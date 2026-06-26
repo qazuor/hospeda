@@ -2,7 +2,7 @@
  * Sitemap and robots.txt validator (SPEC-092 T-093).
  *
  * Validates:
- *   - sitemap-index.xml is reachable, well-formed XML, with at least one <url>.
+ *   - sitemap.xml is reachable, well-formed XML, with at least one <url>.
  *   - Each URL in the sitemap responds 2xx (or 3xx with valid redirect).
  *   - robots.txt is reachable, syntactically valid, and references the
  *     sitemap location.
@@ -76,7 +76,7 @@ function parseRobotsTxt(text: string): { sitemaps: string[]; userAgents: string[
 }
 
 async function validateSitemap(baseUrl: string): Promise<string[]> {
-    const sitemapUrl = `${baseUrl.replace(/\/$/, '')}/sitemap-index.xml`;
+    const sitemapUrl = `${baseUrl.replace(/\/$/, '')}/sitemap.xml`;
     const { ok, status, text } = await fetchText(sitemapUrl);
     if (!ok) {
         addError('sitemap', `${sitemapUrl} returned status ${status}`);
@@ -155,7 +155,7 @@ async function main(): Promise<void> {
 
     console.info(`[sitemap-validator] Base URL: ${baseUrl}, max URL checks: ${effectiveMax}`);
 
-    const expectedSitemapUrl = `${baseUrl.replace(/\/$/, '')}/sitemap-index.xml`;
+    const expectedSitemapUrl = `${baseUrl.replace(/\/$/, '')}/sitemap.xml`;
     const urls = await validateSitemap(baseUrl);
     await validateRobots(baseUrl, expectedSitemapUrl);
 

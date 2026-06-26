@@ -206,7 +206,8 @@ describe('DestinationSchema', () => {
                 seo: {
                     title: 'Destination SEO title thirty chars',
                     description:
-                        'This is a destination SEO description that has at least seventy characters to meet the minimum requirement.'
+                        'This is a destination SEO description that has at least seventy characters to meet the minimum requirement.',
+                    keywords: ['destination', 'travel']
                 },
                 media: {
                     featuredImage: {

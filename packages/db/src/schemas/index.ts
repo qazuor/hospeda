@@ -28,6 +28,7 @@ export * from './tag/index.ts';
 export * from './user/index.ts';
 
 export * from './social/index.ts';
+export * from './feature-flags/index.ts';
 
 // QZPay billing schemas (schema only - exported via billing module)
 export { qzpaySchema } from '@qazuor/qzpay-drizzle';

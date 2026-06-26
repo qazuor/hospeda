@@ -77,7 +77,8 @@
     },
     "platform": {
         "title": "Plataforma",
-        "hostTrades": "Directorio de Oficios"
+        "hostTrades": "Directorio de Oficios",
+        "featureFlags": "Feature Flags"
     },
     "sponsors": "Patrocinadores",
     "analytics": {

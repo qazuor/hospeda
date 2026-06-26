@@ -1,5 +1,5 @@
 {
-    "id": "fd4517c2-3e29-4811-98f5-2fdc868c85dd",
+    "id": "4242659a-2171-4f6a-a6a7-a722095d147b",
     "prevId": "af35fdcd-8ebc-4bf6-a6a3-7aec850da5aa",
     "version": "7",
     "dialect": "postgresql",
@@ -11992,470 +11992,6 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
-        "public.partners": {
-            "name": "partners",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "slug": {
-                    "name": "slug",
-                    "type": "varchar(255)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "name": {
-                    "name": "name",
-                    "type": "varchar(255)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "type": {
-                    "name": "type",
-                    "type": "partner_type_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "tier": {
-                    "name": "tier",
-                    "type": "partner_tier_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "logo_url": {
-                    "name": "logo_url",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "website_url": {
-                    "name": "website_url",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "description": {
-                    "name": "description",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "subscription_status": {
-                    "name": "subscription_status",
-                    "type": "partner_subscription_status_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'pending'"
-                },
-                "lifecycle_state": {
-                    "name": "lifecycle_state",
-                    "type": "lifecycle_status_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'ACTIVE'"
-                },
-                "analytics": {
-                    "name": "analytics",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "default": "'{}'::jsonb"
-                },
-                "plan_id": {
-                    "name": "plan_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "subscription_id": {
-                    "name": "subscription_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "starts_at": {
-                    "name": "starts_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "ends_at": {
-                    "name": "ends_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "deleted_at": {
-                    "name": "deleted_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "created_by_id": {
-                    "name": "created_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "updated_by_id": {
-                    "name": "updated_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "deleted_by_id": {
-                    "name": "deleted_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                }
-            },
-            "indexes": {
-                "partners_slug_idx": {
-                    "name": "partners_slug_idx",
-                    "columns": [
-                        {
-                            "expression": "slug",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_type_idx": {
-                    "name": "partners_type_idx",
-                    "columns": [
-                        {
-                            "expression": "type",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_tier_idx": {
-                    "name": "partners_tier_idx",
-                    "columns": [
-                        {
-                            "expression": "tier",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_subscriptionStatus_idx": {
-                    "name": "partners_subscriptionStatus_idx",
-                    "columns": [
-                        {
-                            "expression": "subscription_status",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_lifecycleState_idx": {
-                    "name": "partners_lifecycleState_idx",
-                    "columns": [
-                        {
-                            "expression": "lifecycle_state",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_startsAt_idx": {
-                    "name": "partners_startsAt_idx",
-                    "columns": [
-                        {
-                            "expression": "starts_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_deletedAt_idx": {
-                    "name": "partners_deletedAt_idx",
-                    "columns": [
-                        {
-                            "expression": "deleted_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_subscriptionStatus_lifecycleState_idx": {
-                    "name": "partners_subscriptionStatus_lifecycleState_idx",
-                    "columns": [
-                        {
-                            "expression": "subscription_status",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "lifecycle_state",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partners_lifecycleState_endsAt_idx": {
-                    "name": "partners_lifecycleState_endsAt_idx",
-                    "columns": [
-                        {
-                            "expression": "lifecycle_state",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "ends_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "partners_plan_id_billing_plans_id_fk": {
-                    "name": "partners_plan_id_billing_plans_id_fk",
-                    "tableFrom": "partners",
-                    "tableTo": "billing_plans",
-                    "columnsFrom": ["plan_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "partners_subscription_id_billing_subscriptions_id_fk": {
-                    "name": "partners_subscription_id_billing_subscriptions_id_fk",
-                    "tableFrom": "partners",
-                    "tableTo": "billing_subscriptions",
-                    "columnsFrom": ["subscription_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "partners_created_by_id_users_id_fk": {
-                    "name": "partners_created_by_id_users_id_fk",
-                    "tableFrom": "partners",
-                    "tableTo": "users",
-                    "columnsFrom": ["created_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "partners_updated_by_id_users_id_fk": {
-                    "name": "partners_updated_by_id_users_id_fk",
-                    "tableFrom": "partners",
-                    "tableTo": "users",
-                    "columnsFrom": ["updated_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "partners_deleted_by_id_users_id_fk": {
-                    "name": "partners_deleted_by_id_users_id_fk",
-                    "tableFrom": "partners",
-                    "tableTo": "users",
-                    "columnsFrom": ["deleted_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {
-                "partners_slug_unique": {
-                    "name": "partners_slug_unique",
-                    "nullsNotDistinct": false,
-                    "columns": ["slug"]
-                }
-            },
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.partner_subscriptions": {
-            "name": "partner_subscriptions",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "subscription_id": {
-                    "name": "subscription_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "product_domain": {
-                    "name": "product_domain",
-                    "type": "varchar(50)",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'partner'"
-                },
-                "partner_id": {
-                    "name": "partner_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "status": {
-                    "name": "status",
-                    "type": "varchar(50)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                }
-            },
-            "indexes": {
-                "partner_subs_partner_uniq": {
-                    "name": "partner_subs_partner_uniq",
-                    "columns": [
-                        {
-                            "expression": "partner_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": true,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partner_subs_partnerId_idx": {
-                    "name": "partner_subs_partnerId_idx",
-                    "columns": [
-                        {
-                            "expression": "partner_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "partner_subs_status_idx": {
-                    "name": "partner_subs_status_idx",
-                    "columns": [
-                        {
-                            "expression": "status",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "partner_subscriptions_subscription_id_billing_subscriptions_id_fk": {
-                    "name": "partner_subscriptions_subscription_id_billing_subscriptions_id_fk",
-                    "tableFrom": "partner_subscriptions",
-                    "tableTo": "billing_subscriptions",
-                    "columnsFrom": ["subscription_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
         "public.platform_settings": {
             "name": "platform_settings",
             "schema": "",
@@ -19713,6 +19249,169 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.feature_flag_audit_log": {
+            "name": "feature_flag_audit_log",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "flag_id": {
+                    "name": "flag_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "action": {
+                    "name": "action",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "previous_value": {
+                    "name": "previous_value",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "new_value": {
+                    "name": "new_value",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "reason": {
+                    "name": "reason",
+                    "type": "varchar(500)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "performed_by_id": {
+                    "name": "performed_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.feature_flags": {
+            "name": "feature_flags",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "key": {
+                    "name": "key",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "varchar(2000)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "''"
+                },
+                "enabled": {
+                    "name": "enabled",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "is_active": {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": true
+                },
+                "force_on_user_ids": {
+                    "name": "force_on_user_ids",
+                    "type": "uuid[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "force_off_user_ids": {
+                    "name": "force_off_user_ids",
+                    "type": "uuid[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "enabled_for_roles": {
+                    "name": "enabled_for_roles",
+                    "type": "text[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.billing_addons": {
             "name": "billing_addons",
             "schema": "",
@@ -24577,21 +24276,6 @@
             "schema": "public",
             "values": ["percentage", "fixed", "free_night"]
         },
-        "public.partner_subscription_status_enum": {
-            "name": "partner_subscription_status_enum",
-            "schema": "public",
-            "values": ["pending", "active", "past_due", "cancelled"]
-        },
-        "public.partner_tier_enum": {
-            "name": "partner_tier_enum",
-            "schema": "public",
-            "values": ["bronze", "silver", "gold"]
-        },
-        "public.partner_type_enum": {
-            "name": "partner_type_enum",
-            "schema": "public",
-            "values": ["commerce", "ngo", "institution"]
-        },
         "public.payment_status_enum": {
             "name": "payment_status_enum",
             "schema": "public",
@@ -24673,7 +24357,6 @@
                 "MODERATION",
                 "COMMERCE",
                 "HOST_TRADE",
-                "PARTNER",
                 "SOCIAL_POST",
                 "SOCIAL_HASHTAG",
                 "SOCIAL_CAMPAIGN",
@@ -25298,6 +24981,7 @@
                 "subscription.view.own",
                 "user.update.self",
                 "ai.settings.manage",
+                "platform.featureFlag.manage",
                 "moderation.term.view",
                 "moderation.term.create",
                 "moderation.term.update",
@@ -25314,11 +24998,6 @@
                 "commerce.editAll",
                 "commerce.delete",
                 "commerce.moderateReview",
-                "partner.create",
-                "partner.update",
-                "partner.delete",
-                "partner.viewAll",
-                "partner.manage",
                 "hostTrade.view",
                 "hostTrade.create",
                 "hostTrade.update",

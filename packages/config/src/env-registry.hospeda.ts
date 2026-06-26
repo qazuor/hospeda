@@ -1674,6 +1674,46 @@ export const HOSPEDA_ENV_VARS = [
         category: 'integrations'
     },
 
+    // Stock image search (SPEC-274)
+    {
+        name: 'HOSPEDA_UNSPLASH_ACCESS_KEY',
+        description:
+            'Unsplash API access key (Client-ID) for the stock image search proxy. Used to authenticate search requests and trigger download tracking on import (TOS requirement).',
+        descriptionEs:
+            'Clave de acceso (Client-ID) de la API de Unsplash para el proxy de búsqueda de imágenes stock. Se usa para autenticar búsquedas y activar el tracking de descarga al importar (requerimiento TOS).',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-unsplash-access-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://unsplash.com/developers',
+        howToObtain:
+            'Unsplash Developer → Your apps → Create a new application → copy the "Access Key". The key is used as Client-ID in the Authorization header. Rate limit: 50 req/hr (demo), 5000 req/hr (production approved).',
+        howToObtainEs:
+            'Unsplash Developer → Your apps → Create a new application → copiá la "Access Key". La clave se usa como Client-ID en el header Authorization. Límite: 50 req/hr (demo), 5000 req/hr (producción aprobada).'
+    },
+    {
+        name: 'HOSPEDA_PEXELS_API_KEY',
+        description:
+            'Pexels API key for the stock image search proxy. Used to authenticate search requests via the Authorization header.',
+        descriptionEs:
+            'Clave de API de Pexels para el proxy de búsqueda de imágenes stock. Se usa para autenticar búsquedas vía el header Authorization.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-pexels-api-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://www.pexels.com/api/',
+        howToObtain:
+            'Pexels API → https://www.pexels.com/api/ → click "Your API Key" → sign up / log in → copy the key. Rate limit: 200 req/hr.',
+        howToObtainEs:
+            'Pexels API → https://www.pexels.com/api/ → hacé click en "Your API Key" → registrate / iniciá sesión → copiá la clave. Límite: 200 req/hr.'
+    },
+
     // -------------------------------------------------------------------------
     // External reputation / review aggregation (SPEC-237)
     // -------------------------------------------------------------------------

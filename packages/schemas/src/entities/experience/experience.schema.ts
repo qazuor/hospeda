@@ -40,7 +40,7 @@ export type ExperienceId = z.infer<typeof ExperienceIdSchema>;
  * - Lifecycle: lifecycleState via `BaseLifecycleFields`
  * - Moderation: moderationState via `BaseModerationFields`
  * - Visibility: visibility via `BaseVisibilityFields`
- * - SEO: title/description via `BaseSeoFields`
+ * - SEO: title/description/keywords via `BaseSeoFields`
  * - Admin: adminInfo via `BaseAdminFields`
  * - Tags: tags array via `TagsFields`
  * - Audit: createdAt/updatedAt/deletedAt and userId variants via `BaseAuditFields`

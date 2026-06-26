@@ -1,4 +1,5 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { ImageSearchModal } from '@/components/entity-form/fields';
 import type {
     FieldConfig,
     GalleryFieldConfig
@@ -24,6 +25,7 @@ import {
     sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
 import { AddIcon, ImageIcon, UploadIcon } from '@repo/icons';
+import { ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { SortableGalleryItem } from './SortableGalleryItem';
 import { UploadProgressIndicator } from './UploadProgressIndicator';
@@ -69,6 +71,12 @@ export interface GalleryFieldProps {
      * This value is only used when typeConfig does not specify maxSize.
      */
     defaultMaxSize?: number;
+    /** Enable stock image search - requires entityType and entityId */
+    enableStockSearch?: boolean;
+    /** Entity type for stock image import */
+    entityType?: 'accommodation' | 'destination' | 'event' | 'post';
+    /** Entity UUID for stock image import */
+    entityId?: string;
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -109,11 +117,15 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             className,
             onUpload,
             onDelete,
-            defaultMaxSize = DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES
+            defaultMaxSize = DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES,
+            enableStockSearch = false,
+            entityType,
+            entityId
         },
         _ref
     ) => {
         const { t } = useTranslations();
+        const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
 
         const label = config.label;
         const description = config.description;
@@ -252,6 +264,32 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                 order: idx
             }));
             onChange?.(reordered);
+        };
+
+        const handleStockImageImported = (result: {
+            url: string;
+            publicId: string;
+            width: number;
+            height: number;
+            attribution: {
+                photographer: string;
+                sourceUrl: string;
+                license: string;
+                provider: 'unsplash' | 'pexels';
+            };
+            moderationState: 'APPROVED';
+        }) => {
+            const newImage: GalleryImage = {
+                id: result.publicId,
+                url: result.url,
+                caption: '',
+                description: '',
+                alt: result.attribution.photographer,
+                moderationState: ModerationStatusEnum.APPROVED,
+                order: value.length,
+                attribution: result.attribution
+            };
+            onChange?.([...value, newImage]);
         };
 
         // Localized announcements for screen readers (dnd-kit Announcements API).
@@ -457,6 +495,16 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     <UploadIcon className="h-4 w-4" />
                                     {t('admin-entities.fields.gallery.selectButton')}
                                 </span>
+                                {enableStockSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsStockModalOpen(true)}
+                                        className="mt-2 inline-flex h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 font-medium text-xs ring-offset-background hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                        <ImageIcon className="h-4 w-4" />
+                                        {t('admin-entities.fields.image.stock.importButton')}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </button>
@@ -498,6 +546,18 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     >
                         {errorMessage}
                     </p>
+                )}
+
+                {/* Stock image search modal */}
+                {enableStockSearch && entityType && entityId && (
+                    <ImageSearchModal
+                        open={isStockModalOpen}
+                        onOpenChange={setIsStockModalOpen}
+                        onImageImported={handleStockImageImported}
+                        entityType={entityType}
+                        entityId={entityId}
+                        targetRole="gallery"
+                    />
                 )}
             </div>
         );

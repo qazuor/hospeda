@@ -140,6 +140,8 @@
 | `GET /api/v1/public/auth/reset-password/check` | `auth/reset-password-check.ts` | none | - | n/a | Public token-check endpoint; no auth needed |
 | `POST /api/v1/public/auth/signup-as-host` | `auth/signup-as-host.ts` | none | - | n/a | Registration endpoint; no entitlement gate |
 | `GET /api/v1/public/auth/status` | `auth/status.ts` | none | - | n/a | Public auth readiness check |
+| **FEATURE FLAGS — PROTECTED** | | | | | |
+| `GET /api/v1/protected/feature-flags/me` | `feature-flags/protected/getMe.ts` | none | - | n/a | Evaluated feature flags for current user; auth-only sufficient (no billing entitlement gate) |
 | **USER — PROTECTED** | | | | | |
 | `GET /api/v1/protected/users/me/entitlements` | `user/protected/entitlements.ts` | none | - | n/a | Returns the caller's own entitlements; always accessible |
 | `GET /api/v1/protected/users/{id}` | `user/protected/getById.ts` | none | - | n/a | Read own profile; auth-only sufficient |
@@ -379,6 +381,14 @@
 | `DELETE /api/v1/admin/features/{id}/hard` | `feature/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/features/{id}/restore` | `feature/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/features/batch` | `feature/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **FEATURE FLAGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/flags` | `feature-flags/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags` | `feature-flags/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}` | `feature-flags/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `PATCH /api/v1/admin/flags/{id}` | `feature-flags/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `DELETE /api/v1/admin/flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | **ATTRACTION — ADMIN** | | | | | |
 | `GET /api/v1/admin/attractions` | `attraction/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions` | `attraction/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
@@ -519,6 +529,8 @@
 | **MEDIA — ADMIN** | | | | | |
 | `POST /api/v1/admin/media` | `media/admin/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check in handler (SPEC-143 Finding #15) |
 | `DELETE /api/v1/admin/media` | `media/admin/delete.ts` | none | - | n/a | Admin media delete; PermissionEnum.MEDIA_DELETE gated |
+| `GET /api/v1/admin/media/search` | `media/admin/search.ts` | none | - | n/a | Admin stock image search (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
+| `POST /api/v1/admin/media/import-stock` | `media/admin/import-stock.ts` | none | - | n/a | Admin stock image import (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
 | **CONVERSATIONS — ADMIN** | | | | | |
 | `GET /api/v1/admin/conversations` | `conversations/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_ALL gated |
 | `GET /api/v1/admin/conversations/{id}` | `conversations/admin/thread.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_OWN or ANY gated |

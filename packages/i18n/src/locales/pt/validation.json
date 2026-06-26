@@ -38,6 +38,20 @@
         "featureIds": {
             "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
         },
+        "featureFlag": {
+            "description": {
+                "max": "A descrição não pode exceder {{max}} caracteres",
+                "min": "A descrição deve ter pelo menos {{min}} caracteres"
+            },
+            "key": {
+                "invalidPattern": "O formato da chave é inválido",
+                "max": "A chave não pode exceder {{max}} caracteres",
+                "min": "A chave deve ter pelo menos {{min}} caracteres"
+            },
+            "reason": {
+                "max": "O motivo não pode exceder {{max}} caracteres"
+            }
+        },
         "location": {
             "apartment": {
                 "max": "[PT] El apartment no puede superar los {{max}} caracteres",
@@ -145,6 +159,20 @@
                     "min": "A lista ordenada deve conter ao menos {{min}} item"
                 }
             }
+        }
+    },
+    "featureFlag": {
+        "description": {
+            "max": "A descrição não pode exceder {{max}} caracteres",
+            "min": "A descrição deve ter pelo menos {{min}} caracteres"
+        },
+        "key": {
+            "invalidPattern": "O formato da chave é inválido",
+            "max": "A chave não pode exceder {{max}} caracteres",
+            "min": "A chave deve ter pelo menos {{min}} caracteres"
+        },
+        "reason": {
+            "max": "O motivo não pode exceder {{max}} caracteres"
         }
     },
     "accommodationAmenity": {
@@ -1430,6 +1458,9 @@
                     },
                     "sourceUrl": {
                         "invalid": "[PT] El source url no es válido"
+                    },
+                    "provider": {
+                        "invalid": "O provedor deve ser unsplash, pexels ou user-upload"
                     }
                 },
                 "caption": {
@@ -1545,6 +1576,9 @@
                 "max": "[PT] La descripción no puede superar los {{max}} caracteres",
                 "min": "[PT] La descripción debe tener al menos {{min}} caracteres",
                 "required": "[PT] La descripción es obligatoria"
+            },
+            "keywords": {
+                "required": "[PT] El palabras clave es obligatorio"
             },
             "title": {
                 "max": "[PT] El título no puede superar los {{max}} caracteres",

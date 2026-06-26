@@ -835,7 +835,16 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
      * Resolved featured image with URL and optional caption.
      * Falls back to `{ url: fallback }` when no image is found on the entity.
      */
-    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    readonly featuredImage: {
+        readonly url: string;
+        readonly caption?: string;
+        readonly attribution?: {
+            readonly photographer: string;
+            readonly sourceUrl: string;
+            readonly license: string;
+            readonly provider: 'unsplash' | 'pexels';
+        };
+    };
     /**
      * Resolved gallery URL list.  Empty array when the entity has no gallery.
      */
@@ -1356,9 +1365,11 @@ export function toEventDetailProps({
 
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
+    const rawKeywords = seoObj?.keywords;
     const seo: EventDetailData['seo'] = {
         title: seoObj?.title ? String(seoObj.title) : undefined,
-        description: seoObj?.description ? String(seoObj.description) : undefined
+        description: seoObj?.description ? String(seoObj.description) : undefined,
+        keywords: Array.isArray(rawKeywords) ? rawKeywords.map(String) : undefined
     };
 
     // --- Contact (event-level, not organizer) ---

@@ -622,6 +622,12 @@ export const ApiEnvBaseSchema = z.object({
     /** Maximum characters of scraped page text sent to the AI Strategy B enrichment step */
     HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000),
 
+    // Stock image search (SPEC-274)
+    /** Unsplash API access key (Client-ID) for stock image search proxy */
+    HOSPEDA_UNSPLASH_ACCESS_KEY: z.string().optional(),
+    /** Pexels API key for stock image search proxy */
+    HOSPEDA_PEXELS_API_KEY: z.string().optional(),
+
     // Social Automation (SPEC-254)
     // All four vars are optional for now — the GPT/Make routes that consume them
     // are NOT mounted yet (Phase 2 / Phase 4). Making them required here would

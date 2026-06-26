@@ -1,4 +1,5 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { ImageSearchModal } from '@/components/entity-form/fields';
 import { ImageFieldErrorBanner } from '@/components/entity-form/fields/ImageFieldErrorBanner';
 import type {
     FieldConfig,
@@ -28,6 +29,12 @@ export interface ImageValue {
     description?: string;
     alt?: string;
     moderationState: ModerationStatusEnum;
+    attribution?: {
+        photographer: string;
+        sourceUrl: string;
+        license: string;
+        provider: 'unsplash' | 'pexels';
+    };
 }
 
 /**
@@ -58,6 +65,12 @@ export interface ImageFieldProps {
     onUpload?: (file: File) => Promise<string>;
     /** External upload error (e.g. from useMediaUpload). Surfaced in the error banner. */
     uploadError?: Error | null;
+    /** Enable stock image search - requires entityType and entityId */
+    enableStockSearch?: boolean;
+    /** Entity type for stock image import */
+    entityType?: 'accommodation' | 'destination' | 'event' | 'post';
+    /** Entity UUID for stock image import */
+    entityId?: string;
 }
 
 /**
@@ -86,11 +99,16 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             required = false,
             className,
             onUpload,
-            uploadError = null
+            uploadError = null,
+            enableStockSearch = false,
+            entityType,
+            entityId
         },
         _ref
     ) => {
         const { t } = useTranslations();
+
+        const [isStockModalOpen, setIsStockModalOpen] = React.useState(false);
 
         // Use direct translations from config
         const label = config.label;
@@ -266,6 +284,29 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             if (value) {
                 onChange?.({ ...value, alt });
             }
+        };
+
+        const handleStockImageImported = (result: {
+            url: string;
+            publicId: string;
+            width: number;
+            height: number;
+            attribution: {
+                photographer: string;
+                sourceUrl: string;
+                license: string;
+                provider: 'unsplash' | 'pexels';
+            };
+            moderationState: 'APPROVED';
+        }) => {
+            onChange?.({
+                url: result.url,
+                caption: '',
+                description: '',
+                alt: result.attribution.photographer,
+                moderationState: ModerationStatusEnum.APPROVED,
+                attribution: result.attribution
+            });
         };
 
         const formatFileSize = (bytes: number): string => {
@@ -574,6 +615,16 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     <UploadIcon className="mr-2 h-4 w-4" />
                                     {t('admin-entities.fields.image.selectButton')}
                                 </span>
+                                {enableStockSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsStockModalOpen(true)}
+                                        className="mt-2 inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 font-medium text-foreground text-sm hover:bg-accent"
+                                    >
+                                        <ImageIcon className="mr-2 h-4 w-4" />
+                                        {t('admin-entities.fields.image.stock.importButton')}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </button>
@@ -620,6 +671,18 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     confirmLabel={t('admin-entities.fields.image.deleteDialogConfirm')}
                     onConfirm={handleConfirmDelete}
                 />
+
+                {/* Stock image search modal */}
+                {enableStockSearch && entityType && entityId && (
+                    <ImageSearchModal
+                        open={isStockModalOpen}
+                        onOpenChange={setIsStockModalOpen}
+                        onImageImported={handleStockImageImported}
+                        entityType={entityType}
+                        entityId={entityId}
+                        targetRole="featured"
+                    />
+                )}
             </div>
         );
     }

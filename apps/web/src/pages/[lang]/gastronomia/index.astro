@@ -11,7 +11,6 @@
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import GastronomyCard from '@/components/gastronomy/GastronomyCard.astro';
@@ -162,12 +161,6 @@ initialParams.sortBy = 'featured';
 
 const baseUrl = buildUrl({ locale, path: 'gastronomia' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
-
-const itemListEntries = cards.map((card) => ({
-    url: new URL(buildUrl({ locale, path: `gastronomia/${card.slug}` }), Astro.site ?? Astro.url.origin)
-        .href,
-    name: card.name,
-}));
 ---
 
 <ListingLayout
@@ -182,14 +175,6 @@ const itemListEntries = cards.map((card) => ({
     filterPosition="left"
     ogTagline={t('gastronomy.listing.subtitle', 'Descubrí los mejores sabores')}
 >
-    <ItemListJsonLd
-        slot="head-extra"
-        name={t('gastronomy.listing.title', 'Gastronomía')}
-        items={itemListEntries}
-        numberOfItems={total}
-        startPosition={(page - 1) * pageSize + 1}
-    />
-
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
