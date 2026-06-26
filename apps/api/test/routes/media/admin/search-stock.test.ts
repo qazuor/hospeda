@@ -34,6 +34,9 @@ vi.mock('../../../../src/utils/env', async (importOriginal) => {
         ...actual,
         env: {
             ...actual.env,
+            NODE_ENV: 'test' as const,
+            HOSPEDA_ALLOW_MOCK_ACTOR: true,
+            CI: undefined,
             HOSPEDA_UNSPLASH_ACCESS_KEY: 'test-unsplash-key',
             HOSPEDA_PEXELS_API_KEY: 'test-pexels-key'
         }
