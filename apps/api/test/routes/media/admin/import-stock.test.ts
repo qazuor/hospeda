@@ -11,16 +11,13 @@
  * @module test/routes/media/admin/import-stock
  */
 
-// ---------------------------------------------------------------------------
-// Environment setup (before any module loads)
-// ---------------------------------------------------------------------------
-
-process.env.NODE_ENV = 'test';
-process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
-
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Set env vars BEFORE any module imports (vitest hoists vi.mock)
+vi.stubEnv('NODE_ENV', 'test');
+vi.stubEnv('HOSPEDA_ALLOW_MOCK_ACTOR', 'true');
 
 import { initApp } from '../../../../src/app';
 import { resetMetrics } from '../../../../src/middlewares/metrics';
