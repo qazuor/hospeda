@@ -747,6 +747,17 @@
             "note": "Doc-only spec; tasks NOT atomized yet. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-1/2/4/5/6 resolved; OQ-3 (values) deferred to implementation. Advertising half is SPEC-282."
         },
         {
+            "specId": "SPEC-282",
+            "title": "Web — Plan comparison table page (detailed feature/entitlement/limit breakdown)",
+            "status": "in-progress",
+            "progress": "11/11",
+            "path": "SPEC-282-web-plan-comparison-table",
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00.000Z",
+            "taskCount": 11,
+            "averageComplexity": 2.0
+        },
+        {
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
             "status": "draft",

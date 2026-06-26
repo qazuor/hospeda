@@ -40,5 +40,19 @@
         "empty": "Plans are not available right now.",
         "period": "/month",
         "cardsHeading": "Tourist plan comparison"
+    },
+    "comparison": {
+        "link": "See detailed comparison",
+        "cta": "Choose plan",
+        "owner": {
+            "heading": "Detailed owner plan comparison",
+            "title": "Owner plan comparison — Hospeda",
+            "description": "Compare all features, benefits and limits of each owner plan."
+        },
+        "tourist": {
+            "heading": "Detailed traveler plan comparison",
+            "title": "Traveler plan comparison — Hospeda",
+            "description": "Compare all features, benefits and limits of each traveler plan."
+        }
     }
 }
