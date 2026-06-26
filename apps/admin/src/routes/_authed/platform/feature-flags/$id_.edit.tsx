@@ -1,3 +1,4 @@
+import { useToast } from '@/components/ui/ToastProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,12 +13,12 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
  */
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 function EditFeatureFlag({ params }: { params: { id: string } }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
 
     const { data: flag } = useSuspenseQuery<FeatureFlag>({
         queryKey: ['feature-flag', params.id],
