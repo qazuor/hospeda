@@ -2154,6 +2154,20 @@
                 "polling",
                 "spec-277-followup"
             ]
+        },
+        {
+            "specId": "SPEC-283",
+            "title": "Graduated Per-Plan AI Usage Limits",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-283-graduated-ai-usage-limits-per-plan",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "parentSpec": "SPEC-211",
+            "origin": "Split out of the SPEC-282 (plan comparison table) review: the owner chose to advertise AI as available now and make graduated per-plan AI usage limits (reverting SPEC-211 G-2/G-4 on the metering axis) a separate formal spec. OQ-1/2/4/5/6 resolved 2026-06-26; OQ-3 (numeric values) deferred to implementation.",
+            "dependsOn": ["SPEC-211", "SPEC-282"],
+            "tags": ["ai", "billing", "entitlements", "monetization", "spec-211-followup"]
         }
     ]
 }
