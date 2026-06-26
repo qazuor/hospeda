@@ -1,33 +1,33 @@
-import { PageTabs, postTabs } from '@/components/layout/PageTabs';
+import { PageTabs, gastronomyTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
 import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
-import { usePostQuery, useUpdatePostMutation } from '@/features/posts/hooks/usePostQuery';
+import { useGastronomyQuery, useUpdateGastronomyMutation } from '@/features/gastronomy';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/posts/$id_/seo')({
-    component: PostSeoPage
+export const Route = createFileRoute('/_authed/gastronomies/$id_/seo')({
+    component: GastronomySeoPage
 });
 
-function PostSeoPage() {
+function GastronomySeoPage() {
     const { id } = Route.useParams();
-    const { data: post, isLoading } = usePostQuery(id);
-    const updatePost = useUpdatePostMutation(id);
+    const { data: gastronomy, isLoading } = useGastronomyQuery(id);
+    const updateGastronomy = useUpdateGastronomyMutation();
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
         locale: SEO_DEFAULT_LOCALE,
-        pathSegment: 'publicaciones',
-        slug: post?.slug
+        pathSegment: 'gastronomias',
+        slug: gastronomy?.slug
     });
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.postsView">
+        <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
             <div className="space-y-4">
                 <PageTabs
-                    tabs={postTabs}
-                    basePath={`/posts/${id}`}
+                    tabs={gastronomyTabs}
+                    basePath={`/gastronomies/${id}`}
                 />
 
                 {isLoading ? (
@@ -40,15 +40,17 @@ function PostSeoPage() {
                     </div>
                 ) : (
                     <SeoEditor
-                        seo={post?.seo}
-                        fallbackTitle={post?.title ?? ''}
-                        fallbackDescription={post?.summary ?? ''}
+                        seo={gastronomy?.seo}
+                        fallbackTitle={gastronomy?.name ?? ''}
+                        fallbackDescription={gastronomy?.summary ?? ''}
                         previewUrl={previewUrl}
-                        isSaving={updatePost.isPending}
+                        isSaving={updateGastronomy.isPending}
                         saveError={
-                            updatePost.error instanceof Error ? updatePost.error.message : undefined
+                            updateGastronomy.error instanceof Error
+                                ? updateGastronomy.error.message
+                                : undefined
                         }
-                        onSave={(seo) => updatePost.mutateAsync({ seo })}
+                        onSave={(seo) => updateGastronomy.mutateAsync({ id, data: { seo } })}
                     />
                 )}
             </div>
