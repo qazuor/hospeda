@@ -13,15 +13,15 @@ import { partnerSchema } from './partner.schema.js';
 import { updatePartnerSchema } from './partner.update.schema.js';
 
 /**
- * HTTP-compatible partner search schema with automatic coercion
- * Extends base search with partner-specific filters
+ * HTTP-compatible partner search schema with automatic coercion.
+ * Only returns active partners — `includeInactive` is intentionally absent
+ * so that the active-only filter is always enforced on public endpoints.
  */
 export const PartnerSearchHttpSchema = BaseHttpSearchSchema.extend({
     q: z.string().optional(),
     type: PartnerTypeEnumSchema.optional(),
     tier: PartnerTierEnumSchema.optional(),
-    subscriptionStatus: PartnerSubscriptionStatusEnumSchema.optional(),
-    includeInactive: z.coerce.boolean().default(false)
+    subscriptionStatus: PartnerSubscriptionStatusEnumSchema.optional()
 });
 
 export type HttpPartnerSearch = z.infer<typeof PartnerSearchHttpSchema>;
