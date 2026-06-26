@@ -1,6 +1,6 @@
 import { FeatureFlagPublicResponseSchema } from '@repo/schemas';
 import { FeatureFlagService } from '@repo/service-core';
-import type { Actor } from '../../../middlewares/actor';
+import type { Actor } from '@repo/service-core';
 import { createProtectedRoute } from '../../../utils/route-factory-tiered';
 
 const featureFlagService = new FeatureFlagService();

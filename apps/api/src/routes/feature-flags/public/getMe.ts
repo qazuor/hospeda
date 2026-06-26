@@ -1,4 +1,4 @@
-import { FeatureFlagPublicResponseSchema, FlagContextSchema } from '@repo/schemas';
+import { FeatureFlagPublicResponseSchema } from '@repo/schemas';
 import { FeatureFlagService } from '@repo/service-core';
 import { createPublicRoute } from '../../../utils/route-factory-tiered';
 
@@ -11,14 +11,13 @@ export const publicGetFeatureFlagsMeRoute = createPublicRoute({
     description:
         'Returns evaluated feature flags for an anonymous user (default global values only). Never exposes internals (user lists, roles).',
     tags: ['Feature Flags'],
-    requestQuery: FlagContextSchema.optional(),
     responseSchema: FeatureFlagPublicResponseSchema,
-    handler: async (_c, _params, _body, query) => {
+    handler: async (_c) => {
         const flags = await featureFlagService.getAllFlags();
         const result: Record<string, boolean> = {};
 
         for (const [key] of Object.entries(flags)) {
-            const enabled = await featureFlagService.evaluateFlag(key, query);
+            const enabled = await featureFlagService.evaluateFlag(key, {});
             result[key] = enabled;
         }
 
