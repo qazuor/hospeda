@@ -86,6 +86,7 @@ export const webLight: Theme = {
     'popover-foreground': oklchValue(0.2, 0.02, 220),
 
     'brand-primary': river[500],
+    'brand-primary-text': river[700],
     'primary-foreground': oklchValue(0.99, 0, 0),
     'brand-secondary': brandSecondary,
     'brand-secondary-foreground': brandSecondaryForeground,

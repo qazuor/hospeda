@@ -248,5 +248,24 @@
         "wineTasting": "Degustação de vinhos",
         "outdoorAdventure": "Aventura ao ar livre",
         "other": "Outro"
+    },
+    "partnerType": {
+        "label": "Tipo de parceiro",
+        "commerce": "Comércio",
+        "ngo": "ONG",
+        "institution": "Instituição"
+    },
+    "partnerTier": {
+        "label": "Nível",
+        "bronze": "Bronze",
+        "silver": "Prata",
+        "gold": "Ouro"
+    },
+    "partnerSubscriptionStatus": {
+        "label": "Estado da assinatura",
+        "active": "Ativo",
+        "pending": "Pendente",
+        "past_due": "Em atraso",
+        "cancelled": "Cancelado"
     }
 }

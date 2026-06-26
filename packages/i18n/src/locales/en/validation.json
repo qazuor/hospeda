@@ -1549,9 +1549,6 @@
                 "min": "[EN] La descripción debe tener al menos {{min}} caracteres",
                 "required": "[EN] La descripción es obligatoria"
             },
-            "keywords": {
-                "required": "[EN] El palabras clave es obligatorio"
-            },
             "title": {
                 "max": "[EN] El título no puede superar los {{max}} caracteres",
                 "min": "[EN] El título debe tener al menos {{min}} caracteres",

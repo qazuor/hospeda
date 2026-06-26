@@ -764,7 +764,6 @@ export interface EventDetailLocation {
 export interface EventSeoData {
     readonly title?: string;
     readonly description?: string;
-    readonly keywords?: readonly string[];
 }
 
 /**
@@ -1097,4 +1096,21 @@ export interface ExperienceDetailData extends ExperienceCardData {
         readonly image: string | null;
         readonly createdAt: string | null;
     } | null;
+}
+
+/**
+ * Partner card data for the partners listing page.
+ */
+export interface PartnerCardData {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly type: string;
+    readonly tier: string;
+    readonly description: string | null;
+    readonly logoUrl: string | null;
+    readonly websiteUrl: string | null;
+    readonly isFeatured: boolean;
+    readonly startsAt: string | null;
+    readonly endsAt: string | null;
 }

@@ -248,5 +248,24 @@
         "wineTasting": "Wine tasting",
         "outdoorAdventure": "Outdoor adventure",
         "other": "Other"
+    },
+    "partnerType": {
+        "label": "Partner type",
+        "commerce": "Commerce",
+        "ngo": "NGO",
+        "institution": "Institution"
+    },
+    "partnerTier": {
+        "label": "Tier",
+        "bronze": "Bronze",
+        "silver": "Silver",
+        "gold": "Gold"
+    },
+    "partnerSubscriptionStatus": {
+        "label": "Subscription status",
+        "active": "Active",
+        "pending": "Pending",
+        "past_due": "Past due",
+        "cancelled": "Cancelled"
     }
 }

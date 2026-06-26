@@ -3,7 +3,7 @@ spec-id: SPEC-275
 title: Web — What's New dialog + Welcome Tour for hosts and commerce owners in /mi-cuenta
 type: feature
 complexity: medium
-status: draft
+status: completed
 created: 2026-06-23T00:00:00Z
 effort_estimate_hours: 16-24
 tags: [web, host, commerce, whats-new, welcome-tour, onboarding, ux, mi-cuenta]

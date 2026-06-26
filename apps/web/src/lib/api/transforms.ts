@@ -28,6 +28,7 @@ import type {
     GastronomyDetailData,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
+    PartnerCardData,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -1364,11 +1365,9 @@ export function toEventDetailProps({
 
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
-    const rawKeywords = seoObj?.keywords;
     const seo: EventDetailData['seo'] = {
         title: seoObj?.title ? String(seoObj.title) : undefined,
-        description: seoObj?.description ? String(seoObj.description) : undefined,
-        keywords: Array.isArray(rawKeywords) ? rawKeywords.map(String) : undefined
+        description: seoObj?.description ? String(seoObj.description) : undefined
     };
 
     // --- Contact (event-level, not organizer) ---
@@ -2111,5 +2110,37 @@ export function toExperienceDetailPageProps({
                   createdAt: ownerObj.createdAt != null ? String(ownerObj.createdAt) : null
               }
             : null
+    };
+}
+
+/**
+ * Transforms a raw API partner item to PartnerCardData props.
+ *
+ * @param item - Raw partner object from the public API
+ * @param locale - Active locale for i18n field resolution
+ * @returns Typed PartnerCardData for the partner card component
+ */
+export function toPartnerCardProps({
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): PartnerCardData {
+    return {
+        id: String(item.id || ''),
+        slug: String(item.slug || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        type: String(item.type || ''),
+        tier: String(item.tier || ''),
+        description:
+            item.description != null
+                ? resolveI18nText(
+                      (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+                      locale
+                  )
+                : null,
+        logoUrl: item.logoUrl != null ? String(item.logoUrl) : null,
+        websiteUrl: item.websiteUrl != null ? String(item.websiteUrl) : null,
+        isFeatured: Boolean(item.isFeatured),
+        startsAt: item.startsAt != null ? String(item.startsAt) : null,
+        endsAt: item.endsAt != null ? String(item.endsAt) : null
     };
 }

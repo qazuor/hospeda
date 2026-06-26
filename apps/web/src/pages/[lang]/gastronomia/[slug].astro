@@ -16,6 +16,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
@@ -124,13 +125,22 @@ const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/`
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
 
+// Price range mapping for JSON-LD
+const priceRangeMap: Record<string, string> = {
+    BUDGET: '$',
+    MID: '$$',
+    HIGH: '$$$',
+    PREMIUM: '$$$$'
+};
+const jsonLdPriceRange = gastronomy.priceRange ? priceRangeMap[gastronomy.priceRange] ?? undefined : undefined;
+
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
-const seoTitle = gastronomy.seo?.title ?? gastronomy.name;
+const seoTitle = gastronomy.seo?.title?.trim() || gastronomy.name;
 const seoDescription =
-    gastronomy.seo?.description ??
-    gastronomy.summary ??
+    gastronomy.seo?.description?.trim() ||
+    gastronomy.summary ||
     t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
 ---
 
@@ -146,6 +156,18 @@ const seoDescription =
     ogSubtitle={gastronomy.destinationName}
     ogRating={gastronomy.averageRating > 0 ? gastronomy.averageRating.toFixed(1) : undefined}
 >
+    <RestaurantJsonLd
+        slot="head-extra"
+        name={gastronomy.name}
+        description={seoDescription}
+        url={canonicalPath}
+        image={gastronomy.featuredImage.url}
+        priceRange={jsonLdPriceRange}
+        aggregateRating={gastronomy.averageRating > 0 ? {
+            ratingValue: gastronomy.averageRating,
+            reviewCount: gastronomy.reviewsCount,
+        } : undefined}
+    />
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}

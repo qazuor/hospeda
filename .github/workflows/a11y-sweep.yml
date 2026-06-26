@@ -1,0 +1,102 @@
+name: A11y Sweep
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+concurrency:
+  group: a11y-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5432/hospeda
+  HOSPEDA_BETTER_AUTH_SECRET: ci-secret-min-32-characters-for-testing-only
+  HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
+  HOSPEDA_API_URL: http://localhost:3001
+  HOSPEDA_SITE_URL: http://localhost:4321
+  PUBLIC_API_URL: http://localhost:3001
+  API_BASE_URL: http://localhost:3001
+  PUBLIC_SITE_URL: http://localhost:4321
+  HOSPEDA_ADMIN_URL: http://localhost:3000
+  PUBLIC_ADMIN_URL: http://localhost:3000
+  HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+  PUBLIC_SENTRY_DSN: ''
+  PUBLIC_POSTHOG_KEY: ''
+  NODE_ENV: production
+  API_PORT: 3001
+  API_HOST: 0.0.0.0
+  API_LOG_FORMAT: json
+  HOSPEDA_NOINDEX_HOSTS: ''
+  REQUIRE_DYNAMIC_ROUTES: '1'
+
+jobs:
+  a11y:
+    name: A11y
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: hospeda_user
+          POSTGRES_PASSWORD: hospeda_pass
+          POSTGRES_DB: hospeda
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Build API and web
+        run: pnpm turbo run build --filter=api --filter=web --filter=@repo/seed
+
+      - name: Apply versioned migrations
+        run: pnpm db:migrate
+
+      - name: Apply extras
+        run: pnpm db:apply-extras
+
+      - name: Seed database
+        run: pnpm db:seed
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install chromium --with-deps
+
+      - name: Start API server
+        run: |
+          node apps/api/dist/index.js &
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3001/health > /dev/null 2>&1; then
+              echo "API ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Start web server
+        run: |
+          node apps/web/dist/server/entry.mjs &
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/es/ 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
+              echo "Web ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run a11y sweep
+        run: pnpm --filter web a11y:sweep
