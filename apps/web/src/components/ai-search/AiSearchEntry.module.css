@@ -1,0 +1,168 @@
+/**
+ * @file AiSearchEntry.module.css
+ * @description Styles for the AI search hybrid layout (SPEC-265 D).
+ *
+ * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
+ * Uses CSS custom properties from global.css; no hardcoded colour values.
+ *
+ * Layout: entry point CTA button → overlay → right-side drawer (desktop)
+ * or full-screen (mobile).
+ */
+
+/* ─── Entry point CTA ─────────────────────────────────────────────────────────
+   A prominent button that invites the user to search with AI.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.entryButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    border: 1px solid var(--brand-primary, #2563eb);
+    border-radius: var(--radius-button, 0.5rem);
+    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.06);
+    color: var(--brand-primary, #2563eb);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+        var(--duration-normal, 0.4s) ease;
+}
+
+.entryButton:hover {
+    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.12);
+}
+
+.entryButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.entryIcon {
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+/* ─── Overlay backdrop ────────────────────────────────────────────────────────
+   Semi-transparent backdrop that dims the page behind the drawer.
+   Click on the backdrop closes the drawer.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: oklch(0 0 0 / 0.4);
+    display: flex;
+    justify-content: flex-end;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ─── Drawer panel ────────────────────────────────────────────────────────────
+   Right-side drawer on desktop, full-screen on mobile.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: var(--core-card, #ffffff);
+    box-shadow: -8px 0 32px -8px oklch(0 0 0 / 0.2);
+    animation: slideIn 0.25s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (min-width: 768px) {
+    .drawer {
+        width: 520px;
+        max-width: 90vw;
+        height: 100%;
+    }
+}
+
+/* ─── Drawer header ───────────────────────────────────────────────────────────
+   Title + close button. Revives the panelTitle i18n key.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--core-foreground-a15, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.drawerTitle {
+    margin: 0;
+    font-family: var(--font-heading, sans-serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground, #1f2937);
+}
+
+.closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: transparent;
+    color: var(--core-muted-foreground, #6b7280);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.closeButton:hover {
+    background-color: oklch(0 0 0 / 0.06);
+    color: var(--core-foreground, #1f2937);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+/* ─── Drawer body ─────────────────────────────────────────────────────────────
+   Container for the SearchChatPanel. The panel fills the available space.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.drawerBody > * {
+    /* SearchChatPanel has its own border/shadow — override to fill the drawer */
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 100% !important;
+    max-height: none !important;
+}

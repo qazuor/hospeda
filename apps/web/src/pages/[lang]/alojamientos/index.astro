@@ -33,7 +33,7 @@ import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/ac
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getApiUrl } from '@/lib/env';
-import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
+import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -819,13 +819,12 @@ const emptyStateSuggestions = [
 	)}
 
 	<!--
-	    Conversational AI search panel (SPEC-212) — chat-based natural-language
-	    search that replaces the SPEC-199 single-shot NL input. Placed above the
-	    results grid so the user finds it immediately after the type-badge nav.
-	    Uses client:load because the panel should be ready for interaction without
-	    requiring scroll (it sits near the top of the main content area).
+	    AI search hybrid layout (SPEC-265 D) — entry point CTA that expands
+	    into a drawer overlay with the conversational AI search panel.
+	    Replaces the always-on SearchChatPanel mount from SPEC-212.
+	    Uses client:load so the CTA is immediately interactive.
 	-->
-	<SearchChatPanel
+	<AiSearchEntry
 		client:load
 		locale={locale}
 		apiUrl={getApiUrl()}
