@@ -8,7 +8,8 @@
  * when no translation is provided.
  */
 
-import { ENTITLEMENT_DEFINITIONS as DEFINITIONS } from '@repo/billing';
+import { ENTITLEMENT_DEFINITIONS as DEFINITIONS, LIMIT_METADATA } from '@repo/billing';
+import type { LimitKey } from '@repo/billing';
 
 export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
 type Translator = (key: string, fallback?: string) => string;
@@ -62,6 +63,29 @@ export function getEntitlementName(input: { key: EntitlementKey; t: Translator }
     const def = ENTITLEMENT_BY_KEY.get(key as string);
     const fallback = def?.name ?? humanizeKey(key as string);
     return t(`billing.entitlement.${key}`, fallback);
+}
+
+/**
+ * Get the localized name for a limit key.
+ *
+ * Tries `billing.comparison.limitLabel.<key>`. Falls back to the English name
+ * from `LIMIT_METADATA`; if the key is unknown, falls back to the raw key
+ * (formatted) so the UI never renders an empty row label.
+ */
+export function getLimitName(input: { key: string; t: Translator }): string {
+    const { key, t } = input;
+    const meta = LIMIT_METADATA[key as LimitKey];
+    const fallback = meta?.name ?? humanizeKey(key);
+    return t(`billing.comparison.limitLabel.${key}`, fallback);
+}
+
+/**
+ * Get the localized label for an entitlement-or-limit group header in the
+ * comparison table.
+ */
+export function getComparisonGroupLabel(input: { group: string; t: Translator }): string {
+    const { group, t } = input;
+    return t(`billing.comparison.group.${group}`, humanizeKey(group));
 }
 
 function humanizeKey(key: string): string {

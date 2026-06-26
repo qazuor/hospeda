@@ -466,5 +466,34 @@
         "ai_text_improve": "Melhoria de textos com IA",
         "ai_chat": "Consultas sobre a acomodação com IA",
         "ai_search": "Busca inteligente"
+    },
+    "comparison": {
+        "unlimited": "Ilimitado",
+        "notIncluded": "Não incluído",
+        "included": "Incluído",
+        "group": {
+            "owner": "Funções de anfitrião",
+            "accommodation": "Funções da hospedagem",
+            "complex": "Funções de complexo",
+            "tourist": "Funções de viajante",
+            "ai": "Funções de IA",
+            "limits": "Limites"
+        },
+        "limitLabel": {
+            "max_accommodations": "Hospedagens publicadas",
+            "max_photos_per_accommodation": "Fotos por hospedagem",
+            "max_active_promotions": "Promoções ativas",
+            "max_favorites": "Favoritos",
+            "max_properties": "Propriedades do complexo",
+            "max_staff_accounts": "Contas de equipe",
+            "max_active_alerts": "Alertas de preço ativos",
+            "max_compare_items": "Comparações simultâneas",
+            "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
+            "max_ai_chat_per_month": "Consultas com IA por mês",
+            "max_ai_search_per_month": "Buscas com IA por mês",
+            "max_ai_support_per_month": "Consultas ao suporte com IA por mês",
+            "max_ai_translate_per_month": "Traduções com IA por mês",
+            "max_ai_accommodation_import_per_month": "Importações com IA por mês"
+        }
     }
 }
