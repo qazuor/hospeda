@@ -2168,6 +2168,80 @@
             "origin": "Split out of the SPEC-282 (plan comparison table) review: the owner chose to advertise AI as available now and make graduated per-plan AI usage limits (reverting SPEC-211 G-2/G-4 on the metering axis) a separate formal spec. OQ-1/2/4/5/6 resolved 2026-06-26; OQ-3 (numeric values) deferred to implementation.",
             "dependsOn": ["SPEC-211", "SPEC-282"],
             "tags": ["ai", "billing", "entitlements", "monetization", "spec-211-followup"]
+        },
+        {
+            "specId": "SPEC-284",
+            "title": "Personalized Recommendations Feed",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-284-recommendations-feed",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 review: CAN_VIEW_RECOMMENDATIONS is a phantom gate (route not built). Build the recommendations feed.",
+            "tags": ["tourist", "recommendations", "entitlements", "web"]
+        },
+        {
+            "specId": "SPEC-285",
+            "title": "Owner Promotions — Tourist-Facing Display",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-285-owner-promotions-tourist-display",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 review: owner-create side of promotions is built, tourist-facing display is not (public route unregistered, no UI). Complete the loop.",
+            "tags": ["owner-promotions", "tourist", "web", "api"]
+        },
+        {
+            "specId": "SPEC-286",
+            "title": "Alerts & Offers — Multichannel Notifications",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-286-alerts-offers-multichannel-notifications",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "parentSpec": "SPEC-285",
+            "origin": "Surfaced during SPEC-282 review (replaces the mislabeled 'Promo VIP' row). Merges phantom price alerts + owner-promo offers into one multichannel (email/whatsapp/push) per-plan-limited feature.",
+            "dependsOn": ["SPEC-285"],
+            "tags": ["tourist", "alerts", "notifications", "promotions", "multichannel"]
+        },
+        {
+            "specId": "SPEC-287",
+            "title": "Favorites Collections — Per-Plan Limits",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-287-favorites-collections-per-plan-limits",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 review: collections feature is built but capped by env var, not billing. Move to a per-plan billing LimitKey (free tourist excluded, paid plans graduated).",
+            "tags": ["tourist", "favorites", "collections", "billing", "limits"]
+        },
+        {
+            "specId": "SPEC-288",
+            "title": "Accommodation Comparison",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-288-accommodation-comparison",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 review: CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS are a phantom gate. Build side-by-side comparison with per-plan differences.",
+            "tags": ["tourist", "comparison", "entitlements", "limits", "web"]
+        },
+        {
+            "specId": "SPEC-289",
+            "title": "Search History",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-289-search-history",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 review: CAN_VIEW_SEARCH_HISTORY is a phantom gate. Build search history with per-plan differences.",
+            "tags": ["tourist", "search-history", "entitlements", "web"]
         }
     ]
 }
