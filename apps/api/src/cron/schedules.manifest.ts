@@ -255,5 +255,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '*/5 * * * *',
         description:
             'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when HOSPEDA_MAKE_API_KEY is absent.'
+    },
+    {
+        name: 'partner-expiry',
+        displayName: 'Expiración de partners',
+        category: 'billing',
+        schedule: '15 4 * * *',
+        description:
+            'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
     }
 ];

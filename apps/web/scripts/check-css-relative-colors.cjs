@@ -84,6 +84,9 @@ const ALLOWLIST = Object.freeze({
     'src/components/GlobalAnnouncements.astro': 2,
     'src/components/ShareButtons.module.css': 1,
     'src/components/shared/cards/EventCardFeatured.astro': 3,
+    // SPEC-271: partner tier badge tints use oklch(from var(--brand-*) l c h / 0.15)
+    // for theme-adaptive background shading — no precomputed alpha tokens exist.
+    'src/components/partner/PartnerCard.astro': 2,
     'src/components/account/CollectionCard.tsx': 3,
     // SPEC-203: subtle primary/accent tints + a modal overlay on the plan-management
     // surface. No precomputed alpha tokens exist (only --ring-a50), so these follow

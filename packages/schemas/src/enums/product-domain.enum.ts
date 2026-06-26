@@ -3,8 +3,10 @@
  *
  * - accommodation: Traditional lodging listings (hotels, cabins, etc.).
  * - commerce: Commercial/gastronomy and experience listings.
+ * - partner: Partner directory subscriptions.
  */
 export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
-    COMMERCE = 'commerce'
+    COMMERCE = 'commerce',
+    PARTNER = 'partner'
 }

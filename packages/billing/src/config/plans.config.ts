@@ -515,6 +515,30 @@ export const COMMERCE_LISTING_PLAN: PlanDefinition = {
     limits: []
 };
 
+/**
+ * Dedicated partner-directory plan (SPEC-271).
+ *
+ * Seeded into `billing_plans` and stamped with `product_domain='partner'`, but
+ * intentionally excluded from `ALL_PLANS` so accommodation pricing surfaces do
+ * not expose it.
+ */
+export const PARTNER_LISTING_PLAN: PlanDefinition = {
+    slug: 'partner-listing',
+    name: 'Partner Listing',
+    description: 'Subscription that makes a partner visible in the public directory (SPEC-271).',
+    category: 'owner',
+    monthlyPriceArs: 500000,
+    annualPriceArs: null,
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 1,
+    isActive: true,
+    entitlements: [],
+    limits: []
+};
+
 // ─── ALL PLANS ─────────────────────────────────────────────────
 
 /** All available plans in the system */

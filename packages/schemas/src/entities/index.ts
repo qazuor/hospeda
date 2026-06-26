@@ -1,6 +1,7 @@
 // Export all entity schemas
 export * from './accommodation/index.js';
 export * from './accommodation-external/index.js';
+export * from './partner/index.js';
 export * from './gastronomy/index.js';
 export * from './experience/index.js';
 export * from './commerce-lead/index.js';

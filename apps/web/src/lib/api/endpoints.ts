@@ -14,6 +14,7 @@ import type {
     ExternalReputationBlock,
     FeaturePublic,
     GastronomyPublic,
+    PartnerPublic,
     PostListItem,
     PostPublic,
     PostSummary
@@ -1426,5 +1427,25 @@ export const commerceLeadApi = {
      */
     submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.post({ path: `${BASE}/commerce/leads`, body });
+    }
+};
+
+/**
+ * Partner public API endpoints.
+ */
+export const partnerApi = {
+    /**
+     * List active partners with pagination.
+     *
+     * GET /api/v1/public/partners
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly type?: string;
+        readonly tier?: string;
+    }): Promise<ApiResult<PaginatedResponse<PartnerPublic>>> {
+        return apiClient.getList({ path: `${BASE}/partners`, params });
     }
 };
