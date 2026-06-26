@@ -38,15 +38,15 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
 </AccountLayout>
 
 <style>
-    .whats-new-page {
+    :global(.whats-new-page) {
         max-width: 720px;
     }
 
-    .whats-new-page__header {
+    :global(.whats-new-page__header) {
         margin-bottom: var(--space-6);
     }
 
-    .whats-new-page__title {
+    :global(.whats-new-page__title) {
         margin: 0 0 var(--space-2);
         font-family: var(--font-heading);
         font-size: 1.5rem;
@@ -54,25 +54,25 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
         color: var(--core-foreground);
     }
 
-    .whats-new-page__desc {
+    :global(.whats-new-page__desc) {
         margin: 0;
         color: var(--core-muted-foreground);
         font-size: 0.9375rem;
     }
 
-    .whats-new-page__empty {
+    :global(.whats-new-page__empty) {
         padding: var(--space-8) 0;
         text-align: center;
         color: var(--core-muted-foreground);
     }
 
-    .whats-new-page__error {
+    :global(.whats-new-page__error) {
         padding: var(--space-8) 0;
         text-align: center;
         color: var(--brand-accent);
     }
 
-    .whats-new-card {
+    :global(.whats-new-card) {
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
@@ -83,30 +83,30 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
         background-color: var(--core-card);
     }
 
-    .whats-new-card--seen {
+    :global(.whats-new-card--seen) {
         opacity: 0.7;
     }
 
-    .whats-new-card__img {
+    :global(.whats-new-card__img) {
         width: 100%;
         height: 200px;
         object-fit: cover;
         border-radius: var(--radius-md);
     }
 
-    .whats-new-card__body {
+    :global(.whats-new-card__body) {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
     }
 
-    .whats-new-card__meta {
+    :global(.whats-new-card__meta) {
         display: flex;
         align-items: center;
         gap: var(--space-3);
     }
 
-    .whats-new-card__badge {
+    :global(.whats-new-card__badge) {
         display: inline-flex;
         border-radius: var(--radius-pill);
         background-color: var(--brand-primary-a12);
@@ -116,12 +116,12 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
         color: var(--brand-primary);
     }
 
-    .whats-new-card__date {
+    :global(.whats-new-card__date) {
         font-size: 0.8125rem;
         color: var(--core-muted-foreground);
     }
 
-    .whats-new-card__title {
+    :global(.whats-new-card__title) {
         margin: 0;
         font-family: var(--font-heading);
         font-size: 1.125rem;
@@ -129,13 +129,13 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
         color: var(--core-foreground);
     }
 
-    .whats-new-card__content {
+    :global(.whats-new-card__content) {
         font-size: 0.9375rem;
         line-height: 1.6;
         color: var(--core-foreground);
     }
 
-    .whats-new-card__content a {
+    :global(.whats-new-card__content a) {
         color: var(--brand-primary);
         text-decoration: underline;
     }

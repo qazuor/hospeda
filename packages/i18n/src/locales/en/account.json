@@ -566,6 +566,10 @@
                 "previewError": "Could not get the change preview. Please try again.",
                 "changeError": "Could not change the plan. Please try again."
             }
+        },
+        "whatsNew": {
+            "title": "What's New",
+            "desc": "News and platform updates"
         }
     },
     "newsletter": {

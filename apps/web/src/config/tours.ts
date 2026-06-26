@@ -26,7 +26,7 @@ export interface TourConfig {
 
 export const WEB_TOURS: ReadonlyArray<TourConfig> = [
     {
-        id: 'host.welcome',
+        id: 'web.host.welcome',
         version: 1,
         roles: ['HOST', 'ADMIN', 'SUPER_ADMIN', 'CLIENT_MANAGER', 'EDITOR'],
         trigger: 'auto-first-visit',
@@ -82,7 +82,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         ]
     },
     {
-        id: 'commerce.welcome',
+        id: 'web.commerce.welcome',
         version: 1,
         roles: ['COMMERCE_OWNER'],
         trigger: 'auto-first-visit',

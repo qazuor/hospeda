@@ -566,6 +566,10 @@
                 "previewError": "Não foi possível obter a prévia da mudança. Tente novamente.",
                 "changeError": "Não foi possível mudar o plano. Tente novamente."
             }
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "newsletter": {

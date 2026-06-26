@@ -2,8 +2,8 @@
  * GET /api/v1/protected/users/me/tour-progress
  * PATCH /api/v1/protected/users/me/tour-progress
  *
- * Tour progress endpoints for recording and retrieving admin tour seen-state.
- * Mirrors the admin panel implementation (SPEC-174) for the web app.
+ * Tour progress endpoints for recording and retrieving tour seen-state.
+ * Shared between the admin panel (SPEC-174) and the web app (SPEC-275).
  *
  * The `settings.onboarding.adminTours` JSONB map stores tourId -> version.
  * PATCH performs a server-side read-modify-write to avoid clobbering sibling settings.
@@ -94,10 +94,10 @@ export const tourProgressHandler = async (
 export const tourProgressGetRoute = createProtectedRoute({
     method: 'get',
     path: '/me/tour-progress',
-    summary: 'Get admin tour progress',
+    summary: 'Get tour progress',
     description:
-        "Returns the authenticated user's admin tour progress map (tourId -> version). " +
-        'The map indicates which tours the user has seen and at which config version.',
+        "Returns the authenticated user's tour progress map (tourId -> version). " +
+        'The map indicates which tours (admin and web) the user has seen and at which config version.',
     tags: ['Users'],
     responseSchema: TourProgressMapSchema,
     handler: tourProgressGetHandler,
@@ -109,8 +109,8 @@ export const tourProgressGetRoute = createProtectedRoute({
 /**
  * PATCH /api/v1/protected/users/me/tour-progress
  *
- * Records that the authenticated user has seen (or skipped) a specific admin
- * guided tour at the given config version. Requires `USER_SETTINGS_UPDATE` — held by
+ * Records that the authenticated user has seen (or skipped) a specific guided
+ * tour (admin or web) at the given config version. Requires `USER_SETTINGS_UPDATE` — held by
  * HOST, EDITOR, ADMIN, SUPER_ADMIN, and USER roles per
  * `packages/seed/src/required/rolePermissions.seed.ts`.
  *
@@ -119,10 +119,10 @@ export const tourProgressGetRoute = createProtectedRoute({
 export const tourProgressRoute = createProtectedRoute({
     method: 'patch',
     path: '/me/tour-progress',
-    summary: 'Mark an admin tour as seen',
+    summary: 'Mark a tour as seen',
     description:
-        'Records that the authenticated user has seen (or skipped) a specific admin guided tour ' +
-        'at the given config version. Performs a server-side read-modify-write merge — only ' +
+        'Records that the authenticated user has seen (or skipped) a specific guided tour ' +
+        '(admin or web) at the given config version. Performs a server-side read-modify-write merge — only ' +
         'settings.onboarding.adminTours[tourId] is overwritten; all other settings keys are preserved.',
     tags: ['Users'],
     requiredPermissions: [PermissionEnum.USER_SETTINGS_UPDATE],

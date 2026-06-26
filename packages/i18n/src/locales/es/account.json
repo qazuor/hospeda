@@ -566,6 +566,10 @@
                 "previewError": "No se pudo obtener la vista previa del cambio. Intentá de nuevo.",
                 "changeError": "No se pudo cambiar el plan. Intentá de nuevo."
             }
+        },
+        "whatsNew": {
+            "title": "Novedades",
+            "desc": "Novedades y actualizaciones de la plataforma"
         }
     },
     "newsletter": {

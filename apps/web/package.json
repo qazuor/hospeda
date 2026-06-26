@@ -68,6 +68,7 @@
     "devDependencies": {
         "@astrojs/check": "^0.9.4",
         "@axe-core/playwright": "^4.10.2",
+        "@lhci/cli": "0.15.1",
         "@playwright/test": "^1.60.0",
         "@repo/typescript-config": "workspace:*",
         "@testing-library/jest-dom": "^6.9.1",

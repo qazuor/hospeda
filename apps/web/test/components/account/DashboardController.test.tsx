@@ -35,7 +35,7 @@ vi.mock('@/components/account/WhatsNewModal.client', () => ({
 describe('DashboardController D12 gate', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetWelcomeTourForRole.mockReturnValue({ id: 'host.welcome', version: '1.0' });
+        mockGetWelcomeTourForRole.mockReturnValue({ id: 'web.host.welcome', version: '1.0' });
     });
 
     it('does not auto-open whats-new when welcome tour is pending', () => {
