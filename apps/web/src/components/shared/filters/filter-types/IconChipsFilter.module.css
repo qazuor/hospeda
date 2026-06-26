@@ -91,10 +91,11 @@
     color: var(--core-muted-foreground);
 }
 
-.searchInput:focus {
+.searchInput:focus-visible {
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a10);
-    outline: none;
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 /* Icon chips dialog — hidden by default, visible when open */

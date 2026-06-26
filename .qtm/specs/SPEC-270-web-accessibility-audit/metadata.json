@@ -3,13 +3,13 @@
     "title": "Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog",
     "type": "improvement",
     "complexity": "medium",
-    "status": "draft",
+    "status": "completed",
     "created": "2026-06-23T00:00:00Z",
     "audited": "2026-06-23",
     "modelFit": "basic",
-    "startedAt": null,
+    "startedAt": "2026-06-24T00:00:00Z",
     "approved": null,
-    "completed": null,
+    "completed": "2026-06-24T00:00:00Z",
     "planFileRef": null,
     "tags": ["accessibility", "web", "audit", "wcag", "a11y", "aria", "keyboard", "contrast"]
 }

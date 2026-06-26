@@ -31,6 +31,7 @@ const name =
 	author.displayName ||
 	[author.firstName, author.lastName].filter(Boolean).join(' ') ||
 	'';
+const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', 'Sobre el autor');
 
 const profileUrl = author.slug
 	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
@@ -49,7 +50,7 @@ const morePostsUrl = buildUrl({
 		{author.profilePicture ? (
 			<img
 				src={author.profilePicture}
-				alt={name}
+				alt={authorImageAlt}
 				class="post-author-card__avatar"
 				width={56}
 				height={56}

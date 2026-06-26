@@ -32,8 +32,9 @@
     box-sizing: border-box;
 }
 
-.input:focus {
-    outline: none;
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }

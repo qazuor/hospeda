@@ -151,11 +151,12 @@
     font-size: 0.875rem;
     cursor: pointer;
     transition: border-color var(--duration-normal, 0.4s) ease;
-    outline: none;
     min-width: 120px;
 }
 
-.select:focus {
+.select:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }

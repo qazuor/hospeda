@@ -364,8 +364,7 @@ export function MobileMenu({
                             {user.image ? (
                                 <img
                                     src={user.image}
-                                    alt=""
-                                    aria-hidden="true"
+                                    alt={user.name ?? 'Usuario'}
                                     className={styles.userAvatar}
                                 />
                             ) : (
