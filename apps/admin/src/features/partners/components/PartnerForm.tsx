@@ -1,36 +1,58 @@
+/**
+ * @file PartnerForm.tsx
+ * Partner create / edit form (SPEC-271).
+ *
+ * Uses TanStack Form with Zod validation at submit boundary.
+ * All fields are Tailwind-styled; no CSS modules (admin convention).
+ *
+ * RO-RO props — inputs are plain values, outputs are via callbacks.
+ */
+
+import { Button } from '@/components/ui-wrapped/Button';
 import {
-    type CreatePartner,
     LifecycleStatusEnum,
-    type Partner,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
-    type UpdatePartner
+    createPartnerSchema
 } from '@repo/schemas';
-import { useEffect, useState } from 'react';
+import { useForm } from '@tanstack/react-form';
+import * as React from 'react';
+import type { z } from 'zod';
 import type { PartnerAdminPlanOption } from '../hooks/usePartnerQuery';
 
-interface PartnerFormProps {
-    readonly initialData?: Partner | null;
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type PartnerFormValues = z.infer<typeof createPartnerSchema>;
+
+/** Props accepted by {@link PartnerForm}. */
+export interface PartnerFormProps {
+    /**
+     * Initial field values.  Pass the existing entity when editing;
+     * omit (or pass `undefined`) when creating.
+     */
+    readonly initialData?: Partial<PartnerFormValues> | null;
+    /** Available billing plans for the plan selector. */
     readonly plans: readonly PartnerAdminPlanOption[];
-    readonly isSubmitting: boolean;
-    readonly submitLabel: string;
-    readonly onSubmit: (data: CreatePartner | UpdatePartner) => Promise<void> | void;
+    /** Whether the form is in a pending/saving state. */
+    readonly isSubmitting?: boolean;
+    /** Label for the submit button. */
+    readonly submitLabel?: string;
+    /** Called when the user clicks Cancel. */
+    readonly onCancel?: () => void;
+    /** Called with the validated form values when the user submits. */
+    readonly onSubmit: (values: PartnerFormValues) => Promise<void> | void;
 }
 
-interface PartnerFormState {
-    readonly name: string;
-    readonly slug: string;
-    readonly type: PartnerTypeEnum;
-    readonly tier: PartnerTierEnum;
-    readonly logoUrl: string;
-    readonly websiteUrl: string;
-    readonly description: string;
-    readonly planId: string;
-    readonly startsAt: string;
-    readonly endsAt: string;
-}
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
+/**
+ * Converts a raw string to a URL-safe slug (lowercase, hyphens).
+ */
 function slugify(value: string): string {
     return value
         .normalize('NFD')
@@ -41,212 +63,570 @@ function slugify(value: string): string {
         .replace(/-+/g, '-');
 }
 
+/**
+ * Formats a Date, ISO string, or null/undefined as a `YYYY-MM-DD` string
+ * suitable for an `<input type="date">`.
+ */
 function toInputDate(value: Date | string | null | undefined): string {
     if (!value) return '';
     const date = value instanceof Date ? value : new Date(value);
     return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }
 
-function getInitialState(initialData?: Partner | null): PartnerFormState {
-    return {
-        name: initialData?.name ?? '',
-        slug: initialData?.slug ?? '',
-        type: initialData?.type ?? PartnerTypeEnum.COMMERCE,
-        tier: initialData?.tier ?? PartnerTierEnum.GOLD,
-        logoUrl: initialData?.logoUrl ?? '',
-        websiteUrl: initialData?.websiteUrl ?? '',
-        description: initialData?.description ?? '',
-        planId: initialData?.planId ?? '',
-        startsAt: toInputDate(initialData?.startsAt) || new Date().toISOString().slice(0, 10),
-        endsAt: toInputDate(initialData?.endsAt)
-    };
+// ---------------------------------------------------------------------------
+// Option lists
+// ---------------------------------------------------------------------------
+
+const TYPE_OPTIONS: ReadonlyArray<{ value: PartnerTypeEnum; label: string }> = [
+    { value: PartnerTypeEnum.COMMERCE, label: 'Comercio' },
+    { value: PartnerTypeEnum.NGO, label: 'ONG' },
+    { value: PartnerTypeEnum.INSTITUTION, label: 'Institución' }
+];
+
+const TIER_OPTIONS: ReadonlyArray<{ value: PartnerTierEnum; label: string }> = [
+    { value: PartnerTierEnum.GOLD, label: 'Gold' },
+    { value: PartnerTierEnum.SILVER, label: 'Silver' },
+    { value: PartnerTierEnum.BRONZE, label: 'Bronze' }
+];
+
+// ---------------------------------------------------------------------------
+// Small field wrapper
+// ---------------------------------------------------------------------------
+
+interface FieldWrapperProps {
+    readonly label: string;
+    readonly htmlFor?: string;
+    readonly required?: boolean;
+    readonly error?: string;
+    readonly children: React.ReactNode;
 }
 
+function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrapperProps) {
+    return (
+        <div className="space-y-1">
+            <label
+                htmlFor={htmlFor}
+                className="block font-medium text-foreground text-sm"
+            >
+                {label}
+                {required && <span className="ml-1 text-destructive">*</span>}
+            </label>
+            {children}
+            {error && <p className="text-destructive text-xs">{error}</p>}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+/**
+ * Partner create / edit form.
+ *
+ * Validates at submit via `createPartnerSchema.safeParse`.
+ * Field-level errors are surfaced after a failed submit attempt.
+ *
+ * @param props - {@link PartnerFormProps}
+ */
 export function PartnerForm({
     initialData,
     plans,
-    isSubmitting,
-    submitLabel,
+    isSubmitting = false,
+    submitLabel = 'Guardar',
+    onCancel,
     onSubmit
 }: PartnerFormProps) {
-    const [form, setForm] = useState<PartnerFormState>(() => getInitialState(initialData));
+    const [globalError, setGlobalError] = React.useState<string | null>(null);
 
-    useEffect(() => {
-        setForm(getInitialState(initialData));
-    }, [initialData]);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const form = useForm<PartnerFormValues>({
+        defaultValues: {
+            name: initialData?.name ?? '',
+            slug: initialData?.slug ?? '',
+            type: initialData?.type ?? PartnerTypeEnum.COMMERCE,
+            tier: initialData?.tier ?? PartnerTierEnum.GOLD,
+            logoUrl: initialData?.logoUrl ?? null,
+            websiteUrl: initialData?.websiteUrl ?? null,
+            description: initialData?.description ?? null,
+            planId: initialData?.planId ?? null,
+            subscriptionStatus:
+                initialData?.subscriptionStatus ?? PartnerSubscriptionStatusEnum.PENDING,
+            lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
+            startsAt: initialData?.startsAt ?? new Date(today),
+            endsAt: initialData?.endsAt ?? null
+        } as PartnerFormValues,
+        onSubmit: async ({ value }) => {
+            setGlobalError(null);
+            const result = createPartnerSchema.safeParse(value);
+            if (!result.success) {
+                const firstIssue = result.error.issues[0];
+                setGlobalError(firstIssue?.message ?? 'Datos inválidos. Revisá el formulario.');
+                return;
+            }
+            await onSubmit(result.data);
+        }
+    });
+
+    const INPUT_CLASS =
+        'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
     return (
         <form
-            className="space-y-6"
-            onSubmit={async (event) => {
-                event.preventDefault();
-
-                const payload = {
-                    name: form.name.trim(),
-                    slug: (form.slug.trim() || slugify(form.name)).trim(),
-                    type: form.type,
-                    tier: form.tier,
-                    logoUrl: form.logoUrl.trim() || null,
-                    websiteUrl: form.websiteUrl.trim() || null,
-                    description: form.description.trim() || null,
-                    planId: form.planId || null,
-                    subscriptionStatus:
-                        initialData?.subscriptionStatus ?? PartnerSubscriptionStatusEnum.PENDING,
-                    lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-                    startsAt: new Date(form.startsAt),
-                    endsAt: form.endsAt ? new Date(form.endsAt) : null
-                } satisfies CreatePartner | UpdatePartner;
-
-                await onSubmit(payload);
+            onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void form.handleSubmit();
             }}
+            aria-label="Formulario de partner"
+            noValidate
         >
-            <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Nombre</span>
-                    <input
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.name}
-                        onChange={(event) =>
-                            setForm((current) => ({
-                                ...current,
-                                name: event.target.value,
-                                slug: current.slug ? current.slug : slugify(event.target.value)
-                            }))
-                        }
-                        required
-                    />
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Slug</span>
-                    <input
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.slug}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, slug: event.target.value }))
-                        }
-                        required
-                    />
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Tipo</span>
-                    <select
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.type}
-                        onChange={(event) =>
-                            setForm((current) => ({
-                                ...current,
-                                type: event.target.value as PartnerTypeEnum
-                            }))
-                        }
+            <div className="space-y-6">
+                {/* ---- Identity ---- */}
+                <section aria-labelledby="partner-identity-heading">
+                    <h3
+                        id="partner-identity-heading"
+                        className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
                     >
-                        <option value="commerce">Comercio</option>
-                        <option value="ngo">ONG</option>
-                        <option value="institution">Institución</option>
-                    </select>
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Tier</span>
-                    <select
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.tier}
-                        onChange={(event) =>
-                            setForm((current) => ({
-                                ...current,
-                                tier: event.target.value as PartnerTierEnum
-                            }))
-                        }
-                    >
-                        <option value="gold">Gold</option>
-                        <option value="silver">Silver</option>
-                        <option value="bronze">Bronze</option>
-                    </select>
-                </label>
-                <label className="space-y-2 text-sm md:col-span-2">
-                    <span className="font-medium">Plan de billing</span>
-                    <select
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.planId}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, planId: event.target.value }))
-                        }
-                        required
-                    >
-                        <option value="">Seleccionar plan</option>
-                        {plans.map((plan) => (
-                            <option
-                                key={plan.id}
-                                value={plan.id}
-                            >
-                                {plan.name}
-                                {plan.monthlyPriceArs !== null
-                                    ? ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`
-                                    : ''}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Logo URL</span>
-                    <input
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.logoUrl}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, logoUrl: event.target.value }))
-                        }
-                    />
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Sitio web</span>
-                    <input
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.websiteUrl}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, websiteUrl: event.target.value }))
-                        }
-                    />
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Inicio</span>
-                    <input
-                        type="date"
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.startsAt}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, startsAt: event.target.value }))
-                        }
-                        required
-                    />
-                </label>
-                <label className="space-y-2 text-sm">
-                    <span className="font-medium">Fin</span>
-                    <input
-                        type="date"
-                        className="w-full rounded-md border px-3 py-2"
-                        value={form.endsAt}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, endsAt: event.target.value }))
-                        }
-                    />
-                </label>
-                <label className="space-y-2 text-sm md:col-span-2">
-                    <span className="font-medium">Descripción</span>
-                    <textarea
-                        className="min-h-32 w-full rounded-md border px-3 py-2"
-                        value={form.description}
-                        onChange={(event) =>
-                            setForm((current) => ({ ...current, description: event.target.value }))
-                        }
-                    />
-                </label>
-            </div>
+                        Datos principales
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {/* Name */}
+                        <form.Field
+                            name="name"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    !value || value.trim().length < 1
+                                        ? 'El nombre es requerido'
+                                        : undefined
+                            }}
+                        >
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Nombre"
+                                    htmlFor={field.name}
+                                    required
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => {
+                                            field.handleChange(e.target.value);
+                                            // Auto-fill slug when slug is still empty
+                                            const slugField = form.getFieldValue('slug');
+                                            if (!slugField || slugField === '') {
+                                                form.setFieldValue('slug', slugify(e.target.value));
+                                            }
+                                        }}
+                                        placeholder="Ej: Municipalidad de Concepción"
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                        aria-required="true"
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
 
-            <button
-                type="submit"
-                className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-                disabled={isSubmitting}
-            >
-                {isSubmitting ? 'Guardando...' : submitLabel}
-            </button>
+                        {/* Slug */}
+                        <form.Field
+                            name="slug"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    !value || value.trim().length < 1
+                                        ? 'El slug es requerido'
+                                        : undefined
+                            }}
+                        >
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Slug"
+                                    htmlFor={field.name}
+                                    required
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        placeholder="ej: municipalidad-cdu"
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                        aria-required="true"
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+
+                        {/* Type */}
+                        <form.Field
+                            name="type"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    value ? undefined : 'El tipo es requerido'
+                            }}
+                        >
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Tipo"
+                                    htmlFor={field.name}
+                                    required
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <select
+                                        id={field.name}
+                                        name={field.name}
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) =>
+                                            field.handleChange(e.target.value as PartnerTypeEnum)
+                                        }
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                        aria-required="true"
+                                    >
+                                        <option value="">Seleccioná el tipo…</option>
+                                        {TYPE_OPTIONS.map((opt) => (
+                                            <option
+                                                key={opt.value}
+                                                value={opt.value}
+                                            >
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+
+                        {/* Tier */}
+                        <form.Field
+                            name="tier"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    value ? undefined : 'El tier es requerido'
+                            }}
+                        >
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Tier"
+                                    htmlFor={field.name}
+                                    required
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <select
+                                        id={field.name}
+                                        name={field.name}
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) =>
+                                            field.handleChange(e.target.value as PartnerTierEnum)
+                                        }
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                        aria-required="true"
+                                    >
+                                        <option value="">Seleccioná el tier…</option>
+                                        {TIER_OPTIONS.map((opt) => (
+                                            <option
+                                                key={opt.value}
+                                                value={opt.value}
+                                            >
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+
+                        {/* Plan */}
+                        <div className="sm:col-span-2">
+                            <form.Field
+                                name="planId"
+                                validators={{
+                                    onChange: ({ value }) =>
+                                        value ? undefined : 'El plan de billing es requerido'
+                                }}
+                            >
+                                {(field) => (
+                                    <FieldWrapper
+                                        label="Plan de billing"
+                                        htmlFor={field.name}
+                                        required
+                                        error={
+                                            field.state.meta.isTouched
+                                                ? field.state.meta.errors.join(', ')
+                                                : undefined
+                                        }
+                                    >
+                                        <select
+                                            id={field.name}
+                                            name={field.name}
+                                            value={(field.state.value as string) ?? ''}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(e.target.value || null)
+                                            }
+                                            className={INPUT_CLASS}
+                                            disabled={isSubmitting}
+                                            aria-required="true"
+                                        >
+                                            <option value="">Seleccioná un plan…</option>
+                                            {plans.map((plan) => (
+                                                <option
+                                                    key={plan.id}
+                                                    value={plan.id}
+                                                >
+                                                    {plan.name}
+                                                    {plan.monthlyPriceArs !== null
+                                                        ? ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`
+                                                        : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </FieldWrapper>
+                                )}
+                            </form.Field>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ---- URLs ---- */}
+                <section aria-labelledby="partner-urls-heading">
+                    <h3
+                        id="partner-urls-heading"
+                        className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
+                    >
+                        Presencia online
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {/* Logo URL */}
+                        <form.Field name="logoUrl">
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Logo URL"
+                                    htmlFor={field.name}
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type="url"
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => field.handleChange(e.target.value || null)}
+                                        placeholder="https://ejemplo.com/logo.png"
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+
+                        {/* Website URL */}
+                        <form.Field name="websiteUrl">
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Sitio web"
+                                    htmlFor={field.name}
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type="url"
+                                        value={(field.state.value as string) ?? ''}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => field.handleChange(e.target.value || null)}
+                                        placeholder="https://ejemplo.com"
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+                    </div>
+                </section>
+
+                {/* ---- Subscription period ---- */}
+                <section aria-labelledby="partner-dates-heading">
+                    <h3
+                        id="partner-dates-heading"
+                        className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
+                    >
+                        Período de partnership
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {/* Starts At */}
+                        <form.Field
+                            name="startsAt"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    value ? undefined : 'La fecha de inicio es requerida'
+                            }}
+                        >
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Inicio"
+                                    htmlFor={field.name}
+                                    required
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type="date"
+                                        value={toInputDate(
+                                            field.state.value as Date | string | null
+                                        )}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => {
+                                            // startsAt is required — only update when a real date is chosen.
+                                            if (e.target.value) {
+                                                field.handleChange(new Date(e.target.value));
+                                            }
+                                        }}
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                        aria-required="true"
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+
+                        {/* Ends At */}
+                        <form.Field name="endsAt">
+                            {(field) => (
+                                <FieldWrapper
+                                    label="Fin (opcional)"
+                                    htmlFor={field.name}
+                                    error={
+                                        field.state.meta.isTouched
+                                            ? field.state.meta.errors.join(', ')
+                                            : undefined
+                                    }
+                                >
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type="date"
+                                        value={toInputDate(
+                                            field.state.value as Date | string | null
+                                        )}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) =>
+                                            field.handleChange(
+                                                e.target.value ? new Date(e.target.value) : null
+                                            )
+                                        }
+                                        className={INPUT_CLASS}
+                                        disabled={isSubmitting}
+                                    />
+                                </FieldWrapper>
+                            )}
+                        </form.Field>
+                    </div>
+                </section>
+
+                {/* ---- Description ---- */}
+                <section aria-labelledby="partner-desc-heading">
+                    <h3
+                        id="partner-desc-heading"
+                        className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
+                    >
+                        Descripción
+                    </h3>
+                    <form.Field name="description">
+                        {(field) => (
+                            <FieldWrapper
+                                label="Descripción"
+                                htmlFor={field.name}
+                                error={
+                                    field.state.meta.isTouched
+                                        ? field.state.meta.errors.join(', ')
+                                        : undefined
+                                }
+                            >
+                                <textarea
+                                    id={field.name}
+                                    name={field.name}
+                                    value={(field.state.value as string) ?? ''}
+                                    onBlur={field.handleBlur}
+                                    onChange={(e) => field.handleChange(e.target.value || null)}
+                                    placeholder="Descripción del partner (opcional, máx. 5000 caracteres)"
+                                    rows={4}
+                                    className={INPUT_CLASS}
+                                    disabled={isSubmitting}
+                                />
+                            </FieldWrapper>
+                        )}
+                    </form.Field>
+                </section>
+
+                {/* ---- Global error ---- */}
+                {globalError && (
+                    <p
+                        role="alert"
+                        className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+                    >
+                        {globalError}
+                    </p>
+                )}
+
+                {/* ---- Actions ---- */}
+                <div className="flex justify-end gap-3">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                        >
+                            Cancelar
+                        </Button>
+                    )}
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Guardando…' : submitLabel}
+                    </Button>
+                </div>
+            </div>
         </form>
     );
 }
