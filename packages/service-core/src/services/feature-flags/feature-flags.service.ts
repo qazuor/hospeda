@@ -32,7 +32,7 @@ interface CachedFlag {
 const FLAG_CACHE_TTL_MS = 60 * 1000;
 const featureFlagCache = new Map<string, CachedFlag>();
 
-function clearFeatureFlagCache(key?: string): void {
+export function clearFeatureFlagCache(key?: string): void {
     if (key) {
         featureFlagCache.delete(key);
     } else {
