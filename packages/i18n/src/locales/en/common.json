@@ -146,5 +146,11 @@
             "privacy": "Privacy Policy",
             "sitemap": "Sitemap"
         }
+    },
+    "attribution": {
+        "text": "Photo by {{photographer}} on {{provider}}",
+        "byline": "Photo by",
+        "onProvider": "on {{provider}}",
+        "ariaLabel": "{{photographer}}'s profile on {{provider}}"
     }
 }

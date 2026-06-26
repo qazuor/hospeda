@@ -83,6 +83,46 @@ describe('media.schema', () => {
             expect(result.success).toBe(false);
         });
 
+        it('accepts a full attribution object (SPEC-274 provider field)', () => {
+            const result = ImageAttributionSchema.safeParse({
+                photographer: 'Alice',
+                sourceUrl: 'https://unsplash.com/photos/abc',
+                license: 'Unsplash License',
+                provider: 'unsplash'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.provider).toBe('unsplash');
+            }
+        });
+
+        it('accepts attribution without provider (backward-compat)', () => {
+            const result = ImageAttributionSchema.safeParse({
+                photographer: 'Alice',
+                sourceUrl: 'https://unsplash.com/photos/abc',
+                license: 'Unsplash License'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.provider).toBeUndefined();
+            }
+        });
+
+        it('accepts provider "pexels"', () => {
+            const result = ImageAttributionSchema.safeParse({ provider: 'pexels' });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts provider "user-upload"', () => {
+            const result = ImageAttributionSchema.safeParse({ provider: 'user-upload' });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects an invalid provider value', () => {
+            const result = ImageAttributionSchema.safeParse({ provider: 'shutterstock' });
+            expect(result.success).toBe(false);
+        });
+
         it('rejects a non-string photographer', () => {
             const result = ImageAttributionSchema.safeParse({ photographer: 123 });
             expect(result.success).toBe(false);
@@ -562,18 +602,23 @@ describe('media.schema', () => {
             });
         });
 
-        it('does NOT carry the publicId / attribution extensions of the standalone ImageSchema', () => {
+        it('strips publicId but preserves attribution (SPEC-274)', () => {
             // BaseMediaFields uses its own inline image shape (kept for
             // historical compatibility with entity schemas) which does NOT
-            // declare `publicId` or `attribution`. Any extra unknown keys are
-            // stripped by default (Zod's strip behavior), so the parse still
-            // succeeds but the extra keys are dropped from the parsed output.
+            // declare `publicId`. Unknown keys are stripped by Zod's strip behavior.
+            // However, `attribution` IS declared on BaseMediaObjectSchema (SPEC-274)
+            // so it is preserved through the parse.
             const result = BaseMediaFields.media.safeParse({
                 featuredImage: {
                     url: 'https://example.com/a.jpg',
                     moderationState: 'APPROVED',
                     publicId: 'should-be-stripped',
-                    attribution: { photographer: 'ignored' }
+                    attribution: {
+                        photographer: 'Alice',
+                        sourceUrl: 'https://unsplash.com/photos/abc',
+                        license: 'Unsplash License',
+                        provider: 'unsplash'
+                    }
                 }
             });
             expect(result.success).toBe(true);
@@ -581,9 +626,12 @@ describe('media.schema', () => {
                 expect(
                     (result.data.featuredImage as Record<string, unknown>).publicId
                 ).toBeUndefined();
-                expect(
-                    (result.data.featuredImage as Record<string, unknown>).attribution
-                ).toBeUndefined();
+                expect((result.data.featuredImage as Record<string, unknown>).attribution).toEqual({
+                    photographer: 'Alice',
+                    sourceUrl: 'https://unsplash.com/photos/abc',
+                    license: 'Unsplash License',
+                    provider: 'unsplash'
+                });
             }
         });
     });

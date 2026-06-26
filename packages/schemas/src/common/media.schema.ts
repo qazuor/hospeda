@@ -23,6 +23,16 @@ export const ImageAttributionSchema = z.object({
         .string()
         .min(1, { message: 'zodError.common.media.image.attribution.license.min' })
         .max(200, { message: 'zodError.common.media.image.attribution.license.max' })
+        .optional(),
+    /**
+     * Source provider identifier. Added by SPEC-274 so stock-image imports
+     * carry provenance through the media lifecycle (search → import → render).
+     * `undefined` or `'user-upload'` for manually uploaded images.
+     */
+    provider: z
+        .enum(['unsplash', 'pexels', 'user-upload'], {
+            message: 'zodError.common.media.image.attribution.provider.invalid'
+        })
         .optional()
 });
 export type ImageAttribution = z.infer<typeof ImageAttributionSchema>;
@@ -146,7 +156,13 @@ export const BaseMediaObjectSchema = z.object({
                 .min(1, { message: 'zodError.common.media.image.alt.min' })
                 .max(200, { message: 'zodError.common.media.image.alt.max' })
                 .optional(),
-            moderationState: ModerationStatusEnumSchema
+            moderationState: ModerationStatusEnumSchema,
+            /**
+             * Optional credits/source metadata (photographer, source URL, license, provider).
+             * Added by SPEC-274 to ensure stock-image attribution survives create/update payloads.
+             * Stored as JSONB — no migration required.
+             */
+            attribution: ImageAttributionSchema.optional()
         })
         .optional(),
     gallery: z
@@ -168,7 +184,8 @@ export const BaseMediaObjectSchema = z.object({
                     .min(1, { message: 'zodError.common.media.image.alt.min' })
                     .max(200, { message: 'zodError.common.media.image.alt.max' })
                     .optional(),
-                moderationState: ModerationStatusEnumSchema
+                moderationState: ModerationStatusEnumSchema,
+                attribution: ImageAttributionSchema.optional()
             })
         )
         .optional(),
@@ -244,7 +261,8 @@ export const AccommodationEntityMediaFields = {
                         .min(1, { message: 'zodError.common.media.image.alt.min' })
                         .max(200, { message: 'zodError.common.media.image.alt.max' })
                         .optional(),
-                    moderationState: ModerationStatusEnumSchema
+                    moderationState: ModerationStatusEnumSchema,
+                    attribution: ImageAttributionSchema.optional()
                 })
             )
             .optional()

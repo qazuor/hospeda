@@ -464,7 +464,16 @@ export interface ArticleCardData {
      * Components should use `featuredImage.url` as `src` and prefer
      * `featuredImage.caption ?? title` as `alt` text for accessibility.
      */
-    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    readonly featuredImage: {
+        readonly url: string;
+        readonly caption?: string;
+        readonly attribution?: {
+            readonly photographer: string;
+            readonly sourceUrl: string;
+            readonly license: string;
+            readonly provider: 'unsplash' | 'pexels';
+        };
+    };
     /** Post category slug (e.g. `'travel'`, `'gastronomy'`, `'tips'`). */
     readonly category: string;
     /** ISO 8601 publish date-time string. */
@@ -784,7 +793,16 @@ export interface EventDetailData {
     readonly pricing: EventDetailPricing;
 
     // --- Media ---
-    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    readonly featuredImage: {
+        readonly url: string;
+        readonly caption?: string;
+        readonly attribution?: {
+            readonly photographer: string;
+            readonly sourceUrl: string;
+            readonly license: string;
+            readonly provider: 'unsplash' | 'pexels';
+        };
+    };
     readonly gallery: readonly EventGalleryImage[];
 
     // --- Location ---

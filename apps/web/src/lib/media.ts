@@ -89,6 +89,12 @@ interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
     readonly description?: string;
+    readonly attribution?: {
+        readonly photographer: string;
+        readonly sourceUrl: string;
+        readonly license: string;
+        readonly provider: 'unsplash' | 'pexels';
+    };
 }
 
 interface MediaObject {
@@ -143,6 +149,16 @@ export interface FeaturedImageResult {
      * (not a plain string) and the caption is a non-empty string.
      */
     readonly caption?: string;
+    /**
+     * Optional attribution for stock images from Unsplash/Pexels.
+     * Present only when the image was imported via the stock image import flow.
+     */
+    readonly attribution?: {
+        readonly photographer: string;
+        readonly sourceUrl: string;
+        readonly license: string;
+        readonly provider: 'unsplash' | 'pexels';
+    };
 }
 
 /**
@@ -179,7 +195,16 @@ export function extractFeaturedImage(
             return { url: getMediaUrl(media.featuredImage, { preset: resolvedPreset }) };
         }
         if (typeof media.featuredImage === 'object' && media.featuredImage.url) {
-            const result: { url: string; caption?: string } = {
+            const result: {
+                url: string;
+                caption?: string;
+                attribution?: {
+                    photographer: string;
+                    sourceUrl: string;
+                    license: string;
+                    provider: 'unsplash' | 'pexels';
+                };
+            } = {
                 url: getMediaUrl(media.featuredImage.url, { preset: resolvedPreset })
             };
             if (
@@ -187,6 +212,16 @@ export function extractFeaturedImage(
                 media.featuredImage.caption.length > 0
             ) {
                 result.caption = media.featuredImage.caption;
+            }
+            // Extract attribution if present (SPEC-274 stock images)
+            const attr = media.featuredImage.attribution as Record<string, unknown> | undefined;
+            if (attr?.photographer && attr?.sourceUrl && attr?.license && attr?.provider) {
+                result.attribution = {
+                    photographer: String(attr.photographer),
+                    sourceUrl: String(attr.sourceUrl),
+                    license: String(attr.license),
+                    provider: attr.provider as 'unsplash' | 'pexels'
+                };
             }
             return result;
         }
