@@ -37,7 +37,7 @@ const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}/` });
 	<TouristAttractionJsonLd
 		slot="head-extra"
 		name={name}
-		description={String(description || '')}
+		description={description || undefined}
 		url={canonicalPath}
 		image={featuredImage}
 	/>

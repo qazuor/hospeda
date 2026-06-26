@@ -273,28 +273,6 @@ export const GET: APIRoute = async () => {
         }
     }
 
-    // ── Home page (priority 1.0) ─────────────────────────────────────────
-    // The home is SSG and appears in @astrojs/sitemap, but that integration
-    // doesn't set priority. We emit it here with 1.0 to override.
-    const homeAlternates = [
-        ...LOCALES.map(
-            ({ code, prefix }) =>
-                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}/"/>`
-        ),
-        `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}/"/>`
-    ].join('\n');
-    for (const { prefix } of LOCALES) {
-        entries.push(
-            buildUrlEntry({
-                loc: `${siteUrl}${prefix}/`,
-                lastmod: new Date().toISOString().split('T')[0],
-                changefreq: 'daily',
-                priority: 1.0,
-                alternates: `${homeAlternates}\n`
-            })
-        );
-    }
-
     // ── Detail entity pages (priority 0.8) ───────────────────────────────
 
     // Accommodations: /alojamientos/{slug}/

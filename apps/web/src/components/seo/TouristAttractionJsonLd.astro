@@ -11,7 +11,7 @@ import JsonLd from './JsonLd.astro';
 
 interface Props {
 	readonly name: string;
-	readonly description: string;
+	readonly description?: string;
 	readonly url: string;
 	readonly image?: string;
 	readonly telephone?: string;
@@ -29,9 +29,12 @@ const structuredData: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'TouristAttraction',
 	name,
-	description,
 	url,
 };
+
+if (description) {
+	structuredData.description = description;
+}
 
 if (image) {
 	structuredData.image = image;

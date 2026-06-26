@@ -299,17 +299,19 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         );
     });
 
-    it('emits home at priority 1.0 and listing pages at priority 0.7', async () => {
+    it('emits listing pages at priority 0.7 but NOT the home (home lives in static sitemap)', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
 
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('<loc>https://hospeda.test/es/</loc>');
-        expect(body).toContain('<priority>1.0</priority>');
+        // Listing pages (SSR, not included by @astrojs/sitemap) must be here
         expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         expect(body).toContain('<priority>0.7</priority>');
+        // Home is SSG — @astrojs/sitemap handles it with priority 1.0 (astro.config.mjs).
+        // The dynamic sitemap must NOT duplicate it.
+        expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
     });
 
     it('emits every es-locale URL with the /es prefix (SPEC-157 REQ-2 regression)', async () => {
@@ -437,9 +439,9 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('<?xml version="1.0"');
         expect(body).toContain('<urlset');
         expect(body).toContain('</urlset>');
-        // Home page and listing pages are always emitted (priority 1.0/0.7)
-        // even when API fetches fail — these are statically-known routes.
-        expect(body).toContain('<loc>https://hospeda.test/es/</loc>');
+        // Listing pages are always emitted (priority 0.7) even when API fetches fail.
+        // Home is NOT emitted here — it belongs to the static sitemap (@astrojs/sitemap).
+        expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
