@@ -1,16 +1,16 @@
+/**
+ * Feature Flags list page — admin panel for managing feature flags (dark launch + kill switch).
+ */
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchApi } from '@/lib/api/client';
 import { AddIcon } from '@repo/icons';
 import type { FeatureFlag } from '@repo/schemas';
-import { useSuspenseQuery } from '@tanstack/react-query';
-/**
- * Feature Flags list page — admin panel for managing feature flags (dark launch + kill switch).
- */
+import { useQuery } from '@tanstack/react-query';
 import { Link, createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 
 type FeatureFlagListResponse = {
     items: FeatureFlag[];
@@ -94,15 +94,21 @@ const columns: readonly DataTableColumn<FeatureFlag>[] = [
 ];
 
 function FeatureFlagsList() {
-    const { data } = useSuspenseQuery<FeatureFlagListResponse>({
-        queryKey: ['feature-flags', 'list'],
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
+
+    const { data, isLoading } = useQuery<FeatureFlagListResponse>({
+        queryKey: ['feature-flags', 'list', page, pageSize],
         queryFn: async () => {
             const response = await fetchApi<FeatureFlagListResponse>({
-                path: '/api/v1/admin/feature-flags?page=1&pageSize=50'
+                path: `/api/v1/admin/feature-flags?page=${page}&pageSize=${pageSize}`
             });
             return response.data;
         }
     });
+
+    const items = data?.items ?? [];
+    const total = data?.pagination?.total ?? 0;
 
     return (
         <div className="p-6">
@@ -121,28 +127,21 @@ function FeatureFlagsList() {
                 </Button>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Feature Flags</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        columns={columns}
-                        data={data.items}
-                        pagination={{
-                            page: data.pagination.page,
-                            pageSize: data.pagination.pageSize,
-                            total: data.pagination.total,
-                            totalPages: data.pagination.totalPages,
-                            hasNextPage: data.pagination.hasNextPage,
-                            hasPreviousPage: data.pagination.hasPreviousPage
-                        }}
-                        searchPlaceholder="Search flags by key or description..."
-                        enableSearch
-                        enableFilters={false}
-                    />
-                </CardContent>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={items}
+                total={total}
+                rowId={(row) => row.id}
+                loading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                sort={[]}
+                onSortChange={() => {}}
+                columnVisibility={{}}
+                onColumnVisibilityChange={() => {}}
+            />
         </div>
     );
 }
@@ -151,5 +150,3 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/')({
     component: FeatureFlagsList,
     loader: async () => undefined
 });
-
-export default FeatureFlagsList;
