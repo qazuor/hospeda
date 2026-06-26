@@ -71,12 +71,6 @@ describe('experiencias/index.astro', () => {
     });
 
     describe('rendering', () => {
-        it('emits ItemList JSON-LD for the visible page of cards', () => {
-            expect(src).toContain('ItemListJsonLd');
-            expect(src).toContain('slot="head-extra"');
-            expect(src).toContain('items={itemListEntries}');
-        });
-
         it('renders ExperienceCard for each listing', () => {
             expect(src).toContain('ExperienceCard');
         });

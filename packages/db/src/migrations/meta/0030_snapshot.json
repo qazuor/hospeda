@@ -1,5 +1,5 @@
 {
-    "id": "db8a2879-59f8-4dba-8aef-38bdcd75f5be",
+    "id": "af35fdcd-8ebc-4bf6-a6a3-7aec850da5aa",
     "prevId": "da306e31-6505-45cd-b5ec-f372d63a10dd",
     "version": "7",
     "dialect": "postgresql",
@@ -3315,6 +3315,175 @@
                     "onUpdate": "no action"
                 }
             },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.audit_log_entries": {
+            "name": "audit_log_entries",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "log_type": {
+                    "name": "log_type",
+                    "type": "varchar(10)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "event_type": {
+                    "name": "event_type",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "severity": {
+                    "name": "severity",
+                    "type": "varchar(10)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "actor_id": {
+                    "name": "actor_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "actor_role": {
+                    "name": "actor_role",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "target_id": {
+                    "name": "target_id",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "ip": {
+                    "name": "ip",
+                    "type": "varchar(64)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "method": {
+                    "name": "method",
+                    "type": "varchar(10)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "path": {
+                    "name": "path",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "status_code": {
+                    "name": "status_code",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "message": {
+                    "name": "message",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "data": {
+                    "name": "data",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "logged_at": {
+                    "name": "logged_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {
+                "auditLogEntries_type_logged_idx": {
+                    "name": "auditLogEntries_type_logged_idx",
+                    "columns": [
+                        {
+                            "expression": "log_type",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "logged_at",
+                            "isExpression": false,
+                            "asc": false,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "auditLogEntries_event_logged_idx": {
+                    "name": "auditLogEntries_event_logged_idx",
+                    "columns": [
+                        {
+                            "expression": "event_type",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "logged_at",
+                            "isExpression": false,
+                            "asc": false,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "auditLogEntries_actor_logged_idx": {
+                    "name": "auditLogEntries_actor_logged_idx",
+                    "columns": [
+                        {
+                            "expression": "actor_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "logged_at",
+                            "isExpression": false,
+                            "asc": false,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "policies": {},
@@ -19080,163 +19249,6 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
-        "public.feature_flag_audit_log": {
-            "name": "feature_flag_audit_log",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "flag_id": {
-                    "name": "flag_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "action": {
-                    "name": "action",
-                    "type": "varchar(50)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "previous_value": {
-                    "name": "previous_value",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "new_value": {
-                    "name": "new_value",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "reason": {
-                    "name": "reason",
-                    "type": "varchar(500)",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "performed_by_id": {
-                    "name": "performed_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.feature_flags": {
-            "name": "feature_flags",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "key": {
-                    "name": "key",
-                    "type": "varchar(100)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "description": {
-                    "name": "description",
-                    "type": "varchar(2000)",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "''"
-                },
-                "enabled": {
-                    "name": "enabled",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": false
-                },
-                "is_active": {
-                    "name": "is_active",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": true
-                },
-                "force_on_user_ids": {
-                    "name": "force_on_user_ids",
-                    "type": "uuid[]",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'{}'"
-                },
-                "force_off_user_ids": {
-                    "name": "force_off_user_ids",
-                    "type": "uuid[]",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'{}'"
-                },
-                "enabled_for_roles": {
-                    "name": "enabled_for_roles",
-                    "type": "text[]",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'{}'"
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "created_by_id": {
-                    "name": "created_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "updated_by_id": {
-                    "name": "updated_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
         "public.billing_addons": {
             "name": "billing_addons",
             "schema": "",
@@ -24357,6 +24369,7 @@
                 "host.message.send",
                 "metrics.reset",
                 "auditLog.view",
+                "securityLog.view",
                 "system.maintenanceMode",
                 "translations.manage",
                 "content.multilanguage.edit",
@@ -24805,7 +24818,6 @@
                 "subscription.view.own",
                 "user.update.self",
                 "ai.settings.manage",
-                "platform.featureFlag.manage",
                 "moderation.term.view",
                 "moderation.term.create",
                 "moderation.term.update",

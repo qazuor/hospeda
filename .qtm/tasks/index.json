@@ -239,9 +239,7 @@
             "completedAt": "2026-04-29T18:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T18:45:00.000Z",
-            "absorbs": [
-                "SPEC-075"
-            ]
+            "absorbs": ["SPEC-075"]
         },
         {
             "specId": "SPEC-060-gaps",
@@ -470,9 +468,7 @@
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "worktree": null,
             "branch": null,
-            "dependsOn": [
-                "SPEC-143"
-            ],
+            "dependsOn": ["SPEC-143"],
             "reservedAt": "2026-05-18T22:00:00Z",
             "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         },
@@ -519,9 +515,7 @@
             "path": "SPEC-155-admin-dashboards-v1",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
             "branch": "spec/SPEC-155-admin-dashboards-v1",
-            "dependsOn": [
-                "SPEC-154"
-            ],
+            "dependsOn": ["SPEC-154"],
             "reservedAt": "2026-05-22T00:00:00Z",
             "activatedAt": "2026-05-26T00:00:00Z",
             "tasksAtomizedAt": "2026-05-27T00:00:00Z",
@@ -566,9 +560,7 @@
             "path": "SPEC-156-admin-settings-reorganization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-156-admin-settings-reorganization",
             "branch": "spec/SPEC-156-admin-settings-reorganization",
-            "dependsOn": [
-                "SPEC-154"
-            ],
+            "dependsOn": ["SPEC-154"],
             "reservedAt": "2026-05-22T00:00:00Z",
             "activatedAt": "2026-05-28T05:15:00Z",
             "tasksAtomizedAt": "2026-05-28T05:35:00Z",
@@ -741,21 +733,6 @@
             "path": "SPEC-180-sentry-observability",
             "archived": true,
             "archivedAt": "2026-06-25"
-        },
-        {
-            "specId": "SPEC-267",
-            "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
-            "status": "completed",
-            "progress": "3/3",
-            "path": "SPEC-267-seo-fields-decision",
-            "base": "staging",
-            "createdAt": "2026-06-23T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-24T00:00:00.000Z",
-            "taskCount": 3,
-            "averageComplexity": 2.0,
-            "archived": true,
-            "archivedAt": "2026-06-24",
-            "archiveNote": "WS-1: Remove keywords from SeoSchema + .strip() + fixtures; DB cleanup migration 022 for 6 entities; platform settings clean. WS-2: title/description verified in SEOHead + pickLocalizedSeo (no regression). WS-3: Shared SeoEditor component with SERP preview, char counters (50-60 / 120-155), auto-fallback badges, SEO_LIMITS const, i18n es/en/pt, PageTabs updated for accommodations/destinations/events/posts. Tests: SeoEditor.test.tsx (4), post-seo-route.test.ts (2), PageTabs.test.tsx (17), events edit test mock fix. CI green. PR #1843."
         }
     ],
     "standalone": {

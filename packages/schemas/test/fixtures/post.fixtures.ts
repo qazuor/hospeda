@@ -132,6 +132,7 @@ export const createPostEdgeCases = (): any => ({
     tags: [createTagFixture(), createTagFixture(), createTagFixture()], // Minimum tag objects
     seo: {
         title: 'D'.repeat(30), // Minimum SEO title length
-        description: 'E'.repeat(70) // Minimum SEO description length
+        description: 'E'.repeat(70), // Minimum SEO description length
+        keywords: ['min']
     }
 });

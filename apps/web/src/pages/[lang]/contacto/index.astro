@@ -12,7 +12,6 @@ import { ContactForm } from '@/components/ContactForm.client';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import ContactFAQ from '@/components/contact/ContactFAQ.astro';
 import ContactMiniMap from '@/components/contact/ContactMiniMap.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
@@ -156,7 +155,11 @@ const contactPageJsonLd = {
 	title={t('contact.title', 'Contacto')}
 	description={t('contact.description', 'Contactate con el equipo de Hospeda. Estamos para ayudarte.')}
 >
-	<JsonLd slot="head-extra" data={contactPageJsonLd} />
+	<script
+		slot="head-extra"
+		type="application/ld+json"
+		set:html={JSON.stringify(contactPageJsonLd)}
+	></script>
 
 	<!-- ───── Section 1 — Hero with form ─────────────────────────────────── -->
 	<section class="contact-hero section">

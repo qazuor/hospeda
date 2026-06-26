@@ -21,6 +21,7 @@ CREATE TABLE "feature_flags" (
 	"enabled_for_roles" text[] DEFAULT '{}' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone,
 	"created_by_id" uuid,
 	"updated_by_id" uuid
 );

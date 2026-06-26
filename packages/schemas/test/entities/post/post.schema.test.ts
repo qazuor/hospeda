@@ -223,7 +223,8 @@ describe('PostSchema', () => {
                 seo: {
                     title: 'SEO title with exactly thirty chars',
                     description:
-                        'This is an SEO description that has at least seventy characters to meet the minimum requirement.'
+                        'This is an SEO description that has at least seventy characters to meet the minimum requirement.',
+                    keywords: ['post', 'content']
                 },
                 media: {
                     featuredImage: {
