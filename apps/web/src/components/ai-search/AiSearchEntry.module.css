@@ -19,34 +19,72 @@
     align-items: center;
     gap: 0.625rem;
     width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--core-foreground-a15, #e5e7eb);
-    border-radius: var(--radius-md, 0.625rem);
-    background-color: var(--core-card, #ffffff);
-    color: var(--core-muted-foreground, #6b7280);
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--brand-primary, #2563eb);
+    border-radius: var(--radius-lg, 1rem);
+    background: linear-gradient(
+        135deg,
+        oklch(from var(--brand-primary, #2563eb) l c h / 0.08),
+        oklch(from var(--brand-accent, #f97316) l c h / 0.04)
+    );
+    color: var(--core-foreground, #1f2937);
     font-family: var(--font-sans, sans-serif);
-    font-size: 0.875rem;
+    font-size: 1rem;
+    font-weight: 500;
     text-align: left;
-    cursor: text;
+    cursor: pointer;
     transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
-        var(--duration-normal, 0.4s) ease;
-    box-shadow: 0 1px 3px -1px oklch(0 0 0 / 0.08);
+        var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
+    box-shadow: 0 4px 12px -4px oklch(from var(--brand-primary, #2563eb) l c h / 0.25), 0 0 0 1px
+        oklch(from var(--brand-primary, #2563eb) l c h / 0.15);
+    margin-bottom: var(--space-8, 2rem);
+    position: relative;
+    overflow: hidden;
+}
+
+.searchBar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-primary, #2563eb), var(--brand-accent, #f97316));
+    opacity: 0;
+    transition: opacity var(--duration-normal, 0.4s) ease;
 }
 
 .searchBar:hover {
     border-color: var(--brand-primary, #2563eb);
-    box-shadow: 0 2px 8px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -6px oklch(from var(--brand-primary, #2563eb) l c h / 0.35), 0 0 0 1px
+        oklch(from var(--brand-primary, #2563eb) l c h / 0.2);
+}
+
+.searchBar:hover::before {
+    opacity: 1;
 }
 
 .searchBar:focus-visible {
-    outline: 2px solid var(--brand-primary, #2563eb);
-    outline-offset: 2px;
+    outline: 3px solid var(--brand-primary, #2563eb);
+    outline-offset: 3px;
 }
 
 .searchBarIcon {
-    font-size: 1.125rem;
+    font-size: 1.375rem;
     line-height: 1;
     flex-shrink: 0;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 .searchBarPlaceholder {
@@ -54,19 +92,31 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: var(--core-muted-foreground, #6b7280);
 }
 
 .searchBarBadge {
     flex-shrink: 0;
-    padding: 0.125rem 0.5rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius-pill, 9999px);
-    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.1);
-    color: var(--brand-primary, #2563eb);
-    font-size: 0.625rem;
+    background: linear-gradient(135deg, var(--brand-primary, #2563eb), var(--brand-accent, #f97316));
+    color: #ffffff;
+    font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    box-shadow: 0 2px 6px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.4);
+}
+
+/* Desktop inline variant: remove the default bottom spacing so the fake
+ * search bar aligns perfectly with the Lista/Mapa toggle row. The page-level
+ * layout owns the row spacing; the component should not add extra margin here. */
+@media (min-width: 768px) {
+    .searchBar {
+        margin-bottom: 0;
+    }
 }
 
 /* ─── Floating FAB ────────────────────────────────────────────────────────────

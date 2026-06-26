@@ -792,47 +792,44 @@ const emptyStateSuggestions = [
 		))}
 	</ScrollableNav>
 
-	{!hasError && cards.length > 0 && (
-		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-			<span
-				class="view-toggle__btn view-toggle__btn--active"
-				role="tab"
-				aria-selected="true"
-			>
-				{t('accommodations.viewToggle.list', 'Lista')}
-			</span>
-			<a
-				href={(() => {
-					const sp = new URLSearchParams(url.searchParams);
-					sp.delete('page');
-					const qs = sp.toString();
-					const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-					return qs ? `${base}?${qs}` : base;
-				})()}
-				class="view-toggle__btn"
-				role="tab"
-				aria-selected="false"
-			>
-				{t('accommodations.viewToggle.map', 'Mapa')}
-			</a>
+{!hasError && cards.length > 0 && (
+		<div class="listing-header" role="group" aria-label={t('accommodations.header.ariaLabel', 'Controles de listado')}>
+			<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+				<span
+					class="view-toggle__btn view-toggle__btn--active"
+					role="tab"
+					aria-selected="true"
+				>
+					{t('accommodations.viewToggle.list', 'Lista')}
+				</span>
+				<a
+					href={(() => {
+						const sp = new URLSearchParams(url.searchParams);
+						sp.delete('page');
+						const qs = sp.toString();
+						const base = buildUrl({ locale, path: 'alojamientos/mapa' });
+						return qs ? `${base}?${qs}` : base;
+					})()}
+					class="view-toggle__btn"
+					role="tab"
+					aria-selected="false"
+				>
+					{t('accommodations.viewToggle.map', 'Mapa')}
+				</a>
+			</div>
+
+			<!-- AI search entry — inline with view-toggle on desktop -->
+			<AiSearchEntry
+				client:load
+				locale={locale}
+				apiUrl={getApiUrl()}
+				isAuthenticated={isAuthenticated}
+				currentUrl={Astro.url.href}
+				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
+				pageType={typesArray[0]}
+			/>
 		</div>
 	)}
-
-	<!--
-	    AI search hybrid layout (SPEC-265 D) — entry point CTA that expands
-	    into a drawer overlay with the conversational AI search panel.
-	    Replaces the always-on SearchChatPanel mount from SPEC-212.
-	    Uses client:load so the CTA is immediately interactive.
-	-->
-	<AiSearchEntry
-		client:load
-		locale={locale}
-		apiUrl={getApiUrl()}
-		isAuthenticated={isAuthenticated}
-		currentUrl={Astro.url.href}
-		destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
-		pageType={typesArray[0]}
-	/>
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
@@ -938,7 +935,7 @@ const emptyStateSuggestions = [
 	 * <ScrollableNav> wrapper — this rule only sets the row spacing. */
 	.acc-type-badges {
 		gap: 0.5rem;
-		margin-bottom: var(--space-4, 16px);
+		margin-bottom: var(--space-6, 24px);
 	}
 
 	/* View toggle (Lista / Mapa) */
@@ -1009,6 +1006,39 @@ const emptyStateSuggestions = [
 		:global(html[data-mobile-menu-open]) .view-toggle {
 			visibility: hidden;
 			pointer-events: none;
+		}
+	}
+
+	/* ─── AI Search inline layout (desktop) ─────────────────────────────────
+	   On desktop, place the AI search bar inline with the view toggle,
+	   matching its height and taking the remaining horizontal space.
+	   ──────────────────────────────────────────────────────────────────────── */
+
+	@media (min-width: 768px) {
+		.listing-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--space-4, 16px);
+			margin-top: var(--space-6, 24px);
+			margin-bottom: var(--space-6, 24px);
+		}
+
+		.listing-header > .view-toggle {
+			flex: 0 0 auto;
+			margin: 0;
+		}
+
+		.listing-header > ai-search-entry {
+			flex: 1 1 auto;
+			max-width: 600px;
+			display: flex;
+			align-items: center;
+		}
+
+		/* Hide FAB on desktop: the inline entry is always visible. */
+		.listing-header > ai-search-entry .fab {
+			display: none;
 		}
 	}
 </style>
