@@ -171,7 +171,7 @@ function buildEntriesForEntity({
     for (const item of items) {
         if (!item.slug) continue;
 
-        const lastmod = item.updatedAt ?? item.updated_at;
+        const lastmod = item.updatedAt ?? item.updated_at ?? new Date().toISOString().split('T')[0];
         const path = pathFn(item.slug);
 
         // SPEC-157 REQ-12: the hreflang alternate set is shared by every locale
@@ -210,26 +210,70 @@ export const GET: APIRoute = async () => {
     }
 
     const base = '/api/v1/public';
+    const esPrefix = LOCALES.find((l) => l.code === 'es')?.prefix ?? '';
 
     // Fetch all entity types in parallel. Individual failures degrade gracefully.
     // No `status` filter: the public list endpoints already return only public
     // (published) content, and they reject an unknown `status` query param with
     // HTTP 400 — which previously made every entity fetch fail and the sitemap
     // come back empty.
-    const [accommodations, destinations, events, posts] = await Promise.allSettled([
-        fetchAllEntities(apiUrl, `${base}/accommodations`),
-        fetchAllEntities(apiUrl, `${base}/destinations`),
-        fetchAllEntities(apiUrl, `${base}/events`),
-        fetchAllEntities(apiUrl, `${base}/posts`)
-    ]);
+    const [accommodations, destinations, events, posts, gastronomy, experiences] =
+        await Promise.allSettled([
+            fetchAllEntities(apiUrl, `${base}/accommodations`),
+            fetchAllEntities(apiUrl, `${base}/destinations`),
+            fetchAllEntities(apiUrl, `${base}/events`),
+            fetchAllEntities(apiUrl, `${base}/posts`),
+            fetchAllEntities(apiUrl, `${base}/gastronomies`),
+            fetchAllEntities(apiUrl, `${base}/experiences`)
+        ]);
 
     const resolvedAccommodations =
         accommodations.status === 'fulfilled' ? accommodations.value : [];
     const resolvedDestinations = destinations.status === 'fulfilled' ? destinations.value : [];
     const resolvedEvents = events.status === 'fulfilled' ? events.value : [];
     const resolvedPosts = posts.status === 'fulfilled' ? posts.value : [];
+    const resolvedGastronomy = gastronomy.status === 'fulfilled' ? gastronomy.value : [];
+    const resolvedExperiences = experiences.status === 'fulfilled' ? experiences.value : [];
 
     const entries: string[] = [];
+
+    // ── Static listing pages (priority 0.7) ──────────────────────────────
+    // These are SSR pages (not SSG), so @astrojs/sitemap does not include them.
+    // Listing pages: /{lang}/alojamientos/, /destinos/, /eventos/, /gastronomia/,
+    //                /experiencias/, /publicaciones/
+    const LISTING_PATHS = [
+        'alojamientos',
+        'destinos',
+        'eventos',
+        'gastronomia',
+        'experiencias',
+        'publicaciones'
+    ] as const;
+
+    for (const listingPath of LISTING_PATHS) {
+        const alternateLinks = LOCALES.map(
+            ({ code, prefix }) =>
+                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}/${listingPath}/"/>`
+        );
+        alternateLinks.push(
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}/${listingPath}/"/>`
+        );
+        const alternates = `${alternateLinks.join('\n')}\n`;
+
+        for (const { prefix } of LOCALES) {
+            entries.push(
+                buildUrlEntry({
+                    loc: `${siteUrl}${prefix}/${listingPath}/`,
+                    lastmod: new Date().toISOString().split('T')[0],
+                    changefreq: 'weekly',
+                    priority: 0.7,
+                    alternates
+                })
+            );
+        }
+    }
+
+    // ── Detail entity pages (priority 0.8) ───────────────────────────────
 
     // Accommodations: /alojamientos/{slug}/
     entries.push(
@@ -270,6 +314,28 @@ export const GET: APIRoute = async () => {
             items: resolvedPosts,
             siteUrl,
             pathFn: (slug) => `/publicaciones/${slug}/`,
+            changefreq: 'weekly',
+            priority: 0.8
+        })
+    );
+
+    // Gastronomy: /gastronomia/{slug}/
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedGastronomy,
+            siteUrl,
+            pathFn: (slug) => `/gastronomia/${slug}/`,
+            changefreq: 'weekly',
+            priority: 0.8
+        })
+    );
+
+    // Experiences: /experiencias/{slug}/
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedExperiences,
+            siteUrl,
+            pathFn: (slug) => `/experiencias/${slug}/`,
             changefreq: 'weekly',
             priority: 0.8
         })
