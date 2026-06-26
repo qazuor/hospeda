@@ -1,0 +1,24 @@
+{
+    "specId": "SPEC-282",
+    "title": "Web — Plan comparison table page (detailed feature/entitlement/limit breakdown)",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-26T00:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "web",
+        "billing",
+        "pricing",
+        "plans",
+        "comparison",
+        "entitlements",
+        "limits",
+        "i18n",
+        "ssr",
+        "astro"
+    ]
+}
