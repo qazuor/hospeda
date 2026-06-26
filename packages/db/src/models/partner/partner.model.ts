@@ -1,6 +1,6 @@
 import type { Partner } from '@repo/schemas';
 import type { LifecycleStatusEnum, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import { and, asc, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import type {
@@ -26,13 +26,6 @@ export interface SearchPartnerFilters {
 
 export interface AdminSearchPartnerFilters extends SearchPartnerFilters {
     includeDeleted?: boolean;
-}
-
-export interface FindActivePartnersFilters {
-    type?: string;
-    tier?: string;
-    limit?: number;
-    offset?: number;
 }
 
 /**
@@ -123,10 +116,16 @@ export class PartnerModel extends BaseModelImpl<Partner> {
     }
 
     /**
-     * Find active partners for public listing
-     * Ordered by tier (gold first) then startsAt
+     * Count active partners matching the given filters.
+     *
+     * Uses a SQL `COUNT(*)` aggregation rather than fetching rows and counting
+     * in memory.  Applies the same text-search filter on `name`/`description`
+     * that {@link findByFilters} uses so the total is always consistent with
+     * the paginated results returned for the same query.
      */
-    async findActivePartners(filters: FindActivePartnersFilters = {}): Promise<Partner[]> {
+    async countActivePartners(
+        filters: { q?: string; type?: string; tier?: string } = {}
+    ): Promise<number> {
         const db = getDb();
         const conditions = [
             eq(partners.lifecycleState, 'ACTIVE'),
@@ -134,54 +133,16 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             isNull(partners.deletedAt)
         ];
 
-        if (filters.type) {
-            conditions.push(eq(partners.type, filters.type));
+        // Text search — mirrors findByFilters so counts are always consistent.
+        if (filters.q) {
+            const textSearch = or(
+                safeIlike(partners.name, filters.q),
+                safeIlike(partners.description, filters.q)
+            );
+            if (textSearch) {
+                conditions.push(textSearch);
+            }
         }
-
-        if (filters.tier) {
-            conditions.push(eq(partners.tier, filters.tier));
-        }
-
-        const query = db
-            .select()
-            .from(partners)
-            .where(and(...conditions));
-
-        // Custom tier ordering: GOLD > SILVER > BRONZE
-        // We need to use a CASE expression for custom ordering
-        query.orderBy(
-            // Custom ordering via CASE
-            // Using raw SQL for custom tier ordering
-            // For now, we'll fetch and sort in memory for correct tier order
-        );
-
-        const limit = filters.limit || 50;
-        const offset = filters.offset || 0;
-        query.limit(limit).offset(offset);
-
-        const results = await query.execute();
-
-        // Sort in memory for correct tier order: gold > silver > bronze
-        const tierOrder = { gold: 0, silver: 1, bronze: 2 };
-        return (results as Partner[]).sort((a, b) => {
-            const tierA = tierOrder[a.tier as keyof typeof tierOrder] ?? 99;
-            const tierB = tierOrder[b.tier as keyof typeof tierOrder] ?? 99;
-            if (tierA !== tierB) return tierA - tierB;
-            // Within same tier, sort by startsAt descending (newest first)
-            return new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime();
-        });
-    }
-
-    /**
-     * Count active partners
-     */
-    async countActivePartners(filters: { type?: string; tier?: string } = {}): Promise<number> {
-        const db = getDb();
-        const conditions = [
-            eq(partners.lifecycleState, 'ACTIVE'),
-            eq(partners.subscriptionStatus, 'ACTIVE'),
-            isNull(partners.deletedAt)
-        ];
 
         if (filters.type) {
             conditions.push(eq(partners.type, filters.type));
@@ -192,11 +153,11 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         }
 
         const result = await db
-            .select({ count: partners.id })
+            .select({ count: count() })
             .from(partners)
             .where(and(...conditions));
 
-        return result.length;
+        return result[0]?.count ?? 0;
     }
 
     /**
