@@ -55,10 +55,20 @@ const providerName = attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels'
                 </>
             ) : (
                 <>
-                    {t('common.attribution.text', undefined, {
-                        photographer: attribution.photographer,
-                        provider: providerName
-                    })}
+                    {t('common.attribution.byline')}
+                    <a
+                        href={attribution.sourceUrl}
+                        class="image-attribution__link"
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        aria-label={t('common.attribution.ariaLabel', undefined, {
+                            photographer: attribution.photographer,
+                            provider: providerName
+                        })}
+                    >
+                        {attribution.photographer}
+                    </a>
+                    {t('common.attribution.onProvider', undefined, { provider: providerName })}
                 </>
             )}
         </span>
