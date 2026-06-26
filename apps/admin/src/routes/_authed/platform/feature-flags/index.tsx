@@ -1,8 +1,8 @@
-import { EntityListPageBase } from '@/components/entity-list/EntityListPageBase';
-import { DataTable } from '@/components/table/data-table';
+import { EntityListPage } from '@/components/entity-list/EntityListPage';
+import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag } from '@repo/schemas';
 import { useSuspenseQuery } from '@tanstack/react-query';
 /**
@@ -90,13 +90,15 @@ function FeatureFlagsList() {
     const { data } = useSuspenseQuery<FeatureFlagListResponse>({
         queryKey: ['feature-flags', 'list'],
         queryFn: async () => {
-            const response = await fetchApi('/api/v1/admin/feature-flags?page=1&pageSize=50');
-            return response as FeatureFlagListResponse;
+            const response = await fetchApi({
+                path: '/api/v1/admin/feature-flags?page=1&pageSize=50'
+            });
+            return response.data as FeatureFlagListResponse;
         }
     });
 
     return (
-        <EntityListPageBase
+        <EntityListPage
             entityName="Feature Flag"
             entityNamePlural="Feature Flags"
             basePath="/platform/feature-flags"
@@ -117,7 +119,7 @@ function FeatureFlagsList() {
                 enableSearch
                 enableFilters={false}
             />
-        </EntityListPageBase>
+        </EntityListPage>
     );
 }
 
@@ -127,8 +129,10 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/')({
         await context.queryClient.ensureQueryData({
             queryKey: ['feature-flags', 'list'],
             queryFn: async () => {
-                const response = await fetchApi('/api/v1/admin/feature-flags?page=1&pageSize=50');
-                return response as FeatureFlagListResponse;
+                const response = await fetchApi({
+                    path: '/api/v1/admin/feature-flags?page=1&pageSize=50'
+                });
+                return response.data as FeatureFlagListResponse;
             }
         });
     }

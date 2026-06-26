@@ -185,7 +185,7 @@ function EditFeatureFlag({ params }: { params: { id: string } }) {
     );
 }
 
-export const Route = createFileRoute('/_authed/platform/feature-flags/$id_.edit')({
+export const Route = createFileRoute('/_authed/platform/feature-flags/$id_/edit')({
     component: EditFeatureFlag,
     loader: async ({ params, context }) => {
         await context.queryClient.ensureQueryData({
