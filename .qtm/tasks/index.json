@@ -756,6 +756,117 @@
             "createdAt": "2026-06-26T00:00:00.000Z",
             "taskCount": 11,
             "averageComplexity": 2.0
+        },
+        {
+            "specId": "SPEC-284",
+            "title": "Personalized Recommendations Feed",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-284-recommendations-feed",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-285",
+            "title": "Owner Promotions — Tourist-Facing Display",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-285-owner-promotions-tourist-display",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-286",
+            "title": "Alerts & Offers — Multichannel Notifications",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-286-alerts-offers-multichannel-notifications",
+            "parent": "SPEC-285",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Merges phantom price alerts + owner-promo offers, multichannel (email/whatsapp/push), per-plan limits. Depends on SPEC-285. Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-287",
+            "title": "Favorites Collections — Per-Plan Limits",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-287-favorites-collections-per-plan-limits",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Move built collections feature from env-var cap to per-plan billing LimitKey (free tourist excluded). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-288",
+            "title": "Accommodation Comparison",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-288-accommodation-comparison",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build phantom compare feature (CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-289",
+            "title": "Search History",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-289-search-history",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build phantom search-history feature (CAN_VIEW_SEARCH_HISTORY). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-290",
+            "title": "Owner Review Responses",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-290-owner-review-responses",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Phantom RESPOND_REVIEWS (no reply endpoint/column). Surfaced in SPEC-282 owner audit."
+        },
+        {
+            "specId": "SPEC-291",
+            "title": "Accommodation Verification Badge",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-291-accommodation-verification-badge",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. HAS_VERIFICATION_BADGE is dead filter code. Surfaced in SPEC-282 owner audit."
+        },
+        {
+            "specId": "SPEC-292",
+            "title": "Featured Listing Management",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-292-featured-listing-management",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. isFeatured not settable (no route), FEATURED_LISTING unenforced. Surfaced in SPEC-282 owner audit."
+        },
+        {
+            "specId": "SPEC-293",
+            "title": "Owner Custom Branding",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-293-owner-custom-branding",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit."
         }
     ],
     "standalone": {
