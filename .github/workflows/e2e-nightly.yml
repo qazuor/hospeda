@@ -8,13 +8,12 @@ name: E2E (Nightly)
 # workflow_dispatch to re-run on demand for pre-release validation.
 
 on:
-  # Cron trigger DISABLED 2026-05-12: the suite has been failing every
-  # night since the VPS migration sprint (database/Brevo/credential
-  # config drift). Each failed run still consumes ~5-10 min of free-tier
-  # Actions minutes. Re-enable the cron after SPEC-103 restores the
-  # suite. Manual triggers via workflow_dispatch remain available.
-  #   schedule:
-  #     - cron: '0 3 * * *' # 03:00 UTC daily
+  # Cron re-enabled 2026-06-25 (SPEC-105 T-105-06).
+  # Infra drift (RC-1 wrong filter + RC-2 stale script paths) fixed.
+  # Schema/API drift in 4 test assertions fixed (T-105-04).
+  # Schedule: 05:00 UTC = 02:00 ART — 4 h before daily backup window.
+  schedule:
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -165,9 +164,9 @@ jobs:
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()
         run: |
-          bash scripts/ci/check-raw-ilike.sh
-          pnpm exec tsx scripts/ci/seo-validator.ts
-          pnpm exec tsx scripts/ci/sitemap-validator.ts
+          bash scripts/check-unsafe-ilike.sh
+          pnpm exec tsx scripts/seo-validator.ts
+          pnpm exec tsx scripts/sitemap-validator.ts
 
       - name: Upload Playwright HTML report
         if: always()

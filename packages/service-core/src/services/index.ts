@@ -2,6 +2,7 @@ export * from './accommodation/accommodation.service';
 export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
 export * from './appLog/index.js';
+export * from './auditLog/index.js';
 export * from './conversation/index.js';
 export * from './contentModeration';
 export * from './cronRun/index.js';

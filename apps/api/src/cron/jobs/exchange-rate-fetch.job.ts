@@ -209,10 +209,12 @@ export const exchangeRateFetchJob: CronJobDefinition = {
             const errorMessage = error instanceof Error ? error.message : String(error);
             const errorStack = error instanceof Error ? error.stack : undefined;
 
-            logger.error('Exchange rate fetch failed', {
-                error: errorMessage,
-                stack: errorStack
-            });
+            // SPEC-180: exchange rate fetch failure is actionable — forward to Sentry.
+            logger.error(
+                'Exchange rate fetch failed',
+                { error: errorMessage, stack: errorStack },
+                { capture: true }
+            );
 
             const durationMs = Date.now() - startedAt.getTime();
 

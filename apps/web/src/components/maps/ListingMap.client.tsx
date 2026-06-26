@@ -13,51 +13,21 @@
  *
  * SPEC-098 T-044: AccommodationPopupContent renders a FavoriteButton in the
  * top-right corner of the thumbnail image when the item id is available.
+ *
+ * SPEC-269: Leaflet, react-leaflet, and react-leaflet-cluster are lazy-loaded
+ * via React.lazy so they are NOT included in the eager island bundle. The full
+ * implementation lives in `ListingMapInner.client.tsx`.
  */
-import 'leaflet/dist/leaflet.css';
-
-import { StarIcon } from '@repo/icons';
-import L from 'leaflet';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
-import { type ReactElement, useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-    Circle,
-    MapContainer,
-    Marker,
-    Popup,
-    TileLayer,
-    useMap,
-    useMapEvents
-} from 'react-leaflet';
-import ReactLeafletClusterImport from 'react-leaflet-cluster';
-
-// CJS/ESM interop guard.
-// `react-leaflet-cluster@2.1.0` ships as CJS with the component exposed as
-// `module.exports.default`. With Vite + React 19, the default import resolves
-// to the wrapper object `{ default: Component }` instead of the component
-// itself, causing React to throw at hydration time:
-//   "Element type is invalid ... got: object. Check the render method of
-//    `ListingMap`."
-// Unwrap defensively: prefer `.default` when present, fall back to the import
-// when the bundler already unwrapped it.
-// TYPE-WORKAROUND: react-leaflet-cluster ships CJS exporting the component on `module.exports.default`; Vite+React 19 may resolve the default import to the wrapper `{ default: Component }` instead of the component, so we peek at `.default` defensively and the cast tells TS the wrapper shape exists at runtime.
-const MarkerClusterGroup = ((
-    ReactLeafletClusterImport as unknown as {
-        default?: typeof ReactLeafletClusterImport;
-    }
-).default ?? ReactLeafletClusterImport) as typeof ReactLeafletClusterImport;
-
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
+import { Suspense, lazy } from 'react';
 import styles from './ListingMap.module.css';
 
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: iconRetinaUrl.src ?? iconRetinaUrl,
-    iconUrl: iconUrl.src ?? iconUrl,
-    shadowUrl: iconShadowUrl.src ?? iconShadowUrl
-});
+// ---------------------------------------------------------------------------
+// Types — exported so AccommodationsListingMap and ListingMapInner can share
+// them without importing leaflet/react-leaflet. Defined here to keep them
+// at the public boundary (this file) while the heavy implementation is async.
+// ---------------------------------------------------------------------------
 
 export interface ListingBBox {
     readonly north: number;
@@ -166,595 +136,47 @@ interface DestinationProps extends BaseProps {
     readonly items: ReadonlyArray<DestinationListingItem>;
 }
 
+/** Public prop type for ListingMap (shared with ListingMapInner). */
 export type ListingMapProps = AccommodationProps | DestinationProps;
 
-const ACCOMMODATION_MAX_ZOOM = 17;
-const DESTINATION_MAX_ZOOM = 19;
-const DEFAULT_BOUNDS_DEBOUNCE_MS = 300;
-const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// ---------------------------------------------------------------------------
+// Lazy-loaded inner implementation (async chunk — loads Leaflet on demand)
+// ---------------------------------------------------------------------------
+const ListingMapInner = lazy(() =>
+    import('./ListingMapInner.client').then((mod) => ({ default: mod.ListingMapInner }))
+);
 
-/**
- * Escapes HTML-significant characters before we inject accommodation
- * names + prices into a Leaflet divIcon `html` string. Names come from the
- * API and could in theory contain `<`, `>`, `&` or quotes.
- */
-function escapeHtmlForPill(text: string): string {
-    return text
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-}
-
-/**
- * Decorative pulsing halo rendered on top of the item the user picked from
- * the cards sidebar. Two stacked CircleMarkers: a steady center dot in
- * brand-accent and an outer ring that scales/fades via a CSS keyframe. The
- * halo doesn't change the map viewport — it just calls the user's eye to
- * the right spot while the rest of the listing keeps reacting to pans.
- */
-const PULSE_PANE = 'pulseHaloPane';
-
-function PulseHalo({ lat, lng }: { lat: number; lng: number }) {
-    const map = useMap();
-    useEffect(() => {
-        // Dedicated pane stacked above markerPane (600) and cluster icons,
-        // so the pulse always renders above the clusters at the same spot.
-        let pane = map.getPane(PULSE_PANE);
-        if (!pane) {
-            pane = map.createPane(PULSE_PANE);
-            pane.style.zIndex = '660';
-            pane.style.pointerEvents = 'none';
-        }
-        // We use a divIcon (HTML + CSS) instead of CircleMarker because
-        // CircleMarker renders as a generic <path d="...">, and SVG `r`
-        // can't be tweened from CSS while `transform: scale` on a path
-        // doesn't pivot reliably across browsers. HTML elements animate
-        // predictably and let us layer a steady center dot under an
-        // expanding ring with full CSS control.
-        const icon = L.divIcon({
-            className: styles.pulseIcon,
-            html: `
-              <span class="${styles.pulseRing}" aria-hidden="true"></span>
-              <span class="${styles.pulseRing} ${styles.pulseRingDelayed}" aria-hidden="true"></span>
-              <span class="${styles.pulseCore}" aria-hidden="true"></span>
-            `,
-            iconSize: [0, 0],
-            iconAnchor: [0, 0]
-        });
-        const marker = L.marker([lat, lng], {
-            icon,
-            pane: PULSE_PANE,
-            interactive: false,
-            keyboard: false,
-            zIndexOffset: 1000
-        }).addTo(map);
-        return () => {
-            marker.remove();
-        };
-    }, [map, lat, lng]);
-    return null;
-}
-
-/**
- * Mount-only `map.fitBounds(...)` to frame all initial items in view. Runs
- * once on first paint; subsequent pans/zooms are controlled by the user.
- * `useMap` here grabs the Leaflet instance owned by the parent MapContainer.
- */
-function FitBoundsOnce({
-    bounds,
-    maxZoom
-}: {
-    bounds: [[number, number], [number, number]];
-    maxZoom: number;
-}) {
-    const map = useMap();
-    const appliedRef = useRef(false);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only; we deliberately use the bounds/map/maxZoom captured at first render and never re-fit on prop changes (the user controls panning after mount)
-    useEffect(() => {
-        if (appliedRef.current) return;
-        appliedRef.current = true;
-        // The container's height changes between mount and the moment the
-        // mobile-fullscreen script publishes --wave-bar-compact, so Leaflet's
-        // cached container size is stale and leaves tiles missing. Force it
-        // to remeasure before applying bounds.
-        map.invalidateSize();
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom });
-
-        // Also re-invalidate whenever the container resizes (e.g. mobile
-        // browser chrome collapsing on scroll, orientation change). Leaflet
-        // otherwise won't request the tiles for the newly revealed area and
-        // leaves a gray gap.
-        const container = map.getContainer();
-        const ro = new ResizeObserver(() => map.invalidateSize());
-        ro.observe(container);
-        return () => ro.disconnect();
-    }, []);
-    return null;
-}
-
-function BoundsReporter({
-    onBoundsChange,
-    debounceMs
-}: {
-    onBoundsChange?: (bbox: ListingBBox) => void;
-    debounceMs: number;
-}) {
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const emit = useCallback(
-        (bbox: ListingBBox) => {
-            if (!onBoundsChange) return;
-            if (timerRef.current) clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => onBoundsChange(bbox), debounceMs);
-        },
-        [onBoundsChange, debounceMs]
-    );
-
-    const map = useMapEvents({
-        moveend: () => {
-            const b = map.getBounds();
-            emit({
-                north: b.getNorth(),
-                south: b.getSouth(),
-                east: b.getEast(),
-                west: b.getWest()
-            });
-        },
-        zoomend: () => {
-            const b = map.getBounds();
-            emit({
-                north: b.getNorth(),
-                south: b.getSouth(),
-                east: b.getEast(),
-                west: b.getWest()
-            });
-        }
-    });
-
-    useEffect(() => {
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
-        };
-    }, []);
-
-    return null;
-}
-
-export function ListingMap(props: ListingMapProps) {
-    const {
-        initialCenter,
-        initialZoom = 8,
-        initialBounds,
-        hoveredItemId,
-        selectedCoord,
-        onBoundsChange,
-        onMarkerClick,
-        ariaLabel,
-        i18nStrings,
-        isAuthenticated = false,
-        locale = 'es'
-    } = props;
-
-    const isAccommodationMode = props.mode === 'accommodation-list';
-    const maxZoom = isAccommodationMode ? ACCOMMODATION_MAX_ZOOM : DESTINATION_MAX_ZOOM;
-
-    // selectedCoord is passed directly from the parent (the cards sidebar
-    // resolves the coord at click time so the halo survives even when the
-    // item leaves the live result set during pan/zoom).
-
-    const accentColor = 'var(--brand-accent)';
-    const highlightColor = 'var(--primary, #2563eb)';
-
-    /*
-     * For accommodations we split rendering into two layers, only one of
-     * which is fed into MarkerClusterGroup:
-     *
-     *   - `accommodationCircles` (NOT clustered): the semi-transparent
-     *     privacy Circle for each item. These render directly under the
-     *     cluster group so they remain anchored to the actual coord
-     *     regardless of clustering decisions.
-     *   - `clusterableMarkers` (CLUSTERED): the pill Markers. The cluster
-     *     decides when to fold a group of pills into a single counter icon.
-     *
-     * Why split: MarkerClusterGroup counts every layer it receives as
-     * cluster-eligible and groups any two layers whose pixel distance is
-     * < maxClusterRadius. If we send Circle + Marker for the same item,
-     * both sit at the exact same lat/lng (pixel distance 0), so the
-     * library always groups them into a cluster of count >= 2 — at any
-     * zoom — and we never reach "1 item, no cluster". Pulling Circles out
-     * of the group makes the cluster count match the actual item count.
-     *
-     * Destination mode keeps the simpler single-Marker-per-item layout.
-     *
-     * --- Stable-element cache (cluster flicker mitigation) ---
-     * `useViewportSearch` re-fetches and re-replaces the items array on
-     * every pan/zoom; the new array is a brand-new JS reference, so a
-     * naive iteration would produce brand-new React elements (and brand-new
-     * L.divIcon instances) for accommodations that didn't actually change.
-     * MarkerClusterGroup sees the new children, tears the existing
-     * Leaflet markers off the map, and adds new ones — that's what the
-     * user sees as a "flicker" while paneando.
-     *
-     * To prevent that, we keep a `cacheRef` keyed by item id. On every
-     * render we compute a signature for each item from the fields that
-     * actually affect the rendered marker; if the cached signature
-     * matches we reuse the same `<Circle>` and `<Marker>` element
-     * references, and React (and react-leaflet-cluster) treat them as
-     * unchanged. Entries for items that fell out of the result set are
-     * pruned at the end of each pass.
-     */
-    const accommodationCacheRef = useRef<
-        Map<string, { signature: string; circle: ReactElement; marker: ReactElement }>
-    >(new Map());
-    const destinationCacheRef = useRef<Map<string, { signature: string; marker: ReactElement }>>(
-        new Map()
-    );
-
-    const { clusterableMarkers, accommodationCircles } = useMemo(() => {
-        if (isAccommodationMode) {
-            const cache = accommodationCacheRef.current;
-            const seenIds = new Set<string>();
-            const markers: ReactElement[] = [];
-            const circles: ReactElement[] = [];
-            for (const item of props.items) {
-                seenIds.add(item.id);
-                const isHovered = hoveredItemId === item.id;
-                const priceLabel = item.priceLabel?.trim();
-                /*
-                 * Signature: every field that, if changed, should rebuild
-                 * the Circle+Marker pair (position, label text, hover state,
-                 * favorite state, popup body content). Locale/auth gates
-                 * apply globally and are already part of the outer
-                 * useMemo deps, so they're not re-checked per item.
-                 */
-                const signature = [
-                    isHovered ? '1' : '0',
-                    item.name,
-                    priceLabel ?? '',
-                    item.approximateLocation.lat,
-                    item.approximateLocation.lng,
-                    item.approximateLocation.radiusMeters,
-                    item.typeLabel ?? '',
-                    item.cityName ?? '',
-                    item.summary ?? '',
-                    item.isFeatured ? '1' : '0',
-                    item.featuredLabel ?? '',
-                    item.averageRating ?? '',
-                    item.reviewsCount ?? '',
-                    item.reviewsLabel ?? '',
-                    item.detailHref ?? '',
-                    item.isFavorited ? '1' : '0',
-                    item.favoriteBookmarkId ?? '',
-                    item.bookmarkCount ?? ''
-                ].join('|');
-
-                const cached = cache.get(item.id);
-                if (cached && cached.signature === signature) {
-                    circles.push(cached.circle);
-                    markers.push(cached.marker);
-                    continue;
-                }
-
-                /*
-                 * Two-line pill when a price is available:
-                 *   line 1: accommodation name (semibold)
-                 *   line 2: price label (regular)
-                 * Single-line pill when there is no price.
-                 */
-                const pillBody = priceLabel
-                    ? `<span class="${styles.itemPillName}">${escapeHtmlForPill(item.name)}</span><span class="${styles.itemPillPrice}">${escapeHtmlForPill(priceLabel)}</span>`
-                    : `<span class="${styles.itemPillName}">${escapeHtmlForPill(item.name)}</span>`;
-                const pillIcon = L.divIcon({
-                    className: styles.itemPill,
-                    html: `<span class="${styles.itemPillInner}${
-                        isHovered ? ` ${styles.itemPillHovered}` : ''
-                    }${priceLabel ? ` ${styles.itemPillStacked}` : ''}">${pillBody}</span>`,
-                    iconSize: [0, 0],
-                    iconAnchor: [0, 0]
-                });
-                const circle = (
-                    <Circle
-                        key={`${item.id}-circle`}
-                        center={[item.approximateLocation.lat, item.approximateLocation.lng]}
-                        radius={item.approximateLocation.radiusMeters}
-                        pathOptions={{
-                            color: isHovered ? highlightColor : accentColor,
-                            fillColor: isHovered ? highlightColor : accentColor,
-                            fillOpacity: isHovered ? 0.35 : 0.18,
-                            weight: isHovered ? 3 : 2
-                        }}
-                        eventHandlers={{
-                            click: () => onMarkerClick?.(item.id)
-                        }}
-                    />
-                );
-                const marker = (
-                    <Marker
-                        key={`${item.id}-pill`}
-                        position={[item.approximateLocation.lat, item.approximateLocation.lng]}
-                        icon={pillIcon}
-                        eventHandlers={{
-                            click: () => onMarkerClick?.(item.id)
-                        }}
-                    >
-                        <Popup
-                            className={styles.popup}
-                            maxWidth={300}
-                            minWidth={280}
-                            // BETA-47: disable Leaflet's reactive autoPan — it panned the map on
-                            // every popup open, and after several markers the queued pans fought
-                            // the user's drag and locked the map. Popups still open in place.
-                            autoPan={false}
-                            keepInView={false}
-                        >
-                            <AccommodationPopupContent
-                                item={item}
-                                viewDetailsLabel={i18nStrings.viewDetails}
-                                isAuthenticated={isAuthenticated}
-                                locale={locale}
-                            />
-                        </Popup>
-                    </Marker>
-                );
-                cache.set(item.id, { signature, circle, marker });
-                circles.push(circle);
-                markers.push(marker);
-            }
-            // Drop cached entries for items that left the current viewport
-            // — keeps the map bounded and avoids stale closures lingering.
-            for (const id of cache.keys()) {
-                if (!seenIds.has(id)) cache.delete(id);
-            }
-            return { clusterableMarkers: markers, accommodationCircles: circles };
-        }
-
-        const cache = destinationCacheRef.current;
-        const seenIds = new Set<string>();
-        const markers: ReactElement[] = [];
-        for (const item of props.items) {
-            seenIds.add(item.id);
-            const signature = [
-                item.name,
-                item.coordinates.lat,
-                item.coordinates.lng,
-                item.thumbnailUrl ?? '',
-                item.accommodationsCount ?? '',
-                item.accommodationsLabel ?? '',
-                item.description ?? '',
-                item.detailHref ?? ''
-            ].join('|');
-            const cached = cache.get(item.id);
-            if (cached && cached.signature === signature) {
-                markers.push(cached.marker);
-                continue;
-            }
-            const marker = (
-                <Marker
-                    key={item.id}
-                    position={[item.coordinates.lat, item.coordinates.lng]}
-                    eventHandlers={{
-                        click: () => onMarkerClick?.(item.id)
-                    }}
-                >
-                    <Popup
-                        className={styles.popup}
-                        maxWidth={300}
-                        minWidth={280}
-                        // BETA-47: disable reactive autoPan (see accommodation popup above).
-                        autoPan={false}
-                        keepInView={false}
-                    >
-                        <DestinationPopupContent
-                            item={item}
-                            viewDetailsLabel={i18nStrings.viewDetails}
-                        />
-                    </Popup>
-                </Marker>
-            );
-            cache.set(item.id, { signature, marker });
-            markers.push(marker);
-        }
-        for (const id of cache.keys()) {
-            if (!seenIds.has(id)) cache.delete(id);
-        }
-        return { clusterableMarkers: markers, accommodationCircles: [] as ReactElement[] };
-    }, [
-        props.items,
-        isAccommodationMode,
-        hoveredItemId,
-        onMarkerClick,
-        i18nStrings,
-        isAuthenticated,
-        locale
-    ]);
-
-    /*
-     * When the runtime-affecting context flips (locale, auth, click handler,
-     * i18n strings, or the mode itself) the cached elements still wrap the
-     * stale closure / callback, so we drop the caches and force them to
-     * rebuild on the next render. Item-level changes are handled by the
-     * per-item signature above; this effect is the "everything-else" reset.
-     */
-    // biome-ignore lint/correctness/useExhaustiveDependencies: each dep is a deliberate cache-invalidation signal; the effect body does not read them, it only fires .clear() when any of them changes.
-    useEffect(() => {
-        accommodationCacheRef.current.clear();
-        destinationCacheRef.current.clear();
-    }, [isAccommodationMode, onMarkerClick, i18nStrings, isAuthenticated, locale]);
-
+// ---------------------------------------------------------------------------
+// Skeleton fallback — sized to match the map container dimensions so there
+// is no Cumulative Layout Shift (CLS) while the Leaflet chunk loads.
+// ---------------------------------------------------------------------------
+function MapSkeleton() {
     return (
         <div
-            className={styles.root}
-            aria-label={ariaLabel}
-            role="img"
+            className={`${styles.root} ${styles.skeleton}`}
+            aria-hidden="true"
         >
-            <MapContainer
-                center={initialCenter}
-                zoom={initialZoom}
-                maxZoom={maxZoom}
-                scrollWheelZoom
-                className={styles.container}
-            >
-                <TileLayer
-                    attribution={i18nStrings.attribution}
-                    url={TILE_URL}
-                    maxZoom={maxZoom}
-                />
-                {initialBounds && (
-                    <FitBoundsOnce
-                        bounds={initialBounds}
-                        maxZoom={maxZoom}
-                    />
-                )}
-                <BoundsReporter
-                    onBoundsChange={onBoundsChange}
-                    debounceMs={DEFAULT_BOUNDS_DEBOUNCE_MS}
-                />
-                {accommodationCircles}
-                <MarkerClusterGroup chunkedLoading>{clusterableMarkers}</MarkerClusterGroup>
-                {selectedCoord && (
-                    <PulseHalo
-                        lat={selectedCoord.lat}
-                        lng={selectedCoord.lng}
-                    />
-                )}
-            </MapContainer>
-            {isAccommodationMode && (
-                <p className={styles.disclaimer}>{i18nStrings.approximateDisclaimer}</p>
-            )}
+            <Spinner
+                size="lg"
+                label="Cargando mapa…"
+            />
         </div>
     );
 }
 
-function AccommodationPopupContent({
-    item,
-    viewDetailsLabel,
-    isAuthenticated,
-    locale
-}: {
-    readonly item: AccommodationListingItem;
-    readonly viewDetailsLabel?: string;
-    readonly isAuthenticated: boolean;
-    readonly locale: SupportedLocale;
-}) {
-    const hasRating =
-        typeof item.averageRating === 'number' &&
-        item.averageRating > 0 &&
-        typeof item.reviewsCount === 'number' &&
-        item.reviewsCount > 0;
-    const hasHeaderRow =
-        Boolean(item.typeLabel) ||
-        (item.isFeatured && Boolean(item.featuredLabel)) ||
-        Boolean(item.id);
+/**
+ * Multi-marker Leaflet map for listing pages.
+ *
+ * The inner Leaflet/react-leaflet/react-leaflet-cluster implementation is
+ * async-chunked via React.lazy and rendered inside a Suspense boundary.
+ * Call-sites keep using `<ListingMap client:only="react" ... />` unchanged.
+ *
+ * @param props - {@link ListingMapProps}
+ */
+export function ListingMap(props: ListingMapProps) {
     return (
-        <div className={styles.popupCard}>
-            <div className={styles.popupBody}>
-                {hasHeaderRow ? (
-                    <div className={styles.popupHeader}>
-                        <div className={styles.popupHeaderChips}>
-                            {item.typeLabel ? (
-                                <span className={styles.popupTypeChip}>{item.typeLabel}</span>
-                            ) : null}
-                            {item.isFeatured && item.featuredLabel ? (
-                                <span className={`${styles.popupFeaturedBadge} featured-badge`}>
-                                    <StarIcon
-                                        size={12}
-                                        weight="fill"
-                                        aria-hidden="true"
-                                    />
-                                    <span>{item.featuredLabel}</span>
-                                </span>
-                            ) : null}
-                        </div>
-                        <FavoriteButton
-                            entityId={item.id}
-                            entityType="ACCOMMODATION"
-                            initialIsFavorited={item.isFavorited}
-                            initialBookmarkId={item.favoriteBookmarkId ?? null}
-                            count={item.bookmarkCount}
-                            variant="compact"
-                            locale={locale}
-                            isAuthenticated={isAuthenticated}
-                        />
-                    </div>
-                ) : null}
-                <div className={styles.popupTitleBlock}>
-                    <h3 className={styles.popupTitle}>{item.name}</h3>
-                    {item.cityName ? <p className={styles.popupCity}>{item.cityName}</p> : null}
-                </div>
-                {item.summary ? <p className={styles.popupSummary}>{item.summary}</p> : null}
-                {hasRating ? (
-                    <span
-                        className={styles.popupRating}
-                        aria-label={`${item.averageRating?.toFixed(1)} estrellas`}
-                    >
-                        <span aria-hidden="true">★</span>
-                        <span>{item.averageRating?.toFixed(1)}</span>
-                        <span className={styles.popupReviewsCount}>
-                            {item.reviewsLabel ?? `(${item.reviewsCount})`}
-                        </span>
-                    </span>
-                ) : null}
-                <div className={styles.popupFooter}>
-                    {item.priceLabel ? (
-                        <span className={styles.popupPrice}>{item.priceLabel}</span>
-                    ) : (
-                        <span aria-hidden="true" />
-                    )}
-                    {item.detailHref ? (
-                        <a
-                            href={item.detailHref}
-                            className={styles.popupCta}
-                        >
-                            <span>{viewDetailsLabel ?? 'Ver más'}</span>
-                            <span aria-hidden="true">→</span>
-                        </a>
-                    ) : null}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function DestinationPopupContent({
-    item,
-    viewDetailsLabel
-}: {
-    item: DestinationListingItem;
-    viewDetailsLabel?: string;
-}) {
-    return (
-        <div className={styles.popupCard}>
-            {item.thumbnailUrl ? (
-                <div className={styles.popupImageWrapper}>
-                    <img
-                        src={item.thumbnailUrl}
-                        alt={item.name}
-                        className={styles.popupImage}
-                        loading="lazy"
-                    />
-                </div>
-            ) : null}
-            <div className={styles.popupBody}>
-                <h3 className={styles.popupTitle}>{item.name}</h3>
-                {item.description ? <p className={styles.popupCity}>{item.description}</p> : null}
-                {item.accommodationsLabel ? (
-                    <p className={styles.popupCount}>{item.accommodationsLabel}</p>
-                ) : typeof item.accommodationsCount === 'number' ? (
-                    <p className={styles.popupCount}>
-                        {`${item.accommodationsCount} alojamientos`}
-                    </p>
-                ) : null}
-                {item.detailHref ? (
-                    <a
-                        href={item.detailHref}
-                        className={styles.popupCta}
-                    >
-                        {viewDetailsLabel ?? 'Ver más'}
-                    </a>
-                ) : null}
-            </div>
-        </div>
+        <Suspense fallback={<MapSkeleton />}>
+            <ListingMapInner {...props} />
+        </Suspense>
     );
 }

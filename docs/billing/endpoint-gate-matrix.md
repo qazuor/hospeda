@@ -578,6 +578,9 @@
 | `GET /api/v1/admin/cron/runs` | `cron-admin/runs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **APP-LOGS — ADMIN** | | | | | |
 | `GET /api/v1/admin/logs` | `app-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| **AUDIT/SECURITY LOGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/audit-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (AUDIT_LOG_VIEW, SUPER only) |
+| `GET /api/v1/admin/security-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SECURITY_LOG_VIEW, SUPER only) |
 | **GEOCODING — ADMIN** | | | | | |
 | `GET /api/v1/admin/geocoding/autocomplete` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
 | `GET /api/v1/admin/geocoding/forward` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
@@ -758,6 +761,8 @@
 | `POST /api/v1/admin/social/posts/{id}/request-changes` | `social/admin/posts/request-changes.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/posts/{id}/schedule` | `social/admin/posts/schedule.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/posts/{id}/unpause` | `social/admin/posts/unpause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/publish-now` | `social/admin/posts/publish-now.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_SCHEDULE permission gated, no entitlement gate |
+| `PUT /api/v1/admin/social/posts/{id}/hashtags` | `social/admin/posts/set-hashtags.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_UPDATE permission gated, no entitlement gate |
 | `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |

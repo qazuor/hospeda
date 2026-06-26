@@ -1546,9 +1546,6 @@
                 "min": "La descripción debe tener al menos {{min}} caracteres",
                 "required": "La descripción es obligatoria"
             },
-            "keywords": {
-                "required": "El palabras clave es obligatorio"
-            },
             "title": {
                 "max": "El título no puede superar los {{max}} caracteres",
                 "min": "El título debe tener al menos {{min}} caracteres",
@@ -3412,6 +3409,10 @@
         },
         "timezone": {
             "required": "El timezone es obligatorio"
+        },
+        "weekday": {
+            "invalid": "El día de la semana no es válido",
+            "requiredForWeekly": "El día de la semana es obligatorio para la recurrencia semanal"
         },
         "title": {
             "required": "El title es obligatorio"

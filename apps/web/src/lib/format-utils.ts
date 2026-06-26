@@ -13,7 +13,7 @@ import {
     formatDate as i18nFormatDate,
     formatNumber as i18nFormatNumber,
     toBcp47Locale
-} from '@repo/i18n';
+} from '@repo/i18n/web';
 
 import type { SupportedLocale } from './i18n';
 

@@ -18,6 +18,7 @@
  *   POST /api/v1/admin/social/posts/{id}/unpause
  *   POST /api/v1/admin/social/posts/{id}/archive
  *   POST /api/v1/admin/social/posts/{id}/promote-hashtag
+ *   PUT  /api/v1/admin/social/posts/{id}/hashtags
  *
  * Route ordering note: Hono resolves routes in registration order. The
  * transition routes use /{id}/<verb> paths (more specific), while the
@@ -35,9 +36,11 @@ import { adminMarkReadySocialPostRoute } from './mark-ready';
 import { adminPatchSocialPostRoute } from './patch';
 import { adminPauseSocialPostRoute } from './pause';
 import { adminPromoteHashtagSocialPostRoute } from './promote-hashtag';
+import { adminPublishNowSocialPostRoute } from './publish-now';
 import { adminRejectSocialPostRoute } from './reject';
 import { adminRequestChangesSocialPostRoute } from './request-changes';
 import { adminScheduleSocialPostRoute } from './schedule';
+import { adminSetHashtagsSocialPostRoute } from './set-hashtags';
 import { adminUnpauseSocialPostRoute } from './unpause';
 
 const app = createRouter();
@@ -48,10 +51,12 @@ app.route('/', adminRejectSocialPostRoute);
 app.route('/', adminRequestChangesSocialPostRoute);
 app.route('/', adminScheduleSocialPostRoute);
 app.route('/', adminMarkReadySocialPostRoute);
+app.route('/', adminPublishNowSocialPostRoute);
 app.route('/', adminPauseSocialPostRoute);
 app.route('/', adminUnpauseSocialPostRoute);
 app.route('/', adminArchiveSocialPostRoute);
 app.route('/', adminPromoteHashtagSocialPostRoute);
+app.route('/', adminSetHashtagsSocialPostRoute);
 
 // --- T-037: CRUD routes ---
 app.route('/', adminListSocialPostsRoute);

@@ -35,8 +35,8 @@ vi.mock('../../src/hooks/use-reduced-motion', () => ({
 
 // Icon resolver: AnimatedCounter only invokes this when an `icon` prop is
 // passed; returning undefined keeps the test surface free of icon rendering.
-vi.mock('../../src/lib/icon-map', () => ({
-    resolveWebIcon: () => undefined
+vi.mock('../../src/lib/stats-icons', () => ({
+    resolveStatsIcon: () => undefined
 }));
 
 // ─── Suite: idle (T-084) ──────────────────────────────────────────────────────

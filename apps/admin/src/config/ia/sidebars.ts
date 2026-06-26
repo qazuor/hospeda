@@ -379,42 +379,6 @@ const editorialSidebar: SidebarInput = {
                     permissions: ['EVENT_ORGANIZER_VIEW', 'EVENT_ORGANIZER_CREATE']
                 }
             ]
-        },
-        { type: 'separator', id: 'sep-newsletter' },
-        // ── Newsletter ────────────────────────────────────────────────────
-        {
-            type: 'group',
-            id: 'newsletter',
-            label: { es: 'Newsletter', en: 'Newsletter', pt: 'Newsletter' },
-            icon: 'NewsletterIcon',
-            defaultOpen: false,
-            permissions: ['NEWSLETTER_CAMPAIGN_VIEW', 'NEWSLETTER_SUBSCRIBER_VIEW'],
-            items: [
-                {
-                    type: 'link',
-                    id: 'campanas',
-                    label: { es: 'Campañas', en: 'Campaigns', pt: 'Campanhas' },
-                    icon: 'ListIcon',
-                    route: '/newsletter/campaigns',
-                    permissions: ['NEWSLETTER_CAMPAIGN_VIEW']
-                },
-                {
-                    type: 'link',
-                    id: 'campana-new',
-                    label: { es: 'Crear campaña', en: 'Create campaign', pt: 'Criar campanha' },
-                    icon: 'AddIcon',
-                    route: '/newsletter/campaigns/new',
-                    permissions: ['NEWSLETTER_CAMPAIGN_WRITE']
-                },
-                {
-                    type: 'link',
-                    id: 'suscriptores',
-                    label: { es: 'Suscriptores', en: 'Subscribers', pt: 'Assinantes' },
-                    icon: 'UsersIcon',
-                    route: '/newsletter/subscribers',
-                    permissions: ['NEWSLETTER_SUBSCRIBER_VIEW']
-                }
-            ]
         }
     ]
 };
@@ -1018,8 +982,17 @@ const plataformaSidebar: SidebarInput = {
             id: 'audit-log',
             label: { es: 'Log de auditoría', en: 'Audit log', pt: 'Log de auditoria' },
             icon: 'LogsIcon',
-            route: '/analytics/debug',
+            route: '/platform/ops/audit-logs',
             permissions: ['AUDIT_LOG_VIEW'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'security-log',
+            label: { es: 'Log de seguridad', en: 'Security log', pt: 'Log de segurança' },
+            icon: 'ShieldIcon',
+            route: '/platform/ops/security-logs',
+            permissions: ['SECURITY_LOG_VIEW'],
             onMissing: 'hide'
         }
     ]
@@ -1281,11 +1254,167 @@ const miFacturacionSidebar: SidebarInput = {
 };
 
 // ---------------------------------------------------------------------------
+// SPEC-254 — marketingSidebar
+// ---------------------------------------------------------------------------
+
+/**
+ * Marketing sidebar — Social media publishing, campaigns, audiences,
+ * hashtags, platform formats, footers, settings, and newsletter.
+ *
+ * Social items are gated by their respective SOCIAL_* permissions.
+ * Newsletter items are migrated from `editorialSidebar` (SPEC-254).
+ *
+ * @example
+ * ```ts
+ * import { sidebars } from '@/config/ia/sidebars';
+ * const items = sidebars.marketingSidebar.items;
+ * ```
+ */
+const marketingSidebar: SidebarInput = {
+    items: [
+        {
+            type: 'link',
+            id: 'social-dashboard',
+            label: { es: 'Panel social', en: 'Social dashboard', pt: 'Painel social' },
+            icon: 'DashboardIcon',
+            route: '/social',
+            exact: true,
+            permissions: ['SOCIAL_POST_VIEW']
+        },
+        { type: 'separator', id: 'sep-social' },
+        // ── Social ────────────────────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'social',
+            label: { es: 'Social', en: 'Social', pt: 'Social' },
+            icon: 'PostIcon',
+            defaultOpen: true,
+            permissions: [
+                'SOCIAL_POST_VIEW',
+                'SOCIAL_BATCH_MANAGE',
+                'SOCIAL_CAMPAIGN_MANAGE',
+                'SOCIAL_AUDIENCE_MANAGE',
+                'SOCIAL_HASHTAG_VIEW',
+                'SOCIAL_PLATFORM_FORMAT_VIEW',
+                'SOCIAL_FOOTER_MANAGE',
+                'SOCIAL_SETTINGS_MANAGE'
+            ],
+            items: [
+                {
+                    type: 'link',
+                    id: 'social-posts',
+                    label: { es: 'Posts', en: 'Posts', pt: 'Posts' },
+                    icon: 'ListIcon',
+                    route: '/social/posts',
+                    permissions: ['SOCIAL_POST_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'social-batches',
+                    label: { es: 'Lotes', en: 'Batches', pt: 'Lotes' },
+                    icon: 'FileTextIcon',
+                    route: '/social/batches',
+                    permissions: ['SOCIAL_BATCH_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'social-campaigns',
+                    label: { es: 'Campañas', en: 'Campaigns', pt: 'Campanhas' },
+                    icon: 'PromotionsIcon',
+                    route: '/social/campaigns',
+                    permissions: ['SOCIAL_CAMPAIGN_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'social-audiences',
+                    label: { es: 'Audiencias', en: 'Audiences', pt: 'Audiências' },
+                    icon: 'UsersIcon',
+                    route: '/social/audiences',
+                    permissions: ['SOCIAL_AUDIENCE_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'social-hashtags',
+                    label: { es: 'Hashtags', en: 'Hashtags', pt: 'Hashtags' },
+                    icon: 'TagIcon',
+                    route: '/social/hashtags',
+                    permissions: ['SOCIAL_HASHTAG_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'social-platform-formats',
+                    label: {
+                        es: 'Formatos de plataforma',
+                        en: 'Platform formats',
+                        pt: 'Formatos de plataforma'
+                    },
+                    icon: 'EyeIcon',
+                    route: '/social/platform-formats',
+                    permissions: ['SOCIAL_PLATFORM_FORMAT_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'social-footers',
+                    label: { es: 'Pies de página', en: 'Footers', pt: 'Rodapés' },
+                    icon: 'FileTextIcon',
+                    route: '/social/footers',
+                    permissions: ['SOCIAL_FOOTER_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'social-settings',
+                    label: { es: 'Configuración', en: 'Settings', pt: 'Configurações' },
+                    icon: 'SettingsIcon',
+                    route: '/social/settings',
+                    permissions: ['SOCIAL_SETTINGS_MANAGE']
+                }
+            ]
+        },
+        { type: 'separator', id: 'sep-newsletter-mk' },
+        // ── Newsletter ────────────────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'newsletter',
+            label: { es: 'Newsletter', en: 'Newsletter', pt: 'Newsletter' },
+            icon: 'NewsletterIcon',
+            defaultOpen: false,
+            permissions: ['NEWSLETTER_CAMPAIGN_VIEW', 'NEWSLETTER_SUBSCRIBER_VIEW'],
+            items: [
+                {
+                    type: 'link',
+                    id: 'campanas',
+                    label: { es: 'Campañas', en: 'Campaigns', pt: 'Campanhas' },
+                    icon: 'ListIcon',
+                    route: '/newsletter/campaigns',
+                    permissions: ['NEWSLETTER_CAMPAIGN_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'campana-new',
+                    label: { es: 'Crear campaña', en: 'Create campaign', pt: 'Criar campanha' },
+                    icon: 'AddIcon',
+                    route: '/newsletter/campaigns/new',
+                    permissions: ['NEWSLETTER_CAMPAIGN_WRITE']
+                },
+                {
+                    type: 'link',
+                    id: 'suscriptores',
+                    label: { es: 'Suscriptores', en: 'Subscribers', pt: 'Assinantes' },
+                    icon: 'UsersIcon',
+                    route: '/newsletter/subscribers',
+                    permissions: ['NEWSLETTER_SUBSCRIBER_VIEW']
+                }
+            ]
+        }
+    ]
+};
+
+// ---------------------------------------------------------------------------
 // Registry export
 // ---------------------------------------------------------------------------
 
 /**
- * Registry of all 11 admin sidebars (7 original + 4 HOST), keyed by canonical sidebar ID.
+ * Registry of all 12 admin sidebars (7 original + 4 HOST + 1 Marketing), keyed by canonical sidebar ID.
  *
  * Role configs reference these IDs in their `mainMenu` section references.
  * The renderer looks up the active sidebar from this registry.
@@ -1300,6 +1429,7 @@ export const sidebars: Record<string, SidebarInput> = {
     inicioSidebar,
     catalogoSidebar,
     editorialSidebar,
+    marketingSidebar,
     comunidadSidebar,
     comercialSidebar,
     plataformaSidebar,

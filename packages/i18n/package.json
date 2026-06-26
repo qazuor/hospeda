@@ -11,6 +11,10 @@
             "types": "./src/index.ts",
             "import": "./src/index.ts"
         },
+        "./web": {
+            "types": "./src/web.ts",
+            "import": "./src/web.ts"
+        },
         "./locales/*": "./src/locales/*"
     },
     "scripts": {

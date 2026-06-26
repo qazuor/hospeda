@@ -101,7 +101,7 @@ const EDITOR_PERMISSIONS: readonly PermissionEnum[] = [
 describe(`AC-13 — ${RoleEnum.EDITOR} role navigation`, () => {
     // ── mainMenu ────────────────────────────────────────────────────────────
 
-    it('mainMenu is exactly [inicio, editorial, analisis, miCuenta] — 4 sections', () => {
+    it('mainMenu is exactly [inicio, editorial, marketing, analisis, miCuenta] — 5 sections', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.EDITOR];
 
@@ -110,7 +110,7 @@ describe(`AC-13 — ${RoleEnum.EDITOR} role navigation`, () => {
 
         // Assert
         expect(role?.enabled).toBe(true);
-        expect(mainMenu).toEqual(['inicio', 'editorial', 'analisis', 'miCuenta']);
+        expect(mainMenu).toEqual(['inicio', 'editorial', 'marketing', 'analisis', 'miCuenta']);
     });
 
     it('catalogo is NOT in EDITOR mainMenu (data≠nav principle — §8)', () => {
@@ -189,12 +189,18 @@ describe(`AC-13 — ${RoleEnum.EDITOR} role navigation`, () => {
         expect(role?.mobile?.fab).toBeNull();
     });
 
-    it('mobile.bottomNav is [inicio, editorial, analisis, miCuenta]', () => {
+    it('mobile.bottomNav is [inicio, editorial, marketing, analisis, miCuenta]', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.EDITOR];
 
         // Act / Assert
-        expect(role?.mobile?.bottomNav).toEqual(['inicio', 'editorial', 'analisis', 'miCuenta']);
+        expect(role?.mobile?.bottomNav).toEqual([
+            'inicio',
+            'editorial',
+            'marketing',
+            'analisis',
+            'miCuenta'
+        ]);
     });
 
     // ── Sidebar visibility for EDITOR's real permissions ─────────────────────

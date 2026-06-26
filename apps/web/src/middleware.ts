@@ -291,28 +291,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // is the single source of truth; the body rewrite makes the policy
     // actually enforceable for inline emissions Astro doesn't tag itself.
     // Phase 1 uses Report-Only so violations are reported without blocking content.
-    // Switch to 'Content-Security-Policy' for Phase 2 enforcement.
+    // Switch to 'Content-Security-Policy' for Phase 2 enforcement (T-020).
+    //
+    // @astrojs/node with `staticHeaders: true` does NOT forward content-type in
+    // the Response object returned from next() for prerendered pages — MIME type
+    // is set by the file server after the middleware pipeline. Use
+    // context.isPrerendered as a fallback so the CSP header reaches static pages.
     const contentType = response.headers.get('content-type') ?? '';
-    if (contentType.includes('text/html')) {
-        // Rewrite body first so the policy header we set after this reflects
-        // the same nonce that's now stamped on every unguarded inline tag.
-        // Content-Length is dropped because the rewrite changes body size;
-        // Node will recompute it on send.
-        const originalBody = await response.text();
-        const { html: rewrittenBody } = injectNonce({
-            html: originalBody,
-            nonce: cspNonce
-        });
-        const newHeaders = new Headers(response.headers);
-        newHeaders.delete('content-length');
-        response = new Response(rewrittenBody, {
-            status: response.status,
-            headers: newHeaders
-        });
+    const isHtmlPage = contentType.includes('text/html') || context.isPrerendered;
 
+    if (isHtmlPage) {
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
         const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
 
+        // T-020: change 'Content-Security-Policy-Report-Only' → 'Content-Security-Policy'
         const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only';
 
         const directives = buildCspHeader({
@@ -323,6 +315,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
             // Sentry tunnel is active (SPEC-181 follow-up).
             sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
         });
+
+        if (!context.isPrerendered) {
+            // SSR pages: rewrite body to stamp nonces on inline <style>/<script>
+            // tags before setting the header. Content-Length is dropped because the
+            // rewrite changes body size; Node will recompute it on send.
+            const originalBody = await response.text();
+            const { html: rewrittenBody } = injectNonce({
+                html: originalBody,
+                nonce: cspNonce
+            });
+            const newHeaders = new Headers(response.headers);
+            newHeaders.delete('content-length');
+            response = new Response(rewrittenBody, {
+                status: response.status,
+                headers: newHeaders
+            });
+        }
+        // Prerendered pages: skip body rewrite — nonces cannot be embedded at
+        // build time. Inline-script violations will appear in Report-Only logs
+        // until they are addressed before the Phase 2 enforce flip (T-020).
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

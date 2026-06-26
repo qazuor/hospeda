@@ -14,7 +14,7 @@
  * ("publicaciones") since posts do not have a type-driven subject phrase.
  */
 
-import { toBcp47Locale } from '@repo/i18n';
+import { toBcp47Locale } from '@repo/i18n/web';
 import { SORT_KEY_PHRASES, getPhrase } from './summary.catalogs';
 import { FILTER_DESCRIPTORS } from './summary.descriptors';
 import type {

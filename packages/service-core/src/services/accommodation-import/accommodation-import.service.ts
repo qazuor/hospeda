@@ -393,6 +393,39 @@ export class AccommodationImportService {
         }
 
         // -----------------------------------------------------------------------
+        // Step 3b (SPEC-277 R2): per-source fallback chain.
+        //
+        // When the primary actor for a slow/blocked source (Airbnb / Booking)
+        // comes back `source_blocked`, attempt ONE cheap GenericAdapter pass
+        // (JSON-LD / OpenGraph) against the same URL for a best-effort partial
+        // draft instead of returning nothing. Cost guard: a single
+        // `safeExternalFetch`, never a second actor run. Only Airbnb/Booking
+        // opt in — Google/MercadoLibre/Generic do not. The `sourcePlatform` is
+        // kept as the original source (NOT relabelled to `generic`) so the host
+        // sees where the data came from; `partial: true` then flows naturally
+        // from the missing mandatory fields (OG rarely yields name+summary+type).
+        // -----------------------------------------------------------------------
+        if (raw.failureCode === 'source_blocked' && (source === 'airbnb' || source === 'booking')) {
+            const fallback = await this._runFallbackGenericExtract(
+                effectiveParsedUrl,
+                input.context
+            );
+            // Useful = at least one of name / summary / images. Optional chaining
+            // tolerates a null/undefined fallback; the `fallback &&` in the `if`
+            // both guards that case and narrows the type for the spread below.
+            const hasUsefulFallback = Boolean(
+                fallback?.name?.value ||
+                    fallback?.summary?.value ||
+                    (fallback?.imageUrls && fallback.imageUrls.length > 0)
+            );
+            if (fallback && hasUsefulFallback) {
+                // Transport-level success via the fallback: drop the failureCode
+                // but keep the real per-field source/confidence from the fallback.
+                raw = { ...fallback, sourcePlatform: source, failureCode: undefined };
+            }
+        }
+
+        // -----------------------------------------------------------------------
         // Step 4: Map raw candidates to a typed draft.
         // -----------------------------------------------------------------------
         const { draft, methodsUsed } = mapRawToDraft({ raw });
@@ -536,6 +569,38 @@ export class AccommodationImportService {
         // failed before this call for non-URLs.
         // biome-ignore lint/style/noNonNullAssertion: last adapter is GenericAdapter, always matches https
         return found ?? this.adapters[this.adapters.length - 1]!;
+    }
+
+    /**
+     * Runs the {@link GenericAdapter} (JSON-LD / OpenGraph) as a best-effort
+     * fallback against a URL whose primary adapter was blocked (SPEC-277 R2).
+     *
+     * Reuses the GenericAdapter instance already in the registry (always the
+     * last entry) rather than constructing a new one. This is a single cheap
+     * `safeExternalFetch` — no Apify actor run and no token required — so it is
+     * safe to attempt after a `source_blocked` without doubling extraction cost.
+     *
+     * Never throws: any error from the GenericAdapter degrades to `null`, which
+     * the caller treats as "fallback yielded nothing, keep the original failure".
+     *
+     * @param url - The canonical listing URL (after short-link resolution).
+     * @param context - The import context (locale, timeouts, credentials).
+     * @returns The fallback {@link RawExtraction}, or `null` on any failure.
+     */
+    private async _runFallbackGenericExtract(
+        url: URL,
+        context: ImportContext
+    ): Promise<RawExtraction | null> {
+        // GenericAdapter is always the last entry in the registry.
+        const generic = this.adapters[this.adapters.length - 1];
+        if (generic === undefined) {
+            return null;
+        }
+        try {
+            return await generic.extract(url, context);
+        } catch {
+            return null;
+        }
     }
 
     /**

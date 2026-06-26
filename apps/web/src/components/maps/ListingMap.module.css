@@ -25,6 +25,23 @@
     }
 }
 
+/* ─── Lazy-load skeleton ────────────────────────────────────────────────────
+ * Shown inside the Suspense fallback while the Leaflet async chunk loads.
+ * Matches the map container's min-height so there is no CLS on reveal.     */
+.skeleton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+    background-color: var(--surface-warm, #faf6f0);
+}
+
+@media (max-width: 768px) {
+    .skeleton {
+        min-height: 360px;
+    }
+}
+
 .disclaimer {
     margin: 0;
     padding: var(--space-3, 12px) var(--space-4, 16px);

@@ -2,30 +2,28 @@ import { z } from 'zod';
 
 /**
  * SEO Schema - Search Engine Optimization information
+ *
+ * `.strip()` ensures legacy payloads that still carry `keywords` (removed)
+ * parse without error — the extra key is silently dropped.
  */
-export const SeoSchema = z.object({
-    title: z
-        .string({
-            message: 'zodError.common.seo.title.required'
-        })
-        .min(30, { message: 'zodError.common.seo.title.min' })
-        .max(60, { message: 'zodError.common.seo.title.max' })
-        .optional(),
-    description: z
-        .string({
-            message: 'zodError.common.seo.description.required'
-        })
-        .min(70, { message: 'zodError.common.seo.description.min' })
-        .max(160, { message: 'zodError.common.seo.description.max' })
-        .optional(),
-    keywords: z
-        .array(
-            z.string({
-                message: 'zodError.common.seo.keywords.required'
+export const SeoSchema = z
+    .object({
+        title: z
+            .string({
+                message: 'zodError.common.seo.title.required'
             })
-        )
-        .optional()
-});
+            .min(30, { message: 'zodError.common.seo.title.min' })
+            .max(60, { message: 'zodError.common.seo.title.max' })
+            .optional(),
+        description: z
+            .string({
+                message: 'zodError.common.seo.description.required'
+            })
+            .min(70, { message: 'zodError.common.seo.description.min' })
+            .max(160, { message: 'zodError.common.seo.description.max' })
+            .optional()
+    })
+    .strip();
 export type Seo = z.infer<typeof SeoSchema>;
 
 /**

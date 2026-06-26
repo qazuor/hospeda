@@ -274,11 +274,12 @@ describe('Social Publish Dispatch Cron Job', () => {
             expect(result.errors).toBe(0);
             expect(mockDispatchTarget).toHaveBeenCalledTimes(3);
 
-            // Every call must receive the env-sourced makeApiKey and apiBaseUrl
+            // Every call must receive the env-sourced makeApiKey
+            // (apiBaseUrl removed in SPEC-254 dispatch redesign — Make webhook
+            // response is now synchronous so no callback URL is needed)
             for (const call of vi.mocked(mockDispatchTarget).mock.calls) {
                 expect(call[0]).toMatchObject({
-                    makeApiKey: 'test-make-api-key',
-                    apiBaseUrl: 'https://api.test.hospeda.com.ar'
+                    makeApiKey: 'test-make-api-key'
                 });
             }
         });

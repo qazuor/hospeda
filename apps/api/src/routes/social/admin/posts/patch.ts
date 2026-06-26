@@ -5,7 +5,12 @@
  * Updates whitelisted content fields of a social post.
  * Status, approvalStatus, paused, and audit/soft-delete fields are stripped by the service.
  */
-import { IdSchema, PermissionEnum, SocialPostSchema, SocialPostUpdateSchema } from '@repo/schemas';
+import {
+    IdSchema,
+    PermissionEnum,
+    SocialPostDetailSchema,
+    SocialPostUpdateSchema
+} from '@repo/schemas';
 import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { UpdatePostData } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -33,7 +38,7 @@ export const adminPatchSocialPostRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.SOCIAL_POST_UPDATE],
     requestParams: { id: IdSchema },
     requestBody: SocialPostUpdateSchema,
-    responseSchema: SocialPostSchema,
+    responseSchema: SocialPostDetailSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -55,6 +60,22 @@ export const adminPatchSocialPostRoute = createAdminRoute({
             );
         }
 
-        return result.data;
+        // Return the full updated detail (same DTO as GET) so the response
+        // validates against SocialPostDetailSchema and the client receives fresh data.
+        const detail = await postService.getPostDetail({
+            actor,
+            postId: params.id as string
+        });
+
+        if (detail.error) {
+            throw new ServiceError(
+                detail.error.code,
+                detail.error.message,
+                undefined,
+                detail.error.reason
+            );
+        }
+
+        return detail.data;
     }
 });

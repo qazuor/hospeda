@@ -816,6 +816,106 @@ describe('BookingAdapter', () => {
     });
 
     // -----------------------------------------------------------------------
+    // R1 retry integration (SPEC-277)
+    // -----------------------------------------------------------------------
+
+    describe('R1 retry integration', () => {
+        /**
+         * Fake-timer helpers are scoped INSIDE this describe so the real-timer
+         * behavior of every other describe block is completely undisturbed.
+         *
+         * The Booking adapter only reaches runApifyActor via the Apify fallback
+         * path.  To reliably drive that path we mock the primary fetch as blocked
+         * (fetchBlocked()) so the adapter always skips JSON-LD and calls withRetry.
+         *
+         * Pattern used per test:
+         *   vi.useFakeTimers();
+         *   const p = adapter.extract(url, ctx);
+         *   await vi.runAllTimersAsync();   // drains the sleep() inside withRetry
+         *   const result = await p;
+         *   vi.useRealTimers();
+         */
+
+        const url = new URL('https://www.booking.com/hotel/ar/x');
+
+        it('should succeed on the 3rd attempt after two source_blocked results', async () => {
+            // Arrange — primary fetch is blocked so the actor path is always taken.
+            // First two actor calls return source_blocked (retryable); third succeeds.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [BOOKING_APIFY_ITEM_FULL] });
+            const ctx = makeCtx();
+
+            // Act — start the promise, flush fake timers to skip sleep(), then await
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — extraction is successful (no failureCode, name mapped)
+            expect(result.sourcePlatform).toBe('booking');
+            expect(result.failureCode).toBeUndefined();
+            expect(result.name?.value).toBe('Alojamiento Booking Apify');
+
+            // Exactly 3 calls: 1 initial + 2 retries
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(3);
+        });
+
+        it('should return source_blocked after exhausting all 3 attempts', async () => {
+            // Arrange — primary fetch blocked, all three actor calls return source_blocked
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' });
+            const ctx = makeCtx();
+
+            // Act
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — adapter propagates the last failure code
+            expect(result).toEqual({ sourcePlatform: 'booking', failureCode: 'source_blocked' });
+
+            // Retry cap enforced: exactly 3 calls (1 + 2 retries = cap)
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(3);
+        });
+
+        it('should not retry credentials_missing and return immediately after 1 call', async () => {
+            // Arrange — primary fetch blocked (so we reach the actor), credentials
+            // present in ctx so the adapter does not early-exit before calling withRetry.
+            // The actor itself returns credentials_missing (non-retryable) on the first call.
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValueOnce({
+                items: [],
+                failureCode: 'credentials_missing'
+            });
+            const ctx = makeCtx();
+
+            // Act — no fake timers needed (no sleep will occur), but use them
+            // defensively to ensure any accidental sleep would not block the test
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — fail-fast: returned on first call, no retry
+            expect(result).toEqual({
+                sourcePlatform: 'booking',
+                failureCode: 'credentials_missing'
+            });
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // SPEC-258 price probe — Booking per-night price extraction
     // -----------------------------------------------------------------------
 
