@@ -97,7 +97,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 234 (NOSPEC import-apify-timeout): +1 HOSPEDA_IMPORT_APIFY_TIMEOUT_MS
  * (separate Apify actor timeout from the short JSON-LD fetch timeout).
  */
-const EXPECTED_VAR_COUNT = 235;
+const EXPECTED_VAR_COUNT = 236;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

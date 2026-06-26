@@ -1,12 +1,22 @@
 /**
  * @file lighthouse-config.test.ts
  * @description Source-based test asserting that the Lighthouse CI config
- * exists and meets the SPEC-096 / REQ-096-38 contract:
- *   - All four categories (performance, accessibility, best-practices, seo)
- *     are asserted at minScore >= 0.8.
- *   - The audit covers the representative page list mandated by REQ-096-38.
+ * exists and meets the contract.
  *
- * SPEC-096 / REQ-096-38 (T-069).
+ * SPEC-269 T-269-11 reconciled this config from the original flat SPEC-096
+ * shape (all categories `error` >= 0.8 on the same page list) into a per-URL
+ * `assertMatrix`:
+ *   - Home (`.../es/$`): performance is the blocking gate (`error`, minScore
+ *     0.8); accessibility / best-practices / SEO stay advisory (`warn`, 0.9).
+ *   - The public listing pages (alojamientos / eventos / destinos): every
+ *     category is advisory (`warn`) because their scores are noisier and not
+ *     the focus of the SPEC-269 fixes.
+ * The home `performance` threshold is intentionally kept at 0.8 until a clean
+ * CI baseline confirms the real score; promotion to 0.9 / hard-block is a
+ * documented follow-up.
+ *
+ * SPEC-096 / REQ-096-38 (T-069) originally introduced the config; SPEC-269
+ * T-269-11 owns its current shape.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -15,7 +25,9 @@ import { describe, expect, it } from 'vitest';
 
 const CONFIG_PATH = resolve(__dirname, '../../lighthouserc.json');
 
-describe('lighthouserc.json (SPEC-096 REQ-096-38)', () => {
+type Assertion = readonly [string, { readonly minScore: number }];
+
+describe('lighthouserc.json (SPEC-269 T-269-11)', () => {
     it('exists at apps/web/lighthouserc.json', () => {
         expect(existsSync(CONFIG_PATH)).toBe(true);
     });
@@ -24,13 +36,18 @@ describe('lighthouserc.json (SPEC-096 REQ-096-38)', () => {
     const cfg = JSON.parse(raw) as {
         ci: {
             collect: { url: string[] };
-            assert: { assertions: Record<string, unknown> };
+            assert: {
+                assertMatrix: {
+                    matchingUrlPattern: string;
+                    assertions: Record<string, Assertion>;
+                }[];
+            };
         };
     };
 
     describe('collect.url', () => {
         const urls = cfg.ci.collect.url;
-        it.each(['/es/', '/es/alojamientos/', '/es/mi-cuenta/', '/es/contacto/'])(
+        it.each(['/es/', '/es/alojamientos/', '/es/eventos/', '/es/destinos/'])(
             'audits %s',
             (suffix) => {
                 expect(urls.some((u) => u.endsWith(suffix))).toBe(true);
@@ -38,18 +55,33 @@ describe('lighthouserc.json (SPEC-096 REQ-096-38)', () => {
         );
     });
 
-    describe('assert.assertions', () => {
-        const assertions = cfg.ci.assert.assertions;
+    describe('assert.assertMatrix', () => {
+        const matrix = cfg.ci.assert.assertMatrix;
 
-        it.each([
-            'categories:performance',
-            'categories:accessibility',
-            'categories:best-practices',
-            'categories:seo'
-        ])('asserts %s at >= 0.8', (key) => {
-            const rule = assertions[key];
-            expect(Array.isArray(rule)).toBe(true);
-            expect(rule).toEqual(['error', { minScore: 0.8 }]);
+        const homeGroup = matrix.find((g) => g.matchingUrlPattern === '.*/es/$');
+        const listingGroup = matrix.find((g) => g.matchingUrlPattern.includes('alojamientos'));
+
+        it('defines a home group and a listing group', () => {
+            expect(homeGroup).toBeDefined();
+            expect(listingGroup).toBeDefined();
+        });
+
+        it('blocks on home performance (error >= 0.8)', () => {
+            expect(homeGroup?.assertions['categories:performance']).toEqual([
+                'error',
+                { minScore: 0.8 }
+            ]);
+        });
+
+        it.each(['categories:accessibility', 'categories:best-practices', 'categories:seo'])(
+            'keeps home %s advisory (warn >= 0.9)',
+            (key) => {
+                expect(homeGroup?.assertions[key]).toEqual(['warn', { minScore: 0.9 }]);
+            }
+        );
+
+        it('keeps listing performance advisory (warn)', () => {
+            expect(listingGroup?.assertions['categories:performance']?.[0]).toBe('warn');
         });
     });
 });

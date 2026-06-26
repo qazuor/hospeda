@@ -578,6 +578,9 @@
 | `GET /api/v1/admin/cron/runs` | `cron-admin/runs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **APP-LOGS — ADMIN** | | | | | |
 | `GET /api/v1/admin/logs` | `app-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| **AUDIT/SECURITY LOGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/audit-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (AUDIT_LOG_VIEW, SUPER only) |
+| `GET /api/v1/admin/security-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SECURITY_LOG_VIEW, SUPER only) |
 | **GEOCODING — ADMIN** | | | | | |
 | `GET /api/v1/admin/geocoding/autocomplete` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
 | `GET /api/v1/admin/geocoding/forward` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |

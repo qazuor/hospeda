@@ -1851,12 +1851,15 @@
             "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-267-seo-fields-decision",
             "created": "2026-06-23T00:00:00Z",
             "base": "staging",
             "origin": "Owner question 2026-06-23: campos SEO en entidades existen pero probablemente no se usan. Decidir si keep & improve / remove / hybrid.",
-            "tags": ["evaluation", "seo", "web", "admin", "schemas", "db", "architecture"]
+            "tags": ["evaluation", "seo", "web", "admin", "schemas", "db", "architecture"],
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "WS-1/2/3 complete: keywords removed from schema + DB cleanup (022 migration), title/description verified, shared SeoEditor with SERP preview + char counters + auto-fallback badges for posts/accommodations/destinations/events, tabs added to PageTabs, i18n es/en/pt, CI green. PR #1843."
         },
         {
             "specId": "SPEC-268",

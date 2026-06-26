@@ -6,12 +6,14 @@
  * CSS adapted from design-cloner output.
  */
 
-import { getImage, Image } from 'astro:assets';
-import heroAtardecerRaw from '@/assets/images/hero/hero-atardecer.jpg';
-import heroIslaRaw from '@/assets/images/hero/hero-isla.jpg';
-import heroPlayaRaw from '@/assets/images/hero/hero-playa.jpg';
+import { Image } from 'astro:assets';
 import heroBlobAccent from '@/assets/images/shapes/hero-blob-accent.png';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
+import {
+	HERO_IMAGE_SIZES,
+	HERO_RAW_SLIDES,
+	buildHeroVariants,
+} from '@/components/sections/hero-images';
 import { SearchBar } from '@/components/sections/SearchBar.client';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -59,29 +61,12 @@ const avatarSlots = Array.from({ length: SOCIAL_PROOF_AVATAR_SLOTS }, (_, index)
 	return url ? { kind: 'image' as const, url } : { kind: 'placeholder' as const, index };
 });
 
-// Process hero images through Astro's optimization pipeline.
-// Generate 3 widths for responsive srcset (480w / 800w / 1200w) so the
-// browser can pick the right resolution per viewport. The 800w variant is
-// kept as the default `src` for backwards compatibility.
-const HERO_IMAGE_WIDTHS = [480, 800, 1200] as const;
-const HERO_IMAGE_SIZES = '(max-width: 768px) 100vw, 50vw';
-
-async function buildHeroVariants(rawImage: ImageMetadata) {
-	const variants = await Promise.all(
-		HERO_IMAGE_WIDTHS.map((width) => getImage({ src: rawImage, width, format: 'webp' })),
-	);
-	const srcset = variants
-		.map((variant, index) => `${variant.src} ${HERO_IMAGE_WIDTHS[index]}w`)
-		.join(', ');
-	const defaultIndex = HERO_IMAGE_WIDTHS.indexOf(800);
-	return { src: variants[defaultIndex].src, srcset };
-}
-
-const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
-	buildHeroVariants(heroPlayaRaw),
-	buildHeroVariants(heroAtardecerRaw),
-	buildHeroVariants(heroIslaRaw),
-]);
+// Process hero images through Astro's optimization pipeline. Widths, sizes and
+// slide order live in `hero-images.ts` so the home `<head>` preload hint and
+// this rotator always reference the exact same optimized resources.
+const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
+	HERO_RAW_SLIDES.map((rawImage) => buildHeroVariants({ rawImage })),
+);
 ---
 
 <section class="hero" aria-label={t('home.hero.title')}>

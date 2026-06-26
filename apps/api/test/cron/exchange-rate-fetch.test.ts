@@ -231,7 +231,8 @@ describe('Exchange Rate Fetch Cron Job', () => {
                 expect.objectContaining({
                     error: 'Test API failure',
                     stack: expect.any(String)
-                })
+                }),
+                { capture: true }
             );
         });
     });

@@ -146,6 +146,24 @@
             "label": "Log date"
         }
     },
+    "auditLog": {
+        "severity": {
+            "label": "Severity",
+            "critical": "Critical",
+            "info": "Info"
+        },
+        "eventType": {
+            "label": "Event type",
+            "placeholder": "e.g. auth.login.failed"
+        },
+        "actorId": {
+            "label": "Actor",
+            "placeholder": "Actor UUID"
+        },
+        "loggedAt": {
+            "label": "Event date"
+        }
+    },
     "endDate": {
         "label": "End date"
     },

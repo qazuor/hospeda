@@ -265,7 +265,8 @@ export enum PermissionEnum {
     METRICS_RESET = 'metrics.reset', // Allows resetting metrics counters.
 
     // SYSTEM: System-level permissions
-    AUDIT_LOG_VIEW = 'auditLog.view', // Allows viewing the audit log.
+    AUDIT_LOG_VIEW = 'auditLog.view', // Allows viewing the admin audit log (SUPER_ADMIN only).
+    SECURITY_LOG_VIEW = 'securityLog.view', // Allows viewing the security log (SUPER_ADMIN only).
     SYSTEM_MAINTENANCE_MODE = 'system.maintenanceMode', // Allows toggling system maintenance mode.
     TRANSLATIONS_MANAGE = 'translations.manage', // Allows managing translations.
     MULTILANGUAGE_CONTENT_EDIT = 'content.multilanguage.edit', // Allows editing multilingual content.

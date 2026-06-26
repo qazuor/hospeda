@@ -539,6 +539,8 @@ export function UserMenu({
                     <img
                         src={user.avatarUrl}
                         alt={displayName}
+                        width={28}
+                        height={28}
                         className={styles.avatar}
                     />
                 ) : (

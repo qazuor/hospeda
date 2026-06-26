@@ -91,6 +91,16 @@
             "plural": "Registros de aplicação",
             "description": "Eventos WARN e ERROR emitidos pelos serviços do sistema"
         },
+        "auditLog": {
+            "singular": "Evento de auditoria",
+            "plural": "Log de auditoria",
+            "description": "Ações administrativas sensíveis registradas para rastreabilidade"
+        },
+        "securityLog": {
+            "singular": "Evento de segurança",
+            "plural": "Log de segurança",
+            "description": "Eventos de autenticação: falhas de login, bloqueios e acessos negados"
+        },
         "hostTrade": {
             "singular": "Ofício",
             "plural": "Ofícios",
@@ -280,6 +290,14 @@
             "request": "Requisição",
             "userId": "Usuário",
             "message": "Mensagem"
+        },
+        "auditLog": {
+            "loggedAt": "Data/Hora",
+            "severity": "Severidade",
+            "eventType": "Evento",
+            "actor": "Ator",
+            "target": "Alvo",
+            "message": "Detalhe"
         }
     },
     "actions": {

@@ -9,5 +9,5 @@
  * @see packages/i18n/src/api-errors.ts
  */
 
-export { translateApiError } from '@repo/i18n';
-export type { ApiErrorShape, TranslationFn } from '@repo/i18n';
+export { translateApiError } from '@repo/i18n/web';
+export type { ApiErrorShape, TranslationFn } from '@repo/i18n/web';

@@ -33,6 +33,11 @@ ARG VITE_SITE_URL=https://placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
+# SPEC-180 BETA-66: SENTRY_AUTH_TOKEN is a build-time secret used by the
+# Sentry Vite plugin to upload source maps during `vite build`. It must
+# NOT be forwarded to the runner stage — it is only needed at build time.
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 ARG VITE_POSTHOG_KEY
 ARG VITE_POSTHOG_HOST
 # HOSPEDA_GIT_SHA + VITE_SENTRY_RELEASE drive the Sentry release tag baked

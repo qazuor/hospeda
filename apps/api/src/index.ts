@@ -11,7 +11,7 @@ import {
 } from '@repo/content-moderation/engine/index';
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
-import { LogFormat, configureLogger } from '@repo/logger';
+import { LogFormat, configureLogger, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
@@ -25,6 +25,7 @@ import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { registerAppLogDbSink } from './lib/app-log-sink';
+import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
@@ -58,8 +59,31 @@ configureLogger({
     FORMAT: env.API_LOG_FORMAT === 'json' ? LogFormat.JSON : LogFormat.PRETTY
 });
 
+// SPEC-180 BETA-50: Warn early if the explicit Sentry environment override
+// is not set in a non-development context. Without it, both staging and
+// production default to NODE_ENV=production and all staging events pollute
+// the production Sentry bucket, making it impossible to filter by environment.
+// Operators MUST set HOSPEDA_SENTRY_ENVIRONMENT=staging on the staging container.
+if (env.NODE_ENV !== 'development' && !env.HOSPEDA_SENTRY_ENVIRONMENT) {
+    // apiLogger is not fully configured yet (format applies below), but the
+    // warn is safe — it only uses process.env reads already available here.
+    apiLogger.warn(
+        'HOSPEDA_SENTRY_ENVIRONMENT not set — staging events may pollute production Sentry bucket. ' +
+            'Set HOSPEDA_SENTRY_ENVIRONMENT=staging on the staging container and ' +
+            'HOSPEDA_SENTRY_ENVIRONMENT=production on the production container.'
+    );
+}
+
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
+
+// SPEC-180 BETA-64: Wire the @repo/logger capture hook to Sentry AFTER
+// Sentry.init() so that logger.error(..., { capture: true }) call sites
+// forward actionable errors to Sentry without importing @sentry/node
+// inside @repo/logger (keeps the package dependency-free).
+registerCaptureHook((error, extra) => {
+    Sentry.captureException(error, { extra });
+});
 
 // SPEC-078-GAPS T-056 / GAP-078-014:
 // Eagerly initialize the Cloudinary media provider so its init warning is
@@ -125,6 +149,11 @@ const startServer = async (): Promise<void> => {
         // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
         // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.
         registerAppLogDbSink();
+
+        // Register the audit-log persister AFTER DB init so audit/security
+        // events become queryable from the admin viewers (SPEC-162).
+        // Fire-and-forget by design.
+        registerAuditLogPersistence();
 
         // SPEC-103 T-073: fail-fast healthcheck against an essential table.
         // The /health endpoint does NOT touch the DB by design, so an
@@ -247,9 +276,11 @@ const startServer = async (): Promise<void> => {
                 // Start cron scheduler (only in non-test environments)
                 if (env.NODE_ENV !== 'test') {
                     startCronScheduler().catch((error) => {
+                        // SPEC-180: cron scheduler failure is actionable — alert via Sentry.
                         apiLogger.error(
                             'Failed to start cron scheduler:',
-                            error instanceof Error ? error.message : String(error)
+                            error instanceof Error ? error.message : String(error),
+                            { capture: true }
                         );
                     });
 
@@ -306,9 +337,11 @@ const startServer = async (): Promise<void> => {
                                 `Newsletter dispatch worker started (concurrency=${env.HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY}).`
                             );
                         } catch (error) {
+                            // SPEC-180: worker startup failure in production is actionable.
                             apiLogger.error(
                                 'Failed to start newsletter dispatch worker:',
-                                error instanceof Error ? error.message : String(error)
+                                error instanceof Error ? error.message : String(error),
+                                { capture: true }
                             );
                         }
                     })();

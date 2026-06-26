@@ -8,8 +8,8 @@
  * Keys use dot-notation: `"namespace.rest.of.key"`.
  */
 
-import type { Namespace } from '@repo/i18n';
-import { namespaces, pluralize, trans } from '@repo/i18n';
+import type { Namespace } from '@repo/i18n/web';
+import { namespaces, pluralize, trans } from '@repo/i18n/web';
 
 /**
  * Array of supported locales for the application.

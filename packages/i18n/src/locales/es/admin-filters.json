@@ -146,6 +146,24 @@
             "label": "Fecha de registro"
         }
     },
+    "auditLog": {
+        "severity": {
+            "label": "Severidad",
+            "critical": "Crítico",
+            "info": "Info"
+        },
+        "eventType": {
+            "label": "Tipo de evento",
+            "placeholder": "Ej: auth.login.failed"
+        },
+        "actorId": {
+            "label": "Actor",
+            "placeholder": "UUID del actor"
+        },
+        "loggedAt": {
+            "label": "Fecha del evento"
+        }
+    },
     "endDate": {
         "label": "Fecha de fin"
     },

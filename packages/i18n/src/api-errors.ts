@@ -25,8 +25,8 @@
  * This function does NOT throw — it always returns a non-empty string.
  */
 
-import { defaultLocale, trans } from './config';
-import type { Locale } from './config';
+import { defaultLocale, webTrans as trans } from './config.shared';
+import type { Locale } from './config.shared';
 
 /**
  * Type alias for supported locale values. Exported so web can re-export it

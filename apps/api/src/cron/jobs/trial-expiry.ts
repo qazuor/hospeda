@@ -157,10 +157,12 @@ export const trialExpiryJob: CronJobDefinition = {
 
             errors++;
 
-            logger.error('Trial expiry check failed', {
-                error: errorMessage,
-                stack: errorStack
-            });
+            // SPEC-180: trial expiry failure is actionable — forward to Sentry.
+            logger.error(
+                'Trial expiry check failed',
+                { error: errorMessage, stack: errorStack },
+                { capture: true }
+            );
 
             const durationMs = Date.now() - startedAt.getTime();
 
