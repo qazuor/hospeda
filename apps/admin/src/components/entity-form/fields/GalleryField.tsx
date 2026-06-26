@@ -286,7 +286,8 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                 description: '',
                 alt: result.attribution.photographer,
                 moderationState: ModerationStatusEnum.APPROVED,
-                order: value.length
+                order: value.length,
+                attribution: result.attribution
             };
             onChange?.([...value, newImage]);
         };

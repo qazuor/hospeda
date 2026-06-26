@@ -29,6 +29,12 @@ export interface ImageValue {
     description?: string;
     alt?: string;
     moderationState: ModerationStatusEnum;
+    attribution?: {
+        photographer: string;
+        sourceUrl: string;
+        license: string;
+        provider: 'unsplash' | 'pexels';
+    };
 }
 
 /**
@@ -298,7 +304,8 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                 caption: '',
                 description: '',
                 alt: result.attribution.photographer,
-                moderationState: ModerationStatusEnum.APPROVED
+                moderationState: ModerationStatusEnum.APPROVED,
+                attribution: result.attribution
             });
         };
 
