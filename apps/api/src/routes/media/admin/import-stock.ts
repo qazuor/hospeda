@@ -14,6 +14,7 @@ import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-l
 import { getMediaProvider } from '../../../services/media';
 import { buildEntityFolder } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
+import { env } from '../../../utils/env';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
@@ -179,7 +180,10 @@ export const adminImportStockMediaRoute = createAdminRoute({
         }
 
         try {
-            const importService = new ImageImportService({ mediaProvider: provider });
+            const importService = new ImageImportService({
+                mediaProvider: provider,
+                unsplashAccessKey: env.HOSPEDA_UNSPLASH_ACCESS_KEY
+            });
             const result = await importService.import({
                 provider: parsedBody.provider,
                 providerId: parsedBody.providerId,

@@ -32,6 +32,7 @@ export interface ImportStockImageResult {
 
 export interface ImageImportServiceConfig extends ServiceConfig {
     readonly mediaProvider: ImageProvider;
+    readonly unsplashAccessKey?: string;
 }
 
 const UNSPLASH_LICENSE = 'Unsplash License';
@@ -89,6 +90,7 @@ export class ImageImportService {
             url: downloadLocation,
             timeoutMs: 5000,
             headers: {
+                Authorization: `Client-ID ${this.config.unsplashAccessKey ?? ''}`,
                 Accept: 'application/json',
                 'User-Agent': 'Hospeda/1.0'
             }
