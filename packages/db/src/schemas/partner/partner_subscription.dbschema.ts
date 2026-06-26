@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { billingSubscriptions } from '../../billing/index.ts';
+import { partners } from './partner.dbschema.js';
 
 /**
  * Partner subscription link table (SPEC-271).
@@ -32,8 +33,10 @@ export const partnerSubscriptions = pgTable(
          * future multi-domain extension without a schema change.
          */
         productDomain: varchar('product_domain', { length: 50 }).notNull().default('partner'),
-        /** UUID of the linked partner entity (partners.id). */
-        partnerId: uuid('partner_id').notNull(),
+        /** UUID of the linked partner entity (partners.id). Cascades on partner deletion. */
+        partnerId: uuid('partner_id')
+            .notNull()
+            .references(() => partners.id, { onDelete: 'cascade' }),
         /**
          * Denormalized subscription status for fast public reads.
          * Mirrors billing_subscriptions.status; updated by the billing webhook handler.
