@@ -60,10 +60,12 @@ export class ImageSearchService {
         const params = new URLSearchParams({
             query,
             page: String(page),
-            per_page: String(Math.min(perPage, 30)),
-            orientation: orientation ?? '',
-            client_id: this.config.unsplashAccessKey
+            per_page: String(Math.min(perPage, 30))
         });
+
+        if (orientation) {
+            params.set('orientation', orientation);
+        }
 
         const url = `https://api.unsplash.com/search/photos?${params.toString()}`;
 
@@ -71,6 +73,7 @@ export class ImageSearchService {
             url,
             timeoutMs: 10000,
             headers: {
+                Authorization: `Client-ID ${this.config.unsplashAccessKey}`,
                 Accept: 'application/json',
                 'User-Agent': 'Hospeda/1.0'
             }
@@ -96,9 +99,12 @@ export class ImageSearchService {
         const params = new URLSearchParams({
             query,
             page: String(page),
-            per_page: String(Math.min(perPage, 80)),
-            orientation: orientation ?? ''
+            per_page: String(Math.min(perPage, 80))
         });
+
+        if (orientation) {
+            params.set('orientation', orientation);
+        }
 
         const url = `https://api.pexels.com/v1/search?${params.toString()}`;
 
