@@ -87,6 +87,12 @@
     border-bottom: 1px solid var(--border);
 }
 
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+    box-shadow: inset 0 -1px 0 var(--brand-primary);
+}
+
 .input::placeholder {
     color: var(--core-muted-foreground);
     opacity: 0.75;

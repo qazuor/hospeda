@@ -35,6 +35,7 @@ export const webDark: Theme = {
     'popover-foreground': oklchValue(0.92, 0.01, 210),
 
     'brand-primary': oklchValue(0.68, 0.17, 259),
+    'brand-primary-text': oklchValue(0.68, 0.17, 259),
     'primary-foreground': oklchValue(0.1, 0.02, 259),
     'brand-secondary': oklchValue(0.25, 0.05, 255),
     'brand-secondary-foreground': oklchValue(0.8, 0.08, 255),

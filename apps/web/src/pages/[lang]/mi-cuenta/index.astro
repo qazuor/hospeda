@@ -21,6 +21,7 @@ import { isHostRole } from '@/lib/account-roles';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
+import { DashboardController } from '@/components/account/DashboardController.client';
 import {
     UserIcon,
     SettingsIcon,
@@ -139,10 +140,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
         <div class="account__header-inner">
             <!-- Avatar: photo when available, initials fallback otherwise (BETA-32) -->
-            <div class="account__avatar" aria-hidden="true">
+            <div class="account__avatar">
                 <span class="account__avatar-ring" aria-hidden="true" />
                 {user.image ? (
-                    <img src={user.image} alt="" class="account__avatar-img" width="104" height="104" />
+                    <img src={user.image} alt={user.name} class="account__avatar-img" width="104" height="104" />
                 ) : (
                     <span class="account__avatar-initials">{initials}</span>
                 )}
@@ -178,6 +179,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <!-- Navigation cards grid (secondary) -->
         <AccountSectionCards locale={locale} navItems={navItems} />
     </div>
+
+    <!-- What's New + Tour: auto-trigger controllers (D12 gate) -->
+    <DashboardController
+        locale={locale}
+        userRole={user.role}
+        client:idle
+    />
 </AccountLayout>
 
 <style>

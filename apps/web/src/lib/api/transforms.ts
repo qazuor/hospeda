@@ -1356,11 +1356,9 @@ export function toEventDetailProps({
 
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
-    const rawKeywords = seoObj?.keywords;
     const seo: EventDetailData['seo'] = {
         title: seoObj?.title ? String(seoObj.title) : undefined,
-        description: seoObj?.description ? String(seoObj.description) : undefined,
-        keywords: Array.isArray(rawKeywords) ? rawKeywords.map(String) : undefined
+        description: seoObj?.description ? String(seoObj.description) : undefined
     };
 
     // --- Contact (event-level, not organizer) ---

@@ -178,10 +178,86 @@ jobs:
       - name: Seed E2E database
         run: pnpm --filter hospeda-e2e e2e:seed
 
-      - name: Run E2E P0 suite
-        run: pnpm --filter hospeda-e2e e2e:test:p0
+      - name: Run SEO validators + E2E P0 suite
+        run: |
+          set -euo pipefail
+
+          pnpm --filter hospeda-api start > /tmp/hospeda-api.log 2>&1 &
+          API_PID=$!
+          pnpm --filter hospeda-web preview --port 18321 > /tmp/hospeda-web.log 2>&1 &
+          WEB_PID=$!
+
+          cleanup() {
+            kill "$API_PID" "$WEB_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 60); do
+            if curl -fsS "$HOSPEDA_E2E_API_URL/health" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          for _ in $(seq 1 60); do
+            if curl -fsS "$HOSPEDA_E2E_WEB_URL/es/" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS "$HOSPEDA_E2E_API_URL/health" >/dev/null
+          curl -fsS "$HOSPEDA_E2E_WEB_URL/es/" >/dev/null
+
+          HOSPEDA_SEO_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" pnpm exec tsx scripts/ci/seo-validator.ts
+          HOSPEDA_SITEMAP_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" pnpm exec tsx scripts/ci/sitemap-validator.ts
+
+          # Lighthouse SEO CI guard (SPEC-268 acceptance criteria)
+          # Runs against the already-started preview server; fails if any page scores < 90.
+          echo "[Lighthouse] Running SEO audit..."
+          # Generate lighthouserc.json with the correct preview server URL using node
+          node -e "
+            const fs = require('fs');
+            const config = {
+              ci: {
+                collect: {
+                  url: [
+                    process.env.HOSPEDA_E2E_WEB_URL + '/es/',
+                    process.env.HOSPEDA_E2E_WEB_URL + '/es/alojamientos/',
+                    process.env.HOSPEDA_E2E_WEB_URL + '/es/gastronomia/',
+                    process.env.HOSPEDA_E2E_WEB_URL + '/es/experiencias/'
+                  ],
+                  numberOfRuns: 3,
+                  settings: { preset: 'desktop', skipAudits: ['uses-http2'] }
+                },
+                assert: {
+                  assertions: {
+                    'categories:performance': ['error', { minScore: 0.8 }],
+                    'categories:accessibility': ['error', { minScore: 0.8 }],
+                    'categories:best-practices': ['error', { minScore: 0.8 }],
+                    'categories:seo': ['error', { minScore: 0.9 }]
+                  }
+                },
+                upload: { target: 'temporary-public-storage' }
+              }
+            };
+            fs.writeFileSync('apps/web/lighthouserc.ci.json', JSON.stringify(config, null, 2));
+          "
+          HOSPEDA_SEO_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" \
+            pnpm --filter hospeda-web exec lhci autorun --config=./lighthouserc.ci.json
+
+          pnpm --filter hospeda-e2e e2e:test:p0
         env:
           PLAYWRIGHT_HTML_OPEN: never
+          HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
+          API_PORT: '18001'
+          HOSPEDA_SITE_URL: ${{ env.HOSPEDA_E2E_WEB_URL }}
+          HOSPEDA_ADMIN_URL: ${{ env.HOSPEDA_E2E_ADMIN_URL }}
+          API_CORS_ORIGINS: ${{ env.HOSPEDA_E2E_WEB_URL }},${{ env.HOSPEDA_E2E_ADMIN_URL }}
+          API_RATE_LIMIT_ENABLED: ''
+          API_RATE_LIMIT_AUTH_ENABLED: ''
+          API_RATE_LIMIT_PUBLIC_ENABLED: ''
+          API_RATE_LIMIT_ADMIN_ENABLED: ''
 
       - name: Upload Playwright HTML report
         if: always()

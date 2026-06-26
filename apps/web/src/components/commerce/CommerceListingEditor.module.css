@@ -58,9 +58,10 @@
     padding: var(--space-2) var(--space-3);
 }
 
-.textarea:focus,
-.input:focus {
-    outline: none;
+.textarea:focus-visible,
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
+    outline-offset: 2px;
     border-color: var(--brand-primary, var(--core-foreground));
     box-shadow: 0 0 0 3px var(--brand-primary-a15, rgba(99, 102, 241, 0.18));
 }

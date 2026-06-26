@@ -11,6 +11,7 @@
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ExperienceCard from '@/components/experience/ExperienceCard.astro';
@@ -153,6 +154,12 @@ initialParams.sortBy = 'featured';
 
 const baseUrl = buildUrl({ locale, path: 'experiencias' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
+const itemListEntries = cards.map((card) => ({
+    url: new URL(buildUrl({ locale, path: `experiencias/${card.slug}` }), Astro.site ?? Astro.url.origin)
+        .href,
+    name: card.name,
+}));
 ---
 
 <ListingLayout
@@ -167,6 +174,14 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
     filterPosition="left"
     ogTagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
 >
+    <ItemListJsonLd
+        slot="head-extra"
+        name={t('experience.listing.title', 'Experiencias')}
+        items={itemListEntries}
+        numberOfItems={total}
+        startPosition={(page - 1) * pageSize + 1}
+    />
+
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}

@@ -70,12 +70,15 @@ export const initializeDatabase = async (): Promise<void> => {
 
         // Handle pool errors
         pool.on('error', (err) => {
-            apiLogger.error('Database pool error:', err.message);
+            // SPEC-180: runtime pool errors are actionable — forward to Sentry.
+            apiLogger.error('Database pool error:', err.message, { capture: true });
         });
     } catch (error) {
+        // SPEC-180: DB init failure is a startup blocker — forward to Sentry.
         apiLogger.error(
             '❌ Failed to initialize database:',
-            error instanceof Error ? error.message : String(error)
+            error instanceof Error ? error.message : String(error),
+            { capture: true }
         );
         throw error;
     }

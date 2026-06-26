@@ -92,7 +92,6 @@
     color: var(--core-card, #fff);
     border: 1px solid var(--core-card-a25);
     border-radius: var(--radius-button, 8px);
-    outline: none;
     transition: border-color var(--duration-fast, 150ms) ease, box-shadow
         var(--duration-fast, 150ms) ease;
 }
@@ -110,7 +109,9 @@
     color: var(--core-card-a50);
 }
 
-.emailInput:focus {
+.emailInput:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
     border-color: var(--brand-accent);
     box-shadow: 0 0 0 3px var(--brand-accent-a30);
 }

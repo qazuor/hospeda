@@ -277,9 +277,11 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
 
     const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
     if (!accessToken) {
+        // SPEC-180: missing access token is a config error — actionable.
         apiLogger.error(
             { eventId: event.id, requestId, authorizedPaymentId },
-            'MercadoPago webhook: HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN not configured — cannot fetch authorized-payment details'
+            'MercadoPago webhook: HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN not configured — cannot fetch authorized-payment details',
+            { capture: true }
         );
         await safeMarkProcessed(event.id);
         cleanupRequestProviderEventId(requestId);
@@ -288,9 +290,11 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
 
     const billing = getQZPayBilling();
     if (!billing) {
+        // SPEC-180: billing instance unavailable is a config error — actionable.
         apiLogger.error(
             { eventId: event.id, requestId, authorizedPaymentId },
-            'MercadoPago webhook: QZPay billing instance unavailable — cannot record payment'
+            'MercadoPago webhook: QZPay billing instance unavailable — cannot record payment',
+            { capture: true }
         );
         await safeMarkProcessed(event.id);
         cleanupRequestProviderEventId(requestId);
@@ -451,6 +455,7 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
         // silently treating it as processed. MP will not retry acknowledged
         // events, so our own retry mechanism is the only recovery path.
         const errMessage = recordErr instanceof Error ? recordErr.message : String(recordErr);
+        // SPEC-180: payment recording failure is actionable — it blocks revenue reconciliation.
         apiLogger.error(
             {
                 eventId: event.id,
@@ -458,7 +463,8 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
                 authorizedPaymentId,
                 error: errMessage
             },
-            'MercadoPago webhook: unexpected error while recording subscription_authorized_payment — marking event failed for retry'
+            'MercadoPago webhook: unexpected error while recording subscription_authorized_payment — marking event failed for retry',
+            { capture: true }
         );
         try {
             await markEventFailedByProviderId({

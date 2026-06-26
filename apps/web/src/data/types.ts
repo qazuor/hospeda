@@ -755,7 +755,6 @@ export interface EventDetailLocation {
 export interface EventSeoData {
     readonly title?: string;
     readonly description?: string;
-    readonly keywords?: readonly string[];
 }
 
 /**

@@ -564,10 +564,14 @@ export const dunningJob: CronJobDefinition = {
             const errorMessage = error instanceof Error ? error.message : String(error);
             const errorStack = error instanceof Error ? error.stack : undefined;
 
-            logger.error('Dunning job failed with unexpected error', {
-                error: errorMessage,
-                stack: errorStack
-            });
+            // SPEC-180: unexpected dunning failure is actionable — forward to Sentry.
+            // Note: the bootstrap also calls Sentry.captureException on thrown errors;
+            // this path is for non-thrown failures inside the handler body.
+            logger.error(
+                'Dunning job failed with unexpected error',
+                { error: errorMessage, stack: errorStack },
+                { capture: true }
+            );
 
             const durationMs = Date.now() - startedAt.getTime();
 

@@ -168,6 +168,7 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.2 0.02 220);
     --brand-primary: oklch(0.63 0.19 259);
+    --brand-primary-text: oklch(0.365 0.143 259);
     --primary-foreground: oklch(0.99 0 0);
     --brand-secondary: oklch(0.96 0.02 236);
     --brand-secondary-foreground: oklch(0.26 0.06 255);
@@ -904,6 +905,7 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --popover: oklch(0.19 0.02 220);
     --popover-foreground: oklch(0.92 0.01 210);
     --brand-primary: oklch(0.68 0.17 259);
+    --brand-primary-text: oklch(0.68 0.17 259);
     --primary-foreground: oklch(0.1 0.02 259);
     --brand-secondary: oklch(0.25 0.05 255);
     --brand-secondary-foreground: oklch(0.8 0.08 255);
