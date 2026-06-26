@@ -66,5 +66,12 @@
         "location": "Location",
         "remove": "Remove filter",
         "activeFiltersLabel": "Active filters"
+    },
+    "examples": {
+        "label": "Try these examples:",
+        "query1": "Cabin for 4 guests with pool",
+        "query2": "Hotel near the river with parking",
+        "query3": "Apartment with WiFi for 2 guests",
+        "query4": "Pet-friendly house, up to 6 people"
     }
 }

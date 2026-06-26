@@ -83,6 +83,19 @@ const LOW_CONFIDENCE_THRESHOLD = 0.4;
  */
 const MAX_CONTENT_LENGTH = 500;
 
+/**
+ * i18n keys for the static example query pool (SPEC-265 B1a).
+ * Shown as clickable chips in the empty state — clicking sends the query
+ * immediately. Each key resolves to a localized natural-language query
+ * that the AI search pipeline can handle.
+ */
+const EXAMPLE_QUERY_KEYS = [
+    'aiSearch.examples.query1',
+    'aiSearch.examples.query2',
+    'aiSearch.examples.query3',
+    'aiSearch.examples.query4'
+] as const;
+
 /** Stable keys for the decorative loading skeletons (avoids array-index keys). */
 const SKELETON_KEYS: readonly string[] = Array.from(
     { length: SKELETON_COUNT },
@@ -257,6 +270,16 @@ export function SearchChatPanel({
         [handleSend]
     );
 
+    // Example query click handler (SPEC-265 B1a) — sends the query immediately.
+    const handleExampleClick = useCallback(
+        (query: string) => {
+            if (chat.isStreaming) return;
+            chat.send(query);
+            setDraft('');
+        },
+        [chat]
+    );
+
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
     const showResults = chat.results.length > 0 || chat.resultsLoading;
@@ -364,13 +387,33 @@ export function SearchChatPanel({
                         'Panel de búsqueda conversacional con IA'
                     )}
                 >
-                    {/* Empty state — before first turn */}
+                    {/* Empty state — before first turn, with example query chips (SPEC-265 B1a) */}
                     {!hasMessages && !chat.isStreaming && (
                         <div className={styles.emptyState}>
-                            {t(
-                                'aiSearch.chat.emptyState',
-                                'Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.'
-                            )}
+                            <p className={styles.emptyStateText}>
+                                {t(
+                                    'aiSearch.chat.emptyState',
+                                    'Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.'
+                                )}
+                            </p>
+                            <div
+                                className={styles.exampleChips}
+                                data-testid="ai-search-examples"
+                            >
+                                <span className={styles.exampleLabel}>
+                                    {t('aiSearch.examples.label', 'Probá con estos ejemplos:')}
+                                </span>
+                                {EXAMPLE_QUERY_KEYS.map((key) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className={styles.exampleChip}
+                                        onClick={() => handleExampleClick(t(key, key))}
+                                    >
+                                        {t(key, key)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
 

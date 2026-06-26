@@ -66,5 +66,12 @@
         "location": "Localização",
         "remove": "Remover filtro",
         "activeFiltersLabel": "Filtros ativos"
+    },
+    "examples": {
+        "label": "Experimente estes exemplos:",
+        "query1": "Cabana para 4 pessoas com piscina",
+        "query2": "Hotel perto do rio com estacionamento",
+        "query3": "Apartamento com WiFi para 2 hóspedes",
+        "query4": "Casa que aceita animais, até 6 pessoas"
     }
 }

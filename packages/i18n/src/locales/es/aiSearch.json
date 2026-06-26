@@ -40,6 +40,13 @@
     "rateLimitError": "Demasiadas búsquedas. Esperá un momento.",
     "serviceError": "El servicio no está disponible en este momento. Intentá de nuevo más tarde.",
     "lowConfidenceMessage": "No pudimos interpretar tu búsqueda. Probá reformularla con otras palabras.",
+    "examples": {
+        "label": "Probá con estos ejemplos:",
+        "query1": "Cabaña para 4 personas con pileta",
+        "query2": "Hotel cerca del río con estacionamiento",
+        "query3": "Apartamento con WiFi para 2 huéspedes",
+        "query4": "Casa que acepte mascotas, hasta 6 personas"
+    },
     "chips": {
         "type": "Tipo: {{value}}",
         "minGuests": "Mínimo {{value}} huéspedes",

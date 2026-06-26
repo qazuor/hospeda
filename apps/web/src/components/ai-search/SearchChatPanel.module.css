@@ -116,6 +116,7 @@
 /* Empty state shown before the first turn */
 .emptyState {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 2rem 1.5rem;
@@ -124,6 +125,58 @@
     font-size: 0.9375rem;
     color: var(--core-muted-foreground, #6b7280);
     line-height: 1.5;
+    gap: 1rem;
+}
+
+.emptyStateText {
+    margin: 0;
+}
+
+/* ─── Example query chips (SPEC-265 B1a) ──────────────────────────────────────
+   Clickable suggestion chips shown in the empty state. Each chip sends
+   a pre-written natural-language query when clicked.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.exampleChips {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.exampleLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.exampleChip {
+    display: inline-block;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
+    border-radius: var(--radius-pill, 9999px);
+    background: transparent;
+    color: var(--core-foreground, #1f2937);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    text-align: center;
+    max-width: 90%;
+}
+
+.exampleChip:hover {
+    border-color: var(--brand-primary, #2563eb);
+    background-color: oklch(from var(--brand-primary, #2563eb) l c h / 0.06);
+}
+
+.exampleChip:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
 }
 
 /* ─── Bubbles ─────────────────────────────────────────────────────────────────
