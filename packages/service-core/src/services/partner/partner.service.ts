@@ -127,7 +127,7 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can view a partner.
-     * Requires `PARTNER_VIEW_ALL`.
+     * Requires `PARTNER_VIEW_ALL` (or `PARTNER_MANAGE`).
      */
     protected _canView(actor: Actor, entity: Partner): void {
         checkCanView(actor, entity);
@@ -135,7 +135,7 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can list partners.
-     * Requires `PARTNER_VIEW_ALL`.
+     * Requires `PARTNER_VIEW_ALL` (or `PARTNER_MANAGE`).
      */
     protected _canList(actor: Actor): void {
         checkCanList(actor);
@@ -143,7 +143,7 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can search partners.
-     * Requires `PARTNER_VIEW_ALL`.
+     * Requires `PARTNER_VIEW_ALL` (or `PARTNER_MANAGE`).
      */
     protected _canSearch(actor: Actor): void {
         checkCanSearch(actor);
@@ -151,7 +151,7 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can count partners.
-     * Requires `PARTNER_VIEW_ALL`.
+     * Requires `PARTNER_VIEW_ALL` (or `PARTNER_MANAGE`).
      */
     protected _canCount(actor: Actor): void {
         checkCanCount(actor);
@@ -159,7 +159,7 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can use admin list for partners.
-     * Requires admin access (base class) plus PARTNER_VIEW_ALL.
+     * Requires admin access (base class) plus `PARTNER_VIEW_ALL` (or `PARTNER_MANAGE`).
      */
     protected async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
@@ -168,10 +168,10 @@ export class PartnerService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can update the visibility of a partner.
-     * Requires `PARTNER_MANAGE`.
+     * Requires `PARTNER_MANAGE` (same as update).
      */
-    protected _canUpdateVisibility(actor: Actor, _entity: Partner, _newVisibility: unknown): void {
-        checkCanCreate(actor, {});
+    protected _canUpdateVisibility(actor: Actor, entity: Partner, _newVisibility: unknown): void {
+        checkCanUpdate(actor, entity);
     }
 
     /**
@@ -189,7 +189,7 @@ export class PartnerService extends BaseCrudService<
             filterParams as Parameters<PartnerModel['findByFilters']>[0]
         );
         const total = await this.model.countActivePartners(
-            filterParams as { type?: string; tier?: string }
+            filterParams as { q?: string; type?: string; tier?: string }
         );
         return { items, total };
     }
@@ -206,26 +206,9 @@ export class PartnerService extends BaseCrudService<
         const { page: _page, pageSize: _pageSize, ...filterParams } = params;
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.countActivePartners(
-            filterParams as { type?: string; tier?: string }
+            filterParams as { q?: string; type?: string; tier?: string }
         );
         return { count };
-    }
-
-    /**
-     * Send payment link for partner
-     */
-    async sendPaymentLink(
-        actor: Actor,
-        partnerId: string,
-        _ctx?: ServiceContext
-    ): Promise<{ paymentUrl: string; planId: string }> {
-        checkCanCreate(actor, {});
-
-        // TODO: Implement QZPay integration to generate payment link
-        return {
-            paymentUrl: `https://pay.hospeda.com.ar/partners/${partnerId}`,
-            planId: 'partner-plan-id'
-        };
     }
 
     /**
