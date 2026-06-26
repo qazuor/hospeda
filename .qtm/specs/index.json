@@ -2156,6 +2156,28 @@
             ]
         },
         {
+            "specId": "SPEC-282",
+            "title": "Web — Plan comparison table page (detailed feature/entitlement/limit breakdown)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-282-web-plan-comparison-table",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "tags": [
+                "web",
+                "billing",
+                "pricing",
+                "plans",
+                "comparison",
+                "entitlements",
+                "limits",
+                "i18n",
+                "ssr",
+                "astro"
+            ]
+        },
+        {
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
             "type": "feat",

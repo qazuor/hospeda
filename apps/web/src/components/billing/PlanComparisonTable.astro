@@ -1,0 +1,465 @@
+---
+/**
+ * @file PlanComparisonTable.astro
+ * @description Curated plan comparison table with explicit, ordered row configs
+ * per audience. Each row has a labelKey (i18n), a typed cell definition, a
+ * status (available | upcoming), and an optional noteKey. Numeric cells read
+ * real limit values from plan data; literal cells use explicit yes/no values.
+ *
+ * Owner audience filters out complex plans and renders a teaser note below.
+ * Tourist audience shows experience + AI groups.
+ *
+ * Renders a semantically accessible <table> with sticky first column and
+ * horizontal scroll on mobile.
+ *
+ * @prop locale - Active locale.
+ * @prop plans - Plans from the API (may include complex plans for owners —
+ *   they are filtered out inside this component).
+ * @prop audience - `'owner'` or `'tourist'`.
+ * @prop intlLocale - BCP-47 locale string for Intl.NumberFormat.
+ */
+
+import { CheckIcon, MinusIcon } from '@repo/icons';
+import { LimitKey } from '@repo/billing';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly plans: readonly PublicPlanData[];
+	readonly audience: 'owner' | 'tourist';
+	readonly intlLocale: string;
+}
+
+const { locale, plans, audience, intlLocale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
+const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
+const includedLabel = t('billing.comparison.included', 'Incluido');
+const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
+
+// Complex plans are included by the /planes/comparar/ page but must NOT appear
+// as columns in this table. Filter them out; we render a teaser below instead.
+const activePlans = audience === 'owner'
+	? plans.filter((p) => p.category === 'owner')
+	: plans;
+
+// ---------------------------------------------------------------------------
+// Row model types
+// ---------------------------------------------------------------------------
+
+type YesNo = 'yes' | 'no';
+
+interface LimitCell {
+	readonly kind: 'limit';
+	/** Strongly-typed limit key — reads the real value from plan.limits. */
+	readonly key: LimitKey;
+}
+interface LiteralsCell {
+	readonly kind: 'literals';
+	/** One value per plan column (in sort order). */
+	readonly values: readonly YesNo[];
+}
+interface AllYesCell { readonly kind: 'all-yes' }
+interface AllNoCell { readonly kind: 'all-no' }
+interface AllUnlimitedCell { readonly kind: 'all-unlimited' }
+
+type RowCellDef = LimitCell | LiteralsCell | AllYesCell | AllNoCell | AllUnlimitedCell;
+type CellRendered = YesNo | 'unlimited' | number;
+
+interface RowConfig {
+	readonly id: string;
+	readonly labelKey: string;
+	readonly cell: RowCellDef;
+	readonly status: 'available' | 'upcoming';
+	readonly noteKey?: string | undefined;
+}
+
+interface GroupConfig {
+	readonly id: string;
+	readonly rows: readonly RowConfig[];
+}
+
+// ---------------------------------------------------------------------------
+// Tourist rows (reused by owner's asTourist group)
+// ---------------------------------------------------------------------------
+
+const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
+	{ id: 'favorites',      labelKey: 'billing.comparison.row.favorites',      cell: { kind: 'limit',    key: LimitKey.MAX_FAVORITES },            status: 'available' },
+	{ id: 'collections',    labelKey: 'billing.comparison.row.collections',    cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'reviews',        labelKey: 'billing.comparison.row.reviews',        cell: { kind: 'all-yes' },                                           status: 'available' },
+	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'upcoming'  },
+	{ id: 'compare',        labelKey: 'billing.comparison.row.compare',        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'alertsOffers',   labelKey: 'billing.comparison.row.alertsOffers',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'whatsappDisplay',labelKey: 'billing.comparison.row.whatsappDisplay',cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
+	{ id: 'whatsappDirect', labelKey: 'billing.comparison.row.whatsappDirect', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },            status: 'available' },
+];
+
+const TOURIST_AI_ROWS: readonly RowConfig[] = [
+	{ id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiSearch'      },
+	{ id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiChatTourist' },
+];
+
+// Convert a tourist cell to its tourist-VIP value for the owner asTourist group.
+function asVipForAll(cell: RowCellDef): RowCellDef {
+	if (cell.kind === 'limit') return { kind: 'all-unlimited' };
+	if (cell.kind === 'literals') {
+		const vipValue = cell.values[cell.values.length - 1];
+		return vipValue === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
+	}
+	return cell;
+}
+
+const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
+	...TOURIST_EXPERIENCE_ROWS,
+	...TOURIST_AI_ROWS,
+].map((row) => ({ ...row, cell: asVipForAll(row.cell) }));
+
+// ---------------------------------------------------------------------------
+// Owner-specific rows
+// ---------------------------------------------------------------------------
+
+const OWNER_ROWS: readonly RowConfig[] = [
+	{ id: 'publish',           labelKey: 'billing.comparison.row.publish',           cell: { kind: 'limit',    key: LimitKey.MAX_ACCOMMODATIONS },               status: 'available' },
+	{ id: 'photos',            labelKey: 'billing.comparison.row.photos',            cell: { kind: 'limit',    key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION },      status: 'available' },
+	{ id: 'editInfo',          labelKey: 'billing.comparison.row.editInfo',          cell: { kind: 'all-yes' },                                                   status: 'available' },
+	{ id: 'respondReviews',    labelKey: 'billing.comparison.row.respondReviews',    cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
+	{ id: 'basicStats',        labelKey: 'billing.comparison.row.basicStats',        cell: { kind: 'all-yes' },                                                   status: 'available' },
+	{ id: 'advancedStats',     labelKey: 'billing.comparison.row.advancedStats',     cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'calendar',          labelKey: 'billing.comparison.row.calendar',          cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
+	{ id: 'richDescription',   labelKey: 'billing.comparison.row.richDescription',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'video',             labelKey: 'billing.comparison.row.video',             cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'promotions',        labelKey: 'billing.comparison.row.promotions',        cell: { kind: 'limit',    key: LimitKey.MAX_ACTIVE_PROMOTIONS },             status: 'upcoming'  },
+	{ id: 'prioritySupport',   labelKey: 'billing.comparison.row.prioritySupport',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'featured',          labelKey: 'billing.comparison.row.featured',          cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'upcoming'  },
+	{ id: 'branding',          labelKey: 'billing.comparison.row.branding',          cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
+	{ id: 'verificationBadge', labelKey: 'billing.comparison.row.verificationBadge', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
+];
+
+const OWNER_AI_ROWS: readonly RowConfig[] = [
+	{ id: 'aiTextImprove', labelKey: 'billing.comparison.row.aiTextImprove', cell: { kind: 'limit', key: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH },         status: 'available' },
+	{ id: 'aiTranslate',   labelKey: 'billing.comparison.row.aiTranslate',   cell: { kind: 'limit', key: LimitKey.MAX_AI_TRANSLATE_PER_MONTH },            status: 'available' },
+	{ id: 'aiImport',      labelKey: 'billing.comparison.row.aiImport',      cell: { kind: 'limit', key: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH }, status: 'available' },
+	{ id: 'aiChatOwner',   labelKey: 'billing.comparison.row.aiChatOwner',   cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_PER_MONTH },                 status: 'available', noteKey: 'billing.comparison.note.aiChatOwner'   },
+	{ id: 'aiSupport',     labelKey: 'billing.comparison.row.aiSupport',     cell: { kind: 'all-no' },                                                     status: 'upcoming',  noteKey: 'billing.comparison.note.aiSupportAddon' },
+];
+
+const TOURIST_GROUPS: readonly GroupConfig[] = [
+	{ id: 'experience', rows: TOURIST_EXPERIENCE_ROWS },
+	{ id: 'ai',         rows: TOURIST_AI_ROWS         },
+];
+
+const OWNER_GROUPS: readonly GroupConfig[] = [
+	{ id: 'asTourist',  rows: OWNER_AS_TOURIST_ROWS },
+	{ id: 'asOwner',    rows: OWNER_ROWS            },
+	{ id: 'aiBusiness', rows: OWNER_AI_ROWS         },
+];
+
+const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
+
+// ---------------------------------------------------------------------------
+// Rendering helpers
+// ---------------------------------------------------------------------------
+
+function getCellRendered(cell: RowCellDef, plan: PublicPlanData, planIndex: number): CellRendered {
+	switch (cell.kind) {
+		case 'limit': {
+			if (!(cell.key in plan.limits)) return 'no';
+			const val = plan.limits[cell.key];
+			return val === -1 ? 'unlimited' : val;
+		}
+		case 'literals':
+			return cell.values[planIndex] ?? 'no';
+		case 'all-yes':
+			return 'yes';
+		case 'all-no':
+			return 'no';
+		case 'all-unlimited':
+			return 'unlimited';
+	}
+}
+
+function formatPriceArs(cents: number): string {
+	if (cents === 0) return t('pricing.free', 'Gratis');
+	const pesos = cents / 100;
+	try {
+		return new Intl.NumberFormat(intlLocale, {
+			style: 'currency',
+			currency: 'ARS',
+			maximumFractionDigits: 0,
+			minimumFractionDigits: 0,
+		}).format(pesos);
+	} catch {
+		return `$${pesos.toLocaleString('es-AR')}`;
+	}
+}
+---
+
+<div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
+	<table class="comparison-table">
+		<thead>
+			<tr>
+				<th scope="col" class="comparison-table__label-col">
+					<span class="sr-only">{t('pricing.features.label', 'Incluye')}</span>
+				</th>
+				{activePlans.map((plan) => (
+					<th scope="col" class="comparison-table__plan-col">
+						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
+						<span class="comparison-table__plan-price">{formatPriceArs(plan.monthlyPriceArs)}</span>
+						{plan.monthlyPriceArs > 0 && (
+							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
+						)}
+					</th>
+				))}
+			</tr>
+		</thead>
+		{groups.map((group) => (
+			<tbody>
+				<tr class="comparison-table__group-header">
+					<th scope="rowgroup" colspan={activePlans.length + 1}>
+						{getComparisonGroupLabel({ group: group.id, t })}
+					</th>
+				</tr>
+				{group.rows.map((row) => (
+					<tr>
+						<th scope="row" class="comparison-table__label-col">
+							<span class="comparison-table__row-label">
+								{t(row.labelKey)}
+								{row.status === 'upcoming' && (
+									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
+								)}
+							</span>
+							{row.noteKey && (
+								<span class="comparison-table__row-note">{t(row.noteKey)}</span>
+							)}
+						</th>
+						{activePlans.map((plan, idx) => {
+							const result = getCellRendered(row.cell, plan, idx);
+							const isNumeric = typeof result === 'number' || result === 'unlimited';
+							return (
+								<td class:list={['comparison-table__cell', { 'comparison-table__cell--limit': isNumeric }]}>
+									{result === 'yes' ? (
+										<span class="comparison-table__icon comparison-table__icon--included" role="img" aria-label={includedLabel}>
+											<CheckIcon size="sm" weight="bold" color="currentColor" />
+										</span>
+									) : result === 'no' ? (
+										<span class="comparison-table__icon comparison-table__icon--not-included" role="img" aria-label={notIncludedLabel}>
+											<MinusIcon size="sm" weight="regular" color="currentColor" />
+										</span>
+									) : (
+										<span class:list={['comparison-table__limit-value', { 'comparison-table__limit-value--unlimited': result === 'unlimited' }]}>
+											{result === 'unlimited' ? unlimitedLabel : result}
+										</span>
+									)}
+								</td>
+							);
+						})}
+					</tr>
+				))}
+			</tbody>
+		))}
+	</table>
+</div>
+
+{audience === 'owner' && (
+	<p class="comparison-table__complex-teaser">
+		{t('billing.comparison.complexTeaser', 'Planes especiales para complejos y hoteles — próximamente')}
+	</p>
+)}
+
+<style>
+	.comparison-table__wrapper {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+		scrollbar-color: var(--brand-primary-a30) transparent;
+	}
+
+	.comparison-table__wrapper:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+	}
+
+	.comparison-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		min-width: 600px;
+	}
+
+	.comparison-table thead th {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		background-color: var(--core-card);
+		border-bottom: 2px solid var(--brand-primary-a20);
+		padding: var(--space-4) var(--space-3);
+		text-align: center;
+		vertical-align: bottom;
+	}
+
+	.comparison-table__label-col {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		background-color: var(--core-card);
+		text-align: left;
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: var(--text-body-sm);
+		color: var(--core-foreground);
+		padding: var(--space-3) var(--space-4);
+		min-width: 200px;
+		white-space: normal;
+		word-break: break-word;
+		border-bottom: 1px solid var(--core-foreground-a10);
+	}
+
+	.comparison-table thead .comparison-table__label-col {
+		z-index: 3;
+		border-bottom: 2px solid var(--brand-primary-a20);
+	}
+
+	.comparison-table__plan-col {
+		min-width: 140px;
+	}
+
+	.comparison-table__plan-name {
+		display: block;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body-lg);
+		color: var(--core-foreground);
+		margin-bottom: var(--space-1);
+	}
+
+	.comparison-table__plan-price {
+		display: inline-block;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-lg);
+		color: var(--brand-accent);
+	}
+
+	.comparison-table__plan-period {
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		color: var(--core-muted-foreground);
+		margin-left: var(--space-1);
+	}
+
+	.comparison-table__group-header th {
+		background-color: var(--surface-warm);
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body);
+		color: var(--brand-primary);
+		padding: var(--space-3) var(--space-4);
+		text-align: left;
+		border-bottom: 2px solid var(--brand-primary-a15);
+		border-top: 1px solid var(--brand-primary-a15);
+		position: sticky;
+		left: 0;
+	}
+
+	.comparison-table__cell {
+		text-align: center;
+		padding: var(--space-3);
+		border-bottom: 1px solid var(--core-foreground-a10);
+		vertical-align: middle;
+	}
+
+	.comparison-table__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.comparison-table__icon--included {
+		color: var(--brand-tertiary);
+	}
+
+	.comparison-table__icon--not-included {
+		color: var(--core-muted-foreground);
+		opacity: 0.5;
+	}
+
+	.comparison-table__cell--limit {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body);
+		color: var(--core-foreground);
+	}
+
+	.comparison-table__limit-value--unlimited {
+		color: var(--brand-tertiary);
+		font-weight: 700;
+	}
+
+	.comparison-table__row-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
+	.comparison-table__badge--upcoming {
+		display: inline-block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		color: var(--brand-accent);
+		background-color: var(--brand-primary-a15);
+		border: 1px solid var(--brand-primary-a30);
+		border-radius: var(--radius-pill, 999px);
+		padding: 1px var(--space-2);
+		white-space: nowrap;
+		line-height: 1.4;
+	}
+
+	.comparison-table__row-note {
+		display: block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		color: var(--core-muted-foreground);
+		margin-top: var(--space-1);
+		font-style: italic;
+	}
+
+	.comparison-table__complex-teaser {
+		max-width: var(--container-max);
+		margin: var(--space-6) auto 0;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		font-style: italic;
+	}
+
+	.comparison-table tbody tr:hover {
+		background-color: var(--surface-warm);
+	}
+
+	.comparison-table tbody tr:hover .comparison-table__label-col {
+		background-color: var(--surface-warm);
+	}
+
+	@media (max-width: 768px) {
+		.comparison-table__label-col {
+			min-width: 160px;
+		}
+		.comparison-table__plan-col {
+			min-width: 120px;
+		}
+	}
+</style>

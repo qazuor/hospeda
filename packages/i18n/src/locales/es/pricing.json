@@ -40,5 +40,19 @@
         "empty": "Planes no disponibles en este momento.",
         "period": "/mes",
         "cardsHeading": "Comparativa de planes para turistas"
+    },
+    "comparison": {
+        "link": "Ver comparativa detallada",
+        "cta": "Elegir plan",
+        "owner": {
+            "heading": "Comparativa detallada de planes para propietarios",
+            "title": "Comparativa de planes para propietarios — Hospeda",
+            "description": "Compará todas las funciones, beneficios y límites de cada plan para propietarios."
+        },
+        "tourist": {
+            "heading": "Comparativa detallada de planes para turistas",
+            "title": "Comparativa de planes para turistas — Hospeda",
+            "description": "Compará todas las funciones, beneficios y límites de cada plan para turistas."
+        }
     }
 }

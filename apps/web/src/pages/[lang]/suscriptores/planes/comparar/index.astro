@@ -1,0 +1,158 @@
+---
+/**
+ * @file suscriptores/planes/comparar/index.astro
+ * @description Owner plan comparison page. Renders a detailed table with all
+ * entitlements and limits for each owner + complex plan, so users can compare
+ * features side by side before choosing a plan.
+ *
+ * @route /{lang}/suscriptores/planes/comparar/
+ * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
+ *   time; Cache-Control: s-maxage=300, stale-while-revalidate=60.
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import PlanComparisonTable from '@/components/billing/PlanComparisonTable.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+import {
+	fetchPublicPlans,
+	filterPlansByCategory,
+	PRICING_CACHE_MAX_AGE_SECONDS,
+	PRICING_CACHE_SWR_SECONDS,
+} from '@/lib/billing/fetch-plans';
+import { BuildingIcon, BarChartIcon, CheckCircleIcon } from '@repo/icons';
+
+export const prerender = false;
+
+const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+Astro.response.headers.set(
+	'Cache-Control',
+	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
+);
+
+const fetchResult = await fetchPublicPlans();
+const ownerPlans = fetchResult.ok
+	? [
+			...filterPlansByCategory(fetchResult.plans, 'owner'),
+			...filterPlansByCategory(fetchResult.plans, 'complex'),
+		].sort((a, b) => a.sortOrder - b.sortOrder)
+	: [];
+
+const intlLocale = getIntlLocale(locale);
+const hasPlans = ownerPlans.length > 0;
+
+const headingFull = t('pricing.comparison.owner.heading', 'Comparativa detallada de planes para propietarios');
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('pricing.comparison.owner.title', 'Comparativa de planes para propietarios — Hospeda')}
+	description={t(
+		'pricing.comparison.owner.description',
+		'Compará todas las funciones, beneficios y límites de cada plan para propietarios.'
+	)}
+>
+	<MarketingHero
+		tagline={t('pricing.owner.tagline', 'Planes y precios')}
+		titleMain={headingMain}
+		titleAccent={headingAccent}
+		subtitle={t(
+			'pricing.comparison.owner.description',
+			'Compará todas las funciones, beneficios y límites de cada plan para propietarios.'
+		)}
+	>
+		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><BarChartIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><CheckCircleIcon size="md" weight="duotone" /></Fragment>
+	</MarketingHero>
+
+	<section class="comparison section" aria-labelledby="comparison-heading">
+		<h2 id="comparison-heading" class="sr-only">
+			{t('pricing.comparison.owner.heading', 'Comparativa detallada de planes para propietarios')}
+		</h2>
+
+		{hasPlans ? (
+			<PlanComparisonTable
+				locale={locale}
+				plans={ownerPlans}
+				audience="owner"
+				intlLocale={intlLocale}
+			/>
+		) : (
+			<div class="comparison__empty">
+				<EmptyState
+					locale={locale}
+					variant="empty"
+					message={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
+					actionUrl={buildUrl({ locale, path: 'contacto' })}
+					actionLabel={t('pricing.empty.contact', 'Contactanos')}
+				/>
+			</div>
+		)}
+	</section>
+
+	{hasPlans && (
+		<section class="comparison-cta section section--warm">
+			<div class="comparison-cta__container">
+				<h2 class="comparison-cta__title">
+					{t('pricing.owner.cta.title', '¿Listo para hacer crecer tu negocio?')}
+				</h2>
+				<p class="comparison-cta__desc">
+					{t('pricing.owner.cta.description', 'Comienza tu prueba gratuita de 14 días y descubre cómo Hospeda puede ayudarte a aumentar tus reservas.')}
+				</p>
+				<GradientButton
+					href={buildUrl({ locale, path: 'suscriptores/planes' })}
+					label={t('pricing.comparison.cta', 'Elegir plan')}
+					variant="accent"
+					icon="true"
+				/>
+			</div>
+		</section>
+	)}
+</MarketingLayout>
+
+<style>
+	.comparison {
+		padding-top: var(--space-8);
+		padding-bottom: var(--space-section);
+	}
+
+	.comparison__empty {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.comparison-cta__container {
+		max-width: 700px;
+		margin: 0 auto;
+		text-align: center;
+		padding: 0 var(--space-container-x);
+	}
+
+	.comparison-cta__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.comparison-cta__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--core-muted-foreground);
+		line-height: 1.6;
+		margin: 0 0 var(--space-6);
+	}
+</style>
