@@ -21,6 +21,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -116,4 +117,24 @@ const headingMain = headingWords.join(' ');
 			ctaText={t('pricing.cta', 'Empezar')}
 		/>
 	</section>
+
+	<section class="comparison-link section">
+		<div class="comparison-link__container">
+			<GradientButton
+				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
+				label={t('pricing.comparison.link', 'Ver comparativa detallada')}
+				variant="outline-primary"
+				icon="true"
+			/>
+		</div>
+	</section>
 </MarketingLayout>
+
+<style>
+	.comparison-link__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+</style>

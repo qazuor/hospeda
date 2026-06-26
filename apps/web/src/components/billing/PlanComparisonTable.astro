@@ -1,0 +1,364 @@
+---
+/**
+ * @file PlanComparisonTable.astro
+ * @description Detailed plan comparison table showing every entitlement and
+ * limit for each plan, grouped by category. Used by the owner comparison page
+ * (/suscriptores/planes/comparar/) and the tourist comparison page
+ * (/suscriptores/turistas/comparar/).
+ *
+ * Renders a semantically accessible <table> with:
+ * - Plan names + monthly prices as column headers
+ * - Entitlement rows (checkmark / dash) grouped by category
+ * - Limit rows (numeric value / "Ilimitado" / dash) in a limits group
+ * - Sticky first column (row labels) + horizontal scroll on mobile
+ */
+
+import { CheckIcon, MinusIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getEntitlementName, getLimitName, getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
+import type { EntitlementKey } from '@/lib/billing-i18n';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly plans: readonly PublicPlanData[];
+	readonly audience: 'owner' | 'tourist';
+	readonly intlLocale: string;
+}
+
+const { locale, plans, audience, intlLocale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
+const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
+const includedLabel = t('billing.comparison.included', 'Incluido');
+
+interface EntitlementGroup {
+	readonly id: string;
+	readonly keys: readonly string[];
+}
+
+const OWNER_ENTITLEMENTS: readonly string[] = [
+	'publish_accommodations', 'edit_accommodation_info', 'view_basic_stats',
+	'view_advanced_stats', 'respond_reviews', 'priority_support',
+	'featured_listing', 'custom_branding', 'create_promotions',
+];
+
+const ACCOMMODATION_ENTITLEMENTS: readonly string[] = [
+	'can_use_rich_description', 'can_embed_video', 'can_use_calendar',
+	'can_sync_external_calendar', 'can_contact_whatsapp_display',
+	'can_contact_whatsapp_direct', 'has_verification_badge',
+];
+
+const COMPLEX_ENTITLEMENTS: readonly string[] = [
+	'multi_property_management', 'consolidated_analytics',
+	'centralized_booking', 'staff_management',
+];
+
+const TOURIST_ENTITLEMENTS: readonly string[] = [
+	'save_favorites', 'write_reviews', 'read_reviews', 'ad_free',
+	'price_alerts', 'exclusive_deals', 'vip_support',
+	'vip_promotions_access', 'can_compare_accommodations',
+	'can_attach_review_photos', 'can_view_search_history',
+	'can_view_recommendations',
+];
+
+const AI_ENTITLEMENTS: readonly string[] = [
+	'ai_text_improve', 'ai_chat', 'ai_search', 'ai_support',
+	'ai_translate', 'ai_accommodation_import',
+];
+
+const OWNER_LIMITS: readonly string[] = [
+	'max_accommodations', 'max_photos_per_accommodation',
+	'max_active_promotions', 'max_properties', 'max_staff_accounts',
+	'max_ai_text_improve_per_month', 'max_ai_chat_per_month',
+	'max_ai_translate_per_month', 'max_ai_accommodation_import_per_month',
+];
+
+const TOURIST_LIMITS: readonly string[] = [
+	'max_favorites', 'max_active_alerts', 'max_compare_items',
+	'max_ai_text_improve_per_month', 'max_ai_chat_per_month',
+	'max_ai_search_per_month', 'max_ai_support_per_month',
+	'max_ai_translate_per_month',
+];
+
+const OWNER_GROUPS: readonly EntitlementGroup[] = [
+	{ id: 'owner', keys: OWNER_ENTITLEMENTS },
+	{ id: 'accommodation', keys: ACCOMMODATION_ENTITLEMENTS },
+	{ id: 'complex', keys: COMPLEX_ENTITLEMENTS },
+	{ id: 'ai', keys: AI_ENTITLEMENTS },
+];
+
+const TOURIST_GROUPS: readonly EntitlementGroup[] = [
+	{ id: 'tourist', keys: TOURIST_ENTITLEMENTS },
+	{ id: 'ai', keys: AI_ENTITLEMENTS },
+];
+
+const entitlementGroups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
+const limitKeys = audience === 'owner' ? OWNER_LIMITS : TOURIST_LIMITS;
+
+function formatPriceArs(cents: number): string {
+	if (cents === 0) return t('pricing.free', 'Gratis');
+	const pesos = cents / 100;
+	try {
+		return new Intl.NumberFormat(intlLocale, {
+			style: 'currency',
+			currency: 'ARS',
+			maximumFractionDigits: 0,
+			minimumFractionDigits: 0,
+		}).format(pesos);
+	} catch {
+		return `$${pesos.toLocaleString('es-AR')}`;
+	}
+}
+
+function hasEntitlement(plan: PublicPlanData, key: string): boolean {
+	return plan.entitlements.includes(key);
+}
+
+function getLimitValue(plan: PublicPlanData, key: string): number | null {
+	const limits = plan.limits as Record<string, number>;
+	if (!(key in limits)) return null;
+	return limits[key];
+}
+
+function formatLimitValue(value: number | null): string {
+	if (value === null) return '—';
+	if (value === -1) return unlimitedLabel;
+	return String(value);
+}
+---
+
+<div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
+	<table class="comparison-table">
+		<thead>
+			<tr>
+				<th scope="col" class="comparison-table__label-col">
+					<span class="sr-only">{t('pricing.features.label', 'Incluye')}</span>
+				</th>
+				{plans.map((plan) => (
+					<th scope="col" class="comparison-table__plan-col">
+						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
+						<span class="comparison-table__plan-price">{formatPriceArs(plan.monthlyPriceArs)}</span>
+						{plan.monthlyPriceArs > 0 && (
+							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
+						)}
+					</th>
+				))}
+			</tr>
+		</thead>
+		{entitlementGroups.map((group) => (
+			<tbody>
+				<tr class="comparison-table__group-header">
+					<th scope="rowgroup" colspan={plans.length + 1}>
+						{getComparisonGroupLabel({ group: group.id, t })}
+					</th>
+				</tr>
+				{group.keys.map((key) => (
+					<tr>
+						<th scope="row" class="comparison-table__label-col">
+							{getEntitlementName({ key: key as EntitlementKey, t })}
+						</th>
+						{plans.map((plan) => (
+							<td class="comparison-table__cell">
+								{hasEntitlement(plan, key) ? (
+									<span class="comparison-table__icon comparison-table__icon--included" role="img" aria-label={includedLabel}>
+										<CheckIcon size="sm" weight="bold" color="currentColor" />
+									</span>
+								) : (
+									<span class="comparison-table__icon comparison-table__icon--not-included" role="img" aria-label={notIncludedLabel}>
+										<MinusIcon size="sm" weight="regular" color="currentColor" />
+									</span>
+								)}
+							</td>
+						))}
+					</tr>
+				))}
+			</tbody>
+		))}
+		<tbody>
+			<tr class="comparison-table__group-header">
+				<th scope="rowgroup" colspan={plans.length + 1}>
+					{getComparisonGroupLabel({ group: 'limits', t })}
+				</th>
+			</tr>
+			{limitKeys.map((key) => (
+				<tr>
+					<th scope="row" class="comparison-table__label-col">
+						{getLimitName({ key, t })}
+					</th>
+					{plans.map((plan) => {
+						const value = getLimitValue(plan, key);
+						const isUnlimited = value === -1;
+						return (
+							<td class="comparison-table__cell comparison-table__cell--limit">
+								<span class:list={[
+									'comparison-table__limit-value',
+									{ 'comparison-table__limit-value--unlimited': isUnlimited }
+								]}>
+									{formatLimitValue(value)}
+								</span>
+							</td>
+						);
+					})}
+				</tr>
+			))}
+		</tbody>
+	</table>
+</div>
+
+<style>
+	.comparison-table__wrapper {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+		scrollbar-color: var(--brand-primary-a30) transparent;
+	}
+
+	.comparison-table__wrapper:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+	}
+
+	.comparison-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		min-width: 600px;
+	}
+
+	.comparison-table thead th {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		background-color: var(--core-card);
+		border-bottom: 2px solid var(--brand-primary-a20);
+		padding: var(--space-4) var(--space-3);
+		text-align: center;
+		vertical-align: bottom;
+	}
+
+	.comparison-table__label-col {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		background-color: var(--core-card);
+		text-align: left;
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: var(--text-body-sm);
+		color: var(--core-foreground);
+		padding: var(--space-3) var(--space-4);
+		min-width: 200px;
+		white-space: normal;
+		word-break: break-word;
+		border-bottom: 1px solid var(--core-foreground-a10);
+	}
+
+	.comparison-table thead .comparison-table__label-col {
+		z-index: 3;
+		border-bottom: 2px solid var(--brand-primary-a20);
+	}
+
+	.comparison-table__plan-col {
+		min-width: 140px;
+	}
+
+	.comparison-table__plan-name {
+		display: block;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body-lg);
+		color: var(--core-foreground);
+		margin-bottom: var(--space-1);
+	}
+
+	.comparison-table__plan-price {
+		display: inline-block;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-lg);
+		color: var(--brand-accent);
+	}
+
+	.comparison-table__plan-period {
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		color: var(--core-muted-foreground);
+		margin-left: var(--space-1);
+	}
+
+	.comparison-table__group-header th {
+		background-color: var(--surface-warm);
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body);
+		color: var(--brand-primary);
+		padding: var(--space-3) var(--space-4);
+		text-align: left;
+		border-bottom: 2px solid var(--brand-primary-a15);
+		border-top: 1px solid var(--brand-primary-a15);
+		position: sticky;
+		left: 0;
+	}
+
+	.comparison-table__cell {
+		text-align: center;
+		padding: var(--space-3);
+		border-bottom: 1px solid var(--core-foreground-a10);
+		vertical-align: middle;
+	}
+
+	.comparison-table__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.comparison-table__icon--included {
+		color: var(--brand-tertiary);
+	}
+
+	.comparison-table__icon--not-included {
+		color: var(--core-muted-foreground);
+		opacity: 0.5;
+	}
+
+	.comparison-table__cell--limit {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body);
+		color: var(--core-foreground);
+	}
+
+	.comparison-table__limit-value--unlimited {
+		color: var(--brand-tertiary);
+		font-weight: 700;
+	}
+
+	.comparison-table tbody tr:hover {
+		background-color: var(--surface-warm);
+	}
+
+	.comparison-table tbody tr:hover .comparison-table__label-col {
+		background-color: var(--surface-warm);
+	}
+
+	.comparison-table__group-header:hover th {
+		background-color: var(--surface-warm);
+	}
+
+	@media (max-width: 768px) {
+		.comparison-table__label-col {
+			min-width: 160px;
+		}
+		.comparison-table__plan-col {
+			min-width: 120px;
+		}
+	}
+</style>
