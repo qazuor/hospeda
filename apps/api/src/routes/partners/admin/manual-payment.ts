@@ -40,7 +40,8 @@ export const adminManualPaymentRoute = createAdminRoute({
             actorId: actor.id,
             action: 'update',
             resourceType: 'partner-manual-payment',
-            resourceId: id
+            resourceId: id,
+            metadata: note ? { note } : undefined
         });
 
         return result;

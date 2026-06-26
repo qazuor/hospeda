@@ -71,6 +71,8 @@ interface BillingMutationEntry extends BaseAuditEntry {
     readonly action: 'create' | 'update' | 'delete';
     readonly resourceType: string;
     readonly resourceId: string;
+    /** Optional structured context captured verbatim in the `data` payload. */
+    readonly metadata?: Record<string, unknown>;
 }
 
 interface PermissionChangeEntry extends BaseAuditEntry {
