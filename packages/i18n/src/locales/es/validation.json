@@ -1444,6 +1444,9 @@
                     },
                     "sourceUrl": {
                         "invalid": "El source url no es válido"
+                    },
+                    "provider": {
+                        "invalid": "El proveedor debe ser unsplash, pexels o user-upload"
                     }
                 },
                 "caption": {

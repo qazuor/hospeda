@@ -529,6 +529,8 @@
 | **MEDIA — ADMIN** | | | | | |
 | `POST /api/v1/admin/media` | `media/admin/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check in handler (SPEC-143 Finding #15) |
 | `DELETE /api/v1/admin/media` | `media/admin/delete.ts` | none | - | n/a | Admin media delete; PermissionEnum.MEDIA_DELETE gated |
+| `GET /api/v1/admin/media/search` | `media/admin/search.ts` | none | - | n/a | Admin stock image search (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
+| `POST /api/v1/admin/media/import-stock` | `media/admin/import-stock.ts` | none | - | n/a | Admin stock image import (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
 | **CONVERSATIONS — ADMIN** | | | | | |
 | `GET /api/v1/admin/conversations` | `conversations/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_ALL gated |
 | `GET /api/v1/admin/conversations/{id}` | `conversations/admin/thread.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_OWN or ANY gated |

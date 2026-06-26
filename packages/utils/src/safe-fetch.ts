@@ -57,6 +57,17 @@ export interface SafeFetchSuccess {
 }
 
 /**
+ * Returned when the fetch succeeds and the caller requested raw bytes.
+ */
+export interface SafeFetchBufferSuccess {
+    readonly ok: true;
+    readonly status: number;
+    readonly body: Buffer;
+    /** The final URL after following all redirects. */
+    readonly finalUrl: string;
+}
+
+/**
  * Returned when the request is blocked by SSRF policy, times out, or exceeds
  * the max-body-size cap. The `blocked` flag is always `true` here so callers
  * can narrow the union with a simple property check.
@@ -82,6 +93,11 @@ export interface SafeFetchBlocked {
  * ```
  */
 export type SafeFetchResult = SafeFetchSuccess | SafeFetchBlocked;
+
+/**
+ * Discriminated union returned by {@link safeExternalFetchBuffer}.
+ */
+export type SafeFetchBufferResult = SafeFetchBufferSuccess | SafeFetchBlocked;
 
 // ---------------------------------------------------------------------------
 // Input shape
@@ -317,6 +333,34 @@ async function readBodyCapped(
     return chunks.join('');
 }
 
+/**
+ * Reads the undici response body as raw bytes, aborting via `abortController`
+ * if the byte count exceeds `maxBytes`.
+ *
+ * @returns The full response body as a Buffer.
+ * @throws A {@link SafeFetchBlocked} object when the body exceeds `maxBytes`.
+ */
+async function readBodyCappedBuffer(
+    body: Dispatcher.ResponseData['body'],
+    maxBytes: number,
+    abortController: AbortController
+): Promise<Buffer> {
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    for await (const chunk of body) {
+        const value = chunk as Uint8Array;
+        totalBytes += value.byteLength;
+        if (totalBytes > maxBytes) {
+            abortController.abort();
+            throwBlocked(`Response body exceeds maximum allowed size of ${maxBytes} bytes`);
+        }
+        chunks.push(value);
+    }
+
+    return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -377,7 +421,15 @@ export async function safeExternalFetch(input: SafeFetchInput): Promise<SafeFetc
     } = input;
 
     try {
-        return await _doFetch({ url, timeoutMs, maxBytes, maxRedirects, headers, resolveOnly });
+        return (await _doFetch({
+            url,
+            timeoutMs,
+            maxBytes,
+            maxRedirects,
+            headers,
+            resolveOnly,
+            responseType: 'text'
+        })) as SafeFetchResult;
     } catch (err) {
         // Internal `throwBlocked` calls land here — they are plain objects, not
         // Error instances, shaped as SafeFetchBlocked.
@@ -386,6 +438,47 @@ export async function safeExternalFetch(input: SafeFetchInput): Promise<SafeFetc
         }
 
         // Genuine unexpected errors (network failure, etc.)
+        const message = err instanceof Error ? err.message : String(err);
+        return { ok: false, status: 0, error: message, blocked: true };
+    }
+}
+
+/**
+ * SSRF-hardened external fetch that returns the response body as raw bytes.
+ *
+ * Use this for binary downloads (for example images) when the same SSRF
+ * protections as {@link safeExternalFetch} are required.
+ *
+ * @param input - Fetch options (URL is required; all others have safe defaults).
+ * @returns A {@link SafeFetchBufferResult} — never throws.
+ */
+export async function safeExternalFetchBuffer(
+    input: SafeFetchInput
+): Promise<SafeFetchBufferResult> {
+    const {
+        url,
+        timeoutMs = 8_000,
+        maxBytes = 3_000_000,
+        maxRedirects = 3,
+        headers = {},
+        resolveOnly = false
+    } = input;
+
+    try {
+        return (await _doFetch({
+            url,
+            timeoutMs,
+            maxBytes,
+            maxRedirects,
+            headers,
+            resolveOnly,
+            responseType: 'buffer'
+        })) as SafeFetchBufferResult;
+    } catch (err) {
+        if (isBlockedShape(err)) {
+            return err;
+        }
+
         const message = err instanceof Error ? err.message : String(err);
         return { ok: false, status: 0, error: message, blocked: true };
     }
@@ -414,10 +507,11 @@ interface FetchParams {
     readonly maxRedirects: number;
     readonly headers: Readonly<Record<string, string>>;
     readonly resolveOnly: boolean;
+    readonly responseType: 'text' | 'buffer';
 }
 
-async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
-    const { timeoutMs, maxBytes, maxRedirects, headers, resolveOnly } = params;
+async function _doFetch(params: FetchParams): Promise<SafeFetchResult | SafeFetchBufferResult> {
+    const { timeoutMs, maxBytes, maxRedirects, headers, resolveOnly, responseType } = params;
     let currentUrl = params.url;
     let hopsRemaining = maxRedirects;
 
@@ -512,6 +606,21 @@ async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
                 }
 
                 // --- Stream body with cap ---
+                if (responseType === 'buffer') {
+                    const body = await readBodyCappedBuffer(
+                        response.body,
+                        maxBytes,
+                        abortController
+                    );
+
+                    return {
+                        ok: true,
+                        status: response.statusCode,
+                        body,
+                        finalUrl: currentUrl
+                    };
+                }
+
                 const body = await readBodyCapped(response.body, maxBytes, abortController);
 
                 return {

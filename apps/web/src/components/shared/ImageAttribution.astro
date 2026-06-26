@@ -1,0 +1,122 @@
+---
+/**
+ * @file ImageAttribution.astro
+ * @description Renders visible attribution for stock images from Unsplash/Pexels.
+ * Shows "Photo by [photographer] on [provider]" with a link to the photographer's profile.
+ *
+ * Requirements (SPEC-274):
+ * - Visible attribution (not just alt text) per Unsplash/Pexels API terms
+ * - Link to photographer profile with rel="nofollow"
+ * - Only renders when attribution data exists (gracefully skips for user uploads)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Attribution {
+    readonly photographer: string;
+    readonly sourceUrl: string;
+    readonly license: string;
+    readonly provider: 'unsplash' | 'pexels';
+}
+
+interface Props {
+    readonly attribution: Attribution;
+    readonly locale: SupportedLocale;
+    readonly variant?: 'overlay' | 'inline';
+}
+
+const { attribution, locale, variant = 'inline' } = Astro.props;
+const { t } = createTranslations(locale);
+
+const providerName = attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels';
+
+---
+
+{attribution && (
+    <div class="image-attribution" data-variant={variant}>
+        <span class="image-attribution__text">
+            {variant === 'overlay' ? (
+                <>
+                    {t('common.attribution.byline')}
+                    <a
+                        href={attribution.sourceUrl}
+                        class="image-attribution__link"
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        aria-label={t('common.attribution.ariaLabel', undefined, {
+                            photographer: attribution.photographer,
+                            provider: providerName
+                        })}
+                    >
+                        {attribution.photographer}
+                    </a>
+                    {t('common.attribution.onProvider', undefined, { provider: providerName })}
+                </>
+            ) : (
+                <>
+                    {t('common.attribution.byline')}
+                    <a
+                        href={attribution.sourceUrl}
+                        class="image-attribution__link"
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        aria-label={t('common.attribution.ariaLabel', undefined, {
+                            photographer: attribution.photographer,
+                            provider: providerName
+                        })}
+                    >
+                        {attribution.photographer}
+                    </a>
+                    {t('common.attribution.onProvider', undefined, { provider: providerName })}
+                </>
+            )}
+        </span>
+    </div>
+)}
+
+<style>
+    .image-attribution {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1, 4px);
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        color: var(--core-muted-foreground);
+        transition: opacity 0.3s ease;
+    }
+
+    .image-attribution[data-variant="overlay"] {
+        position: absolute;
+        bottom: var(--space-2, 8px);
+        left: var(--space-2, 8px);
+        right: var(--space-2, 8px);
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: var(--space-1, 4px) var(--space-2, 8px);
+        border-radius: var(--radius-pill, 9999px);
+        max-width: fit-content;
+    }
+
+    .image-attribution[data-variant="inline"] {
+        margin-top: var(--space-2, 8px);
+    }
+
+    .image-attribution__link {
+        color: var(--core-foreground);
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .image-attribution__link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .image-attribution,
+        .image-attribution__link {
+            transition: none;
+        }
+    }
+</style>
