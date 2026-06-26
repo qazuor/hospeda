@@ -66,6 +66,9 @@ export interface UseSearchChatParams {
  * @property currentReply - Streamed reply text accumulator (shown live while streaming).
  * @property isStreaming - True from `send()` until `done` / `error` arrives.
  * @property conversationId - Server conversation id from the last `done` event (nullable).
+ * @property confidence - Model's self-assessed extraction confidence from the last `filters` event (SPEC-265 A1).
+ *   `null` when no turn has completed yet. Used internally to trigger the low-confidence
+ *   message — no numeric badge is shown to the user.
  * @property error - Surface-level error message from `error` or `stream_error` events.
  * @property send - Send a user message and start a new streaming turn.
  * @property removeFilter - Drop a key from accumulated filters and re-run the accommodations search without a new LLM turn.
@@ -79,6 +82,7 @@ export interface UseSearchChatReturn {
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
+    readonly confidence: number | null;
     readonly error: string | null;
     readonly send: (message: string) => void;
     readonly removeFilter: (key: keyof SearchIntentEntities) => void;
@@ -103,6 +107,7 @@ interface SearchChatState {
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
+    readonly confidence: number | null;
     readonly error: string | null;
 }
 
@@ -115,6 +120,7 @@ const INITIAL_STATE: SearchChatState = {
     currentReply: '',
     isStreaming: false,
     conversationId: null,
+    confidence: null,
     error: null
 };
 
@@ -280,11 +286,14 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                     if (event.type === 'filters') {
                         // Store the accumulated intent (used by chips T-011)
                         // and immediately fire the accommodations search.
+                        // Store confidence (SPEC-265 A1) for the low-confidence UI.
                         const newFilters = event.filters.intent;
+                        const newConfidence = event.filters.confidence ?? null;
                         setState((prev) => ({
                             ...prev,
                             currentFilters: newFilters,
-                            lastSearchParams: event.filters.params
+                            lastSearchParams: event.filters.params,
+                            confidence: newConfidence
                         }));
                         void fetchAccommodations(event.filters.params);
                         return;
@@ -407,6 +416,7 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         currentReply: state.currentReply,
         isStreaming: state.isStreaming,
         conversationId: state.conversationId,
+        confidence: state.confidence,
         error: state.error,
         send,
         removeFilter,

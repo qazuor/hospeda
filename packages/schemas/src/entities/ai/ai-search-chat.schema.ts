@@ -53,10 +53,15 @@ export type AiSearchChatRequest = z.infer<typeof AiSearchChatRequestSchema>;
  *
  * @property params - URL-ready accommodation search params the frontend passes to `GET /api/v1/public/accommodations`.
  * @property intent - The full extracted filter slot bag, used to render the removable active-filter chips.
+ * @property confidence - Model's self-assessed extraction confidence in [0, 1] (SPEC-265 A1).
+ *   Optional for additive compatibility — the route always sends it, but older
+ *   clients that ignore unknown keys are unaffected. Used internally by the UI
+ *   to trigger `lowConfidenceMessage` when below threshold; no numeric badge.
  */
 export const AiSearchChatFiltersEventSchema = z.object({
     params: AccommodationSearchHttpSchema,
-    intent: SearchIntentEntitiesSchema
+    intent: SearchIntentEntitiesSchema,
+    confidence: z.number().min(0).max(1).optional()
 });
 
 export type AiSearchChatFiltersEvent = z.infer<typeof AiSearchChatFiltersEventSchema>;
