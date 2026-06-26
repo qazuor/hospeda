@@ -549,6 +549,56 @@
     outline-offset: 2px;
 }
 
+/* ─── Char counter (SPEC-265 C2) ─────────────────────────────────────────────
+   Shows {n}/500 below the textarea. Muted color so it doesn't compete
+   with the input. Right-aligned within the composer row.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.charCounter {
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: var(--core-muted-foreground, #6b7280);
+    flex-shrink: 0;
+    align-self: flex-end;
+    padding-bottom: 0.625rem;
+    margin-right: 0.25rem;
+    user-select: none;
+}
+
+/* ─── Stop button (SPEC-265 C1) ──────────────────────────────────────────────
+   Replaces the send button while streaming. Amber/warning palette to
+   signal "this is a cancel action", not a submit.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.stopButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    padding: 0 1rem;
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background-color: var(--brand-accent, #f97316);
+    color: #ffffff;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+    align-self: flex-end;
+}
+
+.stopButton:hover {
+    background-color: color-mix(in srgb, var(--brand-accent, #f97316) 90%, black);
+}
+
+.stopButton:focus-visible {
+    outline: 2px solid var(--brand-accent, #f97316);
+    outline-offset: 2px;
+}
+
 /* ─── Reset button ────────────────────────────────────────────────────────────
    Shown when user wants to start a fresh conversation.
    ─────────────────────────────────────────────────────────────────────────── */

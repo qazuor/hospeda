@@ -9,6 +9,7 @@
         "placeholder": "Tell me what you're looking for, e.g. cabin for 4 with a pool near the river",
         "send": "Send message",
         "sending": "Sending…",
+        "stop": "Stop",
         "thinking": "Thinking…",
         "newConversation": "New conversation",
         "errorDefault": "An error occurred. Please try again.",

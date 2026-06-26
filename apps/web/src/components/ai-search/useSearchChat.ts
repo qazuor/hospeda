@@ -84,8 +84,22 @@ export interface UseSearchChatReturn {
     readonly conversationId: string | null;
     readonly confidence: number | null;
     readonly error: string | null;
+    /**
+     * HTTP status code from the last `stream_error` event (SPEC-265 C3).
+     * `null` when no error occurred, or when the error was an SSE-level
+     * `error` event (no HTTP status). `0` = network-level failure.
+     * The UI uses this to classify: 429 → rateLimitError, 5xx → serviceError.
+     */
+    readonly errorStatus: number | null;
     readonly send: (message: string) => void;
     readonly removeFilter: (key: keyof SearchIntentEntities) => void;
+    /**
+     * Abort the current streaming turn (SPEC-265 C1). Stops the SSE stream
+     * via the AbortController and resets `isStreaming` to false. The
+     * accumulated reply text and filters are preserved — only the streaming
+     * state is cleared. Safe to call when not streaming (no-op).
+     */
+    readonly abort: () => void;
     readonly reset: () => void;
 }
 
@@ -109,6 +123,7 @@ interface SearchChatState {
     readonly conversationId: string | null;
     readonly confidence: number | null;
     readonly error: string | null;
+    readonly errorStatus: number | null;
 }
 
 const INITIAL_STATE: SearchChatState = {
@@ -121,7 +136,8 @@ const INITIAL_STATE: SearchChatState = {
     isStreaming: false,
     conversationId: null,
     confidence: null,
-    error: null
+    error: null,
+    errorStatus: null
 };
 
 /**
@@ -331,7 +347,8 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             ...prev,
                             currentReply: '',
                             isStreaming: false,
-                            error: event.message
+                            error: event.message,
+                            errorStatus: null
                         }));
                         return;
                     }
@@ -341,7 +358,8 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             ...prev,
                             currentReply: '',
                             isStreaming: false,
-                            error: event.error.message
+                            error: event.error.message,
+                            errorStatus: event.status
                         }));
                     }
                 }
@@ -406,6 +424,24 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         setState(INITIAL_STATE);
     }, []);
 
+    // ─── abort ───────────────────────────────────────────────────────────────
+
+    /**
+     * Abort the current streaming turn (SPEC-265 C1).
+     *
+     * Signals the AbortController to cancel the in-flight SSE stream and
+     * resets `isStreaming` to false. The accumulated reply text, filters,
+     * and conversation state are preserved — only the streaming flag is
+     * cleared. Safe to call when not streaming (no-op).
+     */
+    const abort = useCallback((): void => {
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
+        setState((prev) =>
+            prev.isStreaming ? { ...prev, isStreaming: false, currentReply: '' } : prev
+        );
+    }, []);
+
     // ─── Return ──────────────────────────────────────────────────────────────
 
     return {
@@ -418,8 +454,10 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         conversationId: state.conversationId,
         confidence: state.confidence,
         error: state.error,
+        errorStatus: state.errorStatus,
         send,
         removeFilter,
+        abort,
         reset
     };
 }

@@ -26,7 +26,6 @@
  * @module SearchChatPanel
  */
 
-import { Spinner } from '@/components/shared/feedback/Spinner';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -76,6 +75,13 @@ const SKELETON_COUNT = 3;
  * user reformulate their query. No numeric badge is shown.
  */
 const LOW_CONFIDENCE_THRESHOLD = 0.4;
+
+/**
+ * Maximum content length for chat messages (SPEC-265 C2).
+ * Matches the `.max(500)` on `AiChatMessageSchema.content` — the textarea
+ * `maxLength` and the char counter both reference this constant.
+ */
+const MAX_CONTENT_LENGTH = 500;
 
 /** Stable keys for the decorative loading skeletons (avoids array-index keys). */
 const SKELETON_KEYS: readonly string[] = Array.from(
@@ -261,6 +267,23 @@ export function SearchChatPanel({
     const isLowConfidence =
         !chat.isStreaming && chat.confidence !== null && chat.confidence < LOW_CONFIDENCE_THRESHOLD;
 
+    // Classified error copy (SPEC-265 C3): map HTTP status to translated
+    // i18n keys instead of showing raw "HTTP 429" / provider messages.
+    // 429 → rateLimitError, 5xx → serviceError, fallback → raw error string.
+    const displayError = (() => {
+        if (!chat.error) return null;
+        if (chat.errorStatus === 429) {
+            return t('aiSearch.rateLimitError', 'Demasiadas búsquedas. Esperá un momento.');
+        }
+        if (chat.errorStatus !== null && chat.errorStatus >= 500) {
+            return t(
+                'aiSearch.serviceError',
+                'El servicio no está disponible en este momento. Intentá de nuevo más tarde.'
+            );
+        }
+        return chat.error;
+    })();
+
     // Build redirect URLs for the login CTA shown to anonymous visitors (W14).
     const loginHref = buildLoginRedirect({ locale, currentUrl });
     const registerHref = `/${locale}/auth/signup/`;
@@ -400,14 +423,15 @@ export function SearchChatPanel({
                     />
                 </div>
 
-                {/* Error banner */}
-                {chat.error && (
+                {/* Error banner — classified copy (SPEC-265 C3) */}
+                {displayError && (
                     <div
                         className={styles.errorBanner}
                         role="alert"
                         aria-live="assertive"
+                        data-testid="ai-search-error"
                     >
-                        {chat.error}
+                        {displayError}
                     </div>
                 )}
 
@@ -530,20 +554,38 @@ export function SearchChatPanel({
                     onKeyDown={handleKeyDown}
                     disabled={chat.isStreaming}
                     rows={2}
+                    maxLength={MAX_CONTENT_LENGTH}
                     aria-disabled={chat.isStreaming}
                 />
-                <button
-                    type="submit"
-                    className={styles.sendButton}
-                    disabled={chat.isStreaming || !draft.trim()}
-                    aria-label={
-                        chat.isStreaming
-                            ? t('aiSearch.chat.sending', 'Enviando…')
-                            : t('aiSearch.chat.send', 'Enviar mensaje')
-                    }
+                {/* Char counter (SPEC-265 C2) */}
+                <span
+                    className={styles.charCounter}
+                    aria-live="off"
+                    data-testid="ai-search-char-count"
                 >
-                    {chat.isStreaming ? <Spinner size="sm" /> : '↑'}
-                </button>
+                    {t('aiSearch.charCount', '{{count}}/500', { count: draft.length })}
+                </span>
+                {chat.isStreaming ? (
+                    /* Stop button — aborts the current stream (SPEC-265 C1) */
+                    <button
+                        type="button"
+                        className={styles.stopButton}
+                        onClick={chat.abort}
+                        aria-label={t('aiSearch.chat.stop', 'Detener')}
+                        data-testid="ai-search-stop"
+                    >
+                        {t('aiSearch.chat.stop', 'Detener')}
+                    </button>
+                ) : (
+                    <button
+                        type="submit"
+                        className={styles.sendButton}
+                        disabled={!draft.trim()}
+                        aria-label={t('aiSearch.chat.send', 'Enviar mensaje')}
+                    >
+                        {'↑'}
+                    </button>
+                )}
             </form>
         </section>
     );
