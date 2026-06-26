@@ -2242,6 +2242,54 @@
             "base": "staging",
             "origin": "Surfaced during SPEC-282 review: CAN_VIEW_SEARCH_HISTORY is a phantom gate. Build search history with per-plan differences.",
             "tags": ["tourist", "search-history", "entitlements", "web"]
+        },
+        {
+            "specId": "SPEC-290",
+            "title": "Owner Review Responses",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-290-owner-review-responses",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 owner-side audit: RESPOND_REVIEWS is a phantom gate (no reply endpoint, no owner_reply column). Build owner replies to reviews.",
+            "tags": ["owner", "reviews", "entitlements", "web", "api"]
+        },
+        {
+            "specId": "SPEC-291",
+            "title": "Accommodation Verification Badge",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-291-accommodation-verification-badge",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 owner-side audit: HAS_VERIFICATION_BADGE is dead filter code (no DB column, no producer, no render). Build the verification badge.",
+            "tags": ["owner", "verification", "trust", "entitlements", "web"]
+        },
+        {
+            "specId": "SPEC-292",
+            "title": "Featured Listing Management",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-292-featured-listing-management",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 owner-side audit: accommodation.isFeatured has a DB column + search sort + a cosmetic admin toggle, but NO API route sets it and FEATURED_LISTING is never enforced. Make featuring real and entitlement-wired.",
+            "tags": ["owner", "featured", "admin", "entitlements", "search"]
+        },
+        {
+            "specId": "SPEC-293",
+            "title": "Owner Custom Branding",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-293-owner-custom-branding",
+            "created": "2026-06-26T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-282 owner-side audit: CUSTOM_BRANDING is a billing flag only (no DB field, route, or UI). Define and build custom branding for premium owners.",
+            "tags": ["owner", "branding", "entitlements", "web"]
         }
     ]
 }
