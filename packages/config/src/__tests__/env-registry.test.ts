@@ -97,12 +97,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 234 (NOSPEC import-apify-timeout): +1 HOSPEDA_IMPORT_APIFY_TIMEOUT_MS
  * (separate Apify actor timeout from the short JSON-LD fetch timeout).
  *
- * 237 (SPEC-274): +2 image provider API keys:
+ * 238 (staging merge: SPEC-274 included): +2 image provider API keys:
  * - HOSPEDA_UNSPLASH_ACCESS_KEY (Unsplash API for stock image search)
  * - HOSPEDA_PEXELS_API_KEY (Pexels API for stock image search)
  * (integrations category, both optional, secret=false)
  */
-const EXPECTED_VAR_COUNT = 237;
+const EXPECTED_VAR_COUNT = 238;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
