@@ -72,6 +72,16 @@
         "query1": "Cabana para 4 pessoas com piscina",
         "query2": "Hotel perto do rio com estacionamento",
         "query3": "Apartamento com WiFi para 2 hóspedes",
-        "query4": "Casa que aceita animais, até 6 pessoas"
+        "query4": "Casa que aceita animais, até 6 pessoas",
+        "typeApartment": "Apartamento mobiliado no centro da cidade",
+        "typeHouse": "Casa com jardim e churrasqueira para fim de semana",
+        "typeCountryHouse": "Chácara com piscina e espaço para 8 pessoas",
+        "typeCabin": "Cabana com hidromassagem e vista para o rio",
+        "typeHotel": "Hotel com café da manhã incluído perto do centro",
+        "typeHostel": "Hostel com quartos compartilhados perto do terminal",
+        "typeCamping": "Camping com serviços perto da costa",
+        "typeRoom": "Quarto privado com banheiro compartilhado",
+        "typeMotel": "Motel com estacionamento e acesso direto",
+        "typeResort": "Resort all-inclusive frente ao rio"
     }
 }

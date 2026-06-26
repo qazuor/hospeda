@@ -54,6 +54,10 @@ import { useSearchChat } from './useSearchChat';
  *   `destinationsApi.list` result in the host page. When provided, the
  *   destination filter chip shows the real city name instead of a generic
  *   "Destino filtrado" label.
+ * @property pageType - Active accommodation type from the page URL (SPEC-265 B1b).
+ *   When set (e.g., 'CABIN'), a type-specific example query is prepended to the
+ *   empty-state example chips, tailoring the onboarding to the user's current
+ *   browsing context. Optional — falls back to the generic pool when absent.
  */
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
@@ -61,6 +65,7 @@ export interface SearchChatPanelProps {
     readonly isAuthenticated: boolean;
     readonly currentUrl: string;
     readonly destinations?: Readonly<Record<string, string>>;
+    readonly pageType?: string;
 }
 
 // ─── Skeleton constants ─────────────────────────────────────────────────────
@@ -95,6 +100,25 @@ const EXAMPLE_QUERY_KEYS = [
     'aiSearch.examples.query3',
     'aiSearch.examples.query4'
 ] as const;
+
+/**
+ * Maps accommodation type enum values to type-specific example query i18n keys
+ * (SPEC-265 B1b — context-aware onboarding). When the page has an active
+ * type context, the matching example is prepended to the pool, tailoring
+ * the suggestions to what the user is browsing.
+ */
+const TYPE_EXAMPLE_KEY: Record<string, string> = {
+    APARTMENT: 'aiSearch.examples.typeApartment',
+    HOUSE: 'aiSearch.examples.typeHouse',
+    COUNTRY_HOUSE: 'aiSearch.examples.typeCountryHouse',
+    CABIN: 'aiSearch.examples.typeCabin',
+    HOTEL: 'aiSearch.examples.typeHotel',
+    HOSTEL: 'aiSearch.examples.typeHostel',
+    CAMPING: 'aiSearch.examples.typeCamping',
+    ROOM: 'aiSearch.examples.typeRoom',
+    MOTEL: 'aiSearch.examples.typeMotel',
+    RESORT: 'aiSearch.examples.typeResort'
+};
 
 /** Stable keys for the decorative loading skeletons (avoids array-index keys). */
 const SKELETON_KEYS: readonly string[] = Array.from(
@@ -223,7 +247,8 @@ export function SearchChatPanel({
     apiUrl,
     isAuthenticated,
     currentUrl,
-    destinations
+    destinations,
+    pageType
 }: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
     const [draft, setDraft] = useState('');
@@ -279,6 +304,16 @@ export function SearchChatPanel({
         },
         [chat]
     );
+
+    // Context-aware example keys (SPEC-265 B1b): when pageType is set and has
+    // a matching type-specific example, prepend it to the generic pool.
+    const exampleKeys: readonly string[] = (() => {
+        const typeKey = pageType ? TYPE_EXAMPLE_KEY[pageType] : undefined;
+        if (typeKey) {
+            return [typeKey, ...EXAMPLE_QUERY_KEYS];
+        }
+        return EXAMPLE_QUERY_KEYS;
+    })();
 
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
@@ -403,7 +438,7 @@ export function SearchChatPanel({
                                 <span className={styles.exampleLabel}>
                                     {t('aiSearch.examples.label', 'Probá con estos ejemplos:')}
                                 </span>
-                                {EXAMPLE_QUERY_KEYS.map((key) => (
+                                {exampleKeys.map((key) => (
                                     <button
                                         key={key}
                                         type="button"

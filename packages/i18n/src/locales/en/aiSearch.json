@@ -72,6 +72,16 @@
         "query1": "Cabin for 4 guests with pool",
         "query2": "Hotel near the river with parking",
         "query3": "Apartment with WiFi for 2 guests",
-        "query4": "Pet-friendly house, up to 6 people"
+        "query4": "Pet-friendly house, up to 6 people",
+        "typeApartment": "Furnished apartment in the city center",
+        "typeHouse": "House with garden and BBQ for the weekend",
+        "typeCountryHouse": "Country house with pool and space for 8 guests",
+        "typeCabin": "Cabin with hot tub and river view",
+        "typeHotel": "Hotel with breakfast included near downtown",
+        "typeHostel": "Hostel with shared rooms near the bus terminal",
+        "typeCamping": "Camping with facilities near the coast",
+        "typeRoom": "Private room with shared bathroom",
+        "typeMotel": "Motel with parking and direct access",
+        "typeResort": "All-inclusive resort by the river"
     }
 }

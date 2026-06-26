@@ -45,7 +45,17 @@
         "query1": "Cabaña para 4 personas con pileta",
         "query2": "Hotel cerca del río con estacionamiento",
         "query3": "Apartamento con WiFi para 2 huéspedes",
-        "query4": "Casa que acepte mascotas, hasta 6 personas"
+        "query4": "Casa que acepte mascotas, hasta 6 personas",
+        "typeApartment": "Apartamento amoblado en el centro de la ciudad",
+        "typeHouse": "Casa con jardín y parrilla para fin de semana",
+        "typeCountryHouse": "Quinta con pileta y espacio para 8 personas",
+        "typeCabin": "Cabaña con hidromasaje y vista al río",
+        "typeHotel": "Hotel con desayuno incluido cerca del centro",
+        "typeHostel": "Hostel con habitaciones compartidas cerca de la terminal",
+        "typeCamping": "Camping con servicios cerca de la costa",
+        "typeRoom": "Habitación privada con baño compartido",
+        "typeMotel": "Motel con estacionamiento y acceso directo",
+        "typeResort": "Resort all-inclusive frente al río"
     },
     "chips": {
         "type": "Tipo: {{value}}",
