@@ -2,16 +2,16 @@
  * @file AiSearchEntry.client.tsx
  * @description Entry point + drawer wrapper for the AI search panel (SPEC-265 D).
  *
- * Implements the **hybrid layout** decision: a CTA entry point on the
- * accommodations listing page that expands into a focused drawer/modal
- * overlay containing the SearchChatPanel. Closing the drawer collapses
- * back to the entry point (absorbs C4).
+ * Implements the **hybrid layout** decision with progressive disclosure:
  *
- * Responsive:
- * - Desktop: right-side drawer (~520px wide, full height)
- * - Mobile: full-screen overlay
+ * 1. **Search-bar entry point** — a fake search input that looks like a natural
+ *    part of the listing page. Clicking it opens the drawer.
+ * 2. **Floating FAB** — when the search bar scrolls out of viewport, a floating
+ *    action button appears at the bottom-right so the AI search is always
+ *    accessible. Positioned above the FeedbackFAB to avoid overlap.
+ * 3. **Drawer overlay** — right-side on desktop, full-screen on mobile.
  *
- * Revives the previously-dead i18n keys `triggerLabel` (entry point button)
+ * Revives the previously-dead i18n keys `triggerLabel` (entry point)
  * and `panelTitle` (drawer header).
  *
  * @module AiSearchEntry
@@ -19,7 +19,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './AiSearchEntry.module.css';
 import { SearchChatPanel } from './SearchChatPanel.client';
 
@@ -39,12 +39,10 @@ export interface AiSearchEntryProps {
 }
 
 /**
- * AiSearchEntry — hybrid layout entry point + drawer (SPEC-265 D).
+ * AiSearchEntry — hybrid layout with progressive disclosure (SPEC-265 D).
  *
- * Renders a CTA button that opens a drawer overlay containing the
- * SearchChatPanel. The drawer is responsive: full-screen on mobile,
- * right-side drawer on desktop. Body scroll is locked while open,
- * and Escape closes the drawer.
+ * Renders a fake search-bar entry point that opens a drawer overlay.
+ * When the search bar scrolls out of viewport, a floating FAB appears.
  *
  * @example
  * ```astro
@@ -67,9 +65,31 @@ export function AiSearchEntry({
 }: AiSearchEntryProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
+    const [isFabVisible, setIsFabVisible] = useState(false);
+
+    // Ref to the search-bar entry point — used by IntersectionObserver to
+    // detect when it scrolls out of viewport and show the FAB.
+    const searchBarRef = useRef<HTMLButtonElement>(null);
 
     const handleOpen = useCallback((): void => setIsOpen(true), []);
     const handleClose = useCallback((): void => setIsOpen(false), []);
+
+    // IntersectionObserver: show FAB when search bar leaves viewport.
+    useEffect(() => {
+        const target = searchBarRef.current;
+        if (!target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    setIsFabVisible(!entry.isIntersecting);
+                }
+            },
+            { threshold: 0 }
+        );
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, []);
 
     // Lock body scroll while the drawer is open (SPEC-265 D).
     useEffect(() => {
@@ -93,22 +113,49 @@ export function AiSearchEntry({
 
     return (
         <>
-            {/* Entry point CTA — revives triggerLabel (SPEC-265 D) */}
+            {/* Search-bar entry point — looks like a natural search input.
+                 Revives triggerLabel (SPEC-265 D). */}
             <button
+                ref={searchBarRef}
                 type="button"
-                className={styles.entryButton}
+                className={styles.searchBar}
                 onClick={handleOpen}
                 aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
                 data-testid="ai-search-entry"
             >
                 <span
-                    className={styles.entryIcon}
+                    className={styles.searchBarIcon}
                     aria-hidden="true"
                 >
                     ✨
                 </span>
-                {t('aiSearch.triggerLabel', 'Buscá con IA')}
+                <span className={styles.searchBarPlaceholder}>
+                    {t(
+                        'aiSearch.chat.placeholder',
+                        'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+                    )}
+                </span>
+                <span
+                    className={styles.searchBarBadge}
+                    aria-hidden="true"
+                >
+                    IA
+                </span>
             </button>
+
+            {/* Floating FAB — appears when the search bar is out of viewport.
+                 Positioned above the FeedbackFAB (bottom: 5rem vs 1rem). */}
+            {isFabVisible && !isOpen && (
+                <button
+                    type="button"
+                    className={styles.fab}
+                    onClick={handleOpen}
+                    aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
+                    data-testid="ai-search-fab"
+                >
+                    <span aria-hidden="true">✨</span>
+                </button>
+            )}
 
             {/* Drawer overlay — revives panelTitle (SPEC-265 D).
                  Click on backdrop (not drawer) closes; Escape is handled by

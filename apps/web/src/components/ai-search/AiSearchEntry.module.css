@@ -5,44 +5,117 @@
  * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
  * Uses CSS custom properties from global.css; no hardcoded colour values.
  *
- * Layout: entry point CTA button → overlay → right-side drawer (desktop)
- * or full-screen (mobile).
+ * Layout: fake search-bar entry point → floating FAB on scroll →
+ * overlay → right-side drawer (desktop) or full-screen (mobile).
  */
 
-/* ─── Entry point CTA ─────────────────────────────────────────────────────────
-   A prominent button that invites the user to search with AI.
+/* ─── Search-bar entry point ──────────────────────────────────────────────────
+   Looks like a natural search input field, not a button. Integrates
+   seamlessly into the listing page layout. Clicking opens the drawer.
    ─────────────────────────────────────────────────────────────────────────── */
 
-.entryButton {
-    display: inline-flex;
+.searchBar {
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
     width: 100%;
-    padding: 0.875rem 1.5rem;
-    border: 1px solid var(--brand-primary, #2563eb);
-    border-radius: var(--radius-button, 0.5rem);
-    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.06);
-    color: var(--brand-primary, #2563eb);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
+    border-radius: var(--radius-md, 0.625rem);
+    background-color: var(--core-card, #ffffff);
+    color: var(--core-muted-foreground, #6b7280);
     font-family: var(--font-sans, sans-serif);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, border-color
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: text;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
         var(--duration-normal, 0.4s) ease;
+    box-shadow: 0 1px 3px -1px oklch(0 0 0 / 0.08);
 }
 
-.entryButton:hover {
-    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.12);
+.searchBar:hover {
+    border-color: var(--brand-primary, #2563eb);
+    box-shadow: 0 2px 8px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.15);
 }
 
-.entryButton:focus-visible {
+.searchBar:focus-visible {
     outline: 2px solid var(--brand-primary, #2563eb);
     outline-offset: 2px;
 }
 
-.entryIcon {
+.searchBarIcon {
     font-size: 1.125rem;
     line-height: 1;
+    flex-shrink: 0;
+}
+
+.searchBarPlaceholder {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+}
+
+.searchBarBadge {
+    flex-shrink: 0;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill, 9999px);
+    background: oklch(from var(--brand-primary, #2563eb) l c h / 0.1);
+    color: var(--brand-primary, #2563eb);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* ─── Floating FAB ────────────────────────────────────────────────────────────
+   Appears when the search bar scrolls out of viewport. Positioned
+   bottom-right, above the FeedbackFAB (which sits at ~1rem bottom).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.fab {
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--brand-primary, #2563eb);
+    color: #ffffff;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 16px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fabIn 0.25s ease;
+}
+
+.fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.5);
+}
+
+.fab:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 3px;
+}
+
+@keyframes fabIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* ─── Overlay backdrop ────────────────────────────────────────────────────────

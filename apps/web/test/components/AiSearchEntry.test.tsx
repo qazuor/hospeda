@@ -60,27 +60,31 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
         vi.restoreAllMocks();
     });
 
-    // ── Entry point ───────────────────────────────────────────────────────────
+    // ── Search-bar entry point ───────────────────────────────────────────────
 
-    describe('entry point CTA', () => {
-        it('renders the entry button with triggerLabel text', () => {
+    describe('search-bar entry point', () => {
+        it('renders the search bar with testid', () => {
             renderEntry();
-            const entryButton = screen.getByTestId('ai-search-entry');
-            expect(entryButton).toBeInTheDocument();
-            expect(entryButton.textContent).toContain('Buscá con IA');
+            expect(screen.getByTestId('ai-search-entry')).toBeInTheDocument();
         });
 
-        it('entry button is a <button> with type="button"', () => {
+        it('search bar shows the placeholder text', () => {
             renderEntry();
-            const entryButton = screen.getByTestId('ai-search-entry');
-            expect(entryButton.tagName).toBe('BUTTON');
-            expect(entryButton).toHaveAttribute('type', 'button');
+            const entry = screen.getByTestId('ai-search-entry');
+            // Mock t() returns the fallback — the placeholder text
+            expect(entry.textContent).toContain('Contame qué buscás');
         });
 
-        it('entry button has an aria-label', () => {
+        it('search bar is a <button> with type="button"', () => {
             renderEntry();
-            const entryButton = screen.getByTestId('ai-search-entry');
-            expect(entryButton).toHaveAttribute('aria-label');
+            const entry = screen.getByTestId('ai-search-entry');
+            expect(entry.tagName).toBe('BUTTON');
+            expect(entry).toHaveAttribute('type', 'button');
+        });
+
+        it('search bar has an aria-label', () => {
+            renderEntry();
+            expect(screen.getByTestId('ai-search-entry')).toHaveAttribute('aria-label');
         });
     });
 
@@ -153,6 +157,21 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
             fireEvent.click(screen.getByTestId('search-chat-panel-mock'));
 
             expect(screen.getByTestId('ai-search-overlay')).toBeInTheDocument();
+        });
+    });
+
+    // ── Floating FAB ──────────────────────────────────────────────────────────
+
+    describe('floating FAB', () => {
+        it('does not render the FAB before scrolling (search bar is visible)', () => {
+            renderEntry();
+            expect(screen.queryByTestId('ai-search-fab')).toBeNull();
+        });
+
+        it('does not render the FAB when drawer is open', () => {
+            renderEntry();
+            fireEvent.click(screen.getByTestId('ai-search-entry'));
+            expect(screen.queryByTestId('ai-search-fab')).toBeNull();
         });
     });
 
