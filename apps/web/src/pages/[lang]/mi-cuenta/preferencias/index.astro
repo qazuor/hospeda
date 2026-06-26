@@ -9,6 +9,7 @@
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PreferenceToggles } from '@/components/account/PreferenceToggles.client';
+import { RestartTour } from '@/components/account/RestartTour.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -34,6 +35,10 @@ const apiUrl = getApiUrl();
 		locale={locale}
 		apiUrl={apiUrl}
 	/>
+
+	<section class="account-tour-card">
+		<RestartTour client:idle locale={locale} userRole={user.role} />
+	</section>
 </AccountLayout>
 
 <style>
@@ -43,5 +48,55 @@ const apiUrl = getApiUrl();
 		font-size: clamp(1.5rem, 3vw, 2rem);
 		color: var(--core-foreground);
 		margin: 0 0 var(--space-6);
+	}
+
+	.account-tour-card {
+		margin-top: var(--space-6);
+		padding: var(--space-5);
+		border: 1px solid var(--core-foreground-a08);
+		border-radius: var(--radius-card);
+		background-color: var(--core-card);
+	}
+
+	:global(.restart-tour) {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	:global(.restart-tour__title) {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	:global(.restart-tour__desc) {
+		margin: 0;
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+	}
+
+	:global(.restart-tour__button) {
+		align-self: flex-start;
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--brand-primary-a30);
+		border-radius: var(--radius-button);
+		background-color: var(--core-card);
+		color: var(--brand-primary);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+	}
+
+	:global(.restart-tour__button:hover:enabled) {
+		background-color: var(--brand-primary);
+		color: var(--primary-foreground);
+	}
+
+	:global(.restart-tour__button:disabled) {
+		opacity: 0.6;
+		cursor: default;
 	}
 </style>

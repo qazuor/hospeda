@@ -1,4 +1,68 @@
 {
+    "whatsNewModal": {
+        "title": "Novidades",
+        "close": "Fechar",
+        "markAsRead": "Marcar como lido",
+        "markAllRead": "Marcar tudo como lido",
+        "noUnread": "Nenhuma novidade não lida",
+        "viewAll": "Ver todas as novidades",
+        "publishedAt": "Publicado em {{date}}"
+    },
+    "whatsNewBadge": {
+        "label": "Novidades",
+        "unseenCount": "{{count}} não lidas",
+        "labelNone": "Sem novidades"
+    },
+    "whatsNewPanel": {
+        "title": "Novidades",
+        "empty": "Nenhuma novidade ainda",
+        "markAllRead": "Marcar tudo como lido",
+        "seeEntry": "Ver"
+    },
+    "status": {
+        "new": "Novo"
+    },
+    "welcomeTour": {
+        "skip": "Pular tour",
+        "next": "Próximo",
+        "prev": "Anterior",
+        "done": "Concluir",
+        "step": "Passo {{current}} de {{total}}",
+        "restart": "Ver tour",
+        "running": "Tour em andamento...",
+        "greetingHost": {
+            "title": "Bem-vindo ao seu painel de hospedagem",
+            "body": "Daqui você pode gerenciar sua conta, seus imóveis e a atividade da sua acomodação."
+        },
+        "greetingCommerce": {
+            "title": "Bem-vindo ao seu painel comercial",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu negócio."
+        },
+        "properties": {
+            "title": "Seus imóveis",
+            "body": "Nesta seção você pode criar, editar e revisar todos os seus imóveis."
+        },
+        "hostDashboard": {
+            "title": "Painel do anfitrião",
+            "body": "Aqui você tem um resumo rápido da atividade das suas acomodações e consultas."
+        },
+        "messages": {
+            "title": "Suas consultas",
+            "body": "Revise e responda as mensagens relacionadas à sua atividade na Hospeda."
+        },
+        "promotions": {
+            "title": "Promoções",
+            "body": "Publique e gerencie promoções para destacar sua proposta."
+        },
+        "profile": {
+            "title": "Seu perfil",
+            "body": "Atualize suas informações pessoais, preferências e configurações da conta."
+        },
+        "commerce": {
+            "title": "Seu negócio",
+            "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
+        }
+    },
     "navigation": "Navegação da conta",
     "sections": "Seções da conta",
     "avatar": {
@@ -69,7 +133,13 @@
         "sections": {
             "appearance": "Aparência",
             "notifications": "Notificações",
-            "newsletter": "Newsletter"
+            "onboarding": "Onboarding",
+            "newsletter": "Boletim de novidades"
+        },
+        "onboarding": {
+            "restartTour": "Repetir tour de boas-vindas",
+            "restartTourDesc": "Veja novamente o tour guiado pelo painel da conta",
+            "restarting": "Iniciando tour..."
         },
         "theme": {
             "label": "Tema",
@@ -97,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Erro ao carregar as preferências"
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "subscription": {
@@ -331,6 +405,8 @@
                 "myMessagesDesc": "Conversas com anfitriões",
                 "newsletter": "Boletim de novidades",
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
+                "whatsNew": "Novidades",
+                "whatsNewDesc": "Novidades e atualizações da plataforma",
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
                 "hostDashboard": "Painel do anfitrião",
@@ -490,6 +566,10 @@
                 "previewError": "Não foi possível obter a prévia da mudança. Tente novamente.",
                 "changeError": "Não foi possível mudar o plano. Tente novamente."
             }
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "newsletter": {

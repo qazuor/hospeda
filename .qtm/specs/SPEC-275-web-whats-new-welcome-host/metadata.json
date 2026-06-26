@@ -3,13 +3,22 @@
     "title": "Web — What's New dialog + Welcome Tour for hosts and commerce owners in /mi-cuenta",
     "type": "feature",
     "complexity": "medium",
-    "status": "draft",
+    "status": "in-progress",
     "created": "2026-06-23T00:00:00Z",
     "decided": "2026-06-23",
     "modelFit": "basic",
-    "startedAt": null,
+    "startedAt": "2026-06-24",
     "approved": null,
     "completed": null,
     "planFileRef": null,
-    "tags": ["web", "host", "commerce", "whats-new", "welcome-tour", "onboarding", "ux", "mi-cuenta"]
+    "tags": [
+        "web",
+        "host",
+        "commerce",
+        "whats-new",
+        "welcome-tour",
+        "onboarding",
+        "ux",
+        "mi-cuenta"
+    ]
 }

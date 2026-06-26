@@ -1,0 +1,48 @@
+/* ─── Badge ─── */
+
+.badgeRoot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badgeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: var(--radius-button);
+    background: transparent;
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: background var(--duration-normal), color var(--duration-normal);
+}
+
+.badgeButton:hover {
+    background: var(--surface-warm);
+    color: var(--brand-primary);
+}
+
+.badgeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.countPill {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    display: flex;
+    min-width: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 9999px;
+    background: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
