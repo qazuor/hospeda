@@ -3096,6 +3096,25 @@
         "prioritization",
         "infra"
       ]
+    },
+    {
+      "specId": "SPEC-305",
+      "title": "Release Deploy Ledger (Env-Var + Merged-Spec Tracking)",
+      "type": "chore",
+      "complexity": "medium",
+      "status": "draft",
+      "path": "SPEC-305-release-deploy-ledger",
+      "created": "2026-06-27T00:00:00Z",
+      "base": "staging",
+      "origin": "Owner request (2026-06-27): maintain a running TEXT ledger of env-var deltas (added/removed/modified) per change so the VPS/Coolify env changes don't have to be re-investigated at release time, PLUS a running log of specs merged to staging (what entered, what to smoke-test). DISCOVERY-FIRST. Anchored in the env-registry + env:check:registry gate, which has 3 blind spots: Dockerfile ARGs, direct-process-env reads, optional->required Zod drift (BETA-100/101/102). Central tension OQ-1: incremental-manual vs auto-derived-at-release vs hybrid. Risk: no git tag at Coolify deploy time makes the auto-diff window hard.",
+      "tags": [
+        "devops",
+        "deploy",
+        "env",
+        "release",
+        "tracking",
+        "devx"
+      ]
     }
   ]
 }

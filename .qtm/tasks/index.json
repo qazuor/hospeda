@@ -998,6 +998,17 @@
       "base": "staging",
       "createdAt": "2026-06-27T00:00:00Z",
       "note": "Doc-only spec; tasks NOT atomized. Extract specs-prioritization.csv + render-specs-prioritization.py viewer to a branch-independent standalone tool. Key tension: estado/avance derive from branch-dependent index.json (agent dual-writes today). OQ-1 = how the standalone tool sources/refreshes derived data. Discovery-first."
+    },
+    {
+      "specId": "SPEC-305",
+      "title": "Release Deploy Ledger (Env-Var + Merged-Spec Tracking)",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-305-release-deploy-ledger",
+      "branch": null,
+      "base": "staging",
+      "createdAt": "2026-06-27T00:00:00Z",
+      "note": "Doc-only spec; tasks NOT atomized. Release/deploy ledger: track env-var deltas (what to hops env-set per app/env) + specs merged to staging (what to smoke-test), so deploy-prep stops being a manual re-audit (BETA-100/101/102). env:check gate has 3 blind spots (Dockerfile ARGs, direct-process-env, optional->required). Tension OQ-1: manual vs auto-derived vs hybrid. Discovery-first."
     }
   ],
   "standalone": {
