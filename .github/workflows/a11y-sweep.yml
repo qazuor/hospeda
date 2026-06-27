@@ -27,7 +27,10 @@ env:
   HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
   PUBLIC_SENTRY_DSN: ''
   PUBLIC_POSTHOG_KEY: ''
-  NODE_ENV: production
+  # NODE_ENV is intentionally NOT set to production at the job level: a
+  # production install skips devDependencies (husky, turbo, playwright, …),
+  # which breaks `pnpm install` and the turbo build. It is applied only to the
+  # server-runtime steps below, where production behaviour is actually wanted.
   API_PORT: 3001
   API_HOST: 0.0.0.0
   API_LOG_FORMAT: json
@@ -76,6 +79,8 @@ jobs:
         run: pnpm --filter web exec playwright install chromium --with-deps
 
       - name: Start API server
+        env:
+          NODE_ENV: production
         run: |
           node apps/api/dist/index.js &
           for i in $(seq 1 30); do
@@ -87,6 +92,8 @@ jobs:
           done
 
       - name: Start web server
+        env:
+          NODE_ENV: production
         run: |
           node apps/web/dist/server/entry.mjs &
           for i in $(seq 1 30); do
