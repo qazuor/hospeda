@@ -67,14 +67,25 @@ const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
 ];
 
 /**
- * The cumulative **tourist-VIP limit tier** (all unlimited). Inherited by every
- * owner/complex plan alongside {@link TOURIST_VIP_ENTITLEMENTS}, via
- * {@link mergeLimits} (plan-specific limits stay authoritative).
+ * The cumulative **tourist-VIP limit tier**. Inherited by every owner/complex
+ * plan alongside {@link TOURIST_VIP_ENTITLEMENTS}, via {@link mergeLimits}
+ * (plan-specific limits stay authoritative).
+ *
+ * Favorites/alerts/compare are unlimited at this tier. The AI consumer quotas
+ * (search + consumer-side chat) are the graduated top-tier value (200/month)
+ * shared by tourist-VIP and every owner/complex plan as a CONSUMER
+ * (SPEC-283 §5, OQ-4). They carry NO entitlement: `ai_search` is auth-baseline
+ * and the consumer-side chat quota is gated by count only — having the limit
+ * without the entitlement is the intended two-sided model. tourist-free/plus
+ * override these with lower values.
  */
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
     limit(LimitKey.MAX_ACTIVE_ALERTS, -1),
-    limit(LimitKey.MAX_COMPARE_ITEMS, -1)
+    limit(LimitKey.MAX_COMPARE_ITEMS, -1),
+    // AI consumer quotas — graduated top tier (SPEC-283).
+    limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
+    limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200)
 ];
 
 // ─── OWNER PLANS ───────────────────────────────────────────────
@@ -105,7 +116,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -116,7 +127,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 200)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -154,7 +166,7 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -165,7 +177,8 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 500)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -205,7 +218,7 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -217,7 +230,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 2000)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -250,7 +264,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -262,7 +276,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 300),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 300)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -304,7 +319,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -316,7 +331,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 500)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -360,7 +376,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
         EntitlementKey.AI_ACCOMMODATION_IMPORT
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
@@ -373,7 +389,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000),
         limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000),
         limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 5000)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
+        // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
 };
 
@@ -398,13 +415,15 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         EntitlementKey.READ_REVIEWS,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS
         // ai_chat removed from tourist plans (SPEC-211 T-003)
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, 3)
-        // MAX_AI_CHAT_PER_MONTH removed from tourist plans (SPEC-211 T-003)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        limit(LimitKey.MAX_FAVORITES, 3),
+        // AI consumer quotas — entry tier (SPEC-283 §5). ai_chat stays
+        // owner-governed; this consumer-side quota only caps the tourist's usage.
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 10),
+        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 10)
     ]
 };
 
@@ -434,15 +453,16 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
         // ai_chat removed from tourist plans (SPEC-211 T-003)
-        // ai_search removed from all plans (SPEC-211 T-004)
+        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_FAVORITES, 20),
         limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 4)
-        // MAX_AI_CHAT_PER_MONTH removed from tourist plans (SPEC-211 T-003)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
+        limit(LimitKey.MAX_COMPARE_ITEMS, 4),
+        // AI consumer quotas — mid tier (SPEC-283 §5).
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
+        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50)
     ]
 };
 
