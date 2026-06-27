@@ -20,7 +20,9 @@
  *   1. Defensive: actor missing or GUEST → 401.
  *   2. billingLoadFailed=true → 503 (billing service unavailable).
  *   3. Entitlement gate: user lacks `AI_<feature>` entitlement → 403
- *      ENTITLEMENT_REQUIRED with upgrade hint.
+ *      ENTITLEMENT_REQUIRED with upgrade hint. Skipped when the middleware is
+ *      created with `{ skipEntitlementGate: true }` (auth-baseline features
+ *      such as `ai_search` — per-plan quota, no entitlement gate).
  *   4. Limit gate: plan limit value is 0 (feature disabled) → 403
  *      LIMIT_REACHED immediately (no DB query needed).
  *      Plan limit value is -1 (unlimited) → pass (skip DB count query).
@@ -109,6 +111,26 @@ export const AI_LIMIT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, LimitKey>
 // ---------------------------------------------------------------------------
 
 /**
+ * Options for {@link createAiQuotaMiddleware}.
+ */
+export type AiQuotaMiddlewareOptions = {
+    /**
+     * When `true`, the entitlement gate (step 3) is skipped: the middleware
+     * enforces only the per-plan monthly limit (steps 1/2/4/5) without
+     * requiring the `AI_<feature>` entitlement.
+     *
+     * Use this for **auth-baseline** AI features — features available to every
+     * authenticated user with a per-plan quota but NO plan entitlement gate.
+     * `ai_search` is the canonical case (SPEC-283 OQ-1): no plan grants
+     * `AI_SEARCH`, so without this flag the middleware would reject every
+     * request with 403 ENTITLEMENT_REQUIRED.
+     *
+     * @defaultValue `false` (entitlement gate enforced — existing behavior).
+     */
+    readonly skipEntitlementGate?: boolean;
+};
+
+/**
  * Factory that creates an AI quota enforcement middleware for a specific
  * AI feature.
  *
@@ -116,8 +138,11 @@ export const AI_LIMIT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, LimitKey>
  * (both requirements are satisfied by the protected route factories
  * `createProtectedStreamingRoute` / `createProtectedRoute`).
  *
- * @param feature - The AI feature to enforce quota for. One of
- *   `'text_improve' | 'chat' | 'search' | 'support'`.
+ * @param feature - The AI feature to enforce quota for (a
+ *   {@link QuotaGatedAiFeature}).
+ * @param options - Optional behavior overrides. Pass
+ *   `{ skipEntitlementGate: true }` for auth-baseline features that have a
+ *   per-plan quota but no entitlement gate (see {@link AiQuotaMiddlewareOptions}).
  * @returns A Hono {@link MiddlewareHandler} that enforces the quota for
  *   the given feature before calling `next()`.
  *
@@ -130,10 +155,14 @@ export const AI_LIMIT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, LimitKey>
  *   middlewares: [createAiQuotaMiddleware('text_improve')],
  *   streamHandler: async (c) => { ... },
  * });
+ *
+ * // Auth-baseline feature (per-plan quota, no entitlement gate):
+ * createAiQuotaMiddleware('search', { skipEntitlementGate: true });
  * ```
  */
 export function createAiQuotaMiddleware(
-    feature: QuotaGatedAiFeature
+    feature: QuotaGatedAiFeature,
+    options?: AiQuotaMiddlewareOptions
 ): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
         // ----------------------------------------------------------------
@@ -182,23 +211,29 @@ export function createAiQuotaMiddleware(
         // The user must have the plan-level entitlement for this AI feature.
         // If not, return 403 ENTITLEMENT_REQUIRED with an upgrade hint —
         // mirroring the exact pattern from tourist-entitlements.ts:68.
+        //
+        // Skipped entirely for auth-baseline features (skipEntitlementGate):
+        // those have a per-plan quota but no entitlement, so enforcing this
+        // gate would reject every request (no plan grants the entitlement).
         // ----------------------------------------------------------------
-        const requiredEntitlement = AI_ENTITLEMENT_BY_FEATURE[feature];
+        if (!options?.skipEntitlementGate) {
+            const requiredEntitlement = AI_ENTITLEMENT_BY_FEATURE[feature];
 
-        if (!hasEntitlement(c, requiredEntitlement)) {
-            apiLogger.warn(
-                { userId: actor.id, feature, requiredEntitlement },
-                `createAiQuotaMiddleware: blocked — user lacks entitlement ${requiredEntitlement}`
-            );
+            if (!hasEntitlement(c, requiredEntitlement)) {
+                apiLogger.warn(
+                    { userId: actor.id, feature, requiredEntitlement },
+                    `createAiQuotaMiddleware: blocked — user lacks entitlement ${requiredEntitlement}`
+                );
 
-            throw new ServiceError(
-                ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                'Tu plan no incluye el uso de inteligencia artificial para esta función. Actualizá tu plan para acceder.',
-                {
-                    requiredEntitlement,
-                    upgradeUrl: '/billing/plans'
-                }
-            );
+                throw new ServiceError(
+                    ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                    'Tu plan no incluye el uso de inteligencia artificial para esta función. Actualizá tu plan para acceder.',
+                    {
+                        requiredEntitlement,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
+            }
         }
 
         // ----------------------------------------------------------------

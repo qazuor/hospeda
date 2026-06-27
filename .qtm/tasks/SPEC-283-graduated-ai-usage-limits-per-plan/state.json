@@ -1,0 +1,645 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-283",
+    "title": "Graduated Per-Plan AI Usage Limits",
+    "created": "2026-06-27T04:44:36.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Confirm OQ-3 numeric quota values with owner",
+            "description": "OQ-3 was deferred to implementation. The §5 placeholder values (tourist-free: 10, tourist-plus: 50, tourist-vip: 200, owner/complex: inherit tourist-vip = 200) must be confirmed or replaced before they are hardcoded in plans.config.ts and the extras migration.\n\nAction: present the §5 table to the owner and capture confirmed per-tier values for both MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH. Record the decision in engram under topic_key: spec/SPEC-283/quota-values.\n\nAcceptance criteria:\n- Confirmed numeric values for all plan tiers (tourist-free, tourist-plus, tourist-vip, owner/complex) for both new limits are documented and saved to engram.\n- No real -1 for any AI quota (cost-guardrail constraint from SPEC-211 §6.1 stays in force).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Present §5 placeholder table to owner",
+                    "completed": true
+                },
+                {
+                    "title": "Record confirmed values in engram (topic_key: spec/SPEC-283/quota-values)",
+                    "completed": true
+                }
+            ],
+            "tags": ["product", "decision"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:28:20.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add MAX_AI_CHAT_CONSUMER_PER_MONTH LimitKey to billing types, LIMIT_METADATA, and RESOURCE_NAMES",
+            "description": "The consumer-side chat quota requires a brand-new LimitKey that does not yet exist. Three files are exhaustive Record<LimitKey, …> maps — a missing entry is a TypeScript compile error — so all three must be updated atomically.\n\nFiles to change:\n1. packages/billing/src/types/plan.types.ts — add enum value `MAX_AI_CHAT_CONSUMER_PER_MONTH = 'max_ai_chat_consumer_per_month'` immediately after `MAX_AI_CHAT_PER_MONTH`, with JSDoc explaining it is the consumer-side (tourist/requesting-user) monthly quota distinct from the owner-side limit.\n2. packages/billing/src/config/limits.config.ts — add `[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: { name: 'AI chat interactions per month (consumer)', description: 'Monthly AI chat quota for the requesting (consuming) user. Distinct from MAX_AI_CHAT_PER_MONTH which meters the listing owner (SPEC-283).' }` to LIMIT_METADATA.\n3. apps/api/src/utils/limit-check.ts — add `max_ai_chat_consumer_per_month: 'conversaciones con IA por mes (consumidor)'` to RESOURCE_NAMES.\n\nNOTE: packages/billing/src/config/model-c-field-split.ts does NOT need updating. MODEL_C_FIELD_SPLIT classifies limits as logical facets (limitsKeysPresent / limitsValues), not individual keys — new keys are covered automatically by the existing `limitsKeysPresent: 'capability'` entry.\n\nNOTE: MAX_AI_SEARCH_PER_MONTH already exists in all three maps (it was removed only from plan config values in SPEC-211, not from the enum/metadata).\n\nAcceptance criteria:\n- `pnpm typecheck` passes with zero errors from the workspace root.\n- No other compilation failures introduced.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Add MAX_AI_CHAT_CONSUMER_PER_MONTH enum value to plan.types.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add LIMIT_METADATA entry in limits.config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add RESOURCE_NAMES entry in limit-check.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:28:20.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add ai_search per-plan limits and consumer chat quota values to plans.config.ts",
+            "description": "Restores MAX_AI_SEARCH_PER_MONTH (removed in SPEC-211 T-004) and adds MAX_AI_CHAT_CONSUMER_PER_MONTH to all 9 accommodation plans in packages/billing/src/config/plans.config.ts. Use values confirmed in T-001 (§5 placeholders: free=10, plus=50, vip=200, owner/complex inherit vip=200).\n\nChanges:\n1. TOURIST_VIP_LIMITS constant (~line 74): add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200)`. These propagate automatically to all owner/complex plans via mergeLimits inheritance (SPEC-216 OQ-4).\n2. TOURIST_FREE_PLAN limits array: add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 10)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 10)`.\n3. TOURIST_PLUS_PLAN limits array: add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50)`.\n4. TOURIST_VIP_PLAN limits: already spreads `[...TOURIST_VIP_LIMITS]` so it picks up both keys at 200 automatically.\n5. Owner/complex plans: inherit both keys at 200 from TOURIST_VIP_LIMITS via mergeLimits — no individual changes needed unless overriding.\n6. Remove all 'MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)' comments from every plan definition.\n\nCost guardrail: confirm no plan ends up with value -1 for the new keys.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- All 9 plans in ALL_PLANS have both MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH in their limits arrays.\n- No plan has value -1 for either new key.\n- Owner/complex plans carry value 200 for both keys.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-005", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add both new limit keys to TOURIST_VIP_LIMITS const",
+                    "completed": true
+                },
+                {
+                    "title": "Add both new limit keys to TOURIST_FREE_PLAN limits",
+                    "completed": true
+                },
+                {
+                    "title": "Add both new limit keys to TOURIST_PLUS_PLAN limits",
+                    "completed": true
+                },
+                {
+                    "title": "Verify TOURIST_VIP_PLAN and owner/complex plans inherit correctly",
+                    "completed": true
+                },
+                {
+                    "title": "Remove all SPEC-211 T-004 removal comments",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "config"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/billing test"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:39:09.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add consumer-limit-reached i18n keys for ai_chat (es/en/pt)",
+            "description": "The chat route needs a distinct error message for the consumer-side quota-exhausted case, separate from the existing owner-side 'accommodations.aiChat.unavailable' (SPEC-211 copy). Add new keys to the aiChat namespace in all three locale files.\n\nFiles to change:\n1. packages/i18n/src/locales/es/accommodations.json — inside the 'aiChat' object, add:\n   - 'consumerLimitReached': 'Alcanzaste tu límite mensual de chats con IA. Actualizá tu plan para obtener más acceso.'\n   - 'consumerLimitUpgradeCta': 'Ver planes'\n2. packages/i18n/src/locales/en/accommodations.json — inside 'aiChat', add:\n   - 'consumerLimitReached': \"You've reached your monthly AI chat limit. Upgrade your plan for more access.\"\n   - 'consumerLimitUpgradeCta': 'View plans'\n3. packages/i18n/src/locales/pt/accommodations.json — inside 'aiChat', add:\n   - 'consumerLimitReached': 'Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.'\n   - 'consumerLimitUpgradeCta': 'Ver planos'\n\nAfter editing locale files, run `pnpm --filter @repo/i18n generate-types` to regenerate TypeScript type declarations.\n\nNote: no search-specific i18n changes needed — the middleware uses a hardcoded Spanish string and the frontend already has aiSearch.quotaExhausted.\n\nAcceptance criteria:\n- Keys present in all three locales.\n- `pnpm --filter @repo/i18n generate-types` succeeds with no errors.\n- No existing keys deleted.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add consumerLimitReached + consumerLimitUpgradeCta to es/accommodations.json aiChat namespace",
+                    "completed": true
+                },
+                {
+                    "title": "Add same keys to en/accommodations.json aiChat namespace",
+                    "completed": true
+                },
+                {
+                    "title": "Add same keys to pt/accommodations.json aiChat namespace",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/i18n generate-types",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "backend"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:23:56.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write idempotent Model C extras migration 023 for new AI limit keys",
+            "description": "Create packages/db/src/migrations/extras/023-billing-plans-ai-consumer-search-limits.plan.sql. The latest existing migration is 022-feature-flags-tables.table.sql.\n\nThis migration adds MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH to the `limits` JSONB column of every accommodation plan row in `billing_plans`. Must be idempotent (safe to re-apply) and OR-PRESERVE (never overwrite operator-set values).\n\nImplementation pattern (follow 014-spec211-ai-monetization.data.sql as model):\n- Use `UPDATE billing_plans SET limits = limits || jsonb_build_object('max_ai_search_per_month', <value>) WHERE slug = '<slug>' AND NOT (limits ? 'max_ai_search_per_month')` per plan slug × key.\n- Repeat for max_ai_chat_consumer_per_month.\n- Wrap in a single transaction.\n- Values: tourist-free=10, tourist-plus=50, tourist-vip=200, all owner-*/complex-*=200.\n- Exclude commerce-listing and partner-listing slugs.\n\nAcceptance criteria:\n- Migration applies cleanly on a fresh DB.\n- Re-application returns without error.\n- All accommodation plan slugs have both keys in their limits JSONB.\n- Pre-existing custom values are NOT overwritten.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Create 023-billing-plans-ai-consumer-search-limits.plan.sql with header comment",
+                    "completed": true
+                },
+                {
+                    "title": "Write idempotent UPDATE statements for max_ai_search_per_month (9 plan slugs)",
+                    "completed": true
+                },
+                {
+                    "title": "Write idempotent UPDATE statements for max_ai_chat_consumer_per_month (9 plan slugs)",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap in transaction with rollback on error",
+                    "completed": true
+                },
+                {
+                    "title": "Verify migration applies cleanly on a dev DB snapshot",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migrations", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pnpm --filter @repo/db test"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:36:09.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Extend createAiQuotaMiddleware to support skipEntitlementGate option for auth-baseline features",
+            "description": "apps/api/src/middlewares/ai-quota.ts — `createAiQuotaMiddleware` always enforces step 3 (entitlement gate). For ai_search this is wrong: no plan has the AI_SEARCH entitlement (auth-baseline per OQ-1). Re-adding the quota middleware for search without skipping the gate would block every request with 403 ENTITLEMENT_REQUIRED.\n\nChanges:\n1. Add exported type: `export type AiQuotaMiddlewareOptions = { readonly skipEntitlementGate?: boolean; };`\n2. Change factory signature: `export function createAiQuotaMiddleware(feature: QuotaGatedAiFeature, options?: AiQuotaMiddlewareOptions): MiddlewareHandler<AppBindings>`\n3. Guard step 3 with: `if (!options?.skipEntitlementGate) { /* existing entitlement check */ }`\n4. Update JSDoc to document the new option with auth-baseline rationale and usage example.\n\nExisting callers pass no second argument — their behavior is unchanged.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Existing apps/api/test/middlewares/ai-quota.test.ts tests pass without modification.\n- When skipEntitlementGate=true, middleware enforces steps 1/2/4/5 only (no entitlement check).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add AiQuotaMiddlewareOptions type export",
+                    "completed": true
+                },
+                {
+                    "title": "Add optional options param to createAiQuotaMiddleware signature",
+                    "completed": true
+                },
+                {
+                    "title": "Guard step 3 entitlement check with skipEntitlementGate flag",
+                    "completed": true
+                },
+                {
+                    "title": "Update JSDoc with new param documentation and usage example",
+                    "completed": true
+                },
+                {
+                    "title": "Run existing ai-quota.test.ts — must pass unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "middleware"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test middlewares/ai-quota"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:28:20.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Re-add search quota middleware to search-chat.ts",
+            "description": "apps/api/src/routes/ai/protected/search-chat.ts — Re-introduces createAiQuotaMiddleware('search', { skipEntitlementGate: true }) to the middleware stack, reverting SPEC-211 G-4 / §7.7.\n\nChanges:\n1. Import createAiQuotaMiddleware from '../../../middlewares/ai-quota.js'.\n2. In the middlewares array, insert `createAiQuotaMiddleware('search', { skipEntitlementGate: true })` AFTER `...createAiRateLimitMiddlewares('search')`. Effective order: entitlement → rateLimit-perUser → rateLimit-perIP → quotaCheck.\n3. Replace the 'NOTE: createAiQuotaMiddleware is intentionally absent (SPEC-211 §7.7)' comment block with SPEC-283 rationale.\n4. Update the route description string and module JSDoc banner to reflect graduated per-plan quota.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Existing search-chat integration tests still pass (adjust mocks if needed, do not delete scenarios).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Import createAiQuotaMiddleware in search-chat.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add quota middleware to middlewares array after rate-limit",
+                    "completed": true
+                },
+                {
+                    "title": "Replace SPEC-211 §7.7 'intentionally absent' comment with SPEC-283 rationale",
+                    "completed": true
+                },
+                {
+                    "title": "Update route description and module JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Run existing search-chat integration tests — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "routes", "ai"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test integration/ai/search-chat"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:55:14.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add consumer-side quota gate and meter to chat.ts",
+            "description": "apps/api/src/routes/ai/protected/chat.ts — Add consumer-side quota enforcement after the owner quota check (step 4) and before the streaming section. Uses actor.id (the requesting tourist) and LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH.\n\nChanges to insert between owner quota block and the 'Gate + quota passed' comment:\n1. `const consumerLimit = getRemainingLimit(c, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH);`\n2. If consumerLimit === 0: throw ServiceError(LIMIT_REACHED, 'accommodations.aiChat.consumerLimitReached', { ... }).\n3. If consumerLimit !== -1: getMonthlyCallCount({ userId: actor.id, feature: FEATURE, now }), then if count >= limit: throw ServiceError(LIMIT_REACHED, 'accommodations.aiChat.consumerLimitReached', { ..., upgradeUrl: '/billing/plans' }).\n4. Add apiLogger.warn for both consumer-block paths.\n\nIn augmentedMeta.then, after owner recordAiUsage, add consumer metering: recordAiUsage({ userId: actor.id, ... }) in its own try/catch.\n\nCritical: two 403 paths MUST use DIFFERENT i18n keys:\n- Owner-side: 'accommodations.aiChat.unavailable' (SPEC-211, unchanged)\n- Consumer-side: 'accommodations.aiChat.consumerLimitReached' (new SPEC-283 key from T-004)\n\nAdd TODO comment about self-hosting edge case (actor.id === ownerId → shared ai_usage bucket).\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Two 403 paths produce verifiably distinct message keys.\n- Consumer usage recorded after successful stream drain.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-012", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Add consumer limit read via getRemainingLimit(c, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH)",
+                    "completed": true
+                },
+                {
+                    "title": "Add consumer limit=0 gate with consumerLimitReached error",
+                    "completed": true
+                },
+                {
+                    "title": "Add consumer monthly count gate (getMonthlyCallCount keyed on actor.id)",
+                    "completed": true
+                },
+                {
+                    "title": "Add apiLogger.warn for both consumer-block paths",
+                    "completed": true
+                },
+                {
+                    "title": "Add consumer recordAiUsage in augmentedMeta.then after owner metering",
+                    "completed": true
+                },
+                {
+                    "title": "Add TODO comment about self-hosting edge case",
+                    "completed": true
+                },
+                {
+                    "title": "Verify two 403 paths use distinct i18n keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "routes", "ai"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test integration/ai/chat"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:23:56.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update SPEC-282 comparison table to show graduated per-tier AI numbers",
+            "description": "G-4 — when SPEC-283 ships, the plan comparison table and plan cards (from SPEC-282) must be updated from binary AI indicator rows to graduated per-tier quota numbers (e.g. '10 / mes', '50 / mes', '200 / mes').\n\nExternal dependency: SPEC-282 must be merged to staging before this task can start.\n\nImplementation steps:\n1. Locate the plan comparison table component(s) in apps/web/ — likely under apps/web/src/features/billing/ or apps/web/src/components/plans/. Search for SPEC-282 references.\n2. Find AI feature rows (ai_search, ai_chat consumer) in the table data structure.\n3. Replace binary 'available/unavailable' cells with per-plan quota values using confirmed T-001 values. Use i18n keys from @repo/i18n for the '/mes' unit label.\n4. Ensure display is consistent: tourist-free=10, plus=50, vip=200, owner/complex=200.\n\nNote: exact component paths need grounding at implementation time.\n\nAcceptance criteria:\n- Comparison table shows graduated numbers for both AI feature rows.\n- Binary display removed.\n- SPEC-282 baseline tests still pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Verify SPEC-282 is merged to staging (external gate)",
+                    "completed": false
+                },
+                {
+                    "title": "Locate plan comparison table component in apps/web/",
+                    "completed": false
+                },
+                {
+                    "title": "Replace binary AI rows with graduated quota values",
+                    "completed": false
+                },
+                {
+                    "title": "Add or reuse i18n unit label ('/mes') for quota display",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "web", "billing", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/web test"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update grant-matrix snapshot test to reflect new AI limit keys",
+            "description": "packages/billing/test/grant-matrix.snapshot.test.ts — EXPECTED_AI_MATRIX and AI_LIMIT_KEYS must be updated to match plans.config.ts state after T-003.\n\nChanges:\n1. Add LimitKey.MAX_AI_SEARCH_PER_MONTH and LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH to AI_LIMIT_KEYS const array.\n2. Update each plan's limitsPresent array to include both new keys.\n3. Update each plan's limitValues array to match T-003 values: tourist-free=[...,10,10], tourist-plus=[...,50,50], tourist-vip=[...,200,200], owner/complex-*=[...,200,200].\n4. Verify test still asserts no plan has value -1 for any AI quota key.\n5. Update test banner comment to reference SPEC-283.\n\nAcceptance criteria:\n- `pnpm --filter @repo/billing test grant-matrix` passes.\n- Snapshot reflects T-003 values exactly.\n- No .only() directives.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add both new LimitKeys to AI_LIMIT_KEYS array",
+                    "completed": true
+                },
+                {
+                    "title": "Update limitsPresent for all 9 plan entries in EXPECTED_AI_MATRIX",
+                    "completed": true
+                },
+                {
+                    "title": "Update limitValues for all 9 plan entries",
+                    "completed": true
+                },
+                {
+                    "title": "Update test banner comment to reference SPEC-283",
+                    "completed": true
+                },
+                {
+                    "title": "Run test — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "billing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/billing test grant-matrix"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:39:09.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write search-chat route quota gate tests",
+            "description": "Extend apps/api/test/integration/ai/search-chat.test.ts with tests for the re-added quota middleware. AAA pattern. No real AI engine calls.\n\nTest cases:\n1. Under-quota pass: userLimits MAX_AI_SEARCH_PER_MONTH=50, getMonthlyCallCount returns 0 → 200.\n2. Quota reached: same limit, count=50 → 403 LIMIT_REACHED, details.limitKey === 'max_ai_search_per_month'.\n3. Limit=0 (disabled): MAX_AI_SEARCH_PER_MONTH=0 → 403 immediately, getMonthlyCallCount NOT called.\n4. skipEntitlementGate verified: empty userEntitlements (no AI_SEARCH) + limit=50 + count=0 → 200 (no entitlement 403).\n5. billingLoadFailed=true → 503 SERVICE_UNAVAILABLE.\n\nAcceptance criteria:\n- All 5 test cases pass.\n- No .only() or hard-coded .skip() directives.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Write under-quota pass test",
+                    "completed": true
+                },
+                {
+                    "title": "Write quota-reached 403 test",
+                    "completed": true
+                },
+                {
+                    "title": "Write limit=0 immediate-block test",
+                    "completed": true
+                },
+                {
+                    "title": "Write skipEntitlementGate verification test",
+                    "completed": true
+                },
+                {
+                    "title": "Write billingLoadFailed 503 test",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "routes", "ai"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test integration/ai/search-chat"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T05:55:14.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write chat route consumer-side gate tests",
+            "description": "Extend apps/api/test/integration/ai/chat-route.test.ts with two-sided gate behavior tests. AAA pattern.\n\nTest cases:\n1. Owner-block path: owner lacks AI_CHAT → 403, message === 'accommodations.aiChat.unavailable'. Assert NOT consumerLimitReached.\n2. Consumer-block path: owner has AI_CHAT + quota OK, consumer MAX_AI_CHAT_CONSUMER_PER_MONTH=200, consumer count=200 → 403, message === 'accommodations.aiChat.consumerLimitReached', details.upgradeUrl present.\n3. Both pass: owner 5/100, consumer 10/200 → stream proceeds (200).\n4. Consumer-block while owner has quota: owner 5/100, consumer 200/200 → consumer-block copy NOT owner-block copy.\n5. Consumer limit=0: MAX_AI_CHAT_CONSUMER_PER_MONTH=0 → 403 consumer-block immediately.\n6. Consumer usage recorded: recordAiUsage called with userId=actor.id after stream completes.\n\nAcceptance criteria:\n- All 6 cases pass.\n- Owner-block and consumer-block messages asserted as distinct strings.\n- No .only() or hard-coded .skip() directives.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Write owner-block 403 test asserting aiChat.unavailable message",
+                    "completed": true
+                },
+                {
+                    "title": "Write consumer-block 403 test asserting aiChat.consumerLimitReached message",
+                    "completed": true
+                },
+                {
+                    "title": "Write both-pass streaming test",
+                    "completed": true
+                },
+                {
+                    "title": "Write consumer-block-while-owner-has-quota test asserting distinct error copy",
+                    "completed": true
+                },
+                {
+                    "title": "Write consumer-limit=0 immediate-block test",
+                    "completed": true
+                },
+                {
+                    "title": "Write consumer recordAiUsage call assertion test",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "routes", "ai"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test integration/ai/chat"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:23:56.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write extras migration 023 idempotency test",
+            "description": "Write a test verifying migration 023-billing-plans-ai-consumer-search-limits.plan.sql is idempotent and OR-PRESERVE. Follow the structure of packages/db/test/integration/spec-211-ai-monetization-migration.test.ts.\n\nTest file: packages/db/test/integration/023-ai-consumer-search-limits.migration.test.ts\n\nScenarios:\n1. AC-first: after running the migration, all 9 accommodation plan slugs have both keys in limits JSONB with seeded values (free=10, plus=50, vip=200, owner/complex=200).\n2. AC-idem: second apply leaves rows byte-identical, no error.\n3. AC-preserve: pre-existing custom value (e.g. max_ai_search_per_month=999) is NOT overwritten.\n4. AC-commerce: commerce-listing and partner-listing rows unaffected.\n\nUse withCleanSlate helper — withTestTransaction is insufficient (DO blocks use intermediate UPDATEs across statement boundaries).\n\nAcceptance criteria:\n- All 4 scenarios pass.\n- No .only() directives.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Create 023-ai-consumer-search-limits.migration.test.ts following spec-211 migration test pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Write AC-first: both keys present in all 9 plan rows after first apply",
+                    "completed": true
+                },
+                {
+                    "title": "Write AC-idem: second apply leaves rows byte-identical, no error",
+                    "completed": true
+                },
+                {
+                    "title": "Write AC-preserve: pre-existing custom value not overwritten",
+                    "completed": true
+                },
+                {
+                    "title": "Write AC-commerce: commerce/partner plan rows unaffected",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "database", "migrations"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/db test integration/023"
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:36:09.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Amend SPEC-211 spec doc to record reversal of G-2 and G-4",
+            "description": "G-5 — .qtm/specs/SPEC-211-ai-monetization-model/spec.md must be amended (NOT overwritten) to record the SPEC-283 reversals so the two specs do not read as contradictory.\n\nAdd a clearly-dated section at the end of the file:\n- Header: '## Amendment: SPEC-283 — Graduated Per-Plan AI Usage Limits (2026-06-27)'\n- Document reversal of G-4/§7.7 (search quota restored as per-plan graduated limit, auth-baseline model preserved).\n- Document reversal of G-2/§7.3 tourist-quota-removed (consumer-side monthly quota restored, two-sided gate model, distinct error copy per failure mode).\n- State what stays unchanged (owner-metered chat, auth-only gate, rate limits, USD ceiling, Model C).\n- Reference: 'See SPEC-283 for full rationale and implementation.'\n\nAcceptance criteria:\n- Amendment section present and dated.\n- No existing SPEC-211 content deleted or overwritten.\n- Both reversals (G-2 and G-4) explicitly named with rationale.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Append amendment section to .qtm/specs/SPEC-211-ai-monetization-model/spec.md",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no existing content was deleted",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "spec"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": "2026-06-27T06:23:56.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Execute billing staging smoke for AI gate changes",
+            "description": "After T-007, T-008, T-005, T-011, T-012, and T-013 are merged to staging and deployed, execute the relevant sections of the billing staging smoke checklist per SPEC-143 policy (mandatory for any PR touching the AI gate surface).\n\nChecklist: .qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md\n\nSections to execute:\n1. AI search quota enforcement: exhaust tourist-free 10-call monthly cap, verify 11th call returns 403 LIMIT_REACHED with search-quota copy.\n2. AI chat consumer-block path: trigger MAX_AI_CHAT_CONSUMER_PER_MONTH exhaustion on a tourist user, chat on a listing whose owner HAS quota, verify 403 with 'accommodations.aiChat.consumerLimitReached' copy and upgrade CTA.\n3. AI chat owner-block regression: confirm listing with no AI_CHAT entitlement still produces 'accommodations.aiChat.unavailable' copy.\n4. Migration verification: confirm billing_plans.limits JSONB in staging DB has both new keys via drizzle studio or hops log.\n\nSign-off: file result (date, executor, PR number, result, notes) in checklist AI section. Reference sign-off in PR description.\n\nAcceptance criteria:\n- All 4 smoke scenarios PASS.\n- Sign-off filed in checklist.\n- PR description references the sign-off entry.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007", "T-008", "T-005", "T-011", "T-012", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Deploy T-007/T-008/T-005 to staging (CI green required)",
+                    "completed": false
+                },
+                {
+                    "title": "Run migration 023 on staging via hops db-migrate --target=staging",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: search quota enforcement (tourist-free 10-call cap)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: consumer-block path (consumerLimitReached copy + upgrade CTA)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: owner-block regression (aiChat.unavailable copy unchanged)",
+                    "completed": false
+                },
+                {
+                    "title": "File sign-off in staging-smoke-checklist.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "process", "billing", "smoke"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-27T04:44:36.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 13,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}

@@ -607,6 +607,8 @@
         "close": "Fechar chat",
         "unavailable": "O chat de IA não está disponível para esta acomodação",
         "expand": "Expandir painel",
-        "collapse": "Recolher painel"
+        "collapse": "Recolher painel",
+        "consumerLimitReached": "Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.",
+        "consumerLimitUpgradeCta": "Ver planos"
     }
 }
