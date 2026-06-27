@@ -199,8 +199,11 @@ export interface JsonLdResult {
  * - The script content is capped at 500 000 characters to prevent runaway
  *   backtracking on adversarial inputs.  Real JSON-LD blocks are far smaller.
  */
-const JSONLD_SCRIPT_RE =
-    /<script[^>]+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]{0,500000}?)<\/script>/gi;
+// Single [^>]* group captures all tag attributes in one pass — avoids the
+// polynomial backtracking that two [^>]+…[^>]* quantifiers around a literal
+// produce (CodeQL ReDoS). The type="application/ld+json" check is done in JS
+// on the short attrs string (group 1) after the match; group 2 holds content.
+const JSONLD_SCRIPT_RE = /<script\b([^>]*)>([\s\S]{0,500000}?)<\/script>/gi;
 
 /**
  * Removes all keys listed in {@link RATING_FIELDS} from a plain object,
@@ -535,7 +538,13 @@ export function extractJsonLd(input: { readonly html: string }): JsonLdResult {
             break;
         }
 
-        const rawJson = match[1];
+        // Group 1 = tag attributes, group 2 = script content (see JSONLD_SCRIPT_RE).
+        const attrs = match[1] ?? '';
+        if (!/type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) {
+            continue;
+        }
+
+        const rawJson = match[2];
         if (rawJson === undefined || rawJson.trim().length === 0) {
             continue;
         }

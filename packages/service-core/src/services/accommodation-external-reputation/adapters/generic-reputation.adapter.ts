@@ -57,13 +57,19 @@ interface JsonLdNode {
  * @returns The first `aggregateRating` object found, or `null`.
  */
 export function parseAggregateRatingFromPage(html: string): JsonLdAggregateRating | null {
-    const scriptPattern =
-        /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    // Single [^>]* group captures all tag attributes in one pass — avoids the
+    // polynomial backtracking that two [^>]+…[^>]* quantifiers around a
+    // literal produce (CodeQL ReDoS). The type check is done in JS on the
+    // short attrs string after the match, where catastrophic backtracking is
+    // not possible.
+    const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
     let match = scriptPattern.exec(html);
 
     while (match !== null) {
-        const raw = match[1];
+        const attrs = match[1] ?? '';
+        const raw = match[2];
         match = scriptPattern.exec(html);
+        if (!/type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) continue;
         if (!raw) continue;
 
         let parsed: unknown;

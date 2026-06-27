@@ -308,6 +308,12 @@ describe('BookingAdapter', () => {
         it('should return false for an unrelated domain', () => {
             expect(adapter.supports(new URL('https://www.example.com/property/1'))).toBe(false);
         });
+
+        // Security: booking.com.attacker.com contains the string "booking.com"
+        // but must NOT be treated as a Booking.com URL (CodeQL URL-substring fix).
+        it('should return false for booking.com.attacker.com (hostile subdomain)', () => {
+            expect(adapter.supports(new URL('https://booking.com.attacker.com/steal'))).toBe(false);
+        });
     });
 
     // -----------------------------------------------------------------------

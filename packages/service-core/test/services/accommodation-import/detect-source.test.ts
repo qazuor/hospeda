@@ -110,6 +110,18 @@ describe('detectSource', () => {
             const result = detectSource({ url: 'https://secure.booking.com/list.html' });
             expect(result).toBe('booking');
         });
+
+        it('should return "booking" for a booking.com.ar ccTLD URL', () => {
+            const result = detectSource({ url: 'https://www.booking.com.ar/hotel/ar/x.html' });
+            expect(result).toBe('booking');
+        });
+
+        // Security: hostname substring checks like includes('booking.com') would
+        // wrongly match attacker-controlled domains.  The safe check must reject them.
+        it('should NOT return "booking" for a hostname that merely contains "booking.com" (e.g. booking.com.attacker.com)', () => {
+            const result = detectSource({ url: 'https://booking.com.attacker.com/steal' });
+            expect(result).toBe('generic');
+        });
     });
 
     // -----------------------------------------------------------------------

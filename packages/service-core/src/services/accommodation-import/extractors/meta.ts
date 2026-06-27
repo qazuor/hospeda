@@ -362,14 +362,26 @@ export function stripHtmlToText(input: {
     HTML_TAG_RE.lastIndex = 0;
     text = text.replace(HTML_TAG_RE, ' ');
 
-    // Step 3 — decode common HTML entities.
-    text = text
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&nbsp;/g, ' ');
+    // Step 3 — decode common HTML entities in a single pass so that a sequence
+    // like "&amp;lt;" is decoded to "&lt;" (one level) rather than to "<"
+    // (double-decode).  A chained replace with &amp; first would convert
+    // "&amp;lt;" → "&lt;" → "<", which is incorrect (CodeQL double-unescape fix).
+    text = text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => {
+        switch (entity) {
+            case '&lt;':
+                return '<';
+            case '&gt;':
+                return '>';
+            case '&quot;':
+                return '"';
+            case '&#39;':
+                return "'";
+            case '&nbsp;':
+                return ' ';
+            default:
+                return '&'; // &amp;
+        }
+    });
 
     // Step 4 & 5 — collapse whitespace and trim.
     WHITESPACE_RE.lastIndex = 0;
