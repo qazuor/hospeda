@@ -19,9 +19,24 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styles from './AiSearchEntry.module.css';
 import { SearchChatPanel } from './SearchChatPanel.client';
+
+/**
+ * Selector matching the elements that can receive keyboard focus inside the
+ * drawer. Used for the initial-focus move and the focus trap (a11y).
+ */
+const FOCUSABLE_SELECTOR =
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * `useLayoutEffect` runs before paint (so focus restore on drawer close does
+ * not flash through `document.body`), but warns during SSR. This island is
+ * server-rendered by Astro before hydration, so fall back to `useEffect` on
+ * the server where layout effects are a no-op anyway.
+ */
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /**
  * Props for the AiSearchEntry React island.
@@ -71,8 +86,30 @@ export function AiSearchEntry({
     // detect when it scrolls out of viewport and show the FAB.
     const searchBarRef = useRef<HTMLButtonElement>(null);
 
+    // Drawer element + the element focused before opening (to restore on close).
+    const drawerRef = useRef<HTMLElement>(null);
+    const previousFocusRef = useRef<HTMLElement | null>(null);
+
     const handleOpen = useCallback((): void => setIsOpen(true), []);
     const handleClose = useCallback((): void => setIsOpen(false), []);
+
+    // Focus trap: keep Tab focus cycling inside the modal drawer (a11y).
+    const handleDrawerKeyDown = useCallback((e: React.KeyboardEvent): void => {
+        if (e.key !== 'Tab') return;
+        const drawer = drawerRef.current;
+        if (!drawer) return;
+        const focusables = drawer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    }, []);
 
     // IntersectionObserver: show FAB when search bar leaves viewport.
     useEffect(() => {
@@ -109,6 +146,19 @@ export function AiSearchEntry({
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
+    }, [isOpen]);
+
+    // Focus management (a11y): on open, remember the trigger and move focus
+    // into the drawer; on close, restore focus to the trigger. Runs as a layout
+    // effect so the restore happens before paint (no focus flash to <body>).
+    useIsomorphicLayoutEffect(() => {
+        if (!isOpen) return;
+        previousFocusRef.current = document.activeElement as HTMLElement | null;
+        const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+        firstFocusable?.focus();
+        return () => {
+            previousFocusRef.current?.focus();
+        };
     }, [isOpen]);
 
     return (
@@ -171,8 +221,13 @@ export function AiSearchEntry({
                     data-testid="ai-search-overlay"
                 >
                     <section
+                        ref={drawerRef}
                         className={styles.drawer}
+                        // biome-ignore lint/a11y/useSemanticElements: a native <dialog> would need imperative showModal()/close() that conflicts with this React-controlled open state, the custom CSS backdrop overlay, and the drawer transition; role=dialog + aria-modal + the manual focus trap/restore below cover the a11y requirement
+                        role="dialog"
+                        aria-modal="true"
                         aria-label={t('aiSearch.panelTitle', 'Búsqueda inteligente')}
+                        onKeyDown={handleDrawerKeyDown}
                     >
                         <div className={styles.drawerHeader}>
                             <h2 className={styles.drawerTitle}>
