@@ -25,9 +25,13 @@ env:
   HOSPEDA_ADMIN_URL: http://localhost:3000
   PUBLIC_ADMIN_URL: http://localhost:3000
   HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
-  PUBLIC_SENTRY_DSN: ''
-  PUBLIC_POSTHOG_KEY: ''
-  NODE_ENV: production
+  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are intentionally OMITTED (not set to
+  # ''): the web env schema validates SENTRY_DSN as a URL, so an empty string
+  # fails ("Invalid URL") during prerender. Absent = Sentry/PostHog disabled.
+  # NODE_ENV is intentionally NOT set to production at the job level: a
+  # production install skips devDependencies (husky, turbo, playwright, …),
+  # which breaks `pnpm install` and the turbo build. It is applied only to the
+  # server-runtime steps below, where production behaviour is actually wanted.
   API_PORT: 3001
   API_HOST: 0.0.0.0
   API_LOG_FORMAT: json
@@ -61,7 +65,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Build API and web
-        run: pnpm turbo run build --filter=api --filter=web --filter=@repo/seed
+        run: pnpm turbo run build --filter=hospeda-api --filter=hospeda-web --filter=@repo/seed
 
       - name: Apply versioned migrations
         run: pnpm db:migrate
@@ -73,9 +77,11 @@ jobs:
         run: pnpm db:seed
 
       - name: Install Playwright browsers
-        run: pnpm --filter web exec playwright install chromium --with-deps
+        run: pnpm --filter hospeda-web exec playwright install chromium --with-deps
 
       - name: Start API server
+        env:
+          NODE_ENV: production
         run: |
           node apps/api/dist/index.js &
           for i in $(seq 1 30); do
@@ -87,6 +93,8 @@ jobs:
           done
 
       - name: Start web server
+        env:
+          NODE_ENV: production
         run: |
           node apps/web/dist/server/entry.mjs &
           for i in $(seq 1 30); do
@@ -99,4 +107,4 @@ jobs:
           done
 
       - name: Run a11y sweep
-        run: pnpm --filter web a11y:sweep
+        run: pnpm --filter hospeda-web a11y:sweep
