@@ -793,7 +793,15 @@ export class BookingAdapter implements ImportSourceAdapter {
      * @returns `true` if this adapter handles the URL.
      */
     supports(url: URL): boolean {
-        return url.hostname.toLowerCase().includes('booking.com');
+        const host = url.hostname.toLowerCase();
+        // Exact match, subdomain (www.booking.com, secure.booking.com), or ccTLD
+        // variant (booking.com.ar, www.booking.com.ar).  The bounded regex prevents
+        // booking.com.attacker.com from matching (CodeQL URL-substring fix).
+        return (
+            host === 'booking.com' ||
+            host.endsWith('.booking.com') ||
+            /^(?:[a-z0-9-]+\.)*booking\.com\.[a-z]{2,3}$/.test(host)
+        );
     }
 
     /**

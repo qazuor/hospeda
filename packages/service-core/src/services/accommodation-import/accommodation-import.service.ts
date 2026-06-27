@@ -101,7 +101,14 @@ function needsShortLinkResolution(url: URL): boolean {
     }
 
     // Booking.com share stubs: booking.com/Share-XXXXX
-    if (host.includes('booking.com') && url.pathname.startsWith('/Share-')) {
+    // Exact host match or subdomain of booking.com; ccTLD variants (booking.com.ar
+    // etc.) use a bounded regex — prevents booking.com.attacker.com from matching.
+    if (
+        (host === 'booking.com' ||
+            host.endsWith('.booking.com') ||
+            /^(?:[a-z0-9-]+\.)*booking\.com\.[a-z]{2,3}$/.test(host)) &&
+        url.pathname.startsWith('/Share-')
+    ) {
         return true;
     }
 

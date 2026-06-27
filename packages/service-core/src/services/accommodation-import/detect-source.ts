@@ -122,8 +122,16 @@ export function detectSource(input: { readonly url: string }): ImportSource {
 
     // -----------------------------------------------------------------------
     // Booking.com
+    // Normalised hostname has www. stripped, so "booking.com" and
+    // "secure.booking.com" are the standard forms.  The ccTLD regex covers
+    // "booking.com.ar", "booking.com.br", etc. while preventing
+    // "booking.com.attacker.com" from matching (CodeQL URL-substring fix).
     // -----------------------------------------------------------------------
-    if (hostname.includes('booking.com')) {
+    if (
+        hostname === 'booking.com' ||
+        hostname.endsWith('.booking.com') ||
+        /^(?:[a-z0-9-]+\.)*booking\.com\.[a-z]{2,3}$/.test(hostname)
+    ) {
         return 'booking';
     }
 
