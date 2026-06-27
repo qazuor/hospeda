@@ -35,7 +35,8 @@ const SAMPLE_FILTERS_PAYLOAD = {
     intent: {
         hasPool: true,
         minGuests: 4
-    }
+    },
+    confidence: 0.82
 };
 
 // --- Tests --------------------------------------------------------------------
@@ -91,7 +92,7 @@ describe('streamSearchChat (SSE client)', () => {
 
     // ── filters event ─────────────────────────────────────────────────────────
 
-    it('parses filters event with params and intent', async () => {
+    it('parses filters event with params, intent, and confidence (SPEC-265 A1)', async () => {
         const events: SearchChatSseEvent[] = [];
         await streamSearchChat({ ...baseParams, onEvent: (e) => events.push(e) });
 
@@ -102,6 +103,7 @@ describe('streamSearchChat (SSE client)', () => {
         expect(filtersEvent.filters).toEqual(SAMPLE_FILTERS_PAYLOAD);
         expect(filtersEvent.filters.params).toEqual({ hasPool: 'true', minGuests: '4' });
         expect(filtersEvent.filters.intent).toEqual({ hasPool: true, minGuests: 4 });
+        expect(filtersEvent.filters.confidence).toBe(0.82);
     });
 
     // ── token events ──────────────────────────────────────────────────────────
@@ -192,7 +194,25 @@ describe('streamSearchChat (SSE client)', () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toEqual({
             type: 'stream_error',
-            error: expect.objectContaining({ message: 'Unauthorized' })
+            error: expect.objectContaining({ message: 'Unauthorized' }),
+            status: 401
+        });
+    });
+
+    it('emits stream_error with status 429 on rate-limit response (SPEC-265 C3)', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(createJsonErrorResponse(429, 'Too many requests'))
+        );
+
+        const events: SearchChatSseEvent[] = [];
+        await streamSearchChat({ ...baseParams, onEvent: (e) => events.push(e) });
+
+        expect(events).toHaveLength(1);
+        expect(events[0]).toEqual({
+            type: 'stream_error',
+            error: expect.objectContaining({ message: 'Too many requests' }),
+            status: 429
         });
     });
 
@@ -205,7 +225,8 @@ describe('streamSearchChat (SSE client)', () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toEqual({
             type: 'stream_error',
-            error: expect.objectContaining({ message: 'fetch failed' })
+            error: expect.objectContaining({ message: 'fetch failed' }),
+            status: 0
         });
     });
 

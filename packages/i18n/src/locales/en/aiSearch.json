@@ -9,6 +9,7 @@
         "placeholder": "Tell me what you're looking for, e.g. cabin for 4 with a pool near the river",
         "send": "Send message",
         "sending": "Sending…",
+        "stop": "Stop",
         "thinking": "Thinking…",
         "newConversation": "New conversation",
         "errorDefault": "An error occurred. Please try again.",
@@ -47,6 +48,7 @@
         "maxPrice": "Up to {{value}}",
         "city": "City: {{value}}",
         "destinationId": "Destination filtered",
+        "destinationName": "Destination: {{value}}",
         "hasPool": "Has pool",
         "hasWifi": "Has WiFi",
         "allowsPets": "Pets allowed",
@@ -64,5 +66,22 @@
         "location": "Location",
         "remove": "Remove filter",
         "activeFiltersLabel": "Active filters"
+    },
+    "examples": {
+        "label": "Try these examples:",
+        "query1": "Cabin for 4 guests with pool",
+        "query2": "Hotel near the river with parking",
+        "query3": "Apartment with WiFi for 2 guests",
+        "query4": "Pet-friendly house, up to 6 people",
+        "typeApartment": "Furnished apartment in the city center",
+        "typeHouse": "House with garden and BBQ for the weekend",
+        "typeCountryHouse": "Country house with pool and space for 8 guests",
+        "typeCabin": "Cabin with hot tub and river view",
+        "typeHotel": "Hotel with breakfast included near downtown",
+        "typeHostel": "Hostel with shared rooms near the bus terminal",
+        "typeCamping": "Camping with facilities near the coast",
+        "typeRoom": "Private room with shared bathroom",
+        "typeMotel": "Motel with parking and direct access",
+        "typeResort": "All-inclusive resort by the river"
     }
 }

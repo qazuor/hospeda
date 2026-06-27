@@ -26,7 +26,6 @@
  * @module SearchChatPanel
  */
 
-import { Spinner } from '@/components/shared/feedback/Spinner';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -50,18 +49,83 @@ import { useSearchChat } from './useSearchChat';
  *   When false, the chat UI is replaced by a login CTA (W14).
  * @property currentUrl - Full URL of the current page, used to build the
  *   post-login redirect href. Pass `Astro.url.href` from the host page.
+ * @property destinations - Catalog of city destinations for chip label
+ *   resolution (SPEC-265 A3). A record of `{ [uuid]: name }` built from the
+ *   `destinationsApi.list` result in the host page. When provided, the
+ *   destination filter chip shows the real city name instead of a generic
+ *   "Destino filtrado" label.
+ * @property pageType - Active accommodation type from the page URL (SPEC-265 B1b).
+ *   When set (e.g., 'CABIN'), a type-specific example query is prepended to the
+ *   empty-state example chips, tailoring the onboarding to the user's current
+ *   browsing context. Optional — falls back to the generic pool when absent.
  */
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
     readonly isAuthenticated: boolean;
     readonly currentUrl: string;
+    readonly destinations?: Readonly<Record<string, string>>;
+    readonly pageType?: string;
 }
 
 // ─── Skeleton constants ─────────────────────────────────────────────────────
 
 /** Number of skeleton cards to show while results are loading. */
 const SKELETON_COUNT = 3;
+
+/**
+ * Confidence threshold below which the low-confidence notice is shown
+ * (SPEC-265 A2). When the model's self-assessed confidence is below this
+ * value, the UI displays `aiSearch.lowConfidenceMessage` suggesting the
+ * user reformulate their query. No numeric badge is shown.
+ *
+ * NOTE — intentionally distinct from the backend `fallbackToKeyword` cutoff
+ * (`confidence < 0.5`, Q5 decision, see `ai-search-intent.schema.ts`). That
+ * 0.5 cutoff drives keyword-search fallback (unused by this conversational
+ * panel, which runs its own accommodations search); this 0.4 cutoff only
+ * decides whether to render the reformulation hint. They answer different
+ * questions, so they are not unified — keep them separate on purpose.
+ */
+const LOW_CONFIDENCE_THRESHOLD = 0.4;
+
+/**
+ * Maximum content length for chat messages (SPEC-265 C2).
+ * Matches the `.max(500)` on `AiChatMessageSchema.content` — the textarea
+ * `maxLength` and the char counter both reference this constant.
+ */
+const MAX_CONTENT_LENGTH = 500;
+
+/**
+ * i18n keys for the static example query pool (SPEC-265 B1a).
+ * Shown as clickable chips in the empty state — clicking sends the query
+ * immediately. Each key resolves to a localized natural-language query
+ * that the AI search pipeline can handle.
+ */
+const EXAMPLE_QUERY_KEYS = [
+    'aiSearch.examples.query1',
+    'aiSearch.examples.query2',
+    'aiSearch.examples.query3',
+    'aiSearch.examples.query4'
+] as const;
+
+/**
+ * Maps accommodation type enum values to type-specific example query i18n keys
+ * (SPEC-265 B1b — context-aware onboarding). When the page has an active
+ * type context, the matching example is prepended to the pool, tailoring
+ * the suggestions to what the user is browsing.
+ */
+const TYPE_EXAMPLE_KEY: Record<string, string> = {
+    APARTMENT: 'aiSearch.examples.typeApartment',
+    HOUSE: 'aiSearch.examples.typeHouse',
+    COUNTRY_HOUSE: 'aiSearch.examples.typeCountryHouse',
+    CABIN: 'aiSearch.examples.typeCabin',
+    HOTEL: 'aiSearch.examples.typeHotel',
+    HOSTEL: 'aiSearch.examples.typeHostel',
+    CAMPING: 'aiSearch.examples.typeCamping',
+    ROOM: 'aiSearch.examples.typeRoom',
+    MOTEL: 'aiSearch.examples.typeMotel',
+    RESORT: 'aiSearch.examples.typeResort'
+};
 
 /** Stable keys for the decorative loading skeletons (avoids array-index keys). */
 const SKELETON_KEYS: readonly string[] = Array.from(
@@ -189,7 +253,9 @@ export function SearchChatPanel({
     locale,
     apiUrl,
     isAuthenticated,
-    currentUrl
+    currentUrl,
+    destinations,
+    pageType
 }: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
     const [draft, setDraft] = useState('');
@@ -236,9 +302,58 @@ export function SearchChatPanel({
         [handleSend]
     );
 
+    // Example query click handler (SPEC-265 B1a) — sends the query immediately.
+    const handleExampleClick = useCallback(
+        (query: string) => {
+            if (chat.isStreaming) return;
+            chat.send(query);
+            setDraft('');
+        },
+        [chat]
+    );
+
+    // Context-aware example keys (SPEC-265 B1b): when pageType is set and has
+    // a matching type-specific example, prepend it to the generic pool.
+    const exampleKeys: readonly string[] = (() => {
+        const typeKey = pageType ? TYPE_EXAMPLE_KEY[pageType] : undefined;
+        if (typeKey) {
+            return [typeKey, ...EXAMPLE_QUERY_KEYS];
+        }
+        return EXAMPLE_QUERY_KEYS;
+    })();
+
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
     const showResults = chat.results.length > 0 || chat.resultsLoading;
+
+    // Low-confidence notice (SPEC-265 A2): show once a turn has completed
+    // (not during streaming) when EITHER the confidence is below threshold OR
+    // the model extracted no usable slots — instead of showing 0 results in
+    // silence. `confidence !== null` marks that a `filters` event arrived.
+    // `lastTurnHadEntities` is a snapshot of THAT turn (not recomputed from the
+    // mutable chip set), so removing chips by hand doesn't trip the notice.
+    // No numeric badge — just the reformulation suggestion from i18n.
+    const isLowConfidence =
+        !chat.isStreaming &&
+        chat.confidence !== null &&
+        (chat.confidence < LOW_CONFIDENCE_THRESHOLD || !chat.lastTurnHadEntities);
+
+    // Classified error copy (SPEC-265 C3): map HTTP status to translated
+    // i18n keys instead of showing raw "HTTP 429" / provider messages.
+    // 429 → rateLimitError, 5xx → serviceError, fallback → raw error string.
+    const displayError = (() => {
+        if (!chat.error) return null;
+        if (chat.errorStatus === 429) {
+            return t('aiSearch.rateLimitError', 'Demasiadas búsquedas. Esperá un momento.');
+        }
+        if (chat.errorStatus !== null && chat.errorStatus >= 500) {
+            return t(
+                'aiSearch.serviceError',
+                'El servicio no está disponible en este momento. Intentá de nuevo más tarde.'
+            );
+        }
+        return chat.error;
+    })();
 
     // Build redirect URLs for the login CTA shown to anonymous visitors (W14).
     const loginHref = buildLoginRedirect({ locale, currentUrl });
@@ -320,13 +435,33 @@ export function SearchChatPanel({
                         'Panel de búsqueda conversacional con IA'
                     )}
                 >
-                    {/* Empty state — before first turn */}
+                    {/* Empty state — before first turn, with example query chips (SPEC-265 B1a) */}
                     {!hasMessages && !chat.isStreaming && (
                         <div className={styles.emptyState}>
-                            {t(
-                                'aiSearch.chat.emptyState',
-                                'Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.'
-                            )}
+                            <p className={styles.emptyStateText}>
+                                {t(
+                                    'aiSearch.chat.emptyState',
+                                    'Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.'
+                                )}
+                            </p>
+                            <div
+                                className={styles.exampleChips}
+                                data-testid="ai-search-examples"
+                            >
+                                <span className={styles.exampleLabel}>
+                                    {t('aiSearch.examples.label', 'Probá con estos ejemplos:')}
+                                </span>
+                                {exampleKeys.map((key) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className={styles.exampleChip}
+                                        onClick={() => handleExampleClick(t(key, key))}
+                                    >
+                                        {t(key, key)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -379,14 +514,15 @@ export function SearchChatPanel({
                     />
                 </div>
 
-                {/* Error banner */}
-                {chat.error && (
+                {/* Error banner — classified copy (SPEC-265 C3) */}
+                {displayError && (
                     <div
                         className={styles.errorBanner}
                         role="alert"
                         aria-live="assertive"
+                        data-testid="ai-search-error"
                     >
-                        {chat.error}
+                        {displayError}
                     </div>
                 )}
 
@@ -399,8 +535,23 @@ export function SearchChatPanel({
                         filters={chat.currentFilters}
                         onRemove={chat.removeFilter}
                         locale={locale}
+                        destinations={destinations}
                     />
                 </div>
+
+                {/* Low-confidence notice (SPEC-265 A2) */}
+                {isLowConfidence && (
+                    <output
+                        className={styles.lowConfidenceNotice}
+                        aria-live="polite"
+                        data-testid="ai-search-low-confidence"
+                    >
+                        {t(
+                            'aiSearch.lowConfidenceMessage',
+                            'No pudimos interpretar tu búsqueda. Probá reformularla con otras palabras.'
+                        )}
+                    </output>
+                )}
 
                 {/* Results section */}
                 {showResults && (
@@ -494,20 +645,38 @@ export function SearchChatPanel({
                     onKeyDown={handleKeyDown}
                     disabled={chat.isStreaming}
                     rows={2}
+                    maxLength={MAX_CONTENT_LENGTH}
                     aria-disabled={chat.isStreaming}
                 />
-                <button
-                    type="submit"
-                    className={styles.sendButton}
-                    disabled={chat.isStreaming || !draft.trim()}
-                    aria-label={
-                        chat.isStreaming
-                            ? t('aiSearch.chat.sending', 'Enviando…')
-                            : t('aiSearch.chat.send', 'Enviar mensaje')
-                    }
+                {/* Char counter (SPEC-265 C2) */}
+                <span
+                    className={styles.charCounter}
+                    aria-live="off"
+                    data-testid="ai-search-char-count"
                 >
-                    {chat.isStreaming ? <Spinner size="sm" /> : '↑'}
-                </button>
+                    {t('aiSearch.charCount', '{{count}}/500', { count: draft.length })}
+                </span>
+                {chat.isStreaming ? (
+                    /* Stop button — aborts the current stream (SPEC-265 C1) */
+                    <button
+                        type="button"
+                        className={styles.stopButton}
+                        onClick={chat.abort}
+                        aria-label={t('aiSearch.chat.stop', 'Detener')}
+                        data-testid="ai-search-stop"
+                    >
+                        {t('aiSearch.chat.stop', 'Detener')}
+                    </button>
+                ) : (
+                    <button
+                        type="submit"
+                        className={styles.sendButton}
+                        disabled={!draft.trim()}
+                        aria-label={t('aiSearch.chat.send', 'Enviar mensaje')}
+                    >
+                        {'↑'}
+                    </button>
+                )}
             </form>
         </section>
     );

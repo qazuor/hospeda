@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AiChatMessageSchema } from '../../../src/entities/ai/ai-chat.schema';
 import {
     AiSearchChatDoneEventSchema,
     AiSearchChatErrorEventSchema,
@@ -103,6 +104,45 @@ describe('AiSearchChatFiltersEventSchema', () => {
         expect(result.success).toBe(true);
     });
 
+    it('accepts confidence field (SPEC-265 A1)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { minGuests: 4 },
+            intent: { minGuests: 4 },
+            confidence: 0.85
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(0.85);
+        }
+    });
+
+    it('accepts payload without confidence (backward-compatible, SPEC-265 A1)', () => {
+        const result = AiSearchChatFiltersEventSchema.safeParse({
+            params: { minGuests: 4 },
+            intent: { minGuests: 4 }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBeUndefined();
+        }
+    });
+
+    it('rejects confidence outside [0, 1]', () => {
+        const resultHigh = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            confidence: 1.5
+        });
+        expect(resultHigh.success).toBe(false);
+
+        const resultLow = AiSearchChatFiltersEventSchema.safeParse({
+            params: {},
+            intent: {},
+            confidence: -0.1
+        });
+        expect(resultLow.success).toBe(false);
+    });
+
     it('rejects a payload missing intent', () => {
         const result = AiSearchChatFiltersEventSchema.safeParse({ params: {} });
         expect(result.success).toBe(false);
@@ -157,6 +197,35 @@ describe('AiSearchChatErrorEventSchema', () => {
         if (!result.success) {
             expect(result.error.issues.some((i) => i.path.includes('code'))).toBe(true);
         }
+    });
+});
+
+describe('AiChatMessageSchema (SPEC-265 C2 — content cap)', () => {
+    it('accepts content within the 500-char cap', () => {
+        const result = AiChatMessageSchema.safeParse({
+            role: 'user',
+            content: 'a'.repeat(500)
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects content exceeding 500 chars', () => {
+        const result = AiChatMessageSchema.safeParse({
+            role: 'user',
+            content: 'a'.repeat(501)
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('content'))).toBe(true);
+        }
+    });
+
+    it('rejects empty content', () => {
+        const result = AiChatMessageSchema.safeParse({
+            role: 'user',
+            content: ''
+        });
+        expect(result.success).toBe(false);
     });
 });
 

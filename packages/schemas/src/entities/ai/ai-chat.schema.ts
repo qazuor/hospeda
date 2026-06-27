@@ -97,9 +97,13 @@ export const AiChatMessageSchema = z
         role: z.enum(['user', 'assistant']),
         /**
          * The text content of the message.
-         * Must be a non-empty string in V1.
+         * Must be a non-empty string, max 500 characters (SPEC-265 C2).
+         * The cap bounds token spend and matches the client-side textarea
+         * `maxLength` + char counter. Enforced at the schema boundary so
+         * both the search-chat and accommodation-chat routes reject overlong
+         * messages with HTTP 400 (`VALIDATION_ERROR`).
          */
-        content: z.string().min(1)
+        content: z.string().min(1).max(500)
     })
     .strict();
 

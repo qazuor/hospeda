@@ -382,7 +382,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         );
 
         return {
-            filters: { params, intent: validatedEntities },
+            filters: { params, intent: validatedEntities, confidence: typedObject.confidence },
             stream,
             meta
         };

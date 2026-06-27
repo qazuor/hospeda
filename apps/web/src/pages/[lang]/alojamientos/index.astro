@@ -33,7 +33,7 @@ import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/ac
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getApiUrl } from '@/lib/env';
-import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
+import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -792,46 +792,49 @@ const emptyStateSuggestions = [
 		))}
 	</ScrollableNav>
 
-	{!hasError && cards.length > 0 && (
-		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-			<span
-				class="view-toggle__btn view-toggle__btn--active"
-				role="tab"
-				aria-selected="true"
-			>
-				{t('accommodations.viewToggle.list', 'Lista')}
-			</span>
-			<a
-				href={(() => {
-					const sp = new URLSearchParams(url.searchParams);
-					sp.delete('page');
-					const qs = sp.toString();
-					const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-					return qs ? `${base}?${qs}` : base;
-				})()}
-				class="view-toggle__btn"
-				role="tab"
-				aria-selected="false"
-			>
-				{t('accommodations.viewToggle.map', 'Mapa')}
-			</a>
+	{/* AI search entry — always available (incl. 0-results) when the page
+	    rendered, so users can reformulate exactly when they hit no matches. */}
+	{!hasError && (
+		<div class="ai-search-slot">
+			<AiSearchEntry
+				client:load
+				locale={locale}
+				apiUrl={getApiUrl()}
+				isAuthenticated={isAuthenticated}
+				currentUrl={Astro.url.href}
+				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
+				pageType={typesArray[0]}
+			/>
 		</div>
 	)}
 
-	<!--
-	    Conversational AI search panel (SPEC-212) — chat-based natural-language
-	    search that replaces the SPEC-199 single-shot NL input. Placed above the
-	    results grid so the user finds it immediately after the type-badge nav.
-	    Uses client:load because the panel should be ready for interaction without
-	    requiring scroll (it sits near the top of the main content area).
-	-->
-	<SearchChatPanel
-		client:load
-		locale={locale}
-		apiUrl={getApiUrl()}
-		isAuthenticated={isAuthenticated}
-		currentUrl={Astro.url.href}
-	/>
+{!hasError && cards.length > 0 && (
+		<div class="listing-header" role="group" aria-label={t('accommodations.header.ariaLabel', 'Controles de listado')}>
+			<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+				<span
+					class="view-toggle__btn view-toggle__btn--active"
+					role="tab"
+					aria-selected="true"
+				>
+					{t('accommodations.viewToggle.list', 'Lista')}
+				</span>
+				<a
+					href={(() => {
+						const sp = new URLSearchParams(url.searchParams);
+						sp.delete('page');
+						const qs = sp.toString();
+						const base = buildUrl({ locale, path: 'alojamientos/mapa' });
+						return qs ? `${base}?${qs}` : base;
+					})()}
+					class="view-toggle__btn"
+					role="tab"
+					aria-selected="false"
+				>
+					{t('accommodations.viewToggle.map', 'Mapa')}
+				</a>
+			</div>
+		</div>
+	)}
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
@@ -937,7 +940,7 @@ const emptyStateSuggestions = [
 	 * <ScrollableNav> wrapper — this rule only sets the row spacing. */
 	.acc-type-badges {
 		gap: 0.5rem;
-		margin-bottom: var(--space-4, 16px);
+		margin-bottom: var(--space-6, 24px);
 	}
 
 	/* View toggle (Lista / Mapa) */
@@ -1009,5 +1012,16 @@ const emptyStateSuggestions = [
 			visibility: hidden;
 			pointer-events: none;
 		}
+	}
+
+	/* ─── AI Search entry slot ──────────────────────────────────────────────
+	   Full-width search-bar entry above the listing grid (replaces the old
+	   always-on panel). Stays available in the no-results state too; the
+	   floating FAB takes over once it scrolls out of view (all viewports).
+	   ──────────────────────────────────────────────────────────────────────── */
+
+	.ai-search-slot {
+		margin-top: var(--space-5, 20px);
+		margin-bottom: var(--space-6, 24px);
 	}
 </style>
