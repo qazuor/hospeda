@@ -607,6 +607,8 @@
         "close": "Close chat",
         "unavailable": "AI chat is not available for this accommodation",
         "expand": "Expand panel",
-        "collapse": "Collapse panel"
+        "collapse": "Collapse panel",
+        "consumerLimitReached": "You've reached your monthly AI chat limit. Upgrade your plan for more access.",
+        "consumerLimitUpgradeCta": "View plans"
     }
 }
