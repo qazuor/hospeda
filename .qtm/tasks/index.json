@@ -749,13 +749,15 @@
         {
             "specId": "SPEC-282",
             "title": "Web — Plan comparison table page (detailed feature/entitlement/limit breakdown)",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "11/11",
             "path": "SPEC-282-web-plan-comparison-table",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00.000Z",
             "taskCount": 11,
-            "averageComplexity": 2.0
+            "averageComplexity": 2.0,
+            "archived": true,
+            "archivedAt": "2026-06-27"
         },
         {
             "specId": "SPEC-284",
