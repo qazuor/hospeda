@@ -513,6 +513,11 @@ jobs:
               THRESHOLD=45
             elif [ "$PACKAGE_NAME" = "api" ]; then
               THRESHOLD=70
+            elif [ "$PACKAGE_NAME" = "mobile" ]; then
+              # Expo app (SPEC-243): covered by E2E/manual, not per-file unit
+              # tests. Floored to current real coverage like the other framework
+              # apps; ratchet up under SPEC-236.
+              THRESHOLD=15
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
               THRESHOLD=88
             fi
