@@ -78,6 +78,13 @@ const SKELETON_COUNT = 3;
  * (SPEC-265 A2). When the model's self-assessed confidence is below this
  * value, the UI displays `aiSearch.lowConfidenceMessage` suggesting the
  * user reformulate their query. No numeric badge is shown.
+ *
+ * NOTE — intentionally distinct from the backend `fallbackToKeyword` cutoff
+ * (`confidence < 0.5`, Q5 decision, see `ai-search-intent.schema.ts`). That
+ * 0.5 cutoff drives keyword-search fallback (unused by this conversational
+ * panel, which runs its own accommodations search); this 0.4 cutoff only
+ * decides whether to render the reformulation hint. They answer different
+ * questions, so they are not unified — keep them separate on purpose.
  */
 const LOW_CONFIDENCE_THRESHOLD = 0.4;
 
@@ -319,11 +326,17 @@ export function SearchChatPanel({
     const showThinking = chat.isStreaming && !chat.currentReply;
     const showResults = chat.results.length > 0 || chat.resultsLoading;
 
-    // Low-confidence notice (SPEC-265 A2): show when the model's confidence
-    // is below threshold AND a turn has completed (not during streaming).
+    // Low-confidence notice (SPEC-265 A2): show once a turn has completed
+    // (not during streaming) when EITHER the confidence is below threshold OR
+    // the model extracted no usable slots — instead of showing 0 results in
+    // silence. `confidence !== null` marks that a `filters` event arrived.
+    // `lastTurnHadEntities` is a snapshot of THAT turn (not recomputed from the
+    // mutable chip set), so removing chips by hand doesn't trip the notice.
     // No numeric badge — just the reformulation suggestion from i18n.
     const isLowConfidence =
-        !chat.isStreaming && chat.confidence !== null && chat.confidence < LOW_CONFIDENCE_THRESHOLD;
+        !chat.isStreaming &&
+        chat.confidence !== null &&
+        (chat.confidence < LOW_CONFIDENCE_THRESHOLD || !chat.lastTurnHadEntities);
 
     // Classified error copy (SPEC-265 C3): map HTTP status to translated
     // i18n keys instead of showing raw "HTTP 429" / provider messages.
