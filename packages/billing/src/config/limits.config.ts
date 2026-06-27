@@ -78,8 +78,14 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         description: 'Maximum number of AI text improvement requests allowed per calendar month'
     },
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: {
-        name: 'AI chat interactions per month',
-        description: 'Maximum number of AI chat assistant interactions allowed per calendar month'
+        name: 'AI chat interactions per month (owner)',
+        description:
+            'Maximum number of AI chat assistant interactions allowed per calendar month, metered against the listing owner who pays for the capability'
+    },
+    [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: {
+        name: 'AI chat interactions per month (consumer)',
+        description:
+            'Monthly AI chat quota for the requesting (consuming) user. Distinct from the owner-side MAX_AI_CHAT_PER_MONTH which caps the listing owner who pays for the capability (SPEC-283)'
     },
     [LimitKey.MAX_AI_SEARCH_PER_MONTH]: {
         name: 'AI search queries per month',

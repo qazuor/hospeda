@@ -19,8 +19,16 @@ export enum LimitKey {
     /** AI usage limits per calendar month (SPEC-173) */
     /** Maximum number of AI text improvement requests per month (-1 = unlimited) */
     MAX_AI_TEXT_IMPROVE_PER_MONTH = 'max_ai_text_improve_per_month',
-    /** Maximum number of AI chat interactions per month (-1 = unlimited) */
+    /** Maximum number of AI chat interactions per month, metered against the listing OWNER who pays for the capability (-1 = unlimited) */
     MAX_AI_CHAT_PER_MONTH = 'max_ai_chat_per_month',
+    /**
+     * Maximum number of AI chat interactions per month metered against the
+     * REQUESTING (consuming) user — the consumer-side quota added by SPEC-283.
+     * Distinct from {@link MAX_AI_CHAT_PER_MONTH}, which caps the listing
+     * owner's cost: a chat call passes only if BOTH the owner-side and this
+     * consumer-side quota have headroom (-1 = unlimited).
+     */
+    MAX_AI_CHAT_CONSUMER_PER_MONTH = 'max_ai_chat_consumer_per_month',
     /** Maximum number of AI-powered search queries per month (-1 = unlimited) */
     MAX_AI_SEARCH_PER_MONTH = 'max_ai_search_per_month',
     /** Maximum number of AI support interactions per month (-1 = unlimited) */
