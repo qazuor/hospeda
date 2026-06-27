@@ -125,26 +125,26 @@
             "id": "T-004",
             "title": "Add consumer-limit-reached i18n keys for ai_chat (es/en/pt)",
             "description": "The chat route needs a distinct error message for the consumer-side quota-exhausted case, separate from the existing owner-side 'accommodations.aiChat.unavailable' (SPEC-211 copy). Add new keys to the aiChat namespace in all three locale files.\n\nFiles to change:\n1. packages/i18n/src/locales/es/accommodations.json — inside the 'aiChat' object, add:\n   - 'consumerLimitReached': 'Alcanzaste tu límite mensual de chats con IA. Actualizá tu plan para obtener más acceso.'\n   - 'consumerLimitUpgradeCta': 'Ver planes'\n2. packages/i18n/src/locales/en/accommodations.json — inside 'aiChat', add:\n   - 'consumerLimitReached': \"You've reached your monthly AI chat limit. Upgrade your plan for more access.\"\n   - 'consumerLimitUpgradeCta': 'View plans'\n3. packages/i18n/src/locales/pt/accommodations.json — inside 'aiChat', add:\n   - 'consumerLimitReached': 'Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.'\n   - 'consumerLimitUpgradeCta': 'Ver planos'\n\nAfter editing locale files, run `pnpm --filter @repo/i18n generate-types` to regenerate TypeScript type declarations.\n\nNote: no search-specific i18n changes needed — the middleware uses a hardcoded Spanish string and the frontend already has aiSearch.quotaExhausted.\n\nAcceptance criteria:\n- Keys present in all three locales.\n- `pnpm --filter @repo/i18n generate-types` succeeds with no errors.\n- No existing keys deleted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-008", "T-012"],
             "subtasks": [
                 {
                     "title": "Add consumerLimitReached + consumerLimitUpgradeCta to es/accommodations.json aiChat namespace",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add same keys to en/accommodations.json aiChat namespace",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add same keys to pt/accommodations.json aiChat namespace",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/i18n generate-types",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "backend"],
@@ -157,7 +157,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:23:56.000Z"
             }
         },
         {
@@ -250,30 +250,30 @@
             "id": "T-007",
             "title": "Re-add search quota middleware to search-chat.ts",
             "description": "apps/api/src/routes/ai/protected/search-chat.ts — Re-introduces createAiQuotaMiddleware('search', { skipEntitlementGate: true }) to the middleware stack, reverting SPEC-211 G-4 / §7.7.\n\nChanges:\n1. Import createAiQuotaMiddleware from '../../../middlewares/ai-quota.js'.\n2. In the middlewares array, insert `createAiQuotaMiddleware('search', { skipEntitlementGate: true })` AFTER `...createAiRateLimitMiddlewares('search')`. Effective order: entitlement → rateLimit-perUser → rateLimit-perIP → quotaCheck.\n3. Replace the 'NOTE: createAiQuotaMiddleware is intentionally absent (SPEC-211 §7.7)' comment block with SPEC-283 rationale.\n4. Update the route description string and module JSDoc banner to reflect graduated per-plan quota.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Existing search-chat integration tests still pass (adjust mocks if needed, do not delete scenarios).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-011", "T-015"],
             "subtasks": [
                 {
                     "title": "Import createAiQuotaMiddleware in search-chat.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add quota middleware to middlewares array after rate-limit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace SPEC-211 §7.7 'intentionally absent' comment with SPEC-283 rationale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update route description and module JSDoc",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing search-chat integration tests — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "routes", "ai"],
@@ -286,45 +286,45 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:55:14.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Add consumer-side quota gate and meter to chat.ts",
             "description": "apps/api/src/routes/ai/protected/chat.ts — Add consumer-side quota enforcement after the owner quota check (step 4) and before the streaming section. Uses actor.id (the requesting tourist) and LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH.\n\nChanges to insert between owner quota block and the 'Gate + quota passed' comment:\n1. `const consumerLimit = getRemainingLimit(c, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH);`\n2. If consumerLimit === 0: throw ServiceError(LIMIT_REACHED, 'accommodations.aiChat.consumerLimitReached', { ... }).\n3. If consumerLimit !== -1: getMonthlyCallCount({ userId: actor.id, feature: FEATURE, now }), then if count >= limit: throw ServiceError(LIMIT_REACHED, 'accommodations.aiChat.consumerLimitReached', { ..., upgradeUrl: '/billing/plans' }).\n4. Add apiLogger.warn for both consumer-block paths.\n\nIn augmentedMeta.then, after owner recordAiUsage, add consumer metering: recordAiUsage({ userId: actor.id, ... }) in its own try/catch.\n\nCritical: two 403 paths MUST use DIFFERENT i18n keys:\n- Owner-side: 'accommodations.aiChat.unavailable' (SPEC-211, unchanged)\n- Consumer-side: 'accommodations.aiChat.consumerLimitReached' (new SPEC-283 key from T-004)\n\nAdd TODO comment about self-hosting edge case (actor.id === ownerId → shared ai_usage bucket).\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Two 403 paths produce verifiably distinct message keys.\n- Consumer usage recorded after successful stream drain.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-012", "T-015"],
             "subtasks": [
                 {
                     "title": "Add consumer limit read via getRemainingLimit(c, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add consumer limit=0 gate with consumerLimitReached error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add consumer monthly count gate (getMonthlyCallCount keyed on actor.id)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add apiLogger.warn for both consumer-block paths",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add consumer recordAiUsage in augmentedMeta.then after owner metering",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add TODO comment about self-hosting edge case",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify two 403 paths use distinct i18n keys",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "routes", "ai"],
@@ -337,7 +337,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:23:56.000Z"
             }
         },
         {
@@ -426,30 +426,30 @@
             "id": "T-011",
             "title": "Write search-chat route quota gate tests",
             "description": "Extend apps/api/test/integration/ai/search-chat.test.ts with tests for the re-added quota middleware. AAA pattern. No real AI engine calls.\n\nTest cases:\n1. Under-quota pass: userLimits MAX_AI_SEARCH_PER_MONTH=50, getMonthlyCallCount returns 0 → 200.\n2. Quota reached: same limit, count=50 → 403 LIMIT_REACHED, details.limitKey === 'max_ai_search_per_month'.\n3. Limit=0 (disabled): MAX_AI_SEARCH_PER_MONTH=0 → 403 immediately, getMonthlyCallCount NOT called.\n4. skipEntitlementGate verified: empty userEntitlements (no AI_SEARCH) + limit=50 + count=0 → 200 (no entitlement 403).\n5. billingLoadFailed=true → 503 SERVICE_UNAVAILABLE.\n\nAcceptance criteria:\n- All 5 test cases pass.\n- No .only() or hard-coded .skip() directives.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Write under-quota pass test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write quota-reached 403 test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write limit=0 immediate-block test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write skipEntitlementGate verification test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write billingLoadFailed 503 test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "routes", "ai"],
@@ -462,41 +462,41 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:55:14.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write chat route consumer-side gate tests",
             "description": "Extend apps/api/test/integration/ai/chat-route.test.ts with two-sided gate behavior tests. AAA pattern.\n\nTest cases:\n1. Owner-block path: owner lacks AI_CHAT → 403, message === 'accommodations.aiChat.unavailable'. Assert NOT consumerLimitReached.\n2. Consumer-block path: owner has AI_CHAT + quota OK, consumer MAX_AI_CHAT_CONSUMER_PER_MONTH=200, consumer count=200 → 403, message === 'accommodations.aiChat.consumerLimitReached', details.upgradeUrl present.\n3. Both pass: owner 5/100, consumer 10/200 → stream proceeds (200).\n4. Consumer-block while owner has quota: owner 5/100, consumer 200/200 → consumer-block copy NOT owner-block copy.\n5. Consumer limit=0: MAX_AI_CHAT_CONSUMER_PER_MONTH=0 → 403 consumer-block immediately.\n6. Consumer usage recorded: recordAiUsage called with userId=actor.id after stream completes.\n\nAcceptance criteria:\n- All 6 cases pass.\n- Owner-block and consumer-block messages asserted as distinct strings.\n- No .only() or hard-coded .skip() directives.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Write owner-block 403 test asserting aiChat.unavailable message",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write consumer-block 403 test asserting aiChat.consumerLimitReached message",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write both-pass streaming test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write consumer-block-while-owner-has-quota test asserting distinct error copy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write consumer-limit=0 immediate-block test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write consumer recordAiUsage call assertion test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "routes", "ai"],
@@ -509,7 +509,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:23:56.000Z"
             }
         },
         {
@@ -559,18 +559,18 @@
             "id": "T-014",
             "title": "Amend SPEC-211 spec doc to record reversal of G-2 and G-4",
             "description": "G-5 — .qtm/specs/SPEC-211-ai-monetization-model/spec.md must be amended (NOT overwritten) to record the SPEC-283 reversals so the two specs do not read as contradictory.\n\nAdd a clearly-dated section at the end of the file:\n- Header: '## Amendment: SPEC-283 — Graduated Per-Plan AI Usage Limits (2026-06-27)'\n- Document reversal of G-4/§7.7 (search quota restored as per-plan graduated limit, auth-baseline model preserved).\n- Document reversal of G-2/§7.3 tourist-quota-removed (consumer-side monthly quota restored, two-sided gate model, distinct error copy per failure mode).\n- State what stays unchanged (owner-metered chat, auth-only gate, rate limits, USD ceiling, Model C).\n- Reference: 'See SPEC-283 for full rationale and implementation.'\n\nAcceptance criteria:\n- Amendment section present and dated.\n- No existing SPEC-211 content deleted or overwritten.\n- Both reversals (G-2 and G-4) explicitly named with rationale.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Append amendment section to .qtm/specs/SPEC-211-ai-monetization-model/spec.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify no existing content was deleted",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "spec"],
@@ -583,7 +583,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:23:56.000Z"
             }
         },
         {
@@ -636,9 +636,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 10,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.1
     }
