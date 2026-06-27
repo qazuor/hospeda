@@ -8,50 +8,70 @@
             "id": "T-001",
             "title": "Confirm OQ-3 numeric quota values with owner",
             "description": "OQ-3 was deferred to implementation. The §5 placeholder values (tourist-free: 10, tourist-plus: 50, tourist-vip: 200, owner/complex: inherit tourist-vip = 200) must be confirmed or replaced before they are hardcoded in plans.config.ts and the extras migration.\n\nAction: present the §5 table to the owner and capture confirmed per-tier values for both MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH. Record the decision in engram under topic_key: spec/SPEC-283/quota-values.\n\nAcceptance criteria:\n- Confirmed numeric values for all plan tiers (tourist-free, tourist-plus, tourist-vip, owner/complex) for both new limits are documented and saved to engram.\n- No real -1 for any AI quota (cost-guardrail constraint from SPEC-211 §6.1 stays in force).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-003", "T-009"],
             "subtasks": [
-                { "title": "Present §5 placeholder table to owner", "completed": false },
+                {
+                    "title": "Present §5 placeholder table to owner",
+                    "completed": true
+                },
                 {
                     "title": "Record confirmed values in engram (topic_key: spec/SPEC-283/quota-values)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["product", "decision"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:28:20.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Add MAX_AI_CHAT_CONSUMER_PER_MONTH LimitKey to billing types, LIMIT_METADATA, and RESOURCE_NAMES",
             "description": "The consumer-side chat quota requires a brand-new LimitKey that does not yet exist. Three files are exhaustive Record<LimitKey, …> maps — a missing entry is a TypeScript compile error — so all three must be updated atomically.\n\nFiles to change:\n1. packages/billing/src/types/plan.types.ts — add enum value `MAX_AI_CHAT_CONSUMER_PER_MONTH = 'max_ai_chat_consumer_per_month'` immediately after `MAX_AI_CHAT_PER_MONTH`, with JSDoc explaining it is the consumer-side (tourist/requesting-user) monthly quota distinct from the owner-side limit.\n2. packages/billing/src/config/limits.config.ts — add `[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: { name: 'AI chat interactions per month (consumer)', description: 'Monthly AI chat quota for the requesting (consuming) user. Distinct from MAX_AI_CHAT_PER_MONTH which meters the listing owner (SPEC-283).' }` to LIMIT_METADATA.\n3. apps/api/src/utils/limit-check.ts — add `max_ai_chat_consumer_per_month: 'conversaciones con IA por mes (consumidor)'` to RESOURCE_NAMES.\n\nNOTE: packages/billing/src/config/model-c-field-split.ts does NOT need updating. MODEL_C_FIELD_SPLIT classifies limits as logical facets (limitsKeysPresent / limitsValues), not individual keys — new keys are covered automatically by the existing `limitsKeysPresent: 'capability'` entry.\n\nNOTE: MAX_AI_SEARCH_PER_MONTH already exists in all three maps (it was removed only from plan config values in SPEC-211, not from the enum/metadata).\n\nAcceptance criteria:\n- `pnpm typecheck` passes with zero errors from the workspace root.\n- No other compilation failures introduced.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003", "T-008"],
             "subtasks": [
                 {
                     "title": "Add MAX_AI_CHAT_CONSUMER_PER_MONTH enum value to plan.types.ts",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add LIMIT_METADATA entry in limits.config.ts", "completed": false },
-                { "title": "Add RESOURCE_NAMES entry in limit-check.ts", "completed": false },
-                { "title": "Run pnpm typecheck — must pass", "completed": false }
+                {
+                    "title": "Add LIMIT_METADATA entry in limits.config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add RESOURCE_NAMES entry in limit-check.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck — must pass",
+                    "completed": true
+                }
             ],
             "tags": ["backend", "billing", "types"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:28:20.000Z"
             }
         },
         {
@@ -79,8 +99,14 @@
                     "title": "Verify TOURIST_VIP_PLAN and owner/complex plans inherit correctly",
                     "completed": false
                 },
-                { "title": "Remove all SPEC-211 T-004 removal comments", "completed": false },
-                { "title": "Run pnpm typecheck — must pass", "completed": false }
+                {
+                    "title": "Remove all SPEC-211 T-004 removal comments",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck — must pass",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "billing", "config"],
             "phase": "core",
@@ -116,11 +142,18 @@
                     "title": "Add same keys to pt/accommodations.json aiChat namespace",
                     "completed": false
                 },
-                { "title": "Run pnpm --filter @repo/i18n generate-types", "completed": false }
+                {
+                    "title": "Run pnpm --filter @repo/i18n generate-types",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "backend"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
@@ -148,7 +181,10 @@
                     "title": "Write idempotent UPDATE statements for max_ai_chat_consumer_per_month (9 plan slugs)",
                     "completed": false
                 },
-                { "title": "Wrap in transaction with rollback on error", "completed": false },
+                {
+                    "title": "Wrap in transaction with rollback on error",
+                    "completed": false
+                },
                 {
                     "title": "Verify migration applies cleanly on a dev DB snapshot",
                     "completed": false
@@ -171,27 +207,30 @@
             "id": "T-006",
             "title": "Extend createAiQuotaMiddleware to support skipEntitlementGate option for auth-baseline features",
             "description": "apps/api/src/middlewares/ai-quota.ts — `createAiQuotaMiddleware` always enforces step 3 (entitlement gate). For ai_search this is wrong: no plan has the AI_SEARCH entitlement (auth-baseline per OQ-1). Re-adding the quota middleware for search without skipping the gate would block every request with 403 ENTITLEMENT_REQUIRED.\n\nChanges:\n1. Add exported type: `export type AiQuotaMiddlewareOptions = { readonly skipEntitlementGate?: boolean; };`\n2. Change factory signature: `export function createAiQuotaMiddleware(feature: QuotaGatedAiFeature, options?: AiQuotaMiddlewareOptions): MiddlewareHandler<AppBindings>`\n3. Guard step 3 with: `if (!options?.skipEntitlementGate) { /* existing entitlement check */ }`\n4. Update JSDoc to document the new option with auth-baseline rationale and usage example.\n\nExisting callers pass no second argument — their behavior is unchanged.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- Existing apps/api/test/middlewares/ai-quota.test.ts tests pass without modification.\n- When skipEntitlementGate=true, middleware enforces steps 1/2/4/5 only (no entitlement check).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Add AiQuotaMiddlewareOptions type export", "completed": false },
+                {
+                    "title": "Add AiQuotaMiddlewareOptions type export",
+                    "completed": true
+                },
                 {
                     "title": "Add optional options param to createAiQuotaMiddleware signature",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard step 3 entitlement check with skipEntitlementGate flag",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update JSDoc with new param documentation and usage example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing ai-quota.test.ts — must pass unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "middleware"],
@@ -204,7 +243,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:28:20.000Z"
             }
         },
         {
@@ -216,7 +255,10 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-011", "T-015"],
             "subtasks": [
-                { "title": "Import createAiQuotaMiddleware in search-chat.ts", "completed": false },
+                {
+                    "title": "Import createAiQuotaMiddleware in search-chat.ts",
+                    "completed": false
+                },
                 {
                     "title": "Add quota middleware to middlewares array after rate-limit",
                     "completed": false
@@ -225,7 +267,10 @@
                     "title": "Replace SPEC-211 §7.7 'intentionally absent' comment with SPEC-283 rationale",
                     "completed": false
                 },
-                { "title": "Update route description and module JSDoc", "completed": false },
+                {
+                    "title": "Update route description and module JSDoc",
+                    "completed": false
+                },
                 {
                     "title": "Run existing search-chat integration tests — must pass",
                     "completed": false
@@ -265,13 +310,22 @@
                     "title": "Add consumer monthly count gate (getMonthlyCallCount keyed on actor.id)",
                     "completed": false
                 },
-                { "title": "Add apiLogger.warn for both consumer-block paths", "completed": false },
+                {
+                    "title": "Add apiLogger.warn for both consumer-block paths",
+                    "completed": false
+                },
                 {
                     "title": "Add consumer recordAiUsage in augmentedMeta.then after owner metering",
                     "completed": false
                 },
-                { "title": "Add TODO comment about self-hosting edge case", "completed": false },
-                { "title": "Verify two 403 paths use distinct i18n keys", "completed": false }
+                {
+                    "title": "Add TODO comment about self-hosting edge case",
+                    "completed": false
+                },
+                {
+                    "title": "Verify two 403 paths use distinct i18n keys",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "routes", "ai"],
             "phase": "integration",
@@ -334,14 +388,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add both new LimitKeys to AI_LIMIT_KEYS array", "completed": false },
+                {
+                    "title": "Add both new LimitKeys to AI_LIMIT_KEYS array",
+                    "completed": false
+                },
                 {
                     "title": "Update limitsPresent for all 9 plan entries in EXPECTED_AI_MATRIX",
                     "completed": false
                 },
-                { "title": "Update limitValues for all 9 plan entries", "completed": false },
-                { "title": "Update test banner comment to reference SPEC-283", "completed": false },
-                { "title": "Run test — must pass", "completed": false }
+                {
+                    "title": "Update limitValues for all 9 plan entries",
+                    "completed": false
+                },
+                {
+                    "title": "Update test banner comment to reference SPEC-283",
+                    "completed": false
+                },
+                {
+                    "title": "Run test — must pass",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "billing"],
             "phase": "testing",
@@ -365,11 +431,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Write under-quota pass test", "completed": false },
-                { "title": "Write quota-reached 403 test", "completed": false },
-                { "title": "Write limit=0 immediate-block test", "completed": false },
-                { "title": "Write skipEntitlementGate verification test", "completed": false },
-                { "title": "Write billingLoadFailed 503 test", "completed": false }
+                {
+                    "title": "Write under-quota pass test",
+                    "completed": false
+                },
+                {
+                    "title": "Write quota-reached 403 test",
+                    "completed": false
+                },
+                {
+                    "title": "Write limit=0 immediate-block test",
+                    "completed": false
+                },
+                {
+                    "title": "Write skipEntitlementGate verification test",
+                    "completed": false
+                },
+                {
+                    "title": "Write billingLoadFailed 503 test",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "routes", "ai"],
             "phase": "testing",
@@ -401,13 +482,22 @@
                     "title": "Write consumer-block 403 test asserting aiChat.consumerLimitReached message",
                     "completed": false
                 },
-                { "title": "Write both-pass streaming test", "completed": false },
+                {
+                    "title": "Write both-pass streaming test",
+                    "completed": false
+                },
                 {
                     "title": "Write consumer-block-while-owner-has-quota test asserting distinct error copy",
                     "completed": false
                 },
-                { "title": "Write consumer-limit=0 immediate-block test", "completed": false },
-                { "title": "Write consumer recordAiUsage call assertion test", "completed": false }
+                {
+                    "title": "Write consumer-limit=0 immediate-block test",
+                    "completed": false
+                },
+                {
+                    "title": "Write consumer recordAiUsage call assertion test",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "routes", "ai"],
             "phase": "testing",
@@ -478,11 +568,18 @@
                     "title": "Append amendment section to .qtm/specs/SPEC-211-ai-monetization-model/spec.md",
                     "completed": false
                 },
-                { "title": "Verify no existing content was deleted", "completed": false }
+                {
+                    "title": "Verify no existing content was deleted",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "spec"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
@@ -518,11 +615,18 @@
                     "title": "Smoke: owner-block regression (aiChat.unavailable copy unchanged)",
                     "completed": false
                 },
-                { "title": "File sign-off in staging-smoke-checklist.md", "completed": false }
+                {
+                    "title": "File sign-off in staging-smoke-checklist.md",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "process", "billing", "smoke"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
@@ -532,9 +636,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 15,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.1
     }
