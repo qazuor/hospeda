@@ -76,6 +76,29 @@ const mapEntryToCreateInput = (entry: LogEntry): CreateAppLogEntry => {
  * @param service - The AppLogEntryService used to persist entries.
  * @returns The hook function to register under {@link APP_LOG_SINK_HOOK_NAME}.
  */
+/**
+ * Extracts the actionable reason from a sink insert failure.
+ *
+ * The service/model layer (and Drizzle underneath) wrap the original driver
+ * error, so `err.message` is a generic "Failed query: insert into ..." string
+ * that hides WHY the insert failed. The real cause — a missing column, a NOT
+ * NULL / type / check violation, a Zod parse failure on the input — lives on
+ * `err.cause`. We surface it so the throttled stderr report is diagnosable
+ * without a DB session.
+ *
+ * @param err - The rejection value from `recordEntry`.
+ * @returns A single-line message including the wrapped cause when present.
+ */
+const formatSinkError = (err: unknown): string => {
+    if (!(err instanceof Error)) {
+        return String(err);
+    }
+    const cause = (err as { cause?: unknown }).cause;
+    const causeMsg =
+        cause instanceof Error ? cause.message : cause !== undefined ? String(cause) : undefined;
+    return causeMsg ? `${err.message} | cause: ${causeMsg}` : err.message;
+};
+
 export const createAppLogSinkHandler = (
     service: AppLogEntryService
 ): ((entry: LogEntry) => void) => {
@@ -110,7 +133,7 @@ export const createAppLogSinkHandler = (
             const now = Date.now();
             if (now - lastReportAt >= SINK_REPORT_THROTTLE_MS) {
                 lastReportAt = now;
-                const detail = err instanceof Error ? err.message : String(err);
+                const detail = formatSinkError(err);
                 process.stderr.write(
                     `[app-log-sink] ${failuresSinceReport} insert failure(s) since last report; latest: ${detail}\n`
                 );
