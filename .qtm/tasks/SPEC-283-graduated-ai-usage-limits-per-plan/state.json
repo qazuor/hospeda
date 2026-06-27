@@ -78,34 +78,34 @@
             "id": "T-003",
             "title": "Add ai_search per-plan limits and consumer chat quota values to plans.config.ts",
             "description": "Restores MAX_AI_SEARCH_PER_MONTH (removed in SPEC-211 T-004) and adds MAX_AI_CHAT_CONSUMER_PER_MONTH to all 9 accommodation plans in packages/billing/src/config/plans.config.ts. Use values confirmed in T-001 (§5 placeholders: free=10, plus=50, vip=200, owner/complex inherit vip=200).\n\nChanges:\n1. TOURIST_VIP_LIMITS constant (~line 74): add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200)`. These propagate automatically to all owner/complex plans via mergeLimits inheritance (SPEC-216 OQ-4).\n2. TOURIST_FREE_PLAN limits array: add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 10)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 10)`.\n3. TOURIST_PLUS_PLAN limits array: add `limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50)` and `limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50)`.\n4. TOURIST_VIP_PLAN limits: already spreads `[...TOURIST_VIP_LIMITS]` so it picks up both keys at 200 automatically.\n5. Owner/complex plans: inherit both keys at 200 from TOURIST_VIP_LIMITS via mergeLimits — no individual changes needed unless overriding.\n6. Remove all 'MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)' comments from every plan definition.\n\nCost guardrail: confirm no plan ends up with value -1 for the new keys.\n\nAcceptance criteria:\n- `pnpm typecheck` passes.\n- All 9 plans in ALL_PLANS have both MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH in their limits arrays.\n- No plan has value -1 for either new key.\n- Owner/complex plans carry value 200 for both keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-005", "T-010"],
             "subtasks": [
                 {
                     "title": "Add both new limit keys to TOURIST_VIP_LIMITS const",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add both new limit keys to TOURIST_FREE_PLAN limits",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add both new limit keys to TOURIST_PLUS_PLAN limits",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify TOURIST_VIP_PLAN and owner/complex plans inherit correctly",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove all SPEC-211 T-004 removal comments",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm typecheck — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "config"],
@@ -118,7 +118,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:39:09.000Z"
             }
         },
         {
@@ -383,30 +383,30 @@
             "id": "T-010",
             "title": "Update grant-matrix snapshot test to reflect new AI limit keys",
             "description": "packages/billing/test/grant-matrix.snapshot.test.ts — EXPECTED_AI_MATRIX and AI_LIMIT_KEYS must be updated to match plans.config.ts state after T-003.\n\nChanges:\n1. Add LimitKey.MAX_AI_SEARCH_PER_MONTH and LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH to AI_LIMIT_KEYS const array.\n2. Update each plan's limitsPresent array to include both new keys.\n3. Update each plan's limitValues array to match T-003 values: tourist-free=[...,10,10], tourist-plus=[...,50,50], tourist-vip=[...,200,200], owner/complex-*=[...,200,200].\n4. Verify test still asserts no plan has value -1 for any AI quota key.\n5. Update test banner comment to reference SPEC-283.\n\nAcceptance criteria:\n- `pnpm --filter @repo/billing test grant-matrix` passes.\n- Snapshot reflects T-003 values exactly.\n- No .only() directives.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add both new LimitKeys to AI_LIMIT_KEYS array",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update limitsPresent for all 9 plan entries in EXPECTED_AI_MATRIX",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update limitValues for all 9 plan entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update test banner comment to reference SPEC-283",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run test — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "billing"],
@@ -419,7 +419,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T05:39:09.000Z"
             }
         },
         {
@@ -636,9 +636,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 12,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.1
     }
