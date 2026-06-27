@@ -22,7 +22,7 @@
  * - Reset button calls `reset`
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     SearchChatPanel,
@@ -76,19 +76,25 @@ const defaultHookReturn = {
     currentReply: '',
     isStreaming: false,
     conversationId: null,
+    confidence: null,
+    lastTurnHadEntities: false,
     error: null,
+    errorStatus: null,
     send: vi.fn(),
     removeFilter: vi.fn(),
+    abort: vi.fn(),
     reset: vi.fn()
 };
 
 const mockSend = vi.fn();
 const mockReset = vi.fn();
+const mockAbort = vi.fn();
 
 vi.mock('../../src/components/ai-search/useSearchChat', () => ({
     useSearchChat: vi.fn(() => ({
         ...defaultHookReturn,
         send: mockSend,
+        abort: mockAbort,
         reset: mockReset
     }))
 }));
@@ -114,6 +120,7 @@ function mockHook(overrides: Partial<typeof defaultHookReturn>) {
     vi.mocked(useSearchChat).mockReturnValue({
         ...defaultHookReturn,
         send: mockSend,
+        abort: mockAbort,
         reset: mockReset,
         ...overrides
     } as ReturnType<typeof useSearchChat>);
@@ -125,10 +132,12 @@ describe('SearchChatPanel', () => {
     beforeEach(() => {
         mockSend.mockClear();
         mockReset.mockClear();
+        mockAbort.mockClear();
         // Reset hook to default state before each test.
         vi.mocked(useSearchChat).mockReturnValue({
             ...defaultHookReturn,
             send: mockSend,
+            abort: mockAbort,
             reset: mockReset
         } as ReturnType<typeof useSearchChat>);
     });
@@ -423,10 +432,15 @@ describe('SearchChatPanel', () => {
             expect(mockSend).not.toHaveBeenCalled();
         });
 
-        it('send button is disabled while isStreaming', () => {
+        it('replaces the send button with a Stop button while streaming (SPEC-265 C1)', () => {
             mockHook({ isStreaming: true });
             renderPanel();
-            expect(screen.getByRole('button', { name: /enviando/i })).toBeDisabled();
+            // The send button is gone during streaming...
+            expect(
+                screen.queryByRole('button', { name: /enviar mensaje/i })
+            ).not.toBeInTheDocument();
+            // ...replaced by a Stop button that aborts the stream.
+            expect(screen.getByRole('button', { name: /detener/i })).toBeInTheDocument();
         });
 
         it('textarea is disabled while isStreaming', () => {
@@ -507,21 +521,119 @@ describe('SearchChatPanel', () => {
             expect(document.body.textContent).not.toContain('⏳');
         });
 
-        it('renders the Spinner (aria-hidden) inside the send button while streaming', () => {
+        it('shows the Stop button (with no ⏳ emoji) while streaming', () => {
+            // SPEC-265 C1 replaced the streaming "Enviando" spinner button with a
+            // Stop button. The SPEC-228 intent (never use the ⏳ emoji) still holds.
             mockHook({ isStreaming: true });
             renderPanel();
-            const sendBtn = screen.getByRole('button', { name: /enviando/i });
-            // Spinner renders a decorative aria-hidden span inside the button
-            const spinnerInBtn = sendBtn.querySelector('[aria-hidden="true"]');
-            expect(spinnerInBtn).not.toBeNull();
-            // Make sure the overall body has no emoji
-            expect(document.body.textContent).not.toContain('⏳');
+            const stopBtn = screen.getByRole('button', { name: /detener/i });
+            expect(stopBtn).toBeInTheDocument();
+            expect(stopBtn.textContent).not.toContain('⏳');
         });
 
         it('shows the up-arrow (↑) on the send button when not streaming', () => {
             renderPanel();
             const sendBtn = screen.getByRole('button', { name: /enviar mensaje/i });
             expect(sendBtn.textContent).toContain('↑');
+        });
+    });
+
+    // ── SPEC-265: controls, transparency & onboarding ────────────────────────
+
+    describe('Char counter (SPEC-265 C2)', () => {
+        it('renders the char counter referencing the 500 cap', () => {
+            renderPanel();
+            const counter = screen.getByTestId('ai-search-char-count');
+            expect(counter).toBeInTheDocument();
+            expect(counter.textContent).toContain('/500');
+        });
+    });
+
+    describe('Stop streaming (SPEC-265 C1)', () => {
+        it('clicking Stop calls the hook abort function', () => {
+            mockHook({ isStreaming: true });
+            renderPanel();
+            fireEvent.click(screen.getByRole('button', { name: /detener/i }));
+            expect(mockAbort).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('Low-confidence notice (SPEC-265 A2)', () => {
+        it('shows the notice when confidence is below threshold', () => {
+            mockHook({ confidence: 0.2, lastTurnHadEntities: true });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+        });
+
+        it('shows the notice when entities are empty even with high confidence', () => {
+            mockHook({ confidence: 0.95, lastTurnHadEntities: false });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-low-confidence')).toBeInTheDocument();
+        });
+
+        it('hides the notice when confidence is high and entities were extracted', () => {
+            mockHook({ confidence: 0.95, lastTurnHadEntities: true });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+
+        it('does not trip the notice when chips are cleared on a good turn', () => {
+            // Regression: lastTurnHadEntities is a snapshot of the turn, so an
+            // empty currentFilters (all chips removed) must NOT show the notice.
+            mockHook({ confidence: 0.9, lastTurnHadEntities: true, currentFilters: null });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+
+        it('hides the notice while streaming', () => {
+            mockHook({ confidence: 0.1, isStreaming: true });
+            renderPanel();
+            expect(screen.queryByTestId('ai-search-low-confidence')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Classified error copy (SPEC-265 C3)', () => {
+        it('maps a 429 status to the rate-limit copy', () => {
+            mockHook({ error: 'HTTP 429', errorStatus: 429 });
+            renderPanel();
+            const banner = screen.getByTestId('ai-search-error');
+            expect(banner.textContent).toContain('Demasiadas búsquedas');
+            expect(banner.textContent).not.toContain('HTTP 429');
+        });
+
+        it('maps a 5xx status to the service-error copy', () => {
+            mockHook({ error: 'HTTP 503', errorStatus: 503 });
+            renderPanel();
+            const banner = screen.getByTestId('ai-search-error');
+            expect(banner.textContent).toContain('El servicio no está disponible');
+        });
+
+        it('falls back to the raw error message for unclassified statuses', () => {
+            mockHook({ error: 'boom', errorStatus: 400 });
+            renderPanel();
+            expect(screen.getByTestId('ai-search-error').textContent).toContain('boom');
+        });
+    });
+
+    describe('Onboarding example chips (SPEC-265 B1)', () => {
+        it('renders clickable example chips in the empty state', () => {
+            renderPanel();
+            const examples = screen.getByTestId('ai-search-examples');
+            expect(within(examples).getAllByRole('button').length).toBeGreaterThan(0);
+        });
+
+        it('clicking an example chip sends that query', () => {
+            renderPanel();
+            const examples = screen.getByTestId('ai-search-examples');
+            fireEvent.click(within(examples).getAllByRole('button')[0]);
+            expect(mockSend).toHaveBeenCalledOnce();
+        });
+
+        it('prepends a type-specific example when pageType is set', () => {
+            renderPanel({ pageType: 'CABIN' });
+            const examples = screen.getByTestId('ai-search-examples');
+            // The type-specific example key is prepended to the generic pool.
+            expect(within(examples).getAllByRole('button')[0].textContent).toContain('typeCabin');
         });
     });
 });

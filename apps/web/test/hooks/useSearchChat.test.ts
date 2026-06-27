@@ -491,4 +491,143 @@ describe('useSearchChat', () => {
         // hasWifi should still be present.
         expect(result.current.currentFilters?.hasWifi).toBe(true);
     });
+
+    // ── confidence forwarded from the filters event (SPEC-265 A1) ─────────────
+
+    it('exposes the confidence carried by the filters event', async () => {
+        mockStreamSearchChat.mockImplementation(
+            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent({
+                    type: 'filters',
+                    filters: {
+                        params: makeSearchParams() as unknown as Extract<
+                            SearchChatSseEvent,
+                            { type: 'filters' }
+                        >['filters']['params'],
+                        intent: makeIntent(),
+                        confidence: 0.3
+                    }
+                } as SearchChatSseEvent);
+                p.onEvent({ type: 'done', conversationId: null });
+            }
+        );
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('algo ambiguo');
+        });
+
+        expect(result.current.confidence).toBe(0.3);
+        // makeIntent() carries usable slots, so the turn had entities.
+        expect(result.current.lastTurnHadEntities).toBe(true);
+    });
+
+    it('flags lastTurnHadEntities as false when the model extracts no slots', async () => {
+        mockStreamSearchChat.mockImplementation(
+            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent({
+                    type: 'filters',
+                    filters: {
+                        params: {} as unknown as Extract<
+                            SearchChatSseEvent,
+                            { type: 'filters' }
+                        >['filters']['params'],
+                        intent: {},
+                        confidence: 0.9
+                    }
+                } as SearchChatSseEvent);
+                p.onEvent({ type: 'done', conversationId: null });
+            }
+        );
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('mmm');
+        });
+
+        // High confidence but no usable slots — the snapshot must report false.
+        expect(result.current.confidence).toBe(0.9);
+        expect(result.current.lastTurnHadEntities).toBe(false);
+    });
+
+    it('keeps lastTurnHadEntities true after removing all chips (snapshot, not live)', async () => {
+        mockStreamSearchChat.mockImplementation(
+            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent(makeFiltersEvent({ minGuests: 4 }));
+                p.onEvent({ type: 'done', conversationId: null });
+            }
+        );
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña para 4');
+        });
+        expect(result.current.lastTurnHadEntities).toBe(true);
+
+        // Remove every filter — the snapshot must NOT flip to false.
+        await act(async () => {
+            result.current.removeFilter('minGuests');
+            result.current.removeFilter('hasPool');
+        });
+
+        expect(result.current.lastTurnHadEntities).toBe(true);
+    });
+
+    // ── stream_error stores the HTTP status (SPEC-265 C3) ─────────────────────
+
+    it('stores the HTTP status and message from a stream_error event', async () => {
+        mockStreamSearchChat.mockImplementation(
+            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent({
+                    type: 'stream_error',
+                    status: 429,
+                    error: new Error('Too many requests')
+                });
+            }
+        );
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('algo');
+        });
+
+        expect(result.current.errorStatus).toBe(429);
+        expect(result.current.error).toBe('Too many requests');
+        expect(result.current.isStreaming).toBe(false);
+    });
+
+    // ── abort preserves the partial reply (SPEC-265 C1) ───────────────────────
+
+    it('abort stops streaming and commits the partial reply to the thread', async () => {
+        mockStreamSearchChat.mockImplementation(
+            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                // Stream two tokens but never emit `done` — the turn stays open.
+                p.onEvent({ type: 'token', delta: 'Buscando ' });
+                p.onEvent({ type: 'token', delta: 'opciones' });
+            }
+        );
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('algo');
+        });
+
+        expect(result.current.isStreaming).toBe(true);
+        expect(result.current.currentReply).toBe('Buscando opciones');
+
+        act(() => {
+            result.current.abort();
+        });
+
+        expect(result.current.isStreaming).toBe(false);
+        expect(result.current.currentReply).toBe('');
+        // The partial reply is preserved as the assistant turn in the thread.
+        const last = result.current.messages[result.current.messages.length - 1];
+        expect(last).toEqual({ role: 'assistant', content: 'Buscando opciones' });
+    });
 });
