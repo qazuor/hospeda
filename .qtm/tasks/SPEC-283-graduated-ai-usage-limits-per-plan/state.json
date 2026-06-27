@@ -344,26 +344,26 @@
             "id": "T-009",
             "title": "Update SPEC-282 comparison table to show graduated per-tier AI numbers",
             "description": "G-4 — when SPEC-283 ships, the plan comparison table and plan cards (from SPEC-282) must be updated from binary AI indicator rows to graduated per-tier quota numbers (e.g. '10 / mes', '50 / mes', '200 / mes').\n\nExternal dependency: SPEC-282 must be merged to staging before this task can start.\n\nImplementation steps:\n1. Locate the plan comparison table component(s) in apps/web/ — likely under apps/web/src/features/billing/ or apps/web/src/components/plans/. Search for SPEC-282 references.\n2. Find AI feature rows (ai_search, ai_chat consumer) in the table data structure.\n3. Replace binary 'available/unavailable' cells with per-plan quota values using confirmed T-001 values. Use i18n keys from @repo/i18n for the '/mes' unit label.\n4. Ensure display is consistent: tourist-free=10, plus=50, vip=200, owner/complex=200.\n\nNote: exact component paths need grounding at implementation time.\n\nAcceptance criteria:\n- Comparison table shows graduated numbers for both AI feature rows.\n- Binary display removed.\n- SPEC-282 baseline tests still pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify SPEC-282 is merged to staging (external gate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Locate plan comparison table component in apps/web/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace binary AI rows with graduated quota values",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add or reuse i18n unit label ('/mes') for quota display",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["frontend", "web", "billing", "ui"],
@@ -376,7 +376,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T08:12:29.000Z"
             }
         },
         {
@@ -636,9 +636,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.1
     }
