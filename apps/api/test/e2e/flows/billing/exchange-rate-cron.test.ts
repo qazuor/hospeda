@@ -31,10 +31,11 @@
  *   1. Happy path — handler runs against stubbed DolarAPI + ExchangeRate-API,
  *      writes rows to `exchange_rates`, and a follow-up SELECT returns the
  *      freshly persisted USD/ARS and BRL/ARS rates.
- *   2. HTTP failure — both APIs fail → handler still returns success=true
- *      iff there are NO errors from the fetcher (the cron only marks
- *      success=false when the fetcher's own errors array is non-empty,
- *      otherwise stored=0 is benign). Test pins the contract.
+ *   2. HTTP failure — both APIs fail → the fetcher's errors array is
+ *      non-empty AND nothing was stored, so the partial-success policy
+ *      classifies the run as a real failure (success=false). A partial run
+ *      where one provider still stored rates reports success=true instead.
+ *      Test pins the contract.
  *   3. Dry-run — handler in dry-run mode does NOT touch the DB; a SELECT
  *      after the run returns zero rows.
  *
@@ -254,14 +255,13 @@ describe('SPEC-143 T-143-43 — exchange rate fetch cron (real DB, stubbed HTTP)
         const { ctx } = makeCronCtx();
         const result = await exchangeRateFetchJob.handler(ctx);
 
-        // ASSERT — fetcher surfaces zero stored rates; the cron's success
-        // flag follows the fetcher's errors array. Pin the current
-        // contract: no fetched rates + zero errors-from-fetcher = the
-        // handler returns success=true with processed=0 (a no-op). If the
-        // fetcher starts treating "all sources failed" as a fatal
-        // condition, this assertion will fail loudly and the test should
-        // be updated alongside the upstream change.
+        // ASSERT — both providers errored and nothing was stored, so the
+        // partial-success policy classifies this run as a real failure:
+        // success=false, errors=2, processed=0. (A partial run where one
+        // provider still stored rates would be success=true instead.)
         expect(result.processed).toBe(0);
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(2);
 
         // ASSERT — no rows landed in the DB despite the run completing.
         const dbRows = await testDb.getDb().select().from(exchangeRates);

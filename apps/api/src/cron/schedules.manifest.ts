@@ -141,7 +141,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'exchange-rate-fetch',
         displayName: 'Tipos de cambio',
         category: 'billing',
-        schedule: '*/15 * * * *',
+        schedule: '0 */3 * * *',
         description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
     },
     {

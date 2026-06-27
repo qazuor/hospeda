@@ -2,7 +2,7 @@
  * Exchange Rate Fetch Cron Job
  *
  * Fetches latest exchange rates from DolarAPI and ExchangeRate-API.
- * Runs every 15 minutes to keep rates current.
+ * Runs every 3 hours to keep rates current.
  *
  * Features:
  * - Fetches from DolarAPI (ARS-specific rates)
@@ -56,13 +56,21 @@ type CronTransactionResult =
 /**
  * Exchange rate fetch cron job definition
  *
- * Schedule: Every 15 minutes (*\/15 * * * *)
+ * Schedule: Every 3 hours (0 *\/3 * * *)
  * Purpose: Keep exchange rates current by fetching from external APIs
+ *
+ * Cadence rationale: rates move slowly, so 3-hourly is ample for display.
+ * At 8 runs/day (~240/month) the ExchangeRate-API free tier (1500/month) is
+ * used at ~16%, with no rate-limit 429s. Both providers are queried every run
+ * because they cover DISJOINT pairs: DolarAPI supplies the ARS variants
+ * (oficial/blue/mep/ccl/tarjeta) and ARS-BRL, while ExchangeRate-API is the
+ * sole source of USD-BRL. A fallback-only secondary would silently drop
+ * USD-BRL on normal runs.
  */
 export const exchangeRateFetchJob: CronJobDefinition = {
     name: 'exchange-rate-fetch',
     description: 'Fetch latest exchange rates from DolarAPI and ExchangeRate-API',
-    schedule: '*/15 * * * *', // Every 15 minutes
+    schedule: '0 */3 * * *', // Every 3 hours
     enabled: true,
     timeoutMs: 60000, // 1 minute timeout
 
@@ -160,18 +168,37 @@ export const exchangeRateFetchJob: CronJobDefinition = {
 
                 const durationMs = Date.now() - startedAt.getTime();
 
+                // Partial-success policy: a transient error from ONE provider
+                // (e.g. the ExchangeRate-API rate-limit 429) must NOT mark the
+                // whole run failed when the other provider still stored rates.
+                // The run is a success if at least one rate was stored OR there
+                // were no errors at all (e.g. everything was served by an active
+                // manual override). Only a run that stored nothing AND hit errors
+                // is a real failure. Provider errors are always recorded in
+                // `details.errorDetails` for visibility regardless of outcome.
+                const hadErrors = result.errors.length > 0;
+                const partial = hadErrors && result.stored > 0;
+                const success = !hadErrors || result.stored > 0;
+
+                let message: string;
+                if (!hadErrors) {
+                    message = `Successfully fetched and stored ${result.stored} exchange rates`;
+                } else if (partial) {
+                    message = `Partial success: stored ${result.stored} rates, ${result.errors.length} provider error(s)`;
+                } else {
+                    message = `Failed: stored 0 rates with ${result.errors.length} errors`;
+                }
+
                 return {
                     skipped: false,
-                    success: result.errors.length === 0,
-                    message:
-                        result.errors.length === 0
-                            ? `Successfully fetched and stored ${result.stored} exchange rates`
-                            : `Fetched ${result.stored} rates with ${result.errors.length} errors`,
+                    success,
+                    message,
                     processed: result.stored,
                     errors: result.errors.length,
                     durationMs,
                     details: {
                         stored: result.stored,
+                        partial,
                         fromManualOverride: result.fromManualOverride,
                         fromDolarApi: result.fromDolarApi,
                         fromExchangeRateApi: result.fromExchangeRateApi,

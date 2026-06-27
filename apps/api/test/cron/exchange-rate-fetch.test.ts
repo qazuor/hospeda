@@ -125,7 +125,7 @@ describe('Exchange Rate Fetch Cron Job', () => {
             expect(exchangeRateFetchJob.description).toBe(
                 'Fetch latest exchange rates from DolarAPI and ExchangeRate-API'
             );
-            expect(exchangeRateFetchJob.schedule).toBe('*/15 * * * *');
+            expect(exchangeRateFetchJob.schedule).toBe('0 */3 * * *');
             expect(exchangeRateFetchJob.enabled).toBe(true);
             expect(exchangeRateFetchJob.timeoutMs).toBe(60000);
         });
@@ -191,6 +191,56 @@ describe('Exchange Rate Fetch Cron Job', () => {
             expect(result.details).toHaveProperty('fromExchangeRateApi');
             expect(result.details).toHaveProperty('fromManualOverride');
             expect(result.details).toHaveProperty('fromDbFallback');
+        });
+
+        it('treats a partial provider failure as success when rates were stored', async () => {
+            const { ExchangeRateFetcher } = await import('@repo/service-core');
+
+            // DolarAPI stored 5 rates; ExchangeRate-API hit a 429.
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
+                fetchAndStore: vi.fn().mockResolvedValue({
+                    stored: 5,
+                    errors: [
+                        { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
+                    ],
+                    fromManualOverride: 0,
+                    fromDolarApi: 5,
+                    fromExchangeRateApi: 0,
+                    fromDbFallback: 0
+                })
+            }));
+
+            const result = await exchangeRateFetchJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('Partial success');
+            expect(result.errors).toBe(1);
+            expect(result.details).toMatchObject({ partial: true, stored: 5 });
+        });
+
+        it('reports failure when no rates were stored and providers errored', async () => {
+            const { ExchangeRateFetcher } = await import('@repo/service-core');
+
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
+                fetchAndStore: vi.fn().mockResolvedValue({
+                    stored: 0,
+                    errors: [
+                        { source: 'DolarAPI', error: 'network down' },
+                        { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
+                    ],
+                    fromManualOverride: 0,
+                    fromDolarApi: 0,
+                    fromExchangeRateApi: 0,
+                    fromDbFallback: 0
+                })
+            }));
+
+            const result = await exchangeRateFetchJob.handler(mockContext);
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain('Failed');
+            expect(result.errors).toBe(2);
+            expect(result.details).toMatchObject({ partial: false });
         });
     });
 
