@@ -62,6 +62,22 @@ function isBillingConfigured(): boolean {
 let billingInstance: QZPayBilling | null = null;
 
 /**
+ * Backoff guard for a FAILED initialization.
+ *
+ * Without this, a failed init (e.g. an invalid MercadoPago access token) would
+ * be retried — and re-log its full stack trace — on every request and every
+ * cron tick (subscription-poll fires once per minute), flooding the logs. When
+ * init throws we suppress further attempts until this timestamp elapses, so the
+ * error is logged at most once per {@link BILLING_INIT_RETRY_BACKOFF_MS} while
+ * a genuinely transient failure can still recover. A process restart (the only
+ * way to apply a corrected token via redeploy) resets this module state anyway.
+ */
+let billingInitRetryAfter = 0;
+
+/** Minimum gap between init attempts after a failure. */
+const BILLING_INIT_RETRY_BACKOFF_MS = 5 * 60_000;
+
+/**
  * Get or create the QZPay billing instance
  *
  * @returns QZPay billing instance or null if not configured
@@ -74,6 +90,12 @@ function getBillingInstance(): QZPayBilling | null {
 
     // Check configuration
     if (!isBillingConfigured()) {
+        return null;
+    }
+
+    // A recent init attempt failed: skip re-trying (and re-logging the stack)
+    // until the backoff window elapses.
+    if (billingInitRetryAfter > Date.now()) {
         return null;
     }
 
@@ -131,11 +153,21 @@ function getBillingInstance(): QZPayBilling | null {
 
         apiLogger.info('✅ QZPay billing initialized successfully');
 
+        // Clear any prior failure backoff now that init succeeded.
+        billingInitRetryAfter = 0;
+
         return billingInstance;
     } catch (error) {
+        // Suppress further attempts (and stack-trace spam) for the backoff window.
+        billingInitRetryAfter = Date.now() + BILLING_INIT_RETRY_BACKOFF_MS;
+
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
-        apiLogger.error(`Failed to initialize billing: ${errorMessage}`);
+        apiLogger.error(
+            `Failed to initialize billing: ${errorMessage} (suppressing retries for ${
+                BILLING_INIT_RETRY_BACKOFF_MS / 60_000
+            }m)`
+        );
         if (errorStack) {
             apiLogger.error(`Billing init stack: ${errorStack}`);
         }
