@@ -22,11 +22,7 @@
     padding: 1rem 1.25rem;
     border: 2px solid var(--brand-primary, #2563eb);
     border-radius: var(--radius-lg, 1rem);
-    background: linear-gradient(
-        135deg,
-        oklch(from var(--brand-primary, #2563eb) l c h / 0.08),
-        oklch(from var(--brand-accent, #f97316) l c h / 0.04)
-    );
+    background: linear-gradient(135deg, var(--brand-primary-a08), var(--brand-accent-a05));
     color: var(--core-foreground, #1f2937);
     font-family: var(--font-sans, sans-serif);
     font-size: 1rem;
@@ -35,8 +31,7 @@
     cursor: pointer;
     transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
         var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
-    box-shadow: 0 4px 12px -4px oklch(from var(--brand-primary, #2563eb) l c h / 0.25), 0 0 0 1px
-        oklch(from var(--brand-primary, #2563eb) l c h / 0.15);
+    box-shadow: 0 4px 12px -4px var(--brand-primary-a25), 0 0 0 1px var(--brand-primary-a15);
     margin-bottom: var(--space-8, 2rem);
     position: relative;
     overflow: hidden;
@@ -57,8 +52,7 @@
 .searchBar:hover {
     border-color: var(--brand-primary, #2563eb);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -6px oklch(from var(--brand-primary, #2563eb) l c h / 0.35), 0 0 0 1px
-        oklch(from var(--brand-primary, #2563eb) l c h / 0.2);
+    box-shadow: 0 8px 24px -6px var(--brand-primary-a35), 0 0 0 1px var(--brand-primary-a20);
 }
 
 .searchBar:hover::before {
@@ -107,7 +101,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    box-shadow: 0 2px 6px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.4);
+    box-shadow: 0 2px 6px -2px var(--brand-primary-a40);
 }
 
 /* Desktop inline variant: remove the default bottom spacing so the fake
@@ -142,14 +136,14 @@
     font-size: 1.25rem;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 4px 16px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.4);
+    box-shadow: 0 4px 16px -2px var(--brand-primary-a40);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     animation: fabIn 0.25s ease;
 }
 
 .fab:hover {
     transform: scale(1.08);
-    box-shadow: 0 6px 20px -2px oklch(from var(--brand-primary, #2563eb) l c h / 0.5);
+    box-shadow: 0 6px 20px -2px var(--brand-primary-a45);
 }
 
 .fab:focus-visible {

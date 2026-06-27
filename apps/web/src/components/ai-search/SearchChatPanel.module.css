@@ -171,7 +171,7 @@
 
 .exampleChip:hover {
     border-color: var(--brand-primary, #2563eb);
-    background-color: oklch(from var(--brand-primary, #2563eb) l c h / 0.06);
+    background-color: var(--brand-primary-a05);
 }
 
 .exampleChip:focus-visible {
@@ -294,7 +294,7 @@
     font-size: 0.8125rem;
     line-height: 1.45;
     color: var(--brand-accent, #f97316);
-    background-color: oklch(from var(--brand-accent, #f97316) l c h / 0.08);
+    background-color: var(--brand-accent-a08);
     border-radius: var(--radius-md, 0.625rem);
     border-left: 3px solid var(--brand-accent, #f97316);
     flex-shrink: 0;
