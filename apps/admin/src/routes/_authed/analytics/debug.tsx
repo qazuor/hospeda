@@ -140,7 +140,9 @@ function AnalyticsDebugPage() {
                                 <span className="text-muted-foreground">
                                     {t('admin-pages.analytics.debug.nodeVersion')}
                                 </span>
-                                <span className="font-mono">{process.version}</span>
+                                <span className="font-mono">
+                                    {typeof process !== 'undefined' ? process.version : 'N/A'}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
