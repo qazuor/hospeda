@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-294",
+    "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
+    "type": "bugfix",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-27T00:00:00Z",
+    "decided": null,
+    "modelFit": "basic-to-medium",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "ci",
+        "a11y",
+        "accessibility",
+        "github-actions",
+        "web",
+        "workflow",
+        "spec-270-followup"
+    ]
+}
