@@ -45,6 +45,8 @@ import { listNotificationLogsRoute } from './notifications';
 import { adminPlansRouter } from './plans';
 import { adminBillingHooks } from './qzpay-admin-hooks';
 import { subscriptionEventsRoute } from './subscription-events';
+import { subscriptionPromoEffectRoute } from './subscription-promo-effect';
+import { adminSubscriptionTrialExtensionRouter } from './subscription-trial-extension';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
 /**
@@ -142,6 +144,12 @@ app.route('/metrics', adminMetricsRouter);
 
 // GET /subscriptions/:id/events - List lifecycle events for a subscription
 app.route('/subscriptions', subscriptionEventsRoute);
+
+// GET /subscriptions/:id/promo-effect - Get active promo effect for a subscription
+app.route('/subscriptions', subscriptionPromoEffectRoute);
+
+// POST /subscriptions/:subscriptionId/apply-trial-extension - Apply a trial_extension promo to a subscription (admin, BILLING_PROMO_CODE_MANAGE)
+app.route('/subscriptions', adminSubscriptionTrialExtensionRouter);
 
 // GET /addons, /addons/:slug - Hospeda add-on catalog (admin only)
 app.route('/addons', adminAddonsRouter);

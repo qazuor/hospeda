@@ -11,7 +11,11 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
-import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
 
@@ -28,7 +32,19 @@ describe('AccommodationService.getTopRated', () => {
         model = createModelMock(['findTopRated']) as any;
         service = new AccommodationService(
             { logger: mockLogger },
-            model as unknown as AccommodationModel
+            model as unknown as AccommodationModel,
+            // mediaProvider, userModel, publishDeps, rAmenityModel, rFeatureModel,
+            // amenityModel, featureCatalogModel are all unused in these tests.
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // SPEC-204: inject stub so attachComposedMediaList does not hit a real DB.
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
         );
         vi.clearAllMocks();
     });

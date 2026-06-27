@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "018-amenity-bed-and-bath-washer",
-    "name": {
-        "es": "washer",
-        "en": "washer",
-        "pt": "washer"
-    },
     "slug": "washer",
     "description": {
         "es": "Lavarropas",
         "en": "Lavarropas",
         "pt": "Lavarropas"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "BED_AND_BATH",
     "icon": "WasherIcon",
     "isBuiltin": false,

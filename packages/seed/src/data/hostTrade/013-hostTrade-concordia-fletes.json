@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "013-hostTrade-concordia-fletes",
+    "name": "Fletes y Mudanzas Concordia",
+    "slug": "fletes-y-mudanzas-concordia",
+    "category": "FLETES",
+    "contact": "https://wa.me/5493454234567",
+    "benefit": "Traslado de muebles y electrodomésticos con 15% de descuento para hosts Hospeda. Carga y descarga incluida.",
+    "destinationId": "003-destination-concordia",
+    "is24h": false,
+    "scheduleText": "Lunes a Sábado 7:00–19:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

@@ -24,6 +24,9 @@
         "town": "Town",
         "neighborhood": "Neighborhood"
     },
+    "destination": {
+        "label": "Destination"
+    },
     "accommodationType": {
         "label": "Type",
         "apartment": "Apartment",
@@ -90,6 +93,9 @@
     "includeDeleted": {
         "label": "Show deleted"
     },
+    "ownerId": {
+        "label": "Owner"
+    },
     "rangeMin": "Min",
     "rangeMax": "Max",
     "rangeFrom": "From",
@@ -140,6 +146,24 @@
             "label": "Log date"
         }
     },
+    "auditLog": {
+        "severity": {
+            "label": "Severity",
+            "critical": "Critical",
+            "info": "Info"
+        },
+        "eventType": {
+            "label": "Event type",
+            "placeholder": "e.g. auth.login.failed"
+        },
+        "actorId": {
+            "label": "Actor",
+            "placeholder": "Actor UUID"
+        },
+        "loggedAt": {
+            "label": "Event date"
+        }
+    },
     "endDate": {
         "label": "End date"
     },
@@ -166,5 +190,82 @@
         "familyFriendly": "Family-friendly",
         "workFriendly": "Work-friendly",
         "generalAppliances": "General appliances"
+    },
+    "isActive": {
+        "label": "Active"
+    },
+    "is24h": {
+        "label": "Available 24h"
+    },
+    "hostTradeCategory": {
+        "label": "Category",
+        "cerrajeria": "Locksmith",
+        "plomeria": "Plumbing",
+        "electricidad": "Electrical",
+        "gas": "Gas",
+        "climatizacion": "HVAC",
+        "limpieza": "Cleaning",
+        "fletes": "Moving / Transport",
+        "vidrieria": "Glazier",
+        "carpinteria": "Carpentry",
+        "piletaJardin": "Pool / Garden",
+        "plagas": "Pest control",
+        "internet": "Internet",
+        "albanileria": "Masonry"
+    },
+    "gastronomyType": {
+        "label": "Type",
+        "restaurant": "Restaurant",
+        "bar": "Bar",
+        "cafe": "Café",
+        "parrilla": "Grill / Parrilla",
+        "cerveceria": "Brewery",
+        "heladeria": "Ice Cream Shop",
+        "panaderia": "Bakery",
+        "rotiseria": "Rotisserie",
+        "foodTruck": "Food Truck"
+    },
+    "priceRange": {
+        "label": "Price range",
+        "budget": "Budget",
+        "mid": "Moderate",
+        "high": "High",
+        "premium": "Premium"
+    },
+    "experienceType": {
+        "label": "Experience type",
+        "carRental": "Car rental",
+        "bikeRental": "Bike rental",
+        "kayakRental": "Kayak rental",
+        "quadRental": "Quad rental",
+        "tourGuide": "Tour guide",
+        "guidedVisit": "Guided visit",
+        "excursion": "Excursion",
+        "boatTrip": "Boat trip",
+        "fishingCharter": "Fishing charter",
+        "birdWatching": "Bird watching",
+        "culturalTour": "Cultural tour",
+        "wineTasting": "Wine tasting",
+        "outdoorAdventure": "Outdoor adventure",
+        "other": "Other"
+    },
+    "partnerType": {
+        "label": "Partner type",
+        "commerce": "Commerce",
+        "ngo": "NGO",
+        "institution": "Institution"
+    },
+    "partnerTier": {
+        "label": "Tier",
+        "bronze": "Bronze",
+        "silver": "Silver",
+        "gold": "Gold"
+    },
+    "partnerSubscriptionStatus": {
+        "label": "Subscription status",
+        "active": "Active",
+        "pending": "Pending",
+        "past_due": "Past due",
+        "cancelled": "Cancelled"
     }
 }

@@ -29,8 +29,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /**
  * Test suite for the AccommodationService.getByDestination method.
@@ -63,7 +66,22 @@ describe('AccommodationService.getByDestination', () => {
             searchWithRelations: vi.fn(),
             findAll: vi.fn()
         } as unknown as Mocked<AccommodationModel>;
-        service = createServiceTestInstance(AccommodationService, modelMock);
+        service = new AccommodationService(
+            { logger: createLoggerMock() },
+            modelMock,
+            // mediaProvider, userModel, publishDeps, rAmenityModel, rFeatureModel,
+            // amenityModel, featureCatalogModel are all unused in these tests.
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // SPEC-204: inject stub so attachComposedMediaList does not hit a real DB.
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
         actor = new ActorFactoryBuilder().host().build();
         destinationId = getMockDestinationId();
     });

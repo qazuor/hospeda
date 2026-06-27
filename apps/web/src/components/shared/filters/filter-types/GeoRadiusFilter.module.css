@@ -48,7 +48,8 @@
 }
 
 .destSelect:focus-visible {
-    outline: none;
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a20);
 }
@@ -76,7 +77,11 @@
 .browserCta:hover:not(:disabled),
 .browserCta:focus-visible {
     background-color: var(--brand-accent-a15);
-    outline: none;
+}
+
+.browserCta:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
 }
 
 .browserCta:disabled {
@@ -115,7 +120,11 @@
 .presetChip:hover,
 .presetChip:focus-visible {
     border-color: var(--brand-accent);
-    outline: none;
+}
+
+.presetChip:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
 }
 
 .presetChipActive {

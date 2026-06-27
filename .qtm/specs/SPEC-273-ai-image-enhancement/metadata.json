@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-273",
+    "title": "AI image enhancement + manual editing (crop, rotate, filters) for all entity images",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "ai",
+        "images",
+        "media",
+        "cloudinary",
+        "editing",
+        "crop",
+        "rotate",
+        "enhancement",
+        "admin",
+        "web",
+        "host"
+    ]
+}

@@ -13,6 +13,7 @@
  */
 
 import type { QueryContext } from '@repo/db';
+import type { EffectPreview, PromoEffect } from '@repo/schemas';
 import {
     createPromoCode,
     deletePromoCode,
@@ -37,19 +38,52 @@ import { validatePromoCode } from './promo-code.validation.js';
 
 /**
  * Discount type for promo codes.
+ *
+ * @deprecated Use `PromoEffect` from `@repo/schemas` for new code.
+ * Kept for backward compatibility with legacy callers.
  */
 export type DiscountType = 'percentage' | 'fixed';
 
 /**
- * Promo code creation input.
+ * Promo code creation input (SPEC-262 T-005 updated).
+ *
+ * Accepts the new typed `effect` discriminated union (SPEC-262) as the
+ * primary mechanism. The legacy `discountType` / `discountValue` flat fields
+ * are RETAINED for backward compatibility with startup/seed paths (e.g.
+ * `ensureDefaultPromoCodes`). When `effect` is supplied it takes precedence
+ * and the service persists the typed effect columns. When only
+ * `discountType` / `discountValue` are supplied (legacy path), the service
+ * maps them to a `discount` effect with `durationCycles = 1`.
+ *
+ * New callers (admin routes, T-008) MUST supply `effect`. Existing seed-only
+ * callers that still pass `discountType` / `discountValue` continue to work
+ * without changes.
  */
 export interface CreatePromoCodeInput {
     /** The promo code string (will be uppercased) */
     code: string;
-    /** Discount type (percentage or fixed amount) */
-    discountType: DiscountType;
-    /** Discount value (percentage 0-100 or fixed amount in cents) */
-    discountValue: number;
+
+    /**
+     * Typed promo effect (SPEC-262).
+     *
+     * When provided, takes precedence over `discountType` / `discountValue`.
+     * Persisted to `effect_kind`, `value_kind`, `duration_cycles`, `extra_days`
+     * via raw SQL after the INSERT (these columns are extras-carril additions
+     * not in the QZPay Drizzle schema).
+     */
+    effect?: PromoEffect;
+
+    /**
+     * Legacy discount type field.
+     * @deprecated Prefer `effect` for new code. Required when `effect` is absent.
+     */
+    discountType?: DiscountType;
+    /**
+     * Legacy discount value field.
+     * @deprecated Prefer `effect` for new code. Required when `effect` is absent.
+     */
+    discountValue?: number;
+
     /** Optional description */
     description?: string;
     /** Expiration date (optional) */
@@ -116,6 +150,10 @@ export interface PromoCodeValidationContext {
 
 /**
  * Validation result.
+ *
+ * SPEC-262 T-012: adds `effectPreview` so the validate endpoint can expose
+ * the typed effect for the web checkout UI (preview before paying).
+ * `discountAmount` is preserved unchanged for back-compat.
  */
 export interface PromoCodeValidationResult {
     /** Whether the code is valid */
@@ -124,17 +162,33 @@ export interface PromoCodeValidationResult {
     errorCode?: string;
     /** Error message if invalid */
     errorMessage?: string;
-    /** Discount amount preview (in cents) */
+    /** Discount amount preview (in cents). Back-compat — existing callers rely on this. */
     discountAmount?: number;
+    /**
+     * Typed effect preview (SPEC-262 T-012).
+     * Present only when `valid` is true. Allows the checkout UI to render
+     * "50% off for 3 months", "Free forever", "Trial +N days" before payment.
+     */
+    effectPreview?: EffectPreview;
 }
 
 /**
  * Promo code entity (matches expected QZPay structure).
+ *
+ * ADDITIVE: the `effect` field is new (SPEC-262) and optional so that
+ * existing callers that only read `type` / `value` continue to work
+ * without changes (AC-4.3 backward-compat contract).
  */
 export interface PromoCode {
     id: string;
     code: string;
-    type: 'percentage' | 'fixed';
+    /**
+     * Legacy type field — kept for backward compat (AC-4.3).
+     * For existing `percentage`/`fixed` codes this matches the DB `type` column.
+     * For new SPEC-262 codes `mapDbToPromoCode` maps `effect_kind` to this field.
+     */
+    type: 'percentage' | 'fixed' | 'discount' | 'trial_extension' | 'comp';
+    /** Discount value in centavos (or percentage integer). 0 for non-discount kinds. */
     value: number;
     active: boolean;
     expiresAt?: string;
@@ -154,6 +208,14 @@ export interface PromoCode {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
+    /**
+     * Full typed effect — NEW field (SPEC-262, optional for backward compat).
+     *
+     * Present on codes created or migrated after SPEC-262. Absent on legacy
+     * codes fetched before the backfill migration runs. Clients that only need
+     * the one-shot discount amount can rely solely on `type` + `value`.
+     */
+    effect?: PromoEffect;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,20 +327,32 @@ export class PromoCodeService {
      * Apply a promo code for a billing customer.
      *
      * Validates, atomically redeems, and records usage.
+     * Branches by effect kind (SPEC-262 T-005):
+     * - `discount` → computes finalAmount/discountAmount (AC-4.1 backward compat)
+     * - `trial_extension` → returns extraDays from persisted DB effect (AC-3.2)
+     * - `comp` → stamps subscription status='comp', returns 0 charge (AC-2.1)
      *
      * @param code - Promo code string
      * @param customerId - Billing customer ID
      * @param amount - Optional original amount in cents
      * @param options - Optional settings
      * @param options.livemode - Whether in live mode (default: false)
+     * @param options.subscriptionId - Optional subscription ID for effect state tracking
+     * @param options.subscriptionStatus - Optional current subscription status for state
+     *   machine validation (AC-3.4). Pass the current subscription's status when applying
+     *   to an existing subscription to enforce compatibility rules.
      * @param ctx - Optional query context carrying a transaction client
-     * @returns Discount calculation result or error
+     * @returns Typed apply result or error
      */
     async apply(
         code: string,
         customerId: string,
         amount?: number,
-        options: { readonly livemode?: boolean } = {},
+        options: {
+            readonly livemode?: boolean;
+            readonly subscriptionId?: string;
+            readonly subscriptionStatus?: string;
+        } = {},
         ctx?: QueryContext
     ) {
         return applyPromoCode(code, customerId, amount, options, ctx);

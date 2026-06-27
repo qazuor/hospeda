@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "011-hostTrade-gualeguaychu-plomeria",
+    "name": "Plomería Rápida Gualeguaychú",
+    "slug": "plomeria-rapida-gualeguaychu",
+    "category": "PLOMERIA",
+    "contact": "https://wa.me/5493446345678",
+    "benefit": "Atención en menos de 2 horas para emergencias. 10% de descuento en mano de obra mencionando Hospeda.",
+    "destinationId": "005-destination-gualeguaychu",
+    "is24h": true,
+    "scheduleText": null,
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

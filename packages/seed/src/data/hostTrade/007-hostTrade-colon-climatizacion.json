@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "007-hostTrade-colon-climatizacion",
+    "name": "Clima Total Colón",
+    "slug": "clima-total-colon",
+    "category": "CLIMATIZACION",
+    "contact": "+54 9 3447 345678",
+    "benefit": "Mantenimiento preventivo anual con 20% de descuento para alojamientos registrados. Service de temporada garantizado.",
+    "destinationId": "002-destination-colon",
+    "is24h": false,
+    "scheduleText": "Lunes a Sábado 8:00–18:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

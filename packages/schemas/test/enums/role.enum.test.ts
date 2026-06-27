@@ -15,13 +15,23 @@ describe('RoleEnum', () => {
             expect(RoleEnum.CLIENT_MANAGER).toBe('CLIENT_MANAGER');
             expect(RoleEnum.EDITOR).toBe('EDITOR');
             expect(RoleEnum.HOST).toBe('HOST');
+            expect(RoleEnum.COMMERCE_OWNER).toBe('COMMERCE_OWNER');
             expect(RoleEnum.SPONSOR).toBe('SPONSOR');
             expect(RoleEnum.USER).toBe('USER');
             expect(RoleEnum.GUEST).toBe('GUEST');
         });
 
-        it('should have exactly 9 roles (including SYSTEM)', () => {
-            expect(Object.values(RoleEnum)).toHaveLength(9);
+        it('should have exactly 10 roles (including SYSTEM and COMMERCE_OWNER)', () => {
+            expect(Object.values(RoleEnum)).toHaveLength(10);
+        });
+
+        // SPEC-239: COMMERCE_OWNER role
+        it('should define COMMERCE_OWNER', () => {
+            expect(RoleEnum.COMMERCE_OWNER).toBe('COMMERCE_OWNER');
+        });
+
+        it('COMMERCE_OWNER should be distinct from HOST', () => {
+            expect(RoleEnum.COMMERCE_OWNER).not.toBe(RoleEnum.HOST);
         });
     });
 
@@ -58,6 +68,12 @@ describe('RoleEnum', () => {
             expect(() => RoleEnumSchema.parse('system')).toThrow(ZodError);
             expect(() => RoleEnumSchema.parse('System')).toThrow(ZodError);
             expect(() => RoleEnumSchema.parse('SYSTEM')).not.toThrow();
+        });
+
+        // SPEC-239: COMMERCE_OWNER schema parsing
+        it('should parse COMMERCE_OWNER successfully', () => {
+            const result = RoleEnumSchema.parse('COMMERCE_OWNER');
+            expect(result).toBe(RoleEnum.COMMERCE_OWNER);
         });
 
         it('should provide appropriate error message for invalid values', () => {

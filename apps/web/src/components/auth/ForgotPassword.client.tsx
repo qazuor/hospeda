@@ -1,6 +1,6 @@
 /**
  * @file ForgotPassword.client.tsx
- * @description Forgot-password form React island for web2.
+ * @description Forgot-password form React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * Requests a password-reset email via forgetPassword() from auth-client.ts.

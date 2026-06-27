@@ -1,0 +1,265 @@
+---
+/**
+ * @file GastronomyDetailHeader.astro
+ * @description Detail page header for a gastronomy listing (SPEC-239 T-054).
+ * Shows name, type badge, price-range badge, average rating, and a featured star.
+ */
+
+import { StarIcon, LocationIcon } from '@repo/icons';
+import type { GastronomyDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly gastronomy: GastronomyDetailData;
+    readonly locale: SupportedLocale;
+}
+
+const { gastronomy, locale } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+const typeLabel = t(`gastronomy.types.${gastronomy.type}`, gastronomy.type);
+const priceRangeLabel = gastronomy.priceRange
+    ? t(`gastronomy.card.priceRange.${gastronomy.priceRange}`, gastronomy.priceRange)
+    : null;
+
+const fullStars = Math.floor(gastronomy.averageRating);
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = gastronomy.createdAt
+    ? Date.now() - new Date(gastronomy.createdAt).getTime() < THIRTY_DAYS_MS
+    : false;
+---
+
+<header class="gastro-detail-header">
+    <div class="gastro-detail-header__badges">
+        <span class="gastro-detail-header__type-badge">{typeLabel}</span>
+        {priceRangeLabel && (
+            <span class="gastro-detail-header__price-badge">{priceRangeLabel}</span>
+        )}
+        {gastronomy.isFeatured && (
+            <span class="featured-badge">
+                <StarIcon size={12} weight="fill" aria-hidden="true" />
+                <span>{t('gastronomy.card.featured', 'Destacado')}</span>
+            </span>
+        )}
+        {isNew && (
+            <span class="gastro-detail-header__new-badge">
+                {t('home.accommodations.badge.new', 'Nuevo')}
+            </span>
+        )}
+    </div>
+
+    <h1 class="gastro-detail-header__name">{gastronomy.name}</h1>
+
+    {gastronomy.destinationName && (
+        <div class="gastro-detail-header__location">
+            <LocationIcon size={16} weight="fill" aria-hidden="true" />
+            <span>{gastronomy.destinationName}</span>
+        </div>
+    )}
+
+    {gastronomy.averageRating > 0 && (
+        <div class="gastro-detail-header__rating">
+            <div class="gastro-detail-header__stars" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                        class={
+                            i < fullStars
+                                ? 'gastro-detail-header__star--filled'
+                                : 'gastro-detail-header__star--empty'
+                        }
+                    >
+                        <StarIcon
+                            size={16}
+                            weight={i < fullStars ? 'fill' : 'regular'}
+                            aria-hidden="true"
+                        />
+                    </span>
+                ))}
+            </div>
+            <span class="gastro-detail-header__rating-value">
+                {gastronomy.averageRating.toFixed(1)}
+            </span>
+            {gastronomy.reviewsCount > 0 && (
+                <span class="gastro-detail-header__reviews-count">
+                    · {tPlural('review.list.totalReviews', gastronomy.reviewsCount, { count: gastronomy.reviewsCount })}
+                </span>
+            )}
+        </div>
+    )}
+</header>
+
+<style>
+    .gastro-detail-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .gastro-detail-header__badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .gastro-detail-header__type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary-a12);
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-primary-a25);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .gastro-detail-header__price-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+        border: 1px solid var(--brand-accent-a25);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .gastro-detail-header__new-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--hospeda-forest);
+        color: var(--primary-foreground);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .gastro-detail-header__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 2vw + 1rem, 2.5rem);
+        line-height: 1.2;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-detail-header__location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--core-muted-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+    }
+
+    .gastro-detail-header__rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .gastro-detail-header__stars {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .gastro-detail-header__star--filled {
+        color: var(--rating-star);
+        display: inline-flex;
+    }
+
+    .gastro-detail-header__star--empty {
+        color: var(--core-muted-foreground);
+        opacity: 0.4;
+        display: inline-flex;
+    }
+
+    .gastro-detail-header__rating-value {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--core-foreground);
+    }
+
+    .gastro-detail-header__reviews-count {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+    }
+
+    /* Smooth collapse into a single short line when the wave header compacts. */
+    .gastro-detail-header {
+        transition: gap 0.3s ease;
+    }
+
+    .gastro-detail-header__name {
+        transition: font-size 0.3s ease;
+    }
+
+    .gastro-detail-header__rating {
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* Compact state: triggered by the `.wave-header--compact` ancestor (mirrors
+       the accommodation DetailHeader). Collapse badges + title + location onto
+       one line and hide the rating so the compact wave band stays short. */
+    :global(.wave-header--compact) .gastro-detail-header {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__badges {
+        gap: 4px;
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__type-badge,
+    :global(.wave-header--compact) .gastro-detail-header__price-badge,
+    :global(.wave-header--compact) .gastro-detail-header__new-badge {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__name {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__location::before {
+        content: '\00B7';
+        margin-right: 0.35em;
+        color: var(--core-muted-foreground);
+        font-weight: 700;
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__location {
+        font-size: 0.85rem;
+    }
+
+    :global(.wave-header--compact) .gastro-detail-header__rating {
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .gastro-detail-header,
+        .gastro-detail-header__name,
+        .gastro-detail-header__rating {
+            transition: none;
+        }
+    }
+</style>

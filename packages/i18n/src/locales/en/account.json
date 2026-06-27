@@ -1,4 +1,68 @@
 {
+    "whatsNewModal": {
+        "title": "What's New",
+        "close": "Close",
+        "markAsRead": "Mark as read",
+        "markAllRead": "Mark all as read",
+        "noUnread": "No unread updates",
+        "viewAll": "View all updates",
+        "publishedAt": "Published on {{date}}"
+    },
+    "whatsNewBadge": {
+        "label": "What's New",
+        "unseenCount": "{{count}} unread",
+        "labelNone": "No updates"
+    },
+    "whatsNewPanel": {
+        "title": "What's New",
+        "empty": "No updates yet",
+        "markAllRead": "Mark all as read",
+        "seeEntry": "View"
+    },
+    "status": {
+        "new": "New"
+    },
+    "welcomeTour": {
+        "skip": "Skip tour",
+        "next": "Next",
+        "prev": "Previous",
+        "done": "Done",
+        "step": "Step {{current}} of {{total}}",
+        "restart": "View tour",
+        "running": "Tour in progress...",
+        "greetingHost": {
+            "title": "Welcome to your hosting dashboard",
+            "body": "From here you can manage your account, your properties and your accommodation activity."
+        },
+        "greetingCommerce": {
+            "title": "Welcome to your commerce dashboard",
+            "body": "From here you can manage your account and the public content of your business."
+        },
+        "properties": {
+            "title": "Your properties",
+            "body": "In this section you can create, edit and review all your properties."
+        },
+        "hostDashboard": {
+            "title": "Host dashboard",
+            "body": "Here you have a quick summary of your accommodation activity and inquiries."
+        },
+        "messages": {
+            "title": "Your inquiries",
+            "body": "Review and reply to messages related to your activity on Hospeda."
+        },
+        "promotions": {
+            "title": "Promotions",
+            "body": "Publish and manage promotions to highlight your offer."
+        },
+        "profile": {
+            "title": "Your profile",
+            "body": "Update your personal information, preferences and account settings."
+        },
+        "commerce": {
+            "title": "Your business",
+            "body": "Edit the public content, opening hours and visible details of your business."
+        }
+    },
     "navigation": "Account navigation",
     "sections": "Account sections",
     "avatar": {
@@ -69,7 +133,13 @@
         "sections": {
             "appearance": "Appearance",
             "notifications": "Notifications",
+            "onboarding": "Onboarding",
             "newsletter": "Newsletter"
+        },
+        "onboarding": {
+            "restartTour": "Repeat welcome tour",
+            "restartTourDesc": "Replay the guided tour of your account panel",
+            "restarting": "Starting tour..."
         },
         "theme": {
             "label": "Theme",
@@ -97,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Error loading preferences"
+        },
+        "whatsNew": {
+            "title": "What's New",
+            "desc": "Platform updates and announcements"
         }
     },
     "subscription": {
@@ -223,6 +297,7 @@
             "moveSuccess": "Moved to {{name}}",
             "moveSuccessUncollected": "Removed from collection",
             "moveError": "Could not move favorite",
+            "deleting": "Deleting…",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again."
         },
@@ -330,6 +405,8 @@
                 "myMessagesDesc": "Conversations with hosts",
                 "newsletter": "Newsletter",
                 "newsletterDesc": "Manage your newsletter subscription",
+                "whatsNew": "What's New",
+                "whatsNewDesc": "Platform updates and announcements",
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
                 "hostDashboard": "Host dashboard",
@@ -432,12 +509,72 @@
                 "emailSubject": "Subscription cancellation",
                 "body": "To cancel your subscription, email us at info@hospeda.com and an agent will process it promptly. Your plan will remain active until the end of the current period.",
                 "contactSupport": "Contact support",
-                "confirm": "Yes, cancel subscription"
+                "confirm": "Yes, cancel subscription",
+                "description": "By cancelling your subscription you keep access to your plan until the end of the current period. No further charges will be made.",
+                "reasonLabel": "Reason for cancellation (optional)",
+                "reasonPlaceholder": "Tell us why you're cancelling so we can improve...",
+                "successTitle": "Subscription cancelled",
+                "successBody": "Your subscription has been cancelled. You still have access until {date}.",
+                "flagOffFallback": "Online cancellation is not available at this time. Please contact support to cancel your subscription.",
+                "cancelError": "Could not cancel the subscription. Please try again."
+            },
+            "scheduledChange": {
+                "title": "Scheduled plan change",
+                "body": "Your plan will change to {plan} on {date}."
+            },
+            "changePlanButton": "Change plan",
+            "changePlanAriaLabel": "Change subscription plan",
+            "planPicker": {
+                "title": "Change plan",
+                "subtitle": "Choose the plan you want to switch to.",
+                "listLabel": "Available plans",
+                "currentBadge": "Current plan",
+                "upgradeBadge": "Upgrade",
+                "downgradeBadge": "Downgrade",
+                "selectMonthly": "Monthly",
+                "selectAnnual": "Annual"
+            },
+            "downgradePreview": {
+                "title": "Review changes before continuing",
+                "intro": "Switching to the {plan} plan will apply restrictions to your account. Choose what you want to keep.",
+                "accommodationsTitle": "Accommodations ({active} active, max {cap})",
+                "accommodationsHint": "Select up to {cap} accommodations to keep active. The rest will be deactivated.",
+                "accommodationsListLabel": "Accommodations list",
+                "promotionsTitle": "Promotions ({active} active, max {cap})",
+                "promotionsHint": "Select up to {cap} promotions to keep active.",
+                "promotionsListLabel": "Promotions list",
+                "overCapWarning": "You have {selected} selected but the plan allows {cap}. Deselect {extra}.",
+                "defaultKeep": "Suggested",
+                "photosTitle": "Excess photos",
+                "photosHint": "Some accommodations have more photos than allowed. The excess will be archived.",
+                "photosOf": "photos, max.",
+                "photoOverflowLabel": "Photos to be archived",
+                "keepPhotoLabel": "Keep photo {url}",
+                "grandfatherTitle": "Content that will become read-only",
+                "grandfatherHint": "These accommodations have content you won't be able to edit with the new plan, but it will NOT be deleted.",
+                "richDescription": "Rich description",
+                "videoEmbed": "Embedded video",
+                "confirmButton": "Continue with change"
+            },
+            "planChangeFlow": {
+                "scheduledTitle": "Change scheduled",
+                "scheduledBody": "Your plan will change on {date}. Until then, you keep your current plan.",
+                "restrictionHint": "Restrictions will be applied at that time. The exact details may vary based on your usage at the time of the change.",
+                "activeTitle": "Plan updated",
+                "activeBody": "Your plan was changed successfully.",
+                "redirecting": "Redirecting to payment...",
+                "previewError": "Could not get the change preview. Please try again.",
+                "changeError": "Could not change the plan. Please try again."
             }
+        },
+        "whatsNew": {
+            "title": "What's New",
+            "desc": "News and platform updates"
         }
     },
     "newsletter": {
         "title": "Newsletter",
+        "loading": "Loading preferences…",
         "statusLabel": "Status",
         "statusActive": "Active",
         "statusPending": "Pending verification",

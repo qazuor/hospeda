@@ -43,6 +43,7 @@ const ROLE_VISUALS: Record<RoleEnum, RoleVisual> = {
     [RoleEnum.CLIENT_MANAGER]: { level: 'high', icon: UsersIcon },
     [RoleEnum.EDITOR]: { level: 'medium', icon: EditIcon },
     [RoleEnum.HOST]: { level: 'medium', icon: HomeIcon },
+    [RoleEnum.COMMERCE_OWNER]: { level: 'medium', icon: HomeIcon },
     [RoleEnum.USER]: { level: 'low', icon: UserIcon },
     [RoleEnum.SPONSOR]: { level: 'low', icon: UserIcon },
     [RoleEnum.GUEST]: { level: 'low', icon: GlobeIcon },

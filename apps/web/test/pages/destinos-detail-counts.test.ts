@@ -83,9 +83,9 @@ describe('destinos/[...path].astro — real counts (T-045)', () => {
             expect(src).toContain('DestinationReviewsSection');
         });
 
-        it('imports DestinationFaqAccordion (SPEC-158) and DestinationClimatePlaceholder', () => {
+        it('imports DestinationFaqAccordion (SPEC-158) and DestinationClimateCard (SPEC-215)', () => {
             expect(src).toContain('DestinationFaqAccordion');
-            expect(src).toContain('DestinationClimatePlaceholder');
+            expect(src).toContain('DestinationClimateCard');
         });
 
         it('wires the FAQ accordion + FAQPage JSON-LD behind a faqs guard (SPEC-158)', () => {

@@ -18,24 +18,27 @@ export { API_CONFIG_ENV_VARS } from './env-registry.api-config.js';
 export { CLIENT_ADMIN_ENV_VARS, CLIENT_WEB_ENV_VARS } from './env-registry.client.js';
 export { DOCKER_ENV_VARS, SYSTEM_ENV_VARS } from './env-registry.docker-system.js';
 export { HOSPEDA_ENV_VARS } from './env-registry.hospeda.js';
+export { MOBILE_ENV_VARS } from './env-registry.mobile.js';
 
 import type { EnvVarDefinition } from './env-registry-types.js';
 import { API_CONFIG_ENV_VARS } from './env-registry.api-config.js';
 import { CLIENT_ADMIN_ENV_VARS, CLIENT_WEB_ENV_VARS } from './env-registry.client.js';
 import { DOCKER_ENV_VARS, SYSTEM_ENV_VARS } from './env-registry.docker-system.js';
 import { HOSPEDA_ENV_VARS } from './env-registry.hospeda.js';
+import { MOBILE_ENV_VARS } from './env-registry.mobile.js';
 
 /**
  * Canonical registry of every environment variable used across the
  * Hospeda monorepo, assembled from category-specific modules.
  *
  * Groups included:
- * - `HOSPEDA_*` — server-side platform variables (auth, database, billing, etc.)
- * - `API_*`     — Hono API server middleware configuration
- * - `PUBLIC_*`  — browser-exposed variables for `apps/web` (Astro)
- * - `VITE_*`    — browser-exposed variables for `apps/admin` (TanStack / Vite)
- * - Docker      — `docker-compose.yml` service configuration
- * - System      — runtime variables set by Node.js or CI
+ * - `HOSPEDA_*`       — server-side platform variables (auth, database, billing, etc.)
+ * - `API_*`           — Hono API server middleware configuration
+ * - `PUBLIC_*`        — browser-exposed variables for `apps/web` (Astro)
+ * - `VITE_*`          — browser-exposed variables for `apps/admin` (TanStack / Vite)
+ * - `EXPO_PUBLIC_*`   — bundle-baked variables for `apps/mobile` (Expo / React Native)
+ * - Docker            — `docker-compose.yml` service configuration
+ * - System            — runtime variables set by Node.js or CI
  *
  * Use this registry as the single source of truth when:
  * - Generating `.env.example` files
@@ -57,6 +60,7 @@ export const ENV_REGISTRY: readonly EnvVarDefinition[] = [
     ...API_CONFIG_ENV_VARS,
     ...CLIENT_WEB_ENV_VARS,
     ...CLIENT_ADMIN_ENV_VARS,
+    ...MOBILE_ENV_VARS,
     ...DOCKER_ENV_VARS,
     ...SYSTEM_ENV_VARS
 ];

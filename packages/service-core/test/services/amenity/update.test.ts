@@ -20,11 +20,10 @@ describe('AmenityService.update', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES
     });
     const updateInput = {
-        name: { es: 'Updated Amenity', en: 'Updated Amenity', pt: 'Updated Amenity' }
+        slug: 'updated-amenity'
     };
 
     beforeEach(() => {
@@ -39,7 +38,7 @@ describe('AmenityService.update', () => {
         asMock(amenityModelMock.update).mockResolvedValue({ ...amenity, ...updateInput });
         const result = await service.update(actor, amenity.id, updateInput);
         expectSuccess(result);
-        expect(result.data).toMatchObject(updateInput);
+        expect(result.data?.slug).toBe(updateInput.slug);
     });
 
     it('should return FORBIDDEN if actor lacks AMENITY_UPDATE permission', async () => {
@@ -50,10 +49,9 @@ describe('AmenityService.update', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // empty es locale violates min:2
+        // empty slug violates min:3
         const result = await service.update(actor, amenity.id, {
-            ...updateInput,
-            name: { es: '', en: '', pt: '' }
+            slug: ''
         });
         expectValidationError(result);
     });
@@ -87,13 +85,12 @@ describe('AmenityService.update', () => {
         });
         expectSuccess(result);
         expect(result.data?.description).toEqual(newDescription);
-        expect(result.data?.name).toEqual(amenity.name);
+        expect(result.data?.slug).toEqual(amenity.slug);
     });
 
-    it('should reject null for required fields', async () => {
+    it('should reject slug that is too short (below min:3)', async () => {
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
-        // @ts-expect-error
-        const result = await service.update(actor, amenity.id, { name: null });
+        const result = await service.update(actor, amenity.id, { slug: 'ab' });
         expectValidationError(result);
     });
 
@@ -102,7 +99,7 @@ describe('AmenityService.update', () => {
         asMock(amenityModelMock.update).mockResolvedValue({ ...amenity });
         const result = await service.update(actor, amenity.id, {});
         expectSuccess(result);
-        expect(result.data?.name).toEqual(amenity.name);
+        expect(result.data?.slug).toEqual(amenity.slug);
     });
 
     it('should update isFeatured only', async () => {

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "034-amenity-outdoors-solarium",
-    "name": {
-        "es": "solarium",
-        "en": "solarium",
-        "pt": "solarium"
-    },
     "slug": "solarium",
     "description": {
         "es": "Solárium disponible",
         "en": "Solárium disponible",
         "pt": "Solárium disponible"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "SolarShowersIcon",
     "isBuiltin": false,

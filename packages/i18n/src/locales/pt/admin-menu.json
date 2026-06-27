@@ -75,6 +75,11 @@
         "activity": "Atividade",
         "edit": "Editar"
     },
+    "platform": {
+        "title": "Plataforma",
+        "hostTrades": "Diretório de Ofícios",
+        "featureFlags": "Feature Flags"
+    },
     "sponsors": "Patrocinadores",
     "analytics": {
         "title": "Análises",
@@ -82,5 +87,13 @@
         "debug": "Debug",
         "business": "De Negócio",
         "views": "Visualizações"
+    },
+    "ai": {
+        "title": "Inteligência Artificial",
+        "usage": "Consumo de IA",
+        "settings": "Configurações",
+        "credentials": "Credenciais",
+        "prompts": "Prompts",
+        "playground": "Playground"
     }
 }

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "046-amenity-services-mini-bar",
-    "name": {
-        "es": "mini_bar",
-        "en": "mini_bar",
-        "pt": "mini_bar"
-    },
     "slug": "mini_bar",
     "description": {
         "es": "Mini bar en habitación",
         "en": "Mini bar en habitación",
         "pt": "Mini bar en habitación"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "MiniBarIcon",
     "isBuiltin": false,

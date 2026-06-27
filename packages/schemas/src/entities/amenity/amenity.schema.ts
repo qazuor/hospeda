@@ -8,6 +8,16 @@ import { PriceSchema } from '../../common/price.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.schema.js';
 
 /**
+ * Verticals that an amenity or feature can be applicable to.
+ * Drives catalog-by-vertical filtering (SPEC-266).
+ */
+export const APPLICABLE_VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+export type ApplicableVertical = (typeof APPLICABLE_VERTICALS)[number];
+
+/** Zod schema for a single applicable vertical. */
+export const ApplicableVerticalSchema = z.enum(APPLICABLE_VERTICALS);
+
+/**
  * Amenity Schema - Main Entity Schema
  *
  * This schema represents an amenity entity that can be associated with accommodations.
@@ -27,14 +37,22 @@ export const AmenitySchema = z.object({
         })
         .min(3, { message: 'zodError.amenity.slug.min' })
         .max(100, { message: 'zodError.amenity.slug.max' })
-        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+        .regex(/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/, {
             message: 'zodError.amenity.slug.pattern'
         })
         .nullish(),
 
-    name: i18nText({ min: 2, max: 100 }),
-
     description: i18nText({ min: 10, max: 500 }).nullish(),
+
+    /**
+     * Verticals this amenity is applicable to (SPEC-266).
+     * At least one vertical required. NOT NULL in DB.
+     */
+    applicableVerticals: z
+        .array(ApplicableVerticalSchema, {
+            message: 'zodError.amenity.applicableVerticals.required'
+        })
+        .min(1, { message: 'zodError.amenity.applicableVerticals.min' }),
 
     icon: z
         .string({
@@ -76,3 +94,25 @@ export const AccommodationAmenityRelationSchema = z.object({
         .optional()
 });
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
+
+/**
+ * Gastronomy-Amenity Relation Schema
+ * Represents the many-to-many relationship between gastronomy listings and amenities.
+ * Simpler than the accommodation variant: no pricing or optional-cost fields.
+ */
+export const GastronomyAmenityRelationSchema = z.object({
+    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    amenityId: AmenityIdSchema
+});
+export type GastronomyAmenityRelation = z.infer<typeof GastronomyAmenityRelationSchema>;
+
+/**
+ * Experience-Amenity Relation Schema (SPEC-240)
+ * Represents the many-to-many relationship between experience listings and amenities.
+ * Mirrors GastronomyAmenityRelationSchema: no pricing or optional-cost fields.
+ */
+export const ExperienceAmenityRelationSchema = z.object({
+    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    amenityId: AmenityIdSchema
+});
+export type ExperienceAmenityRelation = z.infer<typeof ExperienceAmenityRelationSchema>;

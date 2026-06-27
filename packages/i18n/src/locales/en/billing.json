@@ -219,6 +219,23 @@
             "unauthCta": "Sign in to subscribe",
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan"
+        },
+        "promoApply": {
+            "toggle": "Have a discount code?",
+            "label": "Discount code",
+            "inputPlaceholder": "Enter your code",
+            "applyButton": "Apply",
+            "applying": "Verifying...",
+            "removeButton": "Remove",
+            "discountPercentForever": "{{percent}}% discount forever",
+            "discountPercentCycles": "{{percent}}% discount for {{months}} months",
+            "discountFixedForever": "${{amount}} discount forever",
+            "discountFixedCycles": "${{amount}} discount for {{months}} months",
+            "trialExtension": "{{days}} extra free trial days",
+            "comp": "Free forever",
+            "errorInvalid": "The code you entered is not valid. Please check it and try again.",
+            "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
+            "errorGeneric": "We could not verify the code. Please try again."
         }
     },
     "limit": {
@@ -449,5 +466,78 @@
         "ai_text_improve": "AI writing assistant",
         "ai_chat": "Ask about the accommodation (AI)",
         "ai_search": "Smart search"
+    },
+    "comparison": {
+        "unlimited": "Unlimited",
+        "notIncluded": "Not included",
+        "included": "Included",
+        "upcoming": "Coming soon",
+        "complexTeaser": "Special plans for complexes and hotels — coming soon",
+        "group": {
+            "owner": "Owner features",
+            "accommodation": "Accommodation features",
+            "complex": "Complex features",
+            "tourist": "Traveler features",
+            "ai": "AI features",
+            "limits": "Limits",
+            "experience": "Your experience",
+            "asTourist": "As a traveler (included)",
+            "asOwner": "As an owner",
+            "aiBusiness": "AI for your business"
+        },
+        "row": {
+            "favorites": "Favorites",
+            "collections": "Travel collections",
+            "reviews": "Reviews",
+            "recommendations": "Personalized recommendations",
+            "compare": "Compare accommodations",
+            "searchHistory": "Search history",
+            "alertsOffers": "Alerts & offers",
+            "whatsappDisplay": "WhatsApp contact",
+            "whatsappDirect": "Direct WhatsApp with owner",
+            "aiSearch": "AI-powered search",
+            "aiChat": "AI chat about the accommodation",
+            "publish": "Published accommodations",
+            "photos": "Photos per accommodation",
+            "editInfo": "Edit accommodation info",
+            "respondReviews": "Reply to reviews",
+            "basicStats": "Basic statistics",
+            "advancedStats": "Advanced statistics",
+            "calendar": "Availability calendar",
+            "richDescription": "Rich description",
+            "video": "Video in your listing",
+            "promotions": "Active promotions",
+            "prioritySupport": "Priority support",
+            "featured": "Featured in search results",
+            "branding": "Custom branding",
+            "verificationBadge": "Verified property badge",
+            "aiTextImprove": "AI text improvements per month",
+            "aiTranslate": "AI translations per month",
+            "aiImport": "AI imports per month",
+            "aiChatOwner": "AI chat queries per month",
+            "aiSupport": "AI support assistant"
+        },
+        "note": {
+            "aiSearch": "For registered users",
+            "aiChatTourist": "Available in accommodations that enabled it",
+            "aiChatOwner": "You enable it for your guests",
+            "aiSupportAddon": "Available as an add-on"
+        },
+        "limitLabel": {
+            "max_accommodations": "Published accommodations",
+            "max_photos_per_accommodation": "Photos per accommodation",
+            "max_active_promotions": "Active promotions",
+            "max_favorites": "Favorites",
+            "max_properties": "Complex properties",
+            "max_staff_accounts": "Staff accounts",
+            "max_active_alerts": "Active price alerts",
+            "max_compare_items": "Simultaneous comparisons",
+            "max_ai_text_improve_per_month": "AI text improvements per month",
+            "max_ai_chat_per_month": "AI chat queries per month",
+            "max_ai_search_per_month": "AI searches per month",
+            "max_ai_support_per_month": "AI support queries per month",
+            "max_ai_translate_per_month": "AI translations per month",
+            "max_ai_accommodation_import_per_month": "AI imports per month"
+        }
     }
 }

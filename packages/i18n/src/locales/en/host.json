@@ -1,4 +1,72 @@
 {
+    "importFromUrl": {
+        "fields": {
+            "url": "Accommodation URL",
+            "urlPlaceholder": "https://...",
+            "legalConfirm": "I confirm I have permission to import this information."
+        },
+        "actions": {
+            "submit": "Import",
+            "submitting": "Importing..."
+        },
+        "errors": {
+            "urlRequired": "Enter the accommodation URL.",
+            "urlInvalid": "The URL is not valid.",
+            "legalRequired": "You must confirm the legal notice.",
+            "submit": "We couldn't import the accommodation. Please try again.",
+            "network": "We couldn't reach the server.",
+            "failure": {
+                "invalidUrl": "Check that the URL is valid and points to an accommodation.",
+                "sourceBlocked": "The source is temporarily unavailable. Wait a few minutes and try again, or enter the details manually.",
+                "credentialsMissing": "We couldn't reach the source right now. Try again later or enter the details manually.",
+                "providerError": "There was a problem querying the source. Try again or enter the details manually.",
+                "timeout": "The source took too long to respond. Try again or enter the details manually.",
+                "nothingFound": "We couldn't find accommodation data at that URL. You can enter the details manually."
+            }
+        },
+        "prefill": {
+            "sectionToggle": "Import from a URL",
+            "reviewNotice": "Review and confirm the imported data before continuing.",
+            "badge": {
+                "imported": "Imported",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Destination suggestion",
+                "locality": "Detected locality: {{locality}}",
+                "candidates": "Suggested destinations: {{names}}",
+                "hint": "Please select the destination manually in the City field.",
+                "autoSelected": "We auto-selected the detected destination. Review it and change it if it's wrong."
+            }
+        },
+        "help": {
+            "toggle": "How do I get the accommodation URL?",
+            "title": "How to copy the URL on each platform",
+            "platforms": {
+                "airbnb": {
+                    "name": "Airbnb",
+                    "steps": "Open the listing and copy the full address from your browser's address bar.",
+                    "example": "https://www.airbnb.com/rooms/12345678"
+                },
+                "booking": {
+                    "name": "Booking",
+                    "steps": "Open the property page and copy the browser address (it should look like booking.com/hotel/...), without the date filters. Share links (booking.com/Share-...) won't work: open them in your browser and copy the final address.",
+                    "example": "https://www.booking.com/hotel/ar/name.html"
+                },
+                "mercadolibre": {
+                    "name": "MercadoLibre",
+                    "steps": "Open the listing and copy the browser address.",
+                    "example": "https://inmueble.mercadolibre.com.ar/MLA-123456789"
+                },
+                "google": {
+                    "name": "Google Maps",
+                    "steps": "Find the place on Google Maps, open its card and copy the browser address. The app share link (maps.app.goo.gl/...) also works.",
+                    "example": "https://www.google.com/maps/place/..."
+                }
+            }
+        }
+    },
     "form": {
         "sections": {
             "datos-basicos": {
@@ -138,11 +206,15 @@
                 "viewOnSite": "[TODO]",
                 "unpublishConfirm": "Unpublish this property? It will no longer appear on the site.",
                 "confirmYes": "Yes, unpublish",
-                "confirmNo": "Cancel"
+                "confirmNo": "Cancel",
+                "delete": "Delete",
+                "deleteConfirm": "Delete this property? It will be removed from your listings and the site.",
+                "deleteYes": "Yes, delete"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Property unpublished",
             "unpublishError": "Could not unpublish. Please try again.",
+            "deleteError": "Could not delete. Please try again.",
             "priceOnRequest": "Price on request"
         },
         "editor": {
@@ -246,7 +318,8 @@
                 "mapHint": "Drag the pin to adjust the exact location.",
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
-                "geolocationError": "Could not get location. Try typing the address."
+                "geolocationError": "Could not get location. Try typing the address.",
+                "searching": "Searching…"
             },
             "translation": {
                 "sectionTitle": "Translations",
@@ -275,9 +348,45 @@
     },
     "miniForm": {
         "fields": {
+            "name": "Accommodation name",
+            "summary": "Short description",
+            "summaryHint": "One line summary. You can expand it later in the panel.",
             "type": "Accommodation type",
-            "typePlaceholder": "Choose an option"
+            "typePlaceholder": "Choose an option",
+            "typeEmpty": "No types match"
         },
+        "importedExtras": {
+            "sectionTitle": "What we imported",
+            "fields": {
+                "description": "Full description",
+                "maxGuests": "Max guests",
+                "bedrooms": "Bedrooms",
+                "beds": "Beds",
+                "bathrooms": "Bathrooms",
+                "basePrice": "Base price per night",
+                "street": "Street",
+                "number": "Number",
+                "phone": "Phone",
+                "website": "Website",
+                "coordinatesLabel": "Imported location",
+                "amenitiesCount": "{{count}} imported amenities"
+            }
+        },
+        "errors": {
+            "name": "Name must be at least 3 characters.",
+            "summary": "Short description must be at least 10 characters.",
+            "type": "Choose an accommodation type.",
+            "destinationId": "Choose the city where your accommodation is located.",
+            "serviceUnavailable": "We couldn't reach the billing service right now. Please try again in a minute.",
+            "submit": "We couldn't create the accommodation. Please try again.",
+            "missingId": "We didn't receive the accommodation ID. Please try again.",
+            "network": "We couldn't connect to the server. Check your connection and try again."
+        },
+        "actions": {
+            "submit": "Create and continue in the panel",
+            "submitting": "Creating..."
+        },
+        "disclaimer": "We'll create a draft with this information. Then we'll take you to the panel to complete photos, prices and more.",
         "types": {
             "APARTMENT": "Apartment",
             "HOUSE": "House",

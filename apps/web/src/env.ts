@@ -23,6 +23,14 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_BETTER_AUTH_URL: z.url().optional(),
     HOSPEDA_ADMIN_URL: z.url().optional(),
     PUBLIC_ADMIN_URL: z.url().optional(),
+    // Optional in the base schema so that ubiquitous server accessors (getApiUrl,
+    // getSiteUrl, …) do not throw when it is absent. It is only consumed by the
+    // Cloudflare cache-revalidation endpoint, which has no effect in local dev
+    // (no CDN to purge). Required in production via the `.refine` below — mirrors
+    // the PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY production-only pattern. This is
+    // the FU-1 fix: under `astro dev` the Vite SSR module-runner runs with an
+    // isolated process.env that never receives this server-only var, so making it
+    // hard-required broke every web write flow that calls getApiUrl().
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
@@ -55,6 +63,12 @@ export const serverEnvBaseSchema = z.object({
         .string()
         .regex(/^(\/[\w/-]+)?$/, 'PUBLIC_SENTRY_TUNNEL must be an absolute path like /api/event')
         .optional(),
+    /**
+     * Sentry tracing sample rate for the web app (0.0–1.0).
+     * Set to 1.0 on staging to avoid starving CWV data at 10% sampling.
+     * Defaults to 0.1 if unset.
+     */
+    PUBLIC_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.
@@ -114,7 +128,45 @@ export const serverEnvSchema = serverEnvBaseSchema
     .refine((data) => data.HOSPEDA_SITE_URL || data.PUBLIC_SITE_URL, {
         message: 'Either HOSPEDA_SITE_URL or PUBLIC_SITE_URL must be set',
         path: ['SITE_URL']
-    });
+    })
+    // ADMIN_URL is always required (at least one of the HOSPEDA_/PUBLIC_ pair):
+    // getAdminUrlOrThrow() crashes pages (PropertyCard, publicar/nueva) when absent.
+    .refine((data) => data.HOSPEDA_ADMIN_URL || data.PUBLIC_ADMIN_URL, {
+        message: 'Either HOSPEDA_ADMIN_URL or PUBLIC_ADMIN_URL must be set',
+        path: ['ADMIN_URL']
+    })
+    // Production-only: monitoring/analytics must be configured in prod.
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (data.PUBLIC_SENTRY_DSN !== undefined && data.PUBLIC_SENTRY_DSN !== ''),
+        {
+            message: 'PUBLIC_SENTRY_DSN is required in production',
+            path: ['PUBLIC_SENTRY_DSN']
+        }
+    )
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (data.PUBLIC_POSTHOG_KEY !== undefined && data.PUBLIC_POSTHOG_KEY !== ''),
+        {
+            message: 'PUBLIC_POSTHOG_KEY is required in production',
+            path: ['PUBLIC_POSTHOG_KEY']
+        }
+    )
+    // Required in production: the cache-revalidation endpoint authenticates with
+    // this shared secret. Optional in dev/test (no CDN to purge) so getApiUrl()
+    // and friends never throw when the Vite SSR module-runner lacks it (FU-1).
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (typeof data.HOSPEDA_REVALIDATION_SECRET === 'string' &&
+                data.HOSPEDA_REVALIDATION_SECRET.length >= 32),
+        {
+            message: 'HOSPEDA_REVALIDATION_SECRET is required in production',
+            path: ['HOSPEDA_REVALIDATION_SECRET']
+        }
+    );
 
 /** Inferred TypeScript type for server environment variables. */
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -150,7 +202,7 @@ export function validateWebEnv(): ServerEnv {
         const formatted = result.error.issues
             .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
             .join('\n');
-        throw new Error(`Invalid web2 app environment configuration:\n${formatted}`);
+        throw new Error(`Invalid web app environment configuration:\n${formatted}`);
     }
 
     return result.data;

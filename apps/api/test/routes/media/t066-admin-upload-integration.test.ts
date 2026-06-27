@@ -42,10 +42,12 @@ import {
     type createMockUserActor
 } from '../../helpers/auth';
 
-const { mockUpload, mockDelete, providerState } = vi.hoisted(() => ({
+const { mockUpload, mockDelete, providerState, mockFindByAccommodation } = vi.hoisted(() => ({
     mockUpload: vi.fn(),
     mockDelete: vi.fn(),
-    providerState: { configured: true as boolean }
+    providerState: { configured: true as boolean },
+    // SPEC-204: accommodation gallery count now comes from the relational table.
+    mockFindByAccommodation: vi.fn()
 }));
 
 vi.mock('../../../src/services/media', () => ({
@@ -57,6 +59,18 @@ vi.mock('../../../src/services/media', () => ({
               }
             : null
 }));
+
+// SPEC-204: stub accommodationMediaModel so gallery/plan-cap checks resolve
+// against the relational table without a live DB connection. Default: 0 rows.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        accommodationMediaModel: {
+            findByAccommodation: mockFindByAccommodation
+        }
+    };
+});
 
 import {
     AccommodationService,
@@ -172,6 +186,10 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
             height: 1080
         });
         mockDelete.mockReset();
+        // SPEC-204: default empty relational gallery (0 visible rows) so the
+        // gallery-cap and plan-cap checks resolve cleanly without a DB.
+        mockFindByAccommodation.mockReset();
+        mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
         resetMetrics();
     });
 

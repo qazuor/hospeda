@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-263",
+    "title": "Security deps moderate remediation (framework bumps + overrides)",
+    "type": "security",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-22T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["security", "dependencies", "supply-chain", "framework-bump", "overrides"]
+}

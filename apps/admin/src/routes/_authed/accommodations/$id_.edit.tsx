@@ -8,7 +8,6 @@ import { AiTextImproveFieldAddon } from '@/features/accommodations/components/Ai
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
-import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import {
     AccommodationUpdateInputSchema,
@@ -31,16 +30,15 @@ export const Route = createFileRoute('/_authed/accommodations/$id_/edit')({
 /**
  * Accommodation Edit Page Component
  *
- * Wires GalleryField (field id: "media.gallery") to the media upload/delete API
- * via useMediaUpload and createUploadHandler.
+ * SPEC-204 (P2): The gallery fields (`media.featuredImage`, `media.gallery`) have
+ * been removed from the consolidated config and are now managed exclusively via
+ * the GalleryManager sub-tab (`/accommodations/:id/gallery`). The upload/delete
+ * hooks and galleryFieldHandlers that wired those fields are no longer needed here.
  */
 function AccommodationEditPage() {
     const { id } = Route.useParams();
 
     const entityData = useAccommodationPage(id);
-
-    // Media upload/delete hooks for the gallery field
-    const { uploadEntityImage, deleteImage } = useMediaUpload();
 
     // SPEC-198 AC-12 (SHOULD-only): client-side audit hint tracking which
     // fields were AI-assisted. This ref is NOT sent to the API — it exists
@@ -71,28 +69,6 @@ function AccommodationEditPage() {
             )
         }),
         [entityData.canUseAiTextImprove]
-    );
-
-    /**
-     * Field handlers for the accommodation gallery.
-     * - onUpload: calls POST /api/v1/admin/media/upload with role=gallery
-     * - onDelete: calls DELETE /api/v1/admin/media?publicId=... for Cloudinary assets.
-     */
-    const galleryFieldHandlers = useMemo(
-        () => ({
-            'media.gallery': {
-                onUpload: createUploadHandler({
-                    entityType: 'accommodation',
-                    entityId: id,
-                    role: 'gallery',
-                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
-                }),
-                onDelete: async (publicId: string) => {
-                    await deleteImage.mutateAsync({ publicId });
-                }
-            }
-        }),
-        [id, uploadEntityImage, deleteImage]
     );
 
     // Anchor order by role: staff sees "states-moderation" first (spec §4.4)
@@ -149,7 +125,6 @@ function AccommodationEditPage() {
                 >
                     <EntityEditContent
                         entityType="accommodation"
-                        fieldHandlers={galleryFieldHandlers}
                         anchorSectionIds={anchorSectionIds}
                         fieldAddons={fieldAddons}
                     />

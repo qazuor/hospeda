@@ -964,7 +964,16 @@
             "cancelled": "Cancelada",
             "pastDue": "Pagamento pendente",
             "expired": "Expirada",
-            "paused": "Pausada"
+            "paused": "Pausada",
+            "comp": "Cortesia"
+        },
+        "promoEffect": {
+            "title": "Promoção ativa",
+            "discountForCycles": "Desconto: -{value} por mais {count} ciclo(s)",
+            "discountForever": "Desconto: -{value} indefinido",
+            "complimentary": "Cortesia (sem cobranças)",
+            "trialExtended": "Trial estendido +{days} dia(s)",
+            "exhausted": "Promoção esgotada"
         },
         "filtersTitle": "Filtros",
         "searchLabel": "Buscar por usuário",
@@ -1332,7 +1341,20 @@
             "requiresFirstPurchaseLabel": "Somente para primeira compra",
             "cancelButton": "Cancelar",
             "editSubmit": "Salvar alterações",
-            "createSubmit": "Criar código"
+            "createSubmit": "Criar código",
+            "effect": {
+                "kindLabel": "Tipo de efeito *",
+                "kindDiscount": "Desconto",
+                "kindTrialExtension": "Extensão de teste",
+                "kindComp": "Cortesia (nunca cobrado)",
+                "immutableHint": "O tipo de efeito não pode ser alterado após criar o código.",
+                "durationCyclesLabel": "Ciclos de duração",
+                "foreverLabel": "Para sempre",
+                "extraDaysLabel": "Dias extras de teste *",
+                "extraDaysHint": "X meses = X×30 dias.",
+                "compNote": "Este código deixa a assinatura como cortesia: nunca é cobrada.",
+                "validationError": "Verifique os parâmetros do efeito: porcentagem ≤ 100, dias > 0, ciclos > 0."
+            }
         },
         "deleteDialog": {
             "title": "Excluir código promocional",

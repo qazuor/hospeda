@@ -39,6 +39,57 @@ const baseCreatePayload = {
 };
 
 // ---------------------------------------------------------------------------
+// Capacity ceilings — high technical caps so hotels / multi-unit complexes pass
+// ---------------------------------------------------------------------------
+
+describe('AccommodationCreateHttpSchema — capacity ceilings', () => {
+    it('accepts realistic large-hotel capacity that previously failed (45/22/22)', () => {
+        // Arrange
+        const data = { ...baseCreatePayload, maxGuests: 45, bedrooms: 22, bathrooms: 22 };
+        // Act
+        const result = AccommodationCreateHttpSchema.safeParse(data);
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts the upper ceilings (200 guests, 100 bedrooms, 100 bathrooms)', () => {
+        // Arrange
+        const data = { ...baseCreatePayload, maxGuests: 200, bedrooms: 100, bathrooms: 100 };
+        // Act
+        const result = AccommodationCreateHttpSchema.safeParse(data);
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects maxGuests above the 200 ceiling', () => {
+        // Arrange
+        const data = { ...baseCreatePayload, maxGuests: 201 };
+        // Act
+        const result = AccommodationCreateHttpSchema.safeParse(data);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects bedrooms above the 100 ceiling', () => {
+        // Arrange
+        const data = { ...baseCreatePayload, bedrooms: 101 };
+        // Act
+        const result = AccommodationCreateHttpSchema.safeParse(data);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects bathrooms above the 100 ceiling', () => {
+        // Arrange
+        const data = { ...baseCreatePayload, bathrooms: 101 };
+        // Act
+        const result = AccommodationCreateHttpSchema.safeParse(data);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // socialNetworks — HTTP schema parsing
 // ---------------------------------------------------------------------------
 

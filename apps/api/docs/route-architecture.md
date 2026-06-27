@@ -149,6 +149,7 @@ src/routes/<entity>/
     update.ts           # createProtectedRoute
     patch.ts            # createProtectedRoute
     softDelete.ts       # createProtectedRoute
+    import-from-url.ts  # createProtectedRoute (non-CRUD action: stateless URL import; OR-permission check + lazy AI quota — see docs/billing/endpoint-gate-matrix.md)
     ...
   admin/
     index.ts            # Assembles admin router and exports it
@@ -237,6 +238,13 @@ The following entities use the three-tier structure:
 | `post-sponsor` | no | no | yes (admin-only) |
 | `owner-promotion` | yes (legacy router) | no | yes |
 | `views` | yes (capture only) | yes (read own/all) | no |
+| `gastronomy` | yes | yes | yes |
+| `gastronomy/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
+| `experience` | yes | yes | yes |
+| `experience/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
+| `commerce` (leads + subscription) | yes (create-lead) | no | yes |
+| `accommodation/external-listings` | no | yes (owner CRUD) | no |
+| `accommodation/external-reputation` | yes (GET cached block) | yes (master-toggle, refresh) | yes (force-disable) |
 
 ---
 
@@ -519,6 +527,226 @@ dedup — see privacy note). The `window` query param is required (`7d` or `30d`
 
 ---
 
+## Gastronomy Routes (SPEC-239)
+
+Gastronomy listings follow the standard three-tier structure mounted at:
+
+- `/api/v1/public/gastronomies` — public reads, no auth
+- `/api/v1/protected/gastronomies` — owner-scoped edits, session required
+- `/api/v1/admin/gastronomies` — full CRUD, `PermissionEnum.COMMERCE_*`
+
+Reviews have their own admin sub-router mounted at
+`/api/v1/admin/gastronomies/reviews`.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/gastronomies` | Paginated list (filter by type, priceRange, destinationId, isFeatured, ownerId) |
+| `GET` | `/api/v1/public/gastronomies/{id}` | Get by UUID; 404 when not publicly visible |
+| `GET` | `/api/v1/public/gastronomies/slug/{slug}` | Get by URL slug; null when not found |
+| `GET` | `/api/v1/public/gastronomies/destination/{destinationId}` | Paginated list filtered by destination |
+| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
+| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/reviews` | Paginated APPROVED-only reviews |
+
+### Protected tier (session required, owner-scoped)
+
+| Method | Path | Permission | Notes |
+|--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/gastronomies/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
+| `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
+| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
+| `DELETE` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
+| `POST` | `/api/v1/protected/gastronomies/{gastronomyId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/gastronomies` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/gastronomies` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/gastronomies/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
+| `POST` | `/api/v1/admin/gastronomies/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/gastronomies/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
+| `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+
+### Gastronomy Reviews — Admin
+
+Reviews are mounted on a separate sub-router at `/api/v1/admin/gastronomies/reviews`.
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/gastronomies/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+
+---
+
+## Experience Routes (SPEC-240)
+
+Experience listings follow the standard three-tier structure mounted at:
+
+- `/api/v1/public/experiences` — public reads, no auth
+- `/api/v1/protected/experiences` — owner-scoped edits, session required
+- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.COMMERCE_*`
+
+Reviews have their own admin sub-router mounted at
+`/api/v1/admin/experiences/reviews`.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/experiences` | Paginated list (filter by type, destinationId, isFeatured, ownerId) |
+| `GET` | `/api/v1/public/experiences/{id}` | Get by UUID; 404 when not publicly visible |
+| `GET` | `/api/v1/public/experiences/slug/{slug}` | Get by URL slug; null when not found |
+| `GET` | `/api/v1/public/experiences/destination/{destinationId}` | Paginated list filtered by destination |
+| `GET` | `/api/v1/public/experiences/{experienceId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
+| `GET` | `/api/v1/public/experiences/{experienceId}/reviews` | Paginated APPROVED-only reviews |
+
+### Protected tier (session required, owner-scoped)
+
+| Method | Path | Permission | Notes |
+|--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/experiences/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
+| `GET` | `/api/v1/protected/experiences/{id}` | Auth only | Returns `ExperienceProtectedSchema` (includes ownerId, contactInfo, audit fields) |
+| `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
+| `DELETE` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
+| `POST` | `/api/v1/protected/experiences/{experienceId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/experiences` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/experiences` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/experiences/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
+| `POST` | `/api/v1/admin/experiences/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/experiences/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/experiences/{id}` | `COMMERCE_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/experiences/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/experiences/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/experiences/{id}/toggle-subscription` | `COMMERCE_EDIT_ALL` | Toggle MercadoPago subscription active/inactive |
+| `POST` | `/api/v1/admin/experiences/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
+| `GET` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+
+### Experience Reviews — Admin
+
+Reviews are mounted on a separate sub-router at `/api/v1/admin/experiences/reviews`.
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/experiences/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/experiences/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+
+---
+
+## Commerce Routes (SPEC-239)
+
+Commerce routes handle lead intake and subscription provisioning for the
+admin-sells flow. They are mounted at:
+
+- `/api/v1/public/commerce` — unauthenticated lead submission
+- `/api/v1/admin/commerce` — lead inbox, owner provisioning, subscription start
+
+There is no protected commerce tier (merchants operate exclusively through the
+protected gastronomy tier once provisioned as `COMMERCE_OWNER`).
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/api/v1/public/commerce/leads` | Submit "Sumar mi negocio" lead form. No auth. Honeypot spam guard (`_hp` field). Rate-limited to 5 req/min per IP. Silent 200 on honeypot trigger. |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/commerce/leads` | `COMMERCE_VIEW_ALL` | Paginated lead list; filterable by `status` and `domain` |
+| `POST` | `/api/v1/admin/commerce/leads/:id/handle` | `COMMERCE_EDIT_ALL` | Approve or reject a lead; idempotent (overwrites previous decision) |
+| `POST` | `/api/v1/admin/commerce/leads/:id/provision-owner` | `COMMERCE_EDIT_ALL` | Create a `COMMERCE_OWNER` user from an approved lead; emails temp credentials; never returns the password |
+| `POST` | `/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_ALL` | Provisions a MercadoPago preapproval recurring subscription for the listing. `entityType` is currently `gastronomy` only. Requires the listing to have an owner assigned first. |
+
+---
+
+## External Reputation Routes (SPEC-237)
+
+Routes for displaying and managing external-platform reputation data
+(Google Places review snippets, Booking/Airbnb aggregate ratings) on
+accommodation detail pages. Mounted under the accommodation URL namespace.
+
+Key invariant: these routes operate on a **separate cached entity**
+(`accommodation_external_reputation`) and must never affect
+`accommodations.averageRating`. See
+[ADR-036](../../../docs/decisions/ADR-036-external-reputation-separate-entity.md)
+for the full design rationale.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/accommodations/:id/external-reputation` | Returns the cached reputation block for all enabled platforms. No auth. Google snippets are included only when `snippetsFetchedAt` is within the 30-day TTL; they are stripped (aggregate-only) once expired. Never returns snippet text for Booking/Airbnb/generic. |
+
+### Protected tier (session required)
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/protected/accommodations/:id/external-listings` | `ACCOMMODATION_UPDATE_OWN` | List all external listing registrations for the actor's accommodation. |
+| `POST` | `/api/v1/protected/accommodations/:id/external-listings` | `ACCOMMODATION_UPDATE_OWN` | Register a new external platform link (URL, platform, per-listing display flags). |
+| `PATCH` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Update display flags (`showReviews`, `showLink`, `showRating`) on an existing listing. |
+| `DELETE` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Remove an external listing registration; cascades to its reputation cache row. |
+| `PATCH` | `/api/v1/protected/accommodations/:id/external-reputation/master-toggle` | `ACCOMMODATION_UPDATE_OWN` | Set `show_external_reputation` on the accommodation row. When `false`, the public detail page hides the entire external reputation block. |
+| `POST` | `/api/v1/protected/accommodations/:id/external-reputation/refresh` | `ACCOMMODATION_UPDATE_OWN` | Trigger an on-demand reputation refresh. Returns **202** when any platform was enqueued async (Apify-backed), **200** when all platforms resolved inline (Google only). Rate-limited per owner — returns **429** with a `Retry-After` header when the window has not elapsed. |
+| `GET` | `/api/v1/protected/accommodations/:id/external-reputation/status` | `ACCOMMODATION_UPDATE_OWN` | Lightweight poll endpoint returning per-platform `run_status` and `fetch_status`. Used by the owner panel to detect when async Apify runs have completed. Returns `{ platforms: [...] }` with current state for each registered listing. |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `POST` | `/api/v1/admin/accommodations/:id/external-reputation/disable` | `ACCOMMODATION_UPDATE_ANY` | Force `show_external_reputation = false` for any accommodation. Admin override — bypasses owner ownership check. |
+
+### Environment variables required
+
+The following env vars must be set in Coolify for the external reputation feature
+to function on staging and production:
+
+| Variable | Purpose |
+|----------|---------|
+| `HOSPEDA_GOOGLE_PLACES_API_KEY` | Google Places API (New) key for fetching ratings and review snippets. |
+| `HOSPEDA_APIFY_TOKEN` | Apify API token used by Booking/Airbnb/generic scrapers. |
+| `HOSPEDA_EXTREP_CRON_SCHEDULE` | Cron expression for the weekly refresh job. Defaults to `0 2 * * 1` (Monday 02:00 UTC). |
+| `HOSPEDA_EXTREP_POLL_SCHEDULE` | Cron expression for the `poll-apify-reputation-runs` job (SPEC-250). Defaults to `*/2 * * * *` (every 2 minutes). |
+| `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` | Milliseconds before the poller sweeps a stuck Apify run as timed out (SPEC-250). Defaults to `600000` (10 minutes). |
+
+---
+
 ## Anti-Patterns
 
 **Never PUT/POST/DELETE in the public tier.**
@@ -658,6 +886,60 @@ Per-route notes:
 - Wildcard origins (`*`) are incompatible with credentialed uploads: `createCorsMiddleware` automatically downgrades `credentials` to `false` in that case (see `src/middlewares/cors.ts`). Production deployments must enumerate explicit origins for the web and admin apps.
 
 See also: `apps/api/docs/cors-configuration.md` for the global CORS configuration reference and `originVerificationMiddleware` defense-in-depth check.
+
+---
+
+## Public-Response Contract (SPEC-210 PR5)
+
+Every public route (created via `createPublicRoute`, `createPublicListRoute`, or
+`createSimpleRoute`) MUST declare a concrete, non-permissive `responseSchema`.
+This is a compile-time requirement (TypeScript will reject the call if the field
+is omitted) and a runtime backstop enforced by `stripWithSchema`.
+
+### Rules
+
+1. **`responseSchema` is required.** Omitting it from `CreateOpenApiRouteInterface`
+   or `SimpleRouteInterface` is a TypeScript compile error.
+
+2. **`stripWithSchema` is fail-closed.** When called without a `responseSchema`
+   it throws `ServiceError(INTERNAL_ERROR)` immediately — it never returns data
+   unchanged. Routes that bypass the factory and call `createResponse` directly
+   (e.g. the raw conversation public routes) must pass the schema explicitly.
+
+3. **`createPaginatedResponse` is fail-closed.** Same policy as `stripWithSchema`:
+   throws `ServiceError(INTERNAL_ERROR)` when no `responseSchema` is supplied.
+
+4. **Schemas must be concrete.** `assertConcretePublicSchema` (exported from
+   `response-helpers.ts`) rejects permissive top-level schemas at boot time:
+   - `z.any()` — ZodAny
+   - `z.unknown()` — ZodUnknown
+   - `z.record(...)` at the top level — ZodRecord
+   - `z.object({}).passthrough()` — ZodObject with `unknownKeys === 'passthrough'`
+
+   Only the **top level** is checked. Nested `z.record()` inside a `z.object()`
+   field is valid (e.g. the `limits: z.record(z.string(), z.number())` field in
+   `billing/public/listPlans.ts`).
+
+### Raw-route pattern
+
+Routes that cannot use the factory (e.g. the public conversation routes which
+need custom rate limiters and inline body validation) must follow this pattern:
+
+```ts
+// 1. Define or import a concrete schema that matches the exact response shape.
+const MyResponseSchema = z.object({ status: z.string() });
+
+// 2. Pass it as the 4th arg to createResponse.
+return createResponse(payload, c, 200, MyResponseSchema);
+```
+
+### References
+
+- `SPEC-210` — Tier enforcement and public-response field-leak prevention
+- `SPEC-087` — Response-schema strict mode (drift is a server bug, not a fallback)
+- `SPEC-062` — Tier-appropriate field exposure at runtime
+- `src/utils/response-helpers.ts` — `stripWithSchema`, `createPaginatedResponse`, `assertConcretePublicSchema`
+- `src/utils/route-factory.ts` — `CreateOpenApiRouteInterface.responseSchema`
 
 ---
 

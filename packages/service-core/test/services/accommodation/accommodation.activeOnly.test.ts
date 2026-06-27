@@ -27,6 +27,7 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import type { Actor, ServiceConfig } from '../../../src/types';
 import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { getMockId } from '../../factories/utilsFactory';
+import { makeMediaModelStub } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
 // Mock the DestinationService to prevent constructor side-effects.
@@ -127,7 +128,19 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
 
     beforeEach(() => {
         model = makeModelMock();
-        service = new AccommodationService(ctx, model as any);
+        service = new AccommodationService(
+            ctx,
+            model as any,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
         vi.clearAllMocks();
     });
 
@@ -299,7 +312,19 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         model = makeModelMock();
         // _executeCount calls model.countByFilters — spy on it explicitly.
         model.countByFilters = vi.fn().mockResolvedValue({ count: 0 });
-        service = new AccommodationService(ctx, model as any);
+        service = new AccommodationService(
+            ctx,
+            model as any,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
         vi.clearAllMocks();
     });
 
@@ -403,7 +428,19 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
     beforeEach(() => {
         model = makeModelMock();
         model.searchWithRelations = vi.fn().mockResolvedValue({ items: [], total: 0 });
-        service = new AccommodationService(ctx, model as any);
+        service = new AccommodationService(
+            ctx,
+            model as any,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
         vi.clearAllMocks();
     });
 

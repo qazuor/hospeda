@@ -23,6 +23,7 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
@@ -62,7 +63,12 @@ const categoryColors = getPostCategoryColor({ category: category.toLowerCase() }
 interface RawMediaImage {
 	url?: string;
 	caption?: string;
-	description?: string;
+	attribution?: {
+		photographer: string;
+		sourceUrl: string;
+		license: string;
+		provider: 'unsplash' | 'pexels';
+	};
 }
 interface RawMediaVideo {
 	url?: string;
@@ -394,12 +400,19 @@ const breadcrumbItems = [
 			<div class="post-detail__cover">
 				<img
 					src={featuredImage}
-					alt={title}
+					alt=""
 					loading="eager"
 					class="post-detail__cover-img"
 					width="1200"
 					height="675"
 				/>
+				{mediaObj?.featuredImage?.attribution && (
+					<ImageAttribution
+						attribution={mediaObj.featuredImage.attribution}
+						locale={locale}
+						variant="overlay"
+					/>
+				)}
 			</div>
 		)}
 

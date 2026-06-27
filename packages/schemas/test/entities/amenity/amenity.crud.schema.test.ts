@@ -215,7 +215,11 @@ describe('Amenity CRUD Schemas', () => {
         it('should validate valid create input', () => {
             const validInput = {
                 slug: 'wifi-access',
-                name: { es: 'WiFi Access', en: 'WiFi Access', pt: 'WiFi Access' },
+                applicableVerticals: ['accommodation'] as (
+                    | 'accommodation'
+                    | 'gastronomy'
+                    | 'experience'
+                )[],
                 description: {
                     es: 'High-speed internet access throughout the property',
                     en: 'High-speed internet access throughout the property',
@@ -235,7 +239,11 @@ describe('Amenity CRUD Schemas', () => {
         it('should validate minimal create input', () => {
             const minimalInput = {
                 slug: 'pool',
-                name: { es: 'Pool', en: 'Pool', pt: 'Pool' },
+                applicableVerticals: ['accommodation'] as (
+                    | 'accommodation'
+                    | 'gastronomy'
+                    | 'experience'
+                )[],
                 type: 'OUTDOORS',
                 lifecycleState: 'ACTIVE',
                 visibility: 'PUBLIC'
@@ -248,11 +256,11 @@ describe('Amenity CRUD Schemas', () => {
     describe('AmenityUpdateInputSchema', () => {
         it('should validate partial update input', () => {
             const partialUpdate = {
-                name: {
-                    es: 'Updated Amenity Name',
-                    en: 'Updated Amenity Name',
-                    pt: 'Updated Amenity Name'
-                },
+                applicableVerticals: ['accommodation', 'gastronomy'] as (
+                    | 'accommodation'
+                    | 'gastronomy'
+                    | 'experience'
+                )[],
                 description: {
                     es: 'Updated description long enough',
                     en: 'Updated description long enough',

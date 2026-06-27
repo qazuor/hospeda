@@ -7,10 +7,14 @@ import type {
     AccommodationSummary,
     AmenityPublic,
     AnnouncementItem,
+    CommerceLeadCreateInput,
     DestinationPublic,
     EventPublic,
     EventSummary,
+    ExternalReputationBlock,
     FeaturePublic,
+    GastronomyPublic,
+    PartnerPublic,
     PostListItem,
     PostPublic,
     PostSummary
@@ -279,6 +283,28 @@ export const accommodationsApi = {
             path: `${BASE}/accommodations/${id}/reviews`,
             params: { page, pageSize }
         });
+    },
+
+    /**
+     * Get the external reputation block for an accommodation.
+     *
+     * Hits GET /api/v1/public/accommodations/:id/external-reputation.
+     * Returns a validated {@link ExternalReputationBlock} with per-platform
+     * items (links, aggregate rating, Google snippets when TTL valid).
+     * Gracefully returns an empty block on non-2xx responses.
+     *
+     * @param params - Accommodation ID
+     * @returns External reputation block
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsApi.getExternalReputation({ id: 'acc-uuid' });
+     * ```
+     */
+    getExternalReputation({
+        id
+    }: { readonly id: string }): Promise<ApiResult<ExternalReputationBlock>> {
+        return apiClient.get({ path: `${BASE}/accommodations/${id}/external-reputation` });
     }
 };
 
@@ -813,8 +839,8 @@ export interface GuestMessageItem {
 export interface GuestConversationData {
     readonly id: string;
     readonly status: string;
-    readonly accommodationName: string;
-    readonly ownerName: string;
+    readonly accommodationName: string | null;
+    readonly ownerName: string | null;
     readonly lastReadAtByOwner: string | null;
     readonly createdAt: string;
 }
@@ -1212,5 +1238,214 @@ export const authApi = {
             path: `${BASE}/auth/reset-password/check`,
             params: { token }
         });
+    }
+};
+
+// --- Gastronomy (SPEC-239) ---
+
+/**
+ * Review item shape returned by GET /gastronomies/:id/reviews.
+ * The full shape is defined server-side (GastronomyReviewPublicSchema pick);
+ * the web client only needs the fields actually rendered in the review list.
+ */
+export interface GastronomyReviewPublicItem {
+    readonly id: string;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly averageRating?: number | null;
+    readonly rating?: Record<string, number> | null;
+    readonly user?: { readonly name: string | null; readonly image: string | null } | null;
+    readonly createdAt?: string | null;
+}
+
+/** Public gastronomy API endpoints (SPEC-239 T-042..T-044). */
+export const gastronomyApi = {
+    /**
+     * List gastronomy listings with pagination, search, sorting, and filters.
+     *
+     * GET /api/v1/public/gastronomies
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly destinationId?: string;
+        readonly type?: string;
+        readonly priceRange?: string;
+        readonly isFeatured?: boolean;
+        readonly minRating?: number;
+        readonly maxRating?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+        readonly includeAmenities?: boolean;
+        readonly includeFeatures?: boolean;
+    }): Promise<ApiResult<PaginatedResponse<GastronomyPublic>>> {
+        return apiClient.getList({ path: `${BASE}/gastronomies`, params });
+    },
+
+    /**
+     * Get a single gastronomy listing by its URL slug.
+     *
+     * GET /api/v1/public/gastronomies/slug/:slug
+     */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<GastronomyPublic>> {
+        return apiClient.get({ path: `${BASE}/gastronomies/slug/${slug}` });
+    },
+
+    /**
+     * Get paginated reviews for a gastronomy listing (with user info).
+     *
+     * GET /api/v1/public/gastronomies/:id/reviews
+     */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<GastronomyReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/gastronomies/${id}/reviews`,
+            params: { page, pageSize }
+        });
+    },
+
+    /**
+     * Get the FAQ list for a gastronomy listing.
+     *
+     * GET /api/v1/public/gastronomies/:id/faqs
+     */
+    getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
+        return apiClient.get({ path: `${BASE}/gastronomies/${id}/faqs` });
+    }
+};
+
+// --- Experiences (SPEC-240) ---
+
+/**
+ * Review item shape returned by GET /experiences/:id/reviews.
+ * The web client only needs the fields actually rendered in the review list.
+ */
+export interface ExperienceReviewPublicItem {
+    readonly id: string;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly averageRating?: number | null;
+    readonly rating?: Record<string, number> | null;
+    readonly user?: { readonly name: string | null; readonly image: string | null } | null;
+    readonly createdAt?: string | null;
+}
+
+/** Public experience API endpoints (SPEC-240 T-019). */
+export const experiencesApi = {
+    /**
+     * List experience listings with pagination, search, sorting, and filters.
+     *
+     * GET /api/v1/public/experiences
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly destinationId?: string;
+        readonly type?: string;
+        readonly isFeatured?: boolean;
+        readonly minRating?: number;
+        readonly maxRating?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+        readonly includeAmenities?: boolean;
+        readonly includeFeatures?: boolean;
+    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getList({ path: `${BASE}/experiences`, params });
+    },
+
+    /**
+     * Get a single experience listing by its URL slug.
+     *
+     * GET /api/v1/public/experiences/slug/:slug
+     */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.get({ path: `${BASE}/experiences/slug/${slug}` });
+    },
+
+    /**
+     * Get paginated reviews for an experience listing (with user info).
+     *
+     * GET /api/v1/public/experiences/:id/reviews
+     */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<ExperienceReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/experiences/${id}/reviews`,
+            params: { page, pageSize }
+        });
+    },
+
+    /**
+     * Get the FAQ list for an experience listing.
+     *
+     * GET /api/v1/public/experiences/:id/faqs
+     */
+    getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
+        return apiClient.get({ path: `${BASE}/experiences/${id}/faqs` });
+    }
+};
+
+// --- Commerce lead (SPEC-239 T-047) ---
+
+/**
+ * Commerce lead submission — wraps the honeypot field so the
+ * caller does not need to know the field name.
+ *
+ * The server silently returns 200 on honeypot rejection, so the
+ * success path is indistinguishable from a real submission to bots.
+ */
+export type CommerceLeadSubmitBody = CommerceLeadCreateInput & {
+    /** Honeypot field — must be sent as empty string by real users. */
+    readonly _hp?: string;
+};
+
+/** Public commerce lead API endpoints (SPEC-239 T-047). */
+export const commerceLeadApi = {
+    /**
+     * Submit a pre-onboarding commerce lead.
+     *
+     * POST /api/v1/public/commerce/leads
+     *
+     * Always include `_hp: ''` in the body — the server silently drops
+     * submissions where `_hp` is non-empty (honeypot spam guard).
+     */
+    submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.post({ path: `${BASE}/commerce/leads`, body });
+    }
+};
+
+/**
+ * Partner public API endpoints.
+ */
+export const partnerApi = {
+    /**
+     * List active partners with pagination.
+     *
+     * GET /api/v1/public/partners
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly type?: string;
+        readonly tier?: string;
+    }): Promise<ApiResult<PaginatedResponse<PartnerPublic>>> {
+        return apiClient.getList({ path: `${BASE}/partners`, params });
     }
 };

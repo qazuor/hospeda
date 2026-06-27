@@ -1,0 +1,191 @@
+/**
+ * @file CommerceLead.module.css
+ * @description Styles for the CommerceLead React island (SPEC-239 T-056).
+ * All values use CSS custom properties from global.css.
+ */
+
+/* ─── Form layout ───────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 1.25rem);
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+/* ─── Field ─────────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.required {
+    color: var(--brand-accent);
+    margin-left: var(--space-1, 0.25rem);
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    box-sizing: border-box;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+    color: var(--core-muted-foreground);
+    opacity: 0.7;
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
+}
+
+.input.inputError,
+.textarea.inputError {
+    border-color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.input.inputError:focus-visible,
+.textarea.inputError:focus-visible {
+    box-shadow: 0 0 0 3px var(--destructive-a18);
+}
+
+.select {
+    cursor: pointer;
+}
+
+.textarea {
+    min-height: 7rem;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+/* ─── Honeypot ──────────────────────────────────────────────────────────────── */
+
+.honeypot {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* ─── Error message ─────────────────────────────────────────────────────────── */
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}
+
+/* ─── Form-level error ──────────────────────────────────────────────────────── */
+
+.formError {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive, oklch(0.6 0.22 25));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}
+
+/* ─── Submit button ─────────────────────────────────────────────────────────── */
+
+.submit {
+    padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, oklch(1 0 0));
+    border: none;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: var(--text-button);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    align-self: stretch;
+    box-shadow: 0 4px 12px -4px var(--brand-accent-a50);
+}
+
+@media (min-width: 640px) {
+    .submit {
+        align-self: flex-end;
+        min-width: 12rem;
+    }
+}
+
+.submit:hover:not(:disabled) {
+    background-color: var(--brand-accent-lm04);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -4px var(--brand-accent-a55);
+}
+
+.submit:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ─── Success state ─────────────────────────────────────────────────────────── */
+
+.success {
+    text-align: center;
+    padding: var(--space-8, 2rem);
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--brand-accent-a20);
+}
+
+.successIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4, 1rem);
+    color: var(--brand-accent);
+}
+
+.successTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-h3);
+    color: var(--core-foreground);
+    margin: 0;
+    line-height: 1.4;
+}

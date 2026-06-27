@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "010-feature-paved_access",
-    "name": {
-        "es": "Acceso pavimentado",
-        "en": "Acceso pavimentado",
-        "pt": "Acceso pavimentado"
-    },
     "slug": "paved_access",
     "description": {
         "es": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",
         "en": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",
         "pt": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "PavedAccessIcon",
     "isBuiltin": true,
     "isFeatured": false,

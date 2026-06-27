@@ -18,6 +18,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
 import { getApiUrl, getNoindexHosts } from './lib/env';
 import {
+    buildChangePasswordRedirect,
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
@@ -29,6 +30,7 @@ import {
     isAdminBypassUser,
     isAuthRoute,
     isBetaRoute,
+    isChangePasswordRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
@@ -50,7 +52,7 @@ import {
 const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
- * Main middleware handler for all requests in the web2 application.
+ * Main middleware handler for all requests in the web application.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;
@@ -181,6 +183,28 @@ export const onRequest = defineMiddleware(async (context, next) => {
             return context.redirect(loginUrl);
         }
 
+        // Step 7.2 (SPEC-239): Must-change-password gate.
+        //
+        // Commerce owners are provisioned with a server-generated password and
+        // the `mustChangePassword` flag set to true. Until they choose a personal
+        // password, ALL protected routes (except the change-password page itself
+        // and auth/signout) redirect to /mi-cuenta/cambiar-contrasena/.
+        //
+        // Whitelist:
+        //   - The cambiar-contrasena page itself (prevents redirect loop).
+        //   - Auth routes (signout must always work).
+        // Fail-open: if mustChangePassword is missing/false, pass through.
+        if (
+            user &&
+            user.mustChangePassword === true &&
+            isProtectedRoute({ path }) &&
+            !isChangePasswordRoute({ path }) &&
+            !isAuthRoute({ path })
+        ) {
+            const redirectUrl = buildChangePasswordRedirect({ locale });
+            return context.redirect(redirectUrl);
+        }
+
         // Step 7.5 (SPEC-113): Profile completion + set-password guard.
         //
         // Runs on protected routes with a valid user, plus on the subset of
@@ -267,28 +291,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // is the single source of truth; the body rewrite makes the policy
     // actually enforceable for inline emissions Astro doesn't tag itself.
     // Phase 1 uses Report-Only so violations are reported without blocking content.
-    // Switch to 'Content-Security-Policy' for Phase 2 enforcement.
+    // Switch to 'Content-Security-Policy' for Phase 2 enforcement (T-020).
+    //
+    // @astrojs/node with `staticHeaders: true` does NOT forward content-type in
+    // the Response object returned from next() for prerendered pages — MIME type
+    // is set by the file server after the middleware pipeline. Use
+    // context.isPrerendered as a fallback so the CSP header reaches static pages.
     const contentType = response.headers.get('content-type') ?? '';
-    if (contentType.includes('text/html')) {
-        // Rewrite body first so the policy header we set after this reflects
-        // the same nonce that's now stamped on every unguarded inline tag.
-        // Content-Length is dropped because the rewrite changes body size;
-        // Node will recompute it on send.
-        const originalBody = await response.text();
-        const { html: rewrittenBody } = injectNonce({
-            html: originalBody,
-            nonce: cspNonce
-        });
-        const newHeaders = new Headers(response.headers);
-        newHeaders.delete('content-length');
-        response = new Response(rewrittenBody, {
-            status: response.status,
-            headers: newHeaders
-        });
+    const isHtmlPage = contentType.includes('text/html') || context.isPrerendered;
 
+    if (isHtmlPage) {
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
         const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
 
+        // T-020: change 'Content-Security-Policy-Report-Only' → 'Content-Security-Policy'
         const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only';
 
         const directives = buildCspHeader({
@@ -299,6 +315,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
             // Sentry tunnel is active (SPEC-181 follow-up).
             sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
         });
+
+        if (!context.isPrerendered) {
+            // SSR pages: rewrite body to stamp nonces on inline <style>/<script>
+            // tags before setting the header. Content-Length is dropped because the
+            // rewrite changes body size; Node will recompute it on send.
+            const originalBody = await response.text();
+            const { html: rewrittenBody } = injectNonce({
+                html: originalBody,
+                nonce: cspNonce
+            });
+            const newHeaders = new Headers(response.headers);
+            newHeaders.delete('content-length');
+            response = new Response(rewrittenBody, {
+                status: response.status,
+                headers: newHeaders
+            });
+        }
+        // Prerendered pages: skip body rewrite — nonces cannot be embedded at
+        // build time. Inline-script violations will appear in Report-Only logs
+        // until they are addressed before the Phase 2 enforce flip (T-020).
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

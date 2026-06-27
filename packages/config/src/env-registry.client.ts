@@ -54,6 +54,7 @@ export const CLIENT_WEB_ENV_VARS = [
         descriptionEs: 'DSN de Sentry para tracking de errores del lado cliente en la web',
         type: 'url',
         required: false,
+        requiredScope: 'production',
         secret: false,
         exampleValue: 'https://abc123def456@o123456.ingest.sentry.io/7890123',
         apps: ['web'],
@@ -111,6 +112,24 @@ export const CLIENT_WEB_ENV_VARS = [
             'Set to `/api/event` once the Cloudflare Worker in infra/cloudflare/sentry-tunnel/ is deployed for this environment (staging route: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). DEPLOY ORDER MATTERS: the Worker must be live first — the same env flip drops the external *.sentry.io CSP entry, so if the tunnel path 404s, all browser error reports are lost. Sibling of PUBLIC_POSTHOG_HOST (PostHog uses a DIFFERENT path, /api/relay, and a DIFFERENT Worker — do not mix them). Leave unset for direct-to-Sentry reporting (default; *.sentry.io stays in the CSP).',
         howToObtainEs:
             'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Hermano de PUBLIC_POSTHOG_HOST (PostHog usa un path DISTINTO, /api/relay, y un Worker DISTINTO — no los mezcles). Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
+    },
+    {
+        name: 'PUBLIC_SENTRY_TRACES_SAMPLE_RATE',
+        description:
+            'Sentry tracing sample rate for the web app (0.0–1.0). Defaults to 0.1 if unset.',
+        descriptionEs:
+            'Tasa de muestreo de trazas de Sentry para la web (0.0–1.0). Por defecto 0.1 si no está seteada.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '0.1',
+        exampleValue: '1.0',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Floating-point string between 0.0 and 1.0 controlling what fraction of web transactions Sentry records performance traces for. 0.1 (10%) is the production default — enough for CWV trends at low cost. Set to 1.0 on hospeda-web-staging so every request is traced and Core Web Vitals data is never starved by sampling. Increase temporarily on prod only when debugging a performance regression.',
+        howToObtainEs:
+            'Número flotante entre 0.0 y 1.0 que controla qué fracción de transacciones web Sentry registra para trazas de performance. 0.1 (10%) es el default de prod — suficiente para tendencias CWV a bajo costo. Setealo en 1.0 en hospeda-web-staging para que cada request sea traceado y los datos de Core Web Vitals nunca queden sin muestra. Aumentá temporalmente en prod solo cuando estés debuggeando una regresión de performance.'
     },
     {
         name: 'PUBLIC_ENABLE_LOGGING',
@@ -187,6 +206,7 @@ export const CLIENT_WEB_ENV_VARS = [
             'API key del proyecto PostHog Cloud para la app web (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         apps: ['web'],

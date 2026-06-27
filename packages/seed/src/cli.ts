@@ -19,9 +19,9 @@ export interface ProdCleanupGateResult {
  * to run, given a snapshot of the relevant environment variables.
  *
  * GAP-078-117 / GAP-078-234: in any production-like environment
- * (`VERCEL_ENV=production` OR `NODE_ENV=production`) the operation MUST be
- * explicitly opted into via `HOSPEDA_ALLOW_PROD_CLEANUP=true`. Any other
- * value (including unset, `'1'`, `'yes'`) is rejected.
+ * (`NODE_ENV=production`) the operation MUST be explicitly opted into via
+ * `HOSPEDA_ALLOW_PROD_CLEANUP=true`. Any other value (including unset, `'1'`,
+ * `'yes'`) is rejected.
  *
  * @param env - The environment snapshot to evaluate (defaults to `process.env`).
  * @returns A {@link ProdCleanupGateResult} describing the decision.
@@ -29,7 +29,7 @@ export interface ProdCleanupGateResult {
 export function evaluateProdCleanupGate(
     env: NodeJS.ProcessEnv = process.env
 ): ProdCleanupGateResult {
-    const isProd = env.VERCEL_ENV === 'production' || env.NODE_ENV === 'production';
+    const isProd = env.NODE_ENV === 'production';
     if (!isProd) {
         return { allowed: true };
     }

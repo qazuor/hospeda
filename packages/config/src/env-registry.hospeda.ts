@@ -56,7 +56,8 @@ export const HOSPEDA_ENV_VARS = [
         description: 'Admin app URL (CORS, server-side links from web)',
         descriptionEs: 'URL del admin (para CORS y para links del lado servidor desde la web)',
         type: 'url',
-        required: false,
+        required: true,
+        requiredScope: 'always',
         secret: false,
         exampleValue: 'http://localhost:3000',
         apps: ['api', 'web'],
@@ -376,6 +377,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'Token de API de MercadoPago',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'APP_USR-1234567890123456-010100-abcdef0123456789abcdef0123456789-123456789',
         apps: ['api'],
@@ -392,6 +394,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'Secreto para firmar webhooks de MercadoPago',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
         apps: ['api'],
@@ -478,6 +481,24 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
     },
+    {
+        name: 'HOSPEDA_COMMERCE_PLAN_ID',
+        description:
+            'Slug of the billing plan used to provision a commerce-listing subscription (SPEC-239 T-049). Resolved by slug against billing_plans.name via the same machinery as the accommodation start-paid flow.',
+        descriptionEs:
+            'Slug del plan de facturación usado para provisionar una suscripción de listing de comercio (SPEC-239 T-049). Se resuelve por slug contra billing_plans.name con la misma maquinaria que el flujo accommodation start-paid.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue: 'commerce-listing',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'The slug (billing_plans.name) of the commerce plan seeded by the billing-plans seed. Defaults to the seeded commerce slug. The commerce admin start-subscription route 404s when unset or unknown.',
+        howToObtainEs:
+            'El slug (billing_plans.name) del plan de comercio sembrado por el seed de billing-plans. Por defecto el slug de comercio sembrado. La ruta admin commerce start-subscription devuelve 404 cuando está vacío o es desconocido.'
+    },
 
     // -------------------------------------------------------------------------
     // AI / Credential Vault
@@ -509,6 +530,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'API key del proveedor de email transaccional (actualmente Brevo)',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'xkeysib-xxxx',
         apps: ['api'],
@@ -543,6 +565,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'Dirección de email del remitente',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: false,
         exampleValue: 'noreply@hospeda.com.ar',
         apps: ['api'],
@@ -596,6 +619,7 @@ export const HOSPEDA_ENV_VARS = [
             'Secreto HMAC-SHA256 que firma los tokens de verificación y de baja del newsletter. Mínimo 32 bytes de entropía.',
         type: 'string',
         required: true,
+        requiredScope: 'always',
         secret: true,
         exampleValue: 'change-me-to-a-32-byte-random-secret-xxxxxxxx',
         apps: ['api'],
@@ -739,7 +763,8 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs:
             'Secreto compartido para autenticar requests de revalidación ISR que vienen de la API. Mínimo 32 caracteres.',
         type: 'string',
-        required: false,
+        required: true,
+        requiredScope: 'always',
         secret: true,
         exampleValue: 'a-secret-string-of-at-least-32-characters',
         apps: ['api', 'web'],
@@ -877,6 +902,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'API key de Linear para reportes de bugs',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'lin_api_xxxx',
         apps: ['api'],
@@ -1161,6 +1187,8 @@ export const HOSPEDA_ENV_VARS = [
             'API key de OpenAI para el motor de moderación de contenido. Obligatoria cuando HOSPEDA_MODERATION_PROVIDER=openai.',
         type: 'string',
         required: false,
+        requiredScope: 'conditional',
+        requiredWhen: 'HOSPEDA_MODERATION_PROVIDER=openai',
         secret: true,
         exampleValue: 'sk-...',
         apps: ['api'],
@@ -1223,6 +1251,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'DSN de Sentry para tracking de errores de la API',
         type: 'url',
         required: false,
+        requiredScope: 'production',
         secret: false,
         exampleValue: 'https://xxxx@sentry.io/xxxx',
         apps: ['api'],
@@ -1285,6 +1314,7 @@ export const HOSPEDA_ENV_VARS = [
         descriptionEs: 'API key del proyecto PostHog para analíticas server-side de eventos de IA',
         type: 'string',
         required: false,
+        requiredScope: 'production',
         secret: true,
         exampleValue: 'phc_xxx',
         apps: ['api'],
@@ -1476,6 +1506,398 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
     },
+    // -------------------------------------------------------------------------
+    // Accommodation import (SPEC-222)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_APIFY_TOKEN',
+        description:
+            'Apify API token used by the Airbnb scraper actor (and the Booking.com fallback adapter). Required to call any Apify actor run via the Apify REST API.',
+        descriptionEs:
+            'Token de la API de Apify que usan el actor scraper de Airbnb (y el adaptador de Booking.com como fallback). Necesario para ejecutar cualquier actor de Apify vía la REST API.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-apify-api-token',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/settings/integrations',
+        howToObtain:
+            'Apify Console → Settings → Integrations → Personal API tokens → "Create new token". Copy the generated value (starts with "apify_api_"). Never commit this value.',
+        howToObtainEs:
+            'Consola de Apify → Settings → Integrations → Personal API tokens → "Create new token". Copiá el valor generado (empieza con "apify_api_"). Nunca lo commitees.'
+    },
+    {
+        name: 'HOSPEDA_APIFY_AIRBNB_ACTOR',
+        description:
+            'Apify actor ID or slug for the Airbnb rooms/detail scraper. Allows swapping the scraper provider without a code deploy. The default "tri_angle/airbnb-rooms-urls-scraper" accepts /rooms/ detail URLs and returns full listing data including grouped amenities.',
+        descriptionEs:
+            'ID o slug del actor de Apify para el scraper de rooms/detalle de Airbnb. Permite cambiar el proveedor del scraper sin redesplegar código. El default "tri_angle/airbnb-rooms-urls-scraper" acepta URLs de detalle /rooms/ y devuelve datos completos del listing incluyendo amenidades agrupadas.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'tri_angle/airbnb-rooms-urls-scraper',
+        exampleValue: 'tri_angle/airbnb-rooms-urls-scraper',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/actors',
+        howToObtain:
+            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "tri_angle/airbnb-rooms-urls-scraper" works for Airbnb /rooms/ detail URLs (NOT the search scraper tri_angle/airbnb-scraper, which rejects detail URLs).',
+        howToObtainEs:
+            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "tri_angle/airbnb-rooms-urls-scraper" funciona para URLs de detalle /rooms/ de Airbnb (NO usar tri_angle/airbnb-scraper, que rechaza URLs de detalle).'
+    },
+    {
+        name: 'HOSPEDA_APIFY_BOOKING_ACTOR',
+        description:
+            'Apify actor ID or slug for the Booking.com scraper. Used as a fallback when the direct JSON-LD fetch is blocked or yields too few fields. Allows swapping the scraper provider without a code deploy (e.g. "voyager/booking-scraper").',
+        descriptionEs:
+            'ID o slug del actor de Apify para el scraper de Booking.com. Se usa como fallback cuando el fetch directo JSON-LD es bloqueado o produce pocos campos. Permite cambiar el proveedor del scraper sin redesplegar código (ej: "voyager/booking-scraper").',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'voyager/booking-scraper',
+        exampleValue: 'voyager/booking-scraper',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/actors',
+        howToObtain:
+            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "voyager/booking-scraper" works for Booking.com listings.',
+        howToObtainEs:
+            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "voyager/booking-scraper" funciona para listings de Booking.com.'
+    },
+    {
+        name: 'HOSPEDA_GOOGLE_PLACES_API_KEY',
+        description:
+            'Google Places API (New) key for the Google Maps import tier. Used to look up place details and extract accommodation metadata from Google Maps listings.',
+        descriptionEs:
+            'API key de la Google Places API (New) para el tier de importación desde Google Maps. Se usa para buscar detalles de lugares y extraer metadatos de alojamiento de listings en Google Maps.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-google-places-api-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Then restrict the key to the "Places API (New)" under "API restrictions". Billing must be enabled on the project.',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Luego restringí la key a la "Places API (New)" en "API restrictions". El proyecto debe tener billing habilitado.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_TOKEN',
+        description:
+            'MercadoLibre OAuth app access token for reading /items listings. Required because the ML /items endpoint no longer allows anonymous access.',
+        descriptionEs:
+            'Token de acceso OAuth de la app de MercadoLibre para leer listings de /items. Necesario porque el endpoint ML /items ya no permite acceso anónimo.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-mercadolibre-access-token',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Crear aplicación" → complete the form → copy the "Access Token" from the app credentials panel. Tokens expire; use the refresh-token flow to keep them valid.',
+        howToObtainEs:
+            'MercadoLibre Developers → "Crear aplicación" → completá el formulario → copiá el "Access Token" del panel de credenciales de la app. Los tokens expiran; usá el flujo de refresh-token para mantenerlos válidos.'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_FETCH_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for the safeExternalFetch utility used in accommodation import adapters. Requests that exceed this limit are aborted.',
+        descriptionEs:
+            'Timeout en milisegundos para el utilitario safeExternalFetch usado en los adaptadores de importación de alojamientos. Las solicitudes que superen este límite se abortan.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '8000',
+        exampleValue: '8000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_APIFY_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for synchronous Apify actor runs in accommodation import adapters (Airbnb, Booking fallback). Apify actors run server-side and routinely take 8-120s, far longer than the JSON-LD/OpenGraph fetch timeout, so they get their own longer budget. Distinct from HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, which stays short for fast structured-data fetches.',
+        descriptionEs:
+            'Timeout en milisegundos para las corridas sincrónicas de actores de Apify en los adaptadores de importación de alojamientos (Airbnb, fallback de Booking). Los actores de Apify corren del lado del servidor y suelen tardar 8-120s, mucho más que el timeout de fetch de JSON-LD/OpenGraph, por eso tienen su propio presupuesto más largo. Distinto de HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, que se mantiene corto para los fetches rápidos de datos estructurados.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '120000',
+        exampleValue: '120000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_FETCH_MAX_BYTES',
+        description:
+            'Maximum response body size in bytes for the safeExternalFetch utility used in accommodation import adapters. Responses exceeding this limit are rejected.',
+        descriptionEs:
+            'Tamaño máximo del cuerpo de respuesta en bytes para el utilitario safeExternalFetch usado en los adaptadores de importación de alojamientos. Las respuestas que superen este límite son rechazadas.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '3000000',
+        exampleValue: '3000000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_RATE_LIMIT_RPH',
+        description:
+            'Per-user rate limit (requests per hour) for the accommodation import endpoint. Prevents abuse and excessive external API consumption.',
+        descriptionEs:
+            'Límite de tasa por usuario (solicitudes por hora) para el endpoint de importación de alojamientos. Previene abuso y consumo excesivo de APIs externas.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '10',
+        exampleValue: '10',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_AI_MAX_CHARS',
+        description:
+            'Maximum number of characters of scraped page text sent to the AI Strategy B enrichment step. Limits token consumption and cost.',
+        descriptionEs:
+            'Número máximo de caracteres del texto de la página scrapeada que se envían al paso de enriquecimiento por IA (Estrategia B). Limita el consumo de tokens y el costo.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '12000',
+        exampleValue: '12000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+
+    // Stock image search (SPEC-274)
+    {
+        name: 'HOSPEDA_UNSPLASH_ACCESS_KEY',
+        description:
+            'Unsplash API access key (Client-ID) for the stock image search proxy. Used to authenticate search requests and trigger download tracking on import (TOS requirement).',
+        descriptionEs:
+            'Clave de acceso (Client-ID) de la API de Unsplash para el proxy de búsqueda de imágenes stock. Se usa para autenticar búsquedas y activar el tracking de descarga al importar (requerimiento TOS).',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-unsplash-access-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://unsplash.com/developers',
+        howToObtain:
+            'Unsplash Developer → Your apps → Create a new application → copy the "Access Key". The key is used as Client-ID in the Authorization header. Rate limit: 50 req/hr (demo), 5000 req/hr (production approved).',
+        howToObtainEs:
+            'Unsplash Developer → Your apps → Create a new application → copiá la "Access Key". La clave se usa como Client-ID en el header Authorization. Límite: 50 req/hr (demo), 5000 req/hr (producción aprobada).'
+    },
+    {
+        name: 'HOSPEDA_PEXELS_API_KEY',
+        description:
+            'Pexels API key for the stock image search proxy. Used to authenticate search requests via the Authorization header.',
+        descriptionEs:
+            'Clave de API de Pexels para el proxy de búsqueda de imágenes stock. Se usa para autenticar búsquedas vía el header Authorization.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-pexels-api-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://www.pexels.com/api/',
+        howToObtain:
+            'Pexels API → https://www.pexels.com/api/ → click "Your API Key" → sign up / log in → copy the key. Rate limit: 200 req/hr.',
+        howToObtainEs:
+            'Pexels API → https://www.pexels.com/api/ → hacé click en "Your API Key" → registrate / iniciá sesión → copiá la clave. Límite: 200 req/hr.'
+    },
+
+    // -------------------------------------------------------------------------
+    // External reputation / review aggregation (SPEC-237)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS',
+        description:
+            'How many days a cached Google Places snippet (rating + review count) is considered fresh before the background refresh cron re-fetches it. Lower values mean more API quota usage; higher values risk stale data.',
+        descriptionEs:
+            'Cuántos días se considera fresco un snippet de Google Places cacheado (rating + conteo de reseñas) antes de que el cron de actualización lo vuelva a buscar. Valores más bajos implican mayor consumo de cuota de API; valores más altos pueden traer datos desactualizados.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '30',
+        exampleValue: '30',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Number of days between Google Places snippet refreshes per accommodation. Default 30. Lower to keep ratings fresher (more quota); raise to reduce API calls.',
+        howToObtainEs:
+            'Cantidad de días entre actualizaciones del snippet de Google Places por alojamiento. Por defecto 30. Bajalo para tener ratings más frescos (más cuota); subilo para reducir llamadas a la API.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_REFRESH_RATE_LIMIT',
+        description:
+            'Per-accommodation rate limit for the manual snippet refresh endpoint, expressed as "N/S" where N is the number of allowed refreshes and S is the window in seconds. Default "1/600" allows one refresh per accommodation every 10 minutes.',
+        descriptionEs:
+            'Límite de tasa por alojamiento para el endpoint de refresco manual de snippet, expresado como "N/S" donde N es la cantidad de refrescos permitidos y S es la ventana en segundos. Por defecto "1/600" permite un refresco por alojamiento cada 10 minutos.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '1/600',
+        exampleValue: '1/600',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Rate-limit string in "N/S" format (N refreshes per S seconds per accommodation). Default "1/600" (1 refresh per 10 min). Lower the window to allow faster re-fetches; raise it to protect Google Places API quota.',
+        howToObtainEs:
+            'String de rate-limit en formato "N/S" (N refrescos por S segundos por alojamiento). Por defecto "1/600" (1 refresco cada 10 min). Bajá la ventana para permitir refrescos más rápidos; subila para proteger la cuota de la API de Google Places.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_CRON_SCHEDULE',
+        description:
+            'Cron expression for the background job that refreshes stale Google Places snippets across all accommodations. Default "0 2 * * 1" runs every Monday at 02:00 UTC.',
+        descriptionEs:
+            'Expresión cron para el job en segundo plano que actualiza los snippets de Google Places desactualizados en todos los alojamientos. Por defecto "0 2 * * 1" corre todos los lunes a las 02:00 UTC.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '0 2 * * 1',
+        exampleValue: '0 2 * * 1',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Standard 5-field cron expression for the external-reputation snippet refresh job. Default "0 2 * * 1" (weekly, Monday 02:00 UTC). Adjust frequency based on Google Places quota and accommodation count.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos para el job de actualización de snippets de reputación externa. Por defecto "0 2 * * 1" (semanal, lunes 02:00 UTC). Ajustá la frecuencia según la cuota de Google Places y la cantidad de alojamientos.'
+    },
+
+    // -------------------------------------------------------------------------
+    // Social Automation (SPEC-254)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AI_SOCIAL_KEY',
+        description:
+            'Inbound API key the Custom GPT sends in the `x-hospeda-ai-key` header when calling the social-draft endpoints. Validates that requests originate from the authorised Custom GPT and not arbitrary callers.',
+        descriptionEs:
+            'API key entrante que el Custom GPT envía en el header `x-hospeda-ai-key` al llamar los endpoints de borrador social. Valida que las solicitudes provienen del Custom GPT autorizado y no de callers arbitrarios.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-random-32-char-key-for-gpt',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Generate a random shared secret: `openssl rand -base64 32`. Set the same value in the Custom GPT action authentication header (`x-hospeda-ai-key`) and here. Rotate by updating both the GPT action config and this env var simultaneously.',
+        howToObtainEs:
+            'Generá un secreto compartido aleatorio: `openssl rand -base64 32`. Configurá el mismo valor en el header de autenticación de la acción del Custom GPT (`x-hospeda-ai-key`) y acá. Para rotar, actualizá la config de la acción del GPT y esta variable al mismo tiempo.'
+    },
+    {
+        name: 'HOSPEDA_OPERATOR_PIN_HASH',
+        description:
+            'Bcrypt/argon2 hash of the operator PIN used to authorise social-draft submission via the Custom GPT. The raw PIN is never stored — only the hash. Validated on the GPT drafts endpoint when `operator_pin` is submitted.',
+        descriptionEs:
+            'Hash bcrypt/argon2 del PIN del operador usado para autorizar el envío de borradores sociales a través del Custom GPT. El PIN crudo nunca se guarda — solo el hash. Se valida en el endpoint de borradores del GPT cuando se envía `operator_pin`.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: '$2b$12$replace-with-a-real-bcrypt-hash-of-your-pin',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            "Choose a numeric PIN (e.g. 6 digits), then hash it: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('YOUR_PIN',12).then(h=>console.log(h))\"`. Store only the resulting hash here, never the raw PIN. Rotate by generating a new PIN + new hash.",
+        howToObtainEs:
+            "Elegí un PIN numérico (ej: 6 dígitos), luego hashealo: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('TU_PIN',12).then(h=>console.log(h))\"`. Guardá solo el hash resultante acá, nunca el PIN crudo. Para rotar, generá un nuevo PIN y un nuevo hash."
+    },
+    {
+        name: 'HOSPEDA_OPERATOR_PIN',
+        description:
+            'Plaintext operator PIN compared directly against the `operatorPin` submitted to the Custom GPT social-draft endpoint. Supersedes HOSPEDA_OPERATOR_PIN_HASH (the prior unsalted SHA-256 hash was removed). TEMPORARY: restore a hashed comparison (HOSPEDA_OPERATOR_PIN_HASH) before production.',
+        descriptionEs:
+            'PIN del operador en texto plano que se compara directamente contra el `operatorPin` enviado al endpoint de borradores sociales del Custom GPT. Reemplaza a HOSPEDA_OPERATOR_PIN_HASH (el hash SHA-256 sin sal previo fue removido). TEMPORAL: restaurar una comparación hasheada (HOSPEDA_OPERATOR_PIN_HASH) antes de producción.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: '123456',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Choose a numeric PIN (e.g. 4-6 digits) and set it here. The same value must be entered as `operatorPin` in the Custom GPT action. NOTE: temporary plaintext setup — restore HOSPEDA_OPERATOR_PIN_HASH (hashed) before production.',
+        howToObtainEs:
+            'Elegí un PIN numérico (ej: 4-6 dígitos) y poné el valor acá. El mismo valor debe ingresarse como `operatorPin` en la acción del Custom GPT. NOTA: setup temporal en texto plano — restaurar HOSPEDA_OPERATOR_PIN_HASH (hasheado) antes de producción.'
+    },
+    {
+        name: 'HOSPEDA_MAKE_API_KEY',
+        description:
+            'Outbound API key our backend sends to Make.com in the `x-make-apikey` header when pushing social-publish jobs. Authenticates the Hospeda API against the Make.com scenario webhook.',
+        descriptionEs:
+            'API key saliente que nuestro backend envía a Make.com en el header `x-make-apikey` al enviar jobs de publicación social. Autentica la API de Hospeda contra el webhook del escenario de Make.com.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-your-make-scenario-webhook-api-key',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'In Make.com, open the scenario webhook trigger → Authentication → add a custom header `x-make-apikey` with a value of your choice (generate with `openssl rand -hex 32`). Set that same value here.',
+        howToObtainEs:
+            'En Make.com, abrí el trigger webhook del escenario → Authentication → agregá un header custom `x-make-apikey` con un valor a tu elección (generalo con `openssl rand -hex 32`). Poné ese mismo valor acá.'
+    },
+    {
+        name: 'HOSPEDA_MAKE_INBOUND_KEY',
+        description:
+            'Inbound key Make.com sends back in the `x-hospeda-make-key` header on claim and result callbacks. Validates that incoming callbacks originate from our Make.com scenario and not arbitrary senders.',
+        descriptionEs:
+            'Key entrante que Make.com envía de vuelta en el header `x-hospeda-make-key` en los callbacks de claim y resultado. Valida que los callbacks entrantes provienen de nuestro escenario de Make.com y no de remitentes arbitrarios.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-your-make-inbound-callback-key',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Generate a shared secret: `openssl rand -hex 32`. Configure it in the Make.com HTTP module that sends callbacks to Hospeda as a custom header `x-hospeda-make-key`. Set the same value here.',
+        howToObtainEs:
+            'Generá un secreto compartido: `openssl rand -hex 32`. Configuralo en el módulo HTTP de Make.com que envía callbacks a Hospeda como header custom `x-hospeda-make-key`. Poné el mismo valor acá.'
+    },
+    // External reputation async polling (SPEC-250)
+    {
+        name: 'HOSPEDA_EXTREP_POLL_SCHEDULE',
+        description:
+            'Cron expression for the poll-apify-reputation-runs background job that checks the status of pending/running Apify actor runs and persists results. Default "*/2 * * * *" runs every 2 minutes.',
+        descriptionEs:
+            'Expresión cron para el job poll-apify-reputation-runs que verifica el estado de los runs de Apify pendientes/en curso y persiste los resultados. Por defecto "*/2 * * * *" corre cada 2 minutos.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '*/2 * * * *',
+        exampleValue: '*/2 * * * *',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Standard 5-field cron expression for the Apify reputation polling job. Default "*/2 * * * *" (every 2 minutes). Adjust based on how quickly you want async run results to propagate; lower intervals reduce latency at the cost of more Apify status-check calls.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos para el job de polling de reputación de Apify. Por defecto "*/2 * * * *" (cada 2 minutos). Ajustá según la velocidad deseada de propagación de resultados; intervalos más bajos reducen la latencia a costa de más llamadas de status check a Apify.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS',
+        description:
+            'Milliseconds before the poll-apify-reputation-runs job sweeps a pending/running Apify actor run as timed out and marks it with fetch_status="error". Default 600000 (10 minutes).',
+        descriptionEs:
+            'Milisegundos antes de que el job poll-apify-reputation-runs marque un run de Apify pendiente/en curso como timed-out y lo registre con fetch_status="error". Por defecto 600000 (10 minutos).',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '600000',
+        exampleValue: '600000',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Integer number of milliseconds. Default 600000 (10 min). Raise it if your Apify actors regularly take longer; lower it if you want stuck runs to fail fast. Must be a positive integer.',
+        howToObtainEs:
+            'Número entero de milisegundos. Por defecto 600000 (10 min). Subilo si tus actores de Apify tardan más; bajalo si querés que los runs trabados fallen rápido. Debe ser un entero positivo.'
+    },
+
     {
         name: 'HOSPEDA_NOINDEX_HOSTS',
         description:

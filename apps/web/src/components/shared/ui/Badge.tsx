@@ -9,7 +9,7 @@
  * Badge.astro — see that file for the complete spec.
  */
 
-import { resolveIcon } from '@repo/icons/resolver';
+import { resolveWebIcon } from '@/lib/icon-map';
 import type { ReactElement } from 'react';
 import styles from './Badge.module.css';
 import type { BadgeBaseProps } from './badge.types';
@@ -57,10 +57,10 @@ export function Badge({
     });
     const styleObject = buildBadgeStyleObject({ variant, colorScheme, size, hasHref });
 
-    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
     if (icon && !IconComponent && import.meta.env.DEV) {
         // eslint-disable-next-line no-console
-        console.warn(`Badge: icon "${icon}" could not be resolved via @repo/icons`);
+        console.warn(`Badge: icon "${icon}" not found in WEB_ICON_MAP (icon-map.ts)`);
     }
 
     const iconPixelSize = getBadgeIconSize({ size });

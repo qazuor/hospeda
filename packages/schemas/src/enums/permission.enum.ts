@@ -59,7 +59,22 @@ export enum PermissionCategoryEnum {
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
-    MODERATION = 'MODERATION'
+    MODERATION = 'MODERATION',
+    /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
+    COMMERCE = 'COMMERCE',
+    HOST_TRADE = 'HOST_TRADE',
+    /** Partners program (SPEC-271). */
+    PARTNER = 'PARTNER',
+    /** Social media publish pipeline (SPEC-254). */
+    SOCIAL_POST = 'SOCIAL_POST',
+    SOCIAL_HASHTAG = 'SOCIAL_HASHTAG',
+    SOCIAL_CAMPAIGN = 'SOCIAL_CAMPAIGN',
+    SOCIAL_BATCH = 'SOCIAL_BATCH',
+    SOCIAL_AUDIENCE = 'SOCIAL_AUDIENCE',
+    SOCIAL_PLATFORM = 'SOCIAL_PLATFORM',
+    SOCIAL_FOOTER = 'SOCIAL_FOOTER',
+    SOCIAL_SETTINGS = 'SOCIAL_SETTINGS',
+    SOCIAL_AUDIT = 'SOCIAL_AUDIT'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -252,7 +267,8 @@ export enum PermissionEnum {
     METRICS_RESET = 'metrics.reset', // Allows resetting metrics counters.
 
     // SYSTEM: System-level permissions
-    AUDIT_LOG_VIEW = 'auditLog.view', // Allows viewing the audit log.
+    AUDIT_LOG_VIEW = 'auditLog.view', // Allows viewing the admin audit log (SUPER_ADMIN only).
+    SECURITY_LOG_VIEW = 'securityLog.view', // Allows viewing the security log (SUPER_ADMIN only).
     SYSTEM_MAINTENANCE_MODE = 'system.maintenanceMode', // Allows toggling system maintenance mode.
     TRANSLATIONS_MANAGE = 'translations.manage', // Allows managing translations.
     MULTILANGUAGE_CONTENT_EDIT = 'content.multilanguage.edit', // Allows editing multilingual content.
@@ -828,6 +844,7 @@ export enum PermissionEnum {
     SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
+    FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
 
     // MODERATION: Content auto-moderation permissions (SPEC-195)
     MODERATION_TERM_VIEW = 'moderation.term.view', // Allows viewing moderation terms and the term list.
@@ -839,5 +856,61 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_VIEW = 'moderation.threshold.view', // Allows viewing moderation threshold configuration.
     MODERATION_THRESHOLD_UPDATE = 'moderation.threshold.update', // Allows updating moderation threshold values (pending/reject).
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
-    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete' // Allows permanently deleting a moderation threshold.
+    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
+
+    // COMMERCE: Owner-scoped edit permission (SPEC-253)
+    // Replaces the 10 per-section COMMERCE_*_EDIT_OWN permissions (removed in SPEC-253 D2=b).
+    // A COMMERCE_OWNER holding this permission may edit all owner-accessible sections of
+    // their own commerce listing (operational fields, FAQs, i18n, etc.).
+    COMMERCE_EDIT_OWN = 'commerce.editOwn', // Allows a COMMERCE_OWNER to edit their own commerce listing (single owner write permission, SPEC-253).
+
+    // COMMERCE: Admin-level permissions (SPEC-239)
+    COMMERCE_CREATE = 'commerce.create', // Allows creating a new commerce listing.
+    COMMERCE_VIEW_ALL = 'commerce.viewAll', // Allows viewing all commerce listings (including private/draft).
+    COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
+    COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
+    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+
+    // PARTNER: Partners program (SPEC-271)
+    PARTNER_CREATE = 'partner.create', // Allows creating a new partner.
+    PARTNER_UPDATE = 'partner.update', // Allows updating a partner.
+    PARTNER_DELETE = 'partner.delete', // Allows soft-deleting a partner.
+    PARTNER_VIEW_ALL = 'partner.viewAll', // Allows viewing all partners (admin).
+    PARTNER_MANAGE = 'partner.manage', // Allows managing partner (create, update, delete, send link, manual payment).
+
+    // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
+    HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.
+    HOST_TRADE_CREATE = 'hostTrade.create', // Admin: create a trade entry.
+    HOST_TRADE_UPDATE = 'hostTrade.update', // Admin: update a trade entry.
+    HOST_TRADE_DELETE = 'hostTrade.delete', // Admin: soft-delete a trade entry.
+    HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
+    HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
+    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll', // Admin: list all trades including inactive/soft-deleted.
+
+    // SOCIAL: Social media publish pipeline permissions (SPEC-254).
+    // Governs the full editorial lifecycle: GPT draft ingestion → admin review → scheduling → Make.com dispatch.
+    SOCIAL_POST_VIEW = 'socialPost.view', // Allows viewing social posts in the admin panel (list + detail).
+    SOCIAL_POST_CREATE = 'socialPost.create', // Allows creating social post drafts manually (outside GPT flow).
+    SOCIAL_POST_UPDATE = 'socialPost.update', // Allows updating social post content (caption, hashtags, targets).
+    SOCIAL_POST_APPROVE = 'socialPost.approve', // Allows approving, rejecting, or requesting changes on social posts in NEEDS_REVIEW state.
+    SOCIAL_POST_SCHEDULE = 'socialPost.schedule', // Allows scheduling an approved post (set scheduledAt / mark-ready / recurrence config).
+    SOCIAL_POST_PAUSE = 'socialPost.pause', // Allows pausing and unpausing approved, scheduled, or ready-to-publish posts.
+    SOCIAL_POST_ARCHIVE = 'socialPost.archive', // Allows archiving (soft-deleting) a social post.
+    SOCIAL_POST_HARD_DELETE = 'socialPost.hardDelete', // Allows permanently deleting a social post. Also gates ?includeDeleted=true on list.
+    SOCIAL_POST_VIEW_LOGS = 'socialPost.viewLogs', // Allows viewing per-post publish log entries on the post detail page.
+    SOCIAL_HASHTAG_VIEW = 'socialHashtag.view', // Allows viewing the hashtag catalog (list + detail).
+    SOCIAL_HASHTAG_MANAGE = 'socialHashtag.manage', // Allows creating, updating, deactivating, and soft-deleting hashtags; also gates hashtag promotion from draft suggestions.
+    SOCIAL_HASHTAG_SET_MANAGE = 'socialHashtagSet.manage', // Allows creating, updating, and soft-deleting hashtag sets.
+    SOCIAL_FOOTER_MANAGE = 'socialFooter.manage', // Allows creating, updating, and soft-deleting reusable post footer templates.
+    SOCIAL_CAMPAIGN_MANAGE = 'socialCampaign.manage', // Allows creating, updating, and soft-deleting social content campaigns.
+    SOCIAL_BATCH_MANAGE = 'socialBatch.manage', // Allows creating, updating, and soft-deleting social content batches / publishing sprints.
+    SOCIAL_AUDIENCE_MANAGE = 'socialAudience.manage', // Allows creating, updating, and soft-deleting audience descriptors used for targeting.
+    SOCIAL_PLATFORM_MANAGE = 'socialPlatform.manage', // Allows enabling/disabling platforms and updating platform-format settings (caption limits, make_channel_key, mvp_enabled).
+    SOCIAL_PLATFORM_FORMAT_VIEW = 'socialPlatformFormat.view', // Allows viewing platform-format configuration rows (read-only).
+    SOCIAL_ASSET_VIEW = 'socialAsset.view', // Allows viewing social media assets (Cloudinary URLs, metadata).
+    SOCIAL_ASSET_MANAGE = 'socialAsset.manage', // Allows uploading, updating metadata, and soft-deleting social assets.
+    SOCIAL_SETTINGS_MANAGE = 'socialSettings.manage', // Allows reading and updating social automation settings (make webhook URL, defaults, etc.); also gates the GPT action schema export endpoint.
+    SOCIAL_PUBLISH_LOG_VIEW = 'socialPublishLog.view', // Allows querying the social_publish_logs table (dispatch history, failure details).
+    SOCIAL_AUDIT_LOG_VIEW = 'socialAuditLog.view', // Allows querying the social_audit_log table (semantic event trail with actor + old/new values).
+    SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage' // Allows manually triggering or resetting dispatch jobs and managing the Make.com integration state.
 }

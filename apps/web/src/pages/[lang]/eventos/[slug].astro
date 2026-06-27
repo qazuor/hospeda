@@ -20,6 +20,7 @@ import CommentThread from '@/components/comments/CommentThread.astro';
 import EventDetailLocationCard from '@/components/event/EventDetailLocationCard.astro';
 import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCard.astro';
 import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
+import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventDetailProps } from '@/lib/api/transforms';
@@ -229,19 +230,28 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 		) : (
 			<div class="event-detail__hero">
 				{!featuredIsPlaceholder ? (
-					<Image
-						src={featuredImage.url}
-						alt={featuredImage.caption || name}
-						width={1200}
-						height={675}
-						format="webp"
-						loading="eager"
-						class="event-detail__hero-img"
-					/>
+					<>
+						<Image
+							src={featuredImage.url}
+							alt={featuredImage.caption || name}
+							width={1200}
+							height={675}
+							format="webp"
+							loading="eager"
+							class="event-detail__hero-img"
+						/>
+						{featuredImage.attribution && (
+							<ImageAttribution
+								attribution={featuredImage.attribution}
+								locale={locale}
+								variant="overlay"
+							/>
+						)}
+					</>
 				) : (
 					<img
 						src={featuredImage.url}
-						alt={name}
+						alt=""
 						loading="eager"
 						class="event-detail__hero-img"
 						width="1200"

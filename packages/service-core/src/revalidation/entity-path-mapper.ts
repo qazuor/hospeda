@@ -65,6 +65,12 @@ export type EntityChangeData =
           readonly entityType: 'accommodation';
           /** Slug of the changed accommodation — triggers detail page revalidation */
           readonly slug: string;
+          /**
+           * Stable UUID of the changed accommodation entity.
+           * When provided, written to `revalidation_log.entity_id` for precise audit querying.
+           * Optional to avoid breaking existing call sites that don't yet supply it.
+           */
+          readonly id?: string;
           /** Slug of the parent destination — also revalidates the destination page */
           readonly destinationSlug?: string;
           /**
@@ -82,6 +88,8 @@ export type EntityChangeData =
           /** Accommodation entity changed (without slug context) */
           readonly entityType: 'accommodation';
           readonly slug?: undefined;
+          /** Stable UUID of the changed accommodation entity (optional). */
+          readonly id?: string;
           readonly destinationSlug?: string;
           readonly accommodationType?: string;
           readonly amenitySlugs?: readonly string[];

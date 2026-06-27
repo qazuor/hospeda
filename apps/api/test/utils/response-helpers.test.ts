@@ -61,10 +61,11 @@ describe('stripWithSchema', () => {
         vi.clearAllMocks();
     });
 
-    it('returns data unchanged when no schema is provided', () => {
+    it('throws ServiceError(INTERNAL_ERROR) when no schema is provided (SPEC-210 PR5 fail-closed)', () => {
         const data = { id: '1', name: 'foo', secret: 'keep-me' };
-        const result = stripWithSchema(data);
-        expect(result).toBe(data);
+        expect(() => stripWithSchema(data)).toThrow(
+            /every public route must declare a concrete schema/i
+        );
     });
 
     it('strips fields not declared in the schema on parse success', () => {
@@ -120,14 +121,13 @@ describe('createResponse with responseSchema', () => {
         expect(envelope.data.adminInfo).toBeUndefined();
     });
 
-    it('sends data unchanged when no responseSchema is provided (backward compatible)', () => {
-        const { ctx, calls } = createMockContext();
+    it('throws when no responseSchema is provided (SPEC-210 PR5 fail-closed)', () => {
+        const { ctx } = createMockContext();
         const data = { id: '1', name: 'foo', anything: 'stays' };
 
-        createResponse(data, ctx, 200);
-
-        const envelope = calls[0]?.body as { data: Record<string, unknown> };
-        expect(envelope.data).toEqual(data);
+        expect(() => createResponse(data, ctx, 200)).toThrow(
+            /every public route must declare a concrete schema/i
+        );
     });
 
     it('throws ServiceError when handler payload does not match declared responseSchema (SPEC-087 strict mode)', () => {
@@ -177,14 +177,13 @@ describe('createPaginatedResponse with responseSchema', () => {
         expect(envelope.data.pagination).toEqual(pagination);
     });
 
-    it('returns items unchanged when no responseSchema is provided', () => {
-        const { ctx, calls } = createMockContext();
+    it('throws when no responseSchema is provided (SPEC-210 PR5 fail-closed)', () => {
+        const { ctx } = createMockContext();
         const items = [{ id: '1', keep: 'yes' }];
 
-        createPaginatedResponse(items, pagination, ctx, 200);
-
-        const envelope = calls[0]?.body as { data: { items: unknown[] } };
-        expect(envelope.data.items).toEqual(items);
+        expect(() => createPaginatedResponse(items, pagination, ctx, 200)).toThrow(
+            /every public list route must declare a concrete schema/i
+        );
     });
 
     it('handles empty items array without stripping errors', () => {

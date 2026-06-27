@@ -70,7 +70,7 @@ async function fetchAmenities(accommodationId: string) {
     const rows = await db
         .select({
             amenityId: rAccommodationAmenity.amenityId,
-            name: amenities.name,
+            slug: amenities.slug,
             icon: amenities.icon,
             isOptional: rAccommodationAmenity.isOptional,
             additionalCost: rAccommodationAmenity.additionalCost
@@ -81,7 +81,7 @@ async function fetchAmenities(accommodationId: string) {
 
     return rows.map((r) => ({
         amenityId: r.amenityId,
-        name: r.name,
+        slug: r.slug,
         icon: r.icon ?? null,
         isOptional: r.isOptional,
         additionalCost:
@@ -102,7 +102,7 @@ async function fetchFeatures(accommodationId: string) {
     const rows = await db
         .select({
             featureId: rAccommodationFeature.featureId,
-            name: features.name,
+            slug: features.slug,
             icon: features.icon,
             hostReWriteName: rAccommodationFeature.hostReWriteName,
             comments: rAccommodationFeature.comments
@@ -113,7 +113,7 @@ async function fetchFeatures(accommodationId: string) {
 
     return rows.map((r) => ({
         featureId: r.featureId,
-        name: r.name,
+        slug: r.slug,
         icon: r.icon ?? null,
         hostReWriteName: r.hostReWriteName ?? null,
         comments: r.comments ?? null

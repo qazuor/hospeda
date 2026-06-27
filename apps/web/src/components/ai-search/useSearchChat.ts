@@ -66,6 +66,9 @@ export interface UseSearchChatParams {
  * @property currentReply - Streamed reply text accumulator (shown live while streaming).
  * @property isStreaming - True from `send()` until `done` / `error` arrives.
  * @property conversationId - Server conversation id from the last `done` event (nullable).
+ * @property confidence - Model's self-assessed extraction confidence from the last `filters` event (SPEC-265 A1).
+ *   `null` when no turn has completed yet. Used internally to trigger the low-confidence
+ *   message — no numeric badge is shown to the user.
  * @property error - Surface-level error message from `error` or `stream_error` events.
  * @property send - Send a user message and start a new streaming turn.
  * @property removeFilter - Drop a key from accumulated filters and re-run the accommodations search without a new LLM turn.
@@ -79,9 +82,33 @@ export interface UseSearchChatReturn {
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
+    readonly confidence: number | null;
+    /**
+     * Whether the LAST model turn extracted any usable slot (SPEC-265 A2).
+     * Snapshotted from the `filters` event — NOT recomputed from
+     * `currentFilters`, so removing chips via `removeFilter` does not flip it
+     * (that would spuriously trigger the low-confidence notice on a good turn).
+     * `false` until the first `filters` event arrives.
+     */
+    readonly lastTurnHadEntities: boolean;
     readonly error: string | null;
+    /**
+     * HTTP status code from the last `stream_error` event (SPEC-265 C3).
+     * `null` when no error occurred, or when the error was an SSE-level
+     * `error` event (no HTTP status). `0` = network-level failure.
+     * The UI uses this to classify: 429 → rateLimitError, 5xx → serviceError.
+     */
+    readonly errorStatus: number | null;
     readonly send: (message: string) => void;
     readonly removeFilter: (key: keyof SearchIntentEntities) => void;
+    /**
+     * Abort the current streaming turn (SPEC-265 C1). Stops the SSE stream
+     * via the AbortController and resets `isStreaming` to false. Any partially
+     * streamed reply is committed to the conversation thread so the text the
+     * user already read is not lost; accumulated filters and results are kept.
+     * Safe to call when not streaming (no-op).
+     */
+    readonly abort: () => void;
     readonly reset: () => void;
 }
 
@@ -103,7 +130,10 @@ interface SearchChatState {
     readonly currentReply: string;
     readonly isStreaming: boolean;
     readonly conversationId: string | null;
+    readonly confidence: number | null;
+    readonly lastTurnHadEntities: boolean;
     readonly error: string | null;
+    readonly errorStatus: number | null;
 }
 
 const INITIAL_STATE: SearchChatState = {
@@ -115,8 +145,25 @@ const INITIAL_STATE: SearchChatState = {
     currentReply: '',
     isStreaming: false,
     conversationId: null,
-    error: null
+    confidence: null,
+    lastTurnHadEntities: false,
+    error: null,
+    errorStatus: null
 };
+
+/**
+ * Whether an extracted intent carries at least one usable slot value.
+ * Empty arrays, `null`, `undefined` and `''` do NOT count; `false` and `0` do
+ * (they are legitimate slot values, e.g. `hasPool: false`).
+ */
+function hasAnyEntity(entities: SearchIntentEntities | null): boolean {
+    if (!entities) return false;
+    return Object.values(entities).some((value) =>
+        Array.isArray(value)
+            ? value.length > 0
+            : value !== undefined && value !== null && value !== ''
+    );
+}
 
 /**
  * Intent → search-param key map for the keys whose names differ between
@@ -280,11 +327,15 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                     if (event.type === 'filters') {
                         // Store the accumulated intent (used by chips T-011)
                         // and immediately fire the accommodations search.
+                        // Store confidence (SPEC-265 A1) for the low-confidence UI.
                         const newFilters = event.filters.intent;
+                        const newConfidence = event.filters.confidence ?? null;
                         setState((prev) => ({
                             ...prev,
                             currentFilters: newFilters,
-                            lastSearchParams: event.filters.params
+                            lastSearchParams: event.filters.params,
+                            confidence: newConfidence,
+                            lastTurnHadEntities: hasAnyEntity(newFilters)
                         }));
                         void fetchAccommodations(event.filters.params);
                         return;
@@ -322,7 +373,8 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             ...prev,
                             currentReply: '',
                             isStreaming: false,
-                            error: event.message
+                            error: event.message,
+                            errorStatus: null
                         }));
                         return;
                     }
@@ -332,7 +384,8 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                             ...prev,
                             currentReply: '',
                             isStreaming: false,
-                            error: event.error.message
+                            error: event.error.message,
+                            errorStatus: event.status
                         }));
                     }
                 }
@@ -397,6 +450,31 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         setState(INITIAL_STATE);
     }, []);
 
+    // ─── abort ───────────────────────────────────────────────────────────────
+
+    /**
+     * Abort the current streaming turn (SPEC-265 C1).
+     *
+     * Signals the AbortController to cancel the in-flight SSE stream and
+     * resets `isStreaming` to false. Any reply text streamed so far is
+     * committed to the thread as the assistant turn (so the user keeps what
+     * they already read instead of it vanishing); accumulated filters and
+     * results are preserved. Safe to call when not streaming (no-op).
+     */
+    const abort = useCallback((): void => {
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
+        setState((prev) => {
+            if (!prev.isStreaming) return prev;
+            // Commit any partial reply to the thread so it is preserved.
+            const partial = prev.currentReply.trim();
+            const messages = partial
+                ? [...prev.messages, { role: 'assistant' as const, content: partial }]
+                : prev.messages;
+            return { ...prev, messages, isStreaming: false, currentReply: '' };
+        });
+    }, []);
+
     // ─── Return ──────────────────────────────────────────────────────────────
 
     return {
@@ -407,9 +485,13 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
         currentReply: state.currentReply,
         isStreaming: state.isStreaming,
         conversationId: state.conversationId,
+        confidence: state.confidence,
+        lastTurnHadEntities: state.lastTurnHadEntities,
         error: state.error,
+        errorStatus: state.errorStatus,
         send,
         removeFilter,
+        abort,
         reset
     };
 }

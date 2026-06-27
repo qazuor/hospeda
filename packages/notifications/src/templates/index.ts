@@ -12,3 +12,4 @@ export * from './contact/index.js';
 export * from './subscription/index.js';
 export * from './conversation/index.js';
 export * from './newsletter/index.js';
+export * from './commerce/index.js';

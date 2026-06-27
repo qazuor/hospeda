@@ -398,6 +398,157 @@
             }
         }
     },
+    "ai": {
+        "usage": {
+            "title": "Panel de Consumo de IA",
+            "subtitle": "Monitoreá el uso de IA por función, modelo y proveedor. Todos los costos en µUSD (1 USD = 1.000.000 µUSD).",
+            "filter": {
+                "title": "Filtros",
+                "windowMode": "Modo de ventana",
+                "month": "Mes",
+                "dateRange": "Rango de fechas",
+                "year": "Año",
+                "monthLabel": "Mes",
+                "allMonths": "Todos los meses",
+                "from": "Desde (AAAA-MM-DD)",
+                "to": "Hasta (AAAA-MM-DD)",
+                "feature": "Función",
+                "allFeatures": "Todas las funciones",
+                "provider": "Proveedor",
+                "allProviders": "Todos los proveedores",
+                "model": "Modelo",
+                "modelPlaceholder": "ej. gpt-4o-mini",
+                "reset": "Restablecer"
+            },
+            "months": {
+                "1": "Enero",
+                "2": "Febrero",
+                "3": "Marzo",
+                "4": "Abril",
+                "5": "Mayo",
+                "6": "Junio",
+                "7": "Julio",
+                "8": "Agosto",
+                "9": "Septiembre",
+                "10": "Octubre",
+                "11": "Noviembre",
+                "12": "Diciembre"
+            },
+            "features": {
+                "text_improve": "Mejora de texto",
+                "chat": "Chat",
+                "search": "Búsqueda",
+                "support": "Soporte",
+                "translate": "Traducción",
+                "accommodation_import": "Importación de alojamiento",
+                "post_generate": "Generación de publicación"
+            },
+            "providers": {
+                "openai": "OpenAI",
+                "anthropic": "Anthropic",
+                "stub": "Stub (prueba)"
+            },
+            "totals": {
+                "title": "Llamadas totales",
+                "tokensIn": "Tokens de entrada",
+                "tokensOut": "Tokens de salida",
+                "estCost": "Costo estimado",
+                "subtitle": "Solicitudes de IA en la ventana",
+                "subtitleTokensIn": "Tokens de prompt consumidos",
+                "subtitleTokensOut": "Tokens de completado generados",
+                "subtitleCost": "{{total}} tokens totales",
+                "loadError": "No se pudo cargar el resumen de uso.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá."
+            },
+            "table": {
+                "colFeature": "Función",
+                "colModel": "Modelo",
+                "colProvider": "Proveedor",
+                "colCalls": "Llamadas",
+                "colTokensIn": "Tokens entrada",
+                "colTokensOut": "Tokens salida",
+                "colEstCost": "Costo est.",
+                "colCostPer1k": "Costo / 1k tokens"
+            },
+            "byFeature": {
+                "title": "Por función",
+                "desc_one": "{{count}} función — ordenado por costo",
+                "desc_other": "{{count}} funciones — ordenado por costo",
+                "loading": "Cargando datos por función…",
+                "loadError": "No se pudo cargar el uso por función.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de funciones para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "byModel": {
+                "title": "Por modelo",
+                "desc_one": "{{count}} modelo — ordenado por costo",
+                "desc_other": "{{count}} modelos — ordenado por costo",
+                "loading": "Cargando datos por modelo…",
+                "loadError": "No se pudo cargar el uso por modelo.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de modelos para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "byProvider": {
+                "title": "Por proveedor",
+                "desc_one": "{{count}} proveedor — ordenado por costo",
+                "desc_other": "{{count}} proveedores — ordenado por costo",
+                "loading": "Cargando datos por proveedor…",
+                "loadError": "No se pudo cargar el uso por proveedor.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de proveedores para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "featureModel": {
+                "tableTitle": "Función × Modelo",
+                "chartTitle": "Costo por función × modelo",
+                "desc_one": "{{count}} par — ordenado por costo",
+                "desc_other": "{{count}} pares — ordenado por costo",
+                "chartDesc_one": "Distribución de costos en {{features}} función y {{models}} modelo",
+                "chartDesc_other": "Distribución de costos en {{features}} funciones y {{models}} modelos",
+                "loading": "Cargando datos función × modelo…",
+                "chartLoading": "Cargando datos del gráfico…",
+                "loadError": "No se pudo cargar el uso por función × modelo.",
+                "chartLoadError": "No se pudo cargar los datos del gráfico.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de función × modelo para los filtros seleccionados.",
+                "chartEmpty": "Sin datos de costo para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos.",
+                "legendEstCost": "Costo est. (USD)",
+                "legendCalls": "Llamadas"
+            },
+            "daily": {
+                "title": "Costo diario",
+                "desc_one": "{{count}} día — costo a lo largo del tiempo",
+                "desc_other": "{{count}} días — costo a lo largo del tiempo",
+                "loading": "Cargando datos diarios…",
+                "loadError": "No se pudo cargar el uso diario.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso diario para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver el gráfico.",
+                "legendEstCost": "Costo est. (USD)",
+                "legendCalls": "Llamadas",
+                "truncationNotice": "Mostrando los primeros {{shown}} de {{total}} días — reducí la ventana para ver el rango completo."
+            },
+            "a11y": {
+                "sectionTotals": "Totales de uso",
+                "sectionByModel": "Uso por modelo",
+                "sectionByProvider": "Uso por proveedor",
+                "sectionByFeature": "Uso por función",
+                "sectionFeatureModelChart": "Gráfico de costo por función y modelo",
+                "sectionFeatureModelTable": "Tabla de uso por función y modelo",
+                "sectionDailyChart": "Gráfico de uso diario",
+                "tableByModel": "Tabla de uso de IA agrupada por modelo",
+                "tableByProvider": "Tabla de uso de IA agrupada por proveedor",
+                "tableByFeature": "Tabla de uso de IA agrupada por función",
+                "tableByFeatureModel": "Tabla de uso de IA por función y modelo",
+                "chartFeatureModel": "Gráfico de barras agrupadas que muestra el costo estimado por función desglosado por modelo",
+                "chartDaily": "Gráfico de área que muestra el costo estimado de IA por día a lo largo del tiempo",
+                "loadingAnnouncement": "Cargando datos…"
+            }
+        }
+    },
     "access": {
         "permissions": {
             "categories": {
@@ -706,6 +857,30 @@
             "noSponsorship": "Sin Patrocinio",
             "noSponsorshipDesc": "Esta publicación no tiene un patrocinador asignado aún.",
             "noteDescNoSponsor": "Las funciones de gestión de patrocinios estarán disponibles en una actualización futura. Podrás asignar patrocinadores, configurar tipos de patrocinio y gestionar períodos de patrocinio."
+        },
+        "aiGenerate": {
+            "panelTitle": "Generar con IA",
+            "description": "Dale un tema y puntos clave; la IA redacta un borrador para que revises.",
+            "topicLabel": "Tema",
+            "topicPlaceholder": "Ej.: Guía de carnaval en Concepción del Uruguay",
+            "pointsLabel": "Puntos clave",
+            "pointsPlaceholder": "Agregá un punto a cubrir",
+            "pointsAdd": "Agregar punto",
+            "pointsRemove": "Quitar",
+            "categoryLabel": "Categoría",
+            "toneLabel": "Tono",
+            "toneFormal": "Formal",
+            "toneInformal": "Informal",
+            "toneNeutral": "Neutral",
+            "localeLabel": "Idioma de salida",
+            "generate": "Generar",
+            "generating": "Generando borrador…",
+            "apply": "Aplicar borrador",
+            "discard": "Descartar",
+            "errorModeration": "El contenido generado no pasó la moderación. Probá reformular los puntos.",
+            "errorCeiling": "Límite de costo alcanzado. Intentá más tarde.",
+            "errorExhausted": "El servicio de IA no está disponible temporalmente.",
+            "errorGeneric": "No se pudo generar el borrador. Intentá de nuevo."
         }
     },
     "events": {
@@ -1114,6 +1289,34 @@
             "onDragOver": "Moviste la pregunta de la posición {{from}} a la {{to}}.",
             "onDragEnd": "La pregunta quedó en la posición {{position}}.",
             "onDragCancel": "Reordenamiento cancelado. La pregunta volvió a la posición {{position}}."
+        }
+    },
+    "gallery": {
+        "title": "Galería de fotos",
+        "portada": {
+            "title": "Portada",
+            "description": "La imagen principal que se muestra al inicio",
+            "empty": "Sin portada. Subí una imagen para establecerla.",
+            "actions": {
+                "upload": "Subir portada",
+                "replace": "Reemplazar portada",
+                "remove": "Quitar portada"
+            }
+        },
+        "grid": {
+            "title": "Galería",
+            "empty": "No hay fotos en la galería. Subí la primera.",
+            "cap": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
+            "actions": {
+                "add": "Agregar foto"
+            }
+        },
+        "errors": {
+            "loadFailed": "No se pudo cargar la galería. Intentá de nuevo.",
+            "addFailed": "No se pudo agregar la foto. Intentá de nuevo.",
+            "removeFailed": "No se pudo eliminar la foto. Intentá de nuevo.",
+            "setFeaturedFailed": "No se pudo establecer la portada. Intentá de nuevo.",
+            "uploadFailed": "No se pudo subir la imagen. Intentá de nuevo."
         }
     }
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { I18nTextSchema, i18nText } from '../../common/i18n.schema.js';
+import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
@@ -115,7 +115,9 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 amenityId: z.string().uuid(),
-                name: i18nText({ min: 2, max: 100 }),
+                // SPEC-266: catalog `name` was dropped; `slug` is the canonical
+                // identifier and the i18n key (`accommodations.amenityNames.<slug>`).
+                slug: z.string(),
                 icon: z.string().nullable(),
                 isOptional: z.boolean(),
                 additionalCost: z.number().nullable()
@@ -127,7 +129,9 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 featureId: z.string().uuid(),
-                name: i18nText({ min: 2, max: 100 }),
+                // SPEC-266: catalog `name` was dropped; `slug` is the canonical
+                // identifier and the i18n key (`accommodations.featureNames.<slug>`).
+                slug: z.string(),
                 icon: z.string().nullable(),
                 hostReWriteName: z.string().nullable(),
                 comments: z.string().nullable()

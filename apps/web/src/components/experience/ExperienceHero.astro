@@ -1,0 +1,264 @@
+---
+/**
+ * @file ExperienceHero.astro
+ * @description Detail page hero for an experience listing (SPEC-240 T-027).
+ * Shows name, type badge, pricing info (ExperiencePriceTag), average rating,
+ * and a featured star. Mirrors GastronomyDetailHeader pattern.
+ */
+
+import { StarIcon, LocationIcon } from '@repo/icons';
+import type { ExperienceDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import ExperiencePriceTag from './ExperiencePriceTag.astro';
+
+interface Props {
+    readonly experience: ExperienceDetailData;
+    readonly locale: SupportedLocale;
+}
+
+const { experience, locale } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+const typeLabel = t(`experience.type.${experience.type}`, experience.type);
+
+const fullStars = Math.floor(experience.averageRating);
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = experience.createdAt
+    ? Date.now() - new Date(experience.createdAt).getTime() < THIRTY_DAYS_MS
+    : false;
+---
+
+<header class="exp-hero">
+    <div class="exp-hero__badges">
+        <span class="exp-hero__type-badge">{typeLabel}</span>
+        {experience.isFeatured && (
+            <span class="featured-badge">
+                <StarIcon size={12} weight="fill" aria-hidden="true" />
+                <span>{t('experience.card.featured', 'Destacada')}</span>
+            </span>
+        )}
+        {isNew && (
+            <span class="exp-hero__new-badge">
+                {t('home.accommodations.badge.new', 'Nuevo')}
+            </span>
+        )}
+    </div>
+
+    <h1 class="exp-hero__name">{experience.name}</h1>
+
+    {experience.destinationName && (
+        <div class="exp-hero__location">
+            <LocationIcon size={16} weight="fill" aria-hidden="true" />
+            <span>{experience.destinationName}</span>
+        </div>
+    )}
+
+    <!-- Pricing -->
+    <div class="exp-hero__pricing">
+        <ExperiencePriceTag
+            priceFrom={experience.priceFrom}
+            priceUnit={experience.priceUnit}
+            isPriceOnRequest={experience.isPriceOnRequest}
+            locale={locale}
+        />
+    </div>
+
+    {experience.averageRating > 0 && (
+        <div class="exp-hero__rating">
+            <div class="exp-hero__stars" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                        class={
+                            i < fullStars
+                                ? 'exp-hero__star--filled'
+                                : 'exp-hero__star--empty'
+                        }
+                    >
+                        <StarIcon
+                            size={16}
+                            weight={i < fullStars ? 'fill' : 'regular'}
+                            aria-hidden="true"
+                        />
+                    </span>
+                ))}
+            </div>
+            <span class="exp-hero__rating-value">
+                {experience.averageRating.toFixed(1)}
+            </span>
+            {experience.reviewsCount > 0 && (
+                <span class="exp-hero__reviews-count">
+                    · {tPlural('review.list.totalReviews', experience.reviewsCount, { count: experience.reviewsCount })}
+                </span>
+            )}
+        </div>
+    )}
+</header>
+
+<style>
+    .exp-hero {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .exp-hero__badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .exp-hero__type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary-a12);
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-primary-a25);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .exp-hero__new-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--hospeda-forest);
+        color: var(--primary-foreground);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .exp-hero__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 2vw + 1rem, 2.5rem);
+        line-height: 1.2;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-hero__location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--core-muted-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+    }
+
+    .exp-hero__pricing {
+        display: flex;
+        align-items: center;
+    }
+
+    .exp-hero__rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .exp-hero__stars {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .exp-hero__star--filled {
+        color: var(--rating-star);
+        display: inline-flex;
+    }
+
+    .exp-hero__star--empty {
+        color: var(--core-muted-foreground);
+        opacity: 0.4;
+        display: inline-flex;
+    }
+
+    .exp-hero__rating-value {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--core-foreground);
+    }
+
+    .exp-hero__reviews-count {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+    }
+
+    /* Smooth collapse into a single short line when the wave header compacts. */
+    .exp-hero {
+        transition: gap 0.3s ease;
+    }
+
+    .exp-hero__name {
+        transition: font-size 0.3s ease;
+    }
+
+    .exp-hero__pricing,
+    .exp-hero__rating {
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* Compact state: triggered by the `.wave-header--compact` ancestor (mirrors
+       the accommodation DetailHeader). Collapse badges + title + location onto
+       one line and hide pricing + rating so the compact wave band stays short. */
+    :global(.wave-header--compact) .exp-hero {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    :global(.wave-header--compact) .exp-hero__badges {
+        gap: 4px;
+    }
+
+    :global(.wave-header--compact) .exp-hero__type-badge,
+    :global(.wave-header--compact) .exp-hero__new-badge {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+    }
+
+    :global(.wave-header--compact) .exp-hero__name {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+    }
+
+    :global(.wave-header--compact) .exp-hero__location::before {
+        content: '\00B7';
+        margin-right: 0.35em;
+        color: var(--core-muted-foreground);
+        font-weight: 700;
+    }
+
+    :global(.wave-header--compact) .exp-hero__location {
+        font-size: 0.85rem;
+    }
+
+    :global(.wave-header--compact) .exp-hero__pricing,
+    :global(.wave-header--compact) .exp-hero__rating {
+        max-height: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .exp-hero,
+        .exp-hero__name,
+        .exp-hero__pricing,
+        .exp-hero__rating {
+            transition: none;
+        }
+    }
+</style>

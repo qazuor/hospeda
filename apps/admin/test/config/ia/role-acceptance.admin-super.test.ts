@@ -268,13 +268,14 @@ describe(`AC-11 — ${RoleEnum.SUPER_ADMIN} role navigation`, () => {
         'inicio',
         'catalogo',
         'editorial',
+        'marketing',
         'comunidad',
         'comercial',
         'plataforma',
         'analisis'
     ] as const;
 
-    it('mainMenu is exactly the 7 platform sections in order', () => {
+    it('mainMenu is exactly the 8 platform sections in order', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.SUPER_ADMIN];
 
@@ -310,15 +311,23 @@ describe(`AC-11 — ${RoleEnum.SUPER_ADMIN} role navigation`, () => {
         expect(role?.topbar?.accountInMenu).toBe(false);
     });
 
-    it('mobile.bottomNav is all 7 sections (icon-only compact nav on mobile)', () => {
+    it('mobile.bottomNav is all 7 non-marketing sections (icon-only compact nav on mobile)', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.SUPER_ADMIN];
 
         // Act / Assert
-        expect(role?.mobile?.bottomNav).toEqual([...EXPECTED_MAIN_MENU]);
+        expect(role?.mobile?.bottomNav).toEqual([
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ]);
     });
 
-    it('all 7 sections have ≥1 accessible sidebar item for SUPER_ADMIN', () => {
+    it('all 8 sections have ≥1 accessible sidebar item for SUPER_ADMIN', () => {
         // SUPER_ADMIN holds all permissions — every item is accessible.
         for (const sectionId of EXPECTED_MAIN_MENU) {
             // Arrange
@@ -367,13 +376,14 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         'inicio',
         'catalogo',
         'editorial',
+        'marketing',
         'comunidad',
         'comercial',
         'plataforma',
         'analisis'
     ] as const;
 
-    it('mainMenu is exactly the same 7-section list as SUPER_ADMIN', () => {
+    it('mainMenu is exactly the same 8-section list as SUPER_ADMIN', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.ADMIN];
 
@@ -409,12 +419,20 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         expect(role?.topbar?.accountInMenu).toBe(false);
     });
 
-    it('mobile.bottomNav is all 7 sections (icon-only compact nav on mobile)', () => {
+    it('mobile.bottomNav is all 7 non-marketing sections (icon-only compact nav on mobile)', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.ADMIN];
 
         // Act / Assert
-        expect(role?.mobile?.bottomNav).toEqual([...EXPECTED_MAIN_MENU]);
+        expect(role?.mobile?.bottomNav).toEqual([
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ]);
     });
 
     // ── AC-12 KEY ASSERTIONS — SUPER_ADMIN-only item visibility ─────────────
@@ -517,7 +535,7 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         expect(adminHasDebug).toBe(false);
     });
 
-    it('all 7 sections have ≥1 accessible sidebar item for ADMIN', () => {
+    it('all 8 sections have ≥1 accessible sidebar item for ADMIN', () => {
         for (const sectionId of EXPECTED_MAIN_MENU) {
             // Arrange
             const section = validatedConfig.sections[sectionId];

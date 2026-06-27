@@ -145,6 +145,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
     },
     {
+        name: 'destination-weather-fetch',
+        displayName: 'Clima de destinos',
+        category: 'content',
+        schedule: '0 */12 * * *',
+        description:
+            'Refresh cached Open-Meteo weather (current + 16-day forecast) for published destinations with coordinates.'
+    },
+    {
         name: 'finalize-cancelled-subs',
         displayName: 'Finalizar suscripciones canceladas',
         category: 'billing',
@@ -223,5 +231,37 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '0 */1 * * *',
         description: 'Retry failed outbound webhook deliveries.'
+    },
+    {
+        name: 'refresh-external-reputation',
+        displayName: 'Refresco de reputación externa',
+        category: 'content',
+        schedule: '0 2 * * 1',
+        description:
+            'Weekly refresh of cached external platform reputation data (ratings, review counts, Google snippets) for accommodations with enabled external listings.'
+    },
+    {
+        name: 'poll-apify-reputation-runs',
+        displayName: 'Sondeo de runs de Apify (reputación)',
+        category: 'content',
+        schedule: '*/2 * * * *',
+        description:
+            'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
+    },
+    {
+        name: 'social-publish-dispatch',
+        displayName: 'Despacho de publicaciones sociales',
+        category: 'content',
+        schedule: '*/5 * * * *',
+        description:
+            'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when HOSPEDA_MAKE_API_KEY is absent.'
+    },
+    {
+        name: 'partner-expiry',
+        displayName: 'Expiración de partners',
+        category: 'billing',
+        schedule: '15 4 * * *',
+        description:
+            'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
     }
 ];

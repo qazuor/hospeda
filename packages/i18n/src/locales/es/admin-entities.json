@@ -90,6 +90,101 @@
             "singular": "Registro",
             "plural": "Registros de aplicación",
             "description": "Registros de eventos WARN y ERROR emitidos por los servicios del sistema"
+        },
+        "auditLog": {
+            "singular": "Evento de auditoría",
+            "plural": "Log de auditoría",
+            "description": "Acciones administrativas sensibles registradas para trazabilidad"
+        },
+        "securityLog": {
+            "singular": "Evento de seguridad",
+            "plural": "Log de seguridad",
+            "description": "Eventos de autenticación: fallos de login, bloqueos y accesos denegados"
+        },
+        "hostTrade": {
+            "singular": "Oficio",
+            "plural": "Oficios",
+            "description": "Directorio de proveedores de servicios para anfitriones"
+        },
+        "gastronomy": {
+            "singular": "Gastronomía",
+            "plural": "Gastronomías",
+            "description": "Gestiona restaurantes, bares, cafés y otros comercios gastronómicos"
+        },
+        "experience": {
+            "singular": "Experiencia",
+            "plural": "Experiencias",
+            "description": "Gestiona actividades turísticas, excursiones y alquileres de equipos"
+        }
+    },
+    "experience": {
+        "tabs": {
+            "general": "General",
+            "faqs": "Preguntas Frecuentes",
+            "reviews": "Reseñas"
+        },
+        "reviews": {
+            "noPending": "No hay reseñas pendientes de moderación",
+            "anonymous": "Anónimo",
+            "approve": "Aprobar",
+            "reject": "Rechazar"
+        },
+        "assignOwner": {
+            "title": "Asignar propietario",
+            "button": "Asignar"
+        },
+        "create": {
+            "title": "Nueva Experiencia",
+            "successTitle": "Experiencia creada",
+            "successMessage": "La experiencia se creó exitosamente",
+            "errorTitle": "Error al crear",
+            "errorMessage": "No pudimos crear la experiencia. Probá de nuevo."
+        }
+    },
+    "gastronomy": {
+        "tabs": {
+            "general": "General",
+            "faqs": "Preguntas Frecuentes",
+            "reviews": "Reseñas"
+        },
+        "columns": {
+            "priceRange": "Rango de Precios",
+            "type": "Tipo",
+            "menuUrl": "Menú Online"
+        },
+        "types": {
+            "RESTAURANT": "Restaurante",
+            "BAR": "Bar",
+            "CAFE": "Café",
+            "PARRILLA": "Parrilla",
+            "CERVECERIA": "Cervecería",
+            "HELADERIA": "Heladería",
+            "PANADERIA": "Panadería",
+            "ROTISERIA": "Rotisería",
+            "FOOD_TRUCK": "Food Truck"
+        },
+        "priceRanges": {
+            "BUDGET": "Económico ($)",
+            "MID": "Intermedio ($$)",
+            "HIGH": "Elevado ($$$)",
+            "PREMIUM": "Premium ($$$$)"
+        },
+        "reviews": {
+            "noPending": "No hay reseñas pendientes de moderación",
+            "anonymous": "Anónimo",
+            "approve": "Aprobar",
+            "reject": "Rechazar"
+        },
+        "assignOwner": {
+            "title": "Asignar propietario",
+            "button": "Asignar"
+        },
+        "create": {
+            "title": "Nueva Gastronomía",
+            "successTitle": "Gastronomía creada",
+            "successMessage": "La gastronomía se creó exitosamente",
+            "errorTitle": "Error al crear",
+            "errorMessage": "No pudimos crear la gastronomía. Probá de nuevo."
         }
     },
     "columns": {
@@ -182,6 +277,11 @@
         "banExpires": "Baneo Expira",
         "avatar": "Avatar",
         "views30d": "Vistas (30d)",
+        "contact": "Contacto",
+        "is24h": "Disponible 24h",
+        "active": "Activo",
+        "benefit": "Beneficio",
+        "scheduleText": "Horario",
         "appLog": {
             "loggedAt": "Fecha/Hora",
             "level": "Nivel",
@@ -190,6 +290,14 @@
             "request": "Solicitud",
             "userId": "Usuario",
             "message": "Mensaje"
+        },
+        "auditLog": {
+            "loggedAt": "Fecha/Hora",
+            "severity": "Severidad",
+            "eventType": "Evento",
+            "actor": "Actor",
+            "target": "Objetivo",
+            "message": "Detalle"
         }
     },
     "actions": {
@@ -527,7 +635,33 @@
             "deleteDialogTitle": "¿Eliminar imagen?",
             "deleteDialogDescription": "Esta acción no se puede deshacer.",
             "deleteDialogCancel": "Cancelar",
-            "deleteDialogConfirm": "Eliminar"
+            "deleteDialogConfirm": "Eliminar",
+            "stock": {
+                "modalTitle": "Buscar imágenes stock",
+                "modalDescription": "Buscá y seleccioná imágenes de Unsplash o Pexels para importar",
+                "searchPlaceholder": "Buscar imágenes (ej: playa, montaña, concierto)",
+                "searching": "Buscando...",
+                "searchPrompt": "Escribí una búsqueda para encontrar imágenes stock",
+                "noResults": "Sin resultados para «{query}»",
+                "resultsCount": "{count} resultados",
+                "loadMore": "Cargar más",
+                "importButton": "Importar",
+                "importing": "Importando...",
+                "orientation": "Orientación",
+                "orientation.all": "Todas",
+                "orientation.landscape": "Horizontal",
+                "orientation.portrait": "Vertical",
+                "orientation.squarish": "Cuadrada",
+                "previewTitle": "Foto por {photographer}",
+                "previewByline": "Foto por {photographer}",
+                "providersNotConfigured": "Los proveedores de imágenes stock no están configurados",
+                "unsplashRateLimit": "Límite de Unsplash alcanzado, probá Pexels",
+                "pexelsRateLimit": "Límite de Pexels alcanzado, probá Unsplash",
+                "searchError": "Error al buscar imágenes. Intentá nuevamente.",
+                "importError": "Error al importar la imagen. Intentá nuevamente.",
+                "entityNotFound": "Entidad no encontrada",
+                "galleryLimitExceeded": "Límite de galería alcanzado (máx: {limit} imágenes)"
+            }
         },
         "avatar": {
             "label": "Avatar",
@@ -754,7 +888,92 @@
             },
             "publishedAt": {
                 "label": "Fecha de publicación"
+            },
+            "cuisine": {
+                "label": "Tipo de establecimiento"
+            },
+            "operatingHours": {
+                "label": "Horarios de apertura"
+            },
+            "capacity": {
+                "label": "Rango de precios"
             }
+        }
+    },
+    "commerceLeads": {
+        "page": {
+            "title": "Leads de comercios",
+            "empty": "No hay leads para mostrar.",
+            "loadError": "Error al cargar los leads. Intentá de nuevo."
+        },
+        "filter": {
+            "label": "Estado:",
+            "all": "Todos"
+        },
+        "status": {
+            "pending": "Pendiente",
+            "reviewing": "En revisión",
+            "approved": "Aprobado",
+            "rejected": "Rechazado"
+        },
+        "columns": {
+            "businessName": "Negocio",
+            "contactName": "Contacto",
+            "email": "Email",
+            "domain": "Dominio",
+            "status": "Estado",
+            "createdAt": "Fecha",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "handle": "Resolver",
+            "provision": "Crear cuenta",
+            "approveProvision": "Aprobar y crear cuenta"
+        },
+        "approveProvision": {
+            "title": "Aprobar y crear cuenta de propietario",
+            "description": "Se aprobará el lead de {{businessName}} y se creará una cuenta COMMERCE_OWNER para {{email}} en un solo paso. Las credenciales temporales serán enviadas por email.",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentario interno para el equipo...",
+            "confirm": "Aprobar y crear cuenta",
+            "submitting": "Procesando...",
+            "successMessage": "Lead aprobado y cuenta creada para {{email}}. Las credenciales fueron enviadas por email.",
+            "alreadyProvisionedMessage": "El lead ya tenía una cuenta provisionada.",
+            "error": "Error al aprobar y crear la cuenta. Intentá de nuevo."
+        },
+        "handle": {
+            "title": "Resolver lead",
+            "decisionLabel": "Decisión",
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentario interno para el equipo...",
+            "submit": "Confirmar",
+            "submitting": "Guardando...",
+            "successApproved": "Lead aprobado exitosamente.",
+            "successRejected": "Lead rechazado."
+        },
+        "provision": {
+            "title": "Crear cuenta de propietario",
+            "description": "Se creará una cuenta COMMERCE_OWNER para {{businessName}} ({{email}}). Las credenciales temporales serán enviadas por email.",
+            "confirm": "Crear cuenta",
+            "submitting": "Creando...",
+            "successMessage": "Cuenta creada para {{name}} ({{email}}). Las credenciales fueron enviadas por email.",
+            "error": "Error al crear la cuenta. Intentá de nuevo."
+        },
+        "pagination": {
+            "prev": "Anterior",
+            "next": "Siguiente",
+            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        }
+    },
+    "hostTrade": {
+        "create": {
+            "title": "Nuevo Oficio",
+            "successTitle": "Oficio creado",
+            "successMessage": "El oficio se creó exitosamente",
+            "errorTitle": "Error al crear el oficio",
+            "errorMessage": "No pudimos crear el oficio. Probá de nuevo."
         }
     }
 }

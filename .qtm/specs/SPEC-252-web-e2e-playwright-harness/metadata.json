@@ -1,0 +1,24 @@
+{
+    "specId": "SPEC-252",
+    "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
+    "slug": "web-e2e-playwright-harness",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "completed",
+    "created": "2026-06-20T00:00:00.000Z",
+    "updatedAt": "2026-06-24T00:00:00.000Z",
+    "base": "staging",
+    "branch": "spec/SPEC-252-web-e2e-playwright-harness",
+    "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-252-web-e2e-playwright-harness",
+    "dependsOn": ["SPEC-249"],
+    "tags": ["e2e", "playwright", "testing", "seed", "commerce"],
+    "taskCount": 5,
+    "tasksAtomizedAt": "2026-06-21T00:00:00.000Z",
+    "averageComplexity": 2.0,
+    "criticalPath": ["T-001", "T-003", "T-004", "T-005"],
+    "parallelTracks": {
+        "trackA": ["T-001", "T-003", "T-004", "T-005"],
+        "trackB": ["T-002"]
+    },
+    "note": "Realigned 2026-06-21: apps/e2e (hospeda-e2e) is an existing mature harness — scope changed from 'create harness in apps/web' to 'extend apps/e2e with commerce-owner flows + fix seed gaps'. T-002 (auth helper) is optional/parallel; critical path is seed → positive-E2E → negative-E2E → CI-verify."
+}

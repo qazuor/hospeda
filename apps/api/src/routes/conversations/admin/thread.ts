@@ -8,9 +8,15 @@
  * Actors with VIEW_ANY bypass the accommodation scope check.
  */
 
-import { getDb } from '@repo/db';
+import { AccommodationModel, MessageModel, UserModel, getDb } from '@repo/db';
 import { accommodations } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
+import {
+    AdminThreadResponseSchema,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    ThreadQuerySchema
+} from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../utils/actor';
@@ -22,6 +28,10 @@ import {
     createResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+
+const accommodationModel = new AccommodationModel();
+const messageModel = new MessageModel();
+const userModel = new UserModel();
 
 /** System-level actor used for service calls requiring full conversation permissions. */
 const SYSTEM_ACTOR = {
@@ -146,10 +156,76 @@ router.get('/:id', async (c) => {
 
         const { conversation, messages, hasMore } = result.data;
 
-        const nextCursor =
-            hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
+        // TYPE-WORKAROUND: getThread returns a generic conversation type that doesn't
+        // surface userId/anonymousName/anonymousEmail at the TS level; the runtime
+        // shape always carries these columns. Widening through unknown for enrichment.
+        const convRaw = conversation as unknown as {
+            id: string;
+            accommodationId: string;
+            userId: string | null;
+            anonymousName: string | null;
+            anonymousEmail: string | null;
+            [k: string]: unknown;
+        };
 
-        return createResponse({ conversation, messages, nextCursor }, c, 200);
+        // Resolve accommodation display name.
+        const accRow = await accommodationModel.findById(convRaw.accommodationId);
+        const accommodationName = (accRow as { name?: string | null } | null)?.name ?? null;
+
+        // Resolve guest identity: anonymous name from DB column, registered user from
+        // user table (single findByIds call — 0 or 1 element).
+        const anonName = convRaw.anonymousName ?? null;
+        let guestName: string | null = null;
+        let guestEmail: string | null = convRaw.anonymousEmail ?? null;
+
+        if (convRaw.userId) {
+            const userRows = await userModel.findByIds([convRaw.userId]);
+            if (userRows.length > 0) {
+                const u = userRows[0] as {
+                    displayName?: string | null;
+                    firstName?: string | null;
+                    lastName?: string | null;
+                    email?: string | null;
+                };
+                guestName =
+                    u.displayName?.trim() ||
+                    [u.firstName, u.lastName].filter(Boolean).join(' ').trim() ||
+                    null;
+                // Prefer anonymousEmail (the address used at initiation) then user.email.
+                guestEmail = convRaw.anonymousEmail ?? u.email ?? null;
+            }
+        }
+
+        // Unread count for the owner side on this single conversation.
+        const unreadCountByOwner =
+            (await messageModel.countUnreadForOwnerByConversation([convRaw.id])).get(convRaw.id) ??
+            0;
+
+        // Build olderCursor from messages[0].createdAt when there are older pages.
+        // Key is `olderCursor` (NOT `nextCursor`) to match the admin client contract.
+        const createdAt = messages[0]?.createdAt;
+        const olderCursor =
+            hasMore && messages.length > 0
+                ? createdAt instanceof Date
+                    ? createdAt.toISOString()
+                    : ((createdAt as string | undefined) ?? null)
+                : null;
+
+        return createResponse(
+            {
+                conversation: {
+                    ...convRaw,
+                    guest: { anonName, name: guestName, email: guestEmail },
+                    accommodation: { id: convRaw.accommodationId, name: accommodationName },
+                    unreadCountByOwner
+                },
+                messages,
+                olderCursor
+            },
+            c,
+            200,
+            AdminThreadResponseSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

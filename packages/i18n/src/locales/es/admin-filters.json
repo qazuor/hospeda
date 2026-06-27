@@ -24,6 +24,9 @@
         "town": "Pueblo",
         "neighborhood": "Barrio"
     },
+    "destination": {
+        "label": "Destino"
+    },
     "accommodationType": {
         "label": "Tipo",
         "apartment": "Departamento",
@@ -90,6 +93,9 @@
     "includeDeleted": {
         "label": "Mostrar eliminados"
     },
+    "ownerId": {
+        "label": "Propietario"
+    },
     "rangeMin": "Mín",
     "rangeMax": "Máx",
     "rangeFrom": "Desde",
@@ -140,6 +146,24 @@
             "label": "Fecha de registro"
         }
     },
+    "auditLog": {
+        "severity": {
+            "label": "Severidad",
+            "critical": "Crítico",
+            "info": "Info"
+        },
+        "eventType": {
+            "label": "Tipo de evento",
+            "placeholder": "Ej: auth.login.failed"
+        },
+        "actorId": {
+            "label": "Actor",
+            "placeholder": "UUID del actor"
+        },
+        "loggedAt": {
+            "label": "Fecha del evento"
+        }
+    },
     "endDate": {
         "label": "Fecha de fin"
     },
@@ -166,5 +190,82 @@
         "familyFriendly": "Apto familias",
         "workFriendly": "Apto trabajo",
         "generalAppliances": "Electrodomésticos"
+    },
+    "isActive": {
+        "label": "Activo"
+    },
+    "is24h": {
+        "label": "Disponible 24h"
+    },
+    "hostTradeCategory": {
+        "label": "Categoría",
+        "cerrajeria": "Cerrajería",
+        "plomeria": "Plomería",
+        "electricidad": "Electricidad",
+        "gas": "Gas",
+        "climatizacion": "Climatización",
+        "limpieza": "Limpieza",
+        "fletes": "Fletes",
+        "vidrieria": "Vidriería",
+        "carpinteria": "Carpintería",
+        "piletaJardin": "Pileta / Jardín",
+        "plagas": "Plagas",
+        "internet": "Internet",
+        "albanileria": "Albañilería"
+    },
+    "gastronomyType": {
+        "label": "Tipo",
+        "restaurant": "Restaurante",
+        "bar": "Bar",
+        "cafe": "Café",
+        "parrilla": "Parrilla",
+        "cerveceria": "Cervecería",
+        "heladeria": "Heladería",
+        "panaderia": "Panadería",
+        "rotiseria": "Rotisería",
+        "foodTruck": "Food Truck"
+    },
+    "priceRange": {
+        "label": "Rango de precio",
+        "budget": "Económico",
+        "mid": "Moderado",
+        "high": "Elevado",
+        "premium": "Premium"
+    },
+    "experienceType": {
+        "label": "Tipo de experiencia",
+        "carRental": "Alquiler de autos",
+        "bikeRental": "Alquiler de bicicletas",
+        "kayakRental": "Alquiler de kayak",
+        "quadRental": "Alquiler de cuadriciclos",
+        "tourGuide": "Guía turístico",
+        "guidedVisit": "Visita guiada",
+        "excursion": "Excursión",
+        "boatTrip": "Paseo en lancha",
+        "fishingCharter": "Pesca deportiva",
+        "birdWatching": "Avistamiento de aves",
+        "culturalTour": "Tour cultural",
+        "wineTasting": "Degustación de vinos",
+        "outdoorAdventure": "Aventura al aire libre",
+        "other": "Otro"
+    },
+    "partnerType": {
+        "label": "Tipo de partner",
+        "commerce": "Comercio",
+        "ngo": "ONG",
+        "institution": "Institución"
+    },
+    "partnerTier": {
+        "label": "Nivel",
+        "bronze": "Bronce",
+        "silver": "Plata",
+        "gold": "Oro"
+    },
+    "partnerSubscriptionStatus": {
+        "label": "Estado suscripción",
+        "active": "Activo",
+        "pending": "Pendiente",
+        "past_due": "Vencido",
+        "cancelled": "Cancelado"
     }
 }

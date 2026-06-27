@@ -17,11 +17,17 @@ export interface PromoCodeDefinition {
      *   created normally; MP delays the first charge by that many days.
      *   `discountPercent` is ignored for this type.
      *
+     * - `'comp'`: SPEC-262 — complimentary (free-forever) access. Creates a
+     *   `status='comp'` subscription with NO MercadoPago preapproval and no
+     *   charge. This is the ONLY valid mechanism for "free forever" — a 100%
+     *   discount is rejected at checkout (a $0 preapproval is invalid in MP).
+     *   `discountPercent` / `durationCycles` are ignored for this type.
+     *
      * Master plan Decision 4 (SPEC-122): for monthly recurring, the ONLY
      * promo type supported in MVP is `free_trial_extension`. Discount-type
      * promos remain limited to addon purchases and annual upfront flows.
      */
-    type?: 'discount' | 'free_trial_extension';
+    type?: 'discount' | 'free_trial_extension' | 'comp';
     /** Discount percentage (0-100). Required for `type: 'discount'`. */
     discountPercent: number;
     /**
@@ -50,6 +56,7 @@ export interface PromoCodeDefinition {
 export const HOSPEDA_FREE_CODE: PromoCodeDefinition = {
     code: 'HOSPEDA_FREE',
     description: 'Permanent free platform access. Internal use.',
+    type: 'comp',
     discountPercent: 100,
     isPermanent: true,
     durationCycles: null,
@@ -129,6 +136,14 @@ export const DEFAULT_PROMO_CODES: PromoCodeDefinition[] = [
  * code into a `freeTrialDays` input on the qzpay subscription create
  * call. Discount-type promos remain out of scope here per master plan
  * Decision 4 (only free-trial extensions apply to monthly recurring).
+ *
+ * @deprecated SPEC-262 T-005: `subscription-checkout.service.ts` now
+ * reads `extraDays` from the DB-persisted `trial_extension` effect
+ * (via `PromoCodeService.getByCode`) and only falls back to this
+ * config-backed function for legacy rows that have not yet been
+ * backfilled by extras/020. Remove this fallback once T-003 backfill
+ * has run in production and all `trial_extension` codes are in the DB.
+ * TODO(SPEC-262 T-008): retire once the full route rewrite ships.
  */
 export function resolveFreeTrialExtensionPromo(
     code: string,

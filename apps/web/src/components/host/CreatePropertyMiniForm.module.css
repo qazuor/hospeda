@@ -1,0 +1,217 @@
+/**
+ * Styles for CreatePropertyMiniForm — import section and confidence badges.
+ * Tokenized: all values reference CSS custom properties from global.css.
+ *
+ * SPEC-222 T-025
+ */
+
+/* ---------------------------------------------------------------------------
+ * Collapsible import section
+ * --------------------------------------------------------------------------- */
+
+.importSection {
+    margin-bottom: var(--space-6, 1.5rem);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.importToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-align: left;
+}
+
+.importToggle:hover {
+    background-color: var(--brand-primary-a10);
+}
+
+.importToggleIcon {
+    flex-shrink: 0;
+    font-size: var(--text-sm, 0.875rem);
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+.importToggleIcon--open {
+    transform: rotate(180deg);
+}
+
+.importBody {
+    padding: var(--space-4, 1rem);
+    border-top: 1px solid var(--brand-primary-a20);
+}
+
+/* ---------------------------------------------------------------------------
+ * Review notice (AC-1.2/1.3)
+ * --------------------------------------------------------------------------- */
+
+.reviewNotice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    margin-bottom: var(--space-4, 1rem);
+    background-color: var(--brand-accent-a10);
+    border-left: 3px solid var(--brand-accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-foreground);
+}
+
+.reviewNoticeIcon {
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Confidence badge
+ * --------------------------------------------------------------------------- */
+
+.fieldWithBadge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+.confidenceBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 2px var(--space-2, 0.5rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--brand-primary);
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Destination hint
+ * --------------------------------------------------------------------------- */
+
+.destinationHint {
+    margin-top: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+.destinationHintLabel {
+    display: block;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.destinationHintText {
+    display: block;
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.destinationHintCallout {
+    display: block;
+    font-style: italic;
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* ---------------------------------------------------------------------------
+ * Imported extras section — progressive disclosure (SPEC-258 B-web)
+ * --------------------------------------------------------------------------- */
+
+.extrasSection {
+    margin-top: var(--space-6, 1.5rem);
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.extrasToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-align: left;
+}
+
+.extrasToggle:hover {
+    background-color: var(--surface-warm);
+}
+
+.extrasToggleIcon {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+.extrasToggleIcon--open {
+    transform: rotate(180deg);
+}
+
+.extrasBody {
+    padding: var(--space-4, 1rem);
+    border-top: 1px solid var(--core-foreground-a15, #e5e7eb);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.extrasRow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3, 0.75rem);
+}
+
+.extrasReadOnly {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: var(--surface-warm, #f9fafb);
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+.extrasReadOnlyIcon {
+    flex-shrink: 0;
+}
+
+.extrasAmenityChip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--brand-primary);
+}

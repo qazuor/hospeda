@@ -1,0 +1,165 @@
+{
+    "lead": {
+        "title": "Adicione seu negócio",
+        "subtitle": "Preencha o formulário e entraremos em contato para incluir seu estabelecimento na plataforma.",
+        "fields": {
+            "businessName": "Nome do negócio",
+            "contactName": "Seu nome",
+            "email": "Endereço de e-mail",
+            "phone": "Telefone (opcional)",
+            "destination": "Cidade / Destino (opcional)",
+            "message": "Conte-nos sobre seu negócio (opcional)"
+        },
+        "submit": "Enviar solicitação",
+        "submitting": "Enviando...",
+        "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",
+        "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
+        "rateLimited": "Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.",
+        "validation": {
+            "required": "Este campo é obrigatório.",
+            "email": "Por favor, insira um endereço de e-mail válido."
+        }
+    },
+    "changePassword": {
+        "title": "Alterar senha",
+        "subtitle": "Por segurança, você precisa atualizar sua senha antes de continuar.",
+        "fields": {
+            "currentPassword": "Senha atual",
+            "newPassword": "Nova senha",
+            "confirmNewPassword": "Confirme a nova senha"
+        },
+        "submit": "Alterar senha",
+        "submitting": "Salvando...",
+        "success": "Sua senha foi atualizada com sucesso.",
+        "error": "Ocorreu um erro ao atualizar a senha. Por favor, tente novamente.",
+        "mismatch": "As senhas não coincidem.",
+        "currentIncorrect": "A senha atual está incorreta."
+    },
+    "visibility": {
+        "active": "Ativo",
+        "hidden": "Oculto",
+        "pending": "Pendente"
+    },
+    "owner": {
+        "nav": "Meu comércio",
+        "list": {
+            "title": "Meu comércio",
+            "subtitle": "Gerencie as informações dos seus comércios publicados.",
+            "empty": "Você ainda não tem comércios atribuídos. Um administrador precisa criar sua ficha.",
+            "edit": "Editar",
+            "badge": {
+                "gastronomy": "Gastronomia",
+                "experience": "Experiência"
+            }
+        },
+        "editor": {
+            "readOnlyNotice": "Nome, categoria e localização são gerenciados pela equipe Hospeda. Você pode editar as informações operacionais.",
+            "sections": {
+                "type": "Categoria",
+                "summary": "Resumo",
+                "openingHours": "Horário de atendimento",
+                "contactInfo": "Informações de contato",
+                "socialNetworks": "Redes sociais",
+                "media": "Galeria de fotos",
+                "menuUrl": "Link do cardápio",
+                "priceRange": "Faixa de preço",
+                "isPriceOnRequest": "Preço sob consulta",
+                "priceFrom": "Preço a partir de (centavos)",
+                "priceUnit": "Unidade de preço",
+                "richDescription": "Descrição ampliada",
+                "amenities": "Comodidades",
+                "features": "Características",
+                "translations": "Traduções",
+                "faqs": "Perguntas frequentes"
+            },
+            "contactField": {
+                "mobilePhone": "Telefone",
+                "workEmail": "E-mail"
+            },
+            "validation": {
+                "summaryMin": "Mínimo 10 caracteres.",
+                "summaryMax": "Máximo 300 caracteres.",
+                "summaryHint": "{{count}}/300",
+                "priceMustBePositive": "O preço deve ser um número positivo."
+            },
+            "typeOption": {
+                "RESTAURANT": "Restaurante",
+                "BAR": "Bar",
+                "CAFE": "Café",
+                "PARRILLA": "Parrilla",
+                "CERVECERIA": "Cervejaria",
+                "HELADERIA": "Sorveteria",
+                "PANADERIA": "Padaria",
+                "ROTISERIA": "Rotisserie",
+                "FOOD_TRUCK": "Food Truck",
+                "CAR_RENTAL": "Aluguel de carros",
+                "BIKE_RENTAL": "Aluguel de bicicletas",
+                "KAYAK_RENTAL": "Aluguel de caiaques",
+                "QUAD_RENTAL": "Aluguel de quadriciclos",
+                "TOUR_GUIDE": "Guia de turismo",
+                "GUIDED_VISIT": "Visita guiada",
+                "EXCURSION": "Excursão",
+                "BOAT_TRIP": "Passeio de barco",
+                "FISHING_CHARTER": "Pesca esportiva",
+                "BIRD_WATCHING": "Observação de pássaros",
+                "CULTURAL_TOUR": "Tour cultural",
+                "WINE_TASTING": "Degustação de vinhos",
+                "OUTDOOR_ADVENTURE": "Aventura ao ar livre",
+                "OTHER": "Outro"
+            },
+            "priceUnitOption": {
+                "per_day": "Por dia",
+                "per_hour": "Por hora",
+                "per_person": "Por pessoa",
+                "per_group": "Por grupo"
+            },
+            "translationPanel": {
+                "sectionTitle": "Traduções",
+                "sectionDescription": "Edite as traduções dos campos principais do seu estabelecimento nos três idiomas disponíveis.",
+                "fieldName": "Nome",
+                "fieldSummary": "Resumo",
+                "fieldDescription": "Descrição",
+                "fieldRichDescription": "Descrição ampliada",
+                "localePlaceholder": "Digite o texto em {{locale}}...",
+                "saveSuccess": "Traduções salvas.",
+                "saveError": "Não foi possível salvar as traduções.",
+                "generating": "Gerando traduções...",
+                "generateButton": "Gerar traduções ausentes"
+            },
+            "faqManager": {
+                "sectionTitle": "Perguntas frequentes",
+                "emptyState": "Ainda não há perguntas. Adicione a primeira.",
+                "addButton": "Adicionar pergunta",
+                "editButton": "Editar",
+                "deleteButton": "Excluir",
+                "saveButton": "Salvar",
+                "cancelButton": "Cancelar",
+                "questionLabel": "Pergunta",
+                "answerLabel": "Resposta",
+                "questionPlaceholder": "Escreva a pergunta...",
+                "answerPlaceholder": "Escreva a resposta...",
+                "moveUp": "Mover para cima",
+                "moveDown": "Mover para baixo",
+                "deleteConfirm": "Excluir esta pergunta?",
+                "saveError": "Não foi possível salvar a pergunta.",
+                "deleteError": "Não foi possível excluir a pergunta.",
+                "reorderError": "Não foi possível reordenar."
+            },
+            "save": "Salvar alterações",
+            "saving": "Salvando...",
+            "success": "Alterações salvas.",
+            "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "media": {
+                "featured": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "add": "Adicionar foto",
+                "remove": "Remover",
+                "uploadHint": "JPG, PNG ou WebP — máx. 5MB",
+                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode exceder 5MB",
+                "uploadFailed": "Erro ao enviar a imagem",
+                "capReached": "Limite da galeria atingido (máx. {{cap}} fotos)"
+            }
+        }
+    }
+}

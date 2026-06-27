@@ -21,7 +21,7 @@ import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astr
 import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
 import DestinationFaqAccordion from '@/components/destination/DestinationFaqAccordion.astro';
-import DestinationClimatePlaceholder from '@/components/destination/DestinationClimatePlaceholder.astro';
+import DestinationClimateCard from '@/components/destination/DestinationClimateCard.astro';
 import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
 import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
 import DestinationNearbySection from '@/components/destination/DestinationNearbySection.astro';
@@ -70,6 +70,14 @@ const summary = String(dest.summary || '');
 const description = String(dest.description || summary);
 const slug = String(dest.slug || '');
 const destId = String(dest.id || '');
+
+type ClimateInputForPage = {
+	readonly bestSeason?: string;
+	readonly bestMonths?: { readonly from?: string; readonly to?: string };
+	readonly seasons?: Record<string, { avgTempMinC?: number; avgTempMaxC?: number; rainfallMm?: number } | undefined>;
+	readonly note?: Record<string, string>;
+};
+const climate = (dest.climate ?? null) as ClimateInputForPage | null;
 
 // --- Media (featuredImage + gallery) ----------------------------------------
 // The API returns media as an object { featuredImage: { url, caption }, gallery: [...] }.
@@ -402,6 +410,7 @@ const safeDescriptionHtml = renderContent({
 					height={675}
 					format="webp"
 					loading="eager"
+					fetchpriority="high"
 					class="dest-detail__hero-img"
 				/>
 			) : (
@@ -409,6 +418,7 @@ const safeDescriptionHtml = renderContent({
 					src={featuredImageObj.url}
 					alt={featuredImageObj.caption ?? name}
 					loading="eager"
+					fetchpriority="high"
 					class="dest-detail__hero-img"
 					width="1200"
 					height="675"
@@ -627,7 +637,7 @@ const safeDescriptionHtml = renderContent({
 			/>
 		)}
 
-		<DestinationClimatePlaceholder locale={locale} />
+		<DestinationClimateCard locale={locale} destinationId={destId} apiUrl={getApiUrl()} climate={climate} />
 
 		<DestinationSidebarCtas
 			slug={slug}

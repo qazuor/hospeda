@@ -185,6 +185,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // SYSTEM: All permissions
         PermissionEnum.AUDIT_LOG_VIEW,
+        PermissionEnum.SECURITY_LOG_VIEW,
         PermissionEnum.SYSTEM_MAINTENANCE_MODE,
         PermissionEnum.TRANSLATIONS_MANAGE,
         PermissionEnum.MULTILANGUAGE_CONTENT_EDIT,
@@ -352,7 +353,58 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
+        // Listed explicitly here so the all-permissions short-circuit in actor.ts
+        // is never the sole reason these grants exist for SUPER_ADMIN.
+        PermissionEnum.COMMERCE_CREATE,
+        PermissionEnum.COMMERCE_VIEW_ALL,
+        PermissionEnum.COMMERCE_EDIT_ALL,
+        PermissionEnum.COMMERCE_DELETE,
+        PermissionEnum.COMMERCE_MODERATE_REVIEW,
+
+        // PARTNER: Partner directory billing + admin management (SPEC-271).
+        PermissionEnum.PARTNER_VIEW_ALL,
+        PermissionEnum.PARTNER_MANAGE,
+
+        // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
+        PermissionEnum.HOST_TRADE_VIEW,
+        PermissionEnum.HOST_TRADE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_CREATE,
+        PermissionEnum.HOST_TRADE_UPDATE,
+        PermissionEnum.HOST_TRADE_DELETE,
+        PermissionEnum.HOST_TRADE_RESTORE,
+        PermissionEnum.HOST_TRADE_HARD_DELETE,
+
+        // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
+        PermissionEnum.SOCIAL_POST_VIEW,
+        PermissionEnum.SOCIAL_POST_CREATE,
+        PermissionEnum.SOCIAL_POST_UPDATE,
+        PermissionEnum.SOCIAL_POST_APPROVE,
+        PermissionEnum.SOCIAL_POST_SCHEDULE,
+        PermissionEnum.SOCIAL_POST_PAUSE,
+        PermissionEnum.SOCIAL_POST_ARCHIVE,
+        PermissionEnum.SOCIAL_POST_HARD_DELETE,
+        PermissionEnum.SOCIAL_POST_VIEW_LOGS,
+        PermissionEnum.SOCIAL_HASHTAG_VIEW,
+        PermissionEnum.SOCIAL_HASHTAG_MANAGE,
+        PermissionEnum.SOCIAL_HASHTAG_SET_MANAGE,
+        PermissionEnum.SOCIAL_FOOTER_MANAGE,
+        PermissionEnum.SOCIAL_CAMPAIGN_MANAGE,
+        PermissionEnum.SOCIAL_BATCH_MANAGE,
+        PermissionEnum.SOCIAL_AUDIENCE_MANAGE,
+        PermissionEnum.SOCIAL_PLATFORM_MANAGE,
+        PermissionEnum.SOCIAL_PLATFORM_FORMAT_VIEW,
+        PermissionEnum.SOCIAL_ASSET_VIEW,
+        PermissionEnum.SOCIAL_ASSET_MANAGE,
+        PermissionEnum.SOCIAL_SETTINGS_MANAGE,
+        PermissionEnum.SOCIAL_PUBLISH_LOG_VIEW,
+        PermissionEnum.SOCIAL_AUDIT_LOG_VIEW,
+        PermissionEnum.SOCIAL_DISPATCH_MANAGE,
+
+        // FEATURE FLAGS: Kill switch + dark launch management (SPEC-276) — SUPER_ADMIN-only.
+        PermissionEnum.FEATURE_FLAG_MANAGE
     ],
 
     [RoleEnum.ADMIN]: [
@@ -518,7 +570,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_MESSAGE_SEND,
 
         // SYSTEM: Most permissions (no maintenance mode)
-        PermissionEnum.AUDIT_LOG_VIEW,
+        // NOTE: AUDIT_LOG_VIEW / SECURITY_LOG_VIEW are SUPER_ADMIN-only (SPEC-162)
+        // and are intentionally NOT granted to ADMIN.
         PermissionEnum.TRANSLATIONS_MANAGE,
         PermissionEnum.MULTILANGUAGE_CONTENT_EDIT,
         PermissionEnum.DASHBOARD_BASE_VIEW,
@@ -625,7 +678,55 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
+        // SUPER_ADMIN already holds these via the all-permissions short-circuit
+        // in actor.ts; seeded here for completeness should that bypass ever change.
+        PermissionEnum.COMMERCE_CREATE,
+        PermissionEnum.COMMERCE_VIEW_ALL,
+        PermissionEnum.COMMERCE_EDIT_ALL,
+        PermissionEnum.COMMERCE_DELETE,
+        PermissionEnum.COMMERCE_MODERATE_REVIEW,
+
+        // PARTNER: Partner directory billing + admin management (SPEC-271).
+        PermissionEnum.PARTNER_VIEW_ALL,
+        PermissionEnum.PARTNER_MANAGE,
+
+        // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
+        PermissionEnum.HOST_TRADE_VIEW,
+        PermissionEnum.HOST_TRADE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_CREATE,
+        PermissionEnum.HOST_TRADE_UPDATE,
+        PermissionEnum.HOST_TRADE_DELETE,
+        PermissionEnum.HOST_TRADE_RESTORE,
+        PermissionEnum.HOST_TRADE_HARD_DELETE,
+
+        // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
+        PermissionEnum.SOCIAL_POST_VIEW,
+        PermissionEnum.SOCIAL_POST_CREATE,
+        PermissionEnum.SOCIAL_POST_UPDATE,
+        PermissionEnum.SOCIAL_POST_APPROVE,
+        PermissionEnum.SOCIAL_POST_SCHEDULE,
+        PermissionEnum.SOCIAL_POST_PAUSE,
+        PermissionEnum.SOCIAL_POST_ARCHIVE,
+        PermissionEnum.SOCIAL_POST_HARD_DELETE,
+        PermissionEnum.SOCIAL_POST_VIEW_LOGS,
+        PermissionEnum.SOCIAL_HASHTAG_VIEW,
+        PermissionEnum.SOCIAL_HASHTAG_MANAGE,
+        PermissionEnum.SOCIAL_HASHTAG_SET_MANAGE,
+        PermissionEnum.SOCIAL_FOOTER_MANAGE,
+        PermissionEnum.SOCIAL_CAMPAIGN_MANAGE,
+        PermissionEnum.SOCIAL_BATCH_MANAGE,
+        PermissionEnum.SOCIAL_AUDIENCE_MANAGE,
+        PermissionEnum.SOCIAL_PLATFORM_MANAGE,
+        PermissionEnum.SOCIAL_PLATFORM_FORMAT_VIEW,
+        PermissionEnum.SOCIAL_ASSET_VIEW,
+        PermissionEnum.SOCIAL_ASSET_MANAGE,
+        PermissionEnum.SOCIAL_SETTINGS_MANAGE,
+        PermissionEnum.SOCIAL_PUBLISH_LOG_VIEW,
+        PermissionEnum.SOCIAL_AUDIT_LOG_VIEW,
+        PermissionEnum.SOCIAL_DISPATCH_MANAGE
     ],
 
     // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
@@ -910,6 +1011,61 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
         // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
+        PermissionEnum.HOST_TRADE_VIEW
+    ],
+
+    // ---------------------------------------------------------------------------
+    // COMMERCE_OWNER — Gastronomía / commerce listings operator (SPEC-239 / SPEC-253)
+    //
+    // Mirrors the HOST role but scoped to commerce vertical.
+    // A single COMMERCE_EDIT_OWN permission covers all owner-accessible sections
+    // (operational fields, FAQs, i18n, etc.) — the 10 per-section permissions
+    // were collapsed in SPEC-253 D2=b full-removal decision.
+    // ---------------------------------------------------------------------------
+    [RoleEnum.COMMERCE_OWNER]: [
+        // Single owner write permission (SPEC-253 D2=b): replaces the 10
+        // per-section COMMERCE_*_EDIT_OWN permissions removed from PermissionEnum.
+        PermissionEnum.COMMERCE_EDIT_OWN,
+
+        // USER: Basic profile permissions
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
+        // ACCESS: Admin panel access (for the owner self-service section)
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // MEDIA: Upload and delete own images
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: Own-scoped conversations with guests
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // BILLING: Own subscription and billing view (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "002-hostTrade-uruguay-plomeria",
+    "name": "Plomería Litoral",
+    "slug": "plomeria-litoral",
+    "category": "PLOMERIA",
+    "contact": "https://wa.me/5493442567890",
+    "benefit": "Visita de diagnóstico sin cargo para hosts Hospeda. 15% de descuento en mano de obra.",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 8:00–18:00, Sábados 8:00–13:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "097-amenity-services-happy-hour",
+    "slug": "happy_hour",
+    "description": {
+        "es": "Promociones especiales en bebidas durante el happy hour",
+        "en": "Promociones especiales en bebidas durante el happy hour",
+        "pt": "Promociones especiales en bebidas durante el happy hour"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "BarServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 45
+}

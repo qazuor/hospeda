@@ -21,10 +21,8 @@ import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js'
 // Helpers
 // ---------------------------------------------------------------------------
 
-const validI18nName = { es: 'Piscina climatizada', en: 'Heated pool', pt: 'Piscina aquecida' };
-
 const baseCreatePayload = {
-    name: validI18nName,
+    applicableVerticals: ['accommodation'] as ('accommodation' | 'gastronomy' | 'experience')[],
     type: AmenitiesTypeEnum.OUTDOORS,
     priority: 50,
     isActive: true,
@@ -83,11 +81,11 @@ describe('AmenitySearchHttpSchema — safeParse', () => {
         expect(result.success).toBe(false);
     });
 
-    it('should accept nameContains text filter', () => {
-        const result = AmenitySearchHttpSchema.safeParse({ nameContains: 'pool' });
+    it('should accept descriptionContains text filter', () => {
+        const result = AmenitySearchHttpSchema.safeParse({ descriptionContains: 'pool' });
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.nameContains).toBe('pool');
+            expect(result.data.descriptionContains).toBe('pool');
         }
     });
 });
@@ -109,15 +107,14 @@ describe('httpToDomainAmenitySearch', () => {
         expect(result.pageSize).toBe(15);
     });
 
-    it('should include name and slug filters in domain output', () => {
+    it('should include slug filter in domain output', () => {
         // Arrange
-        const parsed = AmenitySearchHttpSchema.parse({ name: 'WiFi', slug: 'wifi' });
+        const parsed = AmenitySearchHttpSchema.parse({ slug: 'wifi' });
 
         // Act
         const result = httpToDomainAmenitySearch(parsed);
 
         // Assert
-        expect(result.name).toBe('WiFi');
         expect(result.slug).toBe('wifi');
     });
 
@@ -167,7 +164,7 @@ describe('httpToDomainAmenitySearch', () => {
         const result = httpToDomainAmenitySearch(parsed);
 
         // Assert
-        expect(result.name).toBeUndefined();
+        expect(result.slug).toBeUndefined();
         expect(result.type).toBeUndefined();
         expect(result.hasIcon).toBeUndefined();
     });
@@ -178,12 +175,12 @@ describe('httpToDomainAmenitySearch', () => {
 // ---------------------------------------------------------------------------
 
 describe('httpToDomainAmenityCreate', () => {
-    it('should map i18n name and type to domain create input', () => {
+    it('should map applicableVerticals and type to domain create input', () => {
         // Act
         const result = httpToDomainAmenityCreate(baseCreatePayload);
 
         // Assert
-        expect(result.name).toEqual(validI18nName);
+        expect(result.applicableVerticals).toEqual(['accommodation']);
         expect(result.type).toBe(AmenitiesTypeEnum.OUTDOORS);
     });
 
@@ -253,15 +250,21 @@ describe('httpToDomainAmenityCreate', () => {
 // ---------------------------------------------------------------------------
 
 describe('httpToDomainAmenityUpdate', () => {
-    it('should map name update to domain update input', () => {
+    it('should map applicableVerticals update to domain update input', () => {
         // Arrange
-        const httpData = { name: validI18nName };
+        const httpData = {
+            applicableVerticals: ['accommodation', 'gastronomy'] as (
+                | 'accommodation'
+                | 'gastronomy'
+                | 'experience'
+            )[]
+        };
 
         // Act
         const result = httpToDomainAmenityUpdate(httpData);
 
         // Assert
-        expect(result.name).toEqual(validI18nName);
+        expect(result.applicableVerticals).toEqual(['accommodation', 'gastronomy']);
     });
 
     it('should map isActive=true to isBuiltin=false (inverse mapping)', () => {
@@ -316,7 +319,7 @@ describe('httpToDomainAmenityUpdate', () => {
         const result = httpToDomainAmenityUpdate(httpData);
 
         // Assert
-        expect(result.name).toBeUndefined();
+        expect(result.slug).toBeUndefined();
         expect(result.type).toBeUndefined();
         expect(result.isBuiltin).toBeUndefined();
     });

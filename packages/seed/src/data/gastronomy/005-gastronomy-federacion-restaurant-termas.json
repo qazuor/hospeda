@@ -1,0 +1,156 @@
+{
+    "id": "005-gastronomy-federacion-restaurant-termas",
+    "ownerId": "043-user-commerce-owner-valentina",
+    "destinationId": "004-destination-federacion",
+    "slug": "restaurant-termas-federacion",
+    "name": "Restaurant Termas",
+    "summary": "Cocina regional entrerriana en el corazón del complejo termal de Federación, con los sabores auténticos del litoral.",
+    "description": "El Restaurant Termas es el espacio gastronómico de referencia dentro del complejo termal de Federación. Ofrecemos una propuesta basada en la cocina regional entrerriana, con protagonismo del surubí, el dorado y el pacú del río Uruguay. Nuestros platos combinan las técnicas tradicionales con ingredientes frescos de productores locales. El ambiente espacioso y luminoso, con vista al parque termal, hace de cada visita una experiencia completa que continúa el relax de las aguas termales.",
+    "type": "RESTAURANT",
+    "priceRange": "HIGH",
+    "menuUrl": "https://termasfederacion.com.ar/restaurant",
+    "visibility": "PUBLIC",
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "restaurant@termasfederacion.com.ar",
+        "mobilePhone": "+54 9 3458 500005",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/restauranttermasfederacion",
+        "facebook": "https://facebook.com/termasfederacionrestaurant"
+    },
+    "openingHours": {
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "tue": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:00"
+                    }
+                ]
+            }
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",
+            "alt": "Comedor del Restaurant Termas con vista al parque",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&h=600&fit=crop",
+                "alt": "Plato de surubí regional",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1546039907-7fa05f864c02?w=800&h=600&fit=crop",
+                "alt": "Mesa con vista al parque termal",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "seo": {
+        "metaTitle": "Restaurant Termas - Federación, Entre Ríos",
+        "metaDescription": "Cocina regional entrerriana en el complejo termal de Federación. Surubí, dorado y pacú del río Uruguay con vista al parque termal.",
+        "keywords": [
+            "restaurant",
+            "termas",
+            "federacion",
+            "entre rios",
+            "cocina regional",
+            "surubi",
+            "dorado"
+        ]
+    },
+    "reviewsCount": 0,
+    "averageRating": 0
+}

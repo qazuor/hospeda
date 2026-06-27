@@ -15,14 +15,13 @@ describe('AmenityService.search', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES
     });
     const paginated = { items: [amenity], total: 1 };
     const searchParams = {
         page: 1,
         pageSize: 10,
-        filters: { nameContains: 'Test Amenity' },
+        slug: 'test-amenity',
         searchInDescription: false,
         fuzzySearch: false
     };

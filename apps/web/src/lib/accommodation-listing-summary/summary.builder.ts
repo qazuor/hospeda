@@ -9,7 +9,7 @@
  * - "Mostrando 124 de 124 hospedajes, sin filtros activos, ordenados por nombre, A a Z."
  */
 
-import { toBcp47Locale } from '@repo/i18n';
+import { toBcp47Locale } from '@repo/i18n/web';
 import { DEFAULT_SORT_KEYS, DEFAULT_TYPE_GRAMMAR, getPhrase } from './summary.catalogs';
 import { FILTER_DESCRIPTORS, FLOW_MODIFIER_KEYS } from './summary.descriptors';
 import { buildSortPhrase } from './summary.sort';

@@ -1,10 +1,4 @@
-import {
-    AccommodationModel,
-    AmenityModel,
-    RAccommodationAmenityModel,
-    escapeLikePattern,
-    sql
-} from '@repo/db';
+import { AccommodationModel, AmenityModel, RAccommodationAmenityModel, amenities } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationAmenityRelation,
@@ -32,12 +26,13 @@ import {
     ServiceErrorCode,
     type VisibilityEnum
 } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
-import { generateAmenitySlug } from './amenity.helpers';
+// generateAmenitySlug removed: JSONB name column dropped in SPEC-266 T-001.
 import {
     checkCanAddAmenityToAccommodation,
     checkCanAdminList,
@@ -478,8 +473,10 @@ export class AmenityService extends BaseCrudRelatedService<
     /**
      * Executes a search for amenities based on the provided parameters and actor.
      *
-     * The `name` filter is a plain text search term applied against the Spanish
-     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     * The `name` filter is a plain text search term applied against the amenity
+     * `slug` column via a case-insensitive partial match (`slug ILIKE %term%`).
+     * The JSONB `name` column was dropped in SPEC-266 T-001; slug is now the
+     * single searchable text identifier.
      *
      * @param params - The search parameters (filters, pagination, sorting).
      * @param _actor - The actor performing the search.
@@ -493,7 +490,7 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
-            name,
+            applicableVertical,
             ...filterParams
         } = params;
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
@@ -502,12 +499,17 @@ export class AmenityService extends BaseCrudRelatedService<
         // instead of falling back to the destructuring default of 10.
         const page = ctx.pagination?.page ?? 1;
         const pageSize = ctx.pagination?.pageSize ?? 10;
-        // name is a plain text search term; the DB column is now JSONB.
-        // Do NOT pass it to buildWhereClause — use additionalConditions instead
-        // to query the Spanish locale via name->>'es' ILIKE %term%.
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match via filterParams) or the q parameter
+        // (handled upstream). safeIlike on slug is available for future extension.
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        // buildWhereClause cannot handle text[] containment, so we build the
+        // SQL condition manually and pass it as additionalConditions.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
             : undefined;
+
         return this.model.findAll(filterParams, { page, pageSize }, additionalConditions);
     }
 
@@ -515,8 +517,10 @@ export class AmenityService extends BaseCrudRelatedService<
      * Searches for amenities with accommodation counts.
      * Uses a single batch COUNT query instead of N+1 individual queries.
      *
-     * The `name` filter is a plain text search term applied against the Spanish
-     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     * The `name` filter is a plain text search term applied against the amenity
+     * `slug` column via a case-insensitive partial match (`slug ILIKE %term%`).
+     * The JSONB `name` column was dropped in SPEC-266 T-001; slug is now the
+     * single searchable text identifier.
      *
      * @param actor - The actor performing the action
      * @param params - The search parameters
@@ -538,13 +542,17 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
-            name,
+            applicableVertical,
             ...filterParams
         } = params;
 
-        // name is a plain text search term; the DB column is now JSONB.
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match via filterParams). safeIlike on
+        // amenities.slug is available for callers that need partial slug matching.
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
             : undefined;
 
         const result = await this.model.findAll(
@@ -578,8 +586,10 @@ export class AmenityService extends BaseCrudRelatedService<
     /**
      * Executes a count of amenities based on the provided parameters and actor.
      *
-     * The `name` filter is a plain text search term applied against the Spanish
-     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     * The `name` filter is a plain text search term applied against the amenity
+     * `slug` column via a case-insensitive partial match (`slug ILIKE %term%`).
+     * The JSONB `name` column was dropped in SPEC-266 T-001; slug is now the
+     * single searchable text identifier.
      *
      * @param params - The search parameters (filters).
      * @param _actor - The actor performing the count.
@@ -595,60 +605,50 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
-            name,
+            applicableVertical,
             ...filterParams
         } = params;
-        // name is a plain text search term; the DB column is now JSONB.
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match via filterParams). safeIlike on
+        // amenities.slug is available for callers that need partial slug matching.
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
             : undefined;
+
         const count = await this.model.count(filterParams, { additionalConditions });
         return { count };
     }
 
     /**
-     * Lifecycle hook: normalizes input and generates slug before creating an amenity.
-     * If slug is not provided, generates a unique slug from the Spanish locale of the name.
+     * Lifecycle hook: normalizes input before creating an amenity.
+     * Slug must be provided explicitly; auto-generation from name is no longer
+     * possible because the JSONB `name` column was dropped in SPEC-266 T-001.
      */
     protected async _beforeCreate(
         data: z.infer<typeof AmenityCreateInputSchema>,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<Amenity>> {
-        let slug = data.slug;
-        if (!slug && data.name) {
-            slug = await generateAmenitySlug(data.name, this.model);
-        }
+        const slug = data.slug;
         // Cast type to AmenitiesTypeEnum
         const type = data.type as AmenitiesTypeEnum;
         return { ...data, slug, type };
     }
 
     /**
-     * Lifecycle hook: normalizes input and updates slug if name changes.
-     * If name is updated and slug is not provided, regenerates slug from the
-     * Spanish locale of the new name (compared against the existing entity).
+     * Lifecycle hook: normalizes input before updating an amenity.
+     * Slug must be provided explicitly; auto-generation from name is no longer
+     * possible because the JSONB `name` column was dropped in SPEC-266 T-001.
      */
     protected async _beforeUpdate(
         data: z.infer<typeof AmenityUpdateInputSchema>,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<Amenity>> {
-        let slug = data.slug;
+        const slug = data.slug;
         const type = data.type ? (data.type as AmenitiesTypeEnum) : undefined;
-        // If name is being updated and slug is not provided, fetch entity to compare
-        if (!slug && data.name) {
-            let entity: Amenity | undefined = undefined;
-            if ('id' in data && data.id) {
-                const found = await this.model.findById(data.id as AmenityId);
-                entity = found ?? undefined;
-            }
-            // Compare by the canonical locale (es) to detect a real name change
-            const nameChanged = !entity || data.name.es !== entity.name.es;
-            if (nameChanged) {
-                slug = await generateAmenitySlug(data.name, this.model);
-            }
-        }
         return { ...data, slug, type };
     }
 }

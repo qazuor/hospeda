@@ -55,6 +55,36 @@ vi.mock('../../src/revalidation/revalidation-init.js', () => ({
     _resetRevalidationService: vi.fn()
 }));
 
+// SPEC-204: AccommodationService.create()/update() now open a transaction when the
+// payload includes `media` (the mock create-input factory always does). Unit tests
+// have no real DB, so mock `withServiceTransaction` to run the callback inline with a
+// truthy tx stub. This keeps the lifecycle hooks running (and thus scheduleRevalidation)
+// without hitting Drizzle. The injected media-model stub swallows the shadow-write calls.
+vi.mock('../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (
+            fn: (ctx: { tx: object; hookState: Record<string, unknown> }) => Promise<unknown>,
+            baseCtx?: { hookState?: Record<string, unknown> }
+        ) => {
+            const ctx = { ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} };
+            try {
+                return await fn(ctx as never);
+            } catch (err) {
+                if (
+                    err !== null &&
+                    typeof err === 'object' &&
+                    'code' in err &&
+                    'name' in err &&
+                    (err as { name: string }).name === 'ServiceError'
+                ) {
+                    return { error: err };
+                }
+                throw err;
+            }
+        }
+    )
+}));
+
 import { getRevalidationService } from '../../src/revalidation/revalidation-init.js';
 
 // ---------------------------------------------------------------------------
@@ -112,6 +142,15 @@ describe('AccommodationService — revalidation hooks', () => {
         // @ts-expect-error: private field override for test isolation
         service._userModel = {
             findById: vi.fn().mockResolvedValue({ serviceSuspended: false })
+        };
+        // SPEC-204: _afterCreate shadow-writes media via _accommodationMediaModel.
+        // Stub it so the sync (running inside the mocked transaction) does not hit the real DB.
+        // @ts-expect-error: private field override for test isolation
+        service._accommodationMediaModel = {
+            hardDelete: vi.fn().mockResolvedValue(undefined),
+            create: vi.fn().mockResolvedValue(undefined),
+            findByAccommodation: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findFeatured: vi.fn().mockResolvedValue(null)
         };
     });
 

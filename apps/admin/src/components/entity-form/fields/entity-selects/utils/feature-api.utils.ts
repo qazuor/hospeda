@@ -18,9 +18,8 @@
 
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
-import { resolveI18nText } from '@/utils/i18n-text';
 import { adminLogger } from '@/utils/logger';
-import type { I18nText } from '@repo/schemas';
+import { defaultLocale, trans } from '@repo/i18n';
 
 /** Maximum number of pages fetched as a defensive hard-cap (100 items/page = 2000 items). */
 const MAX_PAGES = 20;
@@ -36,11 +35,38 @@ const PAGE_SIZE = 100;
 const ADMIN_FEATURES_ENDPOINT = '/api/v1/admin/features';
 
 /**
- * Shape of a single feature item returned by the public list endpoint.
+ * Converts a slug to a human-readable Title Case label.
+ * Used as fallback when the i18n key is missing.
+ */
+const humanizeSlug = (slug: string): string =>
+    slug
+        .split(/[-_]/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+/**
+ * Translates a feature slug to its display label using @repo/i18n.
+ * Key: `accommodations.featureNames.<slug>` in the default locale ('es').
+ * Falls back to humanizeSlug when the key is absent.
+ *
+ * @param slug - The snake_case feature slug (e.g. 'sea_view', 'private_pool').
+ * @returns Human-readable display label in the default locale.
+ */
+const translateFeatureName = (slug: string): string => {
+    const key = `accommodations.featureNames.${slug}`;
+    const translated = trans[defaultLocale as keyof typeof trans]?.[key];
+    if (translated && !translated.startsWith('[MISSING:')) {
+        return translated;
+    }
+    return humanizeSlug(slug);
+};
+
+/**
+ * Shape of a single feature item returned by the admin list endpoint.
+ * SPEC-266: `name` column dropped; slug is now the identity key for i18n.
  */
 interface PublicFeatureItem {
     readonly id: string;
-    readonly name: Partial<I18nText> | string | null | undefined;
     readonly slug?: string;
     readonly icon?: string | null;
 }
@@ -66,18 +92,15 @@ interface PublicListResponse {
 }
 
 /**
- * Map a public feature item to a SelectOption.
- * Resolves the i18n `name` object via resolveI18nText (es → en → pt fallback).
+ * Map a feature item to a SelectOption.
+ * SPEC-266: resolves the display label via `accommodations.featureNames.<slug>` in @repo/i18n.
+ * Falls back to humanizeSlug when the translation key is absent.
  */
 const toSelectOption = (item: PublicFeatureItem): SelectOption => {
-    const label =
-        typeof item.name === 'object' && item.name !== null
-            ? resolveI18nText(item.name)
-            : (item.name as string) || item.id;
-
+    const slug = item.slug ?? item.id;
     return {
         value: item.id,
-        label,
+        label: translateFeatureName(slug),
         description: item.slug
     };
 };

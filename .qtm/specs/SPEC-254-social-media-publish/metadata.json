@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-254",
+    "title": "Social Automation Backend",
+    "type": "feature",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-06-20T00:00:00Z",
+    "approved": "2026-06-20T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "social",
+        "automation",
+        "api",
+        "admin",
+        "cron",
+        "make",
+        "gpt",
+        "cloudinary",
+        "backend",
+        "permissions"
+    ]
+}

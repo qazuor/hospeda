@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "023-amenity-outdoors-fireplace",
-    "name": {
-        "es": "fireplace",
-        "en": "fireplace",
-        "pt": "fireplace"
-    },
     "slug": "fireplace",
     "description": {
         "es": "Chimenea funcional",
         "en": "Chimenea funcional",
         "pt": "Chimenea funcional"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "FireplaceIcon",
     "isBuiltin": false,

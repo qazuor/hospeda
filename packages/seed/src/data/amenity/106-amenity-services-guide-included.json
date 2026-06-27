@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "106-amenity-services-guide-included",
+    "slug": "guide_included",
+    "description": {
+        "es": "Guía profesional incluido durante toda la experiencia",
+        "en": "Guía profesional incluido durante toda la experiencia",
+        "pt": "Guía profesional incluido durante toda la experiencia"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "Reception24hIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 85
+}

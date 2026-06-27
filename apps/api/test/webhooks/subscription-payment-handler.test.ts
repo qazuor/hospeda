@@ -58,6 +58,17 @@ vi.mock('../../src/utils/mp-authorized-payment', () => ({
     fetchAuthorizedPaymentDetails: vi.fn()
 }));
 
+// SPEC-262 T-007: renewal promo effect decision (service-core) + MP restore
+// executor (apps/api). Mocked so the handler's renewal wiring is exercised
+// without a real DB or MercadoPago.
+vi.mock('@repo/service-core', () => ({
+    resolveRenewalPromoEffect: vi.fn()
+}));
+
+vi.mock('../../src/services/promo-renewal-mp.service', () => ({
+    restoreFullPriceMutation: vi.fn()
+}));
+
 // `@repo/db` is mocked at the module level so the handler can call
 // `getDb()` and we can drive the row results per-test.
 const subLookupResult: { rows: Array<{ id: string; customerId: string }> } = { rows: [] };
@@ -104,6 +115,7 @@ vi.mock('@repo/db', () => ({
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import { resolveRenewalPromoEffect } from '@repo/service-core';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
 import {
@@ -114,6 +126,7 @@ import {
     markEventFailedByProviderId,
     markEventProcessedByProviderId
 } from '../../src/routes/webhooks/mercadopago/utils';
+import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
 import {
     type MPAuthorizedPaymentDetails,
     type MPAuthorizedPaymentResult,
@@ -168,6 +181,13 @@ function resetState() {
     subLookupResult.rows = [];
     dedupeResult.rows = [];
     nextSelectCall = 0;
+    // Default: renewal decision is a no-op so existing happy-path tests are
+    // unaffected; individual SPEC-262 tests override this.
+    vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+        success: true,
+        data: { action: 'noop', subscriptionId: 'sub-1' }
+    });
+    vi.mocked(restoreFullPriceMutation).mockResolvedValue({ success: true });
 }
 
 const RECORD_OK = { id: 'billing-payment-uuid' };
@@ -486,5 +506,157 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         expect(record).toHaveBeenCalledOnce();
         const arg = record.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(arg.amount).toBe(99956);
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-262 T-007: multi-cycle discount renewal wiring (AC-1.5)
+    // ---------------------------------------------------------------------------
+
+    describe('SPEC-262 renewal promo effect wiring', () => {
+        it('restore-full decision: calls restoreFullPriceMutation with the target amount', async () => {
+            // Arrange
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+                success: true,
+                data: {
+                    action: 'restore-full',
+                    targetTransactionAmountMajor: 100,
+                    targetTransactionAmountCentavos: 10000,
+                    remainingCyclesAfter: 0,
+                    subscriptionId: 'local-sub-1',
+                    promoCodeId: 'pc-1'
+                }
+            });
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert
+            expect(resolveRenewalPromoEffect).toHaveBeenCalledWith({
+                subscriptionId: 'local-sub-1'
+            });
+            expect(restoreFullPriceMutation).toHaveBeenCalledOnce();
+            const arg = vi.mocked(restoreFullPriceMutation).mock.calls[0]?.[0];
+            expect(arg?.targetTransactionAmountMajor).toBe(100);
+            // preapprovalId from the authorized-payment details is the MP sub id
+            expect(arg?.mpSubscriptionId).toBe('pa-1');
+        });
+
+        it('apply-discount decision: does NOT call the MP restore mutation', async () => {
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+                success: true,
+                data: {
+                    action: 'apply-discount',
+                    targetTransactionAmountMajor: 50,
+                    targetTransactionAmountCentavos: 5000,
+                    remainingCyclesAfter: 1,
+                    subscriptionId: 'local-sub-1'
+                }
+            });
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            expect(restoreFullPriceMutation).not.toHaveBeenCalled();
+        });
+
+        it('comp decision: no MP restore mutation', async () => {
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+                success: true,
+                data: { action: 'comp', subscriptionId: 'local-sub-1' }
+            });
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            expect(restoreFullPriceMutation).not.toHaveBeenCalled();
+        });
+
+        it('renewal resolver failure does not break the webhook (still ACKs)', async () => {
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+                success: false,
+                error: { code: 'INTERNAL_ERROR', message: 'boom' }
+            });
+
+            await expect(
+                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+            ).resolves.toBeUndefined();
+            expect(restoreFullPriceMutation).not.toHaveBeenCalled();
+            expect(markEventProcessedByProviderId).toHaveBeenCalled();
+        });
+
+        it('B2: rejected charge (status=failed) does NOT decrement the cycle counter', async () => {
+            // A rejected charge must not consume a discounted cycle — the MP retry
+            // (different paymentId, passes per-paymentId dedup) would decrement again
+            // and end the discount one cycle early.
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ paymentStatus: 'rejected', status: 'rejected' }))
+            );
+            setupBillingMock();
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // The charge failed → renewal promo effect must NOT be called.
+            expect(resolveRenewalPromoEffect).not.toHaveBeenCalled();
+            expect(restoreFullPriceMutation).not.toHaveBeenCalled();
+            expect(markEventProcessedByProviderId).toHaveBeenCalled();
+        });
+
+        it('B2: in_process charge does NOT decrement the cycle counter (non-terminal)', async () => {
+            // An in_process charge (paymentStatus='in_process', maps to qzpay 'processing')
+            // is NON-TERMINAL — the payment may still succeed or fail on the next attempt.
+            // Decrementing here would consume a discounted cycle prematurely, before a final
+            // settlement event confirms the charge. Only 'succeeded' (approved/processed) may
+            // consume a cycle. This locks in that the B2 fix is `status === 'succeeded'` ONLY
+            // (not `|| status === 'processing'`).
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ paymentStatus: 'in_process', status: 'in_process' }))
+            );
+            setupBillingMock();
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Non-terminal charge → renewal promo effect must NOT be called.
+            expect(resolveRenewalPromoEffect).not.toHaveBeenCalled();
+            expect(restoreFullPriceMutation).not.toHaveBeenCalled();
+            // The event is still acknowledged (processed) — we don't fail it.
+            expect(markEventProcessedByProviderId).toHaveBeenCalled();
+        });
+
+        it('restore mutation failure (best-effort) does not break the webhook', async () => {
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+            vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
+                success: true,
+                data: {
+                    action: 'restore-full',
+                    targetTransactionAmountMajor: 100,
+                    targetTransactionAmountCentavos: 10000,
+                    remainingCyclesAfter: 0,
+                    subscriptionId: 'local-sub-1'
+                }
+            });
+            vi.mocked(restoreFullPriceMutation).mockResolvedValue({
+                success: false,
+                error: { code: 'MP_RESTORE_FAILED', message: 'mp down' }
+            });
+
+            await expect(
+                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+            ).resolves.toBeUndefined();
+            expect(markEventProcessedByProviderId).toHaveBeenCalled();
+        });
     });
 });

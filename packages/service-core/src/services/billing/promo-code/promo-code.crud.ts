@@ -19,6 +19,7 @@ import {
     desc,
     eq,
     getDb,
+    getTableColumns,
     isNull,
     lte,
     or,
@@ -26,7 +27,12 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import {
+    type PromoEffect,
+    PromoEffectKindEnum,
+    ServiceErrorCode,
+    ValueKindEnum
+} from '@repo/schemas';
 import type {
     CreatePromoCodeInput,
     ListPromoCodesFilters,
@@ -34,17 +40,141 @@ import type {
     UpdatePromoCodeInput
 } from './promo-code.service.js';
 
+// ---------------------------------------------------------------------------
+// Extended DB row type for SPEC-262 extras-carril columns
+//
+// The columns `effect_kind`, `value_kind`, `duration_cycles`, `extra_days`
+// were added via extras/018 (ADD COLUMN IF NOT EXISTS). They are NOT in the
+// QZPay Drizzle TS schema (external package). We extend the row type locally
+// so we can safely read them after a Drizzle `.select()` — Drizzle passes
+// the raw Postgres row through and the values are present at runtime even
+// though the TypeScript type does not declare them.
+// ---------------------------------------------------------------------------
+
+/**
+ * Row type extended with SPEC-262 effect columns (extras carril, 018).
+ *
+ * Cast from `QZPayBillingPromoCode` where the extras columns are expected.
+ *
+ * @internal Not part of the public module API.
+ */
+interface ExtendedPromoCodeRow extends QZPayBillingPromoCode {
+    /** Discriminator: 'discount' | 'trial_extension' | 'comp' */
+    effect_kind?: string | null;
+    /** Sub-discriminator for discount: 'percentage' | 'fixed' */
+    value_kind?: string | null;
+    /** Number of billing cycles the discount applies. null = forever. */
+    duration_cycles?: number | null;
+    /** Extra trial days for trial_extension effects */
+    extra_days?: number | null;
+}
+
+/**
+ * Drizzle projection that augments the QZPay `billingPromoCodes` columns with the
+ * SPEC-262 extras-carril columns (`effect_kind`, `value_kind`, `duration_cycles`,
+ * `extra_days`).
+ *
+ * These columns exist in Postgres (added by `extras/018`) but are NOT declared in
+ * the QZPay Drizzle schema, so a bare `db.select()` omits them and the typed
+ * `PromoEffect` is lost — every read falls back to the legacy `type`/`value` path.
+ * Selecting them explicitly keeps {@link parseEffectFromRow} able to reconstruct
+ * the effect. Single-table query, so the raw column names are unambiguous.
+ */
+const promoCodeColumnsWithEffect = () => ({
+    ...getTableColumns(billingPromoCodes),
+    effect_kind: sql<string | null>`effect_kind`,
+    value_kind: sql<string | null>`value_kind`,
+    duration_cycles: sql<number | null>`duration_cycles`,
+    extra_days: sql<number | null>`extra_days`
+});
+
+/**
+ * Parse the SPEC-262 extras-carril columns from a DB row into a `PromoEffect`.
+ *
+ * Returns `undefined` when the `effect_kind` column is absent or still at the
+ * legacy default ('discount' without a `value_kind`) — this preserves backward
+ * compat for rows that have not been backfilled yet.
+ *
+ * @param row - Raw DB row (possibly with extras columns)
+ * @returns Typed `PromoEffect` or `undefined`
+ *
+ * @internal
+ */
+function parseEffectFromRow(row: ExtendedPromoCodeRow): PromoEffect | undefined {
+    const kind = row.effect_kind ?? 'discount';
+
+    if (kind === PromoEffectKindEnum.COMP) {
+        return { kind: PromoEffectKindEnum.COMP };
+    }
+
+    if (kind === PromoEffectKindEnum.TRIAL_EXTENSION) {
+        const extraDays = row.extra_days;
+        if (typeof extraDays === 'number' && extraDays > 0) {
+            return { kind: PromoEffectKindEnum.TRIAL_EXTENSION, extraDays };
+        }
+        // Row backfill not yet applied — skip returning an effect
+        return undefined;
+    }
+
+    // discount branch — only return a typed effect when value_kind is set
+    // (i.e. the row has been created or backfilled with the new columns).
+    const valueKind = row.value_kind;
+    if (valueKind === ValueKindEnum.PERCENTAGE || valueKind === ValueKindEnum.FIXED) {
+        return {
+            kind: PromoEffectKindEnum.DISCOUNT,
+            valueKind,
+            value: row.value ?? 0,
+            durationCycles: row.duration_cycles ?? 1
+        };
+    }
+
+    // No value_kind — legacy row without backfill. Return undefined so callers
+    // fall back to the legacy `type` + `value` fields.
+    return undefined;
+}
+
 /**
  * Map a database promo code row to the PromoCode response shape.
+ *
+ * SPEC-262 (T-005): also reads the SPEC-262 extras-carril columns
+ * (`effect_kind`, `value_kind`, `duration_cycles`, `extra_days`) to populate
+ * the optional `effect` discriminated union on the DTO. The `type` / `value`
+ * legacy fields are preserved unchanged for backward compat (AC-4.3).
+ *
+ * Legacy rows (no extras columns or `value_kind` not yet backfilled) get
+ * `effect = undefined`, so existing callers are unaffected.
  *
  * @param dbPromoCode - Raw database row from billingPromoCodes
  * @returns Mapped PromoCode DTO
  */
 export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode {
+    // Cast to the extended type to access SPEC-262 extras-carril columns.
+    // These columns are present in the Postgres row at runtime (added by extras/018)
+    // even though they are not declared in the QZPay Drizzle TS schema.
+    const row = dbPromoCode as ExtendedPromoCodeRow;
+
+    const effect = parseEffectFromRow(row);
+
+    // Resolve legacy `type` field for backward compat (AC-4.3).
+    // For new SPEC-262 codes we map effect_kind → type so the response
+    // shape is consistent whether the code was created before or after T-005.
+    const effectKind = row.effect_kind ?? 'discount';
+    const legacyType = ((): PromoCode['type'] => {
+        if (effectKind === PromoEffectKindEnum.COMP) return 'comp';
+        if (effectKind === PromoEffectKindEnum.TRIAL_EXTENSION) return 'trial_extension';
+        // discount branch: use the stored `type` column if available, else derive
+        // from value_kind; fall back to the DB `type` column for legacy rows.
+        const vk = row.value_kind;
+        if (vk === ValueKindEnum.PERCENTAGE) return 'percentage';
+        if (vk === ValueKindEnum.FIXED) return 'fixed';
+        // Fully legacy row — trust the DB `type` column as-is.
+        return (row.type ?? 'percentage') as PromoCode['type'];
+    })();
+
     return {
         id: dbPromoCode.id,
         code: dbPromoCode.code,
-        type: dbPromoCode.type as 'percentage' | 'fixed',
+        type: legacyType,
         value: dbPromoCode.value,
         active: dbPromoCode.active ?? false,
         expiresAt: dbPromoCode.expiresAt?.toISOString(),
@@ -57,7 +187,9 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
         newCustomersOnly: dbPromoCode.newCustomersOnly ?? false,
         isStackable: dbPromoCode.combinable ?? false,
         createdAt: dbPromoCode.createdAt.toISOString(),
-        updatedAt: dbPromoCode.createdAt.toISOString() // QZPay schema doesn't have updatedAt
+        updatedAt: dbPromoCode.createdAt.toISOString(), // QZPay schema doesn't have updatedAt
+        // SPEC-262: populate only when effect columns are present and well-formed
+        ...(effect !== undefined ? { effect } : {})
     };
 }
 
@@ -78,6 +210,13 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  *
  * @example
  * ```ts
+ * // New-style with typed effect (SPEC-262):
+ * const result = await createPromoCode({
+ *   code: 'SAVE10',
+ *   effect: { kind: 'discount', valueKind: 'percentage', value: 10, durationCycles: 1 },
+ * });
+ *
+ * // Legacy style (seed/startup path — still supported):
  * const result = await createPromoCode({
  *   code: 'SAVE10',
  *   discountType: 'percentage',
@@ -86,7 +225,7 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
  *
  * // Inside a transaction:
  * await withServiceTransaction(async (ctx) => {
- *   await createPromoCode({ code: 'TX10', discountType: 'fixed', discountValue: 5 }, {}, ctx);
+ *   await createPromoCode({ code: 'TX10', effect: { kind: 'discount', valueKind: 'fixed', value: 500, durationCycles: 1 } }, {}, ctx);
  * });
  * ```
  */
@@ -113,13 +252,42 @@ export async function createPromoCode(
         const livemode = options.livemode ?? false;
         const actorId = options.actorId ?? null;
 
+        // ---------------------------------------------------------------------------
+        // Resolve effect → legacy type/value for the QZPay INSERT columns
+        //
+        // The QZPay Drizzle schema's `billing_promo_codes` INSERT shape still
+        // requires `type` (varchar) and `value` (integer). When `input.effect` is
+        // supplied (SPEC-262 path) we derive these legacy columns from it.
+        // When only `discountType`/`discountValue` are present (legacy seed path)
+        // we use those directly.
+        // ---------------------------------------------------------------------------
+        const resolvedLegacyType: string = (() => {
+            if (input.effect) {
+                if (input.effect.kind === PromoEffectKindEnum.COMP) return 'comp';
+                if (input.effect.kind === PromoEffectKindEnum.TRIAL_EXTENSION)
+                    return 'trial_extension';
+                // discount branch
+                return input.effect.valueKind ?? 'percentage';
+            }
+            return input.discountType ?? 'percentage';
+        })();
+
+        const resolvedLegacyValue: number = (() => {
+            if (input.effect) {
+                if (input.effect.kind === PromoEffectKindEnum.DISCOUNT)
+                    return input.effect.value ?? 0;
+                return 0; // comp / trial_extension have no monetary value
+            }
+            return input.discountValue ?? 0;
+        })();
+
         const doCreate = async (db: DrizzleClient) => {
             const result = await db
                 .insert(billingPromoCodes)
                 .values({
                     code,
-                    type: input.discountType,
-                    value: input.discountValue,
+                    type: resolvedLegacyType,
+                    value: resolvedLegacyValue,
                     config: Object.keys(config).length > 0 ? config : null,
                     maxUses: input.maxUses ?? null,
                     // max_uses_per_user is NOT NULL (default 1); omit when unset
@@ -141,6 +309,22 @@ export async function createPromoCode(
                 throw new Error('Failed to create promo code');
             }
 
+            // -----------------------------------------------------------------
+            // Persist SPEC-262 effect columns via raw SQL.
+            //
+            // These columns (`effect_kind`, `value_kind`, `duration_cycles`,
+            // `extra_days`) are added via extras/018 (ADD COLUMN IF NOT EXISTS)
+            // and are NOT in the QZPay Drizzle table schema, so we cannot set
+            // them in the VALUES clause above. We use a raw UPDATE immediately
+            // after the INSERT — same pattern as product_domain in
+            // subscription-checkout.service.ts. Both the INSERT and this UPDATE
+            // are inside the same `doCreate` transaction block, so they are
+            // atomic.
+            // -----------------------------------------------------------------
+            if (input.effect) {
+                await persistEffectColumns(db, promoCode.id, input.effect);
+            }
+
             await db.insert(billingAuditLogs).values({
                 action: 'promo_code_created',
                 entityType: 'promo_code',
@@ -149,8 +333,10 @@ export async function createPromoCode(
                 actorType: actorId ? 'admin' : 'system',
                 changes: {
                     code,
-                    discountType: input.discountType,
-                    discountValue: input.discountValue
+                    effect: input.effect ?? null,
+                    // legacy fields preserved for audit log completeness
+                    discountType: input.discountType ?? null,
+                    discountValue: input.discountValue ?? null
                 } as unknown,
                 previousValues: null,
                 livemode,
@@ -167,13 +353,88 @@ export async function createPromoCode(
             ? await doCreate(ctx.tx)
             : await withTransaction(doCreate, options.tx);
 
-        return { success: true, data: mapDbToPromoCode(promoCode) };
+        // Re-fetch to get the effect columns we just wrote via raw SQL.
+        // The INSERT .returning() does not include columns set by subsequent
+        // UPDATE, so we need a fresh SELECT to build the full DTO.
+        if (input.effect) {
+            const db = ctx?.tx ?? getDb();
+            const [refreshed] = await db
+                .select(promoCodeColumnsWithEffect())
+                .from(billingPromoCodes)
+                .where(eq(billingPromoCodes.id, promoCode.id))
+                .limit(1);
+            if (refreshed) {
+                return { success: true as const, data: mapDbToPromoCode(refreshed) };
+            }
+        }
+
+        return { success: true as const, data: mapDbToPromoCode(promoCode) };
     } catch (_error) {
         return {
-            success: false,
+            success: false as const,
             error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'Failed to create promo code' }
         };
     }
+}
+
+// ---------------------------------------------------------------------------
+// Effect-column persistence helper (SPEC-262)
+// ---------------------------------------------------------------------------
+
+/**
+ * Persist SPEC-262 effect columns for a promo code via raw SQL.
+ *
+ * Called immediately after the QZPay INSERT in `createPromoCode` to set the
+ * extras-carril columns (`effect_kind`, `value_kind`, `duration_cycles`,
+ * `extra_days`) that are not part of the QZPay Drizzle table schema.
+ *
+ * Must run within the same transaction as the parent INSERT so both are
+ * atomic (the caller's `doCreate` block wraps both in `withTransaction`).
+ *
+ * @param db - Drizzle client (already inside a transaction)
+ * @param promoCodeId - ID of the newly created promo code row
+ * @param effect - Typed effect to persist
+ *
+ * @internal
+ */
+async function persistEffectColumns(
+    db: DrizzleClient,
+    promoCodeId: string,
+    effect: PromoEffect
+): Promise<void> {
+    if (effect.kind === PromoEffectKindEnum.COMP) {
+        await db.execute(
+            sql`UPDATE billing_promo_codes
+                SET effect_kind = 'comp',
+                    value_kind  = NULL,
+                    duration_cycles = NULL,
+                    extra_days  = NULL
+                WHERE id = ${promoCodeId}`
+        );
+        return;
+    }
+
+    if (effect.kind === PromoEffectKindEnum.TRIAL_EXTENSION) {
+        await db.execute(
+            sql`UPDATE billing_promo_codes
+                SET effect_kind = 'trial_extension',
+                    value_kind  = NULL,
+                    duration_cycles = NULL,
+                    extra_days  = ${effect.extraDays}
+                WHERE id = ${promoCodeId}`
+        );
+        return;
+    }
+
+    // discount
+    await db.execute(
+        sql`UPDATE billing_promo_codes
+            SET effect_kind     = 'discount',
+                value_kind      = ${effect.valueKind},
+                duration_cycles = ${effect.durationCycles},
+                extra_days      = NULL
+            WHERE id = ${promoCodeId}`
+    );
 }
 
 /**
@@ -206,7 +467,7 @@ export async function getPromoCodeByCode(code: string, ctx?: QueryContext) {
         const normalizedCode = code.toUpperCase();
 
         const [dbPromoCode] = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(eq(billingPromoCodes.code, normalizedCode))
             .limit(1);
@@ -254,7 +515,7 @@ export async function getPromoCodeById(id: string, ctx?: QueryContext) {
         const db = ctx?.tx ?? getDb();
 
         const [promoCode] = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(eq(billingPromoCodes.id, id))
             .limit(1);
@@ -514,7 +775,7 @@ export async function listPromoCodes(filters: ListPromoCodesFilters = {}, ctx?: 
         const total = countResult[0]?.value ?? 0;
 
         const items = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(whereClause)
             .orderBy(desc(billingPromoCodes.createdAt))

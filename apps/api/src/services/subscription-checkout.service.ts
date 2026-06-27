@@ -25,10 +25,22 @@ import type {
     QZPayPollingResourceType,
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
-import { resolveFreeTrialExtensionPromo } from '@repo/billing';
-import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
+import {
+    type DrizzleClient,
+    billingSubscriptions,
+    commerceListingSubscriptions,
+    getDb,
+    partnerSubscriptions,
+    sql,
+    withTransaction
+} from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
+import { calculatePromoCodeEffect, resolveFullPlanPriceCentavos } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
+import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
+import { createCompSubscription } from './subscription-comp-create.service.js';
+import { applySignupDiscountToMonthly } from './subscription-discount-signup.service.js';
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -152,7 +164,12 @@ export type SubscriptionCheckoutErrorCode =
     | 'INVALID_PROMO_CODE'
     | 'SUBSCRIPTION_NOT_FOUND'
     | 'SAME_PLAN'
-    | 'NOT_AN_UPGRADE';
+    | 'NOT_AN_UPGRADE'
+    // SPEC-262 T-012 P2: the FAIL-CLOSED discount mutation was rejected by MP and
+    // the just-created subscription was cancelled. Maps to HTTP 502 (provider
+    // rejected our amount change) — distinct from INVALID_PROMO_CODE (422) which
+    // is a bad/inactive code, not a provider failure.
+    | 'DISCOUNT_APPLY_FAILED';
 
 /**
  * Domain-level error thrown by {@link initiatePaidMonthlySubscription}.
@@ -305,6 +322,16 @@ export function computePlanChangeDelta(input: ComputePlanChangeDeltaInput): numb
 export interface InitiatePaidMonthlySubscriptionInput {
     /** Hospeda billing customer ID (the qzpay customer ID). */
     readonly customerId: string;
+    /**
+     * The authenticated user's Hospeda user ID (not billing customer ID).
+     * Strongly recommended for production — enables the full promo restriction
+     * checks (newCustomersOnly + maxPerCustomer + validPlans + expiry + minAmount).
+     * When omitted (tests that mock the resolver), the resolver bypasses
+     * `validatePromoCode` and goes straight to effect classification.
+     * SPEC-262 C1+H1: the route MUST supply this; the resolver uses it for the
+     * complete `validatePromoCode` call.
+     */
+    readonly userId?: string;
     /** Plan slug — matched against `QZPayPlan.name`. */
     readonly planSlug: string;
     /** Resolved qzpay billing instance. */
@@ -317,26 +344,44 @@ export interface InitiatePaidMonthlySubscriptionInput {
         readonly notificationUrl: string;
     };
     /**
-     * Optional promo code (SPEC-126 D9). Currently only
-     * `type: 'free_trial_extension'` promos are honored — they translate
-     * to `freeTrialDays` on the qzpay subscription create input. An
-     * unknown or non-extension code surfaces as
-     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, which the route
-     * maps to HTTP 422.
+     * Optional promo code. Resolved via
+     * {@link resolveCheckoutPromoPlan} into a trial / discount / comp plan
+     * (SPEC-262 T-012 P2):
+     *  - `trial_extension` → `freeTrialDays` on the preapproval (delays first charge).
+     *  - `discount` → live-preapproval `transaction_amount` mutation (FAIL-CLOSED).
+     *  - `comp` → a `status='comp'` subscription, NO MercadoPago preapproval.
+     * An unknown / inactive / restricted code surfaces as
+     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, mapped to HTTP 422.
      */
     readonly promoCode?: string;
+    /** Drizzle client override for tests (comp insert path). */
+    readonly db?: DrizzleClient;
 }
+
+/**
+ * Marker for the promo effect that was applied at checkout, when it changes the
+ * response shape. `comp` means NO MercadoPago redirect happened — the subscriber
+ * is already active (free-forever) and the front-end goes straight to success.
+ * `discount` means the preapproval amount was lowered (a normal MP redirect still
+ * follows). Absent when no promo (or a trial extension) was applied.
+ */
+export type CheckoutAppliedEffect = 'comp' | 'discount';
 
 /**
  * Output shape of a successful initiation. Mirrors
  * `StartPaidSubscriptionResponse` from `@repo/schemas` but stays
  * decoupled from the schema package so the service is reusable from
  * non-API contexts (e.g. a CLI seed script).
+ *
+ * For a `comp` redemption there is NO MercadoPago checkout page, so
+ * `checkoutUrl` carries an in-app success sentinel URL and `appliedEffect`
+ * is `'comp'`.
  */
 export interface InitiatePaidMonthlySubscriptionResult {
     readonly checkoutUrl: string;
     readonly localSubscriptionId: string;
     readonly expiresAt: string;
+    readonly appliedEffect?: CheckoutAppliedEffect;
 }
 
 /**
@@ -353,38 +398,83 @@ export interface InitiatePaidMonthlySubscriptionResult {
 export async function initiatePaidMonthlySubscription(
     input: InitiatePaidMonthlySubscriptionInput
 ): Promise<InitiatePaidMonthlySubscriptionResult> {
-    const { customerId, planSlug, billing, urls, promoCode } = input;
+    const { customerId, userId, planSlug, billing, urls, promoCode } = input;
 
-    // Resolve the promo code BEFORE the qzpay call so an invalid code does
-    // not leave a half-created subscription behind. For monthly subs, the
-    // only honored type is `free_trial_extension` (SPEC-126 D9 + master
-    // plan Decision 4); discount-type promos must be rejected here.
-    let freeTrialDays: number | undefined;
-    if (promoCode !== undefined && promoCode.length > 0) {
-        const resolved = resolveFreeTrialExtensionPromo(promoCode);
-        if (!resolved) {
-            throw new SubscriptionCheckoutError(
-                'INVALID_PROMO_CODE',
-                `Promo code '${promoCode}' is not a valid free-trial extension`
-            );
-        }
-        freeTrialDays = resolved.extraTrialDays;
-    }
-
+    // Resolve plan first so we can pass planId + monthly price to the full
+    // promo validation (validPlans check + minAmount). This also ensures an
+    // invalid plan rejects early before the promo is even looked up.
     const plan = await resolvePlanBySlug(billing, planSlug);
-
     if (!plan) {
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
     }
 
     const monthlyPrice = findMonthlyPrice(plan.prices);
-
     if (!monthlyPrice) {
         throw new SubscriptionCheckoutError(
             'NO_MONTHLY_PRICE',
             `Plan '${planSlug}' has no active monthly price`
         );
     }
+
+    // Resolve the promo code with FULL validation (SPEC-262 C1+H1).
+    // Pass userId + planId + amount so all restrictions are enforced:
+    // expiresAt, maxUses, maxPerCustomer, validPlans, newCustomersOnly, minAmount.
+    const promoPlan = await resolveCheckoutPromoPlan({
+        promoCode,
+        userId,
+        planId: plan.id,
+        amount: monthlyPrice.unitAmount
+    });
+    if (promoPlan.kind === 'invalid') {
+        throw new SubscriptionCheckoutError('INVALID_PROMO_CODE', promoPlan.message);
+    }
+
+    // ── COMP branch ──────────────────────────────────────────────────────────
+    // Comp (free-forever) creates a status='comp' subscription directly — NO MP
+    // preapproval, NO charge. The response carries an in-app success sentinel URL
+    // (reusing the already-resolved return URL, which points at the checkout
+    // success page) and appliedEffect='comp' so the front skips the MP redirect.
+    if (promoPlan.kind === 'comp') {
+        const customer = await billing.customers.get(customerId);
+        if (!customer) {
+            throw new SubscriptionCheckoutError(
+                'CUSTOMER_NOT_FOUND',
+                `Customer '${customerId}' not found`
+            );
+        }
+        const comp = await createCompSubscription({
+            customerId,
+            planId: plan.id,
+            promoCodeId: promoPlan.promoCodeId,
+            code: promoPlan.code,
+            interval: 'monthly',
+            livemode: customer.livemode,
+            ...(input.db ? { db: input.db } : {})
+        });
+        return {
+            checkoutUrl: urls.paymentMethodReturnUrl,
+            localSubscriptionId: comp.localSubscriptionId,
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+            appliedEffect: 'comp'
+        };
+    }
+
+    // SPEC-262 L1: reject a discount that would reduce the monthly price to zero.
+    // A 0-amount preapproval is meaningless (MP would reject it) and semantically
+    // wrong — the right tool for a free subscription is a comp code, not a 100%
+    // discount code. Fail early before the preapproval is created.
+    if (promoPlan.kind === 'discount') {
+        const mutation = calculatePromoCodeEffect(promoPlan.effect, monthlyPrice.unitAmount);
+        if (mutation.type === 'apply-discount' && mutation.finalAmount === 0) {
+            throw new SubscriptionCheckoutError(
+                'INVALID_PROMO_CODE',
+                'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+            );
+        }
+    }
+
+    // trial_extension forwards freeTrialDays to delay the first recurring charge.
+    const freeTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
 
     const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
         customerId,
@@ -414,6 +504,59 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
+    // ── DISCOUNT branch (SPEC-262 T-012 P2) ───────────────────────────────────
+    // The preapproval was created at FULL price. Mutate it down to the discounted
+    // amount, FAIL-CLOSED. If MP rejects, cancel the just-created subscription so
+    // the payer is never left on a full-price preapproval, then throw a typed
+    // error — we MUST NOT return a checkoutUrl for a discount that did not apply.
+    let appliedEffect: CheckoutAppliedEffect | undefined;
+    if (promoPlan.kind === 'discount') {
+        const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
+        if (!mpSubscriptionId) {
+            // No live preapproval id to mutate — fail closed (cancel + throw).
+            await cancelSubscriptionFailClosed(billing, subscription.id);
+            throw new SubscriptionCheckoutError(
+                'MISSING_INIT_POINT',
+                'Payment provider returned no preapproval id — cannot apply the discount; subscription cancelled.'
+            );
+        }
+
+        const fullPriceCentavos = await resolveFullPlanPriceCentavos(getDb(), plan.id);
+        if (fullPriceCentavos === null) {
+            await cancelSubscriptionFailClosed(billing, subscription.id);
+            throw new SubscriptionCheckoutError(
+                'NO_MONTHLY_PRICE',
+                `Could not resolve full plan price for plan '${planSlug}' — discount not applied; subscription cancelled.`
+            );
+        }
+
+        // applySignupDiscountToMonthly computes the discounted amount from
+        // fullPriceCentavos via the pure reducer (single source) and FAIL-CLOSED
+        // mutates the live preapproval before committing any DB state.
+        const discountResult = await applySignupDiscountToMonthly({
+            billing,
+            subscriptionId: subscription.id,
+            mpSubscriptionId,
+            customerId,
+            promoCodeId: promoPlan.promoCodeId,
+            code: promoPlan.code,
+            effect: promoPlan.effect,
+            fullPriceCentavos,
+            livemode: subscription.livemode ?? false
+        });
+
+        if (!discountResult.success) {
+            // FAIL-CLOSED: cancel the sub so the payer is not on a full-price
+            // preapproval, then surface a typed error. No checkoutUrl returned.
+            await cancelSubscriptionFailClosed(billing, subscription.id);
+            throw new SubscriptionCheckoutError(
+                'DISCOUNT_APPLY_FAILED',
+                `MercadoPago rejected the discount and the subscription was cancelled: ${discountResult.error.message}`
+            );
+        }
+        appliedEffect = 'discount';
+    }
+
     // SPEC-143 Finding #17 fallback: enqueue a polling job that will flip
     // the local subscription to `active` if the `subscription_preapproval.created`
     // webhook fails to arrive in time. Webhook still wins the race when it
@@ -427,6 +570,293 @@ export async function initiatePaidMonthlySubscription(
         resourceType: 'subscription',
         planSlug,
         sourceLabel: 'start-paid-monthly'
+    });
+
+    return {
+        checkoutUrl,
+        localSubscriptionId: subscription.id,
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        ...(appliedEffect ? { appliedEffect } : {})
+    };
+}
+
+/**
+ * Cancel a just-created subscription as part of the FAIL-CLOSED discount path.
+ *
+ * Best-effort: a cancel failure is logged (the abandoned-pending cron is the
+ * safety net for an orphaned pending row) but must NOT mask the original
+ * discount-failure error the caller is about to throw.
+ *
+ * @internal
+ */
+async function cancelSubscriptionFailClosed(
+    billing: QZPayBilling,
+    subscriptionId: string
+): Promise<void> {
+    try {
+        await billing.subscriptions.cancel(subscriptionId);
+        apiLogger.warn(
+            { subscriptionId },
+            'Signup discount: cancelled subscription after MP discount mutation failed (fail-closed)'
+        );
+    } catch (cancelErr) {
+        apiLogger.error(
+            {
+                subscriptionId,
+                error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
+            },
+            'Signup discount: FAILED to cancel subscription after discount mutation failure — abandoned-pending cron will reap it'
+        );
+    }
+}
+
+/**
+ * Input for {@link initiateCommerceMonthlySubscription} (SPEC-239 T-048).
+ *
+ * Mirrors {@link InitiatePaidMonthlySubscriptionInput} but adds the commerce
+ * entity coordinates so the function can stamp the new subscription as a
+ * commerce-domain sub (D3) and upsert the `commerce_listing_subscriptions`
+ * link row (D4). No promo support — commerce listings have no trial promos.
+ */
+export interface InitiateCommerceMonthlySubscriptionInput {
+    /** Hospeda billing customer ID (the qzpay customer ID of the listing owner). */
+    readonly customerId: string;
+    /** Plan slug — matched against `QZPayPlan.name` (the commerce plan slug). */
+    readonly planSlug: string;
+    /** Commerce entity discriminator (e.g. `'gastronomy'`). */
+    readonly entityType: string;
+    /** UUID of the commerce entity being subscribed (gastronomies.id, etc.). */
+    readonly entityId: string;
+    /** Resolved qzpay billing instance. */
+    readonly billing: QZPayBilling;
+    /** URL builders the route already resolved from env. */
+    readonly urls: {
+        readonly paymentMethodReturnUrl: string;
+        readonly notificationUrl: string;
+    };
+    /** Drizzle client override for tests. */
+    readonly db?: DrizzleClient;
+}
+
+/**
+ * Output shape for a commerce subscription initiation. Mirrors the
+ * accommodation monthly result so the route returns either uniformly.
+ */
+export interface InitiateCommerceMonthlySubscriptionResult {
+    readonly checkoutUrl: string;
+    readonly localSubscriptionId: string;
+    readonly expiresAt: string;
+}
+
+/**
+ * Initiate a monthly commerce-listing subscription (SPEC-239 T-048).
+ *
+ * Reuses the accommodation `mode: 'paid'` MP preapproval flow, then:
+ *   1. (D3) stamps `billing_subscriptions.product_domain = 'commerce'` via a raw
+ *      SQL UPDATE — the column is NOT in qzpay-core's TS schema (extras carril).
+ *   2. (D4) upserts the `commerce_listing_subscriptions` link row keyed on the
+ *      UNIQUE(entity_type, entity_id) constraint (one link per entity), so a
+ *      re-subscription overwrites `subscriptionId` + `status` rather than
+ *      inserting a duplicate.
+ *
+ * The link row is created with `status = subscription.status` (qzpay's
+ * `incomplete` until the preapproval webhook activates it). The visibility
+ * reconciler flips the listing to PUBLIC once the webhook/cron applies an
+ * active status.
+ *
+ * @throws SubscriptionCheckoutError When the plan or monthly price is missing,
+ *   or when the payment adapter returns no init point.
+ */
+export async function initiateCommerceMonthlySubscription(
+    input: InitiateCommerceMonthlySubscriptionInput
+): Promise<InitiateCommerceMonthlySubscriptionResult> {
+    const { customerId, planSlug, entityType, entityId, billing, urls } = input;
+
+    const plan = await resolvePlanBySlug(billing, planSlug);
+    if (!plan) {
+        throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
+    }
+
+    const monthlyPrice = findMonthlyPrice(plan.prices);
+    if (!monthlyPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MONTHLY_PRICE',
+            `Plan '${planSlug}' has no active monthly price`
+        );
+    }
+
+    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+        customerId,
+        planId: plan.id,
+        priceId: monthlyPrice.id,
+        mode: 'paid',
+        billingInterval: 'monthly',
+        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+        notificationUrl: urls.notificationUrl,
+        metadata: {
+            source: 'start-commerce-monthly',
+            createdBy: 'commerce-subscription-flow',
+            productDomain: ProductDomainEnum.COMMERCE,
+            entityType,
+            entityId
+        }
+    });
+
+    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
+    if (!checkoutUrl) {
+        throw new SubscriptionCheckoutError(
+            'MISSING_INIT_POINT',
+            'Payment provider did not return a checkout URL'
+        );
+    }
+
+    // D3 + D4 are wrapped in a single transaction so the commerce path can never
+    // end up with a billing_subscriptions row stamped 'commerce' but no link row
+    // (or vice versa). A partial write would leave the listing unrecoverable: it
+    // could never be reconciled to PUBLIC even after the owner pays.
+    await withTransaction(async (tx) => {
+        // D3: stamp product_domain='commerce' on the freshly-created subscription.
+        // (tx reuses a caller-provided boundary via input.db when present.)
+        // The column is not in QZPay's TS schema, so we set it with raw SQL.
+        await tx.execute(
+            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.COMMERCE} WHERE id = ${subscription.id}`
+        );
+
+        // D4: upsert the commerce_listing_subscriptions link row (one per entity).
+        // On the UNIQUE(entity_type, entity_id) conflict, update subscriptionId +
+        // status so re-subscribing an entity reuses the same link row.
+        await tx
+            .insert(commerceListingSubscriptions)
+            .values({
+                subscriptionId: subscription.id,
+                productDomain: ProductDomainEnum.COMMERCE,
+                entityType,
+                entityId,
+                status: subscription.status
+            })
+            .onConflictDoUpdate({
+                target: [
+                    commerceListingSubscriptions.entityType,
+                    commerceListingSubscriptions.entityId
+                ],
+                set: {
+                    subscriptionId: subscription.id,
+                    status: subscription.status,
+                    updatedAt: new Date()
+                }
+            });
+    }, input.db);
+
+    // Polling fallback — same as the accommodation monthly flow.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug,
+        sourceLabel: 'start-commerce-monthly'
+    });
+
+    return {
+        checkoutUrl,
+        localSubscriptionId: subscription.id,
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+    };
+}
+
+export interface InitiatePartnerMonthlySubscriptionInput {
+    readonly customerId: string;
+    readonly planId: string;
+    readonly partnerId: string;
+    readonly billing: QZPayBilling;
+    readonly urls: {
+        readonly paymentMethodReturnUrl: string;
+        readonly notificationUrl: string;
+    };
+    readonly db?: DrizzleClient;
+}
+
+export interface InitiatePartnerMonthlySubscriptionResult {
+    readonly checkoutUrl: string;
+    readonly localSubscriptionId: string;
+    readonly expiresAt: string;
+}
+
+/**
+ * Initiate a monthly partner-directory subscription (SPEC-271).
+ */
+export async function initiatePartnerMonthlySubscription(
+    input: InitiatePartnerMonthlySubscriptionInput
+): Promise<InitiatePartnerMonthlySubscriptionResult> {
+    const { customerId, planId, partnerId, billing, urls } = input;
+
+    const plan = await billing.plans.get(planId);
+    if (!plan) {
+        throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planId}' not found`);
+    }
+
+    const monthlyPrice = findMonthlyPrice(plan.prices);
+    if (!monthlyPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MONTHLY_PRICE',
+            `Plan '${planId}' has no active monthly price`
+        );
+    }
+
+    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+        customerId,
+        planId: plan.id,
+        priceId: monthlyPrice.id,
+        mode: 'paid',
+        billingInterval: 'monthly',
+        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+        notificationUrl: urls.notificationUrl,
+        metadata: {
+            source: 'start-partner-monthly',
+            createdBy: 'partner-subscription-flow',
+            productDomain: ProductDomainEnum.PARTNER,
+            partnerId
+        }
+    });
+
+    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
+    if (!checkoutUrl) {
+        throw new SubscriptionCheckoutError(
+            'MISSING_INIT_POINT',
+            'Payment provider did not return a checkout URL'
+        );
+    }
+
+    await withTransaction(async (tx) => {
+        await tx.execute(
+            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.PARTNER} WHERE id = ${subscription.id}`
+        );
+
+        await tx
+            .insert(partnerSubscriptions)
+            .values({
+                subscriptionId: subscription.id,
+                productDomain: ProductDomainEnum.PARTNER,
+                partnerId,
+                status: subscription.status
+            })
+            .onConflictDoUpdate({
+                target: partnerSubscriptions.partnerId,
+                set: {
+                    subscriptionId: subscription.id,
+                    status: subscription.status,
+                    updatedAt: new Date()
+                }
+            });
+    }, input.db);
+
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug: plan.name,
+        sourceLabel: 'start-partner-monthly'
     });
 
     return {
@@ -454,6 +884,13 @@ export async function initiatePaidMonthlySubscription(
 export interface InitiatePaidAnnualSubscriptionInput {
     /** Hospeda billing customer ID (the qzpay customer ID). */
     readonly customerId: string;
+    /**
+     * The authenticated user's Hospeda user ID (not billing customer ID).
+     * Strongly recommended for production — enables the full promo restriction
+     * checks. When omitted (tests with a mocked resolver), the resolver bypasses
+     * `validatePromoCode`. SPEC-262 C1+H1: the route MUST supply this.
+     */
+    readonly userId?: string;
     /** Plan slug — matched against `QZPayPlan.name`. */
     readonly planSlug: string;
     /** Resolved qzpay billing instance. */
@@ -474,6 +911,18 @@ export interface InitiatePaidAnnualSubscriptionInput {
      */
     readonly statementDescriptor?: string;
     /**
+     * Optional promo code (SPEC-262 T-012 P2). Annual honors:
+     *  - `discount` → a one-time reduced line-item amount (annual is a SINGLE
+     *    charge, so there is NO preapproval mutation and NO multi-cycle counter;
+     *    forever/multi-cycle semantics do not apply — it is just a one-time
+     *    reduced price).
+     *  - `comp` → a `status='comp'` subscription, NO MercadoPago charge.
+     *  - `trial_extension` → ignored on annual (no recurring trial to extend);
+     *    a trial code on annual is treated as a no-op promo (full price).
+     * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422).
+     */
+    readonly promoCode?: string;
+    /**
      * Drizzle client override for tests. Production callers omit it
      * and `getDb()` resolves the runtime client.
      */
@@ -482,12 +931,15 @@ export interface InitiatePaidAnnualSubscriptionInput {
 
 /**
  * Output shape of a successful annual initiation. Mirrors the monthly
- * shape so the route handler can return either uniformly.
+ * shape so the route handler can return either uniformly. `appliedEffect`
+ * is `'comp'` when a comp code short-circuited the MP charge (no real
+ * `checkoutUrl`), or `'discount'` when the annual line-item was reduced.
  */
 export interface InitiatePaidAnnualSubscriptionResult {
     readonly checkoutUrl: string;
     readonly localSubscriptionId: string;
     readonly expiresAt: string;
+    readonly appliedEffect?: CheckoutAppliedEffect;
 }
 
 /**
@@ -510,9 +962,11 @@ export interface InitiatePaidAnnualSubscriptionResult {
 export async function initiatePaidAnnualSubscription(
     input: InitiatePaidAnnualSubscriptionInput
 ): Promise<InitiatePaidAnnualSubscriptionResult> {
-    const { customerId, planSlug, billing, urls, statementDescriptor } = input;
+    const { customerId, userId, planSlug, billing, urls, statementDescriptor, promoCode } = input;
     const db = input.db ?? getDb();
 
+    // Resolve plan + annual price first so we can pass planId + amount to full
+    // promo validation, and so an unknown plan rejects before any promo lookup.
     const plan = await resolvePlanBySlug(billing, planSlug);
     if (!plan) {
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
@@ -526,6 +980,71 @@ export async function initiatePaidAnnualSubscription(
         );
     }
 
+    // Resolve the promo plan with FULL validation (SPEC-262 C1+H1).
+    // Pass userId + planId + amount so all restrictions are enforced.
+    const promoPlan = await resolveCheckoutPromoPlan({
+        promoCode,
+        userId,
+        planId: plan.id,
+        amount: annualPrice.unitAmount
+    });
+    if (promoPlan.kind === 'invalid') {
+        throw new SubscriptionCheckoutError('INVALID_PROMO_CODE', promoPlan.message);
+    }
+
+    // ── COMP branch ──────────────────────────────────────────────────────────
+    // comp = never charged regardless of interval. Create the status='comp'
+    // subscription directly and return an in-app success sentinel URL.
+    if (promoPlan.kind === 'comp') {
+        const compCustomer = await billing.customers.get(customerId);
+        if (!compCustomer) {
+            throw new SubscriptionCheckoutError(
+                'CUSTOMER_NOT_FOUND',
+                `Customer '${customerId}' not found`
+            );
+        }
+        const comp = await createCompSubscription({
+            customerId,
+            planId: plan.id,
+            promoCodeId: promoPlan.promoCodeId,
+            code: promoPlan.code,
+            interval: 'annual',
+            livemode: compCustomer.livemode,
+            ...(input.db ? { db: input.db } : {})
+        });
+        return {
+            checkoutUrl: urls.successUrl,
+            localSubscriptionId: comp.localSubscriptionId,
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+            appliedEffect: 'comp'
+        };
+    }
+
+    // ── DISCOUNT branch (annual = one-time reduced price) ─────────────────────
+    // Annual is a SINGLE upfront charge, so a discount is just a one-time reduced
+    // line-item amount: compute it via the pure reducer. There is NO preapproval
+    // mutation and NO multi-cycle counter — forever/multi-cycle duration on the
+    // effect is irrelevant for a one-time charge (documented in the input JSDoc).
+    //
+    // SPEC-262 L1: reject 0-amount (100% or fixed >= price) discount up front.
+    // SPEC-262 C2: redeem BEFORE returning discounted checkoutUrl so the cap gates the price.
+    let chargeAmountCentavos = annualPrice.unitAmount;
+    let appliedEffect: CheckoutAppliedEffect | undefined;
+    if (promoPlan.kind === 'discount') {
+        const mutation = calculatePromoCodeEffect(promoPlan.effect, annualPrice.unitAmount);
+        if (mutation.type === 'apply-discount') {
+            // SPEC-262 L1: 0-amount annual checkout is broken (MP rejects unitAmount=0).
+            if (mutation.finalAmount === 0) {
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+                );
+            }
+            chargeAmountCentavos = mutation.finalAmount;
+            appliedEffect = 'discount';
+        }
+    }
+
     const customer = await billing.customers.get(customerId);
     if (!customer) {
         throw new SubscriptionCheckoutError(
@@ -537,6 +1056,40 @@ export async function initiatePaidAnnualSubscription(
     const now = new Date();
     const periodEnd = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
     const localSubscriptionId = crypto.randomUUID();
+
+    // SPEC-262 C2: for annual discount, the redemption GATES the discounted
+    // checkout URL — it must succeed before we return ANY discounted price.
+    // Unlike the monthly path (where the discount is applied post-preapproval
+    // via a mutable mutation), the annual discount is baked into the MP line-item
+    // at checkout-create time. If redemption fails (e.g. cap exhausted by a
+    // concurrent request), we must NOT return the discounted URL — return a 422.
+    //
+    // The local sub row is inserted BEFORE the MP checkout but AFTER redemption,
+    // so a redemption failure rejects cleanly without any orphan row.
+    //
+    // Note: validatePromoCode (above) already checked maxUses as a best-effort
+    // snapshot. redeemAndRecordUsage below acquires SELECT FOR UPDATE lock —
+    // this is the authoritative, race-safe gate (see ADR-019).
+    if (promoPlan.kind === 'discount') {
+        const { redeemAndRecordUsage } = await import('@repo/service-core');
+        const redeemResult = await redeemAndRecordUsage({
+            promoCodeId: promoPlan.promoCodeId,
+            customerId,
+            // localSubscriptionId is not yet in the DB, so we pass it optimistically.
+            // If the checkout fails later, the usage row exists but the sub does not —
+            // acceptable (the code was consumed; the user should try again without it).
+            subscriptionId: localSubscriptionId,
+            discountAmount: annualPrice.unitAmount - chargeAmountCentavos,
+            currency: 'ARS',
+            livemode: customer.livemode
+        });
+        if (!redeemResult.success) {
+            throw new SubscriptionCheckoutError(
+                'INVALID_PROMO_CODE',
+                `Annual discount code '${promoPlan.code}' could not be redeemed: ${redeemResult.error.message}`
+            );
+        }
+    }
 
     // Insert the local sub row BEFORE creating the provider checkout so
     // the localSubscriptionId can be embedded in the checkout metadata
@@ -563,6 +1116,24 @@ export async function initiatePaidAnnualSubscription(
         }
     });
 
+    // Stamp promo_code_id on the pending row (best-effort — the redemption
+    // record already exists from the gate above; this is purely for the FK
+    // audit trail on the subscription row itself).
+    if (promoPlan.kind === 'discount') {
+        try {
+            await db.execute(
+                sql`UPDATE billing_subscriptions
+                    SET promo_code_id = ${promoPlan.promoCodeId}
+                    WHERE id = ${localSubscriptionId}`
+            );
+        } catch (stampErr) {
+            apiLogger.warn(
+                { localSubscriptionId, code: promoPlan.code, error: String(stampErr) },
+                'Annual discount: failed to stamp promo_code_id (redemption already recorded — non-fatal)'
+            );
+        }
+    }
+
     // Split customer.name on the first whitespace for MP's payer fields
     // (mirrors the qzpay-core monthly subscription create path).
     const [firstName, ...rest] = (customer.name ?? '').trim().split(/\s+/);
@@ -571,7 +1142,9 @@ export async function initiatePaidAnnualSubscription(
         mode: 'payment',
         lineItems: [
             {
-                unitAmount: annualPrice.unitAmount,
+                // SPEC-262 T-012 P2: chargeAmountCentavos is the discounted amount
+                // when a discount code applied, else the full annual price.
+                unitAmount: chargeAmountCentavos,
                 currency: 'ARS',
                 quantity: 1,
                 title: `${getPlanDisplayName(plan)} (Annual)`,
@@ -626,7 +1199,8 @@ export async function initiatePaidAnnualSubscription(
     return {
         checkoutUrl,
         localSubscriptionId,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        ...(appliedEffect ? { appliedEffect } : {})
     };
 }
 

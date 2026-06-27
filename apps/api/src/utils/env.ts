@@ -126,7 +126,7 @@ export const ApiEnvBaseSchema = z.object({
 
     // Trusted origins
     HOSPEDA_SITE_URL: z.string().url('Must be a valid URL for the web app'),
-    HOSPEDA_ADMIN_URL: z.string().url().optional(),
+    HOSPEDA_ADMIN_URL: z.string().url(),
 
     /**
      * Dev-only session-cookie domain override (SPEC-182). Set to
@@ -366,7 +366,7 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'node-cron']).default('manual'),
     /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
-    HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
+    HOSPEDA_REVALIDATION_SECRET: z.string().min(32),
     /** Cron schedule for automatic page revalidation (default: every hour) */
     HOSPEDA_REVALIDATION_CRON_SCHEDULE: z.string().optional().default('0 * * * *'),
 
@@ -438,6 +438,14 @@ export const ApiEnvBaseSchema = z.object({
         .default('HOSPEDA'),
 
     /**
+     * Slug of the billing plan used to provision a commerce-listing subscription
+     * (SPEC-239 T-049). Resolved by slug against `billing_plans.name` via the
+     * same `resolvePlanBySlug` machinery the accommodation start-paid flow uses.
+     * Optional: the commerce start-subscription route 404s when unset or unknown.
+     */
+    HOSPEDA_COMMERCE_PLAN_ID: z.string().optional(),
+
+    /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the
      * Hono CORS allow-list and the Better Auth `trustedOrigins` so
      * operators don't have to keep two lists in sync.
@@ -470,7 +478,7 @@ export const ApiEnvBaseSchema = z.object({
 
     // Newsletter (SPEC-101)
     /** HMAC-SHA256 secret for verification + unsubscribe tokens. Min 32 bytes. */
-    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32).optional(),
+    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32),
     /** Previous HMAC secret, accepted during the rotation window. */
     HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV: z.string().min(32).optional(),
     /** Static secret Brevo echoes in X-Sib-Webhook-Token. Min 10 bytes. */
@@ -584,7 +592,109 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_AI_VAULT_MASTER_KEY: z
         .string()
         .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
-        .optional()
+        .optional(),
+
+    // Accommodation import (SPEC-222)
+    /** Apify API token for the Airbnb scraper actor and Booking.com fallback adapter */
+    HOSPEDA_APIFY_TOKEN: z.string().optional(),
+    /**
+     * Apify actor ID/slug for the Airbnb rooms/detail scraper (swappable without a code deploy).
+     *
+     * Defaults to `tri_angle/airbnb-rooms-urls-scraper` — the actor that accepts
+     * /rooms/ detail URLs. Do NOT use `tri_angle/airbnb-scraper` (search scraper),
+     * which rejects detail URLs and returns an empty dataset.
+     */
+    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().default('tri_angle/airbnb-rooms-urls-scraper'),
+    /** Apify actor ID/slug for the Booking.com scraper fallback (swappable without a code deploy) */
+    HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
+    /** Google Places API (New) key for the Google Maps import tier */
+    HOSPEDA_GOOGLE_PLACES_API_KEY: z.string().optional(),
+    /** MercadoLibre OAuth app access token for reading /items listings */
+    HOSPEDA_MERCADOLIBRE_TOKEN: z.string().optional(),
+    /** Timeout in milliseconds for the safeExternalFetch utility used in import adapters */
+    HOSPEDA_IMPORT_FETCH_TIMEOUT_MS: z.coerce.number().default(8000),
+    /** Timeout in milliseconds for synchronous Apify actor runs in import adapters (Airbnb, Booking fallback); actors take 8-120s so they get a longer budget than the fetch timeout */
+    HOSPEDA_IMPORT_APIFY_TIMEOUT_MS: z.coerce.number().default(120000),
+    /** Maximum response body size in bytes for the safeExternalFetch utility used in import adapters */
+    HOSPEDA_IMPORT_FETCH_MAX_BYTES: z.coerce.number().default(3000000),
+    /** Per-user rate limit (requests per hour) for the accommodation import endpoint */
+    HOSPEDA_IMPORT_RATE_LIMIT_RPH: z.coerce.number().default(10),
+    /** Maximum characters of scraped page text sent to the AI Strategy B enrichment step */
+    HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000),
+
+    // Stock image search (SPEC-274)
+    /** Unsplash API access key (Client-ID) for stock image search proxy */
+    HOSPEDA_UNSPLASH_ACCESS_KEY: z.string().optional(),
+    /** Pexels API key for stock image search proxy */
+    HOSPEDA_PEXELS_API_KEY: z.string().optional(),
+
+    // Social Automation (SPEC-254)
+    // All four vars are optional for now — the GPT/Make routes that consume them
+    // are NOT mounted yet (Phase 2 / Phase 4). Making them required here would
+    // break API boot in every environment before the feature is wired. Flip each
+    // to .min(1) (required) when the consuming route is mounted.
+    /**
+     * Inbound API key the Custom GPT sends in `x-hospeda-ai-key`.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_AI_SOCIAL_KEY: z.string().optional(),
+    /**
+     * Bcrypt/argon2 hash of the operator PIN for the GPT drafts endpoint.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_OPERATOR_PIN_HASH: z.string().optional(),
+    /**
+     * Plaintext operator PIN for the GPT drafts endpoint, stored exactly as the
+     * operator types it into the Custom GPT. Compared in constant time against
+     * the `operatorPin` in the request body. Supersedes HOSPEDA_OPERATOR_PIN_HASH.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_OPERATOR_PIN: z.string().optional(),
+    /**
+     * Outbound key sent in `x-make-apikey` when pushing publish jobs to Make.com.
+     * Required when the Make.com publish route is mounted (SPEC-254 Phase 4).
+     */
+    HOSPEDA_MAKE_API_KEY: z.string().optional(),
+    /**
+     * Inbound key Make.com sends in `x-hospeda-make-key` on claim/result callbacks.
+     * Required when the Make.com callback route is mounted (SPEC-254 Phase 4).
+     */
+    HOSPEDA_MAKE_INBOUND_KEY: z.string().optional(),
+
+    // External reputation / review aggregation (SPEC-237)
+    /**
+     * How many days a Google Places snippet is considered fresh before the background
+     * cron re-fetches it. Lower values keep ratings current at the cost of more API quota.
+     * Default 30.
+     */
+    HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS: z.coerce.number().int().min(1).default(30),
+    /**
+     * Per-accommodation rate limit for the manual snippet refresh endpoint.
+     * Format: "N/S" — N refreshes per S seconds. Default "1/600" (1 per 10 min).
+     * A malformed value (not matching N/S) fails fast at boot (FIX L2).
+     */
+    HOSPEDA_EXTREP_REFRESH_RATE_LIMIT: z
+        .string()
+        .regex(/^\d+\/\d+$/, 'must be in N/S format e.g. 1/600')
+        .default('1/600'),
+    /**
+     * Cron expression for the background job that refreshes stale Google Places snippets.
+     * Default "0 2 * * 1" runs every Monday at 02:00 UTC.
+     */
+    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1'),
+
+    // External reputation async polling (SPEC-250)
+    /**
+     * Cron expression for the poll-apify-reputation-runs job that checks the status
+     * of pending/running Apify actor runs and persists results.
+     * Default: every 2 minutes (step-2 cron). See env.example for the exact value.
+     */
+    HOSPEDA_EXTREP_POLL_SCHEDULE: z.string().default('*/2 * * * *'),
+    /**
+     * Milliseconds before the poller sweeps a pending/running Apify run as timed out
+     * and marks it fetch_status='error'. Default 600000 (10 minutes).
+     */
+    HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS: z.coerce.number().int().min(1).default(600_000)
 });
 
 /**
@@ -682,6 +792,46 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                     code: z.ZodIssueCode.custom,
                     path: ['API_CORS_ORIGINS'],
                     message: `CORS origin '${origin}' contains localhost, which is not allowed in production`
+                });
+            }
+        }
+    }
+    // Conditional: the OpenAI moderation key is required when the OpenAI provider
+    // is selected (all environments). With the 'stub'/'local' providers it is not
+    // needed, so it stays unset without aborting startup.
+    if (
+        data.HOSPEDA_MODERATION_PROVIDER === 'openai' &&
+        (!data.HOSPEDA_MODERATION_OPENAI_API_KEY ||
+            data.HOSPEDA_MODERATION_OPENAI_API_KEY.trim() === '')
+    ) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_MODERATION_OPENAI_API_KEY'],
+            message:
+                'HOSPEDA_MODERATION_OPENAI_API_KEY is required when HOSPEDA_MODERATION_PROVIDER=openai'
+        });
+    }
+    // Required only in production: external-service credentials whose absence would
+    // let the API boot but silently break the feature in prod. Fail loud at startup
+    // instead of degrading silently. Mirrors the REDIS_URL / AI_VAULT guards above.
+    if (data.NODE_ENV === 'production') {
+        const requiredInProd: ReadonlyArray<readonly [string, string | undefined]> = [
+            ['HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', data.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN],
+            ['HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', data.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET],
+            ['HOSPEDA_EMAIL_API_KEY', data.HOSPEDA_EMAIL_API_KEY],
+            ['HOSPEDA_EMAIL_FROM_EMAIL', data.HOSPEDA_EMAIL_FROM_EMAIL],
+            ['HOSPEDA_SENTRY_DSN', data.HOSPEDA_SENTRY_DSN],
+            ['HOSPEDA_LINEAR_API_KEY', data.HOSPEDA_LINEAR_API_KEY],
+            ['HOSPEDA_POSTHOG_KEY', data.HOSPEDA_POSTHOG_KEY],
+            ['HOSPEDA_APIFY_TOKEN', data.HOSPEDA_APIFY_TOKEN],
+            ['HOSPEDA_GOOGLE_PLACES_API_KEY', data.HOSPEDA_GOOGLE_PLACES_API_KEY]
+        ];
+        for (const [name, value] of requiredInProd) {
+            if (!value || value.trim() === '') {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [name],
+                    message: `${name} is required in production`
                 });
             }
         }

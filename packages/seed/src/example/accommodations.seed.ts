@@ -1,6 +1,11 @@
+import { AccommodationMediaModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
+import {
+    type FixtureMediaBlock,
+    buildAccommodationMediaRows
+} from '../utils/accommodation-media-builder.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
@@ -302,6 +307,60 @@ export const seedAccommodations = createSeedFactory({
                         logger.error(`Error creating AI data: ${err.message}`);
                         if (!context.continueOnError) {
                             throw error;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Seed accommodation_media rows from fixture's media.featuredImage + media.gallery.
+        // Videos remain in the JSONB blob (D1 design decision — do not touch media.videos).
+        // Direct model insert is used instead of AccommodationService.addMedia because:
+        //   1. We need explicit is_featured control (service always sets isFeatured=false).
+        //   2. We avoid N+1 sortOrder queries — we compute the order inline.
+        //   3. The service's _canUpdate permission gate is unnecessary overhead for seeding.
+        const fixtureMedia = accommodationData.media as FixtureMediaBlock | undefined;
+        if (
+            fixtureMedia &&
+            (fixtureMedia.featuredImage || (fixtureMedia.gallery?.length ?? 0) > 0)
+        ) {
+            const accommodationInfo = getAccommodationInfo(item);
+            const mediaModel = new AccommodationMediaModel();
+
+            // Idempotency guard: skip if rows already exist for this accommodation.
+            // The seed assumes a fresh DB, but this guard protects against accidental re-runs.
+            const { total: existingCount } = await mediaModel.findByAccommodation({
+                accommodationId,
+                pageSize: 1
+            });
+
+            if (existingCount > 0) {
+                logger.info(
+                    `Skipping media for ${accommodationInfo}: ${existingCount} rows already exist`
+                );
+            } else {
+                const rows = buildAccommodationMediaRows({
+                    accommodationId,
+                    media: fixtureMedia
+                });
+
+                if (rows.length > 0) {
+                    logger.info(`Creating ${rows.length} media rows for ${accommodationInfo}`);
+
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row) continue;
+                        try {
+                            await mediaModel.create(row);
+                            logger.success({
+                                msg: `[${i + 1} of ${rows.length}] - Created media row (isFeatured=${row.isFeatured}, sortOrder=${row.sortOrder}): ${row.url}`
+                            });
+                        } catch (error) {
+                            const err = error as { message?: string };
+                            logger.error(`Error creating media row ${i + 1}: ${err.message}`);
+                            if (!context.continueOnError) {
+                                throw error;
+                            }
                         }
                     }
                 }

@@ -12,19 +12,16 @@ if (dsn) {
         dsn,
         environment,
         release:
-            import.meta.env.PUBLIC_SENTRY_RELEASE ||
-            process.env.HOSPEDA_GIT_SHA ||
-            process.env.VERCEL_GIT_COMMIT_SHA ||
-            'development',
+            import.meta.env.PUBLIC_SENTRY_RELEASE || process.env.HOSPEDA_GIT_SHA || 'development',
 
         initialScope: {
             tags: {
                 project: 'hospeda',
-                app_type: 'web2'
+                app_type: 'web'
             }
         },
 
-        tracesSampleRate: 0.1,
+        tracesSampleRate: import.meta.env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.1,
 
         beforeSend(event) {
             if (event.request?.headers) {

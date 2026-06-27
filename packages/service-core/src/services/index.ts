@@ -1,5 +1,8 @@
 export * from './accommodation/accommodation.service';
+export * from './accommodation-external-reputation/index.js';
+export * from './accommodation-import/index.js';
 export * from './appLog/index.js';
+export * from './auditLog/index.js';
 export * from './conversation/index.js';
 export * from './contentModeration';
 export * from './cronRun/index.js';
@@ -17,6 +20,8 @@ export * from './eventLocation/eventLocation.service';
 export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';
 export * from './feature/feature.normalizers';
+export * from './hostTrade/host-trade.service';
+export * from './hostTrade/host-trade.permissions';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';
@@ -26,15 +31,23 @@ export * from './postSponsorship/postSponsorship.service';
 export * from './sponsorship';
 export * from './stats';
 export * from './owner-promotion';
+export * from './partner/partner.service';
 export * from './tag/tag.service';
 export * from './tag/post-tag.service';
 export * from './tag/post-tag.permissions';
 export * from './newsletter';
 export * from './user/user.service';
+export * from './weather/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';
+export * from './commerce';
+export * from './gastronomy';
+export * from './experience';
 export * from './moderation';
+export * from './social';
+export * from './feature-flags';
+export * from './media';
 
 // HookState types for service consumers
 export type {
@@ -48,3 +61,5 @@ export type { DestinationHookState } from './destination/destination.types';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
 export type { EventHookState } from './event/event.types';
 export type { PostHookState } from './post/post.types';
+export type { CommerceListingHookState } from './commerce/commerce.types';
+export type { ExperienceHookState } from './experience/experience.types';

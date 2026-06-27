@@ -1,0 +1,148 @@
+{
+    "tourist": {
+        "home": {
+            "title": "Tourist Home",
+            "subtitle": "Explore accommodations in the region"
+        },
+        "tabs": {
+            "home": "Home",
+            "profile": "Profile"
+        }
+    },
+    "host": {
+        "tabs": {
+            "home": "Home",
+            "accommodations": "Listings",
+            "conversations": "Inquiries",
+            "profile": "Profile"
+        },
+        "dashboard": {
+            "title": "Host Dashboard",
+            "propertiesCard": "Properties",
+            "total": "Total",
+            "published": "Published",
+            "draft": "Drafts",
+            "archived": "Archived",
+            "conversationsCard": "Unread inquiries",
+            "planCard": "Current plan",
+            "planNull": "No active plan",
+            "planTrial": "Trial",
+            "planActive": "Active",
+            "planCancelled": "Cancelled",
+            "planExpired": "Expired",
+            "planPastDue": "Payment pending",
+            "loading": "Loading dashboard...",
+            "error": "Could not load the dashboard. Please try again.",
+            "retry": "Retry",
+            "viewMetrics": "View metrics"
+        },
+        "accommodations": {
+            "listTitle": "My listings",
+            "lifecycleActive": "Active",
+            "lifecycleDraft": "Draft",
+            "lifecycleArchived": "Archived",
+            "loading": "Loading listings...",
+            "error": "Could not load listings. Please try again.",
+            "empty": "You don't have any listings yet.",
+            "retry": "Retry",
+            "edit": {
+                "title": "Edit listing",
+                "contact": "Contact information",
+                "phone": "Phone",
+                "email": "Email",
+                "website": "Website",
+                "social": "Social networks",
+                "twitter": "Twitter / X",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube",
+                "summary": "Summary",
+                "summaryHint": "Between 10 and 300 characters",
+                "description": "Description",
+                "save": "Save changes",
+                "success": "Listing updated successfully.",
+                "error": "Could not save. Please try again.",
+                "loading": "Loading listing...",
+                "notFound": "Listing not found."
+            }
+        },
+        "conversations": {
+            "title": "Inquiries",
+            "loading": "Loading inquiries...",
+            "error": "Could not load inquiries. Please try again.",
+            "empty": "You don't have any inquiries yet.",
+            "retry": "Retry",
+            "guestUnknown": "Guest",
+            "thread": {
+                "title": "Conversation",
+                "loading": "Loading messages...",
+                "error": "Could not load the conversation. Please try again.",
+                "empty": "No messages in this conversation.",
+                "inputPlaceholder": "Type your reply...",
+                "send": "Send",
+                "sendError": "Could not send the message. Please try again.",
+                "back": "Go back"
+            }
+        },
+        "metrics": {
+            "title": "View Metrics",
+            "window7d": "Last 7 days",
+            "window30d": "Last 30 days",
+            "accommodationLabel": "Accommodation",
+            "uniqueLabel": "Unique views",
+            "totalLabel": "Total views",
+            "empty": "No view data for this period.",
+            "error": "Could not load metrics. Please try again.",
+            "loading": "Loading metrics...",
+            "retry": "Retry"
+        }
+    },
+    "profile": {
+        "title": "My profile",
+        "avatarLabel": "Profile picture",
+        "emailLabel": "Email",
+        "roleLabel": "Role",
+        "sections": {
+            "personalInfo": "Personal info",
+            "location": "Location"
+        },
+        "fields": {
+            "name": "Full name",
+            "firstName": "First name",
+            "lastName": "Last name",
+            "phone": "Mobile phone",
+            "city": "City",
+            "region": "Province / Region",
+            "country": "Country"
+        },
+        "save": "Save changes",
+        "saveSuccess": "Profile updated successfully.",
+        "saveError": "Could not save. Please try again.",
+        "loading": "Loading profile...",
+        "loadError": "Could not load profile. Please try again."
+    },
+    "settings": {
+        "title": "Settings",
+        "notifications": {
+            "sectionTitle": "Notifications",
+            "enabled": "Notifications active",
+            "allowPush": "Push notifications",
+            "allowEmails": "Email notifications",
+            "allowSms": "SMS notifications"
+        },
+        "language": {
+            "sectionTitle": "Language",
+            "es": "Español",
+            "en": "English",
+            "pt": "Português"
+        },
+        "account": {
+            "sectionTitle": "Account",
+            "signOut": "Sign out",
+            "deleteAccount": "Delete account",
+            "deleteAccountComingSoon": "Account deletion is not available yet."
+        }
+    }
+}

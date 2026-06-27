@@ -90,6 +90,101 @@
             "singular": "Log entry",
             "plural": "Application logs",
             "description": "WARN and ERROR events emitted by system services"
+        },
+        "auditLog": {
+            "singular": "Audit event",
+            "plural": "Audit log",
+            "description": "Sensitive administrative actions recorded for traceability"
+        },
+        "securityLog": {
+            "singular": "Security event",
+            "plural": "Security log",
+            "description": "Authentication events: login failures, lockouts, and access denied"
+        },
+        "hostTrade": {
+            "singular": "Trade",
+            "plural": "Trades",
+            "description": "Directory of service providers for hosts"
+        },
+        "gastronomy": {
+            "singular": "Gastronomy",
+            "plural": "Gastronomies",
+            "description": "Manage restaurants, bars, cafes and other food and beverage venues"
+        },
+        "experience": {
+            "singular": "Experience",
+            "plural": "Experiences",
+            "description": "Manage tourism activities, excursions and equipment rentals"
+        }
+    },
+    "experience": {
+        "tabs": {
+            "general": "General",
+            "faqs": "FAQs",
+            "reviews": "Reviews"
+        },
+        "reviews": {
+            "noPending": "No reviews pending moderation",
+            "anonymous": "Anonymous",
+            "approve": "Approve",
+            "reject": "Reject"
+        },
+        "assignOwner": {
+            "title": "Assign owner",
+            "button": "Assign"
+        },
+        "create": {
+            "title": "New Experience",
+            "successTitle": "Experience created",
+            "successMessage": "The experience was created successfully",
+            "errorTitle": "Error creating",
+            "errorMessage": "We could not create the experience. Please try again."
+        }
+    },
+    "gastronomy": {
+        "tabs": {
+            "general": "General",
+            "faqs": "FAQs",
+            "reviews": "Reviews"
+        },
+        "columns": {
+            "priceRange": "Price Range",
+            "type": "Type",
+            "menuUrl": "Online Menu"
+        },
+        "types": {
+            "RESTAURANT": "Restaurant",
+            "BAR": "Bar",
+            "CAFE": "Café",
+            "PARRILLA": "Parrilla",
+            "CERVECERIA": "Craft Brewery",
+            "HELADERIA": "Ice Cream Shop",
+            "PANADERIA": "Bakery",
+            "ROTISERIA": "Deli / Rotisserie",
+            "FOOD_TRUCK": "Food Truck"
+        },
+        "priceRanges": {
+            "BUDGET": "Budget ($)",
+            "MID": "Mid-range ($$)",
+            "HIGH": "High ($$$)",
+            "PREMIUM": "Premium ($$$$)"
+        },
+        "reviews": {
+            "noPending": "No reviews pending moderation",
+            "anonymous": "Anonymous",
+            "approve": "Approve",
+            "reject": "Reject"
+        },
+        "assignOwner": {
+            "title": "Assign owner",
+            "button": "Assign"
+        },
+        "create": {
+            "title": "New Gastronomy",
+            "successTitle": "Gastronomy created",
+            "successMessage": "The gastronomy was created successfully",
+            "errorTitle": "Error creating",
+            "errorMessage": "We could not create the gastronomy. Please try again."
         }
     },
     "columns": {
@@ -182,6 +277,11 @@
         "banExpires": "Ban Expires",
         "avatar": "Avatar",
         "views30d": "Views (30d)",
+        "contact": "Contact",
+        "is24h": "Available 24h",
+        "active": "Active",
+        "benefit": "Benefit",
+        "scheduleText": "Schedule",
         "appLog": {
             "loggedAt": "Date/Time",
             "level": "Level",
@@ -190,6 +290,14 @@
             "request": "Request",
             "userId": "User",
             "message": "Message"
+        },
+        "auditLog": {
+            "loggedAt": "Date/Time",
+            "severity": "Severity",
+            "eventType": "Event",
+            "actor": "Actor",
+            "target": "Target",
+            "message": "Detail"
         }
     },
     "actions": {
@@ -551,7 +659,33 @@
             "deleteDialogTitle": "Delete image?",
             "deleteDialogDescription": "This action cannot be undone.",
             "deleteDialogCancel": "Cancel",
-            "deleteDialogConfirm": "Delete"
+            "deleteDialogConfirm": "Delete",
+            "stock": {
+                "modalTitle": "Search stock images",
+                "modalDescription": "Search and select images from Unsplash or Pexels to import",
+                "searchPlaceholder": "Search images (e.g., beach, mountain, concert)",
+                "searching": "Searching...",
+                "searchPrompt": "Type a search term to find stock images",
+                "noResults": "No results for «{query}»",
+                "resultsCount": "{count} results",
+                "loadMore": "Load more",
+                "importButton": "Import",
+                "importing": "Importing...",
+                "orientation": "Orientation",
+                "orientation.all": "All",
+                "orientation.landscape": "Landscape",
+                "orientation.portrait": "Portrait",
+                "orientation.squarish": "Square",
+                "previewTitle": "Photo by {photographer}",
+                "previewByline": "Photo by {photographer}",
+                "providersNotConfigured": "Stock image providers are not configured",
+                "unsplashRateLimit": "Unsplash rate limit reached, try Pexels",
+                "pexelsRateLimit": "Pexels rate limit reached, try Unsplash",
+                "searchError": "Error searching images. Please try again.",
+                "importError": "Error importing image. Please try again.",
+                "entityNotFound": "Entity not found",
+                "galleryLimitExceeded": "Gallery limit reached (max: {limit} images)"
+            }
         },
         "avatar": {
             "label": "Avatar",
@@ -754,7 +888,92 @@
             },
             "publishedAt": {
                 "label": "Publish date"
+            },
+            "cuisine": {
+                "label": "Establishment type"
+            },
+            "operatingHours": {
+                "label": "Opening hours"
+            },
+            "capacity": {
+                "label": "Price range"
             }
+        }
+    },
+    "commerceLeads": {
+        "page": {
+            "title": "Commerce leads",
+            "empty": "No leads to display.",
+            "loadError": "Failed to load leads. Please try again."
+        },
+        "filter": {
+            "label": "Status:",
+            "all": "All"
+        },
+        "status": {
+            "pending": "Pending",
+            "reviewing": "Reviewing",
+            "approved": "Approved",
+            "rejected": "Rejected"
+        },
+        "columns": {
+            "businessName": "Business",
+            "contactName": "Contact",
+            "email": "Email",
+            "domain": "Domain",
+            "status": "Status",
+            "createdAt": "Date",
+            "actions": "Actions"
+        },
+        "actions": {
+            "handle": "Handle",
+            "provision": "Create account",
+            "approveProvision": "Approve & create account"
+        },
+        "approveProvision": {
+            "title": "Approve & create owner account",
+            "description": "The lead for {{businessName}} will be approved and a COMMERCE_OWNER account created for {{email}} in a single step. Temporary credentials will be sent by email.",
+            "noteLabel": "Note (optional)",
+            "notePlaceholder": "Internal comment for the team...",
+            "confirm": "Approve & create account",
+            "submitting": "Processing...",
+            "successMessage": "Lead approved and account created for {{email}}. Credentials have been sent by email.",
+            "alreadyProvisionedMessage": "The lead was already provisioned.",
+            "error": "Failed to approve and create the account. Please try again."
+        },
+        "handle": {
+            "title": "Handle lead",
+            "decisionLabel": "Decision",
+            "approve": "Approve",
+            "reject": "Reject",
+            "noteLabel": "Note (optional)",
+            "notePlaceholder": "Internal comment for the team...",
+            "submit": "Confirm",
+            "submitting": "Saving...",
+            "successApproved": "Lead approved successfully.",
+            "successRejected": "Lead rejected."
+        },
+        "provision": {
+            "title": "Create owner account",
+            "description": "A COMMERCE_OWNER account will be created for {{businessName}} ({{email}}). Temporary credentials will be sent by email.",
+            "confirm": "Create account",
+            "submitting": "Creating...",
+            "successMessage": "Account created for {{name}} ({{email}}). Credentials have been sent by email.",
+            "error": "Failed to create account. Please try again."
+        },
+        "pagination": {
+            "prev": "Previous",
+            "next": "Next",
+            "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
+        }
+    },
+    "hostTrade": {
+        "create": {
+            "title": "New Trade",
+            "successTitle": "Trade created",
+            "successMessage": "The trade was created successfully",
+            "errorTitle": "Error creating trade",
+            "errorMessage": "We could not create the trade. Please try again."
         }
     }
 }

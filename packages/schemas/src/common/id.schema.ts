@@ -34,6 +34,9 @@ export type AccommodationIdType = z.infer<typeof AccommodationIdSchema>;
 export const AccommodationFaqIdSchema = BaseIdSchema;
 export type AccommodationFaqIdType = z.infer<typeof AccommodationFaqIdSchema>;
 
+export const AccommodationMediaIdSchema = BaseIdSchema;
+export type AccommodationMediaIdType = z.infer<typeof AccommodationMediaIdSchema>;
+
 export const AccommodationIaDataIdSchema = BaseIdSchema;
 export type AccommodationIaDataIdType = z.infer<typeof AccommodationIaDataIdSchema>;
 
@@ -48,6 +51,9 @@ export type FeatureIdType = z.infer<typeof FeatureIdSchema>;
 
 export const AttractionIdSchema = BaseIdSchema;
 export type AttractionIdType = z.infer<typeof AttractionIdSchema>;
+
+export const HostTradeIdSchema = BaseIdSchema;
+export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
@@ -207,3 +213,20 @@ export type TouristServiceIdType = z.infer<typeof TouristServiceIdSchema>;
 
 export const UserBookmarkCollectionIdSchema = BaseIdSchema;
 export type UserBookmarkCollectionIdType = z.infer<typeof UserBookmarkCollectionIdSchema>;
+
+// === Accommodation External IDs (SPEC-237) ===
+export const AccommodationExternalListingIdSchema = BaseIdSchema;
+export type AccommodationExternalListingIdType = z.infer<
+    typeof AccommodationExternalListingIdSchema
+>;
+
+export const AccommodationExternalReputationIdSchema = BaseIdSchema;
+export type AccommodationExternalReputationIdType = z.infer<
+    typeof AccommodationExternalReputationIdSchema
+>;
+
+export const FeatureFlagIdSchema = BaseIdSchema;
+export type FeatureFlagIdType = z.infer<typeof FeatureFlagIdSchema>;
+
+export const FeatureFlagAuditIdSchema = BaseIdSchema;
+export type FeatureFlagAuditIdType = z.infer<typeof FeatureFlagAuditIdSchema>;

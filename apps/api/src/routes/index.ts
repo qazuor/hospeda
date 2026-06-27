@@ -22,6 +22,7 @@ import {
     publicAttractionRoutes
 } from './attraction';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
+import { adminCommerceRoutes, publicCommerceRoutes } from './commerce';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -38,9 +39,20 @@ import {
     protectedEventOrganizerRoutes,
     publicEventOrganizerRoutes
 } from './event-organizer';
+import {
+    adminExperienceRoutes,
+    protectedExperienceRoutes,
+    publicExperienceRoutes
+} from './experience';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import {
+    adminGastronomyRoutes,
+    protectedGastronomyRoutes,
+    publicGastronomyRoutes
+} from './gastronomy';
 import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
+import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import {
     adminPostTagAssignmentRoutes,
@@ -56,18 +68,35 @@ import {
 } from './tag/user-tag/index.js';
 
 import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
+import {
+    adminCreatePartnerRoute,
+    adminDeletePartnerRoute,
+    adminGetPartnerRoute,
+    adminListPartnerPlansRoute,
+    adminListPartnersRoute,
+    adminManualPaymentRoute,
+    adminSendPaymentLinkRoute,
+    adminUpdatePartnerRoute,
+    publicPartnersRoutes
+} from './partners';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
+import { adminExternalReputationRoutes } from './accommodation-external-reputation/admin/index.js';
+import { protectedExternalReputationRoutes } from './accommodation-external-reputation/protected/index.js';
+import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
 import {
     adminAiCredentialsRoutes,
+    adminAiPostGenerateRoute,
     adminAiPromptsRoutes,
     adminAiSettingsRoutes,
     adminAiTranslateRoute,
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
+import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
+import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
@@ -80,10 +109,19 @@ import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
+import {
+    adminFeatureFlagRoutes,
+    protectedFeatureFlagRoutes,
+    publicFeatureFlagRoutes
+} from './feature-flags';
 import { publicFeedbackRoutes } from './feedback';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
+import {
+    makeClaimCallbackRoute,
+    makeResultCallbackRoute
+} from './integrations/make/social/jobs/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -99,6 +137,21 @@ import { publicPlatformSettingsRoutes } from './platform-settings/public/index.j
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
+import {
+    adminGetGptActionSchemaRoute,
+    adminSocialAudienceRoutes,
+    adminSocialAuditLogRoutes,
+    adminSocialBatchRoutes,
+    adminSocialCampaignRoutes,
+    adminSocialDashboardRoutes,
+    adminSocialFooterRoutes,
+    adminSocialHashtagRoutes,
+    adminSocialHashtagSetRoutes,
+    adminSocialPlatformFormatRoutes,
+    adminSocialPostTransitionRoutes,
+    adminSocialPublishLogRoutes,
+    adminSocialSettingRoutes
+} from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
@@ -124,7 +177,9 @@ import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
 
 import { ApiInfoSchema } from '@repo/schemas';
+import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
+import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import { createSimpleRoute } from '../utils/route-factory';
 import {
     adminConversationsRouter,
@@ -182,6 +237,19 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
+
+        // External reputation public block (SPEC-237 T-009)
+        // Mounted at /api/v1/public/accommodations so routes resolve as:
+        //   GET /api/v1/public/accommodations/:id/external-reputation
+        app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-042)
+        app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-019)
+        app.route('/api/v1/public/experiences', publicExperienceRoutes);
+        // Partners program public listing (SPEC-271)
+        app.route('/api/v1/public/partners', publicPartnersRoutes);
+        // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
+        app.route('/api/v1/public/commerce', publicCommerceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 
@@ -226,6 +294,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Unified public search (SPEC-096 / REQ-096-04)
         app.route('/api/v1/public/search', publicSearchRoutes);
 
+        // Feature flags (public key-value map — no auth)
+        app.route('/api/v1/public/flags', publicFeatureFlagRoutes);
+
+        // Feature flags for current user (protected — with user/role context)
+        app.route('/api/v1/protected/feature-flags', protectedFeatureFlagRoutes);
+
         // Platform statistics
         app.route('/api/v1/public/stats', publicStatsRoutes);
 
@@ -251,6 +325,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // inside the middleware itself.
         app.use('/api/v1/protected/*', pastDueGraceMiddleware());
 
+        // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
+        // Commerce owner accounts are provisioned with mustChangePassword=true.
+        // Any protected request from such a user returns 403 PASSWORD_CHANGE_REQUIRED
+        // until they change their password via /api/v1/protected/auth/change-password.
+        // The exempt path list is maintained inside the middleware itself.
+        app.use('/api/v1/protected/*', mustChangePasswordGate());
+
         apiLogger.debug('🔗 Registering protected routes...');
 
         app.route('/api/v1/protected/auth', protectedAuthRoutes);
@@ -264,7 +345,21 @@ export const setupRoutes = (app: AppOpenAPI) => {
             protectedUserBookmarkCollectionRoutes
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+
+        // External reputation owner CRUD + refresh (SPEC-237 T-008)
+        // Mounted at /api/v1/protected/accommodations so that routes resolve as:
+        //   GET/POST /api/v1/protected/accommodations/:id/external-listings
+        //   PATCH    /api/v1/protected/accommodations/:id/external-listings/:listingId
+        //   DELETE   /api/v1/protected/accommodations/:id/external-listings/:listingId
+        //   PATCH    /api/v1/protected/accommodations/:id/external-reputation/master-toggle
+        //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
+        app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
+        app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-020)
+        app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
+        app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
@@ -322,6 +417,26 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
+
+        // External reputation admin disable (SPEC-237 T-009)
+        // Mounted at /api/v1/admin/accommodations so routes resolve as:
+        //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
+        app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
+        app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-021)
+        app.route('/api/v1/admin/experiences', adminExperienceRoutes);
+        // Partners program admin management (SPEC-271)
+        app.route('/api/v1/admin/partners', adminListPartnersRoute);
+        app.route('/api/v1/admin/partners', adminListPartnerPlansRoute);
+        app.route('/api/v1/admin/partners', adminGetPartnerRoute);
+        app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
+        app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);
+        app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
+        app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
+        app.route('/api/v1/admin/partners', adminManualPaymentRoute);
+        // Commerce leads admin management (SPEC-239 T-047)
+        app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
         app.route('/api/v1/admin/events', adminEventRoutes);
 
@@ -346,6 +461,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
         app.route('/api/v1/admin/features', adminFeatureRoutes);
         app.route('/api/v1/admin/attractions', adminAttractionRoutes);
+
+        // Host-trade directory (SPEC-241) — admin-curated; host read perk
+        app.route('/api/v1/admin/host-trades', adminHostTradeRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE
@@ -375,6 +493,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin app log viewer (SPEC-184)
         app.route('/api/v1/admin/logs', adminAppLogRoutes);
+
+        // Admin audit & security log viewers (SPEC-162)
+        app.route('/api/v1/admin/audit-logs', adminAuditLogRoutes);
+        app.route('/api/v1/admin/security-logs', adminSecurityLogRoutes);
 
         // Admin view stats (SPEC-197 T-008–T-011)
         app.route('/api/v1/admin/views', adminViewsRoutes);
@@ -409,9 +531,67 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
         app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
+        app.route('/api/v1/admin/ai/post-generate', adminAiPostGenerateRoute);
+
+        // SPEC-254 T-052: tag every social-automation route for Sentry grouping.
+        // Registered at the mount-point prefixes (before the routes below) so the
+        // `feature: 'social-automation'` tag is set in ONE place, not on each of
+        // the 60+ social route files.
+        app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
+
+        // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
+        // Returns the full GPT-safe catalog the Custom GPT fetches before drafting a post.
+        app.route('/api/v1/ai/social/catalog', aiSocialCatalogRoute);
+
+        // AI social draft submission (SPEC-254 T-029): API-key + operator_pin gated.
+        // Custom GPT submits a structured social post draft for admin review.
+        app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
+
+        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
+        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
+        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
+        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
+        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
+
+        // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
+        app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
+
+        // Social catalog admin routes (SPEC-254 T-018)
+        // Catalog entity management: hashtags, hashtag-sets, footers, campaigns, batches, audiences.
+        app.route('/api/v1/admin/social/hashtags', adminSocialHashtagRoutes);
+        app.route('/api/v1/admin/social/hashtag-sets', adminSocialHashtagSetRoutes);
+        app.route('/api/v1/admin/social/footers', adminSocialFooterRoutes);
+        app.route('/api/v1/admin/social/campaigns', adminSocialCampaignRoutes);
+        app.route('/api/v1/admin/social/batches', adminSocialBatchRoutes);
+        app.route('/api/v1/admin/social/audiences', adminSocialAudienceRoutes);
+
+        // Social config admin routes (SPEC-254 T-019)
+        // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
+        app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
+        app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // Social post routes (SPEC-254 T-036 transitions + T-037 CRUD)
+        // Transition paths: /{id}/approve, /{id}/reject, etc.
+        // CRUD paths: / (list), /{id} (detail, PATCH).
+        app.route('/api/v1/admin/social/posts', adminSocialPostTransitionRoutes);
+
+        // Social dashboard (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/dashboard', adminSocialDashboardRoutes);
+
+        // Social publish logs (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/publish-logs', adminSocialPublishLogRoutes);
+
+        // Social audit log (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/audit-log', adminSocialAuditLogRoutes);
+
+        // GPT Action schema export (SPEC-254 T-030)
+        // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
+        app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

@@ -29,13 +29,15 @@ const VALID_FEATURE_CONFIG = {
     params: {}
 } as const;
 
-/** A complete, valid feature map with all 4 required keys. */
+/** A complete, valid feature map with all required keys. */
 const FULL_FEATURES_MAP = {
     text_improve: VALID_FEATURE_CONFIG,
     chat: { ...VALID_FEATURE_CONFIG, enabled: false },
     search: { ...VALID_FEATURE_CONFIG, enabled: false },
     support: { ...VALID_FEATURE_CONFIG, enabled: false },
-    translate: { ...VALID_FEATURE_CONFIG, enabled: false }
+    translate: { ...VALID_FEATURE_CONFIG, enabled: false },
+    accommodation_import: { ...VALID_FEATURE_CONFIG, enabled: false },
+    post_generate: { ...VALID_FEATURE_CONFIG, enabled: false }
 } as const;
 
 /** A valid full settings value blob. */

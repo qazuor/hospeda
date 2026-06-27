@@ -19,6 +19,7 @@
  */
 
 import { LimitKey } from '@repo/billing';
+import { accommodationMediaModel } from '@repo/db';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
@@ -83,11 +84,28 @@ export function buildLimitReachedDetails(input: {
 }
 
 /**
+ * Options for {@link enforceAccommodationLimit}.
+ */
+export interface EnforceAccommodationLimitOptions {
+    /**
+     * When `true`, the limit check is skipped entirely if the actor already has
+     * an active DRAFT accommodation (same predicate `createForOnboarding` uses to
+     * decide a `resumed` outcome). This is opt-in for the host-onboarding `/start`
+     * route: a HOST at their plan ceiling who re-enters onboarding only RESUMES
+     * their existing DRAFT — no new row is inserted — so the limit must not block
+     * them. Defaults to `false`, preserving the original behavior for every other
+     * consumer (accommodation create / createDraft).
+     */
+    readonly skipWhenActiveDraftExists?: boolean;
+}
+
+/**
  * Enforces accommodation limit before creation
  *
  * Checks if user has reached their max_accommodations limit.
  * Returns 403 if limit reached.
  *
+ * @param options - Optional behavior flags. See {@link EnforceAccommodationLimitOptions}.
  * @returns Middleware handler
  *
  * @example
@@ -104,7 +122,9 @@ export function buildLimitReachedDetails(input: {
  * );
  * ```
  */
-export function enforceAccommodationLimit(): AppMiddleware {
+export function enforceAccommodationLimit(
+    options?: EnforceAccommodationLimitOptions
+): AppMiddleware {
     return async (c, next) => {
         try {
             // Get actor to retrieve user info
@@ -116,11 +136,32 @@ export function enforceAccommodationLimit(): AppMiddleware {
                 return;
             }
 
+            const accommodationService = new AccommodationService({ logger: apiLogger });
+
+            // Opt-in resume bypass (host-onboarding `/start`): when the actor already
+            // owns an active DRAFT, the downstream operation will RESUME it rather than
+            // insert a new accommodation, so the plan limit must not block them. Mirror
+            // the exact predicate `createForOnboarding` uses to detect the `resumed`
+            // outcome (ownerId + DRAFT lifecycle + not soft-deleted).
+            if (options?.skipWhenActiveDraftExists === true) {
+                const draftCountResult = await accommodationService.count(actor, {
+                    ownerId: actor.id,
+                    lifecycleState: LifecycleStatusEnum.DRAFT,
+                    deletedAt: null
+                } as never);
+
+                // Only bypass on a confident positive. On a count error we fall through
+                // to the normal limit check rather than skipping it.
+                if (!draftCountResult.error && (draftCountResult.data?.count ?? 0) > 0) {
+                    await next();
+                    return;
+                }
+            }
+
             // Get current accommodation count for this user.
             // Type assertion needed: BaseCrudService.count() accepts z.infer<TSearchSchema>
             // but TypeScript cannot narrow the generic at the call site without importing
             // the concrete schema type. The filter shape matches AccommodationSearchSchema.
-            const accommodationService = new AccommodationService({ logger: apiLogger });
             const countResult = await accommodationService.count(actor, {
                 ownerId: actor.id
             } as never);
@@ -235,32 +276,18 @@ export function enforcePhotoLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current photo count for this accommodation
-            const accommodationService = new AccommodationService({ logger: apiLogger });
-            const accommodationResult = await accommodationService.getById(actor, accommodationId);
-
-            if (accommodationResult.error) {
-                apiLogger.error(
-                    `Failed to get accommodation for photo limit check: ${accommodationResult.error.message}`
-                );
-                // Continue - don't block on fetch failure
-                await next();
-                return;
-            }
-
-            // Count photos from the accommodation's media JSONB field.
-            // Media structure: { featuredImage?: Image, gallery?: Image[] }
-            const accommodation = accommodationResult.data;
-            let currentPhotoCount = 0;
-            if (accommodation?.media && typeof accommodation.media === 'object') {
-                const media = accommodation.media as {
-                    featuredImage?: unknown;
-                    gallery?: unknown[];
-                };
-                const galleryCount = Array.isArray(media.gallery) ? media.gallery.length : 0;
-                const featuredCount = media.featuredImage ? 1 : 0;
-                currentPhotoCount = galleryCount + featuredCount;
-            }
+            // SPEC-204 T-014: count visible accommodation_media rows directly.
+            // The relational table is the read source of truth (T-013); a single
+            // count query is far cheaper than getById (which loads relations and
+            // composes the media object) on every upload. `state: 'visible'` covers
+            // the featured image + active gallery (both are visible rows), matching
+            // the prior `gallery.length + (featuredImage ? 1 : 0)` semantics.
+            // A query failure is swallowed by the method-level catch (logs + next()),
+            // preserving the "don't block uploads on a count failure" behavior.
+            const { total: currentPhotoCount } = await accommodationMediaModel.findByAccommodation({
+                accommodationId,
+                state: 'visible'
+            });
 
             // Check limit
             const limitCheck = checkLimit({

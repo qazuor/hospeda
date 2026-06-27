@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "020-feature-minimalist_style",
-    "name": {
-        "es": "Estilo minimalista",
-        "en": "Estilo minimalista",
-        "pt": "Estilo minimalista"
-    },
     "slug": "minimalist_style",
     "description": {
         "es": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",
         "en": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",
         "pt": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "MinimalistStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,

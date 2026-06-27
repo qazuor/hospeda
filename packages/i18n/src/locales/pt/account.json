@@ -1,4 +1,68 @@
 {
+    "whatsNewModal": {
+        "title": "Novidades",
+        "close": "Fechar",
+        "markAsRead": "Marcar como lido",
+        "markAllRead": "Marcar tudo como lido",
+        "noUnread": "Nenhuma novidade não lida",
+        "viewAll": "Ver todas as novidades",
+        "publishedAt": "Publicado em {{date}}"
+    },
+    "whatsNewBadge": {
+        "label": "Novidades",
+        "unseenCount": "{{count}} não lidas",
+        "labelNone": "Sem novidades"
+    },
+    "whatsNewPanel": {
+        "title": "Novidades",
+        "empty": "Nenhuma novidade ainda",
+        "markAllRead": "Marcar tudo como lido",
+        "seeEntry": "Ver"
+    },
+    "status": {
+        "new": "Novo"
+    },
+    "welcomeTour": {
+        "skip": "Pular tour",
+        "next": "Próximo",
+        "prev": "Anterior",
+        "done": "Concluir",
+        "step": "Passo {{current}} de {{total}}",
+        "restart": "Ver tour",
+        "running": "Tour em andamento...",
+        "greetingHost": {
+            "title": "Bem-vindo ao seu painel de hospedagem",
+            "body": "Daqui você pode gerenciar sua conta, seus imóveis e a atividade da sua acomodação."
+        },
+        "greetingCommerce": {
+            "title": "Bem-vindo ao seu painel comercial",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu negócio."
+        },
+        "properties": {
+            "title": "Seus imóveis",
+            "body": "Nesta seção você pode criar, editar e revisar todos os seus imóveis."
+        },
+        "hostDashboard": {
+            "title": "Painel do anfitrião",
+            "body": "Aqui você tem um resumo rápido da atividade das suas acomodações e consultas."
+        },
+        "messages": {
+            "title": "Suas consultas",
+            "body": "Revise e responda as mensagens relacionadas à sua atividade na Hospeda."
+        },
+        "promotions": {
+            "title": "Promoções",
+            "body": "Publique e gerencie promoções para destacar sua proposta."
+        },
+        "profile": {
+            "title": "Seu perfil",
+            "body": "Atualize suas informações pessoais, preferências e configurações da conta."
+        },
+        "commerce": {
+            "title": "Seu negócio",
+            "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
+        }
+    },
     "navigation": "Navegação da conta",
     "sections": "Seções da conta",
     "avatar": {
@@ -69,7 +133,13 @@
         "sections": {
             "appearance": "Aparência",
             "notifications": "Notificações",
-            "newsletter": "Newsletter"
+            "onboarding": "Onboarding",
+            "newsletter": "Boletim de novidades"
+        },
+        "onboarding": {
+            "restartTour": "Repetir tour de boas-vindas",
+            "restartTourDesc": "Veja novamente o tour guiado pelo painel da conta",
+            "restarting": "Iniciando tour..."
         },
         "theme": {
             "label": "Tema",
@@ -97,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Erro ao carregar as preferências"
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "subscription": {
@@ -223,6 +297,7 @@
             "moveSuccess": "Movido para {{name}}",
             "moveSuccessUncollected": "Removido da coleção",
             "moveError": "Não foi possível mover o favorito",
+            "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente."
         },
@@ -330,6 +405,8 @@
                 "myMessagesDesc": "Conversas com anfitriões",
                 "newsletter": "Boletim de novidades",
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
+                "whatsNew": "Novidades",
+                "whatsNewDesc": "Novidades e atualizações da plataforma",
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
                 "hostDashboard": "Painel do anfitrião",
@@ -432,12 +509,72 @@
                 "emailSubject": "Cancelamento de assinatura",
                 "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
                 "contactSupport": "Contatar suporte",
-                "confirm": "Sim, cancelar assinatura"
+                "confirm": "Sim, cancelar assinatura",
+                "description": "Ao cancelar sua assinatura você mantém o acesso ao seu plano até o final do período atual. Nenhuma cobrança adicional será feita.",
+                "reasonLabel": "Motivo do cancelamento (opcional)",
+                "reasonPlaceholder": "Conte-nos por que você está cancelando para que possamos melhorar...",
+                "successTitle": "Assinatura cancelada",
+                "successBody": "Sua assinatura foi cancelada. Você ainda tem acesso até {date}.",
+                "flagOffFallback": "O cancelamento online não está disponível no momento. Por favor, entre em contato com o suporte para cancelar sua assinatura.",
+                "cancelError": "Não foi possível cancelar a assinatura. Tente novamente."
+            },
+            "scheduledChange": {
+                "title": "Mudança de plano agendada",
+                "body": "Seu plano mudará para {plan} em {date}."
+            },
+            "changePlanButton": "Mudar plano",
+            "changePlanAriaLabel": "Mudar plano de assinatura",
+            "planPicker": {
+                "title": "Mudar plano",
+                "subtitle": "Escolha o plano para o qual deseja mudar.",
+                "listLabel": "Planos disponíveis",
+                "currentBadge": "Plano atual",
+                "upgradeBadge": "Upgrade",
+                "downgradeBadge": "Downgrade",
+                "selectMonthly": "Mensal",
+                "selectAnnual": "Anual"
+            },
+            "downgradePreview": {
+                "title": "Revise as alterações antes de continuar",
+                "intro": "Mudar para o plano {plan} aplicará restrições à sua conta. Escolha o que deseja manter.",
+                "accommodationsTitle": "Acomodações ({active} ativas, máx. {cap})",
+                "accommodationsHint": "Selecione até {cap} acomodações para manter ativas. O restante será desativado.",
+                "accommodationsListLabel": "Lista de acomodações",
+                "promotionsTitle": "Promoções ({active} ativas, máx. {cap})",
+                "promotionsHint": "Selecione até {cap} promoções para manter ativas.",
+                "promotionsListLabel": "Lista de promoções",
+                "overCapWarning": "Você tem {selected} selecionados, mas o plano permite {cap}. Desfaça a seleção de {extra}.",
+                "defaultKeep": "Sugerido",
+                "photosTitle": "Fotos excedentes",
+                "photosHint": "Algumas acomodações têm mais fotos do que o permitido. O excedente será arquivado.",
+                "photosOf": "fotos, máx.",
+                "photoOverflowLabel": "Fotos a serem arquivadas",
+                "keepPhotoLabel": "Manter foto {url}",
+                "grandfatherTitle": "Conteúdo que ficará somente leitura",
+                "grandfatherHint": "Estas acomodações têm conteúdo que você não poderá editar com o novo plano, mas NÃO será excluído.",
+                "richDescription": "Descrição enriquecida",
+                "videoEmbed": "Vídeo incorporado",
+                "confirmButton": "Continuar com a mudança"
+            },
+            "planChangeFlow": {
+                "scheduledTitle": "Mudança agendada",
+                "scheduledBody": "Seu plano mudará em {date}. Até lá, você mantém seu plano atual.",
+                "restrictionHint": "As restrições serão aplicadas nesse momento. Os detalhes exatos podem variar com base no seu uso no momento da mudança.",
+                "activeTitle": "Plano atualizado",
+                "activeBody": "Seu plano foi alterado com sucesso.",
+                "redirecting": "Redirecionando para pagamento...",
+                "previewError": "Não foi possível obter a prévia da mudança. Tente novamente.",
+                "changeError": "Não foi possível mudar o plano. Tente novamente."
             }
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "newsletter": {
         "title": "Newsletter",
+        "loading": "Carregando preferências…",
         "statusLabel": "Status",
         "statusActive": "Ativo",
         "statusPending": "Verificação pendente",

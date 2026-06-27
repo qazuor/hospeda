@@ -34,8 +34,36 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     HOSPEDA_LOCATION_SALT: 'test-location-salt-fixed-for-deterministic-tests-32+chars',
     HOSPEDA_VIEWS_HASH_SECRET: 'test-views-hash-secret-fixed-for-deterministic-tests-32ch',
     HOSPEDA_AI_VAULT_MASTER_KEY: 'test-vault-master-key-0123456789abcd',
+    HOSPEDA_ADMIN_URL: 'http://localhost:3000',
+    HOSPEDA_REVALIDATION_SECRET: 'test-revalidation-secret-at-least-32-characters-x',
+    HOSPEDA_NEWSLETTER_HMAC_SECRET: 'test-newsletter-hmac-secret-at-least-32-characters',
     ...overrides
 });
+
+// Production-valid env. In production the schema requires REDIS, the AI vault
+// master key, and the prod-only service credentials (env hardening). Tests that
+// assert a successful production startup use this so they don't trip those guards.
+const createValidProdEnv = (overrides: Record<string, string | undefined> = {}) =>
+    createValidTestEnv({
+        NODE_ENV: 'production',
+        API_CORS_ORIGINS: 'https://hospeda.com.ar',
+        API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+        HOSPEDA_REDIS_URL: 'redis://prod:6379',
+        HOSPEDA_AI_VAULT_MASTER_KEY: 'a'.repeat(32),
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
+        HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: 'test-webhook-secret',
+        HOSPEDA_EMAIL_API_KEY: 'test-email-api-key',
+        HOSPEDA_EMAIL_FROM_EMAIL: 'noreply@hospeda.com.ar',
+        HOSPEDA_CLOUDINARY_CLOUD_NAME: 'hospeda',
+        HOSPEDA_CLOUDINARY_API_KEY: '123456789012345',
+        HOSPEDA_CLOUDINARY_API_SECRET: 'test-cloudinary-secret',
+        HOSPEDA_SENTRY_DSN: 'https://test@sentry.io/1',
+        HOSPEDA_LINEAR_API_KEY: 'lin_api_test',
+        HOSPEDA_POSTHOG_KEY: 'phc_test',
+        HOSPEDA_APIFY_TOKEN: 'apify_api_test',
+        HOSPEDA_GOOGLE_PLACES_API_KEY: 'google-places-test',
+        ...overrides
+    });
 
 describe('Environment Configuration', () => {
     beforeEach(() => {
@@ -172,7 +200,10 @@ describe('Environment Configuration', () => {
             ];
 
             for (const { envValue, extra } of testCases) {
-                process.env = createValidTestEnv({ NODE_ENV: envValue, ...extra });
+                process.env =
+                    envValue === 'production'
+                        ? createValidProdEnv(extra)
+                        : createValidTestEnv({ NODE_ENV: envValue, ...extra });
                 const envModule = await import('../../src/utils/env');
                 envModule.validateApiEnv();
                 expect(envModule.env.NODE_ENV).toBe(envValue);
@@ -394,11 +425,8 @@ describe('Environment Configuration', () => {
         });
 
         it('should accept HOSPEDA_REDIS_URL in production when provided', async () => {
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_REDIS_URL: 'redis://localhost:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+            process.env = createValidProdEnv({
+                HOSPEDA_REDIS_URL: 'redis://localhost:6379'
             });
 
             const envModule = await import('../../src/utils/env');
@@ -442,11 +470,7 @@ describe('Environment Configuration', () => {
 
         it('should accept HOSPEDA_AI_VAULT_MASTER_KEY in production when provided (FIX 5)', async () => {
             const masterKey = 'a'.repeat(32);
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_REDIS_URL: 'redis://prod:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+            process.env = createValidProdEnv({
                 HOSPEDA_AI_VAULT_MASTER_KEY: masterKey
             });
 
@@ -569,7 +593,6 @@ describe('Environment Configuration', () => {
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_SITE_URL).toBe('http://localhost:4321');
             expect(envModule.env.HOSPEDA_BETTER_AUTH_URL).toBe('http://localhost:3001/api/auth');
-            expect(envModule.env.HOSPEDA_ADMIN_URL).toBeUndefined();
             expect(envModule.env.HOSPEDA_SENTRY_DSN).toBeUndefined();
             expect(envModule.env.HOSPEDA_EMAIL_API_KEY).toBeUndefined();
         });
@@ -688,12 +711,7 @@ describe('Environment Configuration', () => {
         });
 
         it('should accept valid production CORS and CSRF origins', async () => {
-            process.env = createValidTestEnv({
-                NODE_ENV: 'production',
-                HOSPEDA_REDIS_URL: 'redis://prod:6379',
-                API_CORS_ORIGINS: 'https://hospeda.com.ar',
-                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
-            });
+            process.env = createValidProdEnv();
 
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
@@ -1065,6 +1083,65 @@ describe('Environment Configuration', () => {
                 );
 
             expect(result.success).toBe(true);
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-237 — HOSPEDA_EXTREP_REFRESH_RATE_LIMIT format validation (FIX L2)
+    // ---------------------------------------------------------------------------
+
+    describe('HOSPEDA_EXTREP_REFRESH_RATE_LIMIT format validation (L2 regression)', () => {
+        it('should accept valid N/S format values', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const validValues = ['1/600', '5/3600', '10/60', '100/86400'];
+            for (const value of validValues) {
+                const result =
+                    ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse(value);
+                expect(result.success).toBe(true);
+            }
+        });
+
+        it('should reject malformed value (dash separator instead of slash)', async () => {
+            // Arrange
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            // Act — '1-600' must fail parse so the API fails fast at boot instead
+            // of silently disabling rate limiting (FIX L2 regression target)
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('1-600');
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject malformed value (letters)', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('one/600');
+
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject malformed value (empty string)', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result = ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('');
+
+            expect(result.success).toBe(false);
+        });
+
+        it('should use default 1/600 when not provided', async () => {
+            // Arrange — minimal env without HOSPEDA_EXTREP_REFRESH_RATE_LIMIT
+            process.env = createValidTestEnv();
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT).toBe('1/600');
         });
     });
 });

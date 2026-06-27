@@ -12,17 +12,22 @@
             "type": "string",
             "description": "Amenity ID (UUID)"
         },
-        "name": {
-            "type": "string",
-            "description": "Amenity name"
-        },
         "slug": {
             "type": "string",
             "description": "Amenity slug"
         },
         "description": {
-            "type": "string",
-            "description": "Amenity description"
+            "type": "object",
+            "description": "Amenity description (i18n text object)"
+        },
+        "applicableVerticals": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": ["accommodation", "gastronomy", "experience"]
+            },
+            "minItems": 1,
+            "description": "Verticals this amenity applies to (SPEC-266)"
         },
         "type": {
             "type": "string",
@@ -54,10 +59,16 @@
             "type": "boolean",
             "description": "Whether this amenity is featured (highlighted in UI)"
         },
+        "displayWeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Display weight for ordering"
+        },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
-    "required": ["id", "name", "slug", "type", "isBuiltin", "isFeatured"],
+    "required": ["id", "slug", "type", "isBuiltin", "isFeatured", "applicableVerticals"],
     "additionalProperties": false
 }

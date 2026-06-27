@@ -99,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 150 palettes + 208 webLight = 358', () => {
+    it('total :root declarations = 150 palettes + 209 webLight = 359', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(150 + Object.keys(webLight).length);
-        expect(total).toBe(358); // post-SSOT sponsors/amenities/auth/post-categories: 150 + 208
+        expect(total).toBe(359); // + brand-primary-text: 150 + 209
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -162,12 +162,12 @@ describe('buildCSS — viewport media overrides', () => {
 describe('buildCSS — web dark theme block', () => {
     const block = blockOf(CSS, '[data-theme="dark"]:not([data-app="admin"])');
 
-    it(`emits all ${Object.keys(webDark).length} (=56) web dark overrides`, () => {
+    it(`emits all ${Object.keys(webDark).length} (=57) web dark overrides`, () => {
         for (const key of Object.keys(webDark)) {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(webDark).length);
-        expect(countDeclarations(block)).toBe(56);
+        expect(countDeclarations(block)).toBe(57);
     });
 
     it('flips primary-hover direction (calc(l + 0.07) in dark)', () => {

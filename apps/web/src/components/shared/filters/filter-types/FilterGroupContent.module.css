@@ -21,10 +21,11 @@
     color: var(--core-muted-foreground);
 }
 
-.searchInput:focus {
+.searchInput:focus-visible {
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a10);
-    outline: none;
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 /* Checkbox group (chip-styled toggles) */
@@ -115,10 +116,11 @@
     transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
-.rangeInput:focus {
+.rangeInput:focus-visible {
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px var(--brand-primary-a10);
-    outline: none;
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 .rangeInput::-webkit-inner-spin-button,

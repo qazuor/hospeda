@@ -8,6 +8,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { CRON_CATEGORY_LABELS, CRON_CATEGORY_ORDER } from '@/lib/cron-presentation';
+import { translateAdminApiError } from '@/lib/errors';
+import type { ApiErrorShape } from '@repo/i18n';
 import {
     ActivityIcon,
     AlertCircleIcon,
@@ -70,7 +72,9 @@ export function CronJobsPanel() {
                 <CardContent className="py-12 text-center">
                     <AlertCircleIcon className="mx-auto h-8 w-8 text-destructive" />
                     <p className="mt-4 text-destructive">{t('admin-billing.cron.errorLoading')}</p>
-                    <p className="mt-2 text-muted-foreground text-sm">{error.message}</p>
+                    <p className="mt-2 text-muted-foreground text-sm">
+                        {translateAdminApiError({ error: error as ApiErrorShape, t })}
+                    </p>
                 </CardContent>
             </Card>
         );

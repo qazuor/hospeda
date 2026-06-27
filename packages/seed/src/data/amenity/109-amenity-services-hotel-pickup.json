@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "109-amenity-services-hotel-pickup",
+    "slug": "hotel_pickup",
+    "description": {
+        "es": "Servicio de recogida en el hotel o alojamiento del participante",
+        "en": "Servicio de recogida en el hotel o alojamiento del participante",
+        "pt": "Servicio de recogida en el hotel o alojamiento del participante"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "TransferServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70
+}

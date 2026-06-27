@@ -78,7 +78,7 @@ describe('validateEntityMediaPermission (unit)', () => {
     describe.each(['destination', 'event', 'post'] as const)(
         '%s — single flat permission',
         (entityType) => {
-            const permMap: Record<Exclude<MediaEntityType, 'accommodation'>, PermissionEnum> = {
+            const permMap: Record<'destination' | 'event' | 'post', PermissionEnum> = {
                 destination: PermissionEnum.DESTINATION_UPDATE,
                 event: PermissionEnum.EVENT_UPDATE,
                 post: PermissionEnum.POST_UPDATE
@@ -301,4 +301,59 @@ describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
             expect(body.error.code).toBe('UNPROCESSABLE_ENTITY');
         });
     });
+});
+
+// ============================================================================
+// Commerce media permissions (SPEC-249 T-015b) — split OWN/ANY
+// ============================================================================
+
+describe('validateEntityMediaPermission — commerce verticals', () => {
+    for (const entityType of [
+        'gastronomy',
+        'experience'
+    ] as const satisfies readonly MediaEntityType[]) {
+        describe(entityType, () => {
+            it('allows actor with COMMERCE_EDIT_ALL regardless of ownership', () => {
+                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_ALL]);
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { ownerId: 'some-other-user' }
+                });
+                expect(result).toEqual({ allowed: true });
+            });
+
+            it('allows owner with COMMERCE_EDIT_OWN', () => {
+                // SPEC-253 D2=b: COMMERCE_MEDIA_EDIT_OWN replaced by COMMERCE_EDIT_OWN
+                const ownerId = crypto.randomUUID();
+                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], ownerId);
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { ownerId }
+                });
+                expect(result).toEqual({ allowed: true });
+            });
+
+            it('rejects COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
+                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], crypto.randomUUID());
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { ownerId: 'someone-else' }
+                });
+                expect(result).toEqual({ allowed: false, reason: 'NOT_ENTITY_OWNER' });
+            });
+
+            it('rejects actor with no commerce media permission', () => {
+                const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { ownerId: 'any' }
+                });
+                expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+            });
+        });
+    }
 });

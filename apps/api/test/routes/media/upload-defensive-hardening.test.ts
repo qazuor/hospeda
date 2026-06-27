@@ -40,6 +40,7 @@ vi.mock('../../../src/services/media', () => ({
     })
 }));
 
+import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationService,
     DestinationService,
@@ -277,6 +278,14 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
                 error: undefined
             });
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(fullStub);
+            // SPEC-204 T-014: the gallery cap (and the owner plan-limit check) now
+            // count visible rows from the relational accommodation_media table via
+            // `findByAccommodation`, not from the JSONB `media.gallery`. Stub it to
+            // report the entity is already at the 50-item cap so the handler returns
+            // the typed 422 instead of hitting a real DB (which would 500).
+            const mediaCountSpy = vi
+                .spyOn(accommodationMediaModel, 'findByAccommodation')
+                .mockResolvedValue({ items: [], total: 50 });
 
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
@@ -300,6 +309,7 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             expect(body.error?.details?.currentCount).toBe(50);
             // Provider must never be called for a doomed insert.
             expect(mockUpload).not.toHaveBeenCalled();
+            mediaCountSpy.mockRestore();
         });
 
         it('does not trigger gallery cap for featured uploads on the same full-gallery entity', async () => {

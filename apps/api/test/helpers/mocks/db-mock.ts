@@ -97,6 +97,105 @@ class GenericMockModel {
     }
 }
 
+/**
+ * Column map for the `gastronomies` table (SPEC-239), keyed by the camelCase Drizzle
+ * property names → snake_case DB column names. Mirrors the `@repo/db/schemas` mock shape.
+ *
+ * `BaseCrudRead.adminList` validates the requested (or default) sort field against the
+ * model's `getTable()` via `hasOwnProperty`, and checks `'deletedAt' in table` to decide
+ * the soft-delete filter. A bare `{}` (as GenericMockModel returns) makes EVERY sort field —
+ * including the `createdAt` default — fail with VALIDATION_ERROR (400). Returning the real
+ * column set lets the admin list / options routes exercise the full handler path against the
+ * mocked DB, so route-level tests assert true gate + routing behaviour instead of a spurious
+ * 400 from the sort guard.
+ */
+const GASTRONOMY_TABLE_COLUMNS = {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    summary: 'summary',
+    description: 'description',
+    richDescription: 'rich_description',
+    type: 'type',
+    priceRange: 'price_range',
+    menuUrl: 'menu_url',
+    ownerId: 'owner_id',
+    destinationId: 'destination_id',
+    visibility: 'visibility',
+    lifecycleState: 'lifecycle_state',
+    moderationState: 'moderation_state',
+    isFeatured: 'is_featured',
+    reviewsCount: 'reviews_count',
+    averageRating: 'average_rating',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+} as const;
+
+/**
+ * Gastronomy model stub that exposes the real column set via `getTable()` so the
+ * (real) GastronomyService admin list/options/sort validation runs faithfully against
+ * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
+ */
+class GastronomyMockModel extends GenericMockModel {
+    override getTable() {
+        return GASTRONOMY_TABLE_COLUMNS;
+    }
+    override getTableName() {
+        return 'gastronomies';
+    }
+}
+
+/**
+ * Column map for the `experiences` table (SPEC-240), mirroring GASTRONOMY_TABLE_COLUMNS
+ * with experience-specific additions. Needed so ExperienceService admin list/sort
+ * validation runs faithfully against the mocked DB.
+ */
+const EXPERIENCE_TABLE_COLUMNS = {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    summary: 'summary',
+    description: 'description',
+    richDescription: 'rich_description',
+    type: 'type',
+    priceFrom: 'price_from',
+    priceUnit: 'price_unit',
+    isPriceOnRequest: 'is_price_on_request',
+    ownerId: 'owner_id',
+    destinationId: 'destination_id',
+    visibility: 'visibility',
+    lifecycleState: 'lifecycle_state',
+    moderationState: 'moderation_state',
+    isFeatured: 'is_featured',
+    hasActiveSubscription: 'has_active_subscription',
+    reviewsCount: 'reviews_count',
+    averageRating: 'average_rating',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+} as const;
+
+/**
+ * Experience model stub (SPEC-240). Mirrors GastronomyMockModel so that
+ * ExperienceService admin list/options/sort validation runs faithfully against
+ * the mocked DB. Registered in createDbMock() as `experienceModel`.
+ */
+class ExperienceMockModel extends GenericMockModel {
+    override getTable() {
+        return EXPERIENCE_TABLE_COLUMNS;
+    }
+    override getTableName() {
+        return 'experiences';
+    }
+}
+
 export function createDbMock() {
     return {
         // Database client
@@ -199,6 +298,27 @@ export function createDbMock() {
             }
             async findAll(_filters: unknown) {
                 return { items: [], total: 0 };
+            }
+        },
+
+        // Mock AccommodationMediaModel (SPEC-204) — instantiated in the
+        // AccommodationService constructor, so it must exist on the mock or
+        // initApp() fails to load (breaking collection for every route test).
+        AccommodationMediaModel: class MockAccommodationMediaModel {
+            async findByAccommodation(_accommodationId: string) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_accommodationId: string) {
+                return null;
+            }
+            async findByAccommodations(_input: unknown) {
+                return new Map();
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
             }
         },
 
@@ -454,6 +574,21 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
 
+        // SPEC-204 T-008: plan-photo-restriction.service dual-writes archive/restore
+        // state into `accommodation_media` in the same transaction. Route tests that
+        // load initApp() need this table stub present so the SUT import doesn't throw
+        // "[vitest] No 'accommodationMedia' export is defined on the '@repo/db' mock".
+        accommodationMedia: {
+            accommodationId: 'accommodation_id',
+            url: 'url',
+            state: 'state',
+            archivedAt: 'archived_at',
+            isFeatured: 'is_featured',
+            sortOrder: 'sort_order',
+            updatedAt: 'updated_at',
+            deletedAt: 'deleted_at'
+        },
+
         // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
         // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
         ownerPromotions: {
@@ -602,6 +737,8 @@ export function createDbMock() {
         // initApp() build the whole app (previously initApp threw on the first missing model,
         // so NO route test could collect).
         AccessTokenModel: GenericMockModel,
+        AccommodationExternalListingModel: GenericMockModel,
+        AccommodationExternalReputationModel: GenericMockModel,
         AccommodationFaqModel: GenericMockModel,
         AccommodationIaDataModel: GenericMockModel,
         AccommodationReviewModel: GenericMockModel,
@@ -619,7 +756,9 @@ export function createDbMock() {
         EventModel: GenericMockModel,
         EventOrganizerModel: GenericMockModel,
         ExchangeRateConfigModel: GenericMockModel,
+        FeatureFlagModel: GenericMockModel,
         FeatureModel: GenericMockModel,
+        HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         PostModel: GenericMockModel,
@@ -633,6 +772,26 @@ export function createDbMock() {
         SponsorshipLevelModel: GenericMockModel,
         SponsorshipModel: GenericMockModel,
         SponsorshipPackageModel: GenericMockModel,
+        // Social automation models (SPEC-254). Route modules instantiate the
+        // social services eagerly at import time, so the app cannot load under
+        // the @repo/db mock unless every social model is a constructable stub.
+        SocialAiRequestModel: GenericMockModel,
+        SocialAssetModel: GenericMockModel,
+        SocialAudienceModel: GenericMockModel,
+        SocialAuditLogModel: GenericMockModel,
+        SocialCampaignModel: GenericMockModel,
+        SocialContentBatchModel: GenericMockModel,
+        SocialHashtagModel: GenericMockModel,
+        SocialHashtagSetModel: GenericMockModel,
+        SocialPlatformFormatModel: GenericMockModel,
+        SocialPlatformModel: GenericMockModel,
+        SocialPostFooterModel: GenericMockModel,
+        SocialPostHashtagModel: GenericMockModel,
+        SocialPostMediaModel: GenericMockModel,
+        SocialPostModel: GenericMockModel,
+        SocialPostTargetModel: GenericMockModel,
+        SocialPublishLogModel: GenericMockModel,
+        SocialSettingModel: GenericMockModel,
 
         // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
         // instantiate at module scope when the service-core barrel is loaded by any job
@@ -642,6 +801,66 @@ export function createDbMock() {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
             purgeOlderThan: vi.fn().mockResolvedValue(0)
-        }
+        },
+
+        // SPEC-243 T-011: UserPushTokenModel singleton. Required so UserService can
+        // instantiate at module scope (pushTokenModel = userPushTokenModel) when the
+        // service-core barrel is loaded by any route/job that imports it. Returned as
+        // an instance (not a class) because userPushTokenModel is a singleton.
+        userPushTokenModel: {
+            upsertByToken: vi.fn().mockResolvedValue({ id: 'upt_mock_id' })
+        },
+
+        // SPEC-204 T-013/T-014: AccommodationMediaModel singleton. The relational
+        // read hooks (_afterGetByField/_afterList/_afterSearch) and the admin/protected
+        // media upload routes import this singleton at module scope and call
+        // findByAccommodation/findByAccommodations. Exported as an instance (not a
+        // class) because accommodationMediaModel is a singleton in @repo/db. Defaults
+        // to an empty gallery; tests override per-case (e.g. the gallery-cap test).
+        accommodationMediaModel: {
+            findByAccommodation: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByAccommodations: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+
+        // SPEC-239: Gastronomy singleton model instances. GastronomyService,
+        // GastronomyReviewService, and the standalone FAQ helpers access these at module
+        // scope (via service constructor or direct import). They are exported as singleton
+        // instances (not classes) in @repo/db — mirror that here with GenericMockModel
+        // instances so initApp() can construct all gastronomy routes without a real DB.
+        gastronomyModel: new GastronomyMockModel(),
+        gastronomyReviewModel: new GenericMockModel(),
+        rGastronomyAmenityModel: new GenericMockModel(),
+        rGastronomyFeatureModel: new GenericMockModel(),
+
+        // GastronomyFaqModel is also exported as a class (used by gastronomy.faq.ts
+        // helpers which accept a GastronomyModel instance and internally call a new
+        // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
+        GastronomyFaqModel: GenericMockModel,
+        gastronomyFaqModel: new GenericMockModel(),
+
+        // SPEC-239 T-047: CommerceLeadModel — instantiated at module scope by
+        // CommerceLeadService when the commerce lead routes load. The GenericMockModel
+        // no-op stub is sufficient for route-level permission-gate tests (no real DB
+        // data needed; the service layer is exercised via mock actor headers).
+        CommerceLeadModel: GenericMockModel,
+
+        // SPEC-240: Experience singleton model instances. ExperienceService,
+        // ExperienceReviewService, and the standalone FAQ helpers access these at module
+        // scope (via service constructor or direct import). They are exported as singleton
+        // instances (not classes) in @repo/db — mirror that here so initApp() can
+        // construct all experience routes without a real DB.
+        experienceModel: new ExperienceMockModel(),
+        experienceReviewModel: new GenericMockModel(),
+        rExperienceAmenityModel: new GenericMockModel(),
+        rExperienceFeatureModel: new GenericMockModel(),
+
+        // ExperienceFaqModel is also exported as a class (used by experience.faq.ts
+        // helpers which accept an ExperienceModel instance and internally call a new
+        // ExperienceFaqModel for FAQ CRUD). Expose both the class and singleton.
+        ExperienceFaqModel: GenericMockModel,
+        experienceFaqModel: new GenericMockModel()
     };
 }

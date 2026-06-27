@@ -13,6 +13,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
@@ -137,11 +138,11 @@ const mapHasItems = cards.some((c) => c.approximateLocation);
 // Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
 const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: resolveI18nText(d.name, 'es'), en: resolveI18nText(d.name, 'en') } }));
-// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
-// underscores (e.g. air_conditioning → airconditioning) breaking catalog lookups
-// for multi-word amenities. a.name always holds the canonical snake_case form.
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: tEs(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'es')), en: tEn(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'en')) } }));
-const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') } }));
+// SPEC-266: `name` was dropped from the amenities/features catalog. `slug` is
+// now the canonical identifier and is also the i18n key segment.
+// slug is nullish per schema; coerce null→undefined to satisfy the t() signature.
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined) } }));
+const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined) } }));
 
 const typesArray = types?.split(',').filter(Boolean) ?? [];
 const filterSummary = buildAccommodationListingSummary({
@@ -210,16 +211,16 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
-		// underscores (air_conditioning → airconditioning) breaking multi-word lookups.
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
+		// SPEC-266: `name` dropped; use `slug` as the i18n key segment.
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
 		id: 'features',
 		label: t('accommodations.sidebar.features', 'Características'),
 		type: 'icon-chips',
-		options: features.map((f) => ({ value: f.id, label: resolveI18nText(f.name, locale), icon: f.icon ?? undefined })),
+		// SPEC-266: `name` dropped; resolve label from i18n by slug.
+		options: features.map((f) => ({ value: f.id, label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), icon: f.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
@@ -446,13 +447,20 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					openSheetCountOne: t('maps.sidebar.openSheetCount_one', 'Ver {{count}} resultado'),
 					openSheetCountOther: t('maps.sidebar.openSheetCount_other', 'Ver {{count}} resultados'),
 					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
+					loading: t('maps.sidebar.loading', 'Cargando resultados…'),
 				}}
 				i18nStrings={{
 					attribution: t('maps.attribution'),
 					approximateDisclaimer: t('maps.approximateDisclaimer'),
 					viewDetails: t('maps.viewDetails', 'Ver más'),
 				}}
-			/>
+			>
+				<MapPlaceholder
+					slot="fallback"
+					address={t('maps.region', 'Concepción del Uruguay, Entre Ríos')}
+					title={t('maps.loadingTitle', 'Cargando mapa de alojamientos')}
+				/>
+			</AccommodationsListingMap>
 		</div>
 	)}
 </ListingLayout>

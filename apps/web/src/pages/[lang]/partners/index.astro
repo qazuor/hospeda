@@ -1,0 +1,189 @@
+---
+/**
+ * @file partners/index.astro
+ * @description Partners listing page (SPEC-271).
+ * SSR-fetches partnerApi.list with filters from the query string and renders
+ * a grid of PartnerCard components with Pagination, EmptyState, and ErrorBanner.
+ *
+ * @route /{lang}/partners/
+ * @rendering SSR (on-demand)
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import PartnerCard from '@/components/partner/PartnerCard.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { partnerApi } from '@/lib/api/endpoints';
+import { toPartnerCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+
+// --- Pagination ---
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+// --- Filter params ---
+const q = url.searchParams.get('q') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const tier = url.searchParams.get('tier') ?? undefined;
+
+// --- Fetch partners ---
+const result = await partnerApi.list({
+    page,
+    pageSize,
+    q,
+    type,
+    tier
+});
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+
+// --- Transform to card props ---
+const cards = items.map((item) =>
+    toPartnerCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+const baseUrl = buildUrl({ locale, path: 'partners' });
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
+const filterGroups: FilterGroup[] = [
+    {
+        id: 'type',
+        label: t('partners.listing.typeFilter', 'Tipo de partner'),
+        type: 'checkbox',
+        options: [
+            { value: 'commerce', label: t('partners.types.commerce', 'Comercio') },
+            { value: 'ngo', label: t('partners.types.ngo', 'ONG') },
+            { value: 'institution', label: t('partners.types.institution', 'Institución') }
+        ]
+    }
+];
+
+const initialParams: Record<string, string> = {};
+if (type) initialParams.type = type;
+
+const itemListEntries = cards.map((card) => ({
+    url: card.websiteUrl ?? new URL(baseUrl, Astro.site ?? Astro.url.origin).href,
+    name: card.name
+}));
+---
+
+<ListingLayout
+    locale={locale}
+    title={t('partners.listing.title', 'Socios')}
+    description={t(
+        'partners.listing.subtitle',
+        'Conocé a las organizaciones que apoyan a Hospeda'
+    )}
+    canonicalPath={canonicalPath}
+    showFilters={true}
+    filterPosition="left"
+>
+    <ItemListJsonLd
+        slot="head-extra"
+        name={t('partners.listing.title', 'Socios')}
+        items={itemListEntries}
+        numberOfItems={total}
+        startPosition={(page - 1) * pageSize + 1}
+    />
+
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[{ label: t('partners.listing.title', 'Socios') }]}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        initialParams={initialParams}
+    />
+
+    <ListingPageHeader
+        slot="page-header"
+        locale={locale}
+        tagline={t('partners.listing.subtitle', 'Conocé a las organizaciones que apoyan a Hospeda')}
+        title={t('partners.listing.title', 'Socios')}
+        totalCount={total}
+    />
+
+    {hasError && !result.ok && (
+        <ErrorBanner
+            locale={locale}
+            error={result.error}
+            entityName="socios"
+        />
+    )}
+
+    {!hasError && cards.length === 0 && (
+        <EmptyState
+            locale={locale}
+            variant="no-results"
+            actionUrl={baseUrl}
+            message={t(
+                'partners.listing.emptyState',
+                'No se encontraron socios disponibles.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length > 0 && (
+        <div class="partners-grid">
+            {cards.map((card, i) => (
+                <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+                    <PartnerCard
+                        data={card}
+                        locale={locale}
+                        eager={i < 3}
+                    />
+                </div>
+            ))}
+        </div>
+    )}
+
+    {totalPages > 1 && (
+        <Pagination
+            slot="pagination"
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl={baseUrl.slice(0, -1)}
+            locale={locale}
+            searchParams={(() => {
+                const sp = new URLSearchParams(url.searchParams);
+                sp.delete('page');
+                return sp;
+            })()}
+        />
+    )}
+</ListingLayout>
+
+<style>
+    .partners-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--space-card-gap);
+    }
+
+    @media (max-width: 480px) {
+        .partners-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

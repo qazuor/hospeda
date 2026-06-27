@@ -2,6 +2,8 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { seedAccommodationExternalListings } from './accommodationExternalListings.seed.js';
+import { seedAccommodationExternalReputation } from './accommodationExternalReputation.seed.js';
 import { seedAccommodationReviews } from './accommodationReviews.seed.js';
 import { seedAccommodations } from './accommodations.seed.js';
 import { seedBookmarks } from './bookmarks.seed.js';
@@ -10,6 +12,9 @@ import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
 import { seedEventLocations } from './eventLocations.seed.js';
 import { seedEventOrganizers } from './eventOrganizers.seed.js';
 import { seedEvents } from './events.seed.js';
+import { seedExperiences } from './experiences.seed.js';
+import { seedGastronomies } from './gastronomies.seed.js';
+import { seedHostTrades } from './hostTrades.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
 import { seedPostTagAssignments } from './postTagAssignments.seed.js';
@@ -54,8 +59,10 @@ import { seedUsers } from './users.seed.js';
  * // 4. Events
  * // 5. Posts (with sponsors/sponsorships)
  * // 6. Reviews
- * // 7. Bookmarks and tags
- * // 8. Tag relations (connecting tags to entities)
+ * // 7. Host trades
+ * // 8. Experiences (commerce listings — SPEC-240)
+ * // 9. Bookmarks and tags
+ * // 10. Tag relations (connecting tags to entities)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -81,6 +88,15 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedPostSponsorships(context);
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
+        await seedAccommodationExternalListings();
+        await seedAccommodationExternalReputation();
+        await seedHostTrades(context);
+        context.actor = oldContextActor;
+        // SPEC-239 — gastronomy commerce listings
+        await seedGastronomies(context);
+        // SPEC-240 T-014 — experience commerce listing seed data
+        await seedExperiences(context);
+        context.actor = oldContextActor;
         await seedUserBookmarkCollections(context);
         await seedBookmarks(context);
         context.actor = oldContextActor;

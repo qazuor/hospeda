@@ -1,6 +1,6 @@
 /**
  * @file VerifyEmail.client.tsx
- * @description Email verification React island for web2.
+ * @description Email verification React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * NOT a form. Auto-verifies on mount using the token prop.

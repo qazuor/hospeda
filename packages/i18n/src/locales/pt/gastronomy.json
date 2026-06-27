@@ -1,0 +1,52 @@
+{
+    "listing": {
+        "title": "Gastronomia",
+        "subtitle": "Descubra os melhores restaurantes, bares e sabores da região",
+        "emptyState": "Nenhum estabelecimento gastronômico encontrado com os filtros selecionados.",
+        "errorBanner": "Não foi possível carregar a lista de gastronomia. Tente novamente mais tarde.",
+        "results_one": "{{count}} estabelecimento encontrado",
+        "results_other": "{{count}} estabelecimentos encontrados"
+    },
+    "card": {
+        "priceRange": {
+            "BUDGET": "Econômico",
+            "MID": "Moderado",
+            "HIGH": "Elevado",
+            "PREMIUM": "Premium"
+        },
+        "openNow": "Aberto agora",
+        "closedNow": "Fechado agora",
+        "featured": "Destaque"
+    },
+    "detail": {
+        "openingHours": {
+            "title": "Horário de funcionamento",
+            "closed": "Fechado",
+            "open24h": "Aberto 24 horas",
+            "today": "Hoje"
+        },
+        "menu": "Ver cardápio",
+        "reviews": {
+            "title": "Avaliações",
+            "empty": "Ainda não há avaliações. Seja o primeiro a comentar!"
+        },
+        "faqs": {
+            "title": "Perguntas frequentes"
+        },
+        "social": "Redes sociais",
+        "amenities": {
+            "title": "Serviços e comodidades"
+        }
+    },
+    "types": {
+        "RESTAURANT": "Restaurante",
+        "BAR": "Bar",
+        "CAFE": "Café",
+        "PARRILLA": "Churrascaria",
+        "CERVECERIA": "Cervejaria",
+        "HELADERIA": "Sorveteria",
+        "PANADERIA": "Padaria",
+        "ROTISERIA": "Rotisserie",
+        "FOOD_TRUCK": "Food Truck"
+    }
+}

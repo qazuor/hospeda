@@ -11,15 +11,18 @@ import { seedBillingEntitlements } from './billingEntitlements.seed.js';
 import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
+import { seedCommercePlan } from './commercePlan.seed.js';
 import { seedContentModerationData } from './contentModeration.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
+import { seedPartnerPlan } from './partnerPlan.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
+import { seedSocialAutomation } from './socialAutomation.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedSystemTags } from './systemTags.seed.js';
@@ -77,6 +80,7 @@ import { seedUsers } from './users.seed.js';
  * // 20. Revalidation config
  * // 21. AI prompt versions (default system prompts)
  * // 22. AI settings costCeilings defaults (SPEC-211 T-002)
+ * // 23. Social automation catalog (SPEC-254 T-015)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -141,6 +145,16 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 12. Load billing plans (uses entitlements and limits)
         await seedBillingPlans(context);
 
+        // 12.1 Load the commerce-listing plan (SPEC-239 T-049). Separate from
+        //      ALL_PLANS so it stays excluded from accommodation plan lists;
+        //      stamps billing_plans.product_domain='commerce'.
+        await seedCommercePlan(context);
+
+        // 12.2 Load the partner-directory plan (SPEC-271). Separate from
+        //      ALL_PLANS so it stays excluded from accommodation plan lists;
+        //      stamps billing_plans.product_domain='partner'.
+        await seedPartnerPlan(context);
+
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);
 
@@ -162,6 +176,11 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 19. Seed AI settings costCeilings defaults (SPEC-211 T-002)
         //     Idempotent: skips if costCeilings is already set by an operator.
         await seedAiSettings();
+
+        // 20. Seed social automation catalog (SPEC-254 T-015)
+        //     Platforms, platform-formats, settings, campaign, batch, audiences,
+        //     footer, hashtag-sets, hashtags. All idempotent, model-direct.
+        await seedSocialAutomation();
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output

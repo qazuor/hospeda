@@ -8,6 +8,9 @@
     background-color: var(--core-card);
     border: 1px solid var(--border, var(--core-foreground-a15));
     border-radius: var(--radius-card, 24px);
+    /* Fill the grid cell so the chart can center in any extra height
+     * (SPEC-207 layout polish). */
+    height: 100%;
 }
 
 .header {
@@ -36,6 +39,11 @@
 .chartContainer {
     width: 100%;
     min-height: 180px;
+    /* Center the fixed-height chart vertically when the cell is taller. */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* ── Skeleton ── */

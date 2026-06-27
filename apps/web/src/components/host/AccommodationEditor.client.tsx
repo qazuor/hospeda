@@ -13,12 +13,14 @@ import type {
     AccommodationEditData,
     AccommodationTranslationData,
     AmenityData,
-    DestinationData
+    DestinationData,
+    MediaImage
 } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useState } from 'react';
 import styles from './AccommodationEditor.module.css';
+import { ExternalReputationSection } from './ExternalReputationSection.client';
 import { ActionBar } from './editor/ActionBar.client';
 import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
@@ -26,7 +28,6 @@ import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
-import type { MediaImage, PhotoSectionData } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 import { TranslationPanel } from './editor/TranslationPanel.client';
@@ -108,12 +109,6 @@ export function AccommodationEditor({
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
 
-    // --- Photo state ---
-    const [photoData, setPhotoData] = useState<PhotoSectionData>({
-        featuredImage: initialFeaturedImage ?? null,
-        gallery: initialGallery ?? []
-    });
-
     // --- Field change handlers ---
 
     const handleTextFieldChange = useCallback(
@@ -160,16 +155,6 @@ export function AccommodationEditor({
                 ? prev.featureIds.filter((id) => id !== featureId)
                 : [...prev.featureIds, featureId]
         }));
-    }, []);
-
-    // --- Photo handlers ---
-
-    const handleFeaturedImageChange = useCallback((image: MediaImage | null) => {
-        setPhotoData((prev) => ({ ...prev, featuredImage: image }));
-    }, []);
-
-    const handleGalleryChange = useCallback((gallery: readonly MediaImage[]) => {
-        setPhotoData((prev) => ({ ...prev, gallery }));
     }, []);
 
     // --- Validation ---
@@ -230,17 +215,6 @@ export function AccommodationEditor({
         (current: AccommodationEditData): Record<string, unknown> => {
             const payload: Record<string, unknown> = {};
             const initial = initialData;
-
-            // Determine whether photo state has diverged from what was loaded.
-            // Normalise both sides to null so that null === undefined doesn't
-            // trigger a false positive (both mean "no image").
-            const currentFeaturedUrl = photoData.featuredImage?.url ?? null;
-            const initialFeaturedUrl = initialFeaturedImage?.url ?? null;
-            const featuredChanged = currentFeaturedUrl !== initialFeaturedUrl;
-            const normalizedInitialGallery = initialGallery ?? [];
-            const galleryChanged =
-                photoData.gallery.length !== normalizedInitialGallery.length ||
-                photoData.gallery.some((img, i) => img.url !== normalizedInitialGallery[i]?.url);
 
             // Text fields
             if (current.name !== initial.name) {
@@ -330,21 +304,9 @@ export function AccommodationEditor({
                 payload.youtube = current.youtubeUrl;
             }
 
-            // SPEC-208: include media when photo state has changed.
-            // The HTTP schema accepts images with only { url } — the API converter
-            // supplies moderationState: APPROVED for images that lack it.
-            if (featuredChanged || galleryChanged) {
-                payload.media = {
-                    featuredImage: photoData.featuredImage
-                        ? { url: photoData.featuredImage.url }
-                        : null,
-                    gallery: photoData.gallery.map((img) => ({ url: img.url }))
-                };
-            }
-
             return payload;
         },
-        [initialData, photoData, initialFeaturedImage, initialGallery]
+        [initialData]
     );
 
     // --- Submit handler ---
@@ -474,9 +436,8 @@ export function AccommodationEditor({
             <PhotoSection
                 locale={locale}
                 accommodationId={accommodationId}
-                data={photoData}
-                onFeaturedImageChange={handleFeaturedImageChange}
-                onGalleryChange={handleGalleryChange}
+                initialFeaturedImage={initialFeaturedImage}
+                initialGallery={initialGallery}
             />
 
             {translationData && (
@@ -486,6 +447,11 @@ export function AccommodationEditor({
                     translations={translationData}
                 />
             )}
+
+            <ExternalReputationSection
+                locale={locale}
+                accommodationId={accommodationId}
+            />
 
             {submitSuccess && (
                 <output className={styles.submitSuccess}>

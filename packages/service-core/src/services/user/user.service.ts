@@ -1,4 +1,13 @@
-import { UserModel, accounts, eq, getDb, safeIlike, users as userTable } from '@repo/db';
+import {
+    UserModel,
+    accounts,
+    eq,
+    getDb,
+    safeIlike,
+    userPushTokenModel,
+    users as userTable
+} from '@repo/db';
+import type { UserPushTokenModel } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type { EntityFilters, EntityOptionsItem, User, UserAdminStats } from '@repo/schemas';
@@ -7,6 +16,8 @@ import {
     CompleteProfileBodySchema,
     type CompleteProfileResponse,
     PermissionEnum,
+    type PushTokenRegisterBody,
+    PushTokenRegisterBodySchema,
     ServiceErrorCode,
     type SetPasswordResponse,
     type SkipSetPasswordResponse,
@@ -115,6 +126,12 @@ export class UserService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
+     * Model for the `user_push_tokens` table (SPEC-243 T-011).
+     * Injected to allow test substitution via private field override.
+     */
+    private readonly pushTokenModel: UserPushTokenModel;
+
+    /**
      * Initializes a new instance of the UserService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional UserModel instance (for testing/mocking).
@@ -126,6 +143,7 @@ export class UserService extends BaseCrudService<
         this.model = model ?? new UserModel();
         this.adminSearchSchema = UserAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+        this.pushTokenModel = userPushTokenModel;
     }
 
     /**
@@ -1338,6 +1356,46 @@ export class UserService extends BaseCrudService<
                 }
 
                 return { success: true as const };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-243 T-011 — Mobile push-token registration
+    // -----------------------------------------------------------------------
+
+    /**
+     * Registers (or re-registers) an Expo push token for the calling user.
+     *
+     * Performs an UPSERT keyed on the global UNIQUE(`token`) constraint.
+     * If the token was previously registered by another user (re-login on the
+     * same device), ownership is transferred to the current actor.
+     *
+     * Self-scoped: always uses `actor.id`.  No extra permission beyond being
+     * authenticated is required (protected-tier endpoint).
+     *
+     * @param actor - The authenticated actor registering the token.
+     * @param input - `{ token, platform }` — validated body fields.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ registered: true }` on success.
+     * @throws ServiceError (VALIDATION_ERROR, INTERNAL_ERROR)
+     */
+    public async registerPushToken(
+        actor: Actor,
+        input: PushTokenRegisterBody,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ registered: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'registerPushToken',
+            input: { ...input, actor },
+            schema: PushTokenRegisterBodySchema,
+            ctx,
+            execute: async ({ token, platform }, validatedActor, execCtx) => {
+                await this.pushTokenModel.upsertByToken(
+                    { userId: validatedActor.id, token, platform },
+                    execCtx?.tx
+                );
+                return { registered: true as const };
             }
         });
     }

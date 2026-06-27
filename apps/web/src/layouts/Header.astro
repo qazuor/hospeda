@@ -62,6 +62,8 @@ const navLinks = [
     { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("nav.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
     { label: t("nav.events"), href: buildUrl({ locale, path: "/eventos/" }) },
+    { label: t("nav.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
+    { label: t("nav.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
     { label: t("nav.blog"), href: buildUrl({ locale, path: "/publicaciones/" }) },
     { label: t("nav.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
 ] as const;
@@ -101,6 +103,22 @@ const initialUserMenuUser = serverUser
     : null;
 
 const adminPanelUrl = getAdminUrl();
+
+/**
+ * Hide the "Publicar" nav CTA for users who are already HOST (or higher).
+ * They already have the host surfaces (admin panel + /mi-cuenta/propiedades/)
+ * and can create more listings from there. An existing host who hits the
+ * onboarding funnel now creates or resumes a DRAFT (the legacy short-circuit
+ * was removed) — which works — but the nav CTA is visually confusing for them.
+ *
+ * Checks HOST and all higher privileged roles (ADMIN, CLIENT_MANAGER,
+ * SUPER_ADMIN). MobileMenuIsland.astro only checks HOST because its concern is
+ * CTA destination, not CTA visibility. On SSG pages where middleware does not
+ * parse the session, `serverUser` is null and the CTA is shown — the correct
+ * default for guests.
+ */
+const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN' ||
+    serverUser?.role === 'CLIENT_MANAGER' || serverUser?.role === 'SUPER_ADMIN';
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
@@ -141,16 +159,18 @@ const adminPanelUrl = getAdminUrl();
 
         <!-- RIGHT AREA -->
         <div class="header__right">
-            <!-- "Publicar" CTA — visible at all widths -->
-            <GradientButton
-                href={buildUrl({ locale, path: "/publicar/" })}
-                label={t("nav.publishCta", "Publicar")}
-                variant="accent"
-                size="sm"
-                class="header__cta"
-            >
-                <BuildingIcon slot="leading" size={16} weight="regular" />
-            </GradientButton>
+            <!-- "Publicar" CTA — hidden for existing hosts (they use /mi-cuenta/propiedades/) -->
+            {!isAlreadyHost && (
+                <GradientButton
+                    href={buildUrl({ locale, path: "/publicar/" })}
+                    label={t("nav.publishCta", "Publicar")}
+                    variant="accent"
+                    size="sm"
+                    class="header__cta"
+                >
+                    <BuildingIcon slot="leading" size={16} weight="regular" />
+                </GradientButton>
+            )}
 
             <!-- Standalone preferences (BP wide ≥1280, guests only) -->
             <div class="header__lang-control">
@@ -316,7 +336,7 @@ const adminPanelUrl = getAdminUrl();
     }
 
     .header__nav-link:hover {
-        color: var(--brand-primary);
+        color: var(--brand-primary-text);
     }
 
     .header__nav-link:focus-visible {
@@ -325,7 +345,7 @@ const adminPanelUrl = getAdminUrl();
     }
 
     .header__nav-link--active {
-        color: var(--brand-primary);
+        color: var(--brand-primary-text);
         font-weight: 700;
     }
 

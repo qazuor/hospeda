@@ -1,4 +1,72 @@
 {
+    "importFromUrl": {
+        "fields": {
+            "url": "URL da acomodação",
+            "urlPlaceholder": "https://...",
+            "legalConfirm": "Confirmo que tenho permissão para importar estas informações."
+        },
+        "actions": {
+            "submit": "Importar",
+            "submitting": "Importando..."
+        },
+        "errors": {
+            "urlRequired": "Informe a URL da acomodação.",
+            "urlInvalid": "A URL não é válida.",
+            "legalRequired": "Você precisa confirmar o aviso legal.",
+            "submit": "Não foi possível importar a acomodação. Tente novamente.",
+            "network": "Não foi possível conectar ao servidor.",
+            "failure": {
+                "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
+                "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
+                "credentialsMissing": "Não conseguimos conectar à fonte no momento. Tente mais tarde ou preencha os dados manualmente.",
+                "providerError": "Houve um problema ao consultar a fonte. Tente novamente ou preencha os dados manualmente.",
+                "timeout": "A fonte demorou muito para responder. Tente novamente ou preencha os dados manualmente.",
+                "nothingFound": "Não encontramos dados de acomodação nessa URL. Você pode preencher os dados manualmente."
+            }
+        },
+        "prefill": {
+            "sectionToggle": "Importar a partir de uma URL",
+            "reviewNotice": "Revise e confirme os dados importados antes de continuar.",
+            "badge": {
+                "imported": "Importado",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Sugestão de destino",
+                "locality": "Localidade detectada: {{locality}}",
+                "candidates": "Destinos sugeridos: {{names}}",
+                "hint": "Selecione o destino manualmente no campo Cidade.",
+                "autoSelected": "Selecionamos automaticamente o destino detectado. Revise e altere se estiver incorreto."
+            }
+        },
+        "help": {
+            "toggle": "Como obtenho a URL da acomodação?",
+            "title": "Como copiar a URL em cada plataforma",
+            "platforms": {
+                "airbnb": {
+                    "name": "Airbnb",
+                    "steps": "Abra o anúncio e copie o endereço completo da barra do navegador.",
+                    "example": "https://www.airbnb.com.br/rooms/12345678"
+                },
+                "booking": {
+                    "name": "Booking",
+                    "steps": "Abra a página da acomodação e copie o endereço do navegador (deve ser parecido com booking.com/hotel/...), sem os filtros de data. Os links de compartilhamento (booking.com/Share-...) não funcionam: abra-os no navegador e copie o endereço final.",
+                    "example": "https://www.booking.com/hotel/ar/nome.pt-br.html"
+                },
+                "mercadolibre": {
+                    "name": "MercadoLibre",
+                    "steps": "Abra o anúncio do imóvel e copie o endereço do navegador.",
+                    "example": "https://inmueble.mercadolibre.com.ar/MLA-123456789"
+                },
+                "google": {
+                    "name": "Google Maps",
+                    "steps": "Encontre o local no Google Maps, abra o cartão dele e copie o endereço do navegador. O link de compartilhamento do app (maps.app.goo.gl/...) também funciona.",
+                    "example": "https://www.google.com/maps/place/..."
+                }
+            }
+        }
+    },
     "form": {
         "sections": {
             "datos-basicos": {
@@ -138,11 +206,15 @@
                 "viewOnSite": "[TODO]",
                 "unpublishConfirm": "Despublicar este imóvel? Ele não aparecerá mais no site.",
                 "confirmYes": "Sim, despublicar",
-                "confirmNo": "Cancelar"
+                "confirmNo": "Cancelar",
+                "delete": "Excluir",
+                "deleteConfirm": "Excluir este imóvel? Ele será removido da sua lista e do site.",
+                "deleteYes": "Sim, excluir"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Imóvel despublicado",
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
+            "deleteError": "Não foi possível excluir. Tente novamente.",
             "priceOnRequest": "Preço a consultar"
         },
         "editor": {
@@ -246,7 +318,8 @@
                 "mapHint": "Arraste o pin para ajustar a localização exata.",
                 "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
                 "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
-                "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço."
+                "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço.",
+                "searching": "Buscando…"
             },
             "translation": {
                 "sectionTitle": "Traduções",
@@ -275,9 +348,45 @@
     },
     "miniForm": {
         "fields": {
+            "name": "Nome da acomodação",
+            "summary": "Descrição curta",
+            "summaryHint": "Uma frase de apresentação. Você pode expandir tudo no painel depois.",
             "type": "Tipo de acomodação",
-            "typePlaceholder": "Escolha uma opção"
+            "typePlaceholder": "Escolha uma opção",
+            "typeEmpty": "Nenhum tipo encontrado"
         },
+        "importedExtras": {
+            "sectionTitle": "O que importamos",
+            "fields": {
+                "description": "Descrição completa",
+                "maxGuests": "Hóspedes máx.",
+                "bedrooms": "Quartos",
+                "beds": "Camas",
+                "bathrooms": "Banheiros",
+                "basePrice": "Preço base por noite",
+                "street": "Rua",
+                "number": "Número",
+                "phone": "Telefone",
+                "website": "Site",
+                "coordinatesLabel": "Localização importada",
+                "amenitiesCount": "{{count}} comodidades importadas"
+            }
+        },
+        "errors": {
+            "name": "O nome deve ter pelo menos 3 caracteres.",
+            "summary": "A descrição curta deve ter pelo menos 10 caracteres.",
+            "type": "Escolha o tipo de acomodação.",
+            "destinationId": "Escolha a cidade onde está sua acomodação.",
+            "serviceUnavailable": "Não conseguimos contactar o serviço de cobrança agora. Tente novamente em um minuto.",
+            "submit": "Não conseguimos criar a acomodação. Tente novamente.",
+            "missingId": "Não recebemos o ID da acomodação criada. Tente novamente.",
+            "network": "Não conseguimos conectar ao servidor. Verifique sua conexão e tente novamente."
+        },
+        "actions": {
+            "submit": "Criar e continuar no painel",
+            "submitting": "Criando..."
+        },
+        "disclaimer": "Vamos criar um rascunho com esses dados. Depois te levamos ao painel para completar fotos, preços e mais.",
         "types": {
             "APARTMENT": "Apartamento",
             "HOUSE": "Casa",

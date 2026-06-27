@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "052-amenity-entertainment-board-games",
-    "name": {
-        "es": "board_games",
-        "en": "board_games",
-        "pt": "board_games"
-    },
     "slug": "board_games",
     "description": {
         "es": "Juegos de mesa",
         "en": "Juegos de mesa",
         "pt": "Juegos de mesa"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "ENTERTAINMENT",
     "icon": "BoardGamesIcon",
     "isBuiltin": false,

@@ -128,7 +128,8 @@ describe('AmenitySchema', () => {
         it('should reject invalid slug format', () => {
             const invalidSlugCases = [
                 { ...createMinimalAmenity(), slug: 'Invalid Slug With Spaces' },
-                { ...createMinimalAmenity(), slug: 'invalid_slug_with_underscores' },
+                // underscores as SEPARATOR are now valid (SPEC-266); double underscores are NOT
+                { ...createMinimalAmenity(), slug: 'invalid__double__underscore' },
                 { ...createMinimalAmenity(), slug: 'InvalidSlugWithCaps' },
                 { ...createMinimalAmenity(), slug: 'slug-with-special-chars!' },
                 { ...createMinimalAmenity(), slug: 'ab' }, // too short
@@ -143,16 +144,17 @@ describe('AmenitySchema', () => {
             });
         });
 
-        it('should reject invalid name length', () => {
+        it('should reject invalid applicableVerticals', () => {
+            // SPEC-266: applicableVerticals is the required field that replaced name
             const invalidNameCases = [
-                { ...createMinimalAmenity(), name: '' }, // empty
-                { ...createMinimalAmenity(), name: 'A'.repeat(101) } // too long
+                { ...createMinimalAmenity(), applicableVerticals: [] }, // empty — min 1
+                { ...createMinimalAmenity(), applicableVerticals: ['unknown_vertical'] } // unknown value
             ];
 
             invalidNameCases.forEach((testCase, index) => {
                 expect(
                     () => AmenitySchema.parse(testCase),
-                    `Invalid name case ${index} should throw`
+                    `Invalid applicableVerticals case ${index} should throw`
                 ).toThrow(ZodError);
             });
         });
@@ -380,11 +382,9 @@ describe('AmenitySchema', () => {
             // Type checks
             expect(typeof result.id).toBe('string');
             expect(typeof result.slug).toBe('string');
-            // name is now an I18nText object with es/en/pt locale keys
-            expect(typeof result.name).toBe('object');
-            expect(typeof result.name.es).toBe('string');
-            expect(typeof result.name.en).toBe('string');
-            expect(typeof result.name.pt).toBe('string');
+            // applicableVerticals replaces name (SPEC-266)
+            expect(Array.isArray(result.applicableVerticals)).toBe(true);
+            expect(result.applicableVerticals.length).toBeGreaterThan(0);
             expect(typeof result.type).toBe('string');
             expect(typeof result.lifecycleState).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);

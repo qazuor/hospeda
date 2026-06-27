@@ -21,7 +21,7 @@ export type EnvVarType = 'string' | 'url' | 'number' | 'boolean' | 'enum';
 /**
  * Identifier for apps/services that consume an environment variable.
  */
-export type AppId = 'api' | 'web' | 'admin' | 'docker' | 'seed';
+export type AppId = 'api' | 'web' | 'admin' | 'mobile' | 'docker' | 'seed';
 
 /**
  * Complete definition of a single environment variable in the Hospeda platform.
@@ -47,8 +47,37 @@ export interface EnvVarDefinition {
     /** Runtime value type. Use `enum` together with `enumValues`. */
     readonly type: EnvVarType;
 
-    /** Whether the variable MUST be present for the app(s) to start. */
+    /**
+     * Whether the variable MUST be present for the app(s) to start in EVERY
+     * environment. Equivalent to `requiredScope: 'always'`. Production-only or
+     * conditional requirements keep `required: false` and use {@link requiredScope}.
+     */
     readonly required: boolean;
+
+    /**
+     * Refines {@link required} with the scope in which the variable is mandatory:
+     * - `'always'`      — required in every environment (matches `required: true`).
+     * - `'production'`  — required only when `NODE_ENV=production` (optional in dev/test).
+     * - `'conditional'` — required only when another var has a specific value
+     *                     (described in {@link requiredWhen}).
+     *
+     * When omitted, the scope is `'always'` if `required` is `true`, otherwise the
+     * variable is fully optional.
+     */
+    readonly requiredScope?: 'always' | 'production' | 'conditional';
+
+    /**
+     * Human-readable condition under which a `requiredScope: 'conditional'`
+     * variable becomes mandatory (e.g. `'HOSPEDA_MODERATION_PROVIDER=openai'`).
+     */
+    readonly requiredWhen?: string;
+
+    /**
+     * True when the value is injected by the platform/CI at runtime (e.g. `CI`)
+     * and must NOT be set manually. The `.env.example` generator emits these
+     * commented with a "do not set" note.
+     */
+    readonly platformInjected?: boolean;
 
     /**
      * Whether the value is sensitive (credentials, tokens, secrets).

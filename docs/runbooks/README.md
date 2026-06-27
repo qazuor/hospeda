@@ -76,6 +76,14 @@ Runbooks are operational documentation that provide:
    - Log analysis procedures
    - Daily/weekly/monthly reviews
 
+### Integrations & External Providers
+
+1. **[Import Provider Mitigation](./import-provider-mitigation.md)**
+   - Recovering from a blocked/degraded accommodation-import scraper
+   - Swapping a blocked Apify actor via env var + redeploy (no code deploy)
+   - Enabling a residential proxy
+   - Config-seam audit (SPEC-277 R4)
+
 ## Quick Navigation
 
 ### Emergency Scenarios
@@ -90,6 +98,7 @@ Runbooks are operational documentation that provide:
 | Traffic spike | [Scaling](./scaling.md) | Emergency Scaling |
 | Slow queries | [Production Bugs](./production-bugs.md) | Investigation Steps |
 | Memory/CPU at 100% | [Scaling](./scaling.md) | Scaling Triggers |
+| Airbnb/Booking import returns source_blocked | [Import Provider Mitigation](./import-provider-mitigation.md) | Swap a blocked actor |
 
 ### Planned Maintenance
 

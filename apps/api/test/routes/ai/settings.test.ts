@@ -159,6 +159,24 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        // SPEC-222: the accommodation_import feature is part of the full write
+        // record — every AiFeature key must be present on a PUT.
+        accommodation_import: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
+        },
+        // SPEC-223: post_generate is an admin-tier feature that must also be
+        // present in the full write record (every AiFeature key is required on PUT).
+        post_generate: {
+            enabled: true,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };

@@ -32,6 +32,9 @@ jobs:
     timeout-minutes: 15
 
     services:
+      # NOTE: service container port mappings are evaluated before any steps
+      # run, so they CANNOT be sourced from apps/e2e/.env.e2e. Keep them in
+      # sync with the SSOT manually (apps/e2e/.env.e2e E2E_POSTGRES_PORT etc).
       postgres:
         image: postgres:15-alpine
         env:
@@ -39,7 +42,7 @@ jobs:
           POSTGRES_PASSWORD: hospeda_pass
           POSTGRES_DB: hospeda_e2e
         ports:
-          - 5433:5432
+          - 15433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 5s
@@ -49,7 +52,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6380:6379
+          - 16380:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
@@ -59,8 +62,8 @@ jobs:
       mailpit:
         image: axllent/mailpit:latest
         ports:
-          - 1025:1025
-          - 8025:8025
+          - 11025:1025
+          - 18025:8025
         env:
           MP_MAX_MESSAGES: 5000
           MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -72,31 +75,17 @@ jobs:
           --health-retries 10
 
     env:
-      # Apps point to E2E DB on :5433 (different from CI integration DB on :5436)
-      HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_REDIS_URL: redis://localhost:6380
       # Deterministic e2e secrets — isolated throwaway DB, NOT real secrets.
       # All three are min-32 per the API env schema; hardcoded (not repo secrets)
       # so the apps boot consistently and share one secret for cross-app auth.
       HOSPEDA_BETTER_AUTH_SECRET: e2e-better-auth-secret-deterministic-min-32-chars
       HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
       HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
-      HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
-      HOSPEDA_API_URL: http://localhost:3001
-      HOSPEDA_SITE_URL: http://localhost:4321
-      HOSPEDA_ADMIN_URL: http://localhost:3000
-      # Build-time + runtime vars for the web (PUBLIC_*) and admin (VITE_*) apps,
-      # required by their env schemas when they actually boot under the webServer.
-      PUBLIC_API_URL: http://localhost:3001
-      PUBLIC_SITE_URL: http://localhost:4321
-      PUBLIC_ADMIN_URL: http://localhost:3000
-      VITE_API_URL: http://localhost:3001
-      VITE_SITE_URL: http://localhost:4321
-      VITE_ADMIN_URL: http://localhost:3000
-      VITE_BETTER_AUTH_URL: http://localhost:3001/api/auth
+      HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+      HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
       HOSPEDA_MAILER_HOST: localhost
-      HOSPEDA_MAILER_PORT: '1025'
+      PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
+      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
 
       # MercadoPago: PR mode uses simulated webhook only (no real sandbox calls).
       # The webhook secret signs the simulated POST; the access_token is a stub,
@@ -117,21 +106,28 @@ jobs:
       HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
       HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
 
-      # Disable API response cache + rate limiting for deterministic e2e: tests
-      # mutate state (publish/unpublish, subscription changes) and immediately
-      # assert the public/entitlement read, which a cached response would serve
-      # stale. NOTE: these use z.coerce.boolean() in the API env schema, where a
-      # NON-EMPTY string (even "false") coerces to true — so an EMPTY string is
-      # the only way to set them false. Do not change '' to 'false'.
+      # Disable API response cache for deterministic e2e: tests mutate state
+      # (publish/unpublish, subscription changes) and immediately assert the
+      # public/entitlement read, which a cached response would serve stale.
+      # NOTE: z.coerce.boolean() treats any NON-EMPTY string as true — so an
+      # EMPTY string is the only way to set these false. Do not change '' to 'false'.
       API_CACHE_ENABLED: ''
-      API_RATE_LIMIT_ENABLED: ''
 
       # Playwright tuning
       E2E_MODE: pr
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Load E2E port/URL vars from SSOT
+        # Injects all non-secret vars from apps/e2e/.env.e2e into $GITHUB_ENV
+        # so every subsequent step (build, seed, playwright) sees the same ports.
+        # Secrets stay in the static env: block above.
+        # keep in sync with apps/e2e/.env.e2e
+        shell: bash
+        run: |
+          grep -vE '^\s*(#|$)' apps/e2e/.env.e2e >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

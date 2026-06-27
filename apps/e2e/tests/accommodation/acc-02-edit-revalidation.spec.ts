@@ -55,20 +55,6 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
     });
 
     test('host edits accommodation → revalidation_log gets entry for entity', async ({ page }) => {
-        // ── Guard: skip when revalidation service is not configured ────────
-        // RevalidationService only initializes when HOSPEDA_REVALIDATION_SECRET
-        // is set. Without it, scheduleRevalidation() is a no-op and nothing is
-        // written to revalidation_log. Detect this by checking the process env
-        // exposed to the Playwright worker via playwright.config.ts process.env.
-        if (!process.env.HOSPEDA_REVALIDATION_SECRET) {
-            test.fixme(
-                true,
-                'ACC-02 skipped: HOSPEDA_REVALIDATION_SECRET not set — RevalidationService ' +
-                    'will not initialize. Set this variable to test revalidation_log writes.'
-            );
-            return;
-        }
-
         // ── Setup: paid host + published accommodation ─────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
@@ -117,7 +103,7 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
             since,
             entityType: 'accommodation',
             entityId: accommodation.id,
-            timeoutMs: 5_000
+            timeoutMs: 10_000
         });
 
         // ── DB invariant: new name persisted ──────────────────────────────

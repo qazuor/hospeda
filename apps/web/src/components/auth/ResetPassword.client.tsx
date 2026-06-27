@@ -1,6 +1,6 @@
 /**
  * @file ResetPassword.client.tsx
- * @description Reset-password form React island for web2.
+ * @description Reset-password form React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * Validates password requirements and match before calling resetPassword().

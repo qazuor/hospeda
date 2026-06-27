@@ -75,6 +75,11 @@
         "activity": "Activity",
         "edit": "Edit"
     },
+    "platform": {
+        "title": "Platform",
+        "hostTrades": "Trades Directory",
+        "featureFlags": "Feature Flags"
+    },
     "sponsors": "Sponsors",
     "analytics": {
         "title": "Analytics",
@@ -82,5 +87,13 @@
         "debug": "Debug",
         "business": "Business",
         "views": "Views"
+    },
+    "ai": {
+        "title": "Artificial Intelligence",
+        "usage": "AI Usage",
+        "settings": "Settings",
+        "credentials": "Credentials",
+        "prompts": "Prompts",
+        "playground": "Playground"
     }
 }

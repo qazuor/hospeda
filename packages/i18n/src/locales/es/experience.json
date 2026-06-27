@@ -1,0 +1,89 @@
+{
+    "meta": {
+        "title": "Experiencias y Servicios",
+        "description": "Descubrí las mejores experiencias y servicios turísticos de la región: alquileres, excursiones, guías y más"
+    },
+    "listing": {
+        "title": "Experiencias",
+        "subtitle": "Descubrí las mejores experiencias y servicios turísticos del Litoral Entrerriano",
+        "emptyState": "No se encontraron experiencias con los filtros seleccionados.",
+        "errorBanner": "No se pudo cargar el listado de experiencias. Intentá de nuevo más tarde.",
+        "results_one": "{{count}} experiencia encontrada",
+        "results_other": "{{count}} experiencias encontradas",
+        "search": "Búsqueda por texto",
+        "searchPlaceholder": "Buscar por nombre o descripción...",
+        "destination": "Destino",
+        "type": "Tipo de experiencia",
+        "featured": "Solo destacadas",
+        "minRating": "Calificación mínima",
+        "sort": {
+            "featured": "Destacadas primero",
+            "ratingDesc": "Mejor valoradas",
+            "newest": "Recién agregadas",
+            "nameAsc": "Nombre (A-Z)"
+        }
+    },
+    "card": {
+        "featured": "Destacada"
+    },
+    "detail": {
+        "contact": "Contacto",
+        "whatsapp": "Consultar por WhatsApp",
+        "hours": "Horarios de atención",
+        "openingHours": {
+            "title": "Horarios de atención",
+            "closed": "Cerrado",
+            "open24h": "Abierto las 24 horas",
+            "today": "Hoy",
+            "monday": "Lunes",
+            "tuesday": "Martes",
+            "wednesday": "Miércoles",
+            "thursday": "Jueves",
+            "friday": "Viernes",
+            "saturday": "Sábado",
+            "sunday": "Domingo"
+        },
+        "social": "Redes sociales",
+        "amenities": {
+            "title": "Servicios y comodidades"
+        }
+    },
+    "type": {
+        "CAR_RENTAL": "Alquiler de autos",
+        "BIKE_RENTAL": "Alquiler de bicicletas",
+        "KAYAK_RENTAL": "Alquiler de kayak",
+        "QUAD_RENTAL": "Alquiler de cuadriciclos",
+        "TOUR_GUIDE": "Guía turístico",
+        "GUIDED_VISIT": "Visita guiada",
+        "EXCURSION": "Excursión",
+        "BOAT_TRIP": "Paseo en lancha",
+        "FISHING_CHARTER": "Pesca deportiva",
+        "BIRD_WATCHING": "Avistamiento de aves",
+        "CULTURAL_TOUR": "Tour cultural",
+        "WINE_TASTING": "Degustación de vinos",
+        "OUTDOOR_ADVENTURE": "Aventura al aire libre",
+        "OTHER": "Otro"
+    },
+    "priceUnit": {
+        "per_day": "por día",
+        "per_hour": "por hora",
+        "per_person": "por persona",
+        "per_group": "por grupo"
+    },
+    "priceOnRequest": "Consultar precio",
+    "priceFrom": "Desde",
+    "filters": {
+        "type": "Tipo",
+        "destination": "Destino"
+    },
+    "reviews": {
+        "title": "Reseñas",
+        "submit": "Dejar reseña",
+        "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!",
+        "more": "+ {{n}} reseñas más",
+        "loading": "Cargando reseñas…"
+    },
+    "faq": {
+        "heading": "Preguntas frecuentes"
+    }
+}

@@ -30,7 +30,9 @@ const amenityItems = amenitiesResult.data.items as unknown as Array<Record<strin
 const amenity = amenityItems.find((a) => String(a.slug) === slug);
 if (!amenity) return new Response(null, { status: 404 });
 const amenityId = String(amenity.id);
-const amenityName = String(amenity.name || slug);
+// SPEC-266: `name` was dropped from the catalog; resolve label from i18n by slug.
+// The slug is always available as the route param. Falls back to humanized slug.
+const amenityName = t(`accommodations.amenityNames.${slug}`, slug);
 
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const result = await accommodationsApi.list({ page, pageSize: 9 });

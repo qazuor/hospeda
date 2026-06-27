@@ -30,7 +30,8 @@
  * Filesystem side: route handler files under `apps/api/src/routes/`, including:
  *   - Files inside `*\/protected\/*` or `*\/admin\/*` subdirectories
  *   - Specific top-level handler files covered by the matrix (auth/*, billing/*,
- *     app-logs/list.ts, cron-admin/runs.ts, event/comments/public/list.ts, etc.)
+ *     app-logs/list.ts, cron-admin/runs.ts, event/comments/public/list.ts,
+ *     experience/public/*.ts, etc.)
  *
  * Explicit exclusions (not route handlers):
  *   - index.ts barrel files (router assembly)
@@ -184,7 +185,9 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // Per-request prompt builder for search-chat (not a Hono route) — SPEC-212 T-003/T-006
     'ai/protected/search-chat.prompt.ts',
     // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
-    'ai/protected/search-chat.persistence.ts'
+    'ai/protected/search-chat.persistence.ts',
+    // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
+    'accommodation/protected/import-from-url.ai.ts'
 ]);
 
 /**
@@ -240,7 +243,8 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
  *   - Any .ts file inside a /protected/ or /admin/ path segment
  *   - Specific multi-route index.ts files listed in MULTI_ROUTE_INDEX_FILES
  *   - Top-level handler files that appear in the matrix (auth/, billing/
- *     non-public, app-logs/, cron-admin/, event/comments/public/)
+ *     non-public, app-logs/, cron-admin/, event/comments/public/,
+ *     experience/public/)
  *
  * Excluded:
  *   - index.ts barrel files (unless explicitly listed in MULTI_ROUTE_INDEX_FILES)
@@ -305,8 +309,10 @@ function shouldIncludeRouteFile(relPath: string): boolean {
         'auth/',
         'billing/',
         'app-logs/',
+        'audit-logs/',
         'cron-admin/',
-        'event/comments/public/'
+        'event/comments/public/',
+        'experience/public/'
     ];
 
     for (const prefix of TOP_LEVEL_PREFIXES) {

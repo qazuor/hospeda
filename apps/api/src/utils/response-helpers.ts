@@ -67,10 +67,97 @@ export interface ErrorResponse {
 }
 
 /**
+ * Asserts that `schema` is a concrete, non-permissive Zod schema suitable for
+ * use as a public `responseSchema`.
+ *
+ * Permissive/passthrough schemas are rejected because they would silently pass
+ * internal or admin-only fields to public callers, defeating the purpose of the
+ * response-contract enforcement introduced by SPEC-062 and SPEC-210.
+ *
+ * Checked at the **top level only** — nested `z.record()` inside a `z.object()`
+ * field (e.g. the `limits` field in `billing/public/listPlans.ts`) is valid and
+ * intentional; only a top-level `z.record()` as the response schema itself is
+ * rejected.
+ *
+ * Rejected top-level schema types:
+ * - `z.any()` — ZodAny
+ * - `z.unknown()` — ZodUnknown
+ * - `z.record(...)` at the top level — ZodRecord
+ * - `z.object({}).passthrough()` — ZodObject with `unknownKeys === 'passthrough'`
+ *
+ * @param schema - The schema to validate
+ * @throws ServiceError(INTERNAL_ERROR) when the schema is permissive/passthrough
+ *
+ * @example
+ * // Throws at boot — rejects permissive schemas:
+ * assertConcretePublicSchema(z.any());
+ * assertConcretePublicSchema(z.unknown());
+ * assertConcretePublicSchema(z.record(z.string(), z.unknown()));
+ * assertConcretePublicSchema(z.object({ id: z.string() }).passthrough());
+ *
+ * // Passes — concrete schemas:
+ * assertConcretePublicSchema(z.object({ id: z.string(), name: z.string() }));
+ * assertConcretePublicSchema(z.array(z.object({ id: z.string() })));
+ */
+export const assertConcretePublicSchema = (schema: ZodTypeAny): void => {
+    // This project uses @hono/zod-openapi which exposes Zod internals via
+    // `_def.type` (a string like 'any', 'unknown', 'record', 'object') rather
+    // than the standard `_def.typeName` ('ZodAny', 'ZodUnknown', etc.).
+    // Both paths are checked for forward-compatibility should the Zod version
+    // change in the future.
+    // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
+    const def = (schema as any)._def as Record<string, unknown> | undefined;
+    // Support both _def.type ('any') and _def.typeName ('ZodAny') conventions.
+    const defType = (def?.type as string | undefined) ?? '';
+    const defTypeName = (def?.typeName as string | undefined) ?? '';
+
+    const isAny = defType === 'any' || defTypeName === 'ZodAny';
+    const isUnknown = defType === 'unknown' || defTypeName === 'ZodUnknown';
+    const isRecord = defType === 'record' || defTypeName === 'ZodRecord';
+    const isObject = defType === 'object' || defTypeName === 'ZodObject';
+
+    if (isAny) {
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Public responseSchema must not be z.any() — use a concrete z.object() schema (SPEC-210 PR5)'
+        );
+    }
+
+    if (isUnknown) {
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Public responseSchema must not be z.unknown() — use a concrete z.object() schema (SPEC-210 PR5)'
+        );
+    }
+
+    if (isRecord) {
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Public responseSchema must not be a top-level z.record() — use a concrete z.object() schema (SPEC-210 PR5)'
+        );
+    }
+
+    if (isObject) {
+        // Standard Zod: _def.unknownKeys === 'passthrough'
+        // @hono/zod-openapi: _def.catchall._def.type === 'unknown' (set by .passthrough())
+        // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
+        const catchallType = ((def?.catchall as any)?._def?.type as string | undefined) ?? '';
+        const unknownKeys = (def?.unknownKeys as string | undefined) ?? '';
+        const isPassthrough = unknownKeys === 'passthrough' || catchallType === 'unknown';
+        if (isPassthrough) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Public responseSchema must not use .passthrough() — use a concrete z.object() schema without passthrough (SPEC-210 PR5)'
+            );
+        }
+    }
+};
+
+/**
  * Strips a payload down to the fields declared in `responseSchema`.
  *
  * Behavior (strict mode — SPEC-087):
- * - If `responseSchema` is not provided, returns the data unchanged (no-op).
+ * - If `responseSchema` is not provided, throws ServiceError(INTERNAL_ERROR). Every public route MUST declare a concrete responseSchema (SPEC-210 PR5).
  * - If `responseSchema.safeParse(data)` succeeds, returns the parsed (stripped) data.
  * - If parsing fails, logs the structured issues server-side and throws a
  *   `ServiceError(INTERNAL_ERROR)` so the global error handler returns 500. A
@@ -85,11 +172,14 @@ export interface ErrorResponse {
  * @param responseSchema - Optional Zod schema describing the response contract
  * @param c - Optional Hono context to enrich diagnostic logs with method, path, requestId
  * @returns Stripped data on success
- * @throws ServiceError(INTERNAL_ERROR) when the schema rejects the payload
+ * @throws ServiceError(INTERNAL_ERROR) when no schema is provided or when the schema rejects the payload
  */
 export const stripWithSchema = <T>(data: T, responseSchema?: ZodTypeAny, c?: Context): T => {
     if (!responseSchema) {
-        return data;
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'stripWithSchema called without a responseSchema — every public route must declare a concrete schema (SPEC-210 PR5)'
+        );
     }
 
     const parsed = responseSchema.safeParse(data);
@@ -158,9 +248,14 @@ const logStripFailure = (issues: readonly ZodIssue[], c?: Context): void => {
  * @param data - Payload to include in the response envelope
  * @param c - Hono context
  * @param statusCode - HTTP status code (default 200)
- * @param responseSchema - Optional Zod schema used to strip sensitive fields
- *   from `data` via {@link stripWithSchema}. When omitted, the data is sent
- *   as-is and no runtime field enforcement is performed.
+ * @param responseSchema - Zod schema used to strip sensitive fields from `data`
+ *   via {@link stripWithSchema}. Required in practice (SPEC-210 PR5): the
+ *   pipeline is fail-closed, so {@link stripWithSchema} throws
+ *   `ServiceError(INTERNAL_ERROR)` when it is omitted. The parameter remains
+ *   typed as optional only for signature backward compatibility; every caller
+ *   MUST pass a concrete schema or the request fails with a 500.
+ * @throws ServiceError(INTERNAL_ERROR) when no `responseSchema` is provided or
+ *   when the schema rejects the payload (propagated from {@link stripWithSchema}).
  */
 export const createResponse = <T = unknown>(
     data: T,
@@ -225,6 +320,7 @@ export const createErrorResponse = (
  * @param responseSchema - Optional Zod schema applied to EACH item via
  *   {@link stripWithSchema} to enforce tier-appropriate field exposure at
  *   runtime (SPEC-062). Pagination metadata is never stripped.
+ *   Throws ServiceError(INTERNAL_ERROR) when no responseSchema is provided (SPEC-210 PR5 fail-closed).
  */
 export const createPaginatedResponse = (
     items: unknown[],
@@ -233,9 +329,13 @@ export const createPaginatedResponse = (
     statusCode = 200,
     responseSchema?: ZodTypeAny
 ) => {
-    const strippedItems = responseSchema
-        ? items.map((item) => stripWithSchema(item, responseSchema, c))
-        : items;
+    if (!responseSchema) {
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'createPaginatedResponse called without a responseSchema — every public list route must declare a concrete schema (SPEC-210 PR5)'
+        );
+    }
+    const strippedItems = items.map((item) => stripWithSchema(item, responseSchema, c));
 
     const response: ApiResponse<{ items: unknown[]; pagination: PaginationMetadata }> = {
         success: true,

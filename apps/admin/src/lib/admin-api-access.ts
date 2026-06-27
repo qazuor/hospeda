@@ -62,3 +62,32 @@ export function requireAdminApiAccess(context: unknown): void {
         throw redirect({ to: '/auth/forbidden' });
     }
 }
+
+/**
+ * Assert that the route context includes BOTH `ACCESS_API_ADMIN` and a specific
+ * narrower permission.
+ *
+ * Use this for admin pages that have a dedicated permission gating their API
+ * (e.g. the SPEC-162 audit/security log viewers, gated server-side by
+ * `AUDIT_LOG_VIEW` / `SECURITY_LOG_VIEW`). It redirects an admin-tier user who
+ * can reach the admin API but lacks the narrower permission BEFORE the page
+ * renders — defense-in-depth on top of the server-side 403, and a cleaner UX
+ * than rendering a page that immediately errors.
+ *
+ * @param context - Raw TanStack Router `beforeLoad` context object.
+ * @param permission - The narrower permission the page requires.
+ * @throws {ReturnType<typeof redirect>} Redirects to `/auth/forbidden` when
+ *   `ACCESS_API_ADMIN` or `permission` is absent.
+ */
+export function requireAdminPermission(context: unknown, permission: PermissionEnum): void {
+    // TYPE-WORKAROUND: see requireAdminApiAccess — same dynamic-context cast.
+    const authState = context as unknown as AuthState;
+
+    const granted =
+        authState.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
+        authState.permissions?.includes(permission);
+
+    if (!granted) {
+        throw redirect({ to: '/auth/forbidden' });
+    }
+}

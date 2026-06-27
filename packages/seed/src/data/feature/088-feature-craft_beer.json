@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "088-feature-craft_beer",
+    "slug": "craft_beer",
+    "description": {
+        "es": "Selección de cervezas artesanales locales y regionales en carta",
+        "en": "Selección de cervezas artesanales locales y regionales en carta",
+        "pt": "Selección de cervezas artesanales locales y regionales en carta"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "LocalCraftsIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

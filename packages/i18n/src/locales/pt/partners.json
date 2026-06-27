@@ -1,0 +1,18 @@
+{
+    "listing": {
+        "title": "Partners",
+        "subtitle": "Conheça as organizações que apoiam a Hospeda",
+        "emptyState": "Nenhum partner está disponível no momento.",
+        "typeFilter": "Tipo de partner"
+    },
+    "types": {
+        "commerce": "Comércio",
+        "ngo": "ONG",
+        "institution": "Instituição"
+    },
+    "tiers": {
+        "gold": "Gold",
+        "silver": "Silver",
+        "bronze": "Bronze"
+    }
+}

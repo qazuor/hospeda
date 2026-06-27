@@ -1,0 +1,285 @@
+/**
+ * @file AiSearchEntry.module.css
+ * @description Styles for the AI search hybrid layout (SPEC-265 D).
+ *
+ * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
+ * Uses CSS custom properties from global.css; no hardcoded colour values.
+ *
+ * Layout: fake search-bar entry point → floating FAB on scroll →
+ * overlay → right-side drawer (desktop) or full-screen (mobile).
+ */
+
+/* ─── Search-bar entry point ──────────────────────────────────────────────────
+   Looks like a natural search input field, not a button. Integrates
+   seamlessly into the listing page layout. Clicking opens the drawer.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--brand-primary, #2563eb);
+    border-radius: var(--radius-lg, 1rem);
+    background: linear-gradient(135deg, var(--brand-primary-a08), var(--brand-accent-a05));
+    color: var(--core-foreground, #1f2937);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
+    box-shadow: 0 4px 12px -4px var(--brand-primary-a25), 0 0 0 1px var(--brand-primary-a15);
+    margin-bottom: var(--space-8, 2rem);
+    position: relative;
+    overflow: hidden;
+}
+
+.searchBar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-primary, #2563eb), var(--brand-accent, #f97316));
+    opacity: 0;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.searchBar:hover {
+    border-color: var(--brand-primary, #2563eb);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -6px var(--brand-primary-a35), 0 0 0 1px var(--brand-primary-a20);
+}
+
+.searchBar:hover::before {
+    opacity: 1;
+}
+
+.searchBar:focus-visible {
+    outline: 3px solid var(--brand-primary, #2563eb);
+    outline-offset: 3px;
+}
+
+.searchBarIcon {
+    font-size: 1.375rem;
+    line-height: 1;
+    flex-shrink: 0;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.searchBarPlaceholder {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: var(--core-muted-foreground, #6b7280);
+}
+
+.searchBarBadge {
+    flex-shrink: 0;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill, 9999px);
+    background: linear-gradient(135deg, var(--brand-primary, #2563eb), var(--brand-accent, #f97316));
+    color: #ffffff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px -2px var(--brand-primary-a40);
+}
+
+/* Desktop inline variant: remove the default bottom spacing so the fake
+ * search bar aligns perfectly with the Lista/Mapa toggle row. The page-level
+ * layout owns the row spacing; the component should not add extra margin here. */
+@media (min-width: 768px) {
+    .searchBar {
+        margin-bottom: 0;
+    }
+}
+
+/* ─── Floating FAB ────────────────────────────────────────────────────────────
+   Appears when the search bar scrolls out of viewport. Positioned
+   bottom-right, above the FeedbackFAB (which sits at ~1rem bottom).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.fab {
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--brand-primary, #2563eb);
+    color: #ffffff;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 16px -2px var(--brand-primary-a40);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fabIn 0.25s ease;
+}
+
+.fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px -2px var(--brand-primary-a45);
+}
+
+.fab:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 3px;
+}
+
+@keyframes fabIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ─── Overlay backdrop ────────────────────────────────────────────────────────
+   Semi-transparent backdrop that dims the page behind the drawer.
+   Click on the backdrop closes the drawer.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: oklch(0 0 0 / 0.4);
+    display: flex;
+    justify-content: flex-end;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ─── Drawer panel ────────────────────────────────────────────────────────────
+   Right-side drawer on desktop, full-screen on mobile.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: var(--core-card, #ffffff);
+    box-shadow: -8px 0 32px -8px oklch(0 0 0 / 0.2);
+    animation: slideIn 0.25s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (min-width: 768px) {
+    .drawer {
+        width: 520px;
+        max-width: 90vw;
+        height: 100%;
+    }
+}
+
+/* ─── Drawer header ───────────────────────────────────────────────────────────
+   Title + close button. Revives the panelTitle i18n key.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--core-foreground-a15, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.drawerTitle {
+    margin: 0;
+    font-family: var(--font-heading, sans-serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground, #1f2937);
+}
+
+.closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: transparent;
+    color: var(--core-muted-foreground, #6b7280);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.closeButton:hover {
+    background-color: oklch(0 0 0 / 0.06);
+    color: var(--core-foreground, #1f2937);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+/* ─── Drawer body ─────────────────────────────────────────────────────────────
+   Container for the SearchChatPanel. The panel fills the available space.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.drawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.drawerBody > * {
+    /* SearchChatPanel has its own border/shadow — override to fill the drawer */
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 100% !important;
+    max-height: none !important;
+}

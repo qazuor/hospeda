@@ -16,11 +16,12 @@ import type { z } from 'zod';
 /** Input type for sidebar items (fields with .default() are optional). */
 type SidebarItemInput = z.input<typeof SidebarItemSchema>;
 
-// All canonical sidebar IDs (7 original + 4 HOST)
+// All canonical sidebar IDs (7 original + 4 HOST + 1 Marketing)
 const CANONICAL_SIDEBAR_IDS = [
     'inicioSidebar',
     'catalogoSidebar',
     'editorialSidebar',
+    'marketingSidebar',
     'comunidadSidebar',
     'comercialSidebar',
     'plataformaSidebar',
@@ -98,8 +99,8 @@ function collectHiddenItems(items: SidebarItemInput[]): SidebarItemInput[] {
 
 describe('sidebars', () => {
     describe('registry shape', () => {
-        it('should export exactly 11 sidebars (7 original + 4 HOST)', () => {
-            expect(Object.keys(sidebars)).toHaveLength(11);
+        it('should export exactly 12 sidebars (7 original + 4 HOST + 1 Marketing)', () => {
+            expect(Object.keys(sidebars)).toHaveLength(12);
         });
 
         it('should contain all canonical sidebar IDs', () => {

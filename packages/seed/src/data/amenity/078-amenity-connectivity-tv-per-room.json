@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "078-amenity-connectivity-tv-per-room",
-    "name": {
-        "es": "tv_per_room",
-        "en": "tv_per_room",
-        "pt": "tv_per_room"
-    },
     "slug": "tv_per_room",
     "description": {
         "es": "TV en cada habitación",
         "en": "TV en cada habitación",
         "pt": "TV en cada habitación"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "CONNECTIVITY",
     "icon": "RoomTvIcon",
     "isBuiltin": false,

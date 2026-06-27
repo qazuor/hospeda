@@ -1,0 +1,33 @@
+{
+    "$gastronomyId": "002-gastronomy-colon-cafe-del-palacio",
+    "reviews": [
+        {
+            "userId": "006-user-laura-vega",
+            "title": "El mejor café de Entre Ríos",
+            "content": "Descubrí este café en mi viaje a Colón y fue una de las mejores decisiones. El café de especialidad es extraordinario, los croissants recién horneados son perfectos y el ambiente es encantador. La terraza con vista al palacio es simplemente mágica al atardecer.",
+            "rating": {
+                "food": 5,
+                "service": 5,
+                "ambiance": 5,
+                "value": 5
+            },
+            "averageRating": 5.0,
+            "overallRating": 5,
+            "moderationState": "APPROVED"
+        },
+        {
+            "userId": "010-user-roberto-mendoza",
+            "title": "Ambiente perfecto, café excelente",
+            "content": "Pasé una tarde increíble en este café. El flat white estaba perfecto, los macarons eran dignos de una pastelería parisina y el personal muy amable. El único contra es que los fines de semana se llena mucho y puede ser difícil conseguir mesa.",
+            "rating": {
+                "food": 5,
+                "service": 4,
+                "ambiance": 5,
+                "value": 4
+            },
+            "averageRating": 4.5,
+            "overallRating": 5,
+            "moderationState": "APPROVED"
+        }
+    ]
+}

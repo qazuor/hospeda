@@ -103,7 +103,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -113,7 +114,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 200)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -150,7 +152,8 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -160,7 +163,8 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 500)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -199,7 +203,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.HAS_VERIFICATION_BADGE,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -210,7 +215,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 2000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -242,7 +248,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -253,7 +260,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 30),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 300)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 300),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 300)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -294,7 +302,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -305,7 +314,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 150),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 500)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -348,7 +358,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.HAS_VERIFICATION_BADGE,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
-        EntitlementKey.AI_TRANSLATE
+        EntitlementKey.AI_TRANSLATE,
+        EntitlementKey.AI_ACCOMMODATION_IMPORT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -360,7 +371,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 5000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -453,6 +465,78 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     // (SPEC-211 T-003/T-004, SPEC-200).
     entitlements: [...TOURIST_VIP_ENTITLEMENTS],
     limits: [...TOURIST_VIP_LIMITS]
+};
+
+// ─── COMMERCE PLAN (SPEC-239) ──────────────────────────────────
+
+/**
+ * Commerce-listing plan (SPEC-239 T-049).
+ *
+ * A single flat subscription that makes a commerce listing (gastronomy,
+ * experience, etc.) visible. It is **deliberately NOT part of {@link ALL_PLANS}**:
+ * the accommodation seed loop, the public/accommodation plan list, and the
+ * grant-matrix snapshot tests all operate on `ALL_PLANS` and must stay
+ * accommodation-only. This plan is seeded by its own helper
+ * (`seedCommercePlan`) which stamps `billing_plans.product_domain='commerce'`
+ * so the public plans endpoint and the web pricing pages exclude it.
+ *
+ * `category` is set to `'owner'` ONLY to satisfy the {@link PlanCategory} type
+ * (D-ISOLATION forbids widening `PlanCategory` to add `'commerce'`, which would
+ * ripple through every `Record<PlanCategory>` usage). The real domain
+ * discriminator is the `product_domain` column, not this field — nothing in the
+ * accommodation flow ever reads this plan because it is excluded from
+ * `ALL_PLANS` and filtered out by product_domain.
+ *
+ * NOTE (owner): `monthlyPriceArs` below is a PLACEHOLDER (ARS 5,000.00). The
+ * owner must confirm / override the real commerce-listing price via the admin
+ * UI (it is a commercial-layer field; the seed never overwrites it once set).
+ *
+ * `hasTrial=false`, `entitlements=[]`, `limits=[]`: commerce visibility is
+ * driven by the subscription status via the `commerce_listing_subscriptions`
+ * link table + the visibility reconciler, NOT by the billing entitlement engine.
+ */
+export const COMMERCE_LISTING_PLAN: PlanDefinition = {
+    slug: 'commerce-listing',
+    name: 'Commerce Listing',
+    description: 'Subscription that makes a commerce listing visible (SPEC-239).',
+    // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain is
+    // the real discriminator. Do NOT widen PlanCategory to add 'commerce'.
+    category: 'owner',
+    // PLACEHOLDER price — owner to confirm via admin UI (ARS 5,000.00 in cents).
+    monthlyPriceArs: 500000,
+    annualPriceArs: null,
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 1,
+    isActive: true,
+    entitlements: [],
+    limits: []
+};
+
+/**
+ * Dedicated partner-directory plan (SPEC-271).
+ *
+ * Seeded into `billing_plans` and stamped with `product_domain='partner'`, but
+ * intentionally excluded from `ALL_PLANS` so accommodation pricing surfaces do
+ * not expose it.
+ */
+export const PARTNER_LISTING_PLAN: PlanDefinition = {
+    slug: 'partner-listing',
+    name: 'Partner Listing',
+    description: 'Subscription that makes a partner visible in the public directory (SPEC-271).',
+    category: 'owner',
+    monthlyPriceArs: 500000,
+    annualPriceArs: null,
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 1,
+    isActive: true,
+    entitlements: [],
+    limits: []
 };
 
 // ─── ALL PLANS ─────────────────────────────────────────────────

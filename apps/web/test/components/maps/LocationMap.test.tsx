@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-leaflet', () => ({
     MapContainer: ({ children, ...rest }: { children: React.ReactNode }) => (
@@ -46,6 +46,12 @@ vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'shadow.png' 
 import { render, screen } from '@testing-library/react';
 import { LocationMap } from '../../../src/components/maps/LocationMap.client';
 
+// Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
+// default findBy timeout even on a cold module graph when this file runs alone.
+beforeAll(async () => {
+    await import('../../../src/components/maps/LocationMapInner.client');
+});
+
 const i18n = {
     attribution: '© OSM',
     approximateDisclaimer: 'Ubicación aproximada.',
@@ -53,7 +59,7 @@ const i18n = {
 };
 
 describe('LocationMap', () => {
-    it('renders a Circle in approximate mode and shows the disclaimer', () => {
+    it('renders a Circle in approximate mode and shows the disclaimer', async () => {
         render(
             <LocationMap
                 mode="approximate"
@@ -65,13 +71,15 @@ describe('LocationMap', () => {
             />
         );
 
-        expect(screen.getByTestId('circle')).toBeInTheDocument();
+        // Inner map is lazy-loaded (React.lazy + Suspense, SPEC-269): await the
+        // first query so the chunk resolves before the sync assertions run.
+        expect(await screen.findByTestId('circle')).toBeInTheDocument();
         expect(screen.queryByTestId('marker')).not.toBeInTheDocument();
         expect(screen.getByTestId('circle').dataset.radius).toBe('150');
         expect(screen.getByText('Ubicación aproximada.')).toBeInTheDocument();
     });
 
-    it('renders a Marker in exact mode and does not show disclaimer', () => {
+    it('renders a Marker in exact mode and does not show disclaimer', async () => {
         render(
             <LocationMap
                 mode="exact"
@@ -83,13 +91,13 @@ describe('LocationMap', () => {
             />
         );
 
-        expect(screen.getByTestId('marker')).toBeInTheDocument();
+        expect(await screen.findByTestId('marker')).toBeInTheDocument();
         expect(screen.queryByTestId('circle')).not.toBeInTheDocument();
         expect(screen.queryByText('Ubicación aproximada.')).not.toBeInTheDocument();
         expect(screen.getByText('Chajarí')).toBeInTheDocument();
     });
 
-    it('falls back to i18n markerLabel when markerLabel prop is omitted in exact mode', () => {
+    it('falls back to i18n markerLabel when markerLabel prop is omitted in exact mode', async () => {
         render(
             <LocationMap
                 mode="exact"
@@ -100,10 +108,10 @@ describe('LocationMap', () => {
             />
         );
 
-        expect(screen.getByText('Ubicación')).toBeInTheDocument();
+        expect(await screen.findByText('Ubicación')).toBeInTheDocument();
     });
 
-    it('exposes ariaLabel to the wrapper element', () => {
+    it('exposes ariaLabel to the wrapper element', async () => {
         const { container } = render(
             <LocationMap
                 mode="approximate"
@@ -115,6 +123,8 @@ describe('LocationMap', () => {
             />
         );
 
+        // Wait for the lazy inner map to mount before reading the wrapper.
+        await screen.findByTestId('circle');
         const root = container.querySelector('[role="img"]');
         expect(root?.getAttribute('aria-label')).toBe('my-label');
     });

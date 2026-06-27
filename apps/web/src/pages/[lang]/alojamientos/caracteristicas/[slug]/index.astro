@@ -30,7 +30,9 @@ const featureItems = featuresResult.data.items as unknown as Array<Record<string
 const feature = featureItems.find((f) => String(f.slug) === slug);
 if (!feature) return new Response(null, { status: 404 });
 const featureId = String(feature.id);
-const featureName = String(feature.name || slug);
+// SPEC-266: `name` was dropped from the catalog; resolve label from i18n by slug.
+// The slug is always available as the route param. Falls back to humanized slug.
+const featureName = t(`accommodations.featureNames.${slug}`, slug);
 
 // Use accommodations list endpoint filtered by feature UUID
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);

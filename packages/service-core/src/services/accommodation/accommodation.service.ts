@@ -1,6 +1,7 @@
 import {
     AccommodationFaqModel,
     AccommodationIaDataModel,
+    AccommodationMediaModel,
     AccommodationModel,
     AmenityModel,
     DestinationModel,
@@ -49,6 +50,22 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationMediaAddInput,
+    AccommodationMediaAddInputSchema,
+    type AccommodationMediaArchiveInput,
+    AccommodationMediaArchiveInputSchema,
+    type AccommodationMediaListInput,
+    AccommodationMediaListInputSchema,
+    type AccommodationMediaListOutput,
+    type AccommodationMediaRemoveInput,
+    AccommodationMediaRemoveInputSchema,
+    type AccommodationMediaReorderInput,
+    AccommodationMediaReorderInputSchema,
+    type AccommodationMediaRestoreInput,
+    AccommodationMediaRestoreInputSchema,
+    type AccommodationMediaSetFeaturedInput,
+    AccommodationMediaSetFeaturedInputSchema,
+    type AccommodationMediaSingleOutput,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
@@ -69,6 +86,7 @@ import {
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
     LifecycleStatusEnum,
+    ModerationStatusEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
@@ -105,6 +123,8 @@ import {
     generateSlug
 } from './accommodation.helpers';
 import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
+import { attachComposedMedia, attachComposedMediaList } from './accommodation.media-read';
+import { syncAccommodationMedia } from './accommodation.media-sync';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -155,10 +175,9 @@ export class AccommodationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodation';
     /**
-     * Roles that already imply host-level capabilities. Users holding any of these
-     * skip onboarding (no draft is created for them) and are not auto-promoted on
-     * draft creation. Used by the `already_host` short-circuit in
-     * `createForOnboarding` and by the legacy `_assignHostRoleIfNeeded` hook.
+     * Roles that already imply host-level capabilities. Used to skip the USER → HOST
+     * promotion in `createForOnboarding` (the promotion is a no-op for an already-
+     * privileged actor) and by the `_assignHostRoleIfNeeded` hook.
      */
     private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.HOST,
@@ -306,6 +325,13 @@ export class AccommodationService extends BaseCrudService<
     private readonly _featureCatalogModel: FeatureModel;
 
     /**
+     * Model for `accommodation_media`. Used by SPEC-204 T-007 write-both sync to
+     * mirror the JSONB media value into the relational table inside the same transaction.
+     * Initialized once at construction; the singleton is safe to reuse across requests.
+     */
+    private readonly _accommodationMediaModel: AccommodationMediaModel;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
@@ -317,6 +343,9 @@ export class AccommodationService extends BaseCrudService<
      * @param rFeatureModel - Optional junction model for `r_accommodation_feature` (for testing/mocking).
      * @param amenityModel - Optional catalog model for `amenities` (for testing/mocking).
      * @param featureCatalogModel - Optional catalog model for `features` (for testing/mocking).
+     * @param accommodationMediaModel - Optional media model for `accommodation_media` (for testing/mocking).
+     *   When omitted, a default `AccommodationMediaModel` is instantiated. Pass a mock in unit tests
+     *   to avoid requiring a real database connection when the payload includes a `media` field.
      */
     constructor(
         ctx: ServiceConfig,
@@ -327,7 +356,8 @@ export class AccommodationService extends BaseCrudService<
         rAmenityModel?: RAccommodationAmenityModel,
         rFeatureModel?: RAccommodationFeatureModel,
         amenityModel?: AmenityModel,
-        featureCatalogModel?: FeatureModel
+        featureCatalogModel?: FeatureModel,
+        accommodationMediaModel?: AccommodationMediaModel
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -347,6 +377,9 @@ export class AccommodationService extends BaseCrudService<
         this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
         this._amenityModel = amenityModel ?? new AmenityModel();
         this._featureCatalogModel = featureCatalogModel ?? new FeatureModel();
+        // SPEC-204 T-007: shadow-write to accommodation_media on every create/update.
+        // Injectable for unit tests that need to mock DB operations (see FIX 1 note).
+        this._accommodationMediaModel = accommodationMediaModel ?? new AccommodationMediaModel();
     }
 
     /**
@@ -372,14 +405,22 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterGetByField(
         entity: Accommodation | null,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Accommodation | null> {
         const flattened = flattenAccommodationJoinRelations(entity);
         const withCity = projectAccommodationCityDestination(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatar(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return withOwnerAvatar;
-        return applyAccommodationLocationPrivacy(withOwnerAvatar, { actor, salt });
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacy(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: read `media` from the relational accommodation_media
+        // table (shape-identical composition). Videos still come from JSONB.
+        return attachComposedMedia({
+            entity: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
     }
 
     /**
@@ -394,18 +435,23 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterList(
         result: PaginatedListOutput<Accommodation>,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const flattened = flattenAccommodationJoinRelationsList(result.items);
         const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withOwnerAvatar };
-        return {
-            ...result,
-            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
-        };
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+        const items = await attachComposedMediaList({
+            items: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
@@ -420,18 +466,23 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterSearch(
         result: PaginatedListOutput<Accommodation>,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const flattened = flattenAccommodationJoinRelationsList(result.items);
         const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withOwnerAvatar };
-        return {
-            ...result,
-            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
-        };
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+        const items = await attachComposedMediaList({
+            items: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     // --- Permissions Hooks ---
@@ -717,6 +768,12 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterCreate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // SPEC-204 T-007: capture media value for shadow-write into accommodation_media.
+            // undefined → field absent in payload → no-op; null/object → full replace.
+            ctx.hookState.pendingMedia = (data as Record<string, unknown>).media as
+                | import('@repo/schemas').Media
+                | null
+                | undefined;
         }
 
         // Only generate a slug if one is not already provided
@@ -804,6 +861,22 @@ export class AccommodationService extends BaseCrudService<
                 featureIds: ctx.hookState.pendingFeatureIds,
                 junctionModel: this._rFeatureModel,
                 featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+        // SPEC-204 T-007: shadow-write media into accommodation_media.
+        // undefined → no-op (media field was absent in the create payload).
+        if (ctx.hookState?.pendingMedia !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Media sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncAccommodationMedia({
+                accommodationId: entity.id,
+                media: ctx.hookState.pendingMedia as import('@repo/schemas').Media | null,
+                mediaModel: this._accommodationMediaModel,
                 tx: ctx.tx
             });
         }
@@ -914,6 +987,10 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // SPEC-204 DIRECT CUTOVER: pendingMedia is no longer captured for update.
+            // The accommodation_media table is the sole source of truth for photos;
+            // UPDATE only writes videos to the JSONB blob. Gallery management is done
+            // via granular media endpoints, not via the bulk update path.
         }
 
         // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
@@ -948,6 +1025,10 @@ export class AccommodationService extends BaseCrudService<
      *
      * SPEC-172: also syncs amenity/feature junctions when `pendingAmenityIds` or
      * `pendingFeatureIds` are present in `ctx.hookState` (set by `_beforeUpdate`).
+     *
+     * SPEC-204 DIRECT CUTOVER: does NOT sync `accommodation_media` on update.
+     * The relational table is the sole source of truth for photos; gallery
+     * management goes through dedicated media endpoints, not the bulk update path.
      *
      * @param entity - The updated accommodation entity.
      * @param _actor - The actor performing the update.
@@ -992,6 +1073,9 @@ export class AccommodationService extends BaseCrudService<
                 tx: ctx.tx
             });
         }
+        // SPEC-204 DIRECT CUTOVER: accommodation_media is NOT synced on update.
+        // Photo gallery management is handled exclusively via granular media endpoints.
+        // Videos remain in the JSONB blob and are written by the regular update path.
 
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -999,6 +1083,7 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: entity.id,
                 slug: entity.slug,
                 destinationSlug,
                 accommodationType: entity.type?.toLowerCase()
@@ -1094,11 +1179,6 @@ export class AccommodationService extends BaseCrudService<
      *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
      *   data) so the admin-access invariant is restored.
      *
-     * - `already_host`  - the actor already holds a privileged role (HOST, ADMIN,
-     *   CLIENT_MANAGER, SUPER_ADMIN). No draft is created; the caller is expected to
-     *   redirect the user straight to the admin panel where they can create listings
-     *   through the standard CRUD flow.
-     *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
      * one that would have been produced by `create()`.
@@ -1128,9 +1208,6 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
-                if (user && AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
-                    return { status: 'already_host', accommodation: null };
-                }
 
                 const existingDraft = await this.model.findOne(
                     {
@@ -1160,30 +1237,42 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.id
                 );
 
-                const processedData = await this._beforeCreate(
-                    domainInput,
-                    validatedActor,
-                    execCtx
-                );
-
-                const payload = {
-                    ...domainInput,
-                    ...processedData,
-                    ownerId: validatedActor.id,
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    lastWarnedAt: null,
-                    createdById: validatedActor.id,
-                    updatedById: validatedActor.id
-                } as Partial<Accommodation>;
-
-                // Wrap the draft insert AND the USER -> HOST role promotion in
-                // a single short transaction. Promoting at draft creation
-                // (rather than at first publish) is required so the owner can
-                // access the admin panel right away (`ACCESS_PANEL_ADMIN` is
-                // granted to HOST). The trial subscription is still deferred
-                // to the first publish — see `publish()`.
-                const created = await withServiceTransaction(
+                // Wrap the draft insert, slug generation, amenity junction sync,
+                // and USER -> HOST role promotion in a single short transaction.
+                //
+                // _beforeCreate is called INSIDE the transaction (not before it) so
+                // that ctx.hookState.pendingAmenityIds is captured into the same
+                // txCtx that _afterCreate reads from. Calling _beforeCreate outside
+                // the transaction would write hookState into execCtx, but _afterCreate
+                // is called with txCtx (a separate ServiceContext), so the junction
+                // data would be silently lost — amenities would never be synced.
+                // (SPEC-258 B-API fix)
+                //
+                // Promoting at draft creation (rather than at first publish) is
+                // required so the owner can access the admin panel right away
+                // (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription
+                // is still deferred to the first publish — see `publish()`.
+                const result = await withServiceTransaction(
                     async (txCtx) => {
+                        // Run _beforeCreate inside the tx so that hookState mutations
+                        // (pendingAmenityIds, pendingFeatureIds, slug) are visible to
+                        // _afterCreate which runs in the same txCtx.
+                        const processedData = await this._beforeCreate(
+                            domainInput,
+                            validatedActor,
+                            txCtx
+                        );
+
+                        const payload = {
+                            ...domainInput,
+                            ...processedData,
+                            ownerId: validatedActor.id,
+                            lifecycleState: LifecycleStatusEnum.DRAFT,
+                            lastWarnedAt: null,
+                            createdById: validatedActor.id,
+                            updatedById: validatedActor.id
+                        } as Partial<Accommodation>;
+
                         const next = await this.model.create(payload, txCtx.tx);
                         if (!next) {
                             throw new ServiceError(
@@ -1191,10 +1280,9 @@ export class AccommodationService extends BaseCrudService<
                                 'Failed to create onboarding draft accommodation'
                             );
                         }
-                        // Promote USER -> HOST. No-op if the user is somehow
-                        // already privileged (the `already_host` short-circuit
-                        // above already returned), defensive against legacy
-                        // role rows.
+                        // Promote USER -> HOST. No-op if the actor is already HOST
+                        // or higher — an existing host creating another draft flows
+                        // here and the update is a benign no-op at the DB level.
                         if (user && user.role === RoleEnum.USER) {
                             await this._userModel.update(
                                 { id: validatedActor.id },
@@ -1202,37 +1290,44 @@ export class AccommodationService extends BaseCrudService<
                                 txCtx.tx
                             );
                         }
-                        return next;
+                        // Run _afterCreate INSIDE the transaction so that role
+                        // promotion + amenity junction sync + media shadow-writes
+                        // are all atomic. If any step throws, the whole tx rolls
+                        // back (FIX 2, SPEC-204; extended by SPEC-258 B-API).
+                        const after = await this._afterCreate(next, validatedActor, txCtx);
+                        return after;
                     },
                     undefined,
                     { timeoutMs: 5000 }
                 );
 
-                const after = await this._afterCreate(created, validatedActor, execCtx);
-                return { status: 'created', accommodation: after };
+                return { status: 'created', accommodation: result };
             }
         });
     }
 
     /**
      * Creates a new accommodation, wrapping the operation in a database transaction
-     * when `amenityIds` or `featureIds` are present in the input (SPEC-172).
+     * when `amenityIds`, `featureIds`, or `media` are present in the input
+     * (SPEC-172 / SPEC-204).
      *
-     * When junction sync fields are absent, delegates directly to `super.create()`
+     * When none of those fields are present, delegates directly to `super.create()`
      * which behaves exactly as before — this override is a transparent pass-through
-     * for callers that do not supply junction data.
+     * for callers that do not supply junction or media data.
      *
-     * When junction sync fields ARE present, a `withServiceTransaction` boundary is
-     * opened so that:
+     * When junction sync fields OR a media payload ARE present, a
+     * `withServiceTransaction` boundary is opened so that:
      * - The accommodation row insert
      * - The amenity junction inserts (via `_afterCreate` → `syncAmenityJunction`)
      * - The feature junction inserts (via `_afterCreate` → `syncFeatureJunction`)
+     * - The accommodation_media shadow-writes (via `_afterCreate` → `syncAccommodationMedia`)
      *
      * all commit or roll back atomically. An unknown catalog ID in either list causes
      * the whole transaction to roll back with `VALIDATION_ERROR`.
      *
      * @param actor - The actor performing the action.
-     * @param data - Create input, optionally including `amenityIds` and `featureIds`.
+     * @param data - Create input, optionally including `amenityIds`, `featureIds`,
+     *   and `media`.
      * @param ctx - Optional service context. When provided with a transaction, the
      *   operation participates in the existing transaction instead of opening a new one.
      */
@@ -1245,9 +1340,10 @@ export class AccommodationService extends BaseCrudService<
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
-        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+        const needsMedia = (data as Record<string, unknown>).media !== undefined;
+        const needsTx = amenityIds !== undefined || featureIds !== undefined || needsMedia;
 
-        if (!needsJunctionSync) {
+        if (!needsTx) {
             return super.create(actor, data, ctx);
         }
 
@@ -1373,56 +1469,58 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // INV-5 / B-1: preserve server-managed archivedGallery on any media update.
+        // SPEC-204 DIRECT CUTOVER — media blob on update carries ONLY videos.
         //
-        // `archivedGallery` is written exclusively by the downgrade-restriction cron
-        // (plan-photo-restriction.service) and MUST NOT be cleared by a host edit.
-        // The client input schema (`BaseMediaFields.media`) does not expose this field,
-        // so Zod strips it before the payload reaches here. We carry it forward from
-        // the current DB row whenever `data.media` is present.
+        // The relational `accommodation_media` table is the sole source of truth for
+        // photos (gallery, featuredImage, archivedGallery). Sending photo fields from
+        // a bulk update would overwrite the blob's photo-related keys and create a
+        // divergence with the table. We therefore strip those fields from any incoming
+        // `media` object before passing it to `super.update()`.
         //
-        // B-2: preserve server-managed `videos` on any host media edit that omits
-        // the `videos` key. The web editor only sends featuredImage+gallery; clients
-        // that don't manage videos must not wipe the existing videos array. An
-        // explicit `videos` key in the payload (including `[]` to clear) is respected.
+        // B-2 (videos preservation): videos remain in the JSONB blob. The web editor
+        // sends only featuredImage+gallery, so `videos` is typically absent from
+        // client payloads. Without the guard the existing videos array would be wiped
+        // by the shallow JSONB merge. We carry it forward from the current DB row
+        // whenever the payload omits the `videos` key entirely.
+        //   - Absent `videos` key in payload → carry forward from existing row.
+        //   - Explicit `videos: []` in payload → respected (clears the list).
         //
         // Fetch only when needed: if `data.media` is undefined the DB write won't
         // touch the media column at all, so no action is required.
         let normalizedData = data;
         if (data.media !== undefined) {
-            const existing = await this.model.findById(id, resolvedCtx?.tx);
-            const existingArchivedGallery = existing?.media?.archivedGallery;
-            const existingVideos = existing?.media?.videos;
-            // Carry forward archivedGallery when the existing row has it.
-            const shouldCarryArchivedGallery = existingArchivedGallery !== undefined;
-            // Carry forward videos only when the payload does NOT include a `videos` key
-            // (undefined = client omitted it, meaning "no change").
+            // Strip photo fields — they are managed exclusively via media endpoints.
+            const {
+                gallery: _gallery,
+                featuredImage: _featuredImage,
+                archivedGallery: _archivedGallery,
+                ...videosOnlyMedia
+            } = data.media as Record<string, unknown>;
+            // Carry forward existing videos when the payload omits the `videos` key.
+            const existingVideos = (await this.model.findById(id, resolvedCtx?.tx))?.media?.videos;
             const shouldCarryVideos =
                 existingVideos !== undefined &&
-                !('videos' in ((data.media as Record<string, unknown>) ?? {}));
-            if (shouldCarryArchivedGallery || shouldCarryVideos) {
-                normalizedData = {
-                    ...data,
-                    media: {
-                        ...data.media,
-                        ...(shouldCarryArchivedGallery
-                            ? { archivedGallery: existingArchivedGallery }
-                            : {}),
-                        ...(shouldCarryVideos ? { videos: existingVideos } : {})
-                    }
-                } as AccommodationUpdateInput;
-            }
+                !('videos' in (data.media as Record<string, unknown>));
+            normalizedData = {
+                ...data,
+                media: {
+                    ...videosOnlyMedia,
+                    ...(shouldCarryVideos ? { videos: existingVideos } : {})
+                }
+            } as AccommodationUpdateInput;
         }
 
         // SPEC-172: if junction sync fields are present and no external tx exists,
-        // open a transaction so accommodation update + junction sync are atomic.
+        // open a transaction so the accommodation update + junction sync are atomic.
+        // Media no longer needs a tx here: the JSONB write goes through model.update()
+        // directly and is atomic by itself.
         const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
-        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+        const needsTx = amenityIds !== undefined || featureIds !== undefined;
 
-        if (needsJunctionSync && !resolvedCtx?.tx) {
+        if (needsTx && !resolvedCtx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
                     return super.update(actor, id, normalizedData, txCtx);
@@ -2172,7 +2270,7 @@ export class AccommodationService extends BaseCrudService<
     public async getTopRated(
         actor: Actor,
         params: AccommodationTopRatedParams,
-        _ctx?: ServiceContext
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRated',
@@ -2198,10 +2296,17 @@ export class AccommodationService extends BaseCrudService<
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
 
-                const accommodations =
+                const normalized =
                     items.map(
                         (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                     ) ?? [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2239,6 +2344,13 @@ export class AccommodationService extends BaseCrudService<
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
                     return { accommodation: null };
                 }
+                // SPEC-204 T-013: compose `media` from the relational table so the
+                // summary cover image matches the relational source of truth.
+                const withMedia = await attachComposedMedia({
+                    entity: entity as Accommodation,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: execCtx?.tx
+                });
                 const accommodation = {
                     id: entity.id,
                     type: entity.type,
@@ -2249,7 +2361,7 @@ export class AccommodationService extends BaseCrudService<
                     isFeatured: entity.isFeatured,
                     reviewsCount: 0,
                     averageRating: 0,
-                    media: entity.media,
+                    media: withMedia?.media ?? entity.media,
                     location: entity.location
                 };
                 return { accommodation };
@@ -2355,12 +2467,19 @@ export class AccommodationService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                const accommodations = Array.isArray(result.items)
+                const normalized = Array.isArray(result.items)
                     ? result.items.map(
                           (item) =>
                               normalizeAccommodationOutput(item, validatedActor) as Accommodation
                       )
                     : [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2378,7 +2497,7 @@ export class AccommodationService extends BaseCrudService<
     public async getTopRatedByDestination(
         actor: Actor,
         data: AccommodationTopRatedParams,
-        _ctx?: ServiceContext
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
@@ -2409,10 +2528,17 @@ export class AccommodationService extends BaseCrudService<
                     activeOnly: !hasVipAccess
                 });
 
-                const accommodations =
+                const normalized =
                     items.map(
                         (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                     ) ?? [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2877,11 +3003,18 @@ export class AccommodationService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                const accommodations = Array.isArray(result.items)
+                const normalized = Array.isArray(result.items)
                     ? result.items.map(
                           (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                       )
                     : [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2964,6 +3097,552 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
                 return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);
+            }
+        });
+    }
+
+    /**
+     * Adds a photo to an accommodation gallery (SPEC-204 granular gallery endpoint).
+     *
+     * This is a URL-receiver method: the upload to Cloudinary has already happened
+     * via `POST /api/v1/admin/media/upload`. This method registers the already-uploaded
+     * URL as a new `accommodation_media` row.
+     *
+     * Permission model: delegates to `_canUpdate` (same as `addFaq` / `addIaData`).
+     * This enforces `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN`
+     * + ownership), allowing HOSTs to add photos to their own accommodations.
+     *
+     * Plan cap enforcement is NOT done here — it is done in the route handler
+     * because `checkLimit` requires the Hono `Context` object (populated by
+     * `entitlementMiddleware`). The service receives a pre-screened request.
+     *
+     * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end).
+     * When no visible rows exist yet, starts at 0.
+     *
+     * Server-controlled fields set here:
+     * - `state`      → `'visible'` (newly added photos are always visible)
+     * - `isFeatured` → `false` (featured is managed by a dedicated endpoint)
+     * - `sortOrder`  → max(current visible sortOrder) + 1
+     * - `moderationState` → defaults to `ModerationStatusEnum.PENDING` when not supplied
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and the photo payload.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The created `AccommodationMedia` row, wrapped in a `{ media }` envelope.
+     */
+    public async addMedia(
+        actor: Actor,
+        data: AccommodationMediaAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaAddInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
+                // Using the base findAll with descending sort on sortOrder picks the
+                // highest current sortOrder in a single-row page — same pattern as addFaq.
+                const existing = await mediaModel.findAll(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        deletedAt: null
+                    },
+                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.sortOrder ?? -1;
+                const nextSortOrder =
+                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+                const rowToCreate = {
+                    ...validated.media,
+                    accommodationId: validated.accommodationId as AccommodationIdType,
+                    moderationState:
+                        validated.media.moderationState ?? ModerationStatusEnum.PENDING,
+                    state: 'visible' as const,
+                    isFeatured: false,
+                    sortOrder: nextSortOrder
+                };
+
+                const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+                return { media: createdMedia };
+            }
+        });
+    }
+
+    /**
+     * Removes a single photo from an accommodation gallery (SPEC-204 T-018).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Verify the media row exists AND belongs to this accommodation.
+     * 3. Soft-delete the row (sets `deletedAt`).
+     * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
+     *    (preserves their relative order). Both steps run in a single transaction.
+     *
+     * Does NOT touch Cloudinary — deleting the binary is a separate concern
+     * orchestrated by the caller. Only the DB row is affected.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     */
+    public async removeMedia(
+        actor: Actor,
+        data: AccommodationMediaRemoveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaRemoveInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Soft-delete + resequence in a single transaction.
+                const doRemove = async (tx: DrizzleClient): Promise<void> => {
+                    await mediaModel.softDelete({ id: validated.mediaId }, tx);
+
+                    // Reload the remaining visible rows to resequence them.
+                    const { items: remaining } = await mediaModel.findByAccommodation({
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        pageSize: 200,
+                        tx
+                    });
+
+                    // Apply dense 0-based sortOrder in the existing visual order.
+                    for (let i = 0; i < remaining.length; i++) {
+                        const row = remaining[i];
+                        if (row && row.sortOrder !== i) {
+                            await mediaModel.update({ id: row.id }, { sortOrder: i }, tx);
+                        }
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doRemove(ctx.tx);
+                } else {
+                    await withTransaction(doRemove);
+                }
+
+                return { success: true };
+            }
+        });
+    }
+
+    /**
+     * Reorders an accommodation's gallery photos (SPEC-204 T-019).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Load all current VISIBLE rows for the accommodation.
+     * 3. Validate that `orderedIds` is exactly the set of current visible row ids
+     *    — no missing entries, no extras, no foreign ids. Rejects with
+     *    `VALIDATION_ERROR` on any mismatch.
+     * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
+     *    All updates run in a single transaction.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and the ordered array of mediaId UUIDs.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The reordered list wrapped in a `{ media: [...] }` envelope.
+     */
+    public async reorderMedia(
+        actor: Actor,
+        data: AccommodationMediaReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaReorderInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                // Load all visible rows to validate and resequence.
+                const { items: visibleRows } = await mediaModel.findByAccommodation({
+                    accommodationId: validated.accommodationId,
+                    state: 'visible',
+                    pageSize: 200,
+                    tx: ctx?.tx
+                });
+
+                const existingIds = new Set(visibleRows.map((r) => r.id));
+
+                // Validate set equality: orderedIds must match existingIds exactly.
+                const inputIds = new Set(validated.orderedIds);
+                const missingIds = [...existingIds].filter((id) => !inputIds.has(id));
+                const extraIds = [...inputIds].filter((id) => !existingIds.has(id));
+
+                if (missingIds.length > 0 || extraIds.length > 0) {
+                    const details: string[] = [];
+                    if (missingIds.length > 0) details.push(`missing: ${missingIds.join(', ')}`);
+                    if (extraIds.length > 0)
+                        details.push(`unknown/foreign: ${extraIds.join(', ')}`);
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `orderedIds does not match visible media for this accommodation — ${details.join('; ')}`
+                    );
+                }
+
+                // Build a map for fast row lookup so we can return the updated list.
+                const rowById = new Map(visibleRows.map((r) => [r.id, r]));
+
+                // Apply all sortOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (let i = 0; i < validated.orderedIds.length; i++) {
+                        const id = validated.orderedIds[i];
+                        if (id !== undefined) {
+                            await mediaModel.update({ id }, { sortOrder: i }, tx);
+                        }
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                // Return the reordered rows with their updated sortOrder values.
+                const reordered = validated.orderedIds
+                    .map((id, idx) => {
+                        const row = rowById.get(id);
+                        return row ? { ...row, sortOrder: idx } : null;
+                    })
+                    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+                return { media: reordered };
+            }
+        });
+    }
+
+    /**
+     * Lists the media rows for an accommodation gallery (SPEC-204).
+     *
+     * Returns all non-deleted rows ordered by `sortOrder ASC`. Supports an optional
+     * `state` filter (defaults to `'visible'`). Admin equivalent of
+     * `adminGetFaqs` — gated with `_canUpdate` so a VIEW_OWN HOST sees only their
+     * own accommodation's gallery.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and optional state filter.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The media list wrapped in a `{ media: [...] }` envelope.
+     */
+    public async adminGetMedia(
+        actor: Actor,
+        data: AccommodationMediaListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaListInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const { items } = await mediaModel.findByAccommodation({
+                    accommodationId: validated.accommodationId,
+                    state: validated.state ?? 'visible',
+                    pageSize: 200,
+                    tx: ctx?.tx
+                });
+
+                return { media: items };
+            }
+        });
+    }
+
+    /**
+     * Promotes a single photo to the featured image of an accommodation (SPEC-204 T-020).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: target row must be `state = 'visible'` — a DB CHECK constraint
+     *    forbids `is_featured = true AND state = 'archived'`, so we reject early
+     *    with a clear ServiceError rather than letting the DB raise.
+     * 4. In a TRANSACTION: clear the previous featured row (`is_featured = false`),
+     *    then set the target row `is_featured = true`. Clear-then-set order is
+     *    mandatory — setting the new one first would briefly violate the partial
+     *    unique index on (accommodation_id) WHERE is_featured.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The updated media row wrapped in a `{ media }` envelope.
+     */
+    public async setFeaturedMedia(
+        actor: Actor,
+        data: AccommodationMediaSetFeaturedInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setFeaturedMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaSetFeaturedInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: archived photos cannot be featured (DB CHECK constraint would fire).
+                // Reject early with a clear, actionable message.
+                if (mediaRow.state === 'archived') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot feature an archived photo — restore it to visible first'
+                    );
+                }
+
+                // Transaction: clear-then-set to avoid briefly having two featured rows
+                // which would violate the partial unique index on
+                // (accommodation_id) WHERE is_featured = true AND deleted_at IS NULL.
+                const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
+                    // 1. Clear any existing featured row for this accommodation.
+                    const existing = await mediaModel.findFeatured({
+                        accommodationId: validated.accommodationId,
+                        tx
+                    });
+                    if (existing && existing.id !== validated.mediaId) {
+                        await mediaModel.update({ id: existing.id }, { isFeatured: false }, tx);
+                    }
+                    // 2. Promote the target row.
+                    await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
+                };
+
+                if (ctx?.tx) {
+                    await doSetFeatured(ctx.tx);
+                } else {
+                    await withTransaction(doSetFeatured);
+                }
+
+                // Re-fetch the updated row to return the current DB state.
+                const updated = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after set-featured'
+                    );
+                }
+                return { media: updated };
+            }
+        });
+    }
+
+    /**
+     * Archives a single accommodation photo (SPEC-204 T-021a).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: only `state = 'visible'` rows can be archived (idempotency guard
+     *    — already-archived rows are rejected).
+     * 4. Guard: featured photos cannot be archived — the DB CHECK constraint
+     *    enforces `NOT (is_featured AND state = 'archived')`. We reject early with
+     *    an actionable message telling the caller to unfeature first.
+     * 5. Flip `state = 'archived'` and `archivedAt = NOW()`.
+     *
+     * NOTE: this is the per-photo admin archive endpoint — distinct from the
+     * billing downgrade archive in plan-photo-restriction logic (which works by
+     * URL/count on the full gallery). Do NOT confuse the two.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The archived media row wrapped in a `{ media }` envelope.
+     */
+    public async archiveMedia(
+        actor: Actor,
+        data: AccommodationMediaArchiveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'archiveMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaArchiveInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: only visible rows can be archived.
+                if (mediaRow.state !== 'visible') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Photo is already archived'
+                    );
+                }
+
+                // Guard: featured photos cannot be archived — the CHECK constraint
+                // `NOT (is_featured AND state = 'archived')` would fire at the DB.
+                // Reject early with an actionable message.
+                if (mediaRow.isFeatured) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot archive the featured photo — unfeature it first'
+                    );
+                }
+
+                const archived = await mediaModel.update(
+                    { id: validated.mediaId },
+                    { state: 'archived', archivedAt: new Date() },
+                    ctx?.tx
+                );
+                if (!archived) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after archive'
+                    );
+                }
+                return { media: archived };
+            }
+        });
+    }
+
+    /**
+     * Restores an archived accommodation photo (SPEC-204 T-021b).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: only `state = 'archived'` rows can be restored.
+     * 4. Flip `state = 'visible'`, clear `archivedAt = NULL`, and assign
+     *    `sortOrder = max(current visible sortOrder) + 1` (append at end).
+     *
+     * Plan cap on restore: intentionally NOT enforced here. The plan cap is a
+     * billing-layer concern enforced at the upload/add routes (where new binary
+     * assets are registered). Restoring a previously-visible photo that already
+     * exists in the DB is treated as a management action, not a new addition.
+     * This mirrors how addFaq/restore works elsewhere in this service. If product
+     * decides to enforce the cap on restore in the future, it must be added
+     * explicitly — the handler was intentionally left without an inline cap check.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The restored media row wrapped in a `{ media }` envelope.
+     */
+    public async restoreMedia(
+        actor: Actor,
+        data: AccommodationMediaRestoreInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'restoreMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaRestoreInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: only archived rows can be restored.
+                if (mediaRow.state !== 'archived') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Photo is not archived'
+                    );
+                }
+
+                // Compute next sortOrder: append at end of current visible gallery.
+                const existing = await mediaModel.findAll(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        deletedAt: null
+                    },
+                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.sortOrder ?? -1;
+                const nextSortOrder =
+                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+                const restored = await mediaModel.update(
+                    { id: validated.mediaId },
+                    { state: 'visible', archivedAt: null, sortOrder: nextSortOrder },
+                    ctx?.tx
+                );
+                if (!restored) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after restore'
+                    );
+                }
+                return { media: restored };
             }
         });
     }

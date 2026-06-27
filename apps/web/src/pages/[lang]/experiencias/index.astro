@@ -1,0 +1,241 @@
+---
+/**
+ * @file experiencias/index.astro
+ * @description Experience listing page (SPEC-240 T-026).
+ * SSR-fetches experiencesApi.list with filters from the query string and renders
+ * a grid of ExperienceCard components with FilterSidebar, Pagination, EmptyState,
+ * and ErrorBanner following the same pattern as gastronomia/index.astro.
+ *
+ * @route /{lang}/experiencias/
+ * @rendering SSR (on-demand)
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ExperienceCard from '@/components/experience/ExperienceCard.astro';
+import ExperienceGrid from '@/components/experience/ExperienceGrid.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
+import { toExperienceCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+
+// --- Pagination ---
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+// --- Filter params ---
+const q = url.searchParams.get('q') ?? undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
+
+// --- Fetch destinations (CITY) for filter dropdown ---
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+
+// --- Fetch experience listings ---
+const result = await experiencesApi.list({
+    page,
+    pageSize,
+    q,
+    destinationId,
+    type,
+    isFeatured,
+    minRating,
+    sortBy: 'isFeatured',
+    sortOrder: 'desc'
+});
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+
+// --- Transform to card props ---
+const cards = items.map((item) =>
+    toExperienceCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+// --- Experience types for filter (from the confirmed enum) ---
+const EXPERIENCE_TYPES = [
+    'CAR_RENTAL',
+    'BIKE_RENTAL',
+    'KAYAK_RENTAL',
+    'QUAD_RENTAL',
+    'TOUR_GUIDE',
+    'GUIDED_VISIT',
+    'EXCURSION',
+    'BOAT_TRIP',
+    'FISHING_CHARTER',
+    'BIRD_WATCHING',
+    'CULTURAL_TOUR',
+    'WINE_TASTING',
+    'OUTDOOR_ADVENTURE',
+    'OTHER'
+] as const;
+
+// --- Filter groups ---
+const filterGroups: FilterGroup[] = [
+    {
+        id: 'q',
+        label: t('experience.listing.search', 'Búsqueda por texto'),
+        type: 'search',
+        placeholder: t(
+            'experience.listing.searchPlaceholder',
+            'Buscar por nombre o descripción...'
+        )
+    },
+    {
+        id: 'destinationId',
+        label: t('experience.listing.destination', 'Destino'),
+        type: 'select-search',
+        options: destinations.map((d) => ({
+            value: d.id,
+            label: d.name,
+            featured: Boolean(d.isFeatured)
+        })),
+        maxVisible: 8
+    },
+    {
+        id: 'type',
+        label: t('experience.listing.type', 'Tipo de experiencia'),
+        type: 'checkbox',
+        options: EXPERIENCE_TYPES.map((value) => ({
+            value,
+            label: t(`experience.type.${value}`, value)
+        }))
+    },
+    {
+        id: 'isFeatured',
+        label: t('experience.listing.featured', 'Solo destacadas'),
+        type: 'toggle'
+    },
+    {
+        id: 'minRating',
+        label: t('experience.listing.minRating', 'Calificación mínima'),
+        type: 'stars'
+    }
+];
+
+const sortOptions = [
+    { value: 'featured', label: t('experience.listing.sort.featured', 'Destacadas primero') },
+    {
+        value: 'ratingDesc',
+        label: t('experience.listing.sort.ratingDesc', 'Mejor valoradas')
+    },
+    { value: 'newest', label: t('experience.listing.sort.newest', 'Recién agregadas') },
+    { value: 'nameAsc', label: t('experience.listing.sort.nameAsc', 'Nombre (A-Z)') }
+];
+
+// --- Build initial params for sidebar (avoids hydration flash) ---
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (destinationId) initialParams.destinationId = destinationId;
+if (type) initialParams.type = type;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+initialParams.sortBy = 'featured';
+
+const baseUrl = buildUrl({ locale, path: 'experiencias' });
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+---
+
+<ListingLayout
+    locale={locale}
+    title={t('experience.listing.title', 'Experiencias')}
+    description={t(
+        'experience.listing.subtitle',
+        'Descubrí las mejores experiencias y servicios turísticos del Litoral Entrerriano'
+    )}
+    canonicalPath={canonicalPath}
+    showFilters={true}
+    filterPosition="left"
+    ogTagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
+>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[{ label: t('experience.listing.title', 'Experiencias') }]}
+    />
+
+    <ListingPageHeader
+        slot="page-header"
+        locale={locale}
+        tagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
+        title={t('experience.listing.title', 'Experiencias')}
+        totalCount={total}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        sortOptions={sortOptions}
+        initialParams={initialParams}
+    />
+
+    {hasError && !result.ok && (
+        <ErrorBanner
+            locale={locale}
+            error={result.error}
+            entityName="experiencias"
+        />
+    )}
+
+    {!hasError && cards.length === 0 && (
+        <EmptyState
+            locale={locale}
+            variant="no-results"
+            actionUrl={baseUrl}
+            message={t(
+                'experience.listing.emptyState',
+                'No se encontraron experiencias con los filtros seleccionados.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length > 0 && (
+        <ExperienceGrid>
+            {cards.map((card, i) => (
+                <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+                    <ExperienceCard
+                        data={card}
+                        locale={locale}
+                        eager={i < 3}
+                    />
+                </div>
+            ))}
+        </ExperienceGrid>
+    )}
+
+    {totalPages > 1 && (
+        <Pagination
+            slot="pagination"
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl={baseUrl.slice(0, -1)}
+            locale={locale}
+            searchParams={(() => {
+                const sp = new URLSearchParams(url.searchParams);
+                sp.delete('page');
+                return sp;
+            })()}
+        />
+    )}
+</ListingLayout>

@@ -27,6 +27,7 @@ The documentation is organized into project-wide docs (this directory), app-loca
 Cross-cutting development guides. App-specific guides (adding pages, deployment, etc.) live in each app's `docs/` directory.
 
 - [Guides Index](guides/README.md)
+- [Accommodation Gallery Architecture](guides/accommodation-gallery-architecture.md)
 - [Adding New Entity](guides/adding-new-entity.md)
 - [CLI Utilities](guides/cli-utilities.md)
 - [Debugging](guides/debugging.md)

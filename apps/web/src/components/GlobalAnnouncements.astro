@@ -23,6 +23,7 @@
 
 import { announcementsApi } from '@/lib/api/endpoints';
 import { filterActiveByDate, pickAnnouncementText } from '@/lib/announcements';
+import { createTranslations } from '@/lib/i18n';
 
 export interface Props {
     /** Current page locale (e.g. 'es', 'en', 'pt'). Drives copy selection. */
@@ -30,6 +31,7 @@ export interface Props {
 }
 
 const { locale } = Astro.props;
+const { t } = createTranslations(locale as 'es' | 'en' | 'pt');
 
 const response = await announcementsApi.list();
 const all = response.ok ? response.data : [];
@@ -41,12 +43,16 @@ const variantToneClass: Record<string, string> = {
     danger: 'global-announcement--danger'
 };
 
-const dismissAriaLabel =
-    locale === 'en'
-        ? 'Dismiss announcement'
-        : locale === 'pt'
-          ? 'Fechar comunicado'
-          : 'Cerrar anuncio';
+const dismissAriaLabelByLocale = {
+    en: 'Dismiss announcement',
+    pt: 'Fechar comunicado',
+    es: 'Cerrar anuncio'
+} as const;
+
+const dismissAriaLabel = t(
+    'announcements.dismiss',
+    dismissAriaLabelByLocale[locale as 'es' | 'en' | 'pt'] ?? dismissAriaLabelByLocale.es
+);
 
 const cspNonce = Astro.locals.cspNonce ?? '';
 ---
@@ -62,7 +68,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
                 data-announcement-id={item.id}
                 data-starts-at={item.startsAt ?? ''}
                 data-ends-at={item.endsAt ?? ''}
-                role="status"
+                role={item.variant === 'danger' ? 'alert' : 'status'}
             >
                 <p class="global-announcement__text">{pickAnnouncementText(item, locale)}</p>
                 {item.dismissible && (

@@ -1,0 +1,8 @@
+{
+    "team": "Beta Feedback",
+    "backlogState": "Backlog",
+    "defaultLabels": ["QAZUOR"],
+    "commandLabel": "agent-reported",
+    "priority": 4,
+    "autoLabelHint": "Add contextual labels that exist in the team and match the problem: area-* (billing, admin, api, infra, build, observability, ui-polish, destinations, content, reporting, mobile, i18n, profile, events, accommodations, auth), bug-* (bug-js, bug-ui-ux, bug-content) or Bug, feature-request/Feature, Improvement, and source-* (source-web, source-api, source-admin, source-infra, source-standalone). Validate each against list_issue_labels before applying."
+}

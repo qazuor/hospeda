@@ -116,6 +116,7 @@
 /* Empty state shown before the first turn */
 .emptyState {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 2rem 1.5rem;
@@ -124,6 +125,58 @@
     font-size: 0.9375rem;
     color: var(--core-muted-foreground, #6b7280);
     line-height: 1.5;
+    gap: 1rem;
+}
+
+.emptyStateText {
+    margin: 0;
+}
+
+/* ─── Example query chips (SPEC-265 B1a) ──────────────────────────────────────
+   Clickable suggestion chips shown in the empty state. Each chip sends
+   a pre-written natural-language query when clicked.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.exampleChips {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.exampleLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.exampleChip {
+    display: inline-block;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
+    border-radius: var(--radius-pill, 9999px);
+    background: transparent;
+    color: var(--core-foreground, #1f2937);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    text-align: center;
+    max-width: 90%;
+}
+
+.exampleChip:hover {
+    border-color: var(--brand-primary, #2563eb);
+    background-color: var(--brand-primary-a05);
+}
+
+.exampleChip:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
 }
 
 /* ─── Bubbles ─────────────────────────────────────────────────────────────────
@@ -226,6 +279,24 @@
     background-color: #fef2f2;
     border-radius: var(--radius-md, 0.625rem);
     border-left: 3px solid #dc2626;
+    flex-shrink: 0;
+}
+
+/* ─── Low-confidence notice (SPEC-265 A2) ─────────────────────────────────────
+   Shown when the model's confidence is below threshold. Uses a warm amber
+   palette (not red — this is a suggestion, not an error).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.lowConfidenceNotice {
+    margin: 0 1.25rem;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--brand-accent, #f97316);
+    background-color: var(--brand-accent-a08);
+    border-radius: var(--radius-md, 0.625rem);
+    border-left: 3px solid var(--brand-accent, #f97316);
     flex-shrink: 0;
 }
 
@@ -482,8 +553,9 @@
     transition: border-color 0.15s ease;
 }
 
-.textarea:focus {
-    outline: none;
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
     border-color: var(--brand-primary, #2563eb);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #2563eb) 20%, transparent);
 }
@@ -527,6 +599,56 @@
 
 .sendButton:focus-visible {
     outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+/* ─── Char counter (SPEC-265 C2) ─────────────────────────────────────────────
+   Shows {n}/500 below the textarea. Muted color so it doesn't compete
+   with the input. Right-aligned within the composer row.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.charCounter {
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: var(--core-muted-foreground, #6b7280);
+    flex-shrink: 0;
+    align-self: flex-end;
+    padding-bottom: 0.625rem;
+    margin-right: 0.25rem;
+    user-select: none;
+}
+
+/* ─── Stop button (SPEC-265 C1) ──────────────────────────────────────────────
+   Replaces the send button while streaming. Amber/warning palette to
+   signal "this is a cancel action", not a submit.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.stopButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    padding: 0 1rem;
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background-color: var(--brand-accent, #f97316);
+    color: #ffffff;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+    align-self: flex-end;
+}
+
+.stopButton:hover {
+    background-color: color-mix(in srgb, var(--brand-accent, #f97316) 90%, black);
+}
+
+.stopButton:focus-visible {
+    outline: 2px solid var(--brand-accent, #f97316);
     outline-offset: 2px;
 }
 

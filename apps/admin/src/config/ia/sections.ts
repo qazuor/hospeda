@@ -181,6 +181,20 @@ export const sections: Record<string, Section> = {
     },
 
     /**
+     * Marketing — Social media publishing, social post batches, campaigns,
+     * audiences, hashtags, platform formats, footers, settings, and newsletter.
+     * All social marketing operations under one section.
+     */
+    marketing: {
+        id: 'marketing',
+        label: { es: 'Marketing', en: 'Marketing', pt: 'Marketing' },
+        icon: 'PromotionsIcon',
+        route: '/social',
+        defaultRoute: '/social',
+        sidebar: 'marketingSidebar'
+    },
+
+    /**
      * Mi facturación — HOST's own subscription and billing view.
      *
      * Pointed at /billing/subscriptions — the only billing page that makes sense

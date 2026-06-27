@@ -30,7 +30,43 @@ import {
 } from '../../factories/accommodationFactory';
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
-import { createLoggerMock } from '../../utils/modelMockFactory';
+import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
+
+/**
+ * SPEC-204 DIRECT CUTOVER: AccommodationService.update() no longer opens a
+ * transaction for media-only payloads. Junction sync (amenityIds/featureIds)
+ * still wraps in a tx, but a videos-only blob write does not. The
+ * withServiceTransaction mock below is retained for payloads that do include
+ * junction fields, but is not exercised by the videos-preservation cases here.
+ */
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (
+            fn: (ctx: { tx: object; hookState: Record<string, unknown> }) => Promise<unknown>,
+            baseCtx?: { hookState?: Record<string, unknown> }
+        ) => {
+            // Provide a truthy tx stub so the !ctx.tx guards in _afterUpdate
+            // don't fire. The injected AccommodationMediaModel stub swallows all DB calls.
+            const ctx = { ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} };
+            try {
+                return await fn(ctx as never);
+            } catch (err) {
+                // runWithLoggingAndValidation re-throws ServiceError when ctx.tx is truthy.
+                // Detect via duck-type and wrap back into { error } for unit test assertions.
+                if (
+                    err !== null &&
+                    typeof err === 'object' &&
+                    'code' in err &&
+                    'name' in err &&
+                    (err as { name: string }).name === 'ServiceError'
+                ) {
+                    return { error: err };
+                }
+                throw err;
+            }
+        }
+    )
+}));
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -53,7 +89,19 @@ beforeEach(() => {
 });
 
 function makeService(model: ReturnType<typeof createMockBaseModel>): AccommodationService {
-    const svc = new AccommodationService({ logger: mockLogger }, model as AccommodationModel);
+    const svc = new AccommodationService(
+        { logger: mockLogger },
+        model as AccommodationModel,
+        null,
+        undefined,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        // biome-ignore lint/suspicious/noExplicitAny: test stub
+        makeMediaModelStub() as any
+    );
     // Stub the private destination model so _assertDestinationIsCity resolves.
     // @ts-expect-error: private override for test
     svc._destinationModel = {

@@ -1,0 +1,1 @@
+ALTER TABLE "gastronomy_reviews" ALTER COLUMN "rating" DROP NOT NULL;

@@ -20,6 +20,8 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
+import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
+import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
 
@@ -425,6 +427,7 @@ export async function processSubscriptionUpdated({
         subscriptionId: localSubscription.id
     });
     if (!transitionGuard.valid) {
+        // SPEC-180: invalid transitions are actionable (indicate MP/local state divergence).
         apiLogger.error(
             {
                 subscriptionId: localSubscription.id,
@@ -436,7 +439,8 @@ export async function processSubscriptionUpdated({
                 source,
                 reason: transitionGuard.reason
             },
-            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects'
+            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects',
+            { capture: true }
         );
         return { success: true, statusChanged: false };
     }
@@ -554,6 +558,7 @@ export async function processSubscriptionUpdated({
             subscriptionId: localSubscription.id
         });
         if (!txTransitionGuard.valid) {
+            // SPEC-180: in-transaction transition guard failure is actionable.
             apiLogger.error(
                 {
                     subscriptionId: localSubscription.id,
@@ -566,7 +571,8 @@ export async function processSubscriptionUpdated({
                     source,
                     reason: txTransitionGuard.reason
                 },
-                'Subscription webhook tx: invalid transition on fresh status — committing nothing'
+                'Subscription webhook tx: invalid transition on fresh status — committing nothing',
+                { capture: true }
             );
             txStatusChanged = false;
             return;
@@ -625,6 +631,21 @@ export async function processSubscriptionUpdated({
 
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);
+
+    // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
+    // No-op for accommodation subs (no commerce_listing_subscriptions row).
+    // Non-blocking: never breaks webhook processing.
+    await reconcileCommerceListingForSubscription({
+        subscriptionId: localSubscription.id,
+        subscriptionStatus: mappedStatus,
+        source: 'mp-webhook'
+    });
+
+    await reconcilePartnerForSubscription({
+        subscriptionId: localSubscription.id,
+        subscriptionStatus: mappedStatus,
+        source: 'mp-webhook'
+    });
 
     apiLogger.info(
         {

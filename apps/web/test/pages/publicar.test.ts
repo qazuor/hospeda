@@ -87,6 +87,45 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
         });
     });
 
+    describe('existing-host redirect (marketing landing only)', () => {
+        it('only runs the redirect check for authenticated users', () => {
+            // The owned-count fetch is gated behind isAuthenticated so guests always
+            // see the landing.
+            const redirectIdx = src.indexOf('owned-accommodations fetch returned non-ok');
+            const authGateIdx = src.lastIndexOf('if (isAuthenticated) {', redirectIdx);
+            expect(authGateIdx).toBeGreaterThan(-1);
+            expect(authGateIdx).toBeLessThan(redirectIdx);
+        });
+
+        it('fetches the owned-accommodation count via the pageSize=1 endpoint', () => {
+            expect(src).toContain('/api/v1/protected/accommodations?page=1&pageSize=1');
+            expect(src).toContain('data?.pagination?.total');
+        });
+
+        it('redirects to mi-cuenta/propiedades only when owned count > 0 (NOT by role)', () => {
+            expect(src).toMatch(/total\s*>\s*0/);
+            expect(src).toContain(
+                "Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }))"
+            );
+            // Criterion must be owned-count, not a role check.
+            const redirectBlock = src.slice(
+                src.indexOf('Redirect existing hosts'),
+                src.indexOf("path: 'mi-cuenta/propiedades' }))") + 40
+            );
+            expect(redirectBlock).not.toContain('role ===');
+        });
+
+        it('wraps the fetch in try/catch so it is non-fatal (renders landing on error)', () => {
+            const block = src.slice(
+                src.indexOf('Redirect existing hosts'),
+                src.indexOf('const isTrialExpired')
+            );
+            expect(block).toContain('try {');
+            expect(block).toContain('catch (error)');
+            expect(block).toContain('logger.warn');
+        });
+    });
+
     describe('styling — tokens, no hardcoded values', () => {
         it('does not bring back the deprecated banner border-left + warm surface combo', () => {
             // The original guard was file-wide, but commit 85cce1b2d legitimately added

@@ -68,16 +68,15 @@ export interface AccommodationPublishDeps {
  * Outcome of `AccommodationService.createForOnboarding`.
  *
  * - `created`: a fresh DRAFT was inserted for the actor and the onboarding flow
- *   promotes them from `USER` to `HOST` so they can access host surfaces.
+ *   promotes them from `USER` to `HOST` so they can access host surfaces. When the
+ *   actor is already `HOST` (or higher) the role promotion is a no-op but a new
+ *   DRAFT is still created so they don't lose their input.
  * - `resumed`: the actor already had an active DRAFT — that one is returned and the
  *   caller should resume the onboarding flow on it instead of creating a new one.
- * - `already_host`: the actor is already `HOST` (or higher). No draft is created;
- *   the caller is expected to redirect to the admin panel directly.
  */
 export type HostOnboardingResult =
     | { status: 'created'; accommodation: Accommodation }
-    | { status: 'resumed'; accommodation: Accommodation }
-    | { status: 'already_host'; accommodation: null };
+    | { status: 'resumed'; accommodation: Accommodation };
 
 /**
  * Per-request hook state for AccommodationService lifecycle hooks.
@@ -124,6 +123,22 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * `[…]` → list of AiTextImproveFieldType values.
      */
     pendingAiAssistedFields?: readonly string[];
+    /**
+     * Media value extracted from CREATE input (SPEC-204, T-007).
+     * Stored here by `_beforeCreate` so `_afterCreate` can mirror it into the
+     * `accommodation_media` relational table inside the same transaction.
+     *
+     * SPEC-204 DIRECT CUTOVER: this field is NO LONGER captured for UPDATE.
+     * The `accommodation_media` table is the sole source of truth for photos;
+     * gallery management on the update path goes through dedicated media
+     * endpoints, not the bulk update path.
+     *
+     * Three-way contract (create path only):
+     * - `undefined` → field was absent in the input (no-op; leave existing rows untouched).
+     * - `null`      → media was explicitly cleared; delete all rows.
+     * - defined     → full replace (delete-all then re-insert).
+     */
+    pendingMedia?: import('@repo/schemas').Media | null;
     /**
      * Translatable field values captured from the entity BEFORE an update
      * (SPEC-212, AC-5). Set by `_beforeUpdate`, read by `_afterUpdate` to

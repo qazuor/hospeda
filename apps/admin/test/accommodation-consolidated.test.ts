@@ -31,7 +31,8 @@ describe('AccommodationConsolidatedConfig', () => {
             );
 
             expect(config).toBeDefined();
-            expect(config.sections).toHaveLength(7); // Todas las secciones consolidadas
+            // 8 sections: import-from-url (SPEC-222) + the 7 standard consolidated sections
+            expect(config.sections).toHaveLength(8);
             expect(config.metadata).toBeDefined();
             // mockT returns the i18n key verbatim; the real translated value is 'Accommodation'
             expect(config.metadata?.title).toBe('admin-entities.entities.accommodation.singular');
@@ -42,11 +43,11 @@ describe('AccommodationConsolidatedConfig', () => {
                 mockT,
                 mockAccommodationTypeOptions
             );
-            const basicInfoSection = config.sections[0];
+            const basicInfoSection = config.sections.find((s) => s.id === 'basic-info');
 
-            expect(basicInfoSection.id).toBe('basic-info');
-            expect(basicInfoSection.modes).toEqual(['view', 'edit', 'create']);
-            expect(basicInfoSection.fields).toHaveLength(8); // name, summary, description, richDescription, type, isFeatured, destinationId, ownerId
+            expect(basicInfoSection).toBeDefined();
+            expect(basicInfoSection?.modes).toEqual(['view', 'edit', 'create']);
+            expect(basicInfoSection?.fields).toHaveLength(8); // name, summary, description, richDescription, type, isFeatured, destinationId, ownerId
         });
 
         it('should have all required fields in basic-info section', () => {
@@ -54,8 +55,8 @@ describe('AccommodationConsolidatedConfig', () => {
                 mockT,
                 mockAccommodationTypeOptions
             );
-            const basicInfoSection = config.sections[0];
-            const fieldIds = basicInfoSection.fields.map((field) => field.id);
+            const basicInfoSection = config.sections.find((s) => s.id === 'basic-info');
+            const fieldIds = basicInfoSection?.fields.map((field) => field.id) ?? [];
 
             expect(fieldIds).toContain('name');
             expect(fieldIds).toContain('description');
@@ -88,11 +89,14 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const editSections = filterSectionsByMode(config.sections, 'edit');
 
-            expect(editSections).toHaveLength(6);
-            expect(editSections[0].id).toBe('basic-info');
+            // 7 = 6 standard edit sections + import-from-url (SPEC-222, edit+create only)
+            expect(editSections).toHaveLength(7);
+            // import-from-url is positioned first so admins can prefill before editing
+            expect(editSections[0].id).toBe('import-from-url');
 
             // All fields must be present in edit mode
-            expect(editSections[0].fields).toHaveLength(8);
+            const editBasicInfo = editSections.find((s) => s.id === 'basic-info');
+            expect(editBasicInfo?.fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for create mode', () => {
@@ -102,13 +106,16 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const createSections = filterSectionsByMode(config.sections, 'create');
 
-            expect(createSections).toHaveLength(5);
-            expect(createSections[0].id).toBe('basic-info');
+            // 6 = 5 standard create sections + import-from-url (SPEC-222, edit+create only)
+            expect(createSections).toHaveLength(6);
+            // import-from-url is positioned first so admins can prefill before creating
+            expect(createSections[0].id).toBe('import-from-url');
 
             // isFeatured must not be present in create mode
-            const fieldIds = createSections[0].fields.map((field) => field.id);
+            const createBasicInfo = createSections.find((s) => s.id === 'basic-info');
+            const fieldIds = createBasicInfo?.fields.map((field) => field.id) ?? [];
             expect(fieldIds).not.toContain('isFeatured');
-            expect(createSections[0].fields).toHaveLength(7);
+            expect(createBasicInfo?.fields).toHaveLength(7);
         });
     });
 

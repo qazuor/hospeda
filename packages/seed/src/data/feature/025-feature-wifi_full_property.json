@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "025-feature-wifi_full_property",
-    "name": {
-        "es": "Wi-Fi en todo el predio",
-        "en": "Wi-Fi en todo el predio",
-        "pt": "Wi-Fi en todo el predio"
-    },
     "slug": "wifi_full_property",
     "description": {
         "es": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",
         "en": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",
         "pt": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "WifiIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -219,6 +219,23 @@
             "unauthCta": "Faça login para contratar",
             "currentPlan": "Plano atual",
             "currentPlanAriaLabel": "Este é o seu plano atual"
+        },
+        "promoApply": {
+            "toggle": "Tem um código de desconto?",
+            "label": "Código de desconto",
+            "inputPlaceholder": "Digite seu código",
+            "applyButton": "Aplicar",
+            "applying": "Verificando...",
+            "removeButton": "Remover",
+            "discountPercentForever": "{{percent}}% de desconto para sempre",
+            "discountPercentCycles": "{{percent}}% de desconto por {{months}} meses",
+            "discountFixedForever": "R${{amount}} de desconto para sempre",
+            "discountFixedCycles": "R${{amount}} de desconto por {{months}} meses",
+            "trialExtension": "{{days}} dias extras de avaliação gratuita",
+            "comp": "Grátis para sempre",
+            "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
+            "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
+            "errorGeneric": "Não conseguimos verificar o código. Tente novamente."
         }
     },
     "limit": {
@@ -449,5 +466,78 @@
         "ai_text_improve": "Melhoria de textos com IA",
         "ai_chat": "Consultas sobre a acomodação com IA",
         "ai_search": "Busca inteligente"
+    },
+    "comparison": {
+        "unlimited": "Ilimitado",
+        "notIncluded": "Não incluído",
+        "included": "Incluído",
+        "upcoming": "Em breve",
+        "complexTeaser": "Planos especiais para complexos e hotéis — em breve",
+        "group": {
+            "owner": "Funções de anfitrião",
+            "accommodation": "Funções da hospedagem",
+            "complex": "Funções de complexo",
+            "tourist": "Funções de viajante",
+            "ai": "Funções de IA",
+            "limits": "Limites",
+            "experience": "Sua experiência",
+            "asTourist": "Como viajante (incluído)",
+            "asOwner": "Como anfitrião",
+            "aiBusiness": "IA para o seu negócio"
+        },
+        "row": {
+            "favorites": "Favoritos",
+            "collections": "Coleções de viagem",
+            "reviews": "Avaliações",
+            "recommendations": "Recomendações personalizadas",
+            "compare": "Comparar hospedagens",
+            "searchHistory": "Histórico de buscas",
+            "alertsOffers": "Alertas e ofertas",
+            "whatsappDisplay": "Contato por WhatsApp",
+            "whatsappDirect": "WhatsApp direto com o anfitrião",
+            "aiSearch": "Busca inteligente com IA",
+            "aiChat": "Consultas com IA sobre a hospedagem",
+            "publish": "Hospedagens publicadas",
+            "photos": "Fotos por hospedagem",
+            "editInfo": "Editar informações da hospedagem",
+            "respondReviews": "Responder avaliações",
+            "basicStats": "Estatísticas básicas",
+            "advancedStats": "Estatísticas avançadas",
+            "calendar": "Calendário de disponibilidade",
+            "richDescription": "Descrição rica",
+            "video": "Vídeo na sua publicação",
+            "promotions": "Promoções ativas",
+            "prioritySupport": "Suporte prioritário",
+            "featured": "Destaque nos resultados de busca",
+            "branding": "Branding personalizado",
+            "verificationBadge": "Selo de propriedade verificada",
+            "aiTextImprove": "Melhorias de texto com IA por mês",
+            "aiTranslate": "Traduções com IA por mês",
+            "aiImport": "Importações com IA por mês",
+            "aiChatOwner": "Consultas com IA por mês",
+            "aiSupport": "Assistente IA de suporte"
+        },
+        "note": {
+            "aiSearch": "Para usuários registrados",
+            "aiChatTourist": "Disponível em acomodações que o habilitaram",
+            "aiChatOwner": "Você o habilita para seus hóspedes",
+            "aiSupportAddon": "Disponível como complemento"
+        },
+        "limitLabel": {
+            "max_accommodations": "Hospedagens publicadas",
+            "max_photos_per_accommodation": "Fotos por hospedagem",
+            "max_active_promotions": "Promoções ativas",
+            "max_favorites": "Favoritos",
+            "max_properties": "Propriedades do complexo",
+            "max_staff_accounts": "Contas de equipe",
+            "max_active_alerts": "Alertas de preço ativos",
+            "max_compare_items": "Comparações simultâneas",
+            "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
+            "max_ai_chat_per_month": "Consultas com IA por mês",
+            "max_ai_search_per_month": "Buscas com IA por mês",
+            "max_ai_support_per_month": "Consultas ao suporte com IA por mês",
+            "max_ai_translate_per_month": "Traduções com IA por mês",
+            "max_ai_accommodation_import_per_month": "Importações com IA por mês"
+        }
     }
 }

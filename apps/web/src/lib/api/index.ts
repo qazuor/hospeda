@@ -1,5 +1,5 @@
 /**
- * Public API client for web2 - re-exports all API utilities, endpoints, and transforms.
+ * Public API client for web - re-exports all API utilities, endpoints, and transforms.
  *
  * Three tiers of endpoints:
  * - Public (`endpoints.ts`): no auth required, safe to call from any page

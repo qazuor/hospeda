@@ -161,7 +161,12 @@
         "bookmark_count": "Saved by {{count}} people",
         "bookmark_count_one": "Saved by {{count}} person",
         "bookmark_count_other": "Saved by {{count}} people",
-        "bookmark_count_zero": "Be the first to save it"
+        "bookmark_count_zero": "Be the first to save it",
+        "reviews": {
+            "modal": {
+                "loading": "Loading reviews…"
+            }
+        }
     },
     "detailPage": {
         "seoDescription": "Discover {name} in {province}. Complete guide with accommodations, events, attractions and how to get there.",
@@ -219,6 +224,68 @@
             "foodShopping": "Food & shopping",
             "services": "Services & infrastructure",
             "experienceSafety": "Experience & safety"
+        }
+    },
+    "climate": {
+        "title": "Climate",
+        "seasonsTitle": "Climate by season",
+        "bestSeason": "Best season to visit",
+        "bestMonths": "Recommended months",
+        "approximate": "Approximate values",
+        "seasons": {
+            "spring": "Spring",
+            "summer": "Summer",
+            "autumn": "Autumn",
+            "winter": "Winter"
+        },
+        "months": {
+            "jan": "January",
+            "feb": "February",
+            "mar": "March",
+            "apr": "April",
+            "may": "May",
+            "jun": "June",
+            "jul": "July",
+            "aug": "August",
+            "sep": "September",
+            "oct": "October",
+            "nov": "November",
+            "dec": "December"
+        },
+        "fields": {
+            "avgTemp": "Average temperature",
+            "minTemp": "Min",
+            "maxTemp": "Max",
+            "rainfall": "Rainfall"
+        },
+        "units": {
+            "celsius": "°C",
+            "mm": "mm"
+        }
+    },
+    "weather": {
+        "title": "Current weather",
+        "feelsLike": "Feels like",
+        "humidity": "Humidity",
+        "wind": "Wind",
+        "forecast": "16-day forecast",
+        "unavailable": "Weather unavailable right now",
+        "conditions": {
+            "clear": "Clear",
+            "mainlyClear": "Mainly clear",
+            "partlyCloudy": "Partly cloudy",
+            "overcast": "Overcast",
+            "fog": "Fog",
+            "drizzle": "Drizzle",
+            "rain": "Rain",
+            "freezingRain": "Freezing rain",
+            "snow": "Snow",
+            "snowGrains": "Snow grains",
+            "rainShowers": "Rain showers",
+            "snowShowers": "Snow showers",
+            "thunderstorm": "Thunderstorm",
+            "thunderstormHail": "Thunderstorm with hail",
+            "unknown": "Unavailable"
         }
     }
 }

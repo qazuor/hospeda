@@ -1,0 +1,148 @@
+{
+    "tourist": {
+        "home": {
+            "title": "Início turista",
+            "subtitle": "Explore acomodações na região"
+        },
+        "tabs": {
+            "home": "Início",
+            "profile": "Perfil"
+        }
+    },
+    "host": {
+        "tabs": {
+            "home": "Início",
+            "accommodations": "Fichas",
+            "conversations": "Consultas",
+            "profile": "Perfil"
+        },
+        "dashboard": {
+            "title": "Painel do anfitrião",
+            "propertiesCard": "Propriedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Rascunhos",
+            "archived": "Arquivadas",
+            "conversationsCard": "Consultas não lidas",
+            "planCard": "Plano atual",
+            "planNull": "Sem plano ativo",
+            "planTrial": "Período de teste",
+            "planActive": "Ativo",
+            "planCancelled": "Cancelado",
+            "planExpired": "Expirado",
+            "planPastDue": "Pagamento pendente",
+            "loading": "Carregando painel...",
+            "error": "Não foi possível carregar o painel. Tente novamente.",
+            "retry": "Tentar novamente",
+            "viewMetrics": "Ver métricas"
+        },
+        "accommodations": {
+            "listTitle": "Minhas fichas",
+            "lifecycleActive": "Ativa",
+            "lifecycleDraft": "Rascunho",
+            "lifecycleArchived": "Arquivada",
+            "loading": "Carregando fichas...",
+            "error": "Não foi possível carregar as fichas. Tente novamente.",
+            "empty": "Você ainda não tem fichas.",
+            "retry": "Tentar novamente",
+            "edit": {
+                "title": "Editar ficha",
+                "contact": "Informações de contato",
+                "phone": "Telefone",
+                "email": "E-mail",
+                "website": "Site",
+                "social": "Redes sociais",
+                "twitter": "Twitter / X",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube",
+                "summary": "Resumo",
+                "summaryHint": "Entre 10 e 300 caracteres",
+                "description": "Descrição",
+                "save": "Salvar alterações",
+                "success": "Ficha atualizada com sucesso.",
+                "error": "Não foi possível salvar. Tente novamente.",
+                "loading": "Carregando ficha...",
+                "notFound": "Ficha não encontrada."
+            }
+        },
+        "conversations": {
+            "title": "Consultas",
+            "loading": "Carregando consultas...",
+            "error": "Não foi possível carregar as consultas. Tente novamente.",
+            "empty": "Você ainda não tem consultas.",
+            "retry": "Tentar novamente",
+            "guestUnknown": "Hóspede",
+            "thread": {
+                "title": "Conversa",
+                "loading": "Carregando mensagens...",
+                "error": "Não foi possível carregar a conversa. Tente novamente.",
+                "empty": "Não há mensagens nesta conversa.",
+                "inputPlaceholder": "Digite sua resposta...",
+                "send": "Enviar",
+                "sendError": "Não foi possível enviar a mensagem. Tente novamente.",
+                "back": "Voltar"
+            }
+        },
+        "metrics": {
+            "title": "Métricas de visualizações",
+            "window7d": "Últimos 7 dias",
+            "window30d": "Últimos 30 dias",
+            "accommodationLabel": "Acomodação",
+            "uniqueLabel": "Visualizações únicas",
+            "totalLabel": "Total de visualizações",
+            "empty": "Sem dados de visualizações para este período.",
+            "error": "Não foi possível carregar as métricas. Tente novamente.",
+            "loading": "Carregando métricas...",
+            "retry": "Tentar novamente"
+        }
+    },
+    "profile": {
+        "title": "Meu perfil",
+        "avatarLabel": "Foto de perfil",
+        "emailLabel": "E-mail",
+        "roleLabel": "Função",
+        "sections": {
+            "personalInfo": "Informações pessoais",
+            "location": "Localização"
+        },
+        "fields": {
+            "name": "Nome completo",
+            "firstName": "Nome",
+            "lastName": "Sobrenome",
+            "phone": "Celular",
+            "city": "Cidade",
+            "region": "Estado / Região",
+            "country": "País"
+        },
+        "save": "Salvar alterações",
+        "saveSuccess": "Perfil atualizado com sucesso.",
+        "saveError": "Não foi possível salvar. Tente novamente.",
+        "loading": "Carregando perfil...",
+        "loadError": "Não foi possível carregar o perfil. Tente novamente."
+    },
+    "settings": {
+        "title": "Configurações",
+        "notifications": {
+            "sectionTitle": "Notificações",
+            "enabled": "Notificações ativas",
+            "allowPush": "Notificações push",
+            "allowEmails": "Notificações por e-mail",
+            "allowSms": "Notificações por SMS"
+        },
+        "language": {
+            "sectionTitle": "Idioma",
+            "es": "Español",
+            "en": "English",
+            "pt": "Português"
+        },
+        "account": {
+            "sectionTitle": "Conta",
+            "signOut": "Sair",
+            "deleteAccount": "Excluir conta",
+            "deleteAccountComingSoon": "A exclusão de conta ainda não está disponível."
+        }
+    }
+}

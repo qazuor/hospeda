@@ -176,3 +176,34 @@ export class MockBaseModel<T extends Record<string, unknown>> extends BaseModel<
 export function createBaseModelMock<T extends Record<string, unknown>>(): BaseModel<T> {
     return new MockBaseModel<T>();
 }
+
+/**
+ * Creates a minimal no-op stub for AccommodationMediaModel.
+ *
+ * SPEC-204 T-013: read paths (_afterGetByField, _afterList, _afterSearch, getSummary)
+ * now call `this._accommodationMediaModel.findByAccommodations(...)`. Unit tests that
+ * do not have a real DB must inject this stub as the 10th AccommodationService
+ * constructor arg so the read hooks do not throw.
+ *
+ * An empty Map return from `findByAccommodations` means "no rows found" — the
+ * composition helper PRESERVES the entity's original `media` value in that case,
+ * so all existing `media` assertions in tests continue to pass without changes.
+ *
+ * @returns A stub object that satisfies the AccommodationMediaModel surface used by tests.
+ */
+export function makeMediaModelStub() {
+    return {
+        hardDelete: vi.fn().mockResolvedValue(undefined),
+        create: vi.fn().mockResolvedValue(undefined),
+        findById: vi.fn(),
+        findOne: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        restore: vi.fn(),
+        count: vi.fn(),
+        findAll: vi.fn(),
+        findByAccommodation: vi.fn(),
+        findFeatured: vi.fn(),
+        findByAccommodations: vi.fn(async () => new Map())
+    };
+}

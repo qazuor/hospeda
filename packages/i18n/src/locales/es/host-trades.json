@@ -1,0 +1,38 @@
+{
+    "page": {
+        "title": "Directorio de proveedores",
+        "subtitle": "Proveedores locales de confianza para tu alojamiento"
+    },
+    "filter": {
+        "all": "Todos"
+    },
+    "emptyState": {
+        "noAccommodations": "Necesitás tener alojamientos registrados para ver este directorio.",
+        "noTrades": "No hay proveedores disponibles para tus destinos por ahora."
+    },
+    "accessDenied": {
+        "title": "Esta sección es exclusiva para anfitriones",
+        "message": "Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.",
+        "cta": "Ver planes de suscripción"
+    },
+    "card": {
+        "is24h": "Disponible 24hs",
+        "benefit": "Beneficio para hosts",
+        "contact": "Contactar"
+    },
+    "categories": {
+        "CERRAJERIA": "Cerrajería",
+        "PLOMERIA": "Plomería",
+        "ELECTRICIDAD": "Electricidad",
+        "GAS": "Gas",
+        "CLIMATIZACION": "Climatización",
+        "LIMPIEZA": "Limpieza",
+        "FLETES": "Fletes",
+        "VIDRIERIA": "Vidriería",
+        "CARPINTERIA": "Carpintería",
+        "PILETA_JARDIN": "Pileta y Jardín",
+        "PLAGAS": "Control de plagas",
+        "INTERNET": "Internet / TV",
+        "ALBANILERIA": "Albañilería"
+    }
+}

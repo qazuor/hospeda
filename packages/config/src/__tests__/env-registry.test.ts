@@ -71,8 +71,38 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 212 (2026-06-09, SPEC-198): added HOSPEDA_AI_MODERATION_REQUIRED
  * (fail-loud startup gate for the AI moderation credential, moderation
  * category), bumping moderation from 4 to 5.
+ *
+ * 221 (2026-06-16, SPEC-222): added 9 accommodation-import env vars
+ * (HOSPEDA_APIFY_TOKEN, HOSPEDA_APIFY_AIRBNB_ACTOR, HOSPEDA_APIFY_BOOKING_ACTOR,
+ * HOSPEDA_GOOGLE_PLACES_API_KEY, HOSPEDA_MERCADOLIBRE_TOKEN,
+ * HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, HOSPEDA_IMPORT_FETCH_MAX_BYTES,
+ * HOSPEDA_IMPORT_RATE_LIMIT_RPH, HOSPEDA_IMPORT_AI_MAX_CHARS).
+ *
+ * 224 (2026-06-17, env-hardening): +2 new vars:
+ * - EXPO_PUBLIC_API_URL and EXPO_PUBLIC_APP_ENV (new MOBILE_ENV_VARS section, apps/mobile)
+ *
+ * 227 (SPEC-237): +3 external reputation vars:
+ * - HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS (number, default 30)
+ * - HOSPEDA_EXTREP_REFRESH_RATE_LIMIT (string, default '1/600')
+ * - HOSPEDA_EXTREP_CRON_SCHEDULE (string, default '0 2 * * 1')
+ * (HOSPEDA_GOOGLE_PLACES_API_KEY and HOSPEDA_APIFY_TOKEN were already
+ * registered by SPEC-222 — not duplicated.)
+ *
+ * 229 (SPEC-250): +2 async external reputation refresh vars:
+ * - HOSPEDA_EXTREP_POLL_SCHEDULE (string, default '*​/2 * * * *')
+ * - HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS (number, default 600000)
+ *
+ * 233 (SPEC-254): +4 social automation vars (GPT ingestion + Make publishing).
+ *
+ * 234 (NOSPEC import-apify-timeout): +1 HOSPEDA_IMPORT_APIFY_TIMEOUT_MS
+ * (separate Apify actor timeout from the short JSON-LD fetch timeout).
+ *
+ * 238 (staging merge: SPEC-274 included): +2 image provider API keys:
+ * - HOSPEDA_UNSPLASH_ACCESS_KEY (Unsplash API for stock image search)
+ * - HOSPEDA_PEXELS_API_KEY (Pexels API for stock image search)
+ * (integrations category, both optional, secret=false)
  */
-const EXPECTED_VAR_COUNT = 212;
+const EXPECTED_VAR_COUNT = 238;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -183,7 +213,7 @@ describe('ENV_REGISTRY', () => {
         });
 
         it('should only reference valid app identifiers', () => {
-            const validApps = new Set(['api', 'web', 'admin', 'docker', 'seed']);
+            const validApps = new Set(['api', 'web', 'admin', 'mobile', 'docker', 'seed']);
 
             for (const entry of REGISTRY) {
                 for (const app of entry.apps) {

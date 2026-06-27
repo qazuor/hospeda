@@ -39,6 +39,7 @@
 | **ACCOMMODATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
+| `POST /api/v1/protected/accommodations/import-from-url` | `accommodation/protected/import-from-url.ts` | gate+limit | `ai_accommodation_import`, `max_ai_accommodation_import_per_month` | wired | SPEC-222 T-020. Endpoint access is PermissionEnum OR-gated in the handler (ACCOMMODATION_CREATE \| ACCOMMODATION_UPDATE_OWN \| ACCOMMODATION_UPDATE_ANY), NOT entitlement-gated — any host can import. The AI entitlement + monthly quota apply ONLY to Strategy B (AI-assisted extraction for sparse generic pages), enforced LAZILY inside the injected `aiExtract` port and degrade-clean (structured-only partial + informational notice, never 403) when the plan lacks `ai_accommodation_import` or the monthly quota is spent. Successful AI calls metered via recordAiUsage. Per-user 10/h sliding-window rate limit (HOSPEDA_IMPORT_RATE_LIMIT_RPH) → 429. |
 | `POST /api/v1/protected/host-onboarding/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | Funnel exception: tourist-free users may enter onboarding without `publish_accommodations`; first-publish starts the owner trial. `enforceAccommodationLimit()` still prevents over-cap hosts from creating extra drafts. |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}` | `accommodation/protected/getById.ts` | none | - | n/a | Read own data only; auth + ownership check in handler |
@@ -51,8 +52,21 @@
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
+| `GET /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/getMedia.ts` | none | - | n/a | Read own gallery; auth + ownership via service _canUpdate sufficient |
+| `POST /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/addMedia.ts` | gate+limit | `edit_accommodation_info`, `max_photos_per_accommodation` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + plan cap enforced inline (SPEC-204) |
+| `DELETE /api/v1/protected/accommodations/{id}/media/{mediaId}` | `accommodation/protected/removeMedia.ts` | none | - | n/a | Deletion ungated; removing own photo always allowed |
+| `PATCH /api/v1/protected/accommodations/{id}/media/reorder` | `accommodation/protected/reorderMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
+| `PUT /api/v1/protected/accommodations/{id}/media/{mediaId}/featured` | `accommodation/protected/setFeaturedMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
+| **EXTERNAL REPUTATION — PROTECTED (SPEC-237)** | | | | | |
+| `GET /api/v1/protected/accommodations/{id}/external-listings` | `accommodation-external-reputation/protected/listListings.ts` | none | - | n/a | Owner read of own external-listing configs; ACCOMMODATION_UPDATE_OWN, no billing gate (feature available to any host with a listing). NOTE: the matching public read GET /api/v1/public/accommodations/{id}/external-reputation is intentionally out of this matrix (public tier, no gate by definition) |
+| `POST /api/v1/protected/accommodations/{id}/external-listings` | `accommodation-external-reputation/protected/addListing.ts` | none | - | n/a | Owner adds an external-listing config; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `PATCH /api/v1/protected/accommodations/{id}/external-listings/{listingId}` | `accommodation-external-reputation/protected/updateListing.ts` | none | - | n/a | Owner updates URL/toggles; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `DELETE /api/v1/protected/accommodations/{id}/external-listings/{listingId}` | `accommodation-external-reputation/protected/removeListing.ts` | none | - | n/a | Owner removes own external-listing config; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `PATCH /api/v1/protected/accommodations/{id}/external-reputation/master-toggle` | `accommodation-external-reputation/protected/masterToggle.ts` | none | - | n/a | Owner flips show_external_reputation; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `POST /api/v1/protected/accommodations/{id}/external-reputation/refresh` | `accommodation-external-reputation/protected/refresh.ts` | none | - | n/a | Owner-triggered reputation refresh; ACCOMMODATION_UPDATE_OWN, no billing gate; per-accommodation rate-limit → 429 + Retry-After (QUOTA_EXCEEDED) |
+| `GET /api/v1/protected/accommodations/{id}/external-reputation/status` | `accommodation-external-reputation/protected/reputation-status.ts` | none | - | n/a | Owner poll of async refresh run state (SPEC-250); ACCOMMODATION_UPDATE_OWN, pure DB read, no billing gate |
 | **ACCOMMODATION REVIEWS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005). **Owner decision 2026-06-05:** ALL host-tier plans (owner-basico, owner-pro, owner-complex) intentionally lack WRITE_REVIEWS — hosts must not review competitors (conflict-of-interest policy). Hosts keep RESPOND_REVIEWS only. |
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
@@ -117,6 +131,7 @@
 | `POST /api/v1/admin/ai/translate` | `ai/admin/translate.ts` | none | - | n/a | Admin single-entity translate ("Translate now" in the admin TranslationSection); gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212). |
 | `POST /api/v1/admin/ai/translate/batch` | `ai/admin/translate.ts` | none | - | n/a | Admin batch translation; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212 T-009). |
 | `PUT /api/v1/admin/ai/translate/override` | `ai/admin/translate.ts` | none | - | n/a | Admin manual translation override; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]); no billing gate (SPEC-212 T-010). |
+| `POST /api/v1/admin/ai/post-generate` | `ai/admin/post-generate.ts` | none | - | n/a | Admin write; gated by adminAuthMiddleware([POST_CREATE]). Generates AI post draft (title, summary, content) from topic + key points. No billing entitlement gate (staff bypass INV-6); cost ceiling enforced inside AI engine (SPEC-223 T-005). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
@@ -125,6 +140,8 @@
 | `GET /api/v1/public/auth/reset-password/check` | `auth/reset-password-check.ts` | none | - | n/a | Public token-check endpoint; no auth needed |
 | `POST /api/v1/public/auth/signup-as-host` | `auth/signup-as-host.ts` | none | - | n/a | Registration endpoint; no entitlement gate |
 | `GET /api/v1/public/auth/status` | `auth/status.ts` | none | - | n/a | Public auth readiness check |
+| **FEATURE FLAGS — PROTECTED** | | | | | |
+| `GET /api/v1/protected/feature-flags/me` | `feature-flags/protected/getMe.ts` | none | - | n/a | Evaluated feature flags for current user; auth-only sufficient (no billing entitlement gate) |
 | **USER — PROTECTED** | | | | | |
 | `GET /api/v1/protected/users/me/entitlements` | `user/protected/entitlements.ts` | none | - | n/a | Returns the caller's own entitlements; always accessible |
 | `GET /api/v1/protected/users/{id}` | `user/protected/getById.ts` | none | - | n/a | Read own profile; auth-only sufficient |
@@ -141,6 +158,7 @@
 | `POST /api/v1/protected/profile/set-password` | `profile/protected/set-password.ts` | none | - | n/a | Account setup; no plan gate |
 | `POST /api/v1/protected/profile/skip-set-password` | `profile/protected/skip-set-password.ts` | none | - | n/a | Account setup skip; no plan gate |
 | `GET /api/v1/protected/profile/status` | `profile/protected/status.ts` | none | - | n/a | Profile completion status read; auth-only sufficient |
+| `POST /api/v1/protected/profile/push-token` | `profile/protected/push-token.ts` | none | - | n/a | Push-token registration (SPEC-243 T-011); self-scoped to actor.id, auth-only sufficient, no plan gate |
 | **NEWSLETTER — PROTECTED** | | | | | |
 | `POST /api/v1/protected/newsletter/subscribe` | `newsletter/protected/subscribe.ts` | none | - | n/a | Newsletter subscription; no plan gate |
 | `DELETE /api/v1/protected/newsletter/unsubscribe` | `newsletter/protected/unsubscribe.ts` | none | - | n/a | Unsubscription always allowed |
@@ -192,6 +210,7 @@
 | `POST /api/v1/protected/billing/addons/{slug}/purchase` | `billing/addons.ts` | none | - | n/a | Addon purchase; no entitlement gate (payment entry point) |
 | `GET /api/v1/protected/billing/addons/my` | `billing/addons.ts` | none | - | n/a | Own addon list; auth-only sufficient |
 | `POST /api/v1/protected/billing/addons/{id}/cancel` | `billing/addons.ts` | none | - | n/a | Cancel own addon; always allowed |
+| `GET /api/v1/protected/billing/subscriptions/downgrade-preview` | `billing/downgrade-preview.ts` | none | - | n/a | Read-only informational downgrade preview; no entitlement/limit gate |
 | `POST /api/v1/protected/billing/subscriptions/change-plan` | `billing/plan-change.ts` | none | - | n/a | Plan change initiation; no entitlement gate |
 | `POST /api/v1/protected/billing/subscriptions/{id}/cancel` | `billing/subscription-cancel.ts` | none | - | n/a | User self-service soft-cancel (SPEC-147); behind `HOSPEDA_USER_CANCEL_ENABLED` flag, ownership enforced server-side; no entitlement gate |
 | `GET /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
@@ -200,7 +219,7 @@
 | `PUT /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `DELETE /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `POST /api/v1/protected/billing/promo-codes/validate` | `billing/promo-codes.ts` | none | - | n/a | Promo-code validation; no entitlement gate |
-| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.ts` | none | - | n/a | Promo-code apply; no entitlement gate |
+| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.apply.ts` | none | - | n/a | Promo-code apply; no entitlement gate; ownership-guarded (own customer + own subscription, or ACCESS_API_ADMIN) — SPEC-262 T-008 |
 | `GET /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings read; PermissionEnum.BILLING_VIEW_OWN |
 | `PATCH /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings update; PermissionEnum.BILLING_VIEW_OWN |
 | `POST /api/v1/protected/billing/settings/reset` | `billing/settings.ts` | none | - | n/a | Self-billing settings reset; PermissionEnum.BILLING_VIEW_OWN |
@@ -224,6 +243,8 @@
 | `PATCH /api/v1/protected/attractions/{id}` | `attraction/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/attractions/{id}` | `attraction/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `DELETE /api/v1/protected/attractions/{id}` | `attraction/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
+| **HOST-TRADE — PROTECTED** | | | | | |
+| `GET /api/v1/protected/host-trades` | `host-trade/protected/list.ts` | none | - | n/a | Host perk, gated by HOST_TRADE_VIEW permission only — no billing entitlement |
 | **DESTINATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/destinations` | `destination/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/destinations/{id}` | `destination/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
@@ -283,6 +304,15 @@
 | `PUT /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/faqs/reorder` | `accommodation/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/addMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; plan photo cap enforced in handler for owner-actors (bypassed for admins with ACCOMMODATION_UPDATE_ANY) |
+| `GET /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/getMedia.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SPEC-204 T-017) |
+| `PATCH /api/v1/admin/accommodations/{id}/media/reorder` | `accommodation/admin/reorderMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; orderedIds must match visible rows exactly (SPEC-204 T-019) |
+| `DELETE /api/v1/admin/accommodations/{id}/media/{mediaId}` | `accommodation/admin/removeMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; soft-deletes row + resequences sortOrder (SPEC-204 T-018) |
+| `PUT /api/v1/admin/accommodations/{id}/media/{mediaId}/featured` | `accommodation/admin/setFeaturedMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; clear-then-set in TX; archived photos rejected before DB (SPEC-204 T-020) |
+| `POST /api/v1/admin/accommodations/{id}/media/{mediaId}/archive` | `accommodation/admin/archiveMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; featured photos rejected before DB; flips state=archived (SPEC-204 T-021a) |
+| `POST /api/v1/admin/accommodations/{id}/media/{mediaId}/restore` | `accommodation/admin/restoreMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; appends at max(visible sortOrder)+1; plan cap not enforced on restore (SPEC-204 T-021b) |
+| **EXTERNAL REPUTATION — ADMIN (SPEC-237)** | | | | | |
+| `POST /api/v1/admin/accommodations/{id}/external-reputation/disable` | `accommodation-external-reputation/admin/disable-reputation.ts` | none | - | n/a | Admin soft-takedown (showLink=false + showReviews=false on all listings); gated by adminAuthMiddleware([ACCOMMODATION_UPDATE_ANY]); staff bypass entitlements so no billing gate |
 | **ACCOMMODATION REVIEWS — ADMIN** | | | | | |
 | `GET /api/v1/admin/accommodations/{id}/reviews` | `accommodation/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/accommodations/{id}/reviews/{reviewId}` | `accommodation/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
@@ -351,6 +381,14 @@
 | `DELETE /api/v1/admin/features/{id}/hard` | `feature/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/features/{id}/restore` | `feature/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/features/batch` | `feature/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **FEATURE FLAGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/flags` | `feature-flags/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags` | `feature-flags/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}` | `feature-flags/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `PATCH /api/v1/admin/flags/{id}` | `feature-flags/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `DELETE /api/v1/admin/flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | **ATTRACTION — ADMIN** | | | | | |
 | `GET /api/v1/admin/attractions` | `attraction/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions` | `attraction/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
@@ -361,6 +399,15 @@
 | `DELETE /api/v1/admin/attractions/{id}/hard` | `attraction/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/{id}/restore` | `attraction/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/batch` | `attraction/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **HOST-TRADE — ADMIN** | | | | | |
+| `GET /api/v1/admin/host-trades` | `host-trade/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades` | `host-trade/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `GET /api/v1/admin/host-trades/{id}` | `host-trade/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `PUT /api/v1/admin/host-trades/{id}` | `host-trade/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `PATCH /api/v1/admin/host-trades/{id}` | `host-trade/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}` | `host-trade/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}/hard` | `host-trade/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades/{id}/restore` | `host-trade/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | **EVENT-LOCATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/event-locations` | `event-location/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/event-locations` | `event-location/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
@@ -482,6 +529,8 @@
 | **MEDIA — ADMIN** | | | | | |
 | `POST /api/v1/admin/media` | `media/admin/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check in handler (SPEC-143 Finding #15) |
 | `DELETE /api/v1/admin/media` | `media/admin/delete.ts` | none | - | n/a | Admin media delete; PermissionEnum.MEDIA_DELETE gated |
+| `GET /api/v1/admin/media/search` | `media/admin/search.ts` | none | - | n/a | Admin stock image search (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
+| `POST /api/v1/admin/media/import-stock` | `media/admin/import-stock.ts` | none | - | n/a | Admin stock image import (SPEC-274); PermissionEnum.MEDIA_UPLOAD gated |
 | **CONVERSATIONS — ADMIN** | | | | | |
 | `GET /api/v1/admin/conversations` | `conversations/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_ALL gated |
 | `GET /api/v1/admin/conversations/{id}` | `conversations/admin/thread.ts` | none | - | n/a | Admin read; PermissionEnum.CONVERSATION_VIEW_OWN or ANY gated |
@@ -506,6 +555,7 @@
 | `GET /api/v1/admin/billing/metrics/approaching-limits` | `billing/admin/metrics.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/metrics/lifecycle` | `billing/admin/metrics.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/subscriptions/{id}/events` | `billing/admin/subscription-events.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
+| `GET /api/v1/admin/billing/subscriptions/{id}/promo-effect` | `billing/admin/subscription-promo-effect.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated; reads extras-carril columns via raw SQL |
 | `GET /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/addons/{id}` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `POST /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
@@ -527,6 +577,7 @@
 | `GET /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `PUT /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
 | `DELETE /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
+| `POST /api/v1/admin/billing/subscriptions/{subscriptionId}/apply-trial-extension` | `billing/admin/subscription-trial-extension.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_PROMO_CODE_MANAGE gated; VALIDATION_ERROR→422, NOT_FOUND→404, ownership/403, usage-limit→409 |
 | `POST /api/v1/admin/billing/customer-entitlements/grant` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements |
 | `POST /api/v1/admin/billing/customer-entitlements/revoke` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements; POST (not DELETE) because route-factory skips body parsing for DELETE |
 | `* /api/v1/admin/billing/* (qzpay-admin)` | `billing/admin/index.ts (qzpay)` | none | - | n/a | QZPay admin tier: subscriptions/payments/invoices/entitlements/limits; PermissionEnum.BILLING_READ_ALL + BILLING_MANAGE gated via adminBillingAuthMiddleware |
@@ -539,6 +590,9 @@
 | `GET /api/v1/admin/cron/runs` | `cron-admin/runs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **APP-LOGS — ADMIN** | | | | | |
 | `GET /api/v1/admin/logs` | `app-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| **AUDIT/SECURITY LOGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/audit-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (AUDIT_LOG_VIEW, SUPER only) |
+| `GET /api/v1/admin/security-logs` | `audit-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SECURITY_LOG_VIEW, SUPER only) |
 | **GEOCODING — ADMIN** | | | | | |
 | `GET /api/v1/admin/geocoding/autocomplete` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
 | `GET /api/v1/admin/geocoding/forward` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
@@ -594,6 +648,264 @@
 | `GET /api/v1/admin/views/batch` | `views/admin/batch.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/top` | `views/admin/top.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/daily-series` | `views/admin/daily-series.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
+| **GASTRONOMY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/gastronomies/mine` | `gastronomy/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-006) |
+| `GET /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-239) |
+| `PATCH /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred to SPEC-239 billing API (T-048+) |
+| `POST /api/v1/protected/gastronomies/{id}/faqs` | `gastronomy/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
+| `PUT /api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `gastronomy/protected/updateFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
+| `DELETE /api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `gastronomy/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own FAQ always allowed (SPEC-239) |
+| `PUT /api/v1/protected/gastronomies/{id}/faqs/reorder` | `gastronomy/protected/reorderFaqs.ts` | none | - | n/a | Owner-scoped FAQ reorder; auth + ownership check (SPEC-239) |
+| `POST /api/v1/protected/gastronomies/{gastronomyId}/reviews` | `gastronomy/protected/createReview.ts` | none | - | n/a | Public-user review submission; auth-only, moderation enforced in service (SPEC-239) |
+| **GASTRONOMY — ADMIN** | | | | | |
+| `GET /api/v1/admin/gastronomies` | `gastronomy/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `POST /api/v1/admin/gastronomies` | `gastronomy/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_CREATE) |
+| `GET /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `PUT /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PATCH /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) |
+| `DELETE /api/v1/admin/gastronomies/{id}/hard` | `gastronomy/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) |
+| `POST /api/v1/admin/gastronomies/{id}/restore` | `gastronomy/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `POST /api/v1/admin/gastronomies/batch` | `gastronomy/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `GET /api/v1/admin/gastronomies/options` | `gastronomy/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) |
+| `GET /api/v1/admin/gastronomies/{id}/faqs` | `gastronomy/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `POST /api/v1/admin/gastronomies/{id}/faqs` | `gastronomy/admin/addFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PUT /api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `gastronomy/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `gastronomy/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PATCH /api/v1/admin/gastronomies/{id}/faqs/reorder` | `gastronomy/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `POST /api/v1/admin/gastronomies/{id}/assign-owner` | `gastronomy/admin/assignOwner.ts` | none | - | n/a | Admin owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-046) |
+| **GASTRONOMY REVIEWS — ADMIN** | | | | | |
+| `GET /api/v1/admin/gastronomies/reviews` | `gastronomy/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `GET /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `PUT /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/delete.ts` | none | - | n/a | Admin review removal; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) |
+| `POST /api/v1/admin/gastronomies/reviews/{id}/moderate` | `gastronomy/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-239 T-046) |
+| **EXPERIENCES — PUBLIC** | | | | | |
+| `GET /api/v1/public/experiences` | `experience/public/list.ts` | none | - | n/a | Public listing search/filter; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}` | `experience/public/getById.ts` | none | - | n/a | Public experience detail; `hasActiveSubscription=false` returns null (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/slug/{slug}` | `experience/public/getBySlug.ts` | none | - | n/a | Public experience by slug; same subscription-gate as getById (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/destination/{destinationId}` | `experience/public/getByDestination.ts` | none | - | n/a | Public experiences by destination; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}/faqs` | `experience/public/getFaqs.ts` | none | - | n/a | Public FAQ read; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}/reviews` | `experience/public/getReviews.ts` | none | - | n/a | Public approved-review list; no auth, no billing gate (SPEC-240 T-019) |
+| **EXPERIENCES — PROTECTED** | | | | | |
+| `GET /api/v1/protected/experiences/mine` | `experience/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-007) |
+| `GET /api/v1/protected/experiences/{id}` | `experience/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-240 T-020) |
+| `PATCH /api/v1/protected/experiences/{id}` | `experience/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred (SPEC-240 T-020) |
+| `POST /api/v1/protected/experiences/{id}/faqs` | `experience/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |
+| `PUT /api/v1/protected/experiences/{id}/faqs/{faqId}` | `experience/protected/updateFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |
+| `DELETE /api/v1/protected/experiences/{id}/faqs/{faqId}` | `experience/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own FAQ always allowed (SPEC-240 T-020) |
+| `PUT /api/v1/protected/experiences/{id}/faqs/reorder` | `experience/protected/reorderFaqs.ts` | none | - | n/a | Owner-scoped FAQ reorder; auth + ownership check (SPEC-240 T-020) |
+| `POST /api/v1/protected/experiences/{experienceId}/reviews` | `experience/protected/createReview.ts` | none | - | n/a | Public-user review submission; auth-only, moderation enforced in service (SPEC-240 T-020) |
+| **EXPERIENCES — ADMIN** | | | | | |
+| `GET /api/v1/admin/experiences` | `experience/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences` | `experience/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_CREATE) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/{id}` | `experience/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/{id}` | `experience/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PATCH /api/v1/admin/experiences/{id}` | `experience/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}` | `experience/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}/hard` | `experience/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/restore` | `experience/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/batch` | `experience/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/options` | `experience/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/{id}/faqs` | `experience/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/faqs` | `experience/admin/addFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/{id}/faqs/{faqId}` | `experience/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}/faqs/{faqId}` | `experience/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PATCH /api/v1/admin/experiences/{id}/faqs/reorder` | `experience/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/assign-owner` | `experience/admin/assignOwner.ts` | none | - | n/a | Admin owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| **EXPERIENCE REVIEWS — ADMIN** | | | | | |
+| `GET /api/v1/admin/experiences/reviews` | `experience/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/delete.ts` | none | - | n/a | Admin review removal; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/reviews/{id}/moderate` | `experience/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-240 T-021) |
+| **COMMERCE LEADS — ADMIN** | | | | | |
+| `GET /api/v1/admin/commerce/leads` | `commerce/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-239 T-047) |
+| `POST /api/v1/admin/commerce/leads/{id}/handle` | `commerce/admin/mark-handled.ts` | none | - | n/a | Admin lead handling + owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-047) |
+| `POST /api/v1/admin/commerce/leads/{id}/provision-owner` | `commerce/admin/provision-owner.ts` | none | - | n/a | Admin commerce owner provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-050) |
+| `POST /api/v1/admin/commerce/leads/{id}/approve-and-provision` | `commerce/admin/approve-and-provision.ts` | none | - | n/a | Admin combined approve+provision action; idempotent via lead.provisionedUserId; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-249 Part D / T-018) |
+| `POST /api/v1/admin/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/admin/start-subscription.ts` | none | - | n/a | Admin commerce subscription provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-048) |
+| **SOCIAL AUTOMATION (SPEC-254)** | | | | | |
+| `GET /api/v1/admin/social/audiences` | `social/admin/audiences/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/audiences` | `social/admin/audiences/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/audit-log` | `social/admin/audit-log/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/batches` | `social/admin/batches/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/batches/{id}` | `social/admin/batches/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/batches` | `social/admin/batches/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/batches/{id}` | `social/admin/batches/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/batches/{id}` | `social/admin/batches/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/campaigns` | `social/admin/campaigns/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/campaigns` | `social/admin/campaigns/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/dashboard` | `social/admin/dashboard/get.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/footers` | `social/admin/footers/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/footers/{id}` | `social/admin/footers/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/footers` | `social/admin/footers/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/footers/{id}` | `social/admin/footers/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/footers/{id}` | `social/admin/footers/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/gpt-action-schema` | `social/admin/gpt-action-schema.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
+| `GET /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtags` | `social/admin/hashtags/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/hashtags` | `social/admin/hashtags/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/platform-formats` | `social/admin/platform-formats/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/platform-formats/{platform}` | `social/admin/platform-formats/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/posts` | `social/admin/posts/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/posts/{id}` | `social/admin/posts/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/posts/{id}` | `social/admin/posts/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/approve` | `social/admin/posts/approve.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/archive` | `social/admin/posts/archive.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/mark-ready` | `social/admin/posts/mark-ready.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/pause` | `social/admin/posts/pause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/promote-hashtag` | `social/admin/posts/promote-hashtag.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/reject` | `social/admin/posts/reject.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/request-changes` | `social/admin/posts/request-changes.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/schedule` | `social/admin/posts/schedule.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/unpause` | `social/admin/posts/unpause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/publish-now` | `social/admin/posts/publish-now.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_SCHEDULE permission gated, no entitlement gate |
+| `PUT /api/v1/admin/social/posts/{id}/hashtags` | `social/admin/posts/set-hashtags.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_UPDATE permission gated, no entitlement gate |
+| `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/plans` | `partners/admin/list-plans.ts` | none | - | n/a | Admin plan lookup for partner billing setup; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners` | `partners/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/{id}` | `partners/admin/get.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `PUT /api/v1/admin/partners/{id}` | `partners/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/manual-payment` | `partners/admin/manual-payment.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+
+---
+
+## Commerce and Gastronomy Gate Model (SPEC-239)
+
+This section documents how the billing-gate model applies to the commerce and
+gastronomy routes introduced in SPEC-239. The per-route rows already exist in the
+main table above; this prose explains the three tiers of access control and how
+they relate to the `COMMERCE_OWNER` role.
+
+### Public endpoints — no gate
+
+Gastronomy public reads and the commerce lead-intake route require no authentication
+and carry no entitlement or billing gate:
+
+- `GET /api/v1/public/gastronomies` and its sub-paths (by ID, slug, destination,
+  FAQs, approved reviews) — read-only, cached, rate-limited.
+- `POST /api/v1/public/commerce/leads` — anonymous lead submission; spam-guarded
+  by a honeypot field and a 5 req/min rate limit, not by authentication.
+
+### Admin endpoints — `COMMERCE_*` PermissionEnum gates
+
+All admin gastronomy and commerce routes are gated by `PermissionEnum` values
+from the `COMMERCE_*` family. No entitlement or limit key from the accommodation
+billing engine applies here.
+
+| Permission | Covers |
+|------------|--------|
+| `COMMERCE_VIEW_ALL` | List, getById, batch, options, lead list, FAQ list, review list/getById |
+| `COMMERCE_CREATE` | Create a gastronomy listing |
+| `COMMERCE_EDIT_ALL` | Update, patch, restore, assign-owner, FAQ CRUD+reorder, lead handle, lead provision-owner, start-subscription |
+| `COMMERCE_DELETE` | Soft delete and hard delete |
+| `COMMERCE_MODERATE_REVIEW` | Review list, getById, delete, moderate (`approve`/`reject`) |
+
+`COMMERCE_EDIT_ALL` and `COMMERCE_MODERATE_REVIEW` are both required to update
+a review (`PUT /api/v1/admin/gastronomies/reviews/{id}`), mirroring the pattern
+used for accommodation reviews.
+
+### Owner-scoped protected endpoints — `COMMERCE_*_EDIT_OWN`
+
+`COMMERCE_OWNER` users access their own listing through the protected tier. Each
+owner-editable section is gated by a dedicated `_EDIT_OWN` permission that the
+service enforces internally. No route-level `requiredPermissions` is declared on
+these routes (the service performs the check after ownership is confirmed):
+
+- **Operational fields** (`PATCH /api/v1/protected/gastronomies/{id}`) — the
+  request schema (`GastronomyOwnerUpdateInputSchema`) silently strips identity and
+  lifecycle fields, so forged keys never reach the service.
+- **FAQ management** — `COMMERCE_FAQS_EDIT_OWN` gates add, update, and reorder;
+  removal is always allowed (consistent with the accommodation FAQ pattern).
+
+Review submission (`POST /api/v1/protected/gastronomies/{gastronomyId}/reviews`)
+requires authentication only — any logged-in user may submit a review; moderation
+is enforced server-side (reviews start in `PENDING`).
+
+Commerce-subscription gating on the owner-edit paths (restricting edits when no
+active subscription exists) is deferred to a follow-up spec. The current posture
+is: any authenticated `COMMERCE_OWNER` may edit operational fields regardless of
+subscription state.
+
+For the full rationale behind `COMMERCE_OWNER` as a separate role from `HOST` and
+the `product_domain` isolation, see
+[ADR-035](../decisions/ADR-035-commerce-core-gastronomy-separation.md).
+
+---
+
+## Experiences and Services Gate Model (SPEC-240)
+
+This section documents how the billing-gate model applies to the experience routes
+introduced in SPEC-240. Experience routes share the same `COMMERCE_*` permission
+family as gastronomy routes (SPEC-239). The per-route rows exist in the main table
+above; this prose explains the three tiers.
+
+### Public endpoints — no gate
+
+Experience public reads require no authentication and carry no billing gate:
+
+- `GET /api/v1/public/experiences` and its sub-paths (by ID, slug, destination,
+  FAQs, approved reviews) — read-only, no auth required.
+- The detail endpoint (`getById`, `getBySlug`) applies a visibility gate at the
+  service layer: if `hasActiveSubscription=false`, the handler returns `null`
+  (listings without an active commerce subscription are not publicly visible).
+
+### Admin endpoints — `COMMERCE_*` PermissionEnum gates
+
+All admin experience routes use the same `COMMERCE_*` permission family as
+gastronomy. No entitlement or limit key from the accommodation billing engine
+applies here.
+
+| Permission | Covers |
+|------------|--------|
+| `COMMERCE_VIEW_ALL` | List, getById, batch, options, FAQ list, review list/getById |
+| `COMMERCE_CREATE` | Create an experience listing |
+| `COMMERCE_EDIT_ALL` | Update, patch, restore, assign-owner, FAQ CRUD+reorder |
+| `COMMERCE_DELETE` | Soft delete and hard delete |
+| `COMMERCE_MODERATE_REVIEW` | Review delete and moderate (`approve`/`reject`) |
+
+`COMMERCE_EDIT_ALL` and `COMMERCE_MODERATE_REVIEW` are both required to update
+a review (`PUT /api/v1/admin/experiences/reviews/{id}`), mirroring the pattern
+used for accommodation and gastronomy reviews.
+
+### Owner-scoped protected endpoints — `COMMERCE_*_EDIT_OWN`
+
+`COMMERCE_OWNER` users access their own experience listing through the protected
+tier. No route-level `requiredPermissions` is declared; the service performs the
+check after ownership is confirmed:
+
+- **Operational fields** (`PATCH /api/v1/protected/experiences/{id}`) — the
+  request schema (`ExperienceOwnerUpdateInputSchema`) strips identity and
+  lifecycle fields before passing to the service.
+- **FAQ management** — `COMMERCE_FAQS_EDIT_OWN` gates add, update, and reorder;
+  removal is always allowed.
+
+Review submission (`POST /api/v1/protected/experiences/{experienceId}/reviews`)
+requires authentication only — any logged-in user may submit a review; moderation
+is enforced server-side (reviews start in `PENDING`).
+
+Commerce-subscription gating on the owner-edit paths is deferred (same posture
+as gastronomy): any authenticated `COMMERCE_OWNER` may edit operational fields
+regardless of subscription state.
 
 ---
 
@@ -646,7 +958,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `gate` | 11 | All `to-wire` (T-145-03); `PATCH /accommodations/{id}` partially wired (rich-desc + video) |
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
-| `none` | ~320 | Admin PermissionEnum-gated or pure auth-sufficient reads |
+| `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
 | `reserved` | 14 | 12 phantom gates + 2 limit stubs |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)

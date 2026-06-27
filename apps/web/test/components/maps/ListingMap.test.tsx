@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-leaflet', () => ({
     MapContainer: ({ children, ...rest }: { children: React.ReactNode }) => (
@@ -59,8 +59,21 @@ vi.mock('leaflet/dist/images/marker-icon-2x.png', () => ({ default: 'icon-retina
 vi.mock('leaflet/dist/images/marker-icon.png', () => ({ default: 'icon.png' }));
 vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'shadow.png' }));
 
+// Short-circuit the FavoriteButton dependency chain (Auth, endpoints-protected,
+// billing-limit-error, toast-store) so the lazy pre-warm in beforeAll resolves
+// quickly on cold CI runners instead of timing out in 10 s.
+vi.mock('@/components/shared/favorite/FavoriteButton.client', () => ({
+    FavoriteButton: () => null
+}));
+
 import { render, screen } from '@testing-library/react';
 import { ListingMap } from '../../../src/components/maps/ListingMap.client';
+
+// Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
+// default findBy timeout even on a cold module graph when this file runs alone.
+beforeAll(async () => {
+    await import('../../../src/components/maps/ListingMapInner.client');
+});
 
 const i18n = {
     attribution: '© OSM',
@@ -68,7 +81,7 @@ const i18n = {
 };
 
 describe('ListingMap', () => {
-    it('renders a Circle per accommodation in accommodation-list mode', () => {
+    it('renders a Circle per accommodation in accommodation-list mode', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -95,12 +108,14 @@ describe('ListingMap', () => {
         // Since commit 9690b6a25 ("show Airbnb-style pill on each map accommodation")
         // each accommodation renders BOTH a Circle (approximate location blurred area)
         // AND a Marker carrying a divIcon pill. Both are expected in accommodation mode.
-        expect(screen.getAllByTestId('circle')).toHaveLength(2);
+        // The inner map is lazy-loaded (React.lazy + Suspense, SPEC-269), so the
+        // first query must await the chunk resolving before the rest run sync.
+        expect(await screen.findAllByTestId('circle')).toHaveLength(2);
         expect(screen.getAllByTestId('marker')).toHaveLength(2);
         expect(screen.getByText('Ubicación aproximada.')).toBeInTheDocument();
     });
 
-    it('renders a Marker per destination in destination-list mode', () => {
+    it('renders a Marker per destination in destination-list mode', async () => {
         render(
             <ListingMap
                 mode="destination-list"
@@ -118,12 +133,12 @@ describe('ListingMap', () => {
             />
         );
 
-        expect(screen.getByTestId('marker')).toBeInTheDocument();
+        expect(await screen.findByTestId('marker')).toBeInTheDocument();
         expect(screen.queryByTestId('circle')).not.toBeInTheDocument();
         expect(screen.queryByText('Ubicación aproximada.')).not.toBeInTheDocument();
     });
 
-    it('forwards items into a cluster group wrapper', () => {
+    it('forwards items into a cluster group wrapper', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -141,6 +156,6 @@ describe('ListingMap', () => {
             />
         );
 
-        expect(screen.getByTestId('cluster-group')).toBeInTheDocument();
+        expect(await screen.findByTestId('cluster-group')).toBeInTheDocument();
     });
 });

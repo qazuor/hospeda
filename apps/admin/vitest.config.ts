@@ -51,12 +51,10 @@ export default defineConfig({
                 '**/*.config.*',
                 'src/routeTree.gen.ts',
                 '.output/',
-                '.vercel/',
                 '.tanstack/',
                 'public/',
                 // Build artifacts and bundled chunks: never source files
                 // even when sourcemaps point back into src.
-                '**/.vercel/**',
                 '**/.output/**',
                 '**/chunks/**',
                 '**/_functions/**',

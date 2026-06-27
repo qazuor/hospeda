@@ -223,6 +223,18 @@ export interface LoggerOptions {
      * Whether to stringify objects for this entry
      */
     stringifyObj?: boolean;
+
+    /**
+     * When `true` and the log level is `ERROR`, forward the logged value to
+     * the registered capture hook (e.g. Sentry) via {@link registerCaptureHook}.
+     *
+     * Opt-in: only genuinely actionable errors should set this flag.
+     * Expected errors (404s, validation failures, known domain errors) must
+     * NOT set it — those should use `apiLogger.warn` or omit `capture`.
+     *
+     * SPEC-180 BETA-64.
+     */
+    capture?: boolean;
 }
 
 /**

@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-269",
+    "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "completed",
+    "created": "2026-06-23T00:00:00Z",
+    "audited": "2026-06-23",
+    "modelFit": "mixed",
+    "startedAt": "2026-06-24T00:00:00Z",
+    "approved": "2026-06-24T00:00:00Z",
+    "completed": "2026-06-25T00:00:00Z",
+    "archived": true,
+    "archivedAt": "2026-06-25T00:00:00Z",
+    "planFileRef": null,
+    "tags": [
+        "performance",
+        "web",
+        "audit",
+        "core-web-vitals",
+        "lcp",
+        "inp",
+        "cls",
+        "bundle",
+        "images"
+    ]
+}

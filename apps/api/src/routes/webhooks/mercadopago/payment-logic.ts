@@ -22,8 +22,13 @@ import {
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { AddonCatalogService } from '@repo/service-core';
-import { checkSubscriptionStatusTransition } from '@repo/service-core';
+import {
+    AddonCatalogService,
+    calculatePromoCodeEffect,
+    checkSubscriptionStatusTransition,
+    getPromoCodeById,
+    resolveFullPlanPriceCentavos
+} from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
@@ -296,6 +301,53 @@ export async function confirmAnnualSubscription(input: {
 }
 
 /**
+ * SPEC-262 S3 — Compute the discount-aware MP amount for a plan-change upgrade.
+ *
+ * Mirrors the same helper in `apply-scheduled-plan-changes.ts`. When a subscription
+ * with an active multi-cycle discount is upgraded, the remaining discounted cycles
+ * must be PRESERVED and recalculated on the NEW plan's price.
+ *
+ * @internal
+ */
+async function resolveDiscountAwareUpgradeAmount(
+    subscriptionId: string,
+    newPlanId: string,
+    nominalAmountMajor: number
+): Promise<number> {
+    const db = getDb();
+    try {
+        const result = await db.execute(
+            sql`SELECT promo_code_id, promo_effect_remaining_cycles
+                FROM billing_subscriptions
+                WHERE id = ${subscriptionId}
+                LIMIT 1`
+        );
+        const row = (result.rows?.[0] ?? null) as {
+            promo_code_id: string | null;
+            promo_effect_remaining_cycles: number | null;
+        } | null;
+
+        if (!row?.promo_code_id) return nominalAmountMajor;
+
+        const remaining = row.promo_effect_remaining_cycles;
+        if (remaining !== null && remaining <= 0) return nominalAmountMajor;
+
+        const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, newPlanId);
+        if (fullPriceCentavos === null) return nominalAmountMajor;
+
+        const promoResult = await getPromoCodeById(row.promo_code_id);
+        if (!promoResult.success || !promoResult.data?.effect) return nominalAmountMajor;
+
+        const mutation = calculatePromoCodeEffect(promoResult.data.effect, fullPriceCentavos);
+        if (mutation.type !== 'apply-discount') return nominalAmountMajor;
+
+        return mutation.finalAmount / 100;
+    } catch {
+        return nominalAmountMajor; // Fail-open: use nominal amount on error.
+    }
+}
+
+/**
  * Commit a plan-change upgrade after the user paid the prorated
  * delta upfront (SPEC-141 D7).
  *
@@ -428,15 +480,34 @@ async function confirmPlanUpgrade(input: {
     }
 
     // Step 2: propagate to MP preapproval — best-effort.
+    // SPEC-262 S3: if the sub has an active multi-cycle discount, pass the
+    // discounted amount on the NEW plan's price (not the full nominal amount).
+    // The counter and promo_code_id are preserved; the discount window continues.
     const mpSubscriptionId = sub.providerSubscriptionIds?.mercadopago;
     if (mpSubscriptionId) {
         const paymentAdapter = billing.getPaymentAdapter();
         if (paymentAdapter) {
             try {
+                const effectiveTransactionAmountMajor = await resolveDiscountAwareUpgradeAmount(
+                    planChangeUpgradeId,
+                    newPlanId,
+                    targetTransactionAmountMajor
+                );
                 await paymentAdapter.subscriptions.update(mpSubscriptionId, {
                     planId: newPlanId,
-                    transactionAmount: targetTransactionAmountMajor
+                    transactionAmount: effectiveTransactionAmountMajor
                 });
+                if (effectiveTransactionAmountMajor !== targetTransactionAmountMajor) {
+                    apiLogger.info(
+                        {
+                            planChangeUpgradeId,
+                            newPlanId,
+                            nominalAmountMajor: targetTransactionAmountMajor,
+                            discountedAmountMajor: effectiveTransactionAmountMajor
+                        },
+                        'Plan upgrade confirmation: discount preserved on new plan price (S3)'
+                    );
+                }
             } catch (mpErr) {
                 apiLogger.error(
                     {

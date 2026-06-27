@@ -11,7 +11,8 @@ import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { isHostRole } from '@/lib/account-roles';
+import { isCommerceOwnerRole, isHostRole } from '@/lib/account-roles';
+import { WhatsNewBadge } from '@/components/shared/whats-new/WhatsNewBadge.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import {
@@ -24,8 +25,11 @@ import {
 	SettingsIcon,
 	NewsletterIcon,
 	BuildingIcon,
+	BriefcaseIcon,
 	DashboardIcon,
 	MegaphoneIcon,
+	WrenchIcon,
+	SparkleIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
@@ -66,6 +70,16 @@ interface NavGroup {
 
 const userRole = Astro.locals.user?.role ?? null;
 const showPropertiesNav = isHostRole(userRole);
+const showCommerceNav = isCommerceOwnerRole(userRole);
+
+function getTourTarget(section: string): string | undefined {
+	if (section === 'mi-cuenta') return undefined;
+	if (section === 'editar') return 'profile';
+	if (section === 'propiedades') return 'properties';
+	if (section === 'promociones') return 'promotions';
+	if (section === 'comercio') return 'commerce';
+	return section;
+}
 
 /**
  * Sidebar nav is grouped so users can scan it as two short lists instead
@@ -85,8 +99,12 @@ const navGroups: ReadonlyArray<NavGroup> = [
 		id: 'activity',
 		label: t('account.nav.groupActivity', 'Actividad'),
 		items: [
+			{ section: 'novedades', label: t('account.nav.whatsNew', 'Novedades'), path: 'mi-cuenta/novedades', Icon: SparkleIcon },
 			...(showPropertiesNav
 				? [{ section: 'propiedades', label: t('account.nav.properties', 'Mis propiedades'), path: 'mi-cuenta/propiedades', Icon: BuildingIcon }]
+				: []),
+			...(showCommerceNav
+				? [{ section: 'comercio', label: t('commerce.owner.nav', 'Mi comercio'), path: 'mi-cuenta/comercio', Icon: BriefcaseIcon }]
 				: []),
 			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
 			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
@@ -116,6 +134,12 @@ const navGroups: ReadonlyArray<NavGroup> = [
 							label: t('account.nav.promotions', 'Mis promociones'),
 							path: 'mi-cuenta/promociones',
 							Icon: MegaphoneIcon
+						},
+						{
+							section: 'directorio-proveedores',
+							label: t('account.nav.tradeDirectory', 'Directorio de proveedores'),
+							path: 'mi-cuenta/directorio-proveedores',
+							Icon: WrenchIcon
 						},
 					],
 				} as NavGroup,
@@ -163,7 +187,10 @@ const navGroups: ReadonlyArray<NavGroup> = [
 						<div class="account-nav__group">
 							<p class="account-nav__group-label">{group.label}</p>
 							<ul class="account-nav__list">
-								{group.items.map(({ section, label, path, Icon }) => (
+								{group.items.map(({ section, label, path, Icon }) => {
+									const tourTarget = getTourTarget(section);
+
+									return (
 									<li class="account-nav__item">
 										<a
 											href={buildUrl({ locale, path })}
@@ -172,14 +199,19 @@ const navGroups: ReadonlyArray<NavGroup> = [
 												{ 'account-nav__link--active': section === activeSection },
 											]}
 											aria-current={section === activeSection ? 'page' : undefined}
+											{...(tourTarget ? { 'data-tour': tourTarget } : {})}
 										>
 											<span class="account-nav__icon" aria-hidden="true">
 												<Icon size={18} weight="regular" aria-hidden="true" />
 											</span>
-											<span class="account-nav__label">{label}</span>
+											<span class="account-nav__label">
+												{label}
+												{section === 'novedades' && <WhatsNewBadge locale={locale} client:idle />}
+											</span>
 										</a>
 									</li>
-								))}
+									);
+								})}
 							</ul>
 						</div>
 					))}
@@ -327,6 +359,9 @@ const navGroups: ReadonlyArray<NavGroup> = [
 
 	.account-nav__label {
 		flex: 1;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 		font-weight: 500;
 	}
 

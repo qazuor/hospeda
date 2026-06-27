@@ -28,6 +28,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -44,16 +45,25 @@ interface ToggleResponse {
     };
 }
 
+// SPEC-105 T-105-04: GET /user-bookmarks returns { data: { bookmarks: [...], total: N } }
+// NOT a flat array on data. Using data.bookmarks to access the list.
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<{
-        readonly id: string;
-        readonly entityId: string;
-        readonly entityType: string;
-    }>;
+    readonly data?: {
+        readonly bookmarks: ReadonlyArray<{
+            readonly id: string;
+            readonly entityId: string;
+            readonly entityType: string;
+        }>;
+        readonly total: number;
+    };
 }
 
 test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favorites @smoke @spec-098', () => {
     let userId: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userId) {
@@ -124,7 +134,7 @@ test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favori
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as BookmarkListResponse;
-        const found = listBody.data?.some(
+        const found = listBody.data?.bookmarks?.some(
             (bm) => bm.entityId === entityId && bm.entityType === entityType
         );
         expect(found, `${entityType} bookmark not found in GET list`).toBe(true);

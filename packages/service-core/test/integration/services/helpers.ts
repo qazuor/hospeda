@@ -10,11 +10,15 @@ import {
     type DrizzleClient,
     accommodationReviews,
     accommodations,
+    commerceLeads,
+    commerceListingSubscriptions,
     destinationReviews,
     destinations,
     eq,
     eventLocations,
     eventOrganizers,
+    gastronomies,
+    gastronomyReviews,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -25,6 +29,7 @@ import {
     sponsorshipLevels,
     sponsorshipPackages,
     sponsorships,
+    sql,
     tags,
     userBookmarks,
     users
@@ -749,4 +754,245 @@ export async function seedEvent(
     } as typeof rEntityTag.$inferInsert);
 
     return { authorId, destinationId, locationId, organizerId, eventId, tagId };
+}
+
+// ---------------------------------------------------------------------------
+// SPEC-239 seed helpers — gastronomy commerce lifecycle
+// ---------------------------------------------------------------------------
+
+interface SeedGastronomyOverrides {
+    readonly ownerId?: string;
+    readonly destinationId?: string;
+    readonly gastronomyId?: string;
+    readonly visibility?: string;
+    readonly lifecycleState?: string;
+    readonly moderationState?: string;
+}
+
+/**
+ * Inserts a User (owner), a Destination (CITY), and a Gastronomy listing
+ * referencing both. Returns all three IDs.
+ *
+ * The gastronomy is created with `visibility=PRIVATE` and
+ * `lifecycleState=INACTIVE` so reconciliation tests can assert the
+ * PUBLIC/ACTIVE flip.
+ *
+ * @param tx - Drizzle transaction client (always rolled back after the test).
+ * @param overrides - Optional ID / field overrides.
+ * @returns Object containing `{ ownerId, destinationId, gastronomyId }`.
+ */
+export async function seedGastronomy(
+    tx: DrizzleClient,
+    overrides: SeedGastronomyOverrides = {}
+): Promise<{
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly gastronomyId: string;
+}> {
+    const ownerId = overrides.ownerId ?? crypto.randomUUID();
+    const destinationId = overrides.destinationId ?? crypto.randomUUID();
+    const gastronomyId = overrides.gastronomyId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+
+    await tx.insert(users).values({
+        id: ownerId,
+        email: `seed-gastro-owner-${uid}@example.com`,
+        displayName: 'Gastronomy Owner',
+        emailVerified: true,
+        lifecycleState: 'ACTIVE'
+    } as typeof users.$inferInsert);
+
+    await tx.insert(destinations).values({
+        id: destinationId,
+        slug: `seed-gastro-dest-${uid}`,
+        name: 'Gastronomy Destination',
+        destinationType: 'CITY',
+        level: 4,
+        path: `/seed/gastro-dest-${uid}`,
+        summary: 'Seed gastronomy destination summary',
+        description: 'Seed gastronomy destination description',
+        location: {
+            state: 'Entre Rios',
+            country: 'Argentina',
+            coordinates: { lat: '-32.48', long: '-58.23' }
+        },
+        media: {
+            featuredImage: {
+                moderationState: 'APPROVED',
+                url: 'https://example.com/seed-gastro-destination.jpg'
+            }
+        },
+        lifecycleState: 'ACTIVE'
+    } as typeof destinations.$inferInsert);
+
+    await tx.insert(gastronomies).values({
+        id: gastronomyId,
+        slug: `seed-gastronomy-${uid}`,
+        name: 'La Parrilla de Prueba',
+        summary: 'A seed gastronomy listing summary',
+        description: 'A seed gastronomy listing description for integration tests.',
+        type: 'RESTAURANT',
+        ownerId,
+        destinationId,
+        visibility: overrides.visibility ?? 'PRIVATE',
+        lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
+        moderationState: overrides.moderationState ?? 'PENDING'
+    } as typeof gastronomies.$inferInsert);
+
+    return { ownerId, destinationId, gastronomyId };
+}
+
+interface SeedCommerceLeadOverrides {
+    readonly leadId?: string;
+    readonly email?: string;
+    readonly contactName?: string;
+    readonly businessName?: string;
+    readonly domain?: string;
+}
+
+/**
+ * Inserts a `commerce_leads` row (no FK dependencies beyond optional
+ * destinationId). Returns the lead ID, email, and contact name so the
+ * provisioning test can build the `CommerceLead` object.
+ *
+ * @param tx - Drizzle transaction client.
+ * @param overrides - Optional field overrides.
+ * @returns Object containing `{ leadId, email, contactName }`.
+ */
+export async function seedCommerceLead(
+    tx: DrizzleClient,
+    overrides: SeedCommerceLeadOverrides = {}
+): Promise<{
+    readonly leadId: string;
+    readonly email: string;
+    readonly contactName: string;
+}> {
+    const leadId = overrides.leadId ?? crypto.randomUUID();
+    const uid = crypto.randomUUID().slice(0, 8);
+    const email = overrides.email ?? `lead-${uid}@example.com`;
+    const contactName = overrides.contactName ?? `Lead Contact ${uid}`;
+    const businessName = overrides.businessName ?? `Lead Business ${uid}`;
+    const domain = overrides.domain ?? 'gastronomy';
+
+    await tx.insert(commerceLeads).values({
+        id: leadId,
+        domain,
+        businessName,
+        contactName,
+        email,
+        status: 'new'
+    } as typeof commerceLeads.$inferInsert);
+
+    return { leadId, email, contactName };
+}
+
+interface SeedCommerceListingSubscriptionOverrides {
+    readonly linkId?: string;
+    readonly gastronomyId: string;
+    readonly status: string;
+}
+
+/**
+ * Seeds a `commerce_listing_subscriptions` link row tying a gastronomy
+ * listing to a stub billing subscription row.
+ *
+ * Because the billing subscription table (`billing_subscriptions`) is managed
+ * by `@qazuor/qzpay-drizzle`, we insert a minimal stub billing subscription
+ * row first so the FK constraint is satisfied.
+ *
+ * @param tx - Drizzle transaction client.
+ * @param options - Required `gastronomyId` and `status`; optional `linkId`.
+ * @returns Object containing `{ linkId, subscriptionId }`.
+ */
+export async function seedCommerceListingSubscription(
+    tx: DrizzleClient,
+    options: SeedCommerceListingSubscriptionOverrides
+): Promise<{
+    readonly linkId: string;
+    readonly subscriptionId: string;
+}> {
+    const linkId = options.linkId ?? crypto.randomUUID();
+    const subscriptionId = crypto.randomUUID();
+
+    // Insert a minimal billing_customers stub row first (billing_subscriptions
+    // has a FK to billing_customers.id ON DELETE RESTRICT).
+    const customerId = crypto.randomUUID();
+    const uid = customerId.slice(0, 8);
+    await tx.execute(sql`
+        INSERT INTO billing_customers (
+            id, external_id, email, livemode
+        ) VALUES (
+            ${customerId},
+            ${`ext-${uid}`},
+            ${`billing-stub-${uid}@test.local`},
+            false
+        )
+    `);
+
+    // Insert a minimal billing_subscriptions stub row to satisfy the FK from
+    // commerce_listing_subscriptions.  Uses raw SQL to ensure billing_interval
+    // (NOT NULL in the qzpay-drizzle schema) is provided without relying on
+    // Drizzle client-side $defaultFn which does not fire inside raw tx contexts.
+    await tx.execute(sql`
+        INSERT INTO billing_subscriptions (
+            id, customer_id, plan_id, status, billing_interval,
+            current_period_start, current_period_end, livemode
+        ) VALUES (
+            ${subscriptionId},
+            ${customerId},
+            ${crypto.randomUUID()},
+            ${options.status},
+            'month',
+            now(),
+            now() + interval '30 days',
+            false
+        )
+    `);
+
+    await tx.insert(commerceListingSubscriptions).values({
+        id: linkId,
+        subscriptionId,
+        entityType: 'gastronomy',
+        entityId: options.gastronomyId,
+        status: options.status,
+        productDomain: 'commerce'
+    } as typeof commerceListingSubscriptions.$inferInsert);
+
+    return { linkId, subscriptionId };
+}
+
+interface SeedGastronomyReviewOverrides {
+    readonly reviewId?: string;
+    readonly gastronomyId: string;
+    readonly userId: string;
+    readonly overallRating?: number;
+    readonly moderationState?: string;
+}
+
+/**
+ * Inserts a `gastronomy_reviews` row directly (bypassing the service layer)
+ * for tests that need a pre-existing review to moderate.
+ *
+ * @param tx - Drizzle transaction client.
+ * @param options - Required `gastronomyId` and `userId`.
+ * @returns Object containing `{ reviewId }`.
+ */
+export async function seedGastronomyReview(
+    tx: DrizzleClient,
+    options: SeedGastronomyReviewOverrides
+): Promise<{ readonly reviewId: string }> {
+    const reviewId = options.reviewId ?? crypto.randomUUID();
+
+    await tx.insert(gastronomyReviews).values({
+        id: reviewId,
+        gastronomyId: options.gastronomyId,
+        userId: options.userId,
+        rating: { food: 4, service: 4, ambiance: 3, value: 4 },
+        averageRating: 3.75,
+        overallRating: options.overallRating ?? 4,
+        lifecycleState: 'ACTIVE',
+        moderationState: options.moderationState ?? 'PENDING'
+    } as typeof gastronomyReviews.$inferInsert);
+
+    return { reviewId };
 }

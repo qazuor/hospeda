@@ -2,7 +2,7 @@
  * Public destination summary endpoint
  * Returns destination summary data
  */
-import { DestinationIdSchema, DestinationSummarySchema } from '@repo/schemas';
+import { DestinationIdSchema, DestinationSummaryPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -24,7 +24,7 @@ export const publicGetDestinationSummaryRoute = createPublicRoute({
     requestParams: {
         id: DestinationIdSchema
     },
-    responseSchema: DestinationSummarySchema.nullable(),
+    responseSchema: DestinationSummaryPublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await destinationService.getSummary(actor, {

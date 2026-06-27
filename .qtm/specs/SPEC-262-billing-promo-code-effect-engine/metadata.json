@@ -1,0 +1,26 @@
+{
+    "specId": "SPEC-262",
+    "title": "Billing Promo-Code Typed Effect Engine",
+    "type": "feature",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-06-22T00:00:00Z",
+    "approved": "2026-06-22T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "promo-codes",
+        "mercadopago",
+        "subscriptions",
+        "recurring",
+        "trial",
+        "discount",
+        "service-core",
+        "schemas",
+        "db",
+        "cron",
+        "admin",
+        "spec-143-gate"
+    ]
+}

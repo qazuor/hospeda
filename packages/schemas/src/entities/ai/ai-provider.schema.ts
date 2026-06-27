@@ -38,19 +38,30 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
 // ---------------------------------------------------------------------------
 
 /**
- * The four V1 AI feature identifiers.
+ * The V1 AI feature identifiers.
  *
  * These are the runtime keys used for routing, usage metering, kill-switches,
  * and cost ceilings. They intentionally omit the `ai_` prefix used by the
  * entitlement/limit keys in `@repo/billing` — the context here is already AI.
  *
  * Mapping to `@repo/billing` entitlement gates (Q2, §5.7):
- * - `text_improve` → `ai_text_improve`
- * - `chat`         → `ai_chat`
- * - `search`       → `ai_search`
- * - `support`      → `ai_support`
+ * - `text_improve`         → `ai_text_improve`
+ * - `chat`                 → `ai_chat`
+ * - `search`               → `ai_search`
+ * - `support`              → `ai_support`
+ * - `translate`            → `ai_translate`
+ * - `accommodation_import` → `ai_accommodation_import`
+ * - `post_generate`        → n/a (admin-only; permission-gated via PermissionEnum.POST_CREATE)
  */
-export const AiFeatureSchema = z.enum(['text_improve', 'chat', 'search', 'support', 'translate']);
+export const AiFeatureSchema = z.enum([
+    'text_improve',
+    'chat',
+    'search',
+    'support',
+    'translate',
+    'accommodation_import',
+    'post_generate'
+]);
 
 /** TypeScript type for a supported AI feature. */
 export type AiFeature = z.infer<typeof AiFeatureSchema>;

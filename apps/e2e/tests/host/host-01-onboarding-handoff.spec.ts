@@ -20,7 +20,7 @@
  *  6. Filling remaining fields + clicking Publicar transitions to ACTIVE
  *     and creates a billing_subscriptions row with status='trialing'.
  *  7. Public detail page shows the accommodation within ISR window.
- *  8. Idempotency: re-firing mini-form returns `already_host` with no
+ *  8. Idempotency: re-firing mini-form returns `resumed` with no
  *     new accommodation row.
  *  9. No Sentry errors logged.
  *
@@ -40,6 +40,7 @@ import {
     signupUser,
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -53,6 +54,10 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @billing @cross-app', () => {
     let createdUserId: string | null = null;
     let _createdAccommodationId: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (createdUserId) {
@@ -268,21 +273,21 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         }).toPass({ timeout: 20_000, intervals: [500, 1000, 2000, 3000, 5000] });
 
         // ───────────────────────────────────────────────────────────────────
-        // Idempotency on retry (step 15)
+        // Re-entry after publish (step 15): existing host can "Publicar otra"
         // ───────────────────────────────────────────────────────────────────
 
-        // The host now has 1 ACTIVE accommodation. The default owner-basico plan
-        // has max_accommodations=1, so the enforceAccommodationLimit middleware
-        // blocks the retry before the handler can return 'already_host'. Upgrade
-        // to owner-premium (max=10) so the idempotency path is exercised.
+        // The host now has 1 ACTIVE accommodation and NO active DRAFT. Re-entering
+        // onboarding creates a NEW draft (the "Publicar otra" path) — existing
+        // hosts are no longer dead-ended by the removed `already_host` short-circuit.
+        // The default owner-basico plan has max_accommodations=1, so creating a
+        // second accommodation needs a higher ceiling. Upgrade to owner-premium
+        // (max=10) so the create path is exercised.
         //
         // NOTE (cache): The entitlement cache has a 5-minute TTL keyed by
         // billingCustomerId. After upgrading the subscription via direct DB insert,
         // the in-process API cache may still carry the old owner-basico limits.
-        // In that case, the retry receives 403 LIMIT_REACHED instead of 'already_host'.
-        // Both outcomes are acceptable idempotency behaviors — the critical invariant
-        // is that no NEW accommodation row is inserted regardless of the response.
-        // The 'already_host' assertion is only made when the server returns 200.
+        // In that case, the re-entry receives 403 LIMIT_REACHED instead of `created`.
+        // Both outcomes are handled below; the assertions branch on the response.
         const premiumPlanRows = await execSQL<{ id: string }>(
             `SELECT id FROM billing_plans
              WHERE name = 'owner-premium' AND active = true
@@ -297,48 +302,60 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         }
 
         let retryCacheLimited = false;
+        let createdSecond = false;
         try {
             const retryResult = await startHostOnboarding(
                 {
                     sessionCookie: hostSessionCookie,
-                    name: 'Casa de Prueba E2E (retry)',
-                    summary: 'Should be a no-op',
+                    name: 'Casa de Prueba E2E (otra propiedad)',
+                    summary: 'Second accommodation via the Publicar-otra path',
                     type: 'house',
                     cityDestinationId: cityId
                 },
                 { apiBaseUrl: API_URL }
             );
-            expect(retryResult.status).toBe('already_host');
-            expect(retryResult.accommodationId).toBeNull();
+            // No active DRAFT remains (the first one was published to ACTIVE), so
+            // re-entering onboarding creates a NEW draft — the "Publicar otra" path.
+            // Idempotency against a double submit only holds WHILE a draft is active
+            // (covered by the createForOnboarding unit test and host-07a), not after
+            // publish.
+            expect(retryResult.status).toBe('created');
+            expect(retryResult.accommodationId).not.toBeNull();
+            expect(
+                retryResult.accommodationId,
+                're-entry must create a distinct accommodation, not reuse the published one'
+            ).not.toBe(result.accommodationId);
+            createdSecond = true;
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             if (msg.includes('LIMIT_REACHED') || msg.includes('403')) {
                 // Entitlement cache still has the old owner-basico limits (5-min TTL).
                 // This is an infrastructure artifact of persistent-server local runs,
-                // not a bug in the idempotency logic. Record as annotation, not failure.
+                // not a bug in the create logic. Record as annotation, not failure.
                 retryCacheLimited = true;
                 test.info().annotations.push({
                     type: 'warning',
                     description:
-                        'HOST-01 idempotency retry blocked by cached owner-basico entitlement ' +
+                        'HOST-01 re-entry blocked by cached owner-basico entitlement ' +
                         '(LIMIT_REACHED 403). Cache TTL is 5 minutes; DB invariant still verified. ' +
                         'This is expected in persistent-server local runs after the subscription was ' +
-                        'upgraded via direct DB insert.'
+                        'upgraded via direct DB insert. Expected response would have been `created`.'
                 });
             } else {
                 throw err;
             }
         }
 
-        // No new accommodations inserted by retry — invariant holds regardless
-        // of whether the server returned 200 already_host or 403 LIMIT_REACHED.
+        // Accommodation count after re-entry:
+        //  - 2 when the second draft was created (premium ceiling effective)
+        //  - 1 when the create was blocked by the cached owner-basico limit (403)
         const accsAfterRetry = await execSQL('SELECT id FROM accommodations WHERE owner_id = $1', [
             user.id
         ]);
         expect(
             accsAfterRetry.length,
-            `idempotency invariant: no new accommodation after retry (cache limited: ${retryCacheLimited})`
-        ).toBe(1);
+            `re-entry: ${createdSecond ? 'second draft created' : 'blocked by cached limit'} (cache limited: ${retryCacheLimited})`
+        ).toBe(createdSecond ? 2 : 1);
 
         // ───────────────────────────────────────────────────────────────────
         // Final asserts: actor reflects HOST role through /me

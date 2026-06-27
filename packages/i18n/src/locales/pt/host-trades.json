@@ -1,0 +1,38 @@
+{
+    "page": {
+        "title": "Diretório de fornecedores",
+        "subtitle": "Fornecedores locais de confiança para sua acomodação"
+    },
+    "filter": {
+        "all": "Todos"
+    },
+    "emptyState": {
+        "noAccommodations": "Você precisa ter acomodações registradas para ver este diretório.",
+        "noTrades": "Não há fornecedores disponíveis para seus destinos por enquanto."
+    },
+    "accessDenied": {
+        "title": "Esta seção é exclusiva para anfitriões",
+        "message": "Você precisa de um plano de anfitrião ativo para acessar o diretório de fornecedores.",
+        "cta": "Ver planos de assinatura"
+    },
+    "card": {
+        "is24h": "Disponível 24h",
+        "benefit": "Benefício para anfitriões",
+        "contact": "Contatar"
+    },
+    "categories": {
+        "CERRAJERIA": "Chaveiro",
+        "PLOMERIA": "Encanamento",
+        "ELECTRICIDAD": "Elétrica",
+        "GAS": "Gás",
+        "CLIMATIZACION": "Climatização",
+        "LIMPIEZA": "Limpeza",
+        "FLETES": "Fretes",
+        "VIDRIERIA": "Vidraçaria",
+        "CARPINTERIA": "Carpintaria",
+        "PILETA_JARDIN": "Piscina e Jardim",
+        "PLAGAS": "Controle de pragas",
+        "INTERNET": "Internet / TV",
+        "ALBANILERIA": "Alvenaria"
+    }
+}

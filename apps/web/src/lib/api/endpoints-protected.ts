@@ -6,11 +6,17 @@
  * The apiClient methods `getProtected` and `postProtected` handle this automatically.
  */
 import type {
+    AccommodationImportResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
+    DowngradePreview,
+    KeepSelections,
+    PlanChangeResponse,
     UserBookmark,
+    UserCancelSubscriptionResponse,
     UserProtected,
-    UserPublic
+    UserPublic,
+    ValidationResult
 } from '@repo/schemas';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
@@ -195,6 +201,8 @@ type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_d
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
+    /** Subscription id — required to call the cancel/plan-change endpoints. */
+    readonly id: string;
     readonly planSlug: string;
     readonly planName: string;
     readonly status: SubscriptionStatus;
@@ -211,6 +219,35 @@ export interface SubscriptionData {
     } | null;
     readonly gracePeriodDaysRemaining?: number | null;
     readonly gracePeriodExpiresAt?: string | null;
+    /**
+     * Pending scheduled plan change (downgrade), if any.
+     *
+     * Present when the host scheduled a downgrade via `billingApi.changePlan` and
+     * it has not yet been applied. The backend (`GET /protected/users/me/subscription`)
+     * returns this field (null when no pending change). The UI treats a null/absent
+     * value as "no scheduled change" and skips the banner render.
+     *
+     * Field names match the `QZPayScheduledPlanChange` shape stored by QZPay:
+     * `newPlanId` is the target plan ID and `effectiveAt` is an ISO 8601 datetime
+     * for when the change will be applied (typically `currentPeriodEnd`).
+     */
+    readonly scheduledPlanChange?: {
+        readonly newPlanId: string;
+        readonly effectiveAt: string;
+    } | null;
+    /**
+     * Restriction preview computed at downgrade-schedule time (SPEC-167 / SPEC-203).
+     *
+     * Populated by `billingApi.changePlan` in the `status === 'scheduled'` response
+     * branch (`PlanChangeAppliedResponse.restrictionPreview`). The UI should persist
+     * this alongside the scheduled-change state so the dashboard can render the
+     * "here is what gets restricted" notice without an extra API call.
+     *
+     * The backend does not return this on the subscription endpoint — this field
+     * exists so the UI layer can attach the preview after a changePlan call and
+     * display it in the downgrade-scheduled banner.
+     */
+    readonly restrictionPreview?: DowngradePreview | null;
 }
 
 /** Protected user API endpoints */
@@ -405,45 +442,113 @@ export const billingApi = {
     /**
      * Request a plan change for the authenticated user's subscription.
      *
-     * @param params - Target plan ID and billing interval
-     * @returns Whether the plan change was accepted
+     * For upgrades, the response may have `status === 'pending_payment'` with a
+     * `checkoutUrl` the client must redirect to (SPEC-141 D7).
+     * For downgrades, the response will have `status === 'scheduled'` and may
+     * include a `restrictionPreview` so the UI can render a "what gets restricted"
+     * notice (SPEC-167 / SPEC-203).
+     *
+     * An idempotency key is sent automatically on every call so that network-level
+     * retries are safe (the server deduplicates by key). Each logical user action
+     * should result in a fresh `changePlan` call (a new UUID is generated per call).
+     *
+     * @param params - Target plan ID, billing interval, and optional keep selections
+     * @returns Discriminated-union response: active | scheduled | pending_payment
      *
      * @example
      * ```ts
      * const result = await billingApi.changePlan({ newPlanId: 'plan-uuid', billingInterval: 'monthly' });
+     * if (result.ok && result.data.status === 'scheduled') {
+     *   console.log(result.data.restrictionPreview);
+     * }
      * ```
      */
     changePlan({
         newPlanId,
-        billingInterval
+        billingInterval,
+        keepSelections
     }: {
         readonly newPlanId: string;
         readonly billingInterval: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        readonly keepSelections?: KeepSelections;
+    }): Promise<ApiResult<PlanChangeResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/change-plan`,
-            body: { newPlanId, billingInterval }
+            body:
+                keepSelections !== undefined
+                    ? { newPlanId, billingInterval, keepSelections }
+                    : { newPlanId, billingInterval },
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
 
     /**
-     * Cancel the authenticated user's current subscription.
+     * Soft-cancel the authenticated user's current subscription (SPEC-147).
      *
-     * @param params - Subscription ID to cancel
-     * @returns Whether the cancellation succeeded
+     * Sets `cancelAtPeriodEnd = true` on the subscription. The user retains
+     * full access to their plan entitlements until `accessUntil` (the current
+     * period end). The subscription status remains `active`; the finalization
+     * cron flips it to `cancelled` after the period ends.
+     *
+     * This calls `POST /subscriptions/:id/cancel` (the SPEC-147 soft-cancel
+     * endpoint), NOT `DELETE /subscriptions/:id` (the hard-cancel / QZPay
+     * internal endpoint that is not exposed to end users).
+     *
+     * @param params - Subscription ID and optional free-text cancellation reason
+     * @returns Soft-cancel confirmation with accessUntil date
      *
      * @example
      * ```ts
-     * const result = await billingApi.cancelSubscription({ subscriptionId: 'sub-uuid' });
+     * const result = await billingApi.cancelSubscription({ subscriptionId: 'sub-uuid', reason: 'Too expensive' });
+     * if (result.ok) console.log('Access until:', result.data.accessUntil);
      * ```
      */
     cancelSubscription({
-        subscriptionId
+        subscriptionId,
+        reason
     }: {
         readonly subscriptionId: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
-        return apiClient.delete({
-            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}`
+        readonly reason?: string;
+    }): Promise<ApiResult<UserCancelSubscriptionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/cancel`,
+            body: { reason }
+        });
+    },
+
+    /**
+     * Preview the restrictions that would apply if the host downgrades to a given plan.
+     *
+     * Returns a structured excess report covering:
+     * - `accommodations` — active accommodations over the target plan cap.
+     * - `promotions` — active promotions over the target plan cap.
+     * - `photos` — per-accommodation gallery overflow entries.
+     * - `grandfatherFlags` — informational flags for rich/video content that
+     *   becomes read-only under the target plan (no data is removed).
+     * - `hasExcess` — convenience flag; `true` when any dimension has excess.
+     *
+     * The host can use this preview to decide which items to keep active by
+     * passing explicit `keepSelections` to `billingApi.changePlan`.
+     *
+     * @param params - Billing catalog slug of the plan to preview downgrading to
+     * @returns Structured excess preview for the given target plan
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.previewDowngrade({ targetPlan: 'owner-basico' });
+     * if (result.ok && result.data.hasExcess) {
+     *   console.log('Accommodations to restrict:', result.data.accommodations.excessCount);
+     * }
+     * ```
+     */
+    previewDowngrade({
+        targetPlan
+    }: {
+        readonly targetPlan: string;
+    }): Promise<ApiResult<DowngradePreview>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/subscriptions/downgrade-preview`,
+            params: { targetPlan }
         });
     },
 
@@ -516,25 +621,43 @@ export const billingApi = {
      * trial-to-paid transitions, and idempotency. The legacy `/checkout`
      * endpoint was deprecated in SPEC-126.
      *
-     * @param params - Plan slug and billing interval
-     * @returns The checkout URL to redirect the user to
+     * When a `promoCode` is supplied and the server resolves it to a `comp`
+     * (free-forever) effect, `appliedEffect` in the response is `'comp'` and
+     * `checkoutUrl` is an **in-app success sentinel URL** — NOT a MercadoPago
+     * redirect. The caller should still follow `checkoutUrl` via
+     * `window.location.href`; the sentinel page handles the success flow
+     * without touching the payment provider (SPEC-262 T-012).
+     *
+     * @param params - Plan slug, billing interval, and optional promo code
+     * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
      * ```ts
-     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual' });
+     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual', promoCode: 'WELCOME50' });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
      * ```
      */
     createCheckout({
         planSlug,
-        billingInterval
+        billingInterval,
+        promoCode
     }: {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
-    }): Promise<ApiResult<{ readonly checkoutUrl: string }>> {
+        readonly promoCode?: string;
+    }): Promise<
+        ApiResult<{
+            readonly checkoutUrl: string;
+            readonly appliedEffect?: 'comp' | 'discount';
+        }>
+    > {
+        const body: Record<string, unknown> = { planSlug, billingInterval };
+        if (promoCode) {
+            body.promoCode = promoCode;
+        }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,
-            body: { planSlug, billingInterval },
+            body,
             // `/start-paid` is wrapped by `idempotencyKeyMiddleware` (SPEC-143
             // T-143-60). A fresh UUID v4 per click means double-click retries
             // get the cached response (no duplicate MP preference + sub row)
@@ -543,6 +666,48 @@ export const billingApi = {
             // double-click case; the middleware covers the network-level retry
             // case (slow network → user reloads, etc.).
             headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        });
+    },
+
+    /**
+     * Validate a promo code before checkout and preview its effect.
+     *
+     * Rate-limited to 5 requests/minute server-side. Always call on an
+     * explicit user action ("Aplicar"), NOT on every keystroke.
+     *
+     * The `userId` MUST equal the session user's id; the route returns 403
+     * otherwise. `amount` (in centavos) is forwarded so the server can
+     * calculate and return `effectPreview.finalAmount` for discount codes.
+     * The web only has `planSlug`, not `planId`, so `planId` is intentionally
+     * omitted from this call.
+     *
+     * @param params.code - Promo code string entered by the user
+     * @param params.userId - Authenticated user's UUID (from session)
+     * @param params.amount - Base price in centavos for discount preview (optional)
+     * @returns Validation result including `effectPreview` when the code is valid
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.validatePromoCode({ code: 'PROMO20', userId: 'uuid-...', amount: 120000 });
+     * if (result.ok && result.data.valid) console.log(result.data.effectPreview);
+     * ```
+     */
+    validatePromoCode({
+        code,
+        userId,
+        amount
+    }: {
+        readonly code: string;
+        readonly userId: string;
+        readonly amount?: number;
+    }): Promise<ApiResult<ValidationResult>> {
+        const body: { code: string; userId: string; amount?: number } = { code, userId };
+        if (amount !== undefined) {
+            body.amount = amount;
+        }
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/promo-codes/validate`,
+            body
         });
     },
 
@@ -1780,6 +1945,26 @@ export const accommodationEditApi = {
     },
 
     /**
+     * Soft-delete an accommodation.
+     * Calls `DELETE /protected/accommodations/:id`, which enforces ownership
+     * (or `ACCOMMODATION_DELETE_ANY`). The accommodation is soft-deleted, so it
+     * disappears from the owner's listings and the public site (SPEC-230 filters
+     * soft-deleted rows out of every protected list).
+     *
+     * @param params - Accommodation ID to delete
+     * @returns The delete result
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.softDelete({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation deleted');
+     * ```
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+    },
+
+    /**
      * Fetch all active amenities for the editor's checkbox group.
      * Uses the public amenities endpoint (no auth required).
      *
@@ -2310,5 +2495,166 @@ export const ownerPromotionApi = {
         readonly id: string;
     }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};
+
+// --- Accommodation Import from URL (Protected) ---
+
+/** Protected accommodation import-from-URL API endpoint (SPEC-222). */
+export const accommodationsImportApi = {
+    /**
+     * Import accommodation data from an external listing URL.
+     *
+     * The server extracts a per-field draft (with confidence + source) for the
+     * host to review before saving. Nothing is persisted. Reviews/ratings are
+     * never returned.
+     *
+     * @param body - The listing URL, optional locale, and the legal confirmation
+     *   (must be `true` — the host confirms they have the right to import).
+     * @returns The import response with the draft and hints, or an API error.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsImportApi.importFromUrl({
+     *   url: 'https://www.airbnb.com.ar/rooms/123',
+     *   locale: 'es',
+     *   legalConfirmed: true
+     * });
+     * if (result.ok) prefillForm(result.data.draft);
+     * ```
+     */
+    importFromUrl(body: {
+        readonly url: string;
+        readonly locale?: string;
+        readonly legalConfirmed: true;
+    }): Promise<ApiResult<AccommodationImportResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/import-from-url`,
+            body
+        });
+    }
+};
+
+// --- Accommodation Media (Protected — SPEC-204) ---
+
+/**
+ * Row shape returned by the accommodation_media relational endpoints.
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia.
+ */
+export interface AccommodationMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string;
+    readonly caption?: string;
+    readonly description?: string;
+    readonly alt?: string;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for accommodation photo management.
+ *
+ * These endpoints replace the old JSONB-embedded media approach (SPEC-204).
+ * Each operation persists immediately to the `accommodation_media` relational
+ * table — the parent PATCH no longer carries photo data.
+ *
+ * @example
+ * ```ts
+ * const list = await accommodationMediaApi.listMedia({ id: 'acc-uuid' });
+ * const added = await accommodationMediaApi.addMedia({ id: 'acc-uuid', body: { url, publicId } });
+ * await accommodationMediaApi.removeMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * await accommodationMediaApi.setFeaturedMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const accommodationMediaApi = {
+    /**
+     * List visible media rows for an accommodation.
+     *
+     * @param params - Accommodation ID, optional state filter, optional SSR cookie
+     * @returns `{ media: AccommodationMediaRow[] }`
+     */
+    listMedia({
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly AccommodationMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for an accommodation.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * @param params - Accommodation ID and media body
+     * @returns `{ media: AccommodationMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID.
+     * Also removes the Cloudinary asset on the server side.
+     *
+     * @param params - Accommodation ID and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        id,
+        mediaId
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (portada) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Accommodation ID and media row ID (DB UUID) to feature
+     * @returns `{ media: AccommodationMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        id,
+        mediaId
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
     }
 };

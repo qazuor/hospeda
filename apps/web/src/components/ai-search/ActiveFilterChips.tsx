@@ -39,11 +39,15 @@ import styles from './ActiveFilterChips.module.css';
  * @property onRemove - Callback invoked with the intent key to drop.
  *   The hook re-runs the accommodations search after removal.
  * @property locale - Active locale used for label translation.
+ * @property destinations - Optional catalog of `{ [uuid]: name }` for
+ *   resolving `destinationId` chips (SPEC-265 A3). When provided, the
+ *   destination chip shows the real city name instead of "Destino filtrado".
  */
 export interface ActiveFilterChipsProps {
     readonly filters: SearchIntentEntities | null;
     readonly onRemove: (key: keyof SearchIntentEntities) => void;
     readonly locale: SupportedLocale;
+    readonly destinations?: Readonly<Record<string, string>>;
 }
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
@@ -131,7 +135,8 @@ interface ChipDescriptor {
 function resolveChipLabel(
     key: keyof SearchIntentEntities,
     value: unknown,
-    t: ReturnType<typeof createTranslations>['t']
+    t: ReturnType<typeof createTranslations>['t'],
+    destinations?: Readonly<Record<string, string>>
 ): ChipDescriptor {
     // Skip undefined/null.
     if (value === undefined || value === null) {
@@ -177,8 +182,19 @@ function resolveChipLabel(
         };
     }
 
-    // Destination UUID — generic "Destino filtrado" (UUID not human-readable).
+    // Destination UUID — resolve to real name via catalog (SPEC-265 A3),
+    // or fall back to the generic label when no catalog is provided.
     if (key === 'destinationId') {
+        const uuid = String(value);
+        const resolvedName = destinations?.[uuid];
+        if (resolvedName) {
+            return {
+                label: t('aiSearch.chips.destinationName', 'Destino: {{value}}', {
+                    value: resolvedName
+                }),
+                visible: true
+            };
+        }
         return {
             label: t('aiSearch.chips.destinationId', 'Destino filtrado'),
             visible: true
@@ -252,7 +268,12 @@ function resolveChipLabel(
  * />
  * ```
  */
-export function ActiveFilterChips({ filters, onRemove, locale }: ActiveFilterChipsProps) {
+export function ActiveFilterChips({
+    filters,
+    onRemove,
+    locale,
+    destinations
+}: ActiveFilterChipsProps) {
     const { t } = createTranslations(locale);
 
     if (!filters) return null;
@@ -270,7 +291,7 @@ export function ActiveFilterChips({ filters, onRemove, locale }: ActiveFilterChi
         if (LOCATION_KEYS.has(key)) {
             if (locationChipRendered) continue;
             // Only render if at least one location key has a non-null value.
-            const descriptor = resolveChipLabel(key, value, t);
+            const descriptor = resolveChipLabel(key, value, t, destinations);
             if (!descriptor.visible) continue;
             // Use 'locationType' as the canonical key to remove for the location group.
             chips.push({ key: 'locationType', label: descriptor.label });
@@ -278,7 +299,7 @@ export function ActiveFilterChips({ filters, onRemove, locale }: ActiveFilterChi
             continue;
         }
 
-        const descriptor = resolveChipLabel(key, value, t);
+        const descriptor = resolveChipLabel(key, value, t, destinations);
         if (!descriptor.visible) continue;
         chips.push({ key, label: descriptor.label });
     }

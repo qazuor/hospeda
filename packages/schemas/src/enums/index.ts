@@ -2,6 +2,26 @@
 
 // Core enums
 export * from './access-right-scope.enum.js';
+
+// Commerce enums (SPEC-239)
+export * from './commerce-entity-type.enum.js';
+export * from './commerce-entity-type.schema.js';
+
+export * from './gastronomy-type.enum.js';
+export * from './gastronomy-type.schema.js';
+
+export * from './price-range.enum.js';
+export * from './price-range.schema.js';
+
+// Experience enums (SPEC-240)
+export * from './experience-type.enum.js';
+export * from './experience-type.schema.js';
+
+export * from './experience-price-unit.enum.js';
+export * from './experience-price-unit.schema.js';
+
+export * from './product-domain.enum.js';
+export * from './product-domain.schema.js';
 export * from './access-right-scope.schema.js';
 
 export * from './accommodation-type.enum.js';
@@ -45,6 +65,9 @@ export * from './exchange-rate-source.schema.js';
 
 export * from './exchange-rate-type.enum.js';
 export * from './exchange-rate-type.schema.js';
+
+export * from './host-trade-category.enum.js';
+export * from './host-trade-category.schema.js';
 
 export * from './invoice-status.enum.js';
 export * from './invoice-status.schema.js';
@@ -126,6 +149,16 @@ export * from './sponsorship-target-type.schema.js';
 export * from './sponsorship-tier.enum.js';
 export * from './sponsorship-tier.schema.js';
 
+// Partner enums (SPEC-271)
+export * from './partner-type.enum.js';
+export * from './partner-type.schema.js';
+
+export * from './partner-tier.enum.js';
+export * from './partner-tier.schema.js';
+
+export * from './partner-subscription-status.enum.js';
+export * from './partner-subscription-status.schema.js';
+
 export * from './subscription-status.enum.js';
 export * from './subscription-status.schema.js';
 
@@ -137,3 +170,34 @@ export * from './tag-type.schema.js';
 
 export * from './visibility.enum.js';
 export * from './visibility.schema.js';
+
+export * from './external-platform.enum.js';
+export * from './external-platform.schema.js';
+
+// Social media publish enums (SPEC-254)
+export * from './social-approval-status.enum.js';
+export * from './social-approval-status.schema.js';
+
+export * from './social-asset-source.enum.js';
+export * from './social-asset-source.schema.js';
+
+export * from './social-media-type.enum.js';
+export * from './social-media-type.schema.js';
+
+export * from './social-platform.enum.js';
+export * from './social-platform.schema.js';
+
+export * from './social-post-status.enum.js';
+export * from './social-post-status.schema.js';
+
+export * from './social-publish-format.enum.js';
+export * from './social-publish-format.schema.js';
+
+export * from './social-publish-result-status.enum.js';
+export * from './social-publish-result-status.schema.js';
+
+export * from './social-recurrence-type.enum.js';
+export * from './social-recurrence-type.schema.js';
+
+export * from './social-source.enum.js';
+export * from './social-source.schema.js';

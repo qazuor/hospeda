@@ -1,0 +1,89 @@
+{
+    "meta": {
+        "title": "Experiences & Services",
+        "description": "Discover the best tourism experiences and services in the region: rentals, excursions, guides, and more"
+    },
+    "listing": {
+        "title": "Experiences",
+        "subtitle": "Discover the best tourism experiences and services of the Litoral Entrerriano",
+        "emptyState": "No experiences found with the selected filters.",
+        "errorBanner": "Could not load the experiences list. Please try again later.",
+        "results_one": "{{count}} experience found",
+        "results_other": "{{count}} experiences found",
+        "search": "Text search",
+        "searchPlaceholder": "Search by name or description...",
+        "destination": "Destination",
+        "type": "Experience type",
+        "featured": "Featured only",
+        "minRating": "Minimum rating",
+        "sort": {
+            "featured": "Featured first",
+            "ratingDesc": "Best rated",
+            "newest": "Recently added",
+            "nameAsc": "Name (A-Z)"
+        }
+    },
+    "card": {
+        "featured": "Featured"
+    },
+    "detail": {
+        "contact": "Contact",
+        "whatsapp": "Enquire via WhatsApp",
+        "hours": "Opening hours",
+        "openingHours": {
+            "title": "Opening hours",
+            "closed": "Closed",
+            "open24h": "Open 24 hours",
+            "today": "Today",
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday",
+            "sunday": "Sunday"
+        },
+        "social": "Social networks",
+        "amenities": {
+            "title": "Services and amenities"
+        }
+    },
+    "type": {
+        "CAR_RENTAL": "Car Rental",
+        "BIKE_RENTAL": "Bike Rental",
+        "KAYAK_RENTAL": "Kayak Rental",
+        "QUAD_RENTAL": "Quad Rental",
+        "TOUR_GUIDE": "Tour Guide",
+        "GUIDED_VISIT": "Guided Visit",
+        "EXCURSION": "Excursion",
+        "BOAT_TRIP": "Boat Trip",
+        "FISHING_CHARTER": "Fishing Charter",
+        "BIRD_WATCHING": "Bird Watching",
+        "CULTURAL_TOUR": "Cultural Tour",
+        "WINE_TASTING": "Wine Tasting",
+        "OUTDOOR_ADVENTURE": "Outdoor Adventure",
+        "OTHER": "Other"
+    },
+    "priceUnit": {
+        "per_day": "per day",
+        "per_hour": "per hour",
+        "per_person": "per person",
+        "per_group": "per group"
+    },
+    "priceOnRequest": "Price on request",
+    "priceFrom": "From",
+    "filters": {
+        "type": "Type",
+        "destination": "Destination"
+    },
+    "reviews": {
+        "title": "Reviews",
+        "submit": "Leave a review",
+        "empty": "No reviews yet. Be the first to share your experience!",
+        "more": "+ {{n}} more reviews",
+        "loading": "Loading reviews…"
+    },
+    "faq": {
+        "heading": "Frequently asked questions"
+    }
+}

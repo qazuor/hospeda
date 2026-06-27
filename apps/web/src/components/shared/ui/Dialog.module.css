@@ -128,7 +128,6 @@
 .closeButton:focus-visible {
     background-color: var(--surface-warm);
     color: var(--core-foreground);
-    outline: none;
 }
 
 .closeButton:focus-visible {

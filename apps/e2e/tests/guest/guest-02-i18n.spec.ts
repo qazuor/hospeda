@@ -12,10 +12,15 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 
 test.describe('GUEST-02: i18n locale switching @p0 @guest @i18n', () => {
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
+
     test('all 3 locales render the home page', async ({ page }) => {
         const consoleErrors: string[] = [];
         page.on('console', (msg) => {

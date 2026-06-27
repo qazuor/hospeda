@@ -70,6 +70,36 @@ export const SponsorshipLevelSchema = z.object({
 export type SponsorshipLevel = z.infer<typeof SponsorshipLevelSchema>;
 
 /**
+ * PUBLIC ACCESS SCHEMA for SponsorshipLevel
+ *
+ * Fail-closed allow-list: only explicitly picked fields are exposed.
+ * New base or audit fields added in the future are NOT auto-exposed.
+ *
+ * Included fields (catalog / display):
+ *   id, slug, name, description, targetType, tier,
+ *   priceAmount, priceCurrency, benefits, sortOrder, isActive
+ *
+ * Excluded fields (internal / audit — NEVER expose to anonymous callers):
+ *   createdAt, updatedAt, createdById, updatedById, deletedAt, deletedById
+ *
+ * Owner decision (SPEC-210 PR4): sponsorship level public = catalog/display fields only.
+ */
+export const SponsorshipLevelPublicSchema = SponsorshipLevelSchema.pick({
+    id: true,
+    slug: true,
+    name: true,
+    description: true,
+    targetType: true,
+    tier: true,
+    priceAmount: true,
+    priceCurrency: true,
+    benefits: true,
+    sortOrder: true,
+    isActive: true
+});
+export type SponsorshipLevelPublic = z.infer<typeof SponsorshipLevelPublicSchema>;
+
+/**
  * Create input for sponsorship level
  */
 export const SponsorshipLevelCreateInputSchema = SponsorshipLevelSchema.omit({

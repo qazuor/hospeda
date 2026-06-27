@@ -3,7 +3,7 @@ spec-id: SPEC-207
 title: Host Analytics & KPIs — Business Dashboard in Web
 type: epic
 complexity: high
-status: in-progress
+status: completed
 created: 2026-06-07T00:00:00Z
 parentSpec: SPEC-205
 dependsOn: [SPEC-205, SPEC-206]
@@ -135,6 +135,18 @@ now renders the comparison table.
 A staging smoke against production-like infra is still nice-to-have post-merge
 but NOT a blocker — SPEC-207 touches no MercadoPago path, so test-control covers
 the relevant surface. Original staging-oriented notes kept below.
+
+#### Staging-readiness re-smoke — ✅ PASSED (local browser, 2026-06-19)
+
+Re-validated end-to-end in a real browser as `host-pro@local.test` (owner-pro)
+with `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` (host resolves owner-pro, 30
+entitlements incl. `view_advanced_stats`). Verified: summary widgets (3/3
+properties, owner-pro plan); AnalyticsSection unlocked; Views daily-series chart
+with seeded data + 7d/30d toggle re-fetching chart **and** ranked list
+(300↔70, ranked 180/90/30↔42/21/7); Favorites per-property bars; Market
+comparison table (the `ACCOMMODATION_VIEW_OWN` 403 fix holds); all 5 analytics
+endpoints `→ 200`. No new bugs. A follow-up UI polish (full-width Views banner +
+2×2 small-card grid + 7d/30d fieldset border fix) ships in the same PR.
 
 ## Out of scope
 

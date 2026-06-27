@@ -28,6 +28,14 @@ vi.mock('../../src/middlewares/billing', () => ({
     requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
+// Mock the actor middleware so the handler resolves a fake actor (the real one
+// instantiates RRolePermissionModel at load — staging fix 05bc14a9e) without
+// requiring an actor in the test context. These tests do not assert on actor
+// identity, so a fixed actor is sufficient.
+vi.mock('../../src/middlewares/actor', () => ({
+    getActorFromContext: vi.fn(() => ({ id: 'user-1', email: 'test@test.com', roles: [] }))
+}));
+
 vi.mock('../../src/lib/sentry', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
     return {
@@ -78,6 +86,38 @@ vi.mock('../../src/utils/env', () => ({
     }
 }));
 
+// Mock the checkout promo resolver so the happy-path FREEMONTH test (D9)
+// does not require a live DB. The resolver crosses a module boundary
+// (subscription-checkout.service.ts imports it via
+// './subscription-checkout-promo.service.js'), so this vi.mock intercepts
+// correctly. Convention matches subscription-checkout-promo-branches.test.ts.
+//
+// Behaviour:
+//  - undefined / empty promoCode → { kind: 'none' } (mirrors the real early-exit).
+//  - 'FREEMONTH' → { kind: 'trial', freeTrialDays: 30 } (SPEC-126 D9 trial extension).
+//  - any other non-empty code → { kind: 'invalid', message: '...' } so that the
+//    existing 422 rejection tests (NOT_A_REAL_CODE) continue to pass.
+vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
+    resolveCheckoutPromoPlan: vi.fn(
+        async (input: { promoCode?: string }): Promise<{
+            kind: 'none' | 'trial' | 'invalid';
+            freeTrialDays?: number;
+            message?: string;
+        }> => {
+            if (!input.promoCode || input.promoCode.length === 0) {
+                return { kind: 'none' };
+            }
+            if (input.promoCode.toUpperCase() === 'FREEMONTH') {
+                return { kind: 'trial', freeTrialDays: 30 };
+            }
+            return {
+                kind: 'invalid',
+                message: `Promo code '${input.promoCode}' is not valid`
+            };
+        }
+    )
+}));
+
 // `@repo/db` is mocked at module level so `initiatePaidAnnualSubscription`'s
 // direct Drizzle insert into billing_subscriptions does not require a live
 // Postgres. The default behaviour is a no-op insert; individual tests can
@@ -90,7 +130,20 @@ vi.mock('@repo/db', () => {
         getDb: vi.fn(() => ({
             insert: vi.fn(() => insertChain)
         })),
-        billingSubscriptions: { __table: 'billing_subscriptions' }
+        billingSubscriptions: { __table: 'billing_subscriptions' },
+        // Required by role-permissions-cache.ts (loaded via the actor middleware
+        // at module load, staging fix 05bc14a9e). This test never resolves
+        // permissions, so empty findAll stubs suffice.
+        RRolePermissionModel: class MockRRolePermissionModel {
+            async findAll(_filters: unknown, _opts?: unknown) {
+                return { items: [], total: 0 };
+            }
+        },
+        RUserPermissionModel: class MockRUserPermissionModel {
+            async findAll(_filters: unknown, _opts?: unknown) {
+                return { items: [], total: 0 };
+            }
+        }
     };
 });
 

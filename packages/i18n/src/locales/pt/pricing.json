@@ -40,5 +40,19 @@
         "empty": "Os planos não estão disponíveis no momento.",
         "period": "/mês",
         "cardsHeading": "Comparação de planos para viajantes"
+    },
+    "comparison": {
+        "link": "Ver comparação detalhada",
+        "cta": "Escolher plano",
+        "owner": {
+            "heading": "Comparação detalhada de planos para anfitriões",
+            "title": "Comparação de planos para anfitriões — Hospeda",
+            "description": "Compare todas as funções, benefícios e limites de cada plano para anfitriões."
+        },
+        "tourist": {
+            "heading": "Comparação detalhada de planos para viajantes",
+            "title": "Comparação de planos para viajantes — Hospeda",
+            "description": "Compare todas as funções, benefícios e limites de cada plano para viajantes."
+        }
     }
 }

@@ -12,6 +12,11 @@ import {
     EventCategoryEnum,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
+    ExperiencePriceUnitEnum,
+    ExperienceTypeEnum,
+    ExternalPlatformEnum,
+    GastronomyTypeEnum,
+    HostTradeCategoryEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
@@ -26,6 +31,9 @@ import {
     NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
     OwnerPromotionDiscountTypeEnum,
+    PartnerSubscriptionStatusEnum,
+    PartnerTierEnum,
+    PartnerTypeEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEffectEnum,
@@ -33,10 +41,20 @@ import {
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
+    PriceRangeEnum,
     ProductTypeEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
+    SocialApprovalStatusEnum,
+    SocialAssetSourceEnum,
+    SocialMediaTypeEnum,
+    SocialPlatformEnum,
+    SocialPostStatusEnum,
+    SocialPublishFormatEnum,
+    SocialPublishResultStatusEnum,
+    SocialRecurrenceTypeEnum,
+    SocialSourceEnum,
     SponsorshipStatusEnum,
     SponsorshipTargetTypeEnum,
     SponsorshipTierEnum,
@@ -79,6 +97,11 @@ export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(Product
 export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTypeEnum));
 
 export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(EventCategoryEnum));
+
+export const HostTradeCategoryPgEnum = pgEnum(
+    'host_trade_category_enum',
+    enumToTuple(HostTradeCategoryEnum)
+);
 
 export const ExchangeRateSourcePgEnum = pgEnum(
     'exchange_rate_source_enum',
@@ -217,4 +240,106 @@ export const MessageSenderTypePgEnum = pgEnum(
 export const NotificationRecipientSidePgEnum = pgEnum(
     'notification_recipient_side_enum',
     enumToTuple(NotificationRecipientSideEnum)
+);
+
+export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(GastronomyTypeEnum));
+
+export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
+
+export const ExternalPlatformPgEnum = pgEnum(
+    'external_platform_enum',
+    enumToTuple(ExternalPlatformEnum)
+);
+
+/**
+ * Fetch status for external reputation data.
+ * Defined as a literal tuple (not backed by a TypeScript enum) because
+ * these values are internal to the DB layer and do not need Zod nativeEnum.
+ * Matches ExternalFetchStatusSchema in @repo/schemas.
+ */
+export const ExternalReputationFetchStatusPgEnum = pgEnum('external_reputation_fetch_status_enum', [
+    'ok',
+    'blocked',
+    'not_found',
+    'error'
+]);
+
+/**
+ * Async run status for external reputation Apify actor runs.
+ * Tracks the lifecycle of an asynchronous Apify run for a given
+ * (accommodation, platform) row — separate from fetch_status so the
+ * public block builder never sees transient run state.
+ * Matches ExternalReputationRunStatusSchema in @repo/schemas.
+ */
+export const ExternalReputationRunStatusPgEnum = pgEnum('external_reputation_run_status_enum', [
+    'idle',
+    'pending',
+    'running'
+]);
+
+/**
+ * PostgreSQL enum for experience sub-categories (SPEC-240).
+ * Values: CAR_RENTAL, BIKE_RENTAL, KAYAK_RENTAL, QUAD_RENTAL, TOUR_GUIDE,
+ * GUIDED_VISIT, EXCURSION, BOAT_TRIP, FISHING_CHARTER, BIRD_WATCHING,
+ * CULTURAL_TOUR, WINE_TASTING, OUTDOOR_ADVENTURE, OTHER.
+ */
+export const ExperienceTypePgEnum = pgEnum('experience_type_enum', enumToTuple(ExperienceTypeEnum));
+
+/**
+ * PostgreSQL enum for experience price units (SPEC-240).
+ * Values: per_day, per_hour, per_person, per_group.
+ */
+export const ExperiencePriceUnitPgEnum = pgEnum(
+    'experience_price_unit_enum',
+    enumToTuple(ExperiencePriceUnitEnum)
+);
+
+// Social media publish pgEnums (SPEC-254)
+export const SocialApprovalStatusPgEnum = pgEnum(
+    'social_approval_status_enum',
+    enumToTuple(SocialApprovalStatusEnum)
+);
+
+export const SocialAssetSourcePgEnum = pgEnum(
+    'social_asset_source_enum',
+    enumToTuple(SocialAssetSourceEnum)
+);
+
+export const SocialMediaTypePgEnum = pgEnum(
+    'social_media_type_enum',
+    enumToTuple(SocialMediaTypeEnum)
+);
+
+export const SocialPlatformPgEnum = pgEnum('social_platform_enum', enumToTuple(SocialPlatformEnum));
+
+export const SocialPostStatusPgEnum = pgEnum(
+    'social_post_status_enum',
+    enumToTuple(SocialPostStatusEnum)
+);
+
+export const SocialPublishFormatPgEnum = pgEnum(
+    'social_publish_format_enum',
+    enumToTuple(SocialPublishFormatEnum)
+);
+
+export const SocialPublishResultStatusPgEnum = pgEnum(
+    'social_publish_result_status_enum',
+    enumToTuple(SocialPublishResultStatusEnum)
+);
+
+export const SocialRecurrenceTypePgEnum = pgEnum(
+    'social_recurrence_type_enum',
+    enumToTuple(SocialRecurrenceTypeEnum)
+);
+
+export const SocialSourcePgEnum = pgEnum('social_source_enum', enumToTuple(SocialSourceEnum));
+
+// Partner enums (SPEC-271)
+export const PartnerTypePgEnum = pgEnum('partner_type_enum', enumToTuple(PartnerTypeEnum));
+
+export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(PartnerTierEnum));
+
+export const PartnerSubscriptionStatusPgEnum = pgEnum(
+    'partner_subscription_status_enum',
+    enumToTuple(PartnerSubscriptionStatusEnum)
 );

@@ -33,12 +33,20 @@ export const adminRestoreAccommodationRoute = createAdminRoute({
     responseSchema: AccommodationAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const result = await accommodationService.restore(actor, params.id as string);
+        const id = params.id as string;
 
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+        const restoreResult = await accommodationService.restore(actor, id);
+
+        if (restoreResult.error) {
+            throw new ServiceError(restoreResult.error.code, restoreResult.error.message);
         }
 
-        return result.data;
+        const fetchResult = await accommodationService.adminGetById(actor, id);
+
+        if (fetchResult.error) {
+            throw new ServiceError(fetchResult.error.code, fetchResult.error.message);
+        }
+
+        return fetchResult.data;
     }
 });

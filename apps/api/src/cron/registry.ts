@@ -16,6 +16,7 @@ import {
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
     cronRunPurgeJob,
+    destinationWeatherFetchJob,
     dunningJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
@@ -25,7 +26,11 @@ import {
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
+    partnerExpiryJob,
+    pollApifyReputationRunsJob,
+    refreshExternalReputationJob,
     searchIndexRefreshJob,
+    socialPublishDispatchJob,
     subscriptionPollJob,
     trialExpiryJob,
     trialPreEndNotifJob,
@@ -43,6 +48,7 @@ export const cronJobs: CronJobDefinition[] = [
     notificationScheduleJob,
     addonExpiryJob,
     exchangeRateFetchJob,
+    destinationWeatherFetchJob,
     dunningJob,
     searchIndexRefreshJob,
     notificationLogPurgeJob,
@@ -62,7 +68,11 @@ export const cronJobs: CronJobDefinition[] = [
     subscriptionPollJob,
     cronRunPurgeJob,
     appLogPurgeJob,
-    entityViewsPurgeJob
+    entityViewsPurgeJob,
+    refreshExternalReputationJob,
+    socialPublishDispatchJob,
+    pollApifyReputationRunsJob,
+    partnerExpiryJob
 ];
 
 /**

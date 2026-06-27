@@ -212,9 +212,13 @@ export const AccommodationCreateHttpSchema = z.object({
     longitude: z.coerce.number().min(-180).max(180),
 
     // Capacity
-    maxGuests: z.coerce.number().int().min(1).max(20),
-    bedrooms: z.coerce.number().int().min(0).max(10),
-    bathrooms: z.coerce.number().int().min(1).max(10),
+    // High technical ceilings so large accommodations (hotels, multi-unit
+    // complexes) are accepted. The domain schema imposes no max; these caps are
+    // anti-abuse guards, not product limits. Per-unit capacity modelling for
+    // hotels/complexes is tracked as a dedicated follow-up spec.
+    maxGuests: z.coerce.number().int().min(1).max(200),
+    bedrooms: z.coerce.number().int().min(0).max(100),
+    bathrooms: z.coerce.number().int().min(1).max(100),
 
     // Pricing
     basePrice: z.coerce.number().min(0),
@@ -268,12 +272,20 @@ export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSche
 /**
  * HTTP-compatible minimal accommodation draft creation schema.
  *
- * Used by the public web "create draft" flow where a host fills only the
- * essentials (name, summary, type, destinationId) and is then redirected
- * to the admin panel to complete the full listing. The resulting record is
- * always persisted with `lifecycleState: DRAFT`.
+ * Used by the public web "create draft" flow (host onboarding). The required
+ * fields (name, summary, type, destinationId) are the bare minimum needed to
+ * create a DRAFT. All other fields are OPTIONAL and carry import-provided data
+ * when the host triggers an automated import (SPEC-258).
+ *
+ * Optional fields use the SAME flat field names and coercion rules as
+ * `AccommodationCreateHttpSchema` so the existing flat→nested converter
+ * (`httpToDomainAccommodationCreateDraft`) can reuse the same mapping logic
+ * without reimplementing the nested transformations.
+ *
+ * The resulting record is always persisted with `lifecycleState: DRAFT`.
  */
 export const AccommodationCreateDraftHttpSchema = z.object({
+    // --- Required essentials ---
     name: z
         .string()
         .min(3, { message: 'zodError.accommodation.name.min' })
@@ -282,13 +294,62 @@ export const AccommodationCreateDraftHttpSchema = z.object({
         .string()
         .min(10, { message: 'zodError.accommodation.summary.min' })
         .max(300, { message: 'zodError.accommodation.summary.max' }),
+    type: AccommodationTypeEnumSchema,
+    destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // --- Optional text fields ---
+    /**
+     * Long description. When provided must be at least 30 chars (matches the
+     * base `AccommodationSchema.description.min(30)` constraint). Omitting it
+     * causes the service to seed a placeholder so the DB constraint is satisfied.
+     */
     description: z
         .string()
         .min(30, { message: 'zodError.accommodation.description.min' })
         .max(2000, { message: 'zodError.accommodation.description.max' })
         .optional(),
-    type: AccommodationTypeEnumSchema,
-    destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+
+    // --- Optional capacity (→ extraInfo) ---
+    /** Maximum number of guests. Maps to `extraInfo.capacity`. */
+    maxGuests: z.coerce.number().int().min(1).max(200).optional(),
+    /** Number of bedrooms. Maps to `extraInfo.bedrooms`. */
+    bedrooms: z.coerce.number().int().min(0).max(100).optional(),
+    /** Number of bathrooms. Maps to `extraInfo.bathrooms`. */
+    bathrooms: z.coerce.number().int().min(1).max(100).optional(),
+    /** Number of beds. Maps to `extraInfo.beds`. */
+    beds: z.coerce.number().int().min(0).max(200).optional(),
+
+    // --- Optional pricing (→ price) ---
+    /** Base nightly price. Maps to `price.price`. */
+    basePrice: z.coerce.number().min(0).optional(),
+    /** Currency code. Maps to `price.currency`. Defaults to USD when basePrice is supplied without it. */
+    currency: PriceCurrencyEnumSchema.optional(),
+
+    // --- Optional location (→ location) ---
+    /** Latitude in decimal degrees. Maps to `location.coordinates.lat`. */
+    latitude: z.coerce.number().min(-90).max(90).optional(),
+    /** Longitude in decimal degrees. Maps to `location.coordinates.long`. */
+    longitude: z.coerce.number().min(-180).max(180).optional(),
+    /** Street name. Maps to `location.street`. */
+    street: z.string().min(2).max(50).optional(),
+    /** Street number (string to support "123bis" etc.). Maps to `location.number`. */
+    number: z.string().min(1).max(10).optional(),
+
+    // --- Optional contact (→ contactInfo) ---
+    /** Mobile phone. Maps to `contactInfo.mobilePhone`. */
+    phone: z.string().optional(),
+    /** Website URL. Maps to `contactInfo.website`. */
+    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
+
+    // --- Optional amenity junction (SPEC-172) ---
+    /**
+     * UUID list of amenities to sync on creation. When provided, the service
+     * inserts rows in `r_accommodation_amenity` transactionally.
+     * Undefined → no junction rows written.
+     */
+    amenityIds: z
+        .array(z.string().uuid({ message: 'zodError.accommodation.amenityIds.invalidUuid' }))
+        .optional()
 });
 
 export type AccommodationCreateDraftHttp = z.infer<typeof AccommodationCreateDraftHttpSchema>;
@@ -603,14 +664,6 @@ export const httpToDomainAccommodationCreate = (
 });
 
 /**
- * Convert minimal HTTP draft input into a domain create input.
- *
- * Used by the protected "create draft" endpoint. The caller (route handler)
- * is responsible for injecting `ownerId` from the authenticated actor before
- * passing the result to the service layer. Only the essentials are mapped;
- * the rest is left for the host to complete in the admin panel.
- */
-/**
  * Placeholder description seeded on draft creation when the host did not
  * provide one in the onboarding form. Must be ≥ 30 chars to satisfy the
  * base `AccommodationSchema.description.min(30)` constraint used by the
@@ -621,22 +674,124 @@ export const httpToDomainAccommodationCreate = (
 const DRAFT_DESCRIPTION_PLACEHOLDER =
     'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
 
+/**
+ * Convert minimal HTTP draft input into a domain create input.
+ *
+ * Used by the protected "create draft" endpoint (host onboarding). The caller
+ * (route handler) is responsible for injecting `ownerId` from the authenticated
+ * actor before passing the result to the service layer.
+ *
+ * Required fields (name, summary, type, destinationId) are always mapped.
+ * Optional import-provided fields (capacity, bedrooms, bathrooms, beds, price,
+ * coordinates, street, number, phone, website, amenityIds) are mapped
+ * conditionally — only when present — using the same flat→nested logic as
+ * `httpToDomainAccommodationCreate` (SPEC-258 single source of truth).
+ *
+ * Forced server-side overrides:
+ * - `lifecycleState`: always `DRAFT`
+ * - `visibility`: always `PRIVATE`
+ * - `isFeatured`: always `false`
+ * - `moderationState`: always `PENDING`
+ * - `ownerId`: always injected from the authenticated actor
+ *
+ * @param httpData - Validated HTTP draft input.
+ * @param ownerId - Authenticated actor ID (injected by the route handler).
+ * @returns Domain create input ready for the service layer.
+ */
 export const httpToDomainAccommodationCreateDraft = (
     httpData: AccommodationCreateDraftHttp,
     ownerId: string
 ): AccommodationCreateInput => ({
+    // --- Required fields ---
     name: httpData.name,
     summary: httpData.summary,
     description: httpData.description ?? DRAFT_DESCRIPTION_PLACEHOLDER,
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId,
+
+    // --- Forced server-side overrides ---
     isFeatured: false,
     moderationState: ModerationStatusEnum.PENDING,
     lifecycleState: LifecycleStatusEnum.DRAFT,
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PRIVATE
+    visibility: VisibilityEnum.PRIVATE,
+
+    // --- Optional: location (→ location JSONB) ---
+    // Emit the `location` block only when at least one location field is present.
+    // Mirrors the flat→nested mapping of `httpToDomainAccommodationCreate`.
+    ...(httpData.latitude !== undefined ||
+    httpData.longitude !== undefined ||
+    httpData.street !== undefined ||
+    httpData.number !== undefined
+        ? {
+              location: {
+                  ...(httpData.latitude !== undefined && httpData.longitude !== undefined
+                      ? {
+                            coordinates: {
+                                lat: httpData.latitude.toString(),
+                                long: httpData.longitude.toString()
+                            }
+                        }
+                      : {}),
+                  ...(httpData.street !== undefined ? { street: httpData.street } : {}),
+                  ...(httpData.number !== undefined ? { number: httpData.number } : {})
+              }
+          }
+        : {}),
+
+    // --- Optional: pricing (→ price JSONB) ---
+    ...(httpData.basePrice !== undefined || httpData.currency !== undefined
+        ? {
+              price: {
+                  ...(httpData.basePrice !== undefined ? { price: httpData.basePrice } : {}),
+                  ...(httpData.currency !== undefined ? { currency: httpData.currency } : {})
+              }
+          }
+        : {}),
+
+    // --- Optional: contact info (→ contactInfo JSONB) ---
+    // ContactInfoSchema.mobilePhone is required in the full schema, but for a DRAFT
+    // we may only have a website (no phone) or a phone without website. Cast to the
+    // full ContactInfo type since the DB column is JSONB and the service normalises
+    // at read time. Same pattern as the update path (ContactInfoSchema.partial()).
+    ...(httpData.phone !== undefined || httpData.website !== undefined
+        ? {
+              contactInfo: {
+                  ...(httpData.phone !== undefined ? { mobilePhone: httpData.phone } : {}),
+                  ...(httpData.website !== undefined ? { website: httpData.website } : {})
+              } as AccommodationCreateInput['contactInfo']
+          }
+        : {}),
+
+    // --- Optional: capacity (→ extraInfo JSONB) ---
+    // Only emits the `extraInfo` block when at least one capacity field is present.
+    // The draft is intentionally partial — the host completes the full listing from
+    // the admin panel. AccommodationCreateInput.extraInfo expects the FULL ExtraInfo
+    // shape (capacity/minNights/bedrooms/bathrooms required), but for a DRAFT we
+    // only persist whatever the import provided. The cast is safe because the DB
+    // column is JSONB (any valid JSON) and the service normalises partial extraInfo
+    // at read time. See also the `extraInfo: AccommodationExtraInfoSchema.partial().nullish()`
+    // pattern on `AccommodationUpdateInputSchema` (SPEC-229).
+    ...(httpData.maxGuests !== undefined ||
+    httpData.bedrooms !== undefined ||
+    httpData.bathrooms !== undefined ||
+    httpData.beds !== undefined
+        ? {
+              extraInfo: {
+                  ...(httpData.maxGuests !== undefined ? { capacity: httpData.maxGuests } : {}),
+                  ...(httpData.bedrooms !== undefined ? { bedrooms: httpData.bedrooms } : {}),
+                  ...(httpData.bathrooms !== undefined ? { bathrooms: httpData.bathrooms } : {}),
+                  ...(httpData.beds !== undefined ? { beds: httpData.beds } : {})
+              } as AccommodationCreateInput['extraInfo']
+          }
+        : {}),
+
+    // --- Optional: amenity junction sync (SPEC-172 / SPEC-258) ---
+    // Pass amenityIds through to the domain input so _beforeCreate captures them
+    // in hookState and _afterCreate can run syncAmenityJunction transactionally.
+    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {})
 });
 
 /**

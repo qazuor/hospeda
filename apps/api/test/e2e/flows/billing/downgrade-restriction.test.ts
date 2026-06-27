@@ -71,7 +71,15 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { randomUUID } from 'node:crypto';
-import { accommodations, billingSubscriptions, destinations, eq, ownerPromotions } from '@repo/db';
+import {
+    accommodationMedia,
+    accommodations,
+    billingSubscriptions,
+    destinations,
+    eq,
+    ownerPromotions
+} from '@repo/db';
+import type { InsertAccommodationMedia } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -163,34 +171,6 @@ function makeHostActor(userId: string) {
 // ---------------------------------------------------------------------------
 // Media helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Build a media JSONB value with a featured image and N gallery items.
- * Used to seed an accommodation with photos that will be over-cap after
- * the restriction runs.
- *
- * Each photo includes `moderationState: 'APPROVED'` to satisfy the
- * AccommodationPublicSchema validator when the public list route strips
- * the response payload against the declared schema. Without this the
- * route returns 500 "Response payload does not match declared schema".
- */
-function buildMedia(params: {
-    readonly galleryCount: number;
-}): Record<string, unknown> {
-    const gallery = Array.from({ length: params.galleryCount }, (_, i) => ({
-        url: `https://cdn.example.com/gallery-${i + 1}.jpg`,
-        alt: `Gallery image ${i + 1}`,
-        moderationState: 'APPROVED'
-    }));
-    return {
-        featuredImage: {
-            url: 'https://cdn.example.com/featured.jpg',
-            alt: 'Featured',
-            moderationState: 'APPROVED'
-        },
-        gallery
-    };
-}
 
 // ---------------------------------------------------------------------------
 // Main suite
@@ -396,9 +376,31 @@ describe('SPEC-167 T-019 — downgrade restriction happy path', () => {
                 lifecycleState: 'ACTIVE',
                 visibility: 'PUBLIC',
                 planRestricted: false,
-                media: buildMedia({ galleryCount: ACC3_GALLERY_COUNT }),
                 updatedAt: new Date(now - 10000) // oldest → restricted by default sort
             } as typeof accommodations.$inferInsert);
+
+        // ── Seed accommodation_media rows for acc3 ───────────────────────
+        // 1 featured + 8 gallery, all state='visible'. These replace the
+        // JSONB media blob for the SPEC-204 relational cutover.
+        const acc3MediaRows: InsertAccommodationMedia[] = [
+            {
+                accommodationId: acc3Id,
+                url: 'https://cdn.example.com/featured.jpg',
+                isFeatured: true,
+                state: 'visible',
+                sortOrder: 0,
+                moderationState: 'APPROVED'
+            },
+            ...Array.from({ length: ACC3_GALLERY_COUNT }, (_, i) => ({
+                accommodationId: acc3Id,
+                url: `https://cdn.example.com/gallery-${i + 1}.jpg`,
+                isFeatured: false,
+                state: 'visible' as const,
+                sortOrder: i + 1,
+                moderationState: 'APPROVED' as const
+            }))
+        ];
+        await testDb.getDb().insert(accommodationMedia).values(acc3MediaRows);
 
         // ── 5. Create 2 ACTIVE promotions (cap = 0 on owner-basico) ───────
         const validFrom = new Date(now + 86400000);
@@ -670,48 +672,56 @@ describe('SPEC-167 T-019 — downgrade restriction happy path', () => {
         ).toBe(true);
 
         // ── ASSERT: photos archived in acc3 ───────────────────────────────
-        // acc3 originally: featuredImage + 8 gallery = 9 total, cap=5.
-        // After restriction: featuredImage stays, 4 gallery slots kept,
-        // remaining 4 gallery items moved to archivedGallery.
-        // Conservation: archivedCount + keptGalleryCount == original gallery count.
-        const postAcc3Rows = await testDb
+        // acc3 originally: 1 featured + 8 gallery = 9 rows, all state='visible', cap=5.
+        // After restriction: featured stays visible, 4 gallery slots kept (cap-1),
+        // remaining 4 gallery rows flipped to state='archived'.
+        // Conservation: archivedCount + keptGalleryCount == ACC3_GALLERY_COUNT.
+        const postAcc3MediaRows = await testDb
             .getDb()
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(eq(accommodations.id, acc3Id));
+            .select({
+                url: accommodationMedia.url,
+                state: accommodationMedia.state,
+                isFeatured: accommodationMedia.isFeatured
+            })
+            .from(accommodationMedia)
+            .where(eq(accommodationMedia.accommodationId, acc3Id));
 
-        const postAcc3Media = postAcc3Rows[0]?.media as {
-            featuredImage?: { url: string };
-            gallery?: Array<{ url: string }>;
-            archivedGallery?: Array<{ url: string }>;
-        } | null;
-
-        expect(postAcc3Media, 'acc3 media must be present after restriction').toBeDefined();
-
-        // Featured image must always be preserved.
         expect(
-            postAcc3Media?.featuredImage?.url,
-            'acc3 featuredImage must be preserved after photo restriction'
-        ).toBe('https://cdn.example.com/featured.jpg');
+            postAcc3MediaRows.length,
+            'all acc3 accommodation_media rows must still exist after restriction'
+        ).toBe(ACC3_GALLERY_COUNT + 1); // 8 gallery + 1 featured
 
-        const keptGalleryCount = postAcc3Media?.gallery?.length ?? 0;
-        const archivedCount = postAcc3Media?.archivedGallery?.length ?? 0;
+        // Featured image must always be preserved as visible.
+        const featuredRow = postAcc3MediaRows.find((r) => r.isFeatured);
+        expect(featuredRow, 'acc3 featured row must be present').toBeDefined();
+        expect(
+            featuredRow?.url,
+            'acc3 featuredImage url must be preserved after photo restriction'
+        ).toBe('https://cdn.example.com/featured.jpg');
+        expect(featuredRow?.state, 'acc3 featuredImage must remain visible').toBe('visible');
+
+        const visibleGalleryRows = postAcc3MediaRows.filter(
+            (r) => !r.isFeatured && r.state === 'visible'
+        );
+        const archivedRows = postAcc3MediaRows.filter(
+            (r) => !r.isFeatured && r.state === 'archived'
+        );
 
         // Photos are conserved: original 8 gallery = kept + archived.
         expect(
-            keptGalleryCount + archivedCount,
-            'photo conservation: kept + archived must equal original gallery count'
+            visibleGalleryRows.length + archivedRows.length,
+            'photo conservation: visible + archived gallery must equal original gallery count'
         ).toBe(ACC3_GALLERY_COUNT);
 
         // Kept gallery must be within the basico cap (cap - 1 for featured).
         const maxGallerySlots = BASICO_PHOTO_CAP - 1; // 4
         expect(
-            keptGalleryCount,
+            visibleGalleryRows.length,
             `kept gallery count must be <= ${maxGallerySlots} (basico cap minus featured)`
         ).toBeLessThanOrEqual(maxGallerySlots);
 
         // Archived count = overflow amount = ACC3_GALLERY_OVERFLOW.
-        expect(archivedCount, `archived photo count must be ${ACC3_GALLERY_OVERFLOW}`).toBe(
+        expect(archivedRows.length, `archived photo count must be ${ACC3_GALLERY_OVERFLOW}`).toBe(
             ACC3_GALLERY_OVERFLOW
         );
 

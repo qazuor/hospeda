@@ -23,20 +23,24 @@ import type {
 /**
  * Discriminated union of all SSE events the search-chat stream can emit.
  *
- * - `filters`: carries the extracted search params and intent entities.
- *   Emitted once per turn, before any `token` frames.
+ * - `filters`: carries the extracted search params, intent entities, and
+ *   optional confidence (SPEC-265 A1). Emitted once per turn, before any
+ *   `token` frames.
  * - `token`: one streamed chunk of the natural-language reply.
  * - `done`: terminal success event. `conversationId` is nullable — the server
  *   emits `null` when best-effort persistence did not produce an id.
  * - `error`: terminal SSE-level error from the AI provider.
  * - `stream_error`: transport/fetch-level error (not an SSE `error` frame).
+ *   Carries `status` (HTTP status code, or 0 for network-level failures) so
+ *   the UI can classify 429 → rate-limit copy, 5xx → service-error copy, etc.
+ *   (SPEC-265 C3).
  */
 export type SearchChatSseEvent =
     | { readonly type: 'filters'; readonly filters: AiSearchChatFiltersEvent }
     | { readonly type: 'token'; readonly delta: string }
     | { readonly type: 'done'; readonly conversationId: string | null }
     | { readonly type: 'error'; readonly code: string; readonly message: string }
-    | { readonly type: 'stream_error'; readonly error: Error };
+    | { readonly type: 'stream_error'; readonly error: Error; readonly status: number };
 
 // ─── Public API ────────────────────────────────────────────────────────────────
 
@@ -132,7 +136,8 @@ export async function streamSearchChat(params: StreamSearchChatParams): Promise<
                 error: new Error(
                     (errBody as { error?: { message?: string } })?.error?.message ??
                         `HTTP ${response.status}`
-                )
+                ),
+                status: response.status
             });
             return;
         }
@@ -198,7 +203,8 @@ export async function streamSearchChat(params: StreamSearchChatParams): Promise<
         // All other errors surface as stream_error.
         params.onEvent({
             type: 'stream_error',
-            error: err instanceof Error ? err : new Error(String(err))
+            error: err instanceof Error ? err : new Error(String(err)),
+            status: 0
         });
     }
 }

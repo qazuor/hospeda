@@ -18,8 +18,9 @@ import { execSQL } from './db-helpers.ts';
  * cleanupTestUsers from support/test-cleanup.ts in afterEach.
  */
 
-const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
-const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
+// Ports match apps/e2e/.env.e2e (SSOT). Override via HOSPEDA_E2E_API_URL / HOSPEDA_E2E_WEB_URL.
+const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
+const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
 export type UserRole = 'USER' | 'HOST' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -91,7 +92,7 @@ interface SignupResponse {
  * state-changing auth endpoints. Direct `fetch()` calls (not from a real
  * browser) do not send Origin automatically, so we must add it explicitly.
  * The value must match a configured trustedOrigin — HOSPEDA_SITE_URL
- * (`http://localhost:4321`) is always in the list for local dev.
+ * (`http://localhost:18321`) is always in the list for local E2E dev.
  *
  * Note: `createUser()` callers that pass `verifyEmail: false` can safely
  * skip the SQL force-verify step that happens inside this function —
@@ -291,7 +292,7 @@ export async function getMe(
 
 interface OnboardingStartResponse {
     data?: {
-        status: 'created' | 'resumed' | 'already_host';
+        status: 'created' | 'resumed';
         accommodationId?: string;
         accommodationSlug?: string;
     };
@@ -324,7 +325,7 @@ export async function startHostOnboarding(
     },
     config?: ApiHelperConfig
 ): Promise<{
-    readonly status: 'created' | 'resumed' | 'already_host';
+    readonly status: 'created' | 'resumed';
     readonly accommodationId: string | null;
     readonly accommodationSlug: string | null;
 }> {
@@ -493,28 +494,71 @@ export async function createSubscription(options: {
 }
 
 /**
- * Creates a conversation row linking guest and host on a specific
- * accommodation. Used by MSG-01 and resilience tests that need a
- * pre-existing conversation.
+ * Signs in an already-existing user (seeded or previously created) and
+ * returns their session cookie. Use this for tests that authenticate as a
+ * known seeded account (e.g. the commerce-owner Julieta) rather than
+ * creating a fresh user per test.
+ *
+ * The underlying mechanism is identical to the sign-in step inside
+ * `signupUser`: POST to `/api/auth/sign-in/email` with the required Better
+ * Auth CSRF `Origin` header.
+ *
+ * @param options.email    - Existing user's email address.
+ * @param options.password - Existing user's password.
+ * @returns The session cookie string to use in `cookie` request headers or
+ *   `page.context().addCookies()`.
+ */
+export async function signInExistingUser(
+    options: {
+        readonly email: string;
+        readonly password: string;
+    },
+    config?: ApiHelperConfig
+): Promise<string> {
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
+    const signinResponse = await fetch(`${apiBaseUrl}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            // Better Auth CSRF guard requires a trusted Origin on state-changing
+            // endpoints. Direct fetch() calls do not send Origin automatically.
+            Origin: webBaseUrl
+        },
+        body: JSON.stringify({ email: options.email, password: options.password })
+    });
+    if (!signinResponse.ok) {
+        throw new Error(
+            `signInExistingUser: sign-in failed ${signinResponse.status} ${signinResponse.statusText} — ${await signinResponse.text()}`
+        );
+    }
+    const sessionCookie = extractSessionCookie(signinResponse.headers.get('set-cookie'));
+    if (!sessionCookie) {
+        throw new Error('signInExistingUser: sign-in response missing session cookie');
+    }
+    return sessionCookie;
+}
+
+/**
+ * Creates a conversation row for an authenticated guest on a specific accommodation.
+ * The host is derived from the accommodation's owner_id — no host column exists.
+ * Used by MSG-01 and resilience tests that need a pre-existing conversation.
+ *
+ * SPEC-105 T-105-04: fixed column drift — conversations table has user_id (guest)
+ * and accommodation_id only; host is always resolved via accommodations.owner_id.
+ * Valid statuses: PENDING_VERIFICATION | PENDING_OWNER | PENDING_GUEST | OPEN | CLOSED | BLOCKED.
  */
 export async function createConversation(options: {
     readonly guestUserId: string;
-    readonly hostUserId: string;
     readonly accommodationId: string;
     readonly subject?: string;
 }): Promise<{ readonly id: string }> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO conversations (
-             guest_user_id, host_user_id, accommodation_id,
+             user_id, accommodation_id,
              subject, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, 'ACTIVE', NOW(), NOW())
+         ) VALUES ($1, $2, $3, 'OPEN', NOW(), NOW())
          RETURNING id`,
-        [
-            options.guestUserId,
-            options.hostUserId,
-            options.accommodationId,
-            options.subject ?? 'E2E test conversation'
-        ]
+        [options.guestUserId, options.accommodationId, options.subject ?? 'E2E test conversation']
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createConversation: insert returned no id');

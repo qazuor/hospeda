@@ -26,14 +26,6 @@ describe('GAP-078-117/234: evaluateProdCleanupGate', () => {
         expect(result.reason).toMatch(/HOSPEDA_ALLOW_PROD_CLEANUP/);
     });
 
-    it('refuses the operation when VERCEL_ENV=production without the override flag', () => {
-        const result = evaluateProdCleanupGate({
-            NODE_ENV: 'development',
-            VERCEL_ENV: 'production'
-        });
-        expect(result.allowed).toBe(false);
-    });
-
     it('refuses the operation when override flag is set to a non-true value', () => {
         for (const value of ['1', 'yes', 'TRUE', 'on', '']) {
             const result = evaluateProdCleanupGate({

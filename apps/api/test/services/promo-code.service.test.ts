@@ -110,6 +110,7 @@ vi.mock('@repo/db', () => ({
     count: vi.fn(() => 'count-fn'),
     desc: vi.fn((field) => `desc(${field})`),
     eq: vi.fn((field, value) => ({ field, value, op: 'eq' })),
+    getTableColumns: vi.fn(() => ({})),
     ilike: vi.fn((field, value) => ({ field, value, op: 'ilike' })),
     safeIlike: vi.fn((field, value) => ({ field, value, op: 'safeIlike' })),
     isNull: vi.fn((field) => ({ field, op: 'isNull' })),

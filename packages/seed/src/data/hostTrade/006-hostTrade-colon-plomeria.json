@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "006-hostTrade-colon-plomeria",
+    "name": "Plomería y Sanitarios Colon",
+    "slug": "plomeria-y-sanitarios-colon",
+    "category": "PLOMERIA",
+    "contact": "+54 9 3447 234567",
+    "benefit": "Diagnóstico gratuito y 10% de descuento en mano de obra para hosts de Hospeda.",
+    "destinationId": "002-destination-colon",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 8:00–19:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

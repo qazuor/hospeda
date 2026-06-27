@@ -45,6 +45,7 @@
     "subscribeShort": "Suscribirme",
     "publications": "Blog",
     "events": "Eventos",
+    "gastronomy": "Gastronomía",
     "accommodations": "Alojamientos",
     "proprietors": "Propietarios",
     "tourists": "Turistas",
@@ -102,5 +103,6 @@
         "blockedUnverifiedCta": "Ir a mi cuenta",
         "authedEmailLabel": "Te suscribís con el email de tu cuenta",
         "configureLink": "Configurar"
-    }
+    },
+    "experiences": "Experiencias"
 }

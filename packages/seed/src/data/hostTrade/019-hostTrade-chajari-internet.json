@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "019-hostTrade-chajari-internet",
+    "name": "ConectaRed Chajarí",
+    "slug": "conectared-chajari",
+    "category": "INTERNET",
+    "contact": "+54 9 3458 234567",
+    "benefit": "Instalación y configuración de router WiFi sin cargo para alojamientos Hospeda. Soporte técnico prioritario.",
+    "destinationId": "001-destination-chajari",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 9:00–18:00, Sábados 9:00–13:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

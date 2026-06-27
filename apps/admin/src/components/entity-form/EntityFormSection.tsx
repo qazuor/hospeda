@@ -26,6 +26,7 @@ import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
+import { Checkbox, Label as ShadLabel } from '@/components/ui-wrapped';
 import type { I18nText } from '@repo/schemas';
 
 // Heavy field components — lazy-loaded so tiptap/leaflet/upload don't sit in
@@ -574,6 +575,50 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
+                    case FieldTypeEnum.SELECT_MULTIPLE: {
+                        // Checkbox-group implementation for arrays of fixed options.
+                        // typeConfig must be SelectFieldConfig with options[].
+                        const multiConfig = field.typeConfig as SelectFieldConfig | undefined;
+                        const multiOptions = multiConfig?.options ?? [];
+                        const selectedValues: string[] = Array.isArray(fieldValue)
+                            ? (fieldValue as string[])
+                            : [];
+                        return (
+                            <div className="flex flex-wrap gap-4">
+                                {multiOptions.map((opt) => {
+                                    const checked = selectedValues.includes(opt.value);
+                                    const checkId = `${field.id}-${opt.value}`;
+                                    return (
+                                        <div
+                                            key={opt.value}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Checkbox
+                                                id={checkId}
+                                                checked={checked}
+                                                disabled={disabled}
+                                                onCheckedChange={(v) => {
+                                                    const next = v
+                                                        ? [...selectedValues, opt.value]
+                                                        : selectedValues.filter(
+                                                              (s) => s !== opt.value
+                                                          );
+                                                    onFieldChange(field.id, next);
+                                                }}
+                                            />
+                                            <ShadLabel
+                                                htmlFor={checkId}
+                                                className="cursor-pointer font-normal text-sm"
+                                            >
+                                                {opt.label}
+                                            </ShadLabel>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    }
+
                     default:
                         // Fallback for unknown field types
                         return (
@@ -666,7 +711,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         //     doesn't misalign its neighbor). Mobile → 1 column (grid-cols-1).
         //   - Each field wrapper carries its own col-span class derived from field type.
         //   - TABS layout: fallback to stacked, no grid (nested sections handle their own layout).
+        //   - customRender: when defined, the function is called directly and its result
+        //     replaces the field-grid entirely (mirrors the view-path behaviour in
+        //     EntityViewContent). Sections WITHOUT customRender are unaffected (SPEC-223).
         const renderSectionContent = () => {
+            // Custom-render sections (e.g. ai-generate, stats-chips) bypass the field
+            // renderer entirely — call the function and return its output. This mirrors
+            // the identical branch in EntityViewContent.buildSectionBody (line ~96).
+            if (typeof config.customRender === 'function') {
+                return config.customRender();
+            }
+
             if (config.layout === 'TABS') {
                 // TABS: stacked layout — nested sections manage their own grid
                 return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
@@ -712,8 +767,9 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 {/* Premium upsell — grouped at the bottom so editable fields stay clean. */}
                 <PremiumBlock items={premiumItems} />
 
-                {/* Section Footer Info */}
-                {visibleFields.length === 0 && (
+                {/* Section Footer Info — suppressed for customRender sections whose
+                    fields array is intentionally empty (e.g. ai-generate). */}
+                {visibleFields.length === 0 && !config.customRender && (
                     <div className="py-8 text-center text-muted-foreground text-sm">
                         {t('admin-common.entityForm.noAccessibleFields')}
                     </div>

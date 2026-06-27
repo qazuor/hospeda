@@ -14,6 +14,7 @@
  * Tasks: T-074
  */
 
+import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
@@ -44,21 +45,24 @@ const AUTH_TEXTS = {
         favorites: 'Favoritos',
         myReviews: 'Mis resenas',
         preferences: 'Preferencias',
-        signOut: 'Cerrar sesion'
+        signOut: 'Cerrar sesion',
+        signingOut: 'Cerrando sesion…'
     },
     en: {
         myAccount: 'My account',
         favorites: 'Favorites',
         myReviews: 'My reviews',
         preferences: 'Preferences',
-        signOut: 'Sign out'
+        signOut: 'Sign out',
+        signingOut: 'Signing out…'
     },
     pt: {
         myAccount: 'Minha conta',
         favorites: 'Favoritos',
         myReviews: 'Minhas avaliacoes',
         preferences: 'Preferencias',
-        signOut: 'Sair'
+        signOut: 'Sair',
+        signingOut: 'Saindo…'
     }
 } as const;
 
@@ -360,8 +364,7 @@ export function MobileMenu({
                             {user.image ? (
                                 <img
                                     src={user.image}
-                                    alt=""
-                                    aria-hidden="true"
+                                    alt={user.name ?? 'Usuario'}
                                     className={styles.userAvatar}
                                 />
                             ) : (
@@ -423,10 +426,10 @@ export function MobileMenu({
                                 >
                                     {authTexts.preferences}
                                 </a>
-                                <button
-                                    type="button"
+                                <LoadingButton
+                                    loading={isSigningOut}
+                                    loadingLabel={authTexts.signingOut}
                                     onClick={() => void handleSignOut()}
-                                    disabled={isSigningOut}
                                     tabIndex={isOpen ? 0 : -1}
                                     className={styles.signOutButton}
                                 >
@@ -434,8 +437,8 @@ export function MobileMenu({
                                         size={18}
                                         aria-hidden="true"
                                     />
-                                    {isSigningOut ? '...' : authTexts.signOut}
-                                </button>
+                                    {authTexts.signOut}
+                                </LoadingButton>
                             </div>
                         )}
                     </>

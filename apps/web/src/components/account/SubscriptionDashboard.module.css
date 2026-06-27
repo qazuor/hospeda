@@ -349,6 +349,11 @@
 }
 
 .modal {
+    /* Reset the browser's <dialog> UA stylesheet (position:absolute; left:0;
+       margin:auto; etc.) so the element participates in the flex centering of
+       .modalBackdrop and does not pin itself to the left edge of the screen. */
+    position: relative;
+    margin: 0;
     background-color: var(--core-card);
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-card, 24px);
@@ -381,6 +386,51 @@
     gap: var(--space-3, 12px);
     justify-content: flex-end;
     flex-wrap: wrap;
+}
+
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.modalLabel {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.modalTextarea {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-3, 12px);
+    resize: vertical;
+    width: 100%;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+}
+
+.modalTextarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-color: var(--brand-primary);
+}
+
+.modalTextarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modalError {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-danger, oklch(0.55 0.2 27));
+    margin: 0;
 }
 
 /* ── Loading state ──────────────────────────────────────────────────────────── */
@@ -448,6 +498,40 @@
     color: var(--core-muted-foreground);
     margin: 0;
     max-width: 360px;
+}
+
+/* ── Scheduled plan-change banner ──────────────────────────────────────────── */
+
+.scheduledChangeBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    background-color: var(
+        --brand-accent-a12,
+        oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.12)
+    );
+    border: 1px solid
+        var(--brand-accent-a30, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.3));
+    border-radius: var(--radius-sm, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.scheduledChangeBannerTitle {
+    font-weight: 600;
+    color: var(--brand-accent, oklch(0.7 0.16 60));
+    margin: 0 0 var(--space-1, 4px);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.scheduledChangeBannerBody {
+    margin: 0;
+    color: var(--core-foreground);
 }
 
 /* ── Error state ───────────────────────────────────────────────────────────── */

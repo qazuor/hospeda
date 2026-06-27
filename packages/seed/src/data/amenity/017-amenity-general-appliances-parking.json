@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "017-amenity-general-appliances-parking",
-    "name": {
-        "es": "parking",
-        "en": "parking",
-        "pt": "parking"
-    },
     "slug": "parking",
     "description": {
         "es": "Cochera / Estacionamiento",
         "en": "Cochera / Estacionamiento",
         "pt": "Cochera / Estacionamiento"
     },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
     "type": "GENERAL_APPLIANCES",
     "icon": "ParkingIcon",
     "isBuiltin": false,

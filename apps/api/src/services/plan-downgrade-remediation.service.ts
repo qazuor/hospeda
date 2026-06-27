@@ -285,8 +285,27 @@ function resolveKeepIds(params: {
 // ---------------------------------------------------------------------------
 
 /**
- * Reads the current gallery for an accommodation within an active transaction
- * and returns keepIds = gallery URLs MINUS the overflow set.
+ * Reads the current visible gallery for an accommodation from the relational
+ * `accommodation_media` table within an active transaction and returns
+ * keepIds = visible photo URLs MINUS the overflow set.
+ *
+ * SPEC-204 direct cutover: previously read from `accommodations.media.gallery`
+ * (JSONB blob). Now reads from `accommodation_media` with `state = 'visible'`
+ * — the same source used by `enforcePhotoLimit` and `computeDowngradeExcess`.
+ *
+ * Identity key is **URL** (unchanged from the original implementation; the
+ * SPEC-167 photo primitive `archiveAccommodationPhotos` partitions the gallery
+ * by `keepIds.has(img.url)` in the JSONB write path, and the SPEC-204 dual-write
+ * leg of that same primitive matches rows by URL too). Callers must continue to
+ * pass URL sets.
+ *
+ * Note: `findByAccommodation` is called without a transaction client because
+ * Drizzle's model does not expose the raw `DrizzleClient` parameter through the
+ * `tx` forwarding of the base model in the same way the raw SQL path below does.
+ * The JSONB write (`archiveAccommodationPhotos`) holds the row lock via
+ * `SELECT ... FOR UPDATE`; reading the relational shadow table within the same
+ * tx for the keep-set is safe under PostgreSQL's snapshot isolation because all
+ * writes to `accommodation_media` happen in the same tx (dual-write).
  *
  * Used for the default photo-restriction path when no `photoKeepMap` is
  * provided by the host. The overflow URLs from the excess preview are archived;
@@ -297,24 +316,20 @@ async function buildDefaultPhotoKeepIds(params: {
     readonly overflowUrls: ReadonlySet<string>;
     readonly tx: DrizzleClient;
 }): Promise<Set<string>> {
-    const { accommodationId, overflowUrls, tx } = params;
+    const { accommodationId, overflowUrls } = params;
     try {
-        const { accommodations: accommodationsTable, eq, isNull, and } = await import('@repo/db');
-        const [row] = await tx
-            .select({ media: accommodationsTable.media })
-            .from(accommodationsTable)
-            .where(
-                and(
-                    eq(accommodationsTable.id, accommodationId),
-                    isNull(accommodationsTable.deletedAt)
-                )
-            );
+        const { accommodationMediaModel } = await import('@repo/db');
+        // Fetch all visible media rows for this accommodation.
+        // `state: 'visible'` covers featured image + active gallery (same definition
+        // as the excess-computation side). keepIds is the non-overflow subset by URL.
+        // pageSize 1000 is well above any realistic gallery size.
+        const { items } = await accommodationMediaModel.findByAccommodation({
+            accommodationId,
+            state: 'visible',
+            pageSize: 1000
+        });
 
-        if (!row?.media) return new Set<string>();
-        const media = row.media as { gallery?: Array<{ url: string }> };
-        return new Set(
-            (media.gallery ?? []).filter((img) => !overflowUrls.has(img.url)).map((img) => img.url)
-        );
+        return new Set(items.filter((row) => !overflowUrls.has(row.url)).map((row) => row.url));
     } catch {
         // Fallback: empty keepIds archives everything (still reversible per INV-5)
         return new Set<string>();

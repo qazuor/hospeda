@@ -2,7 +2,7 @@ import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ['src/index.ts', 'src/vercel.ts'],
+    entry: ['src/index.ts'],
     outDir: 'dist',
     target: 'es2022',
     format: ['esm'],
@@ -54,7 +54,13 @@ export default defineConfig({
         // native CJS interop handle it. It's a transitive dep of ai ->
         // @ai-sdk/gateway -> @vercel/oidc.
         '@vercel/oidc',
-        '@ai-sdk/gateway'
+        '@ai-sdk/gateway',
+        // undici (SPEC-222, transitive via @repo/utils safe-fetch) uses dynamic
+        // require("assert") internally; bundling it into the ESM output throws
+        // "Dynamic require of assert is not supported" at startup. Externalize so
+        // Node's CJS interop resolves it at runtime. Declared as a direct dep of
+        // apps/api so pnpm installs it at apps/api/node_modules.
+        'undici'
     ],
     noExternal: [
         /@repo\/.*/,

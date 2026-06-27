@@ -125,7 +125,6 @@ export const AmenityWithCategorySchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -146,7 +145,6 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -163,7 +161,6 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 icon: true
             }).extend({
                 category: z.string().optional(),
@@ -178,7 +175,6 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -283,7 +279,6 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -299,7 +294,6 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -316,7 +310,6 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 icon: true
             }).extend({
                 category: z.string().optional(),

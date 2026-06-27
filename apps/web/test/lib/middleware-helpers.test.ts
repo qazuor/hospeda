@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
     buildAdminLoginRedirect,
+    buildChangePasswordRedirect,
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
@@ -15,6 +16,7 @@ import {
     extractLocaleFromPath,
     generateCspNonce,
     isAuthRoute,
+    isChangePasswordRoute,
     isProfileCompletionBypassRole,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
@@ -673,5 +675,107 @@ describe('buildSetPasswordRedirect', () => {
     it('should always end with a trailing slash', () => {
         const url = buildSetPasswordRedirect({ locale: 'es' });
         expect(url.endsWith('/')).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-239 T-055: isChangePasswordRoute + buildChangePasswordRedirect
+// ---------------------------------------------------------------------------
+
+describe('isChangePasswordRoute', () => {
+    it('should return true for the cambiar-contrasena route', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/cambiar-contrasena/' })).toBe(true);
+    });
+
+    it('should return true for all supported locales', () => {
+        expect(isChangePasswordRoute({ path: '/en/mi-cuenta/cambiar-contrasena/' })).toBe(true);
+        expect(isChangePasswordRoute({ path: '/pt/mi-cuenta/cambiar-contrasena/' })).toBe(true);
+    });
+
+    it('should return true for sub-paths under cambiar-contrasena', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/cambiar-contrasena/confirmar/' })).toBe(
+            true
+        );
+    });
+
+    it('should return false for the agregar-contrasena route', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/agregar-contrasena/' })).toBe(false);
+    });
+
+    it('should return false for the completar-perfil route', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/completar-perfil/' })).toBe(false);
+    });
+
+    it('should return false for the mi-cuenta root', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/' })).toBe(false);
+    });
+
+    it('should return false for public routes', () => {
+        expect(isChangePasswordRoute({ path: '/es/destinos/' })).toBe(false);
+    });
+
+    it('should return false for empty path', () => {
+        expect(isChangePasswordRoute({ path: '' })).toBe(false);
+    });
+});
+
+describe('buildChangePasswordRedirect', () => {
+    it('should build correct URL for es locale', () => {
+        expect(buildChangePasswordRedirect({ locale: 'es' })).toBe(
+            '/es/mi-cuenta/cambiar-contrasena/'
+        );
+    });
+
+    it('should build correct URL for en locale', () => {
+        expect(buildChangePasswordRedirect({ locale: 'en' })).toBe(
+            '/en/mi-cuenta/cambiar-contrasena/'
+        );
+    });
+
+    it('should build correct URL for pt locale', () => {
+        expect(buildChangePasswordRedirect({ locale: 'pt' })).toBe(
+            '/pt/mi-cuenta/cambiar-contrasena/'
+        );
+    });
+
+    it('should always end with a trailing slash', () => {
+        const url = buildChangePasswordRedirect({ locale: 'es' });
+        expect(url.endsWith('/')).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-249 T-020 / T-023 — commerce area is subject to the force-password gate
+// ---------------------------------------------------------------------------
+
+/**
+ * The web middleware redirects a `mustChangePassword` user away from any
+ * protected route that is NOT the change-password route itself (avoiding a
+ * redirect loop). These assertions verify that the commerce self-service area
+ * (`/[lang]/mi-cuenta/comercio/...`) falls inside that gated set — so a freshly
+ * provisioned COMMERCE_OWNER is forced through `cambiar-contrasena` before
+ * reaching it. The gate mechanism itself is reused from SPEC-239 (verify-only).
+ */
+describe('SPEC-249 — commerce area force-password gating (T-020 / T-023)', () => {
+    const commercePaths = [
+        '/es/mi-cuenta/comercio/',
+        '/es/mi-cuenta/comercio/gastronomy/abc-123/editar/',
+        '/en/mi-cuenta/comercio/experience/def-456/editar/'
+    ];
+
+    it('treats every commerce area path as a protected route (auth + gate apply)', () => {
+        for (const path of commercePaths) {
+            expect(isProtectedRoute({ path })).toBe(true);
+        }
+    });
+
+    it('does NOT treat commerce paths as the change-password route (so the gate redirects them)', () => {
+        for (const path of commercePaths) {
+            expect(isChangePasswordRoute({ path })).toBe(false);
+        }
+    });
+
+    it('exempts the change-password route itself (no redirect loop)', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/cambiar-contrasena/' })).toBe(true);
     });
 });

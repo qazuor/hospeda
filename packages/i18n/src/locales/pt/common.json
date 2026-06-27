@@ -69,7 +69,16 @@
         "SERVICE_UNAVAILABLE": "Este serviço está temporariamente indisponível. Tente novamente em alguns minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "A newsletter não está disponível no momento. Estamos trabalhando para restabelecê-la.",
         "INVALID_EMAIL_OR_PASSWORD": "O endereço de e-mail ou a senha estão incorretos.",
-        "ACCOUNT_LOCKED": "Sua conta está temporariamente bloqueada devido a muitas tentativas de login malsucedidas. Tente novamente em alguns minutos ou use a opção de recuperação de senha."
+        "ACCOUNT_LOCKED": "Sua conta está temporariamente bloqueada devido a muitas tentativas de login malsucedidas. Tente novamente em alguns minutos ou use a opção de recuperação de senha.",
+        "INVALID_PAGINATION_PARAMS": "Os parâmetros de paginação não são válidos.",
+        "NOT_IMPLEMENTED": "Esta função ainda não está disponível.",
+        "CONFIGURATION_ERROR": "Há um problema de configuração. Tente novamente em alguns minutos.",
+        "QUOTA_EXCEEDED": "Você atingiu o limite permitido para esta ação.",
+        "ENTITLEMENT_REQUIRED": "Seu plano não inclui esta função. Atualize para continuar.",
+        "PROVIDER_ERROR": "O serviço de pagamento retornou um erro inesperado. Tente novamente em alguns minutos.",
+        "PROVIDER_RATE_LIMITED": "O serviço de pagamento está ocupado. Aguarde alguns segundos e tente novamente.",
+        "PROVIDER_TIMEOUT": "O serviço de pagamento demorou muito para responder. Tente novamente.",
+        "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar."
     },
     "filters": "Filtros",
     "goHome": "Voltar ao início",
@@ -137,5 +146,11 @@
             "privacy": "Política de Privacidade",
             "sitemap": "Mapa do Site"
         }
+    },
+    "attribution": {
+        "text": "Foto por {{photographer}} no {{provider}}",
+        "byline": "Foto por",
+        "onProvider": "no {{provider}}",
+        "ariaLabel": "Perfil de {{photographer}} no {{provider}}"
     }
 }

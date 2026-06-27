@@ -1,10 +1,11 @@
 /**
- * Protected profile routes (SPEC-113).
- * Aggregates all profile-completion endpoints under a single router.
+ * Protected profile routes (SPEC-113 / SPEC-243).
+ * Aggregates all profile-completion and device-management endpoints.
  */
 
 import { createRouter } from '../../../utils/create-app';
 import { profileCompleteRoute } from './complete';
+import { profilePushTokenRoute } from './push-token';
 import { profileSetPasswordRoute } from './set-password';
 import { profileSkipSetPasswordRoute } from './skip-set-password';
 import { profileStatusRoute } from './status';
@@ -22,5 +23,8 @@ app.route('/', profileSetPasswordRoute);
 
 // POST /skip-set-password
 app.route('/', profileSkipSetPasswordRoute);
+
+// POST /push-token — register an Expo push token (SPEC-243 T-011)
+app.route('/', profilePushTokenRoute);
 
 export { app as protectedProfileRoutes };

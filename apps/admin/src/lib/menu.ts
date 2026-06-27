@@ -231,6 +231,25 @@ export const menuTree: readonly MenuItem[] = [
         ]
     },
     {
+        titleKey: 'admin-menu.platform.title',
+        children: [
+            {
+                titleKey: 'admin-menu.platform.hostTrades',
+                to: '/platform/host-trades',
+                permission: [
+                    PermissionEnum.HOST_TRADE_VIEW_ALL,
+                    PermissionEnum.HOST_TRADE_CREATE,
+                    PermissionEnum.HOST_TRADE_UPDATE
+                ]
+            },
+            {
+                titleKey: 'admin-menu.platform.featureFlags',
+                to: '/platform/feature-flags',
+                permission: PermissionEnum.FEATURE_FLAG_MANAGE
+            }
+        ]
+    },
+    {
         titleKey: 'admin-menu.sponsors',
         to: '/sponsors',
         permission: [PermissionEnum.POST_SPONSOR_MANAGE, PermissionEnum.POST_SPONSORSHIP_MANAGE]
@@ -257,6 +276,37 @@ export const menuTree: readonly MenuItem[] = [
                 titleKey: 'admin-menu.analytics.views',
                 to: '/analytics/views',
                 permission: PermissionEnum.ANALYTICS_VIEW
+            }
+        ]
+    },
+    {
+        titleKey: 'admin-menu.ai.title',
+        permission: PermissionEnum.AI_SETTINGS_MANAGE,
+        children: [
+            {
+                titleKey: 'admin-menu.ai.usage',
+                to: '/ai/usage',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.settings',
+                to: '/ai/settings',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.credentials',
+                to: '/ai/credentials',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.prompts',
+                to: '/ai/prompts',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.playground',
+                to: '/ai/playground',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
             }
         ]
     }

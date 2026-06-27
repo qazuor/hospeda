@@ -491,7 +491,11 @@
 .lightboxNav:focus-visible {
     background: oklch(0 0 0 / 0.9);
     border-color: oklch(1 0 0 / 0.8);
-    outline: none;
+}
+
+.lightboxNav:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
 }
 
 .lightboxNavPrev:hover,
@@ -526,17 +530,33 @@
     max-height: 70vh;
     object-fit: contain;
     border-radius: var(--radius-card, 24px);
-    animation: lightboxImgIn 0.18s ease-out;
 }
 
-@keyframes lightboxImgIn {
+/**
+ * .lightboxImgFade — fade-in transition applied to each new lightbox image.
+ * Uses a CSS animation (opacity 0→1) to avoid a jarring blank frame when
+ * navigating between images. The `key` prop on the <img> element forces React
+ * to remount the element on every image change, restarting the animation.
+ *
+ * Respects `prefers-reduced-motion`: animation is suppressed so users who
+ * have requested reduced motion do not experience any fade effect.
+ */
+.lightboxImgFade {
+    animation: lightboxImgFadeIn var(--duration-fast, 0.2s) ease-out;
+}
+
+@keyframes lightboxImgFadeIn {
     from {
         opacity: 0;
-        transform: scale(0.96);
     }
     to {
         opacity: 1;
-        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lightboxImgFade {
+        animation: none;
     }
 }
 
@@ -588,7 +608,11 @@
 .lightboxThumb:hover,
 .lightboxThumb:focus-visible {
     opacity: 0.85;
-    outline: none;
+}
+
+.lightboxThumb:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
 }
 
 .lightboxThumbActive {

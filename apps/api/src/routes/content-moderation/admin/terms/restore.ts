@@ -24,12 +24,20 @@ export const adminRestoreTermRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const termService = new ContentModerationTermService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
-        const result = await termService.restore(actor, params.id as string);
+        const id = params.id as string;
 
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+        const restoreResult = await termService.restore(actor, id);
+
+        if (restoreResult.error) {
+            throw new ServiceError(restoreResult.error.code, restoreResult.error.message);
         }
 
-        return result.data;
+        const fetchResult = await termService.getById(actor, id);
+
+        if (fetchResult.error) {
+            throw new ServiceError(fetchResult.error.code, fetchResult.error.message);
+        }
+
+        return fetchResult.data;
     }
 });

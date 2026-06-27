@@ -1,0 +1,61 @@
+{
+    "section": {
+        "title": "Reputación en otras plataformas",
+        "subtitle": "Opiniones de viajeros verificados en los principales sitios de alojamiento"
+    },
+    "platform": {
+        "google": "Google",
+        "booking": "Booking.com",
+        "airbnb": "Airbnb",
+        "other": "Otra plataforma"
+    },
+    "link": {
+        "cta": "Mirá nuestro alojamiento en {{platform}} →",
+        "viewOn": "Ver en {{platform}} →"
+    },
+    "reviews": {
+        "title": "Reseñas destacadas",
+        "via": "vía {{platform}}"
+    },
+    "aggregate": {
+        "rating": "Puntuación promedio",
+        "reviewsCount": "{{count}} reseñas",
+        "noData": "Sin datos disponibles"
+    },
+    "snippets": {
+        "googleOnly": "Solo Google muestra el texto completo de las reseñas porque ofrece una API oficial. Las demás plataformas muestran el puntaje agregado y un enlace directo por razones legales.",
+        "ttlExpired": "Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje",
+        "byAuthor": "Por {{author}}",
+        "on": "en {{platform}}"
+    },
+    "ownerConfig": {
+        "title": "Configuración de reputación externa",
+        "addListing": "Agregar enlace de plataforma",
+        "showLink": "Mostrar enlace a la plataforma",
+        "showReviews": "Mostrar reseñas de texto",
+        "masterToggle": "Mostrar sección de reputación externa",
+        "refresh": "Actualizar reseñas",
+        "lastUpdated": "Última actualización: {{date}}",
+        "rateLimitHit": "Podés actualizar nuevamente en {{minutes}} minutos",
+        "googleOnlyExplainer": "El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.",
+        "verifiedHint": "El enlace fue verificado y corresponde a este alojamiento",
+        "loading": "Cargando listados…"
+    },
+    "errors": {
+        "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",
+        "notFound": "No se encontraron datos de reputación para esta plataforma.",
+        "blocked": "El acceso a los datos de esta plataforma fue bloqueado temporalmente.",
+        "statusFailed": "No se pudo obtener el estado de actualización."
+    },
+    "status": {
+        "pending": "Actualizando...",
+        "running": "Procesando...",
+        "error": "Falló",
+        "blocked": "Bloqueado",
+        "notFound": "No encontrado"
+    },
+    "refresh": {
+        "enqueued": "Actualizando en segundo plano...",
+        "inlineSuccess": "Actualizado"
+    }
+}

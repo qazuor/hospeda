@@ -8,13 +8,12 @@ name: E2E (Nightly)
 # workflow_dispatch to re-run on demand for pre-release validation.
 
 on:
-  # Cron trigger DISABLED 2026-05-12: the suite has been failing every
-  # night since the VPS migration sprint (database/Brevo/credential
-  # config drift). Each failed run still consumes ~5-10 min of free-tier
-  # Actions minutes. Re-enable the cron after SPEC-103 restores the
-  # suite. Manual triggers via workflow_dispatch remain available.
-  #   schedule:
-  #     - cron: '0 3 * * *' # 03:00 UTC daily
+  # Cron re-enabled 2026-06-25 (SPEC-105 T-105-06).
+  # Infra drift (RC-1 wrong filter + RC-2 stale script paths) fixed.
+  # Schema/API drift in 4 test assertions fixed (T-105-04).
+  # Schedule: 05:00 UTC = 02:00 ART — 4 h before daily backup window.
+  schedule:
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -33,6 +32,9 @@ jobs:
     timeout-minutes: 50
 
     services:
+      # NOTE: service container port mappings are evaluated before any steps
+      # run, so they CANNOT be sourced from apps/e2e/.env.e2e. Keep them in
+      # sync with the SSOT manually (apps/e2e/.env.e2e E2E_POSTGRES_PORT etc).
       postgres:
         image: postgres:15-alpine
         env:
@@ -40,7 +42,7 @@ jobs:
           POSTGRES_PASSWORD: hospeda_pass
           POSTGRES_DB: hospeda_e2e
         ports:
-          - 5433:5432
+          - 15433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 5s
@@ -50,7 +52,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6380:6379
+          - 16380:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
@@ -60,8 +62,8 @@ jobs:
       mailpit:
         image: axllent/mailpit:latest
         ports:
-          - 1025:1025
-          - 8025:8025
+          - 11025:1025
+          - 18025:8025
         env:
           MP_MAX_MESSAGES: 5000
           MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -73,16 +75,12 @@ jobs:
           --health-retries 10
 
     env:
-      HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_REDIS_URL: redis://localhost:6380
       HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
-      HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
-      HOSPEDA_API_URL: http://localhost:3001
-      HOSPEDA_SITE_URL: http://localhost:4321
-      HOSPEDA_ADMIN_URL: http://localhost:3000
+      HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+      HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
+      PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
+      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       HOSPEDA_MAILER_HOST: localhost
-      HOSPEDA_MAILER_PORT: '1025'
 
       # Real MP sandbox credentials (HOST-02 uses real checkout flow)
       HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN }}
@@ -101,7 +99,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Load E2E port/URL vars from SSOT
+        # Injects all non-secret vars from apps/e2e/.env.e2e into $GITHUB_ENV
+        # so every subsequent step (build, seed, playwright) sees the same ports.
+        # Secrets stay in the static env: block above.
+        # keep in sync with apps/e2e/.env.e2e
+        shell: bash
+        run: |
+          grep -vE '^\s*(#|$)' apps/e2e/.env.e2e >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -157,9 +164,9 @@ jobs:
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()
         run: |
-          bash scripts/ci/check-raw-ilike.sh
-          pnpm exec tsx scripts/ci/seo-validator.ts
-          pnpm exec tsx scripts/ci/sitemap-validator.ts
+          bash scripts/check-unsafe-ilike.sh
+          pnpm exec tsx scripts/seo-validator.ts
+          pnpm exec tsx scripts/sitemap-validator.ts
 
       - name: Upload Playwright HTML report
         if: always()

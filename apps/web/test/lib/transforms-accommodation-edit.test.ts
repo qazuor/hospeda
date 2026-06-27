@@ -142,16 +142,18 @@ describe('transformAccommodationEdit', () => {
 
 describe('transformAmenityList', () => {
     it('should transform a list of raw amenity objects into AmenityData[]', () => {
+        // SPEC-266: the catalog `name` column was dropped; `slug` is the
+        // canonical identifier and the i18n key for label resolution.
         const raw = [
-            { id: 'am-1', name: 'WiFi', category: 'connectivity' },
-            { id: 'am-2', name: 'Pool', category: 'leisure' }
+            { id: 'am-1', slug: 'wifi', category: 'connectivity' },
+            { id: 'am-2', slug: 'pool', category: 'leisure' }
         ];
 
         const result = transformAmenityList({ items: raw });
 
         expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({ id: 'am-1', name: 'WiFi', category: 'connectivity' });
-        expect(result[1]).toEqual({ id: 'am-2', name: 'Pool', category: 'leisure' });
+        expect(result[0]).toEqual({ id: 'am-1', slug: 'wifi', category: 'connectivity' });
+        expect(result[1]).toEqual({ id: 'am-2', slug: 'pool', category: 'leisure' });
     });
 
     it('should handle empty input', () => {
@@ -160,7 +162,7 @@ describe('transformAmenityList', () => {
     });
 
     it('should default missing category to null', () => {
-        const raw = [{ id: 'am-3', name: 'Parking' }];
+        const raw = [{ id: 'am-3', slug: 'parking' }];
         const result = transformAmenityList({ items: raw });
         expect(result[0].category).toBeNull();
     });

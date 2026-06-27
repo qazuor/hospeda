@@ -1,0 +1,125 @@
+/**
+ * @file useExperiencePage.ts
+ * Page-orchestrator hook for the experience view and edit pages (SPEC-240 T-028).
+ *
+ * Centralises data loading, mode switching, and navigation so route components
+ * stay thin.  Mirrors the `useGastronomyPage` pattern adapted for the
+ * experience entity's consolidated config.
+ */
+
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useTranslations } from '@/hooks/use-translations';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { PermissionEnum } from '@repo/schemas';
+import { useNavigate } from '@tanstack/react-router';
+import { useMemo, useState } from 'react';
+import { createExperienceConsolidatedConfig } from '../config/experience-consolidated.config';
+import { useExperienceQuery, useUpdateExperienceMutation } from './useExperienceQuery';
+
+/**
+ * Centralised hook for the experience view/edit pages.
+ *
+ * Provides:
+ *   - `entity` / `isLoading` / `error` from the detail query
+ *   - `mode` toggle (view ↔ edit)
+ *   - `sections` filtered for the current mode
+ *   - `userPermissions` / `canView` / `canEdit`
+ *   - `updateMutation` for the edit form
+ *   - Navigation helpers (`goToList`, `goToView`, `goToEdit`)
+ *
+ * @param entityId - UUID of the experience listing being displayed
+ * @returns Page state and helpers for view/edit routes
+ */
+export const useExperiencePage = (entityId: string) => {
+    const navigate = useNavigate();
+    const { t } = useTranslations();
+
+    const [mode, setMode] = useState<'view' | 'edit'>('view');
+    const [activeSection, setActiveSection] = useState<string>();
+
+    const query = useExperienceQuery(entityId);
+    const updateMutationResult = useUpdateExperienceMutation();
+
+    const entityConfig = useMemo(() => {
+        const consolidatedConfig = createExperienceConsolidatedConfig(t);
+        const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
+        const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
+        return { viewSections, editSections, metadata: consolidatedConfig.metadata };
+    }, [t]);
+
+    const permissions = useMemo(
+        () => ({
+            view: [PermissionEnum.COMMERCE_VIEW_ALL],
+            edit: [PermissionEnum.COMMERCE_EDIT_ALL],
+            create: [PermissionEnum.COMMERCE_CREATE],
+            delete: [PermissionEnum.COMMERCE_DELETE]
+        }),
+        []
+    );
+
+    const userPermissions = useUserPermissions();
+
+    const canView = useMemo(
+        () => permissions.view.some((p) => userPermissions.includes(p)),
+        [permissions, userPermissions]
+    );
+
+    const canEdit = useMemo(
+        () => permissions.edit.some((p) => userPermissions.includes(p)),
+        [permissions, userPermissions]
+    );
+
+    const switchToView = () => setMode('view');
+    const switchToEdit = () => setMode('edit');
+
+    const goToList = () => navigate({ to: '/experiences' });
+    const goToView = () => navigate({ to: '/experiences/$id', params: { id: entityId } });
+    const goToEdit = () =>
+        navigate({ to: '/experiences/$id/edit' as never, params: { id: entityId } as never });
+
+    const getSections = (): SectionConfig[] =>
+        mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
+
+    return {
+        mode,
+        setMode,
+        switchToView,
+        switchToEdit,
+        activeSection,
+        setActiveSection,
+
+        entity: query.data,
+        isLoading: query.isLoading,
+        error: query.error,
+
+        entityConfig,
+        sections: getSections(),
+
+        userPermissions,
+        canView,
+        canEdit,
+
+        updateMutation: {
+            // EntityPageBase.handleSave calls mutateAsync with the FLAT form
+            // payload (the field values), but the commerce factory's useUpdate()
+            // mutationFn expects `{ id, data }`. Bind the entity id here and wrap
+            // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
+            // (Calling it directly silently no-ops: id/data come through
+            // undefined, the PATCH never fires, and the save looks dead.)
+            mutateAsync: (values: Record<string, unknown>) =>
+                updateMutationResult.mutateAsync({
+                    id: entityId,
+                    data: values as Parameters<typeof updateMutationResult.mutateAsync>[0]['data']
+                }),
+            isLoading: updateMutationResult.isPending
+        },
+
+        entityType: 'experience',
+        entityId,
+
+        goToList,
+        goToView,
+        goToEdit
+    };
+};

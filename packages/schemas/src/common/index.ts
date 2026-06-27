@@ -22,6 +22,12 @@ export * from './admin-search.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './entity-options.schema.js';
 
+// Commerce common schemas (SPEC-239)
+export * from './commerce-identity.schema.js';
+export * from './commerce-owner-listing.schema.js';
+export * from './commerce-rating.schema.js';
+export * from './opening-hours.schema.js';
+
 // Schemas
 export * from './admin.schema.js';
 export * from './audit.schema.js';
@@ -37,8 +43,13 @@ export * from './media-upload.schema.js';
 export * from './moderation.schema.js';
 export * from './password.schema.js';
 // Skip pagination.schema.js to avoid `BaseSearchSchema` conflict with base.schema.js,
-// but re-export the multi-sort primitives which have no counterpart elsewhere.
-export { SortFieldSchema, type SortField } from './pagination.schema.js';
+// but re-export the non-conflicting schemas: multi-sort primitives and pagination result shapes.
+export {
+    CursorPaginationResultSchema,
+    PaginationResultSchema,
+    SortFieldSchema,
+    type SortField
+} from './pagination.schema.js';
 export * from './params.schema.js';
 export * from './price.schema.js';
 export * from './relations.schema.js';

@@ -40,9 +40,10 @@
     transition: border-color var(--duration-fast, 0.2s) ease;
 }
 
-.input:focus,
-.textarea:focus {
-    outline: none;
+.input:focus-visible,
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 2px var(--brand-primary-a15);
 }
@@ -56,7 +57,7 @@
     border-color: var(--destructive, #e74c3c);
 }
 
-.textareaError:focus {
+.textareaError:focus-visible {
     border-color: var(--destructive, #e74c3c);
     box-shadow: 0 0 0 2px var(--destructive-a15);
 }
@@ -178,4 +179,11 @@
 
 .viewExistingLink:hover {
     color: var(--brand-primary-lm05);
+}
+
+/* Loading content wrapper — centers Spinner + label inline inside a button */
+.loadingContent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }

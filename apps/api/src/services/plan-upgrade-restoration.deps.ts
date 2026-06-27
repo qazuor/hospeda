@@ -200,6 +200,7 @@ export const defaultDeps: UpgradeRestorationDeps = {
     ): Promise<AccommodationWithArchivedPhotos[]> {
         const {
             accommodations: accsTable,
+            accommodationMedia: mediaTable,
             getDb,
             and,
             eq,
@@ -208,30 +209,33 @@ export const defaultDeps: UpgradeRestorationDeps = {
         } = await import('@repo/db');
         const db = getDb();
 
-        // Select accommodations owned by this user that have non-empty archivedGallery
+        // Query accommodation_media grouped by accommodation_id. We JOIN to
+        // accommodations to filter by ownerId and deletedAt. Only accommodations
+        // that have at least one archived row are included (HAVING clause).
+        // The COUNT filters use SQL filter expressions to get both visible-gallery
+        // and archived counts in a single pass.
         const rows = await db
-            .select({ id: accsTable.id, media: accsTable.media })
+            .select({
+                accommodationId: accsTable.id,
+                galleryCount: drizzleSql<number>`COUNT(*) FILTER (WHERE ${mediaTable.state} = 'visible' AND ${mediaTable.isFeatured} = false AND ${mediaTable.deletedAt} IS NULL)`,
+                archivedCount: drizzleSql<number>`COUNT(*) FILTER (WHERE ${mediaTable.state} = 'archived' AND ${mediaTable.deletedAt} IS NULL)`
+            })
             .from(accsTable)
-            .where(
-                and(
-                    eq(accsTable.ownerId, userId),
-                    isNull(accsTable.deletedAt),
-                    // JSONB: archivedGallery exists and is non-empty
-                    drizzleSql`${accsTable.media}->'archivedGallery' IS NOT NULL AND jsonb_array_length(${accsTable.media}->'archivedGallery') > 0`
-                )
+            .innerJoin(
+                mediaTable,
+                and(eq(mediaTable.accommodationId, accsTable.id), isNull(mediaTable.deletedAt))
+            )
+            .where(and(eq(accsTable.ownerId, userId), isNull(accsTable.deletedAt)))
+            .groupBy(accsTable.id)
+            .having(
+                drizzleSql`COUNT(*) FILTER (WHERE ${mediaTable.state} = 'archived' AND ${mediaTable.deletedAt} IS NULL) > 0`
             );
 
-        return rows.map((r) => {
-            const media = r.media as {
-                gallery?: Array<unknown>;
-                archivedGallery?: Array<unknown>;
-            } | null;
-            return {
-                accommodationId: r.id,
-                galleryCount: media?.gallery?.length ?? 0,
-                archivedCount: media?.archivedGallery?.length ?? 0
-            };
-        });
+        return rows.map((r) => ({
+            accommodationId: r.accommodationId,
+            galleryCount: Number(r.galleryCount),
+            archivedCount: Number(r.archivedCount)
+        }));
     },
 
     async fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>> {

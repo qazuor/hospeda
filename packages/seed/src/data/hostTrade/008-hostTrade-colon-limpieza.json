@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "008-hostTrade-colon-limpieza",
+    "name": "Limpieza Profesional Colón",
+    "slug": "limpieza-profesional-colon",
+    "category": "LIMPIEZA",
+    "contact": "https://wa.me/5493447456789",
+    "benefit": "Limpieza profunda post-temporada con 25% de descuento. Productos de primera calidad incluidos.",
+    "destinationId": "002-destination-colon",
+    "is24h": false,
+    "scheduleText": "Todos los días 7:00–18:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

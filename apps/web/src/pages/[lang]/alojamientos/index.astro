@@ -33,7 +33,7 @@ import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/ac
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getApiUrl } from '@/lib/env';
-import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
+import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -263,21 +263,22 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 	key: d.id,
 	label: { es: d.name, en: d.name }
 }));
-// NOTE: The API strips underscores from amenity slugs (e.g. air_conditioning →
-// airconditioning), but the i18n catalog keys and a.name use snake_case
-// (air_conditioning). We resolve the canonical identifier from a.name (which
-// always holds the snake_case form) instead of a.slug to avoid lookup misses
-// for multi-word amenities.
+// SPEC-266: `name` was dropped from the amenities/features catalog. `slug` is
+// now the canonical identifier and is also the i18n key segment.
+// slug is nullish per schema; coerce to '' to satisfy the t() signature.
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
 	label: {
-		es: tEs(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'es')),
-		en: tEn(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'en'))
+		es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
+		en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined)
 	}
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 	key: f.id,
-	label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') }
+	label: {
+		es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
+		en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined)
+	}
 }));
 
 // When types are active the API already filters by type, so `total` is the
@@ -413,10 +414,8 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
-		// underscores (e.g. air_conditioning → airconditioning) which breaks catalog
-		// lookups for multi-word amenities. a.name always holds the canonical form.
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
+		// SPEC-266: `name` dropped; use `slug` as the i18n key segment.
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
 		// Each `value` is the URL boolean param name that the backend resolves
@@ -433,7 +432,8 @@ const filterGroups: FilterGroup[] = [
 		id: 'features',
 		label: t('accommodations.sidebar.features', 'Características'),
 		type: 'icon-chips',
-		options: features.map((f) => ({ value: f.id, label: resolveI18nText(f.name, locale), icon: f.icon ?? undefined })),
+		// SPEC-266: `name` dropped; resolve label from i18n by slug.
+		options: features.map((f) => ({ value: f.id, label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), icon: f.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
@@ -671,10 +671,9 @@ if (amenitiesParam) {
 	for (const id of amenitiesParam.split(',').filter(Boolean)) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
-			// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
-			// underscores (air_conditioning → airconditioning) breaking multi-word lookups.
+			// SPEC-266: `name` dropped; use `slug` as i18n key.
 			activeFilterChips.push({
-				label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)),
+				label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
@@ -684,8 +683,9 @@ if (featuresParam) {
 	for (const id of featuresParam.split(',').filter(Boolean)) {
 		const f = features.find((x) => x.id === id);
 		if (f) {
+			// SPEC-266: `name` dropped; resolve label from i18n by slug.
 			activeFilterChips.push({
-				label: resolveI18nText(f.name, locale),
+				label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
 				removeUrl: urlWithoutListValue('features', id),
 			});
 		}
@@ -792,46 +792,49 @@ const emptyStateSuggestions = [
 		))}
 	</ScrollableNav>
 
-	{!hasError && cards.length > 0 && (
-		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-			<span
-				class="view-toggle__btn view-toggle__btn--active"
-				role="tab"
-				aria-selected="true"
-			>
-				{t('accommodations.viewToggle.list', 'Lista')}
-			</span>
-			<a
-				href={(() => {
-					const sp = new URLSearchParams(url.searchParams);
-					sp.delete('page');
-					const qs = sp.toString();
-					const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-					return qs ? `${base}?${qs}` : base;
-				})()}
-				class="view-toggle__btn"
-				role="tab"
-				aria-selected="false"
-			>
-				{t('accommodations.viewToggle.map', 'Mapa')}
-			</a>
+	{/* AI search entry — always available (incl. 0-results) when the page
+	    rendered, so users can reformulate exactly when they hit no matches. */}
+	{!hasError && (
+		<div class="ai-search-slot">
+			<AiSearchEntry
+				client:load
+				locale={locale}
+				apiUrl={getApiUrl()}
+				isAuthenticated={isAuthenticated}
+				currentUrl={Astro.url.href}
+				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
+				pageType={typesArray[0]}
+			/>
 		</div>
 	)}
 
-	<!--
-	    Conversational AI search panel (SPEC-212) — chat-based natural-language
-	    search that replaces the SPEC-199 single-shot NL input. Placed above the
-	    results grid so the user finds it immediately after the type-badge nav.
-	    Uses client:load because the panel should be ready for interaction without
-	    requiring scroll (it sits near the top of the main content area).
-	-->
-	<SearchChatPanel
-		client:load
-		locale={locale}
-		apiUrl={getApiUrl()}
-		isAuthenticated={isAuthenticated}
-		currentUrl={Astro.url.href}
-	/>
+{!hasError && cards.length > 0 && (
+		<div class="listing-header" role="group" aria-label={t('accommodations.header.ariaLabel', 'Controles de listado')}>
+			<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+				<span
+					class="view-toggle__btn view-toggle__btn--active"
+					role="tab"
+					aria-selected="true"
+				>
+					{t('accommodations.viewToggle.list', 'Lista')}
+				</span>
+				<a
+					href={(() => {
+						const sp = new URLSearchParams(url.searchParams);
+						sp.delete('page');
+						const qs = sp.toString();
+						const base = buildUrl({ locale, path: 'alojamientos/mapa' });
+						return qs ? `${base}?${qs}` : base;
+					})()}
+					class="view-toggle__btn"
+					role="tab"
+					aria-selected="false"
+				>
+					{t('accommodations.viewToggle.map', 'Mapa')}
+				</a>
+			</div>
+		</div>
+	)}
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
@@ -937,7 +940,7 @@ const emptyStateSuggestions = [
 	 * <ScrollableNav> wrapper — this rule only sets the row spacing. */
 	.acc-type-badges {
 		gap: 0.5rem;
-		margin-bottom: var(--space-4, 16px);
+		margin-bottom: var(--space-6, 24px);
 	}
 
 	/* View toggle (Lista / Mapa) */
@@ -1009,5 +1012,16 @@ const emptyStateSuggestions = [
 			visibility: hidden;
 			pointer-events: none;
 		}
+	}
+
+	/* ─── AI Search entry slot ──────────────────────────────────────────────
+	   Full-width search-bar entry above the listing grid (replaces the old
+	   always-on panel). Stays available in the no-results state too; the
+	   floating FAB takes over once it scrolls out of view (all viewports).
+	   ──────────────────────────────────────────────────────────────────────── */
+
+	.ai-search-slot {
+		margin-top: var(--space-5, 20px);
+		margin-bottom: var(--space-6, 24px);
 	}
 </style>

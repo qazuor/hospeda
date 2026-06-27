@@ -67,6 +67,12 @@ export {
     getFriendlyErrorInfo
 } from './toast-error';
 
+// Admin-side adapter for translateApiError (SPEC-183)
+export {
+    type TranslateAdminApiErrorInput,
+    translateAdminApiError
+} from './translate-api-error';
+
 // API validation error parser (GAP-032)
 export {
     ApiValidationDetailSchema,

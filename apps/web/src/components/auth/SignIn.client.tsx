@@ -1,9 +1,9 @@
 /**
  * @file SignIn.client.tsx
- * @description Sign-in form React island for web2.
+ * @description Sign-in form React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
- * Calls auth-client.ts directly, styled with CSS Modules + web2 design tokens.
+ * Calls auth-client.ts directly, styled with CSS Modules + web design tokens.
  * Shows a skeleton while hydrating to prevent layout shift.
  */
 
