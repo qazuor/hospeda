@@ -64,7 +64,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Build API and web
-        run: pnpm turbo run build --filter=api --filter=web --filter=@repo/seed
+        run: pnpm turbo run build --filter=hospeda-api --filter=hospeda-web --filter=@repo/seed
 
       - name: Apply versioned migrations
         run: pnpm db:migrate
@@ -76,7 +76,7 @@ jobs:
         run: pnpm db:seed
 
       - name: Install Playwright browsers
-        run: pnpm --filter web exec playwright install chromium --with-deps
+        run: pnpm --filter hospeda-web exec playwright install chromium --with-deps
 
       - name: Start API server
         env:
@@ -106,4 +106,4 @@ jobs:
           done
 
       - name: Run a11y sweep
-        run: pnpm --filter web a11y:sweep
+        run: pnpm --filter hospeda-web a11y:sweep
