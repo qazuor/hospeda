@@ -878,6 +878,17 @@
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. A11y Sweep broken since SPEC-270 (post-merge trigger). B1-B3 (NODE_ENV, filter names, SENTRY) fixed in #1865/#1867; this spec owns B4+ and the pre-merge trigger."
+        },
+        {
+            "specId": "SPEC-295",
+            "title": "Versioned Seed Data Migrations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-295-versioned-seed-data-migrations",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Seed data evolvable on live DB like schema migrations: versioned data-migrations + ledger, hard-delete with FK guards, dual-write baseline+deltas, both required+example. 6 open questions; OQ-1 (example determinism) is the primary prerequisite."
         }
     ],
     "standalone": {
