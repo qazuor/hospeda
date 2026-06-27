@@ -293,4 +293,8 @@ export function resetBillingInstance(): void {
         );
     }
     billingInstance = null;
+    // Also clear the failure backoff so a failed init in one test cannot
+    // suppress billing for the next (the 5-minute window would outlast the
+    // whole suite). See billingInitRetryAfter.
+    billingInitRetryAfter = 0;
 }
