@@ -261,6 +261,8 @@ describe('SPEC-143 T-143-43 — exchange rate fetch cron (real DB, stubbed HTTP)
         // provider still stored rates would be success=true instead.)
         expect(result.processed).toBe(0);
         expect(result.success).toBe(false);
+        // Each stub returns exactly one error; the fetcher maps them 1:1 into
+        // result.errors, so two failing providers => errors === 2.
         expect(result.errors).toBe(2);
 
         // ASSERT — no rows landed in the DB despite the run completing.
