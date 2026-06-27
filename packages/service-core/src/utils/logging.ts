@@ -25,12 +25,20 @@ export const setLogger = (logger: typeof defaultLogger) => {
  * @param actor - The actor to project.
  * @returns A JSON string with `id`, `role`, and `permissionsCount` only.
  */
-const formatActor = (actor: Actor): string =>
-    JSON.stringify({
+const formatActor = (actor: Actor | null | undefined): string => {
+    // These helpers run BEFORE the actor/permission check in every service
+    // method, so they are reached with a missing actor on the unauthorized
+    // path. The previous `JSON.stringify(actor)` tolerated null/undefined;
+    // preserve that so logging never throws and masks the real 401/403.
+    if (actor === null || actor === undefined) {
+        return String(actor);
+    }
+    return JSON.stringify({
         id: actor.id,
         role: actor.role,
         permissionsCount: actor.permissions?.length ?? 0
     });
+};
 
 /**
  * Logs the start of a service method execution, including input and actor details.
