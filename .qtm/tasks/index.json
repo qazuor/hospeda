@@ -987,6 +987,17 @@
       "base": "staging",
       "createdAt": "2026-06-27T00:00:00Z",
       "note": "Doc-only spec; tasks NOT atomized. Cleanup users inactive XX time with prior confirmation email. Blocker: no lastLoginAt column (only Better Auth session.createdAt proxy). LifecycleStatusEnum.INACTIVE exists. Cron pattern = trial-expiry.ts; legal/LPDP review. Discovery-first."
+    },
+    {
+      "specId": "SPEC-304",
+      "title": "Standalone Spec-Prioritization Tracker & Viewer",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-304-standalone-prioritization-tracker",
+      "branch": null,
+      "base": "staging",
+      "createdAt": "2026-06-27T00:00:00Z",
+      "note": "Doc-only spec; tasks NOT atomized. Extract specs-prioritization.csv + render-specs-prioritization.py viewer to a branch-independent standalone tool. Key tension: estado/avance derive from branch-dependent index.json (agent dual-writes today). OQ-1 = how the standalone tool sources/refreshes derived data. Discovery-first."
     }
   ],
   "standalone": {

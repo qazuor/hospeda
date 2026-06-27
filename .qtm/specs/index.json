@@ -3078,6 +3078,24 @@
         "gdpr",
         "auth"
       ]
+    },
+    {
+      "specId": "SPEC-304",
+      "title": "Standalone Spec-Prioritization Tracker & Viewer",
+      "type": "chore",
+      "complexity": "medium",
+      "status": "draft",
+      "path": "SPEC-304-standalone-prioritization-tracker",
+      "created": "2026-06-27T00:00:00Z",
+      "base": "staging",
+      "origin": "Owner request (2026-06-27): extract the prioritization CSV + its browser viewer (scripts/render-specs-prioritization.py) to something SEPARATE from the hospeda repo, so it survives git branch switches and the viewer can run continuously regardless of the current checkout. DISCOVERY-FIRST. Key tension: the script does NOT re-derive estado from index.json at runtime -- the agent dual-writes it per CLAUDE.md sync rule; estado + avance are branch-dependent derived columns. OQ-1 (how the standalone tool sources/refreshes derived data) gates the design.",
+      "tags": [
+        "tooling",
+        "devx",
+        "specs",
+        "prioritization",
+        "infra"
+      ]
     }
   ]
 }
