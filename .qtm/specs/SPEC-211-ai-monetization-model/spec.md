@@ -841,3 +841,42 @@ None. No new providers, no new payment integration.
 10. The USD ceilings are concrete: globalMonthlyMicroUsd = 100_000_000 (USD 100),
     per-feature chat/search/text_improve/support = 45M/30M/15M/10M µUSD. These are
     the "last resort" backstop — the per-owner finite quota trips first.
+
+---
+
+## Amendment: SPEC-283 — Graduated Per-Plan AI Usage Limits (2026-06-27)
+
+SPEC-283 revises two metering decisions made in this spec. SPEC-211's GOVERNANCE
+model (who may use each feature, who pays, the auth gate, the per-listing fallback
+copy) is unchanged — only the METERING axis changes. Without this note the two
+specs read as contradictory.
+
+### Reverted: G-4 / §7.7 — `ai_search` per-plan quota re-introduced
+
+This spec made `ai_search` a free, platform-funded feature with no per-plan quota
+(`createAiQuotaMiddleware('search')` intentionally absent). SPEC-283 re-adds that
+middleware on the search-chat route, keyed on the requesting (consuming) user.
+`ai_search` remains **auth-baseline** — no plan entitlement gate (SPEC-283 OQ-1) —
+but a graduated per-plan monthly quota (`MAX_AI_SEARCH_PER_MONTH`) now applies, so
+AI search becomes a tier differentiator. The USD ceiling stays as the backstop.
+NOTE: because the route now reads a per-plan limit, it fails closed (503) when the
+billing context cannot load, where it was previously billing-transparent.
+
+### Reverted: G-2 / §7.3 tourist-quota removal — consumer-side chat quota restored
+
+This spec removed the tourist-side chat quota, making chat purely owner-governed
+and owner-metered. SPEC-283 adds a **consumer-side** monthly quota
+(`MAX_AI_CHAT_CONSUMER_PER_MONTH`, a new LimitKey distinct from the owner-side
+`MAX_AI_CHAT_PER_MONTH`) ON TOP OF the owner gate. A chat call now passes only if
+BOTH hold: (1) the owner's plan grants `AI_CHAT` and the owner's monthly quota has
+headroom (metered against the owner — unchanged); (2) the requesting user's own
+consumer quota has headroom (metered against the consumer — new). The two failure
+modes map to DISTINCT copy: owner-side → `accommodations.aiChat.unavailable` (this
+spec's copy); consumer-side → `accommodations.aiChat.consumerLimitReached` (new).
+
+### What stays unchanged
+
+Owner-paid / owner-governed chat, the authenticated-only access model, per-user/IP
+anti-abuse rate limits, the global + per-feature USD ceiling backstop, and Model C
+as the propagation mechanism. See SPEC-283 for full rationale, the two-sided model,
+and the open-question resolutions (OQ-1..OQ-6).
