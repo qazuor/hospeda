@@ -2332,6 +2332,18 @@
                 "workflow",
                 "spec-270-followup"
             ]
+        },
+        {
+            "specId": "SPEC-295",
+            "title": "Versioned Seed Data Migrations",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-295-versioned-seed-data-migrations",
+            "created": "2026-06-27T00:00:00Z",
+            "base": "staging",
+            "origin": "Requested by the owner (2026-06-27): make seed data evolvable on a live DB like schema migrations. Architecture locked in session: versioned data-migrations + ledger (not declarative reconcile), hard-delete with FK guards, dual-write baseline+deltas (Drizzle-style), scope = both required and example. Primary risk: example is non-deterministic Faker (OQ-1).",
+            "tags": ["seed", "db", "migrations", "devops", "billing", "data-integrity"]
         }
     ]
 }
