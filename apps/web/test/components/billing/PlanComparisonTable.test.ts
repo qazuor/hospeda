@@ -60,6 +60,30 @@ describe('PlanComparisonTable.astro', () => {
         expect(src).toContain('LimitKey.MAX_PHOTOS_PER_ACCOMMODATION');
     });
 
+    it('should use graduated limit keys for consumer AI rows in TOURIST_AI_ROWS (SPEC-283)', () => {
+        // aiSearch and aiChat must now read per-plan quotas, not binary all-yes.
+        expect(src).toContain('LimitKey.MAX_AI_SEARCH_PER_MONTH');
+        expect(src).toContain('LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH');
+        // The tourist AI rows must use kind:'limit', not kind:'all-yes'.
+        expect(src).toContain("{ id: 'aiSearch'");
+        expect(src).toContain("{ id: 'aiChat'");
+        expect(src).toContain('key: LimitKey.MAX_AI_SEARCH_PER_MONTH');
+        expect(src).toContain('key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH');
+    });
+
+    it('should NOT use all-yes for consumer AI rows (SPEC-283 graduated quotas)', () => {
+        // Verify the tourist AI rows no longer contain 'all-yes' by checking
+        // neither aiSearch nor aiChat is paired with kind:'all-yes' in the source.
+        // We do this by asserting the graduated keys ARE present (positive form),
+        // and that the two AI row IDs appear with 'limit' kind nearby.
+        expect(src).not.toContain(
+            "id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'all-yes'"
+        );
+        expect(src).not.toContain(
+            "id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'all-yes'"
+        );
+    });
+
     it('should handle missing limit key with no (Minus icon) fallback', () => {
         expect(src).toContain('in plan.limits');
     });

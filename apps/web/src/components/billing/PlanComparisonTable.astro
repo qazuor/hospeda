@@ -100,13 +100,16 @@ const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
 ];
 
 const TOURIST_AI_ROWS: readonly RowConfig[] = [
-	{ id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiSearch'      },
-	{ id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiChatTourist' },
+	{ id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'limit', key: LimitKey.MAX_AI_SEARCH_PER_MONTH        }, status: 'available', noteKey: 'billing.comparison.note.aiSearch'      },
+	{ id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH }, status: 'available', noteKey: 'billing.comparison.note.aiChatTourist' },
 ];
 
 // Convert a tourist cell to its tourist-VIP value for the owner asTourist group.
 function asVipForAll(cell: RowCellDef): RowCellDef {
-	if (cell.kind === 'limit') return { kind: 'all-unlimited' };
+	// `limit` cells are passed through unchanged: the owner plan's actual
+	// plan.limits value is used (e.g. MAX_FAVORITES=-1 → "Ilimitado",
+	// MAX_AI_SEARCH_PER_MONTH=200 → 200). Conversion to 'all-unlimited' was
+	// removed in SPEC-283 so graduated AI quotas surface correctly for owners.
 	if (cell.kind === 'literals') {
 		const vipValue = cell.values[cell.values.length - 1];
 		return vipValue === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
