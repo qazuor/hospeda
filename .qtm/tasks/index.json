@@ -737,14 +737,14 @@
         {
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/15",
             "path": "SPEC-283-graduated-ai-usage-limits-per-plan",
             "parent": "SPEC-211",
-            "branch": "spec/SPEC-283-docs",
+            "branch": "spec/SPEC-283-graduated-ai-usage-limits-per-plan",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized yet. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-1/2/4/5/6 resolved; OQ-3 (values) deferred to implementation. Advertising half is SPEC-282."
+            "note": "Impl started 2026-06-27 (worktree spec/SPEC-283-graduated-ai-usage-limits-per-plan). 15 tasks atomized. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-3 (values) confirmed at impl (T-001). T-009 (advertising table) waits on SPEC-282 merge."
         },
         {
             "specId": "SPEC-282",

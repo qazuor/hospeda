@@ -3,7 +3,7 @@ specId: SPEC-283
 title: Graduated Per-Plan AI Usage Limits
 type: feat
 complexity: high
-status: draft
+status: in-progress
 parentSpec: SPEC-211
 created: 2026-06-26
 tags: [ai, billing, entitlements, monetization]

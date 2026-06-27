@@ -2182,7 +2182,7 @@
             "title": "Graduated Per-Plan AI Usage Limits",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-283-graduated-ai-usage-limits-per-plan",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
