@@ -66,6 +66,7 @@ change.
 |---|--------|-------|
 | B1 | Change the trigger from `push: [staging]` to `pull_request` targeting `staging` (and keep `workflow_dispatch`). A broken sweep then fails the PR's checks in review, not silently after merge | This is why the workflow rotted unnoticed; fixing it prevents recurrence. |
 | B2 | Decide whether the sweep is **required** or **advisory** (report-only, like the existing Lighthouse job). Default to advisory first (don't block merges on a freshly-repaired sweep), promote to required once stable | Owner decision at implementation time. |
+| B3 | Make CI workflows **re-runnable**: add `workflow_dispatch` to `sync-main-to-staging.yml` (today it only triggers on `push` to `main`, so a failed back-merge cannot be retried without a new push). Audit other `push`-only workflows for the same gap | Same lesson as B1: a workflow that can't be dispatched can't be recovered when it fails. Surfaced 2026-06-27 when the sync workflow failed (Actions PR-create permission, since enabled) with no way to re-run it. |
 
 ## 4. Out of scope
 
@@ -108,6 +109,7 @@ change.
 | T-294-04 | B1: switch trigger to `pull_request` → `staging` (+ keep `workflow_dispatch`) | BÁSICO |
 | T-294-05 | B2: decide advisory vs required; wire accordingly | BÁSICO |
 | T-294-06 | Docs: note the workflow contract + the "CI workflows that only run post-merge never get validated" lesson | BÁSICO |
+| T-294-07 | B3: add `workflow_dispatch` to `sync-main-to-staging.yml` + audit other `push`-only workflows for missing dispatch | BÁSICO |
 
 ## 7. Risks
 
