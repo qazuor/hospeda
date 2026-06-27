@@ -792,6 +792,22 @@ const emptyStateSuggestions = [
 		))}
 	</ScrollableNav>
 
+	{/* AI search entry — always available (incl. 0-results) when the page
+	    rendered, so users can reformulate exactly when they hit no matches. */}
+	{!hasError && (
+		<div class="ai-search-slot">
+			<AiSearchEntry
+				client:load
+				locale={locale}
+				apiUrl={getApiUrl()}
+				isAuthenticated={isAuthenticated}
+				currentUrl={Astro.url.href}
+				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
+				pageType={typesArray[0]}
+			/>
+		</div>
+	)}
+
 {!hasError && cards.length > 0 && (
 		<div class="listing-header" role="group" aria-label={t('accommodations.header.ariaLabel', 'Controles de listado')}>
 			<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
@@ -817,17 +833,6 @@ const emptyStateSuggestions = [
 					{t('accommodations.viewToggle.map', 'Mapa')}
 				</a>
 			</div>
-
-			<!-- AI search entry — inline with view-toggle on desktop -->
-			<AiSearchEntry
-				client:load
-				locale={locale}
-				apiUrl={getApiUrl()}
-				isAuthenticated={isAuthenticated}
-				currentUrl={Astro.url.href}
-				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
-				pageType={typesArray[0]}
-			/>
 		</div>
 	)}
 
@@ -1009,36 +1014,14 @@ const emptyStateSuggestions = [
 		}
 	}
 
-	/* ─── AI Search inline layout (desktop) ─────────────────────────────────
-	   On desktop, place the AI search bar inline with the view toggle,
-	   matching its height and taking the remaining horizontal space.
+	/* ─── AI Search entry slot ──────────────────────────────────────────────
+	   Full-width search-bar entry above the listing grid (replaces the old
+	   always-on panel). Stays available in the no-results state too; the
+	   floating FAB takes over once it scrolls out of view (all viewports).
 	   ──────────────────────────────────────────────────────────────────────── */
 
-	@media (min-width: 768px) {
-		.listing-header {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: var(--space-4, 16px);
-			margin-top: var(--space-6, 24px);
-			margin-bottom: var(--space-6, 24px);
-		}
-
-		.listing-header > .view-toggle {
-			flex: 0 0 auto;
-			margin: 0;
-		}
-
-		.listing-header > ai-search-entry {
-			flex: 1 1 auto;
-			max-width: 600px;
-			display: flex;
-			align-items: center;
-		}
-
-		/* Hide FAB on desktop: the inline entry is always visible. */
-		.listing-header > ai-search-entry .fab {
-			display: none;
-		}
+	.ai-search-slot {
+		margin-top: var(--space-5, 20px);
+		margin-bottom: var(--space-6, 24px);
 	}
 </style>
