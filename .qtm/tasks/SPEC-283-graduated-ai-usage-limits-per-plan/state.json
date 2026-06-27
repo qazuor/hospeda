@@ -164,30 +164,30 @@
             "id": "T-005",
             "title": "Write idempotent Model C extras migration 023 for new AI limit keys",
             "description": "Create packages/db/src/migrations/extras/023-billing-plans-ai-consumer-search-limits.plan.sql. The latest existing migration is 022-feature-flags-tables.table.sql.\n\nThis migration adds MAX_AI_SEARCH_PER_MONTH and MAX_AI_CHAT_CONSUMER_PER_MONTH to the `limits` JSONB column of every accommodation plan row in `billing_plans`. Must be idempotent (safe to re-apply) and OR-PRESERVE (never overwrite operator-set values).\n\nImplementation pattern (follow 014-spec211-ai-monetization.data.sql as model):\n- Use `UPDATE billing_plans SET limits = limits || jsonb_build_object('max_ai_search_per_month', <value>) WHERE slug = '<slug>' AND NOT (limits ? 'max_ai_search_per_month')` per plan slug × key.\n- Repeat for max_ai_chat_consumer_per_month.\n- Wrap in a single transaction.\n- Values: tourist-free=10, tourist-plus=50, tourist-vip=200, all owner-*/complex-*=200.\n- Exclude commerce-listing and partner-listing slugs.\n\nAcceptance criteria:\n- Migration applies cleanly on a fresh DB.\n- Re-application returns without error.\n- All accommodation plan slugs have both keys in their limits JSONB.\n- Pre-existing custom values are NOT overwritten.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-013", "T-015"],
             "subtasks": [
                 {
                     "title": "Create 023-billing-plans-ai-consumer-search-limits.plan.sql with header comment",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write idempotent UPDATE statements for max_ai_search_per_month (9 plan slugs)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write idempotent UPDATE statements for max_ai_chat_consumer_per_month (9 plan slugs)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wrap in transaction with rollback on error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify migration applies cleanly on a dev DB snapshot",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "migrations", "billing"],
@@ -200,7 +200,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:36:09.000Z"
             }
         },
         {
@@ -516,30 +516,30 @@
             "id": "T-013",
             "title": "Write extras migration 023 idempotency test",
             "description": "Write a test verifying migration 023-billing-plans-ai-consumer-search-limits.plan.sql is idempotent and OR-PRESERVE. Follow the structure of packages/db/test/integration/spec-211-ai-monetization-migration.test.ts.\n\nTest file: packages/db/test/integration/023-ai-consumer-search-limits.migration.test.ts\n\nScenarios:\n1. AC-first: after running the migration, all 9 accommodation plan slugs have both keys in limits JSONB with seeded values (free=10, plus=50, vip=200, owner/complex=200).\n2. AC-idem: second apply leaves rows byte-identical, no error.\n3. AC-preserve: pre-existing custom value (e.g. max_ai_search_per_month=999) is NOT overwritten.\n4. AC-commerce: commerce-listing and partner-listing rows unaffected.\n\nUse withCleanSlate helper — withTestTransaction is insufficient (DO blocks use intermediate UPDATEs across statement boundaries).\n\nAcceptance criteria:\n- All 4 scenarios pass.\n- No .only() directives.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Create 023-ai-consumer-search-limits.migration.test.ts following spec-211 migration test pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-first: both keys present in all 9 plan rows after first apply",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-idem: second apply leaves rows byte-identical, no error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-preserve: pre-existing custom value not overwritten",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-commerce: commerce/partner plan rows unaffected",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "database", "migrations"],
@@ -552,7 +552,7 @@
             "timestamps": {
                 "created": "2026-06-27T04:44:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-27T06:36:09.000Z"
             }
         },
         {
@@ -636,9 +636,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 4,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.1
     }

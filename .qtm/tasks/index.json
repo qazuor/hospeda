@@ -738,7 +738,7 @@
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
             "status": "in-progress",
-            "progress": "11/15",
+            "progress": "13/15",
             "path": "SPEC-283-graduated-ai-usage-limits-per-plan",
             "parent": "SPEC-211",
             "branch": "spec/SPEC-283-graduated-ai-usage-limits-per-plan",
