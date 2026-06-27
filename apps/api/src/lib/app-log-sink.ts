@@ -63,20 +63,6 @@ const mapEntryToCreateInput = (entry: LogEntry): CreateAppLogEntry => {
 };
 
 /**
- * Builds the sink handler. Exported separately so tests can exercise the
- * level guard, mapping, and failure behavior with an injected service.
- *
- * The persistence path is log-free (`AppLogEntryService.recordEntry` →
- * `AppLogEntryModel.createQuiet`), so insert failures cannot re-enter this
- * sink through the DB layer's own error logging. Every WARN/ERROR entry is
- * always attempted; failures are reported to stderr (bypasses the logger),
- * throttled to one report per {@link SINK_REPORT_THROTTLE_MS} to avoid spam
- * during a DB outage.
- *
- * @param service - The AppLogEntryService used to persist entries.
- * @returns The hook function to register under {@link APP_LOG_SINK_HOOK_NAME}.
- */
-/**
  * Extracts the actionable reason from a sink insert failure.
  *
  * The service/model layer (and Drizzle underneath) wrap the original driver
@@ -93,12 +79,26 @@ const formatSinkError = (err: unknown): string => {
     if (!(err instanceof Error)) {
         return String(err);
     }
-    const cause = (err as { cause?: unknown }).cause;
+    const cause = (err as Error & { cause?: unknown }).cause;
     const causeMsg =
         cause instanceof Error ? cause.message : cause !== undefined ? String(cause) : undefined;
     return causeMsg ? `${err.message} | cause: ${causeMsg}` : err.message;
 };
 
+/**
+ * Builds the sink handler. Exported separately so tests can exercise the
+ * level guard, mapping, and failure behavior with an injected service.
+ *
+ * The persistence path is log-free (`AppLogEntryService.recordEntry` →
+ * `AppLogEntryModel.createQuiet`), so insert failures cannot re-enter this
+ * sink through the DB layer's own error logging. Every WARN/ERROR entry is
+ * always attempted; failures are reported to stderr (bypasses the logger),
+ * throttled to one report per {@link SINK_REPORT_THROTTLE_MS} to avoid spam
+ * during a DB outage.
+ *
+ * @param service - The AppLogEntryService used to persist entries.
+ * @returns The hook function to register under {@link APP_LOG_SINK_HOOK_NAME}.
+ */
 export const createAppLogSinkHandler = (
     service: AppLogEntryService
 ): ((entry: LogEntry) => void) => {
