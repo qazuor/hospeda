@@ -447,8 +447,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(hono@4.12.25)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.2.0
-        version: 2.2.0(mercadopago@2.12.0)
+        specifier: ^2.2.1
+        version: 2.2.1(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^0.0.30
         version: 0.0.30(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1088,8 +1088,8 @@ importers:
         specifier: ^1.12.0
         version: 1.12.0
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.2.0
-        version: 2.2.0(mercadopago@2.12.0)
+        specifier: ^2.2.1
+        version: 2.2.1(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -4079,8 +4079,8 @@ packages:
       hono: '>=4.0.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.2.0':
-    resolution: {integrity: sha512-3xaZZwdHcIBAVW8QOMvVck21OpZghHgggOUGqESlG1rB3Zph/or1cr5RYu6Bv+LQWbafcWWgxM48DVnCnijtsw==}
+  '@qazuor/qzpay-mercadopago@2.2.1':
+    resolution: {integrity: sha512-bpoBxP5IrS7sXMbMbTUmb9zq6StWo7b2Cdy9NTZPOFXOwnQ4vitnlxyCtl7jLzgwPLdtxP+YEBwcpF3Zl39lUQ==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
@@ -15437,7 +15437,7 @@ snapshots:
       hono: 4.12.25
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.2.0(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@2.2.1(mercadopago@2.12.0)':
     dependencies:
       '@qazuor/qzpay-core': 1.12.0
       mercadopago: 2.12.0
