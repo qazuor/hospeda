@@ -256,6 +256,192 @@ describe('UserMenu — permission-gated items', () => {
     });
 });
 
+describe('UserMenu — TTL guard (rate-limit fix)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        sessionStorage.clear();
+    });
+
+    it('does NOT call fetch when the sessionStorage cache is still within the 60s TTL', async () => {
+        // Simulate the scenario: page was loaded, /auth/me was fetched and cached,
+        // then a View Transition navigation remounts UserMenu within the TTL window.
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                permissions: [],
+                cachedAt: Date.now() // just written — definitely fresh
+            })
+        );
+
+        const fetchMock = vi.fn();
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu();
+
+        // Give effects time to flush
+        await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('applies the cached auth state immediately without fetching', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
+                permissions: ['accommodation.create'],
+                cachedAt: Date.now()
+            })
+        );
+
+        const fetchMock = vi.fn();
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu({
+            initialUser: { id: 'u1', name: 'Cached User', email: 'cached@example.com' }
+        });
+
+        // Permission-gated item should appear from the cached permissions
+        // without waiting for any network call.
+        const trigger = screen.getByRole('button', { name: /abrir menú de cuenta/i });
+        fireEvent.click(trigger);
+        await waitFor(() => {
+            expect(screen.getByRole('menuitem', { name: /mis alojamientos/i })).toBeInTheDocument();
+        });
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('fetches (ignores cache) when a fresh GUEST cache contradicts an authenticated SSR user', async () => {
+        // Post-sign-in regression: user browsed as guest (guest snapshot cached),
+        // then signed in via OAuth (full reload). sessionStorage survives the reload,
+        // so the fresh guest cache must NOT overwrite the authenticated initialUser the
+        // SSR now provides — the guard has to discard the mismatched cache and refetch.
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                cachedAt: Date.now() // fresh guest cache, well within the 60s TTL
+            })
+        );
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'u1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        permissions: []
+                    },
+                    isAuthenticated: true
+                }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        // renderMenu default passes initialUser=MOCK_USER (authenticated).
+        renderMenu();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('fetches (ignores cache) when a fresh AUTHENTICATED cache contradicts a guest SSR user', async () => {
+        // Reverse (post-sign-out) regression: a stale authenticated cache must not
+        // keep showing the avatar after the SSR reports a guest session.
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Stale User', email: 'stale@example.com' },
+                permissions: [],
+                cachedAt: Date.now()
+            })
+        );
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: { actor: null, isAuthenticated: false }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu({ initialUser: null });
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('calls fetch when the cache is absent (first page load / cache cleared)', async () => {
+        // No sessionStorage entry — simulates a fresh page load or post-signout.
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'u1',
+                        name: 'Fresh User',
+                        email: 'fresh@example.com',
+                        permissions: []
+                    },
+                    isAuthenticated: true
+                }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('calls fetch when the cache is expired (older than 60s TTL)', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Old User', email: 'old@example.com' },
+                permissions: [],
+                cachedAt: Date.now() - 65_000 // 65 seconds ago — past the 60s TTL
+            })
+        );
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'u1',
+                        name: 'Old User',
+                        email: 'old@example.com',
+                        permissions: []
+                    },
+                    isAuthenticated: true
+                }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        renderMenu();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
 describe('UserMenu — sign out', () => {
     beforeEach(() => {
         global.fetch = vi.fn().mockResolvedValue({
