@@ -20,6 +20,7 @@
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
+import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { LimitKey } from '@repo/billing';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -239,10 +240,17 @@ function formatPriceArs(cents: number): string {
 						{getComparisonGroupLabel({ group: group.id, t })}
 					</th>
 				</tr>
-				{group.rows.map((row) => (
+				{group.rows.map((row) => {
+					const RowIcon = COMPARISON_ROW_ICONS[row.id];
+					return (
 					<tr>
 						<th scope="row" class="comparison-table__label-col">
 							<span class="comparison-table__row-label">
+								{RowIcon && (
+									<span class="comparison-table__row-icon" aria-hidden="true">
+										<RowIcon size="xs" weight="regular" color="currentColor" />
+									</span>
+								)}
 								{t(row.labelKey)}
 								{row.status === 'upcoming' && (
 									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
@@ -274,7 +282,8 @@ function formatPriceArs(cents: number): string {
 							);
 						})}
 					</tr>
-				))}
+				);
+				})}
 			</tbody>
 		))}
 	</table>
@@ -457,6 +466,15 @@ function formatPriceArs(cents: number): string {
 		align-items: center;
 		gap: var(--space-2);
 		flex-wrap: wrap;
+	}
+
+	/* OQ-6: decorative icon in the label column, one per feature row. */
+	.comparison-table__row-icon {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		color: var(--core-muted-foreground);
+		opacity: 0.65;
 	}
 
 	.comparison-table__badge--upcoming {
