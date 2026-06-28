@@ -45,6 +45,8 @@
     "comparison": {
         "link": "Ver comparativa detallada",
         "cta": "Elegir plan",
+        "teaserTitle": "¿No sabés cuál elegir?",
+        "teaserText": "Compará todas las funciones, beneficios y límites lado a lado.",
         "owner": {
             "heading": "Comparativa detallada de planes para propietarios",
             "title": "Comparativa de planes para propietarios — Hospeda",

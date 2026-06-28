@@ -45,6 +45,8 @@
     "comparison": {
         "link": "See detailed comparison",
         "cta": "Choose plan",
+        "teaserTitle": "Not sure which one to pick?",
+        "teaserText": "Compare every feature, benefit and limit side by side.",
         "owner": {
             "heading": "Detailed owner plan comparison",
             "title": "Owner plan comparison — Hospeda",
