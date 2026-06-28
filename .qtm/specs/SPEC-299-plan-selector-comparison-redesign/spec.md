@@ -207,10 +207,15 @@ questions are now LOCKED. Design direction is agreed; implementation may begin.
   share height via `align-items: stretch`. The perceived imbalance comes from the
   delta-only entitlement display leaving the Premium card near-empty (2 bullets)
   while Básico is full (~22 bullets). Resolved by OQ-2.
-- **Mobile selector has a real layout defect.** In the 1-column mobile grid, the
-  inherited `align-items: stretch` plus the scroll-reveal animation produce a large
-  white gap and visual overlap (the Básico card reserves ~2257px vs ~1050px of real
-  content). Must be fixed structurally for mobile, not cosmetically.
+- **Mobile selector is healthy (initial "defect" was a false positive).** The
+  first audit pass appeared to show a huge white gap / overlap on mobile, but that
+  was an artifact: the scroll-reveal animation leaves below-the-fold cards at
+  `opacity: 0` in a full-page screenshot, and an over-broad selector mismeasured
+  heights. With the reveal tripped and `.pricing-card` measured directly, the three
+  cards stack cleanly (heights 1048 / 713 / 568px, 16px grid gap, no overlap,
+  opacity 1). `align-items: stretch` only equalizes within the 3-column desktop row;
+  in the 1-column mobile grid each card takes its natural height. No structural
+  mobile fix needed.
 - **Comparison CTA** is a bare button floating in whitespace (confirms G-3).
 - **Comparison table** has no recommended-column accent and no per-column CTA; row
   groups are plain bars; many "Próximamente" badges (confirms G-4/G-5).
@@ -240,3 +245,15 @@ questions are now LOCKED. Design direction is agreed; implementation may begin.
 - 2026-06-28 — Discovery session completed (screenshot audit + owner sign-off).
   All eight open questions resolved (see section 11). Status flipped
   `draft` → `in-progress`. Implementation cleared to begin.
+- 2026-06-28 — Implementation landed on `spec/SPEC-299-plan-selector-comparison-redesign`:
+  (1) card highlight → accent border + warm tint, scale removed, badge headroom
+  added (OQ-1); (2) inherited-tier summary block on incremental cards (OQ-2);
+  (3) comparison CTA promoted to a teaser mini-section on both owner and tourist
+  selectors (OQ-3); (4) per-column purchase CTA in the comparison table (OQ-4);
+  (5) mobile horizontal-scroll hint (OQ-5); (6) per-row decorative icons mapped
+  from `@repo/icons`, extracted to `comparison-row-icons.ts` (OQ-6). The mobile
+  "defect" flagged in discovery was a false positive (reveal-animation screenshot
+  artifact); no structural mobile work was needed (WU3 dropped). All changes verified
+  in the local worktree across owner + tourist, desktop + mobile; `pnpm --filter
+  hospeda-web typecheck` passes with 0 errors. SPEC-283's graduated-AI table work
+  was already merged to staging, so no merge conflict in `PlanComparisonTable.astro`.
