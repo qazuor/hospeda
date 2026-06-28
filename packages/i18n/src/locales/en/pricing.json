@@ -4,6 +4,7 @@
     "recommended": "Recommended",
     "trial": "{days}-day free trial",
     "includesEverything": "Everything in {plan}, plus:",
+    "inheritedSummary": "+{count} features from the {plan} plan",
     "features": {
         "label": "Includes"
     },

@@ -4,6 +4,7 @@
     "recommended": "Recomendado",
     "trial": "{days} dias grátis",
     "includesEverything": "Tudo do plano {plan}, mais:",
+    "inheritedSummary": "+{count} funções do plano {plan}",
     "features": {
         "label": "Inclui"
     },

@@ -86,6 +86,10 @@ const includesEverythingTemplate = t(
 	'pricing.includesEverything',
 	'Todo lo del plan {plan}, más:'
 );
+const inheritedSummaryTemplate = t(
+	'pricing.inheritedSummary',
+	'+{count} funciones del plan {plan}'
+);
 const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
 const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
 const toggleAriaLabel = t(
@@ -210,6 +214,11 @@ function formatPriceArs(cents: number): string {
 				const includesEverythingLabel = previousPlan
 					? includesEverythingTemplate.replace('{plan}', getPlanName({ plan: previousPlan, t }))
 					: '';
+				const inheritedSummaryLabel = previousPlan
+					? inheritedSummaryTemplate
+							.replace('{count}', String(previousPlan.entitlements.length))
+							.replace('{plan}', getPlanName({ plan: previousPlan, t }))
+					: '';
 
 				return (
 					<div
@@ -308,6 +317,27 @@ function formatPriceArs(cents: number): string {
 								))}
 							</ul>
 						)}
+						{showsIncremental && inheritedSummaryLabel && (
+							<p class="pricing-card__inherited">
+								<svg
+									class="pricing-card__inherited-icon"
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									aria-hidden="true"
+								>
+									<path
+										d="M12 2l2.39 4.84L19.74 7.6l-3.87 3.77.91 5.33L12 14.18l-4.78 2.52.91-5.33L4.26 7.6l5.35-.76L12 2z"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linejoin="round"
+									/>
+								</svg>
+								<span>{inheritedSummaryLabel}</span>
+							</p>
+						)}
 						<div class="pricing-card__btn-wrapper">
 							<PlanPurchaseButton
 								client:load
@@ -340,6 +370,9 @@ function formatPriceArs(cents: number): string {
 		align-items: stretch;
 		max-width: 1140px;
 		margin: 0 auto;
+		/* Headroom so the highlighted card's "Recomendado" badge, which sits
+		   above the card's top edge, is never clipped (no scale anymore). */
+		padding-top: var(--space-4);
 	}
 
 	.pricing-card {
@@ -363,12 +396,12 @@ function formatPriceArs(cents: number): string {
 
 	.pricing-card--highlighted {
 		border-color: var(--brand-accent);
-		transform: scale(1.02);
+		background-color: var(--surface-warm);
 		position: relative;
 	}
 
 	.pricing-card--highlighted:hover {
-		transform: scale(1.02) translateY(-4px);
+		transform: translateY(-4px);
 	}
 
 	.pricing-card--highlighted::before {
@@ -433,11 +466,33 @@ function formatPriceArs(cents: number): string {
 	.pricing-card__features {
 		list-style: none;
 		padding: 0;
-		margin: 0 0 var(--space-6);
+		margin: 0 0 var(--space-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		flex-grow: 1;
+	}
+
+	/* Summary block (OQ-2): on incremental cards, restate the inherited tier
+	   compactly so higher-tier cards do not read as "empty" next to the full
+	   base card. A dashed outline keeps it legible on both the plain card and
+	   the warm-tinted highlighted card. It sits right after the feature list;
+	   the CTA wrapper's `margin-top: auto` absorbs the remaining space below. */
+	.pricing-card__inherited {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-4);
+		padding: var(--space-3);
+		border: 1px dashed var(--core-foreground-a15);
+		border-radius: var(--radius-card);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.pricing-card__inherited-icon {
+		flex-shrink: 0;
+		color: var(--brand-accent);
 	}
 
 	.pricing-card__feature {
