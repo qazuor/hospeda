@@ -81,6 +81,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     aiTextImprove: AskToAiIcon,
     aiTranslate: GlobeIcon,
     aiImport: ImportIcon,
+    // Same icon as `aiChat` on purpose — distinct audiences, never co-rendered.
     aiChatOwner: ChatIcon,
     aiSupport: BriefcaseIcon
 };

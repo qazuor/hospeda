@@ -12,6 +12,7 @@
  * tweaks land in both places at once.
  */
 
+import { StarIcon } from '@repo/icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
@@ -319,22 +320,9 @@ function formatPriceArs(cents: number): string {
 						)}
 						{showsIncremental && inheritedSummaryLabel && (
 							<p class="pricing-card__inherited">
-								<svg
-									class="pricing-card__inherited-icon"
-									xmlns="http://www.w3.org/2000/svg"
-									width="18"
-									height="18"
-									viewBox="0 0 24 24"
-									fill="none"
-									aria-hidden="true"
-								>
-									<path
-										d="M12 2l2.39 4.84L19.74 7.6l-3.87 3.77.91 5.33L12 14.18l-4.78 2.52.91-5.33L4.26 7.6l5.35-.76L12 2z"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linejoin="round"
-									/>
-								</svg>
+								<span class="pricing-card__inherited-icon" aria-hidden="true">
+									<StarIcon size="xs" weight="fill" color="currentColor" />
+								</span>
 								<span>{inheritedSummaryLabel}</span>
 							</p>
 						)}
@@ -491,6 +479,8 @@ function formatPriceArs(cents: number): string {
 	}
 
 	.pricing-card__inherited-icon {
+		display: inline-flex;
+		align-items: center;
 		flex-shrink: 0;
 		color: var(--brand-accent);
 	}

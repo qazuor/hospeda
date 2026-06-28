@@ -21,7 +21,7 @@ import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -120,60 +120,10 @@ const headingMain = headingWords.join(' ');
 
 	{hasPlans && (
 		<section class="comparison-link section">
-			<div class="comparison-link__container">
-				<div class="comparison-link__teaser">
-					<h2 class="comparison-link__title">
-						{t('pricing.comparison.teaserTitle', '¿No sabés cuál elegir?')}
-					</h2>
-					<p class="comparison-link__text">
-						{t(
-							'pricing.comparison.teaserText',
-							'Compará todas las funciones, beneficios y límites lado a lado.'
-						)}
-					</p>
-				</div>
-				<GradientButton
-					href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
-					label={t('pricing.comparison.link', 'Ver comparativa detallada')}
-					variant="outline-primary"
-					icon="true"
-				/>
-			</div>
+			<ComparisonLinkTeaser
+				locale={locale}
+				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
+			/>
 		</section>
 	)}
 </MarketingLayout>
-
-<style>
-	.comparison-link__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-4);
-		text-align: center;
-	}
-
-	.comparison-link__teaser {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		max-width: 32rem;
-	}
-
-	.comparison-link__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-xl);
-		color: var(--core-foreground);
-		margin: 0;
-	}
-
-	.comparison-link__text {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-muted-foreground);
-		margin: 0;
-	}
-</style>
