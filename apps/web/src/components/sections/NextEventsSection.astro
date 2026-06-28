@@ -19,6 +19,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { eventsApi, toEventCardProps } from '@/lib/api';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import type { EventCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -52,14 +53,45 @@ try {
   webLogger.error('API fetch failed', { endpoint: 'events', error: err instanceof Error ? err.message : err });
 }
 
+// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
+// NextEventsSection uses server:defer (SSR at request time), so Astro.locals
+// is available. One /check-bulk call resolves favorite state for all cards
+// before the island renders — mirrors the alojamientos pattern.
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && eventItems.length > 0) {
+  try {
+    const bulkResult = await userBookmarksApi.checkBulk({
+      entityType: 'EVENT',
+      entityIds: eventItems.map((e) => e.id)
+    });
+    if (bulkResult.ok) {
+      eventFavoriteChecks = bulkResult.data.checks;
+    } else {
+      webLogger.warn('Bulk bookmark check failed on NextEventsSection; falling back to per-card hydration', {
+        error: bulkResult.error
+      });
+    }
+  } catch (error) {
+    webLogger.warn('Bulk bookmark check threw on NextEventsSection; falling back to per-card hydration', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+const resolvedEventItems: EventCardData[] = eventItems.map((e) => {
+  const entry = eventFavoriteChecks[e.id];
+  if (!entry) return e;
+  return { ...e, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
+
 /**
  * Split events into bento grid zones:
  * - featuredEvent: first item flagged as featured, or the first item overall
  * - topEvents:     next 2 items shown stacked to the right of the featured card
  * - bottomEvents:  remaining items (up to 3) shown in the bottom 3-column row
  */
-const featuredEvent = eventItems.find((e) => e.isFeatured) ?? eventItems[0];
-const remainingEvents = eventItems.filter((e) => e !== featuredEvent);
+const featuredEvent = resolvedEventItems.find((e) => e.isFeatured) ?? resolvedEventItems[0];
+const remainingEvents = resolvedEventItems.filter((e) => e !== featuredEvent);
 const topEvents = remainingEvents.slice(0, 2);
 const bottomEvents = remainingEvents.slice(2, 5);
 ---
@@ -75,7 +107,7 @@ const bottomEvents = remainingEvents.slice(2, 5);
       alignment="left"
     />
 
-    {eventItems.length === 0 ? (
+    {resolvedEventItems.length === 0 ? (
       <EmptyState
         locale={locale}
         variant="empty"

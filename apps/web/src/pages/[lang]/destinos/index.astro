@@ -31,7 +31,9 @@ import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toDestinationCardProps } from '@/lib/api/transforms';
+import { webLogger } from '@/lib/logger';
 import { getAttractionIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -78,6 +80,32 @@ const rawCards = items.map((item) =>
 // API already returns featured-first then alphabetical (see
 // DestinationModel.findAll default ordering), so no client-side sort is needed.
 const sortedCards = rawCards;
+
+// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
+// Mirrors the pattern in alojamientos/index.astro: one /check-bulk request
+// per page load for authenticated users, then each DestinationCard receives
+// `initialIsFavorited` so FavoriteButton never fires its own per-card request.
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && sortedCards.length > 0) {
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'DESTINATION',
+            entityIds: sortedCards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            favoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn('Bulk bookmark check failed on destinos listing; falling back to per-card hydration', {
+                error: bulkResult.error
+            });
+        }
+    } catch (error) {
+        webLogger.warn('Bulk bookmark check threw on destinos listing; falling back to per-card hydration', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+    }
+}
 
 // --- Attraction filter state ----------------------------------------------
 // Parse the active attraction ids from the query string. Empty/missing means
@@ -337,6 +365,8 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 										locale={locale}
 										variant="grid"
 										isAuthenticated={isAuthenticated}
+										initialIsFavorited={favoriteChecks[card.id]?.isBookmarked}
+										initialBookmarkId={favoriteChecks[card.id]?.bookmarkId ?? null}
 									/>
 								</div>
 							);

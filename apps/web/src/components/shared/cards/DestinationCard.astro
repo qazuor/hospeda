@@ -40,6 +40,17 @@ interface Props {
 	 * Defaults to false (guest user).
 	 */
 	readonly isAuthenticated?: boolean;
+	/**
+	 * Pre-resolved favorite state from a bulk-check call on the parent page.
+	 * When provided (including `false`), FavoriteButton skips its own /check request.
+	 * When omitted (undefined), FavoriteButton falls back to its own per-card hydration.
+	 */
+	readonly initialIsFavorited?: boolean;
+	/**
+	 * Bookmark id when the destination is already favorited by the current user.
+	 * Passed alongside `initialIsFavorited` from the parent bulk-check result.
+	 */
+	readonly initialBookmarkId?: string | null;
 }
 
 const {
@@ -47,6 +58,8 @@ const {
 	locale,
 	variant = 'grid',
 	isAuthenticated = false,
+	initialIsFavorited,
+	initialBookmarkId = null,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
@@ -127,6 +140,8 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 					entityId={destination.id}
 					entityType="DESTINATION"
 					isAuthenticated={isAuthenticated}
+					initialIsFavorited={initialIsFavorited}
+					initialBookmarkId={initialBookmarkId}
 					locale={locale}
 					variant="compact"
 					showCount={true}

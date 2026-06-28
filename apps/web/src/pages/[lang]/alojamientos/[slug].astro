@@ -233,12 +233,14 @@ const currentUser = Astro.locals.user
       }
     : null;
 
-// --- Review eligibility: only allow leaving a review if the visitor has
-// already initiated a conversation with this property's host. Acts as a
-// lightweight "has the visitor actually engaged with this property?" check
-// — strong enough to block drive-by reviews, weak enough to not require
-// a verified stay/booking workflow we don't have yet.
+// --- Review eligibility + existing conversation (single API call) ---
+// A conversation-list filtered by accommodationId with pageSize:1 satisfies both:
+// - canLeaveReview: user has at least one conversation with this accommodation
+// - existingConversationId: the ID of that conversation for the "contact host" button
+// Previously these were two separate calls; collapsing them halves the conversation
+// API pressure on every authenticated accommodation-detail page view.
 let canLeaveReview = false;
+let existingConversationId: string | null = null;
 if (isAuthenticated) {
     try {
         const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
@@ -247,10 +249,14 @@ if (isAuthenticated) {
             pageSize: 1,
             cookieHeader
         });
-        canLeaveReview = convResult.ok && (convResult.data.items?.length ?? 0) > 0;
+        if (convResult.ok) {
+            const firstConv = convResult.data.items?.[0] ?? null;
+            canLeaveReview = firstConv !== null;
+            existingConversationId = firstConv?.id ?? null;
+        }
     } catch {
-        // Fail-closed: any error reading the inbox means we hide the form
-        // rather than risk surfacing it to someone who shouldn't see it.
+        // Fail-closed: any error reading the inbox means we hide the review form
+        // and show the contact form without a pre-filled conversation ID.
         canLeaveReview = false;
     }
 }
@@ -284,22 +290,6 @@ if (isAuthenticated) {
         }
     } catch {
         // Graceful degradation: FavoriteButton hydrates itself on mount
-    }
-}
-
-// Look up existing conversation for authenticated user (graceful degradation)
-let existingConversationId: string | null = null;
-if (userId) {
-    try {
-        const convResult = await protectedConversationsApi.list({ page: 1, pageSize: 50 });
-        if (convResult.ok) {
-            const match = convResult.data.items.find(
-                (c) => c.accommodationId === accommodation.id
-            );
-            existingConversationId = match?.id ?? null;
-        }
-    } catch {
-        // Graceful degradation: show form if lookup fails
     }
 }
 
