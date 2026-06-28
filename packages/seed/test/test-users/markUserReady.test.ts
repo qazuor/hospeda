@@ -384,4 +384,48 @@ describe('markUserReady (SPEC-264)', () => {
             expect(adminTours['host.welcome']).toBe(TOUR_READY_SENTINEL);
         });
     });
+
+    // -----------------------------------------------------------------------
+    // adminInfo.passwordChangeRequired — admin forced-change-password gate
+    // The /auth/me gate reads adminInfo.passwordChangeRequired (JSONB), not the
+    // mustChangePassword column, so markUserReady must clear it for the seeded
+    // super admin to skip the change-password redirect in local dev.
+    // -----------------------------------------------------------------------
+
+    describe('adminInfo.passwordChangeRequired (admin change-password gate)', () => {
+        it('clears passwordChangeRequired when true, preserving sibling adminInfo keys', async () => {
+            storedUser = makeUser({
+                adminInfo: { notes: 'keep me', favorite: true, passwordChangeRequired: true }
+            } as Partial<User>);
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            const adminInfo = (capturedUpdatePayload as Record<string, unknown>)?.adminInfo as
+                | Record<string, unknown>
+                | undefined;
+            expect(adminInfo).toBeTruthy();
+            expect(adminInfo?.passwordChangeRequired).toBe(false);
+            // Sibling keys must survive the read-modify-write.
+            expect(adminInfo?.notes).toBe('keep me');
+            expect(adminInfo?.favorite).toBe(true);
+        });
+
+        it('does NOT touch adminInfo when the user has none (typical test user)', async () => {
+            storedUser = makeUser();
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            expect((capturedUpdatePayload as Record<string, unknown>)?.adminInfo).toBeUndefined();
+        });
+
+        it('does NOT write adminInfo when passwordChangeRequired is already false', async () => {
+            storedUser = makeUser({
+                adminInfo: { notes: 'x', favorite: false, passwordChangeRequired: false }
+            } as Partial<User>);
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            expect((capturedUpdatePayload as Record<string, unknown>)?.adminInfo).toBeUndefined();
+        });
+    });
 });

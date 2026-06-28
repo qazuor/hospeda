@@ -51,6 +51,9 @@ export type MarkUserReadyResult = { ok: true; userId: string } | { ok: false; re
  *   admin welcome tour as permanently seen.
  * - `settings.onboarding.whatsNew.baselineAt = <now>` — baselines the what's-new modal
  *   so all currently published entries are treated as seen.
+ * - `adminInfo.passwordChangeRequired = false` (only when currently `true`) — clears the
+ *   admin forced-change-password gate (read by `/auth/me`). This is what lets a seeded
+ *   super admin skip the change-password redirect in local dev.
  *
  * The merge is non-destructive: any pre-existing settings keys (e.g. `theme`, other
  * `adminTours` entries) are preserved via a read-modify-write spread, mirroring the
@@ -96,6 +99,20 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
         }
     };
 
+    // The admin change-password gate (apps/api/src/routes/auth/me.ts) reads
+    // `adminInfo.passwordChangeRequired` (JSONB), NOT the `mustChangePassword`
+    // column. The seeded super admin is created with that flag = `true` (forced
+    // first-login change — by design for prod, see superAdminLoader.ts). To make
+    // it "ready" in dev we must clear that JSONB flag too; clearing only the
+    // `mustChangePassword` column is not enough. Read-modify-write preserves
+    // sibling adminInfo keys (notes, favorite). Only touched when the flag is
+    // actually set, so users without adminInfo are left untouched.
+    const currentAdminInfo = (existing as Record<string, unknown>).adminInfo as
+        | Record<string, unknown>
+        | null
+        | undefined;
+    const clearsPasswordChange = currentAdminInfo?.passwordChangeRequired === true;
+
     // NOTE: `mustChangePassword` is a DB column (must_change_password) that is NOT
     // part of the Zod `User` type. It defaults to `false` for all new users, so
     // writing it here is only relevant for users whose flag was explicitly set to
@@ -107,7 +124,10 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
     const updatePayload = {
         profileCompleted: true,
         mustChangePassword: false,
-        settings: mergedSettings
+        settings: mergedSettings,
+        ...(clearsPasswordChange
+            ? { adminInfo: { ...currentAdminInfo, passwordChangeRequired: false } }
+            : {})
     } as unknown as Partial<User>;
 
     await model.update({ id: existing.id }, updatePayload);
