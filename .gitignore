@@ -156,3 +156,6 @@ apps/web-old
 # / Notion / S3, not the repo.)
 # =========================
 .claude/baseline/
+
+# CodeGraph local index (do not commit, ~345MB)
+.codegraph/
