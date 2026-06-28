@@ -3,7 +3,7 @@ specId: SPEC-299
 title: Plan Selector & Comparison Redesign
 type: feat
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-27
 tags: [web, billing, ui, ux, plans]
 ---
@@ -96,7 +96,7 @@ questions to resolve in a joint session with the owner before any code ships.
 The implementation MUST NOT start until the following are resolved with the owner:
 
 1. **Screenshot audit.** Take browser screenshots of both pricing pages (desktop
-   + mobile) and the comparison table. Present them to the owner with annotations
+   - mobile) and the comparison table. Present them to the owner with annotations
    marking the four pain points so the scope is concrete and shared.
 
 2. **Card highlight strategy.** Decide between: (a) keep `scale(1.02)` but fix
@@ -195,6 +195,41 @@ The implementation MUST NOT start until the following are resolved with the owne
 - **`PlanPurchaseButton.client.tsx`** — React island inside each card. Must
   remain functional and correctly placed after any card-layout changes.
 
+## 11. Discovery Resolved — Owner Decisions (2026-06-28)
+
+Joint discovery session completed against a real screenshot audit of the local
+worktree (owner + tourist, desktop + mobile + DOM inspection). All eight open
+questions are now LOCKED. Design direction is agreed; implementation may begin.
+
+**Audit findings (evidence-backed):**
+
+- **Card height imbalance is a CONTENT problem, not a layout one.** Cards already
+  share height via `align-items: stretch`. The perceived imbalance comes from the
+  delta-only entitlement display leaving the Premium card near-empty (2 bullets)
+  while Básico is full (~22 bullets). Resolved by OQ-2.
+- **Mobile selector has a real layout defect.** In the 1-column mobile grid, the
+  inherited `align-items: stretch` plus the scroll-reveal animation produce a large
+  white gap and visual overlap (the Básico card reserves ~2257px vs ~1050px of real
+  content). Must be fixed structurally for mobile, not cosmetically.
+- **Comparison CTA** is a bare button floating in whitespace (confirms G-3).
+- **Comparison table** has no recommended-column accent and no per-column CTA; row
+  groups are plain bars; many "Próximamente" badges (confirms G-4/G-5).
+- **Tourist parity:** both pages use the shared `PricingCardsGrid.astro` /
+  `PlanComparisonTable.astro`, so every change lands in both (confirms R-4).
+
+**Locked decisions:**
+
+| OQ | Decision |
+|----|----------|
+| **OQ-1** Card highlight | Accent border + warm background tint (`--surface-warm`), **no** `transform: scale`. Removes the physical enlargement and badge-clipping risk; heights stay perfectly even. |
+| **OQ-2** Entitlements | Keep **incremental** ("Todo del plan anterior, más:") and fill the empty space on higher-tier cards with a **summary block** (e.g. "+22 del plan anterior"). Root fix for the height imbalance. |
+| **OQ-3** Selector→compare CTA | **Mini-section with teaser**: secondary heading + one value line + reuse `GradientButton`. No new primitive. |
+| **OQ-4** Per-column table CTA | **Yes** — mount `PlanPurchaseButton` in each plan column header (table becomes transactional). |
+| **OQ-5** Mobile table | **Horizontal scroll + visible scroll hint**. CSS-only; does NOT change `<table>` structure → preserves SPEC-282 a11y (avoids R-5). |
+| **OQ-6** Row icons | **Yes** — small icon per feature row from `@repo/icons` in the label column. Requires mapping one icon per table feature row (content work). |
+| **OQ-7** Recommended column in table | **Nothing** — table stays neutral; the selector card carries the "recomendado" role alone. |
+| **OQ-8** Scope | **Both owner + tourist** in this pass (shared components; single PR; verify both views). |
+
 ## 10. Revision History
 
 - 2026-06-27 — Initial draft (SPEC-299 allocated). Design not locked. Goals
@@ -202,3 +237,6 @@ The implementation MUST NOT start until the following are resolved with the owne
   CTA weight, table column highlighting, mobile table UX). Eight open questions
   (OQ-1..8) and a five-step discovery plan defined for the owner review session
   before implementation begins.
+- 2026-06-28 — Discovery session completed (screenshot audit + owner sign-off).
+  All eight open questions resolved (see section 11). Status flipped
+  `draft` → `in-progress`. Implementation cleared to begin.
