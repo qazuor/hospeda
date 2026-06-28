@@ -231,30 +231,30 @@
             "id": "T-006",
             "title": "Verify and sync client feedback schema with API validation schema",
             "description": "Ensure packages/schemas/src/feedback.ts (client-side Zod schema) stays in sync with apps/api/src/routes/feedback/public/validation.ts (server-side validation) after the slim form changes from T-005. Schema drift = 400 on submission (risk R-4).\n\nSteps:\n1. Read packages/schemas/src/feedback.ts to understand the current submit payload schema.\n2. Read apps/api/src/routes/feedback/public/validation.ts to understand what the API expects.\n3. Compare: any field that the slim form sends (including the Turnstile token field 'cfTurnstileToken' from T-007/T-008) must be present and accepted in the API schema.\n4. Any field that is no longer sent by the slim form should be made optional (not removed) in the API schema to preserve backward compatibility with the standalone page.\n5. Verify from spec.md §10 audit note: reporterEmail and reporterName must remain required server-side (API schema) even when the user is authenticated.\n6. title remains required in both schemas.\n\nNote: the Turnstile token field ('cfTurnstileToken' or similar) will be ADDED to the client schema here so T-008 (client widget) and T-009 (server verify) can both reference it.\n\nFiles to change:\n- packages/schemas/src/feedback.ts (if needed)\n- apps/api/src/routes/feedback/public/validation.ts (if needed)\n\nAcceptance criteria:\n- Both schemas accept the same submit payload shape.\n- Turnstile token field defined in client schema and accepted (optional, string) in API schema.\n- reporterEmail + reporterName remain required in API schema.\n- title required in both schemas.\n- pnpm typecheck passes.\n- pnpm --filter @repo/schemas test passes (if schema tests exist).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Read packages/schemas/src/feedback.ts and apps/api validation.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add cfTurnstileToken (optional, string) to client schema for Turnstile integration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add cfTurnstileToken (optional, string) to API validation schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify reporterEmail + reporterName required server-side",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm typecheck — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "feedback", "backend"],
@@ -266,8 +266,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-28T23:45:00.000Z",
+                "completed": "2026-06-29T00:15:00.000Z"
             }
         },
         {
