@@ -6,6 +6,9 @@ import type { FeedbackEnvironment } from '@repo/schemas';
  * collapsible tech details section, attachment file validation (size + type),
  * environment field changes, updateErrorInfo helper, drag-and-drop, and the
  * "clear interactions" button.
+ *
+ * Note: StepDetails no longer owns action buttons (step navigation was removed
+ * in T-005). Submit and Back buttons live in FeedbackForm.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -39,9 +42,6 @@ const makeProps = (overrides: Partial<Parameters<typeof StepDetails>[0]> = {}) =
     onRemoveAttachment: vi.fn(),
     environment: makeEnvironment(),
     onEnvironmentChange: vi.fn(),
-    onBack: vi.fn(),
-    onSubmit: vi.fn(),
-    isSubmitting: false,
     ...overrides
 });
 
@@ -107,38 +107,6 @@ describe('StepDetails — always-rendered structure', () => {
         expect(
             screen.getByPlaceholderText(FEEDBACK_STRINGS.fields.actualResultPlaceholder)
         ).toBeInTheDocument();
-    });
-
-    it('should render the "Volver" button', () => {
-        render(<StepDetails {...makeProps()} />);
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back })
-        ).toBeInTheDocument();
-    });
-
-    it('should render the "Enviar" button', () => {
-        render(<StepDetails {...makeProps()} />);
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).toBeInTheDocument();
-    });
-
-    it('should disable both buttons when isSubmitting=true', () => {
-        render(<StepDetails {...makeProps({ isSubmitting: true })} />);
-        expect(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back })).toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).toBeDisabled();
-    });
-
-    it('should enable both buttons when isSubmitting=false', () => {
-        render(<StepDetails {...makeProps({ isSubmitting: false })} />);
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back })
-        ).not.toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).not.toBeDisabled();
     });
 });
 
@@ -230,26 +198,6 @@ describe('StepDetails — onChange handlers', () => {
         const textarea = screen.getByDisplayValue('something');
         fireEvent.change(textarea, { target: { value: '' } });
         expect(onChange).toHaveBeenCalledWith('actualResult', undefined);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Tests: action button handlers
-// ---------------------------------------------------------------------------
-
-describe('StepDetails — action button handlers', () => {
-    it('should call onBack when "Volver" button is clicked', () => {
-        const onBack = vi.fn();
-        render(<StepDetails {...makeProps({ onBack })} />);
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back }));
-        expect(onBack).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onSubmit when "Enviar" button is clicked', () => {
-        const onSubmit = vi.fn();
-        render(<StepDetails {...makeProps({ onSubmit })} />);
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
-        expect(onSubmit).toHaveBeenCalledTimes(1);
     });
 });
 

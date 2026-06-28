@@ -180,38 +180,38 @@
             "id": "T-005",
             "title": "Collapse two-step wizard into single step + collapsible expander in @repo/feedback",
             "description": "Slim the feedback form from a two-step wizard to a single visible step with an optional expander. This is the largest change in the spec and the critical-path bottleneck.\n\nFiles to change:\n1. packages/feedback/src/components/FeedbackForm.tsx — remove step navigation (Next/Back buttons, step state); render step 1 fields always visible; add collapsible 'agregar más detalles' expander that wraps step 2 content.\n2. packages/feedback/src/components/steps/StepBasic.tsx — may need minor adjustments (remove step header/progress indicators if present).\n3. packages/feedback/src/components/steps/StepDetails.tsx — may need minor adjustments (remove step header; should now be rendered inside the expander).\n\nPreserve:\n- All auto-captured silent fields (URL, browser, OS, viewport, timestamp, app source, user ID, console errors, Sentry event ID, navigation history, etc.) — these are collected by the FAB/island wrapper, not the form wizard, but verify nothing is lost.\n- reporter email + name fields (required when user is not auth'd, pre-filled when auth'd). These stay in the visible step (StepBasic).\n- All Step 2 fields functional when expander is open (severity, stepsToReproduce, expectedResult, actualResult, attachments).\n- No architectural rewrite of @repo/feedback — prefer additive/reshaping changes.\n\nThe expander 'agregar más detalles' / 'ocultar detalles' label: add to i18n if the package uses @repo/i18n; otherwise use inline strings acceptable as a follow-up. Check existing i18n usage in the package first.\n\nAcceptance criteria:\n- Single visible step (type + title + description) when form mounts.\n- 'agregar más detalles' expander collapsed by default.\n- Expanding shows severity, stepsToReproduce, expectedResult, actualResult, attachments.\n- No Next/Back step buttons visible.\n- reporter email/name visible for non-auth'd users, pre-filled for auth'd.\n- All auto-captured context unchanged.\n- pnpm lint + pnpm typecheck pass.\n- pnpm --filter @repo/feedback test passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": [],
             "blocks": ["T-006", "T-008", "T-011"],
             "subtasks": [
                 {
                     "title": "Read FeedbackForm.tsx, StepBasic.tsx, StepDetails.tsx to understand current step management",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove step navigation state and Next/Back buttons from FeedbackForm.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render StepBasic fields always visible in FeedbackForm.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add collapsible expander wrapping StepDetails fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add expander toggle label to i18n (or inline if package doesn't use @repo/i18n)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify all auto-captured silent fields still collected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/feedback test — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["feedback", "frontend", "packages"],
@@ -223,8 +223,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-28T22:30:00.000Z",
+                "completed": "2026-06-28T22:55:00.000Z"
             }
         },
         {

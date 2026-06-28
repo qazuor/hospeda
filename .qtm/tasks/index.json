@@ -951,12 +951,12 @@
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
             "status": "in-progress",
-            "progress": "1/13",
+            "progress": "2/13",
             "path": "SPEC-301-feedback-system-prod-rework",
             "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Discovery closed 2026-06-28: OQ-1/2/4/6 resolved, 13 tasks atomized (T-001 done). Footer entry + slim form expander + invisible Turnstile + admin alignment. Linear destination, no DB."
+            "note": "Discovery closed 2026-06-28: OQ-1/2/4/6 resolved, 13 tasks atomized. T-001 + T-005 (slim form expander) done."
         },
         {
             "specId": "SPEC-302",

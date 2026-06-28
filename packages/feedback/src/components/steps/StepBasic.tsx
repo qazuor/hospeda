@@ -7,7 +7,6 @@ import type { ReportTypeId } from '@repo/schemas';
  */
 import { REPORT_TYPES } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
-import { Button } from '../../ui/Button.js';
 import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
@@ -41,12 +40,6 @@ export interface StepBasicProps {
     readonly errors: Partial<Record<keyof StepBasicData, string>>;
     /** When true, renders email and name inputs (user not authenticated) */
     readonly showContactFields: boolean;
-    /** Called when user clicks "Agregar más detalles" */
-    readonly onGoToStep2: () => void;
-    /** Called when user clicks "Enviar" */
-    readonly onSubmit: () => void;
-    /** Whether form is currently submitting */
-    readonly isSubmitting: boolean;
 }
 
 /**
@@ -64,21 +57,10 @@ export interface StepBasicProps {
  *   onChange={(field, value) => setField(field, value)}
  *   errors={validationErrors}
  *   showContactFields={!isAuthenticated}
- *   onGoToStep2={handleNextStep}
- *   onSubmit={handleSubmit}
- *   isSubmitting={false}
  * />
  * ```
  */
-export function StepBasic({
-    data,
-    onChange,
-    errors,
-    showContactFields,
-    onGoToStep2,
-    onSubmit,
-    isSubmitting
-}: StepBasicProps) {
+export function StepBasic({ data, onChange, errors, showContactFields }: StepBasicProps) {
     return (
         <div className="stepRoot">
             {/* Report type */}
@@ -209,25 +191,6 @@ export function StepBasic({
                     </div>
                 </>
             )}
-
-            {/* Action buttons */}
-            <div className="actions">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onGoToStep2}
-                    disabled={isSubmitting}
-                >
-                    {FEEDBACK_STRINGS.buttons.addDetails}
-                </Button>
-                <Button
-                    type="button"
-                    onClick={onSubmit}
-                    disabled={isSubmitting}
-                >
-                    {FEEDBACK_STRINGS.buttons.submit}
-                </Button>
-            </div>
         </div>
     );
 }
