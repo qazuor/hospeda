@@ -44,7 +44,9 @@ async function main(): Promise<void> {
         console.log(
             '[mark-user-ready] Fields written: profileCompleted=true, mustChangePassword=false,'
         );
-        console.log('[mark-user-ready]   settings.onboarding.adminTours["host.welcome"]=9999,');
+        console.log(
+            '[mark-user-ready]   adminInfo.passwordChangeRequired=false (when set), all admin tours marked seen,'
+        );
         console.log('[mark-user-ready]   settings.onboarding.whatsNew.baselineAt=<now>.');
     } else {
         console.error(`[mark-user-ready] ERROR — user not found: ${email}`);

@@ -9,6 +9,7 @@ import { UserSettingsSchema } from '@repo/schemas';
 import type { User } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    ALL_ADMIN_TOUR_IDS,
     type MarkUserReadyResult,
     TOUR_READY_SENTINEL,
     type UserReadyModelPort,
@@ -167,6 +168,21 @@ describe('markUserReady (SPEC-264)', () => {
 
         it('TOUR_READY_SENTINEL equals 9999', () => {
             expect(TOUR_READY_SENTINEL).toBe(9999);
+        });
+
+        it('marks EVERY admin tour seen (all roles, welcome + contextual)', async () => {
+            storedUser = makeUser();
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            const settings = capturedUpdatePayload?.settings as Record<string, unknown>;
+            const onboarding = settings?.onboarding as Record<string, unknown>;
+            const adminTours = onboarding?.adminTours as Record<string, number>;
+            for (const tourId of ALL_ADMIN_TOUR_IDS) {
+                expect(adminTours[tourId]).toBe(TOUR_READY_SENTINEL);
+            }
+            // superAdmin.welcome was the original gap that left the super admin tour firing.
+            expect(adminTours['superAdmin.welcome']).toBe(TOUR_READY_SENTINEL);
         });
     });
 
