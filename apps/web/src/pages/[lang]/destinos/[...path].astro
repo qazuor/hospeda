@@ -192,7 +192,6 @@ try {
 	const [
 		accResult,
 		eventsResult,
-		eventsCountResult,
 		statsResult,
 		postsResult,
 		siblingsResult
@@ -201,8 +200,10 @@ try {
 		// single non-paginated payload — pageSize is not accepted. One call serves both
 		// the preview cards (sliced below) and the total count (array length).
 		accommodationsApi.getByDestination({ destinationId: destId }),
+		// NOTE: eventsApi.list with pageSize:3 already carries pagination.total in its
+		// response. We derive eventsCount from that field via extractTotal() — no second
+		// pageSize:1 "count-only" call needed.
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
-		eventsApi.list({ pageSize: 1, destinationId: destId }),
 		destinationsApi.getStats({ id: destId }),
 		postsApi.getByRelatedDestination({ destinationId: destId }),
 		parentDestinationId
@@ -218,7 +219,7 @@ try {
 	eventCards = extractItems(eventsResult)
 		.slice(0, 3)
 		.map((item) => toEventCardProps({ item, locale }));
-	eventsCount = extractTotal(eventsCountResult);
+	eventsCount = extractTotal(eventsResult);
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
 		stats = {
