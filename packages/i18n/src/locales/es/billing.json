@@ -473,6 +473,7 @@
         "included": "Incluido",
         "upcoming": "Próximamente",
         "complexTeaser": "Planes especiales para complejos y hoteles — próximamente",
+        "scrollHint": "Deslizá para ver todos los planes",
         "group": {
             "owner": "Funciones de propietario",
             "accommodation": "Funciones del alojamiento",

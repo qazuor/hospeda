@@ -20,6 +20,7 @@
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
+import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { LimitKey } from '@repo/billing';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -216,6 +217,17 @@ function formatPriceArs(cents: number): string {
 						{plan.monthlyPriceArs > 0 && (
 							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
 						)}
+						<span class="comparison-table__plan-cta">
+							<PlanPurchaseButton
+								client:load
+								planSlug={plan.slug}
+								monthlyPrice={plan.monthlyPriceArs}
+								annualPrice={plan.annualPriceArs ?? null}
+								currency="ARS"
+								ctaText={t('pricing.comparison.cta', 'Elegir plan')}
+								locale={locale}
+							/>
+						</span>
 					</th>
 				))}
 			</tr>
@@ -267,6 +279,11 @@ function formatPriceArs(cents: number): string {
 		))}
 	</table>
 </div>
+
+<p class="comparison-table__scroll-hint" aria-hidden="true">
+	<span>{t('billing.comparison.scrollHint', 'Deslizá para ver todos los planes')}</span>
+	<span class="comparison-table__scroll-hint-arrow">→</span>
+</p>
 
 {audience === 'owner' && (
 	<p class="comparison-table__complex-teaser">
@@ -357,6 +374,34 @@ function formatPriceArs(cents: number): string {
 		font-size: var(--text-caption);
 		color: var(--core-muted-foreground);
 		margin-left: var(--space-1);
+	}
+
+	/* OQ-4: per-column purchase CTA in each plan header, so users can buy
+	   straight from the comparison table without returning to the selector. */
+	.comparison-table__plan-cta {
+		display: block;
+		margin-top: var(--space-3);
+	}
+
+	/* OQ-5: mobile-only hint that the table scrolls horizontally. Hidden on
+	   desktop where the full table fits without scrolling. */
+	.comparison-table__scroll-hint {
+		display: none;
+	}
+
+	.comparison-table__scroll-hint-arrow {
+		animation: comparison-scroll-nudge var(--duration-slow, 1.2s) ease-in-out infinite;
+	}
+
+	@keyframes comparison-scroll-nudge {
+		0%, 100% { transform: translateX(0); }
+		50% { transform: translateX(var(--space-1)); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.comparison-table__scroll-hint-arrow {
+			animation: none;
+		}
 	}
 
 	.comparison-table__group-header th {
@@ -463,6 +508,18 @@ function formatPriceArs(cents: number): string {
 		}
 		.comparison-table__plan-col {
 			min-width: 120px;
+		}
+		.comparison-table__scroll-hint {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: var(--space-2);
+			max-width: var(--container-max);
+			margin: var(--space-2) auto 0;
+			padding: 0 var(--space-container-x);
+			font-family: var(--font-sans);
+			font-size: var(--text-caption);
+			color: var(--core-muted-foreground);
 		}
 	}
 </style>

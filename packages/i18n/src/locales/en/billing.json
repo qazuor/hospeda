@@ -473,6 +473,7 @@
         "included": "Included",
         "upcoming": "Coming soon",
         "complexTeaser": "Special plans for complexes and hotels — coming soon",
+        "scrollHint": "Swipe to see all plans",
         "group": {
             "owner": "Owner features",
             "accommodation": "Accommodation features",
