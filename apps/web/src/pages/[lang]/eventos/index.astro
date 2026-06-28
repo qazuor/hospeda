@@ -47,9 +47,11 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -352,6 +354,39 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 // see their saved state on listing cards (instead of a guest-default heart).
 const isAuthenticated = Astro.locals.user ? true : false;
 
+// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
+// The public events API does not return isFavorited. Without this block each
+// EventCardHorizontal would fire its own /check request on mount. We mirror
+// the accommodation pattern: one /check-bulk SSR call, result injected into
+// cards so FavoriteButton receives initialIsFavorited and skips hydration.
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && cards.length > 0) {
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'EVENT',
+            entityIds: cards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            eventFavoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn('Bulk bookmark check failed on eventos listing; falling back to per-card hydration', {
+                error: bulkResult.error
+            });
+        }
+    } catch (error) {
+        webLogger.warn('Bulk bookmark check threw on eventos listing; falling back to per-card hydration', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+    }
+}
+
+const resolvedCards = cards.map((card) => {
+    const entry = eventFavoriteChecks[card.id];
+    if (!entry) return card;
+    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
+
 /** Quick-filter chips: top event categories */
 const categoryChips = [
     { label: t('events.categories.music',      'Música'),      href: buildUrl({ locale, path: '/eventos/categoria/music/'      }) },
@@ -475,10 +510,10 @@ const itemListEntries = cards.map((card) => ({
 		<EmptyState locale={locale} variant="no-results" actionUrl={baseUrl} />
 	)}
 
-	{!hasError && cards.length > 0 && (
+	{!hasError && resolvedCards.length > 0 && (
 		<>
 			<div class="events-grid">
-				{cards.map((card, i) => (
+				{resolvedCards.map((card, i) => (
 					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
 					</div>

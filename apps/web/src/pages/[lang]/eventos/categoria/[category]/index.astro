@@ -14,9 +14,11 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { eventsApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -39,6 +41,35 @@ const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+
+// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && cards.length > 0) {
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'EVENT',
+            entityIds: cards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            eventFavoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn('Bulk bookmark check failed on category eventos listing; falling back to per-card hydration', {
+                error: bulkResult.error
+            });
+        }
+    } catch (error) {
+        webLogger.warn('Bulk bookmark check threw on category eventos listing; falling back to per-card hydration', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+    }
+}
+const resolvedCards = cards.map((card) => {
+    const entry = eventFavoriteChecks[card.id];
+    if (!entry) return card;
+    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
+
 const catLabel = t(`events.categories.${catSlug}`, catSlug ?? '');
 const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
 ---
@@ -48,10 +79,10 @@ const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byCategory.tagline', 'Categoría')} title={catLabel} totalCount={total} />
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
-	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
-	{!hasError && cards.length > 0 && (
+	{!hasError && resolvedCards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
+	{!hasError && resolvedCards.length > 0 && (
 		<div class="grid">
-			{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}
+			{resolvedCards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}
 		</div>
 	)}
 	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
