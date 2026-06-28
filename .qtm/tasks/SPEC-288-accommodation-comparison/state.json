@@ -1,0 +1,490 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-288",
+    "title": "Accommodation Comparison",
+    "created": "2026-06-28T22:19:08.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Define compare endpoint request/response Zod schemas in @repo/schemas",
+            "description": "Add CompareAccommodationsRequestSchema ({ ids: string[] } with min 2 / max-bound length) and the compare response schema (reusing the existing accommodation summary shape for the matrix fields) in packages/schemas/src. Export types via @repo/schemas. Tests: packages/schemas/src/**/test/*.test.ts asserting valid/invalid ids arrays (empty, too few, too many, non-uuid) parse/reject as expected.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Define request schema (ids array)",
+                    "completed": false
+                },
+                {
+                    "title": "Define response schema (matrix fields)",
+                    "completed": false
+                },
+                {
+                    "title": "Export types + unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Update MAX_COMPARE_ITEMS per-plan limits in billing config",
+            "description": "In packages/billing/src/config/plans.config.ts: tourist-plus MAX_COMPARE_ITEMS 4 -> 2 (line ~462); TOURIST_VIP_LIMITS.MAX_COMPARE_ITEMS -1 -> 4 (line ~85), which cascades to tourist-vip + the 6 owner/complex plans that inherit the VIP tier. tourist-free stays without CAN_COMPARE_ACCOMMODATIONS. Tests: update/add billing config tests asserting limit('max_compare_items') == 2 for tourist-plus, == 4 for tourist-vip and an inheriting owner/complex plan, and that tourist-free lacks the entitlement.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "tourist-plus 4 -> 2",
+                    "completed": true
+                },
+                {
+                    "title": "TOURIST_VIP_LIMITS -1 -> 4",
+                    "completed": true
+                },
+                {
+                    "title": "Config tests for new per-plan values",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "config", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": "2026-06-28T22:22:00.000Z",
+                "completed": "2026-06-28T22:28:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Build POST /protected/accommodations/compare route + handler",
+            "description": "Create the route in apps/api/src/routes/accommodation/protected/ mounting entitlementMiddleware() + gateComparator(). Handler: validate body with T-001 schema, set currentCompareItemsCount in context so gateComparator enforces MAX_COMPARE_ITEMS, fetch the N accommodations by ids (via existing service/model), return the matrix payload. Register the route in the protected accommodation index. Tests: covered by T-005 (integration).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Route + middleware mount",
+                    "completed": false
+                },
+                {
+                    "title": "Handler: set count + fetch by ids",
+                    "completed": false
+                },
+                {
+                    "title": "Register in protected index",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Remove PHANTOM-GATE note from gateComparator()",
+            "description": "In apps/api/src/middlewares/tourist-entitlements.ts, remove the '// PHANTOM-GATE (SPEC-145): route not built yet' comment block (and the 'do NOT build without a spec' note) now that POST /compare ships. Update docs/billing/endpoint-gate-matrix.md to move the comparator out of the Phantom Gates section. No new tests; existing gate tests still apply.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Remove phantom-gate comment",
+                    "completed": false
+                },
+                {
+                    "title": "Update endpoint-gate-matrix.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "docs", "cleanup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Integration tests for the compare endpoint",
+            "description": "In apps/api test suite for the route: assert no-entitlement (tourist-free) -> ENTITLEMENT_REQUIRED; over-limit (Plus with 3 ids, VIP with 5 ids) -> LIMIT_REACHED; happy path Plus(2)/VIP(4) returns the matrix payload. Use the role x plan test users / existing auth test helpers. AAA pattern.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ENTITLEMENT_REQUIRED case",
+                    "completed": false
+                },
+                {
+                    "title": "LIMIT_REACHED cases (Plus>2, VIP>4)",
+                    "completed": false
+                },
+                {
+                    "title": "Happy path Plus(2)/VIP(4)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Build compare-store (singleton pub/sub + localStorage)",
+            "description": "Create apps/web/src/store/compare-store.ts following the toast-store.ts pattern: module-singleton state { ids: string[] }, subscribe/getSnapshot, addToCompare/removeFromCompare/clearCompare, useCompareStore() via useSyncExternalStore, persisted to localStorage (read on init). Tests: apps/web store test for add/remove/clear, dedupe, and localStorage round-trip.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Singleton state + pub/sub",
+                    "completed": false
+                },
+                {
+                    "title": "localStorage persistence",
+                    "completed": false
+                },
+                {
+                    "title": "useSyncExternalStore hook + unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "state", "store"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Client-side limit enforcement via useMyEntitlements",
+            "description": "Add a helper/hook (apps/web/src) that combines compare-store with useMyEntitlements: expose canCompare = has('can_compare_accommodations'), maxItems = limit('max_compare_items'), and a guarded add that blocks when count would exceed maxItems (treat -1 / future values defensively). Returns reason ('upsell' | 'limit') for the UI. Tests: unit tests for the guard logic across free/plus(2)/vip(4).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Combine store + entitlements",
+                    "completed": false
+                },
+                {
+                    "title": "Guarded add with reason",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests per plan",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Build CompareButton island with upsell",
+            "description": "Create apps/web/src/components/shared/compare/CompareButton.client.tsx following FavoriteButton.client.tsx. Toggles the accommodation in compare-store; uses T-007 guard. Shown to everyone (D-4): free/anonymous -> upsell message ('requires Plus or VIP'); over-limit -> limit message. i18n via @repo/i18n (T-012 keys). Tests: component test for toggle, upsell on free, limit message.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007", "T-012"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Button island + toggle",
+                    "completed": false
+                },
+                {
+                    "title": "Upsell + limit messaging",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Integrate CompareButton into card render points",
+            "description": "Insert CompareButton.client.tsx into AccommodationCard.astro acc-card__actions (client:visible, parallel to FavoriteButton) and into MapCardsSidebar.client.tsx so map view selection shares the same store. Pass isAuthenticated as needed. Tests: render smoke for both card surfaces showing the button.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Wire into AccommodationCard.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Wire into MapCardsSidebar.client.tsx",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Build floating comparison bar/drawer",
+            "description": "Create a floating bar/drawer island (apps/web/src/components/shared/compare/) showing selected items (thumbnails + remove), a 'Comparar ahora' CTA linking to the compare page, and a clear-all action. Reads compare-store; hidden when empty. Tests: component test for render with N items, remove, clear, CTA href.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Bar/drawer island",
+                    "completed": false
+                },
+                {
+                    "title": "Remove / clear / CTA",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Build comparison page with side-by-side matrix",
+            "description": "Create apps/web/src/pages/[lang]/alojamientos/comparar/index.astro (+ React island for the matrix). On load, read ids from compare-store, call POST /protected/accommodations/compare to hydrate, render the side-by-side attribute matrix (same attributes for all plans). Handle empty state and error/limit responses. Tests: island test for matrix render + empty state.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-006"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Page + island scaffold",
+                    "completed": false
+                },
+                {
+                    "title": "Hydrate via endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Matrix render + empty/error states + tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ui", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add i18n keys for compare feature (es/en/pt)",
+            "description": "Add @repo/i18n keys for the compare button, upsell/limit messages, floating bar, and matrix headers/labels across es/en/pt. Reuse the billing.comparison namespace where it fits. No standalone tests (covered by component tests that assert key usage).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "es keys",
+                    "completed": false
+                },
+                {
+                    "title": "en + pt keys",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "i18n"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Activate compare row in PlanComparisonTable",
+            "description": "Flip the 'compare' row status from 'upcoming' to 'available' in apps/web/src/components/billing/PlanComparisonTable.astro (line ~95) and confirm the per-tier cells reflect Plus/VIP availability. Removes the 'Próximamente' badge for this row. Tests: snapshot/render assertion that the badge is gone and the row shows availability.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "upcoming -> available",
+                    "completed": false
+                },
+                {
+                    "title": "Verify per-tier cells",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "billing", "ui"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "End-to-end compare flow test",
+            "description": "Add an E2E/integration test covering: select accommodations from a listing, see the floating bar, open the compare page, see the matrix, and hit the per-plan limit (Plus=2, VIP=4) + upsell for free. Use the project's web e2e harness. AAA pattern.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Select + floating bar",
+                    "completed": false
+                },
+                {
+                    "title": "Compare page matrix",
+                    "completed": false
+                },
+                {
+                    "title": "Limit + upsell assertions",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:19:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 14,
+        "pending": 13,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
