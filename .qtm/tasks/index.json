@@ -951,12 +951,12 @@
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
             "status": "in-progress",
-            "progress": "2/13",
+            "progress": "5/13",
             "path": "SPEC-301-feedback-system-prod-rework",
             "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Discovery closed 2026-06-28: OQ-1/2/4/6 resolved, 13 tasks atomized. T-001 + T-005 (slim form expander) done."
+            "note": "Discovery + slim form (T-005) + web entry point (T-002 i18n, T-003 headless host, T-004 footer link) done. Next: T-006 schema parity, Turnstile (T-007/8/9), admin (T-010), tests/smoke."
         },
         {
             "specId": "SPEC-302",

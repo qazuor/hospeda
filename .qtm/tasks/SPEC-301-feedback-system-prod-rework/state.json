@@ -55,30 +55,30 @@
             "id": "T-002",
             "title": "Add i18n keys for footer link label in @repo/i18n (es/en/pt)",
             "description": "Add the 'Reportar un problema' footer link label to all three locale files. This is a prerequisite for T-004 (footer link component).\n\nFiles to change:\n1. packages/i18n/src/locales/es/common.json — add key: 'reportProblemLink': 'Reportar un problema'\n2. packages/i18n/src/locales/en/common.json — add key: 'reportProblemLink': 'Report a problem'\n3. packages/i18n/src/locales/pt/common.json — add key: 'reportProblemLink': 'Relatar um problema'\n\nAfter editing, run: pnpm --filter @repo/i18n generate-types to regenerate TypeScript declarations.\n\nIf the footer already uses a different i18n namespace (e.g. 'layout' or 'footer'), use that namespace instead of 'common'. Inspect the existing Footer imports before writing.\n\nAcceptance criteria:\n- Keys present in all three locale files under the same namespace.\n- pnpm --filter @repo/i18n generate-types succeeds with no errors.\n- No existing keys deleted.\n- pnpm typecheck passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-004"],
             "subtasks": [
                 {
                     "title": "Confirm which i18n namespace the Footer uses (check Footer imports)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add reportProblemLink to es locale file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add reportProblemLink to en locale file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add reportProblemLink to pt locale file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/i18n generate-types — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web"],
@@ -90,38 +90,38 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Replace FeedbackFABClient mount with headless host in BaseLayout.astro",
             "description": "Replace the visible FeedbackFABClient island in apps/web/src/layouts/BaseLayout.astro with a headless host that keeps the Ctrl+Shift+F shortcut and the feedback:open / feedback:ack CustomEvent bridge active but renders NO visible button.\n\nApproach: create a minimal Astro component or inline <script> that:\n- Listens for Ctrl+Shift+F and dispatches feedback:open (or directly navigates to /[lang]/feedback/).\n- Listens for feedback:open CustomEvent and opens the standalone page or form.\n- Dispatches feedback:ack on open to acknowledge callers.\n- Preserves the Sentry event ID bridge (getSentryEventId / onSentryFeedback wiring) so error pages still get correlation.\n\nKey constraint: the headless host is only rendered when isFeedbackEnabled() is true (same gate as before). No visible UI whatsoever — zero screen real estate consumed.\n\nFiles to change:\n- apps/web/src/layouts/BaseLayout.astro (replace FeedbackFABClient island)\n- Possibly: apps/web/src/components/feedback/FeedbackHeadlessHost.astro (new headless island)\n- apps/web/src/components/feedback/FeedbackFAB.client.tsx may be left in place for the standalone page consumers that still need it; adjust scope accordingly.\n\nRegression checks (manual or test):\n- 404 and 500 page links to /[lang]/feedback/ still work.\n- Ctrl+Shift+F opens the form from any web page.\n- feedback:open CustomEvent dispatched by a page element still opens the form.\n- Standalone /[lang]/feedback/ page renders correctly.\n\nAcceptance criteria:\n- No visible floating button rendered in the web app.\n- Ctrl+Shift+F still works as a keyboard entry point.\n- feedback:open / feedback:ack events still function.\n- Sentry correlation preserved.\n- pnpm lint + pnpm typecheck pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Read FeedbackFABClient and BaseLayout to understand wiring (Sentry, keyboard, events)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create FeedbackHeadlessHost.astro (or inline script) with keyboard + event wiring",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace FeedbackFABClient island with headless host in BaseLayout.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify Sentry correlation bridge preserved",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify 404/500 standalone page links unaffected (regression)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "feedback"],
@@ -133,34 +133,34 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Add 'Reportar un problema' footer link to web Footer component",
             "description": "Add the primary discovery entry point: a 'Reportar un problema' link in the web app footer that navigates to /[lang]/feedback/.\n\nFiles to change:\n- apps/web/src/layouts/Footer.astro and/or the web Footer component (whichever owns the footer links section). Read the file before editing to understand the existing link structure.\n\nImplementation:\n1. Add the link using the i18n key added in T-002 ('reportProblemLink' or whichever namespace applies).\n2. Build the href as a lang-prefixed URL: /[lang]/feedback/ (use the current lang from Astro context, same pattern as other locale-prefixed links in the file).\n3. OQ-3 (not blocking): optionally add a title attribute surfacing the Ctrl+Shift+F shortcut hint, e.g. title='Ctrl+Shift+F'.\n4. Ensure the link is keyboard-navigable and has a visible focus indicator (a11y bar per SPEC-294).\n\nAcceptance criteria:\n- 'Reportar un problema' link visible in web footer across all pages using BaseLayout.\n- Link href navigates to the lang-prefixed /[lang]/feedback/ page.\n- Uses i18n key from T-002 (no hardcoded Spanish string).\n- Link is keyboard-accessible (tab-navigable, visible focus ring).\n- pnpm lint + pnpm typecheck pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Read Footer.astro to locate existing link structure and lang context pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add 'Reportar un problema' link using i18n key + lang-prefixed href",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Optionally add title attribute with Ctrl+Shift+F hint (OQ-3)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify keyboard-navigability and focus ring (a11y check)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "feedback", "a11y"],
@@ -172,8 +172,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
             }
         },
         {

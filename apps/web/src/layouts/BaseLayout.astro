@@ -32,7 +32,7 @@ import PostHogScript from '@/components/analytics/PostHogScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
-import { FeedbackFABClient } from '@/components/feedback/FeedbackFAB.client';
+import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import '@/styles/global.css';
 // Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
@@ -252,9 +252,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<PaginationLoading client:idle />
 
 		{feedbackEnabled && (
-			<FeedbackFABClient
+			<FeedbackHeadlessHost
 				client:idle
-				transition:persist="feedback-fab"
+				transition:persist="feedback-host"
 				apiUrl={apiUrl}
 				deployVersion={deployVersion}
 				userId={Astro.locals.user?.id}
