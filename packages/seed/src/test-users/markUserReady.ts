@@ -15,6 +15,38 @@ import type { User } from '@repo/schemas';
 export const TOUR_READY_SENTINEL = 9999;
 
 /**
+ * Every admin tour ID from the catalog (`apps/admin/src/config/ia/tours.ts`, v1:
+ * 4 welcome tours + 15 contextual mini-tours). `markUserReady` marks ALL of them
+ * seen so no tour — welcome modal or contextual spotlight — fires for a ready dev
+ * user of ANY role (host / editor / admin / super admin).
+ *
+ * `packages/seed` cannot import `apps/admin` (app→package import is forbidden), so
+ * this list MUST be kept in sync with the catalog by hand. Adding a tour there
+ * without adding its id here means that tour will still fire for ready dev users.
+ */
+export const ALL_ADMIN_TOUR_IDS = [
+    'host.welcome',
+    'host.misAlojamientos',
+    'host.consultas',
+    'host.miFacturacion',
+    'host.miCuenta',
+    'editor.welcome',
+    'editor.editorial',
+    'editor.analisis',
+    'editor.miCuenta',
+    'admin.welcome',
+    'admin.editorial',
+    'admin.comunidad',
+    'admin.comercial',
+    'admin.plataforma',
+    'admin.analisis',
+    'admin.catalogo',
+    'superAdmin.welcome',
+    'superAdmin.plataforma',
+    'superAdmin.analisis'
+] as const;
+
+/**
  * Minimal port interface so the helper is unit-testable without a live DB.
  * `UserModel` from `@repo/db` satisfies this interface.
  */
@@ -47,10 +79,14 @@ export type MarkUserReadyResult = { ok: true; userId: string } | { ok: false; re
  * that the onboarding gates read:
  *
  * - `profileCompleted = true` — clears the "complete your profile" redirect on the web app.
- * - `settings.onboarding.adminTours["host.welcome"] = TOUR_READY_SENTINEL` — marks the
- *   admin welcome tour as permanently seen.
+ * - `settings.onboarding.adminTours[<id>] = TOUR_READY_SENTINEL` for every id in
+ *   {@link ALL_ADMIN_TOUR_IDS} — marks ALL admin tours (welcome modals + contextual
+ *   mini-tours, for every role) as permanently seen.
  * - `settings.onboarding.whatsNew.baselineAt = <now>` — baselines the what's-new modal
  *   so all currently published entries are treated as seen.
+ * - `adminInfo.passwordChangeRequired = false` (only when currently `true`) — clears the
+ *   admin forced-change-password gate (read by `/auth/me`). This is what lets a seeded
+ *   super admin skip the change-password redirect in local dev.
  *
  * The merge is non-destructive: any pre-existing settings keys (e.g. `theme`, other
  * `adminTours` entries) are preserved via a read-modify-write spread, mirroring the
@@ -87,7 +123,12 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
         ...currentSettings,
         onboarding: {
             ...currentOnboarding,
-            adminTours: { ...currentAdminTours, 'host.welcome': TOUR_READY_SENTINEL },
+            adminTours: {
+                ...currentAdminTours,
+                ...Object.fromEntries(
+                    ALL_ADMIN_TOUR_IDS.map((tourId) => [tourId, TOUR_READY_SENTINEL])
+                )
+            },
             whatsNew: {
                 ...currentWhatsNew,
                 // Idempotent: preserve an existing baselineAt so re-runs don't move it forward.
@@ -95,6 +136,20 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
             }
         }
     };
+
+    // The admin change-password gate (apps/api/src/routes/auth/me.ts) reads
+    // `adminInfo.passwordChangeRequired` (JSONB), NOT the `mustChangePassword`
+    // column. The seeded super admin is created with that flag = `true` (forced
+    // first-login change — by design for prod, see superAdminLoader.ts). To make
+    // it "ready" in dev we must clear that JSONB flag too; clearing only the
+    // `mustChangePassword` column is not enough. Read-modify-write preserves
+    // sibling adminInfo keys (notes, favorite). Only touched when the flag is
+    // actually set, so users without adminInfo are left untouched.
+    const currentAdminInfo = (existing as Record<string, unknown>).adminInfo as
+        | Record<string, unknown>
+        | null
+        | undefined;
+    const clearsPasswordChange = currentAdminInfo?.passwordChangeRequired === true;
 
     // NOTE: `mustChangePassword` is a DB column (must_change_password) that is NOT
     // part of the Zod `User` type. It defaults to `false` for all new users, so
@@ -107,7 +162,10 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
     const updatePayload = {
         profileCompleted: true,
         mustChangePassword: false,
-        settings: mergedSettings
+        settings: mergedSettings,
+        ...(clearsPasswordChange
+            ? { adminInfo: { ...currentAdminInfo, passwordChangeRequired: false } }
+            : {})
     } as unknown as Partial<User>;
 
     await model.update({ id: existing.id }, updatePayload);
