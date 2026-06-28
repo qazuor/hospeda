@@ -66,6 +66,27 @@ describe('computeOpenNowStatus', () => {
             expect(computeOpenNowStatus(splitDay, mondayAt(21))).toBe(true);
         });
     });
+
+    it('returns true at exactly the opening minute (inclusive boundary)', () => {
+        const hours = { monday: openDay([{ open: '09:00', close: '18:00' }]) };
+        expect(computeOpenNowStatus(hours, mondayAt(9, 0))).toBe(true);
+    });
+
+    describe('overnight shift (defensive — the schema normally forbids it)', () => {
+        const overnight = { monday: openDay([{ open: '22:00', close: '02:00' }]) };
+
+        it('is open late at night before midnight', () => {
+            expect(computeOpenNowStatus(overnight, mondayAt(23))).toBe(true);
+        });
+
+        it('is open after midnight within the wrapped window', () => {
+            expect(computeOpenNowStatus(overnight, mondayAt(1))).toBe(true);
+        });
+
+        it('is closed outside the overnight window', () => {
+            expect(computeOpenNowStatus(overnight, mondayAt(3))).toBe(false);
+        });
+    });
 });
 
 describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
