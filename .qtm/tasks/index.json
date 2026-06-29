@@ -928,13 +928,13 @@
         {
             "specId": "SPEC-299",
             "title": "Plan Selector & Comparison Redesign",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-299-plan-selector-comparison-redesign",
-            "branch": null,
+            "branch": "spec/SPEC-299-plan-selector-comparison-redesign",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. UI polish: equal-height plan cards, CTA to full comparison, better comparison tables. Cards already stretch (issue=scale highlight); comparison table from SPEC-282, touched by SPEC-283 (coordinate merge). Discovery-first."
+            "note": "Discovery resolved 2026-06-28 (OQ-1..8 locked). UI polish in progress: card highlight=border+tint (no scale), incremental+summary entitlements, mini-section CTA, per-column table CTA, mobile scroll+hint, row icons, neutral table column, owner+tourist both. Coordinate merge with SPEC-283 (PlanComparisonTable)."
         },
         {
             "specId": "SPEC-300",

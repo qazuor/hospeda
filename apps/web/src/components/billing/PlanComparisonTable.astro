@@ -20,6 +20,8 @@
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
+import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
+import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import { LimitKey } from '@repo/billing';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -216,6 +218,18 @@ function formatPriceArs(cents: number): string {
 						{plan.monthlyPriceArs > 0 && (
 							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
 						)}
+						<span class="comparison-table__plan-cta">
+							<PlanPurchaseButton
+								client:load
+								planSlug={plan.slug}
+								monthlyPrice={plan.monthlyPriceArs}
+								annualPrice={plan.annualPriceArs ?? null}
+								currency="ARS"
+								ctaText={t('pricing.comparison.cta', 'Elegir plan')}
+								locale={locale}
+								showPromo={false}
+							/>
+						</span>
 					</th>
 				))}
 			</tr>
@@ -227,15 +241,27 @@ function formatPriceArs(cents: number): string {
 						{getComparisonGroupLabel({ group: group.id, t })}
 					</th>
 				</tr>
-				{group.rows.map((row) => (
+				{group.rows.map((row) => {
+					const RowIcon = COMPARISON_ROW_ICONS[row.id];
+					// Per-row descriptive text (SPEC-299). Empty fallback → not rendered.
+					const rowDesc = t(`billing.comparison.rowDesc.${row.id}`, '');
+					return (
 					<tr>
 						<th scope="row" class="comparison-table__label-col">
 							<span class="comparison-table__row-label">
+								{RowIcon && (
+									<span class="comparison-table__row-icon" aria-hidden="true">
+										<RowIcon size="xs" weight="regular" color="currentColor" />
+									</span>
+								)}
 								{t(row.labelKey)}
 								{row.status === 'upcoming' && (
 									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
 								)}
 							</span>
+							{rowDesc && (
+								<span class="comparison-table__row-desc">{rowDesc}</span>
+							)}
 							{row.noteKey && (
 								<span class="comparison-table__row-note">{t(row.noteKey)}</span>
 							)}
@@ -262,11 +288,17 @@ function formatPriceArs(cents: number): string {
 							);
 						})}
 					</tr>
-				))}
+				);
+				})}
 			</tbody>
 		))}
 	</table>
 </div>
+
+<p class="comparison-table__scroll-hint" aria-hidden="true">
+	<span>{t('billing.comparison.scrollHint', 'Deslizá para ver todos los planes')}</span>
+	<span class="comparison-table__scroll-hint-arrow">→</span>
+</p>
 
 {audience === 'owner' && (
 	<p class="comparison-table__complex-teaser">
@@ -359,6 +391,34 @@ function formatPriceArs(cents: number): string {
 		margin-left: var(--space-1);
 	}
 
+	/* OQ-4: per-column purchase CTA in each plan header, so users can buy
+	   straight from the comparison table without returning to the selector. */
+	.comparison-table__plan-cta {
+		display: block;
+		margin-top: var(--space-3);
+	}
+
+	/* OQ-5: mobile-only hint that the table scrolls horizontally. Hidden on
+	   desktop where the full table fits without scrolling. */
+	.comparison-table__scroll-hint {
+		display: none;
+	}
+
+	.comparison-table__scroll-hint-arrow {
+		animation: comparison-scroll-nudge var(--duration-slow, 1.2s) ease-in-out infinite;
+	}
+
+	@keyframes comparison-scroll-nudge {
+		0%, 100% { transform: translateX(0); }
+		50% { transform: translateX(var(--space-1)); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.comparison-table__scroll-hint-arrow {
+			animation: none;
+		}
+	}
+
 	.comparison-table__group-header th {
 		background-color: var(--surface-warm);
 		font-family: var(--font-heading);
@@ -414,6 +474,15 @@ function formatPriceArs(cents: number): string {
 		flex-wrap: wrap;
 	}
 
+	/* OQ-6: decorative icon in the label column, one per feature row. */
+	.comparison-table__row-icon {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		color: var(--core-muted-foreground);
+		opacity: 0.65;
+	}
+
 	.comparison-table__badge--upcoming {
 		display: inline-block;
 		font-size: var(--text-caption);
@@ -425,6 +494,19 @@ function formatPriceArs(cents: number): string {
 		border-radius: var(--radius-pill, 999px);
 		padding: 1px var(--space-2);
 		white-space: nowrap;
+		line-height: 1.4;
+	}
+
+	/* Per-row descriptive text (SPEC-299): explains what the feature does,
+	   shown under the row label. Distinct from `row-note` (contextual caveat)
+	   by not being italic. */
+	.comparison-table__row-desc {
+		display: block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		color: var(--core-muted-foreground);
+		margin-top: var(--space-1);
 		line-height: 1.4;
 	}
 
@@ -463,6 +545,18 @@ function formatPriceArs(cents: number): string {
 		}
 		.comparison-table__plan-col {
 			min-width: 120px;
+		}
+		.comparison-table__scroll-hint {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: var(--space-2);
+			max-width: var(--container-max);
+			margin: var(--space-2) auto 0;
+			padding: 0 var(--space-container-x);
+			font-family: var(--font-sans);
+			font-size: var(--text-caption);
+			color: var(--core-muted-foreground);
 		}
 	}
 </style>

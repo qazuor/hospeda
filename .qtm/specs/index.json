@@ -2388,7 +2388,7 @@
             "title": "Plan Selector & Comparison Redesign",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-299-plan-selector-comparison-redesign",
             "created": "2026-06-27T00:00:00Z",
             "base": "staging",

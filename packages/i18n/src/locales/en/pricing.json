@@ -4,6 +4,13 @@
     "recommended": "Recommended",
     "trial": "{days}-day free trial",
     "includesEverything": "Everything in {plan}, plus:",
+    "inheritedSummary": "+{count} features from the {plan} plan",
+    "baseHighlightTitle": "Perfect to get started",
+    "baseHighlightText": "Everything essential to begin, no commitment.",
+    "group": {
+        "tourist": "All tourist features",
+        "ai": "AI suite: text, translation, import and chat"
+    },
     "features": {
         "label": "Includes"
     },
@@ -44,6 +51,8 @@
     "comparison": {
         "link": "See detailed comparison",
         "cta": "Choose plan",
+        "teaserTitle": "Not sure which one to pick?",
+        "teaserText": "Compare every feature, benefit and limit side by side.",
         "owner": {
             "heading": "Detailed owner plan comparison",
             "title": "Owner plan comparison — Hospeda",
