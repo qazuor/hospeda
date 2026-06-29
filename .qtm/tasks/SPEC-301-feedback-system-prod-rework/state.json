@@ -274,38 +274,38 @@
             "id": "T-007",
             "title": "Register Turnstile env vars in @repo/config and add Zod validation to apps/web + apps/api",
             "description": "Follow the full project env-var workflow for the two new Turnstile env vars. This is a hard project rule: all steps must happen in the same change.\n\nEnv vars:\n- PUBLIC_TURNSTILE_SITE_KEY — web app, public (client-visible), used by the Turnstile widget.\n- HOSPEDA_TURNSTILE_SECRET_KEY — API app, secret, used for server-side siteverify.\n\nSteps:\n1. Register both vars in packages/config/src/env-registry.*.ts with full metadata: description, type, required, secret (true for SECRET_KEY), defaultValue, exampleValue, apps (['web'] / ['api']), category ('security' or 'integrations').\n2. Add Zod validation in apps/web/src/lib/env.ts: PUBLIC_TURNSTILE_SITE_KEY as z.string().min(1) (it is a PUBLIC_ var, client-side).\n3. Add Zod validation in apps/api/src/utils/env.ts: HOSPEDA_TURNSTILE_SECRET_KEY as z.string().min(1) (secret, server only).\n4. Update apps/web/.env.example: add PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA (Cloudflare always-pass test key).\n5. Update apps/api/.env.example: add HOSPEDA_TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA (Cloudflare always-pass test secret).\n6. Document the vars if their purpose is non-obvious (can add a one-line comment in each .env.example).\n\nIMPORTANT: After this task is merged, the human must set these vars in Coolify for hospeda-web-prod and hospeda-api-prod. Claude cannot do this step. Add a note in the PR description: 'New env vars PUBLIC_TURNSTILE_SITE_KEY and HOSPEDA_TURNSTILE_SECRET_KEY must be set in Coolify before enabling PUBLIC_FEEDBACK_ENABLED=true on prod.'\n\nAcceptance criteria:\n- Both vars registered in packages/config registry with full metadata.\n- Zod validation in apps/web/src/lib/env.ts for PUBLIC_TURNSTILE_SITE_KEY.\n- Zod validation in apps/api/src/utils/env.ts for HOSPEDA_TURNSTILE_SECRET_KEY.\n- .env.example updated in both apps with Cloudflare always-pass test keys.\n- pnpm env:check:registry passes.\n- pnpm typecheck passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Register PUBLIC_TURNSTILE_SITE_KEY in packages/config env-registry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register HOSPEDA_TURNSTILE_SECRET_KEY in packages/config env-registry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add Zod validation for PUBLIC_TURNSTILE_SITE_KEY in apps/web/src/lib/env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add Zod validation for HOSPEDA_TURNSTILE_SECRET_KEY in apps/api/src/utils/env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update apps/web/.env.example with Cloudflare always-pass test key",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update apps/api/.env.example with Cloudflare always-pass test secret",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm env:check:registry — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["config", "web", "backend", "security"],
@@ -317,38 +317,38 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Add invisible Cloudflare Turnstile widget to FeedbackForm client-side",
             "description": "Integrate the Cloudflare Turnstile invisible widget into the slimmed FeedbackForm (built in T-005). The widget runs a silent challenge and produces a token that is attached to the submit payload.\n\nApproach:\n1. Add the Turnstile script tag or use the JS API (https://challenges.cloudflare.com/turnstile/v0/api.js) to render an invisible widget inside FeedbackForm.tsx. The widget sitekey comes from the PUBLIC_TURNSTILE_SITE_KEY env var (available on client-side).\n2. Capture the token produced by the widget on challenge completion.\n3. Attach the token as 'cfTurnstileToken' to the form submit payload (field name defined in T-006's schema update).\n4. If Turnstile fails to load, token is empty, or challenge times out: block form submit with a user-visible error message.\n5. In local dev: PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA (always-pass test key from T-007) allows testing without a real Cloudflare account.\n\nNote: Turnstile is 'invisible' — no visible CAPTCHA UI, no user interaction required for normal traffic.\n\nFiles to change:\n- packages/feedback/src/components/FeedbackForm.tsx (primary file)\n- Possibly a new packages/feedback/src/components/TurnstileWidget.tsx sub-component.\n\nAcceptance criteria:\n- Invisible Turnstile widget renders in the form without visible UI.\n- Token attached as cfTurnstileToken in submit payload.\n- Form submission blocked if token is absent or empty.\n- pnpm lint + pnpm typecheck pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-007"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Add Turnstile script loading to FeedbackForm (or a new TurnstileWidget component)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Capture Turnstile token on widget callback",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Attach cfTurnstileToken to form submit payload",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Block submission with error if token absent",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify Cloudflare always-pass test key works in local dev",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["feedback", "frontend", "security", "packages"],
@@ -360,42 +360,42 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Verify Cloudflare Turnstile token server-side in feedback submit handler",
             "description": "Add server-side Turnstile token verification to apps/api/src/routes/feedback/public/submit.ts before the Linear issue creation. The verification MUST fail closed — if the secret is missing or the token is invalid, the submission is rejected.\n\nSteps:\n1. Extract the cfTurnstileToken field from the validated request body.\n2. Before creating the Linear issue, call the Cloudflare siteverify endpoint:\n   POST https://challenges.cloudflare.com/turnstile/v0/siteverify\n   body: { secret: HOSPEDA_TURNSTILE_SECRET_KEY, response: cfTurnstileToken, remoteip: req.ip }\n3. If HOSPEDA_TURNSTILE_SECRET_KEY is missing/empty: reject with appropriate HTTP error — FAIL CLOSED (do NOT let the submission through).\n4. If siteverify returns { success: false }: reject with 400 (or 403).\n5. If siteverify network call fails (timeout/error): reject with 503 — FAIL CLOSED.\n6. Only if siteverify returns { success: true }: proceed to create the Linear issue.\n7. Keep existing guards unchanged: website honeypot check, 30/IP/hr rate limit.\n\nFail-closed rule is non-negotiable (per spec risk R-2): a missing or misconfigured secret must never silently pass submissions through.\n\nFiles to change:\n- apps/api/src/routes/feedback/public/submit.ts\n\nAcceptance criteria:\n- Turnstile siteverify called before Linear issue creation.\n- Missing HOSPEDA_TURNSTILE_SECRET_KEY → submission rejected, Linear not called.\n- Invalid token (success: false) → 400/403 returned.\n- Siteverify network error → 503 returned.\n- Valid token → submission proceeds normally.\n- Existing honeypot + rate limit checks unchanged.\n- pnpm lint + pnpm typecheck pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Read submit.ts to understand current flow (honeypot, rate limit, Linear create)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add Turnstile siteverify call after honeypot/rate-limit checks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement fail-closed guard for missing HOSPEDA_TURNSTILE_SECRET_KEY",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Reject on siteverify success=false (invalid token)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Reject on siteverify network error (fail-closed)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing honeypot + rate limit guards unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "api", "feedback", "security"],
@@ -407,8 +407,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
             }
         },
         {

@@ -53,6 +53,12 @@ export interface FeedbackHeadlessHostProps {
     readonly userEmail?: string;
     /** Authenticated user display name — undefined when not logged in */
     readonly userName?: string;
+    /**
+     * Cloudflare Turnstile site key for the invisible bot-detection widget.
+     * Passed through to FeedbackForm via formProps. When undefined, the widget
+     * is not rendered (server applies fail-closed).
+     */
+    readonly turnstileSiteKey?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +118,8 @@ export function FeedbackHeadlessHost({
     deployVersion,
     userId,
     userEmail,
-    userName
+    userName,
+    turnstileSiteKey
 }: FeedbackHeadlessHostProps): React.JSX.Element | null {
     // Install console.error interceptor once at mount time so errors that
     // occur before the modal is opened are still captured (GAP-031-04).
@@ -201,7 +208,8 @@ export function FeedbackHeadlessHost({
                 userEmail,
                 userName,
                 sentryEventId,
-                onSentryFeedback: handleSentryFeedback
+                onSentryFeedback: handleSentryFeedback,
+                turnstileSiteKey
             }}
         />,
         document.body

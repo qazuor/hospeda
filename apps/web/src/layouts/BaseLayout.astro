@@ -16,7 +16,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getApiUrl, getDeployVersion, isFeedbackEnabled } from '@/lib/env';
+import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
@@ -71,6 +71,7 @@ const apiUrl = getApiUrl();
 // SPEC-157 REQ-4: API origin for the <head> preconnect hint (env-derived).
 const apiOrigin = new URL(apiUrl).origin;
 const deployVersion = getDeployVersion();
+const turnstileSiteKey = getTurnstileSiteKey();
 
 /**
  * Hint for client islands (UserMenu, GuestPreferenceNudge) about whether the
@@ -260,6 +261,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 				userId={Astro.locals.user?.id}
 				userEmail={Astro.locals.user?.email}
 				userName={Astro.locals.user?.name}
+				turnstileSiteKey={turnstileSiteKey}
 			/>
 		)}
 

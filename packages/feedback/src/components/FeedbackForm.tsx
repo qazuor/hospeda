@@ -1,3 +1,4 @@
+import { Turnstile } from '@marsidev/react-turnstile';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '@repo/schemas';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '@repo/schemas';
 /**
@@ -100,6 +101,15 @@ export interface FeedbackFormProps {
      * interactions) on every modal open.
      */
     readonly isOpen?: boolean;
+    /**
+     * Cloudflare Turnstile site key for the invisible bot-detection widget.
+     *
+     * When set, the invisible Turnstile widget is rendered and the resolved token
+     * is included as `cfTurnstileToken` in the submission payload. When undefined
+     * (e.g. local dev without config), the widget is NOT rendered and submission
+     * proceeds without a token — the server's fail-closed policy then decides.
+     */
+    readonly turnstileSiteKey?: string;
 }
 
 /**
@@ -188,7 +198,8 @@ export function FeedbackForm({
     sentryEventId,
     onSentryFeedback,
     onClose,
-    isOpen
+    isOpen,
+    turnstileSiteKey
 }: FeedbackFormProps) {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [basicData, setBasicData] = useState<StepBasicData>(() =>
@@ -199,6 +210,8 @@ export function FeedbackForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [honeypot, setHoneypot] = useState<string>('');
     const [hasNotifiedSentry, setHasNotifiedSentry] = useState<boolean>(false);
+    /** Turnstile token resolved by the invisible widget; null until verified. */
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
     const { environment, updateField: updateEnvField } = useAutoCollect({
         appSource,
@@ -291,13 +304,23 @@ export function FeedbackForm({
             ...basicData,
             ...detailsData,
             attachments: attachments.length > 0 ? attachments : undefined,
-            environment
+            environment,
+            ...(turnstileToken != null ? { cfTurnstileToken: turnstileToken } : {})
         };
 
         const parsed = feedbackFormSchema.parse(combined);
 
         await submit(parsed, attachments.length > 0 ? attachments : undefined, honeypot);
-    }, [basicData, detailsData, attachments, environment, validate, submit, honeypot]);
+    }, [
+        basicData,
+        detailsData,
+        attachments,
+        environment,
+        validate,
+        submit,
+        honeypot,
+        turnstileToken
+    ]);
 
     // ------------------------------------------------------------------ //
     // Reset
@@ -310,6 +333,7 @@ export function FeedbackForm({
         setAttachments([]);
         setErrors({});
         setHasNotifiedSentry(false);
+        setTurnstileToken(null);
         resetSubmit();
     }, [userEmail, userName, resetSubmit]);
 
@@ -441,6 +465,21 @@ export function FeedbackForm({
                         onEnvironmentChange={updateEnvField}
                     />
                 </div>
+            )}
+
+            {/* Invisible Turnstile bot-detection widget (SPEC-301).
+                Renders only when the site key is configured; otherwise skipped.
+                The onSuccess callback stores the token so it can be included in
+                the submission payload. onExpire/onError resets the token so any
+                re-submission triggers a fresh challenge. */}
+            {turnstileSiteKey && (
+                <Turnstile
+                    siteKey={turnstileSiteKey}
+                    options={{ size: 'invisible' }}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onExpire={() => setTurnstileToken(null)}
+                    onError={() => setTurnstileToken(null)}
+                />
             )}
 
             {/* Single submit button */}

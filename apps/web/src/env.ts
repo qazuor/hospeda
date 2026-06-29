@@ -99,6 +99,11 @@ export const serverEnvBaseSchema = z.object({
      */
     PUBLIC_ENABLE_LOGGING: z.string().optional(),
     /**
+     * Cloudflare Turnstile site key for the invisible feedback bot-detection widget (SPEC-301).
+     * Public by design — ships in the browser bundle. When unset, the widget is not rendered.
+     */
+    PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+    /**
      * PostHog Cloud project API key for the web app (SPEC-140). Public by
      * design — ships in the browser bundle. Leave unset to disable PostHog
      * init (no events sent, no cookies set, no network requests). Per-env

@@ -435,5 +435,23 @@ describe('T-006 SPEC-301 — feedback schema parity guard', () => {
             expect(client.success).toBe(true);
             expect(api.success).toBe(true);
         });
+
+        it('cfTurnstileToken is accepted by both schemas when present (shared optional field)', () => {
+            // cfTurnstileToken is an optional field on both client and API schemas.
+            // It flows through the JSON data payload. Both schemas must accept it.
+            const { client, api } = parseBoth({
+                ...BASE_PAYLOAD,
+                cfTurnstileToken: 'XXXX.DUMMY.TOKEN.XXXX'
+            });
+            expect(client.success, 'client should accept cfTurnstileToken').toBe(true);
+            expect(api.success, 'api should accept cfTurnstileToken').toBe(true);
+        });
+
+        it('cfTurnstileToken is accepted by both schemas when absent (shared optional field)', () => {
+            // Both schemas must also accept the field being absent.
+            const { client, api } = parseBoth({ ...BASE_PAYLOAD });
+            expect(client.success, 'client should accept absent cfTurnstileToken').toBe(true);
+            expect(api.success, 'api should accept absent cfTurnstileToken').toBe(true);
+        });
     });
 });
