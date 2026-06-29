@@ -350,35 +350,35 @@
             "id": "T-011",
             "title": "Build comparison page with side-by-side matrix",
             "description": "Create apps/web/src/pages/[lang]/alojamientos/comparar/index.astro (+ React island for the matrix). On load, read ids from compare-store, call POST /protected/accommodations/compare to hydrate, render the side-by-side attribute matrix (same attributes for all plans). Handle empty state and error/limit responses. Tests: island test for matrix render + empty state.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-006"],
             "blocks": ["T-013", "T-014"],
             "subtasks": [
                 {
                     "title": "Page + island scaffold",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hydrate via endpoint",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Matrix render + empty/error states + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T06:25:00.000Z",
+                "completed": "2026-06-29T06:40:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.4
     }

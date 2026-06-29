@@ -808,7 +808,7 @@
             "specId": "SPEC-288",
             "title": "Accommodation Comparison",
             "status": "in-progress",
-            "progress": "11/14",
+            "progress": "12/14",
             "path": "SPEC-288-accommodation-comparison",
             "branch": "spec/SPEC-288-accommodation-comparison",
             "base": "staging",
