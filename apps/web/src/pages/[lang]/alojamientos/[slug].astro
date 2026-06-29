@@ -37,7 +37,9 @@ import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import { accommodationsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
+import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -141,14 +143,15 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
     : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
-const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult, externalReputationResult] =
+const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult, externalReputationResult, promotionsResult] =
     await Promise.allSettled([
         accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
         accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
         postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
         eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 6 }),
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
-        accommodationsApi.getExternalReputation({ id: accommodation.id })
+        accommodationsApi.getExternalReputation({ id: accommodation.id }),
+        ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id })
     ]);
 
 /** Safely extract array from a settled API result. */
@@ -211,6 +214,9 @@ const ratingBreakdown = (() => {
 // Posts and events: pass raw items for lightweight cards
 const postItems = extractItems(postsResult);
 const eventItems = extractItems(eventsResult).slice(0, 6);
+
+// Active promotions for this accommodation — graceful degradation via extractItems.
+const activePromos = extractItems(promotionsResult) as unknown as OwnerPromotionPublicItem[];
 
 // External reputation: graceful degradation — empty block when fetch fails or endpoint missing.
 const externalReputationData = (() => {
@@ -487,6 +493,8 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
+
+        <PromotionBanner promos={activePromos} locale={locale} />
 
         <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} lang={locale}>
             <ReviewsModal
