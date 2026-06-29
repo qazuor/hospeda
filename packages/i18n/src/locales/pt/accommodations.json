@@ -356,7 +356,14 @@
         "bookmark_count": "Salvo por {{count}} pessoas",
         "bookmark_count_one": "Salvo por {{count}} pessoa",
         "bookmark_count_other": "Salvo por {{count}} pessoas",
-        "bookmark_count_zero": "Seja o primeiro a salvar"
+        "bookmark_count_zero": "Seja o primeiro a salvar",
+        "promotions": {
+            "sectionTitle": "Promoções especiais",
+            "validUntil": "Válido até {date}",
+            "minNights": "Mínimo {n} noites",
+            "discountOff": "de desconto",
+            "noPromos": ""
+        }
     },
     "amenityNames": {
         "wifi": "WiFi",
