@@ -21,25 +21,21 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import { getAccommodationTypeLabel } from '@/lib/colors';
+import { AccommodationTypeEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { type: typeSlug } = Astro.params;
 const isAuthenticated = Boolean(Astro.locals.user);
 
-// Valid type slugs mapped to enum values
-const VALID_TYPES: Record<string, string> = {
-	'apartment': 'APARTMENT',
-	'house': 'HOUSE',
-	'country-house': 'COUNTRY_HOUSE',
-	'cabin': 'CABIN',
-	'hotel': 'HOTEL',
-	'hostel': 'HOSTEL',
-	'camping': 'CAMPING',
-	'room': 'ROOM',
-	'motel': 'MOTEL',
-	'resort': 'RESORT',
-};
+// Derived from the canonical enum so any new type added to AccommodationTypeEnum
+// is automatically accepted here without code changes (Bug B10 fix).
+const VALID_TYPES: Record<string, string> = Object.fromEntries(
+	Object.values(AccommodationTypeEnum).map((v) => [
+		String(v).toLowerCase().replace(/_/g, '-'),
+		String(v)
+	])
+);
 
 const typeEnum = typeSlug ? VALID_TYPES[typeSlug] : undefined;
 if (!typeEnum) {
@@ -58,7 +54,10 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-const typeLabel = getAccommodationTypeLabel({ type: typeSlug ?? '', t });
+// Use the enum value (underscore form), not the URL slug — the i18n label keys
+// are keyed by the enum value, so passing the hyphenated slug misses the key and
+// falls back to the raw string (Bug B10: "apart-hotel" shown in title/breadcrumb).
+const typeLabel = getAccommodationTypeLabel({ type: typeEnum, t });
 const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 ---
 
