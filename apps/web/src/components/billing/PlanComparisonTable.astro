@@ -243,6 +243,8 @@ function formatPriceArs(cents: number): string {
 				</tr>
 				{group.rows.map((row) => {
 					const RowIcon = COMPARISON_ROW_ICONS[row.id];
+					// Per-row descriptive text (SPEC-299). Empty fallback → not rendered.
+					const rowDesc = t(`billing.comparison.rowDesc.${row.id}`, '');
 					return (
 					<tr>
 						<th scope="row" class="comparison-table__label-col">
@@ -257,6 +259,9 @@ function formatPriceArs(cents: number): string {
 									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
 								)}
 							</span>
+							{rowDesc && (
+								<span class="comparison-table__row-desc">{rowDesc}</span>
+							)}
 							{row.noteKey && (
 								<span class="comparison-table__row-note">{t(row.noteKey)}</span>
 							)}
@@ -489,6 +494,19 @@ function formatPriceArs(cents: number): string {
 		border-radius: var(--radius-pill, 999px);
 		padding: 1px var(--space-2);
 		white-space: nowrap;
+		line-height: 1.4;
+	}
+
+	/* Per-row descriptive text (SPEC-299): explains what the feature does,
+	   shown under the row label. Distinct from `row-note` (contextual caveat)
+	   by not being italic. */
+	.comparison-table__row-desc {
+		display: block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		color: var(--core-muted-foreground);
+		margin-top: var(--space-1);
 		line-height: 1.4;
 	}
 
