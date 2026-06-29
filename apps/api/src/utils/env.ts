@@ -350,6 +350,13 @@ export const ApiEnvBaseSchema = z.object({
         .transform((v) => v !== 'false'),
     /** Override fallback email for feedback reports when Linear is down */
     HOSPEDA_FEEDBACK_FALLBACK_EMAIL: z.string().email().optional(),
+    /**
+     * Cloudflare Turnstile secret key for server-side token verification (SPEC-301).
+     * When set, every public feedback submission is verified via the Turnstile siteverify
+     * endpoint before creating a Linear issue. Missing token or siteverify failure → 403
+     * (fail-closed, R-2). When unset, the route also rejects — dev must set the test key.
+     */
+    HOSPEDA_TURNSTILE_SECRET_KEY: z.string().optional(),
 
     // Exchange rates
     HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),

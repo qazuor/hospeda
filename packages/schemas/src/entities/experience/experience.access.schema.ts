@@ -118,7 +118,14 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
                 category: z.string().nullable()
             })
         )
-        .optional()
+        .optional(),
+    /**
+     * Destination relation (populated by findAllWithRelations in public search
+     * and by findOneWithRelations on detail views).
+     * Nullish: a listing may reference an unresolvable destination FK in edge cases.
+     * Used by the web card transform to show the destination name without an N+1.
+     */
+    destination: z.object({ id: z.string().uuid(), name: z.string(), slug: z.string() }).nullish()
 });
 
 /** TypeScript type for {@link ExperiencePublicSchema}. */

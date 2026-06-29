@@ -12,10 +12,11 @@
  * tweaks land in both places at once.
  */
 
+import { CheckIcon, SparkleIcon, StarIcon } from '@repo/icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
-import type { EntitlementKey } from '@/lib/billing-i18n';
+import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
+import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -45,6 +46,9 @@ interface Props {
 	readonly plans: ReadonlyArray<PricingPlan>;
 	readonly highlightedSlug: string;
 	readonly intlLocale: string;
+	/** Audience of the page — owner cards collapse the inherited tourist tier
+	    and the AI entitlements into grouped bullets to keep the list short. */
+	readonly audience: PricingAudience;
 	/** Section heading text (rendered sr-only as h2 for accessibility). */
 	readonly sectionHeading: string;
 	/** Aria label for the section. */
@@ -62,6 +66,7 @@ const {
 	plans,
 	highlightedSlug,
 	intlLocale,
+	audience,
 	sectionHeading,
 	emptyMessage,
 	emptyActionUrl,
@@ -85,6 +90,15 @@ const trialFallback = t('pricing.trial', '{days} días gratis');
 const includesEverythingTemplate = t(
 	'pricing.includesEverything',
 	'Todo lo del plan {plan}, más:'
+);
+const inheritedSummaryTemplate = t(
+	'pricing.inheritedSummary',
+	'+{count} funciones del plan {plan}'
+);
+const baseHighlightTitle = t('pricing.baseHighlightTitle', 'Ideal para empezar');
+const baseHighlightText = t(
+	'pricing.baseHighlightText',
+	'Todo lo esencial para arrancar, sin compromiso.'
 );
 const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
 const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
@@ -207,8 +221,19 @@ function formatPriceArs(cents: number): string {
 				const previousPlan = i > 0 ? plans[i - 1] : undefined;
 				const visibleEntitlements = computeAddedEntitlements({ plan, previous: previousPlan });
 				const showsIncremental = i > 0 && visibleEntitlements !== plan.entitlements;
+					// Curate bullets per audience: owner cards collapse the inherited
+					// tourist tier + AI suite into grouped bullets to keep lists short.
+					const visibleFeatures = getDisplayFeatures({ keys: visibleEntitlements, audience, t });
+					const inheritedFeatures = previousPlan
+						? getDisplayFeatures({ keys: previousPlan.entitlements, audience, t })
+						: [];
 				const includesEverythingLabel = previousPlan
 					? includesEverythingTemplate.replace('{plan}', getPlanName({ plan: previousPlan, t }))
+					: '';
+				const inheritedSummaryLabel = previousPlan
+					? inheritedSummaryTemplate
+							.replace('{count}', String(previousPlan.entitlements.length))
+							.replace('{plan}', getPlanName({ plan: previousPlan, t }))
 					: '';
 
 				return (
@@ -261,30 +286,9 @@ function formatPriceArs(cents: number): string {
 								{trialFallback.replace('{days}', String(plan.trialDays))}
 							</p>
 						)}
-						{visibleEntitlements.length > 0 && (
+						{visibleFeatures.length > 0 && (
 							<ul class="pricing-card__features" aria-label={featuresLabel}>
-								{showsIncremental && (
-									<li class="pricing-card__feature pricing-card__feature--carryover">
-										<svg
-											class="pricing-card__feature-icon"
-											xmlns="http://www.w3.org/2000/svg"
-											width="18"
-											height="18"
-											viewBox="0 0 24 24"
-											fill="none"
-											aria-hidden="true"
-										>
-											<path
-												d="M12 5v14M5 12h14"
-												stroke="currentColor"
-												stroke-width="2.5"
-												stroke-linecap="round"
-											/>
-										</svg>
-										<strong>{includesEverythingLabel}</strong>
-									</li>
-								)}
-								{visibleEntitlements.map((entitlementKey) => (
+								{visibleFeatures.map((feature) => (
 									<li class="pricing-card__feature">
 										<svg
 											class="pricing-card__feature-icon"
@@ -303,10 +307,38 @@ function formatPriceArs(cents: number): string {
 												stroke-linejoin="round"
 											/>
 										</svg>
-										<span>{getEntitlementName({ key: entitlementKey as EntitlementKey, t })}</span>
+										<span>{feature.label}</span>
 									</li>
 								))}
 							</ul>
+						)}
+						{showsIncremental && previousPlan ? (
+							<div class="pricing-card__inherited">
+								<p class="pricing-card__inherited-header">
+									<span class="pricing-card__inherited-icon" aria-hidden="true">
+										<StarIcon size="xs" weight="fill" color="currentColor" />
+									</span>
+									<span>{inheritedSummaryLabel}</span>
+								</p>
+								<ul class="pricing-card__inherited-list" aria-label={includesEverythingLabel}>
+									{inheritedFeatures.map((feature) => (
+										<li class="pricing-card__inherited-item">
+											<span class="pricing-card__inherited-check" aria-hidden="true">
+												<CheckIcon size="xs" weight="bold" color="currentColor" />
+											</span>
+											<span>{feature.label}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						) : (
+							<div class="pricing-card__base-highlight">
+								<span class="pricing-card__base-highlight-icon" aria-hidden="true">
+									<SparkleIcon size="md" weight="fill" color="currentColor" />
+								</span>
+								<p class="pricing-card__base-highlight-title">{baseHighlightTitle}</p>
+								<p class="pricing-card__base-highlight-text">{baseHighlightText}</p>
+							</div>
 						)}
 						<div class="pricing-card__btn-wrapper">
 							<PlanPurchaseButton
@@ -340,6 +372,9 @@ function formatPriceArs(cents: number): string {
 		align-items: stretch;
 		max-width: 1140px;
 		margin: 0 auto;
+		/* Headroom so the highlighted card's "Recomendado" badge, which sits
+		   above the card's top edge, is never clipped (no scale anymore). */
+		padding-top: var(--space-4);
 	}
 
 	.pricing-card {
@@ -363,12 +398,12 @@ function formatPriceArs(cents: number): string {
 
 	.pricing-card--highlighted {
 		border-color: var(--brand-accent);
-		transform: scale(1.02);
+		background-color: var(--surface-warm);
 		position: relative;
 	}
 
 	.pricing-card--highlighted:hover {
-		transform: scale(1.02) translateY(-4px);
+		transform: translateY(-4px);
 	}
 
 	.pricing-card--highlighted::before {
@@ -433,11 +468,107 @@ function formatPriceArs(cents: number): string {
 	.pricing-card__features {
 		list-style: none;
 		padding: 0;
-		margin: 0 0 var(--space-6);
+		margin: 0 0 var(--space-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
+	}
+
+	/* Inherited-tier block (OQ-2): on incremental cards, list the tier the plan
+	   builds on — the new entitlements show above with a solid check; the
+	   inherited ones repeat here in a muted, compact style. This fills the
+	   vertical space the delta-only list would otherwise leave empty (keeping
+	   stretched cards visually balanced) while preserving the "what's new vs
+	   what carries over" hierarchy. A dashed outline keeps it legible on both
+	   the plain and warm-tinted highlighted card. */
+	.pricing-card__inherited {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-4);
+		padding: var(--space-3);
+		border: 1px dashed var(--core-foreground-a15);
+		border-radius: var(--radius-card);
+		font-family: var(--font-sans);
+	}
+
+	.pricing-card__inherited-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-muted-foreground);
+	}
+
+	.pricing-card__inherited-icon {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		color: var(--brand-accent);
+	}
+
+	.pricing-card__inherited-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.pricing-card__inherited-item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+		font-size: var(--text-body-sm);
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+	}
+
+	.pricing-card__inherited-check {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+		margin-top: 2px;
+		color: var(--core-muted-foreground);
+		opacity: 0.6;
+	}
+
+	/* Value highlight (OQ-2 follow-up): the base plan has no inherited tier to
+	   list, so it would leave empty space under its feature list once cards are
+	   stretched to the tallest column. This block grows to fill that space with
+	   a centered value message, keeping the base card balanced with the rest. */
+	.pricing-card__base-highlight {
 		flex-grow: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-4);
+		padding: var(--space-4);
+	}
+
+	.pricing-card__base-highlight-icon {
+		display: inline-flex;
+		color: var(--brand-accent);
+	}
+
+	.pricing-card__base-highlight-title {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body-lg);
+		color: var(--core-foreground);
+	}
+
+	.pricing-card__base-highlight-text {
+		margin: 0;
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
 	}
 
 	.pricing-card__feature {
@@ -448,20 +579,6 @@ function formatPriceArs(cents: number): string {
 		font-size: var(--text-body-sm);
 		color: var(--core-foreground);
 		line-height: 1.5;
-	}
-
-	.pricing-card__feature--carryover {
-		padding-bottom: var(--space-2);
-		border-bottom: 1px dashed var(--core-foreground-a15);
-		margin-bottom: var(--space-1);
-	}
-
-	.pricing-card__feature--carryover strong {
-		font-weight: 600;
-	}
-
-	.pricing-card__feature--carryover .pricing-card__feature-icon {
-		color: var(--brand-accent);
 	}
 
 	.pricing-card__feature-icon {

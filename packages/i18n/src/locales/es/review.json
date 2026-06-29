@@ -69,7 +69,9 @@
         "canLeaveReview": "Compartí tu experiencia en este lugar para ayudar a otros comensales.",
         "cta": "Dejar reseña",
         "signInCta": "Iniciá sesión para opinar",
-        "signInCtaHint": "Necesitás una cuenta para dejar tu reseña."
+        "signInCtaHint": "Necesitás una cuenta para dejar tu reseña.",
+        "pendingTitle": "Reseña en revisión",
+        "pendingBanner": "Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe."
     },
     "dialog": {
         "close": "Cerrar"

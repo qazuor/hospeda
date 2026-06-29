@@ -49,7 +49,7 @@ function mergeLimits(
  * truth — `TOURIST_VIP_PLAN` and the owner/complex inheritance both build from it,
  * so the tourist tier and the owner inheritance can never drift.
  */
-const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
+export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
     EntitlementKey.SAVE_FAVORITES,
     EntitlementKey.WRITE_REVIEWS,
     EntitlementKey.READ_REVIEWS,

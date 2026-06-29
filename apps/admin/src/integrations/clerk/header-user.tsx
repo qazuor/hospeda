@@ -24,7 +24,7 @@ import { useContextualTourForRoute, useWelcomeTourForRole } from '@/hooks/use-to
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { getInitialsFromName } from '@/lib/avatar-utils';
-import { CompassIcon, MapIcon } from '@repo/icons';
+import { ChatIcon, CompassIcon, MapIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import { useLocation, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
@@ -187,6 +187,29 @@ export function HeaderUser() {
                                 )}
                             </>
                         )}
+
+                        {/*
+                         * SPEC-301 T-010 — "Reportar un problema" visible entry
+                         * point for the in-page feedback modal. Dispatches
+                         * `feedback:open` so AdminFeedbackHeadlessHost (mounted in
+                         * __root.tsx) intercepts and opens the modal, without any
+                         * page navigation.
+                         */}
+                        <hr className="my-1" />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsOpen(false);
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('feedback:open'));
+                                }
+                            }}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent"
+                            aria-label={t('admin-nav.topbar.reportProblem')}
+                        >
+                            <ChatIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            {t('admin-nav.topbar.reportProblem')}
+                        </button>
 
                         <hr className="my-1" />
                         <button

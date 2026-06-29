@@ -3,7 +3,7 @@ specId: SPEC-301
 title: Feedback System Production Rework
 type: feat
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-27
 tags: [feedback, error-reporting, web, admin, ux]
 ---
@@ -29,9 +29,10 @@ owner wants to enable the feature in production but with three changes:
    description + contact info → severity + steps + expected/actual + attachments)
    is too heavy for a casual visitor; a leaner form lowers the submission bar.
 
-This is a **discovery-first** spec. Goals, form design, and entry-point strategy
-are provisional and must be validated with the owner before implementation starts.
-The first phase is an audit + a short design decision session.
+This was a **discovery-first** spec. The audit and owner decision session are now
+**complete** (2026-06-28): OQ-1 (entry point), OQ-2 (field set), OQ-4 (anti-spam),
+and OQ-6 (admin scope) are resolved (see §8 and the Revision History). Goals below
+are now firm and implementation can proceed.
 
 ## 2. Current State
 
@@ -86,28 +87,36 @@ connection type, color scheme, localStorage feature flags.
 - **Linear integration** — fully configured (team, project, labels, source
   differentiation web/admin/standalone).
 
-## 3. Provisional Goals (SUBJECT TO OWNER VALIDATION)
+## 3. Goals (FIRM — owner-validated 2026-06-28)
 
 - **G-1** Enable the feedback feature behind `PUBLIC_FEEDBACK_ENABLED=true` on
-  `hospeda-web-prod` without a permanent floating button (FAB removal or
-  permanent hide).
-- **G-2** Provide at least two discoverable entry points for the reworked form
-  (exact surface TBD in discovery — see OQ-1).
-- **G-3** Reduce the required form surface to the minimum needed to file a useful
-  report. Candidate: a single-step form with only `type` + `description` (already
-  auto-captured: URL, browser, user ID, Sentry event ID, console errors). All
-  Step 2 fields become either hidden or moved to a toggleable "add more details"
-  expander — exact field set confirmed in OQ-2.
+  `hospeda-web-prod` without a permanent floating button. The visible FAB is
+  removed from the web app; a headless host keeps the keyboard shortcut and the
+  `feedback:open` CustomEvent working.
+- **G-2** Primary discovery surface (OQ-1): a **footer link "Reportar un
+  problema"** that navigates to the standalone `/[lang]/feedback/` page.
+  Supplementary surfaces that already exist stay: the 404/500 error-page links and
+  the `Ctrl+Shift+F` keyboard shortcut.
+- **G-3** Slim the form (OQ-2): keep **`type` + `title` + `description`** visible
+  as the only required fields; move Step 2 (severity, stepsToReproduce,
+  expectedResult, actualResult, attachments) into a collapsible **"agregar más
+  detalles" expander** instead of a separate wizard step. All silently
+  auto-captured context (URL, browser, user ID, Sentry event ID, console errors)
+  is unchanged. `title` stays required, so the canonical schema barely changes.
 - **G-4** Preserve the Sentry correlation bridge and the Linear destination
   unchanged. No new storage required (reports continue going straight to Linear).
-- **G-5** Rate limiting remains at 30 reports/IP/hour (server-side, already in
-  place). Evaluate whether anonymous submissions should be allowed in prod or
-  require auth (OQ-4).
+- **G-5** Anti-spam (OQ-4): allow **anonymous** submissions (no login required) but
+  add an **invisible Cloudflare Turnstile** challenge, verified server-side in the
+  submit handler. The existing 30/IP/hour rate limit and the `website` honeypot
+  field stay in place as additional layers.
 - **G-6** The standalone `/[lang]/feedback/` page and its error-context pre-fill
   (used by 404 / 500 pages) stay fully functional.
 - **G-7** The keyboard shortcut `Ctrl+Shift+F` keeps working as a power-user
-  entry point, now as one of the *primary* discovery surfaces instead of a
-  supplementary one.
+  entry point, now alongside the footer link as a *primary* discovery surface
+  instead of a supplementary one.
+- **G-8** Apply the same rework to the **admin app** (OQ-6): remove the default-on
+  admin FAB and give admin an equivalent entry point, so web and admin stay
+  consistent.
 
 ## 4. Non-Goals
 
@@ -117,16 +126,20 @@ connection type, color scheme, localStorage feature flags.
 - Removing the Linear integration or changing the destination.
 - Adding a native admin feedback dashboard (Linear covers triage for now).
 - Changing the standalone page's shell / SEO setup.
-- Reworking the admin app's feedback surface (if it has one — to be confirmed in
-  discovery; likely out of scope for this spec).
-- Multi-step wizard redesign: if the form becomes a single compact step, the
-  `StepBasic`/`StepDetails` split may become irrelevant. Refactoring the package
-  internals is in scope only to the extent needed; no architectural rewrite.
+- Multi-step wizard redesign as a ground-up rewrite. The two-step split collapses
+  into one visible step (`type`/`title`/`description`) plus a collapsible
+  expander; the `StepBasic`/`StepDetails` components are reused/refactored as
+  needed, but no architectural rewrite of `@repo/feedback`.
 
-## 5. Discovery Plan (Phase 1 — before any code)
+> Note: reworking the **admin** feedback surface is **in scope** as of OQ-6 (see
+> G-8) — it is no longer a non-goal.
 
-Phase 1 is **read-only analysis + owner decisions**. No implementation until the
-questions below are answered.
+## 5. Discovery Plan (Phase 1 — ✅ COMPLETE 2026-06-28)
+
+Phase 1 was **read-only analysis + owner decisions**. It is now complete — the
+audit ran (see Revision History) and OQ-1/OQ-2/OQ-4/OQ-6 are answered.
+Implementation (Phase 2+) can proceed. The audit tasks below are kept for the
+record.
 
 ### Audit tasks
 
@@ -151,24 +164,50 @@ questions below are answered.
 
 OQ-1 through OQ-6 must be answered before starting implementation.
 
-## 6. High-Level Implementation Sketch (provisional)
+## 6. High-Level Implementation Sketch (firm)
 
-Once discovery is done, implementation is expected to touch:
+Implementation is expected to touch:
 
-- `apps/web/src/layouts/BaseLayout.astro` — either remove the `FeedbackFABClient`
-  mount entirely, or replace it with a headless version that only registers the
-  keyboard shortcut + the CustomEvent listener (no visible button).
-- `apps/web/src/layouts/Footer.astro` — add a "Reportar un problema" link (or
-  similar; surface TBD by OQ-1) that either navigates to the standalone page or
-  dispatches `feedback:open`.
-- `packages/feedback/src/components/FeedbackForm.tsx` (or a new sibling) — slim
-  down to a single-step form; exact fields per OQ-2.
-- `packages/schemas/src/feedback.ts` — update `feedbackFormSchema` if required
-  fields change (e.g. `title` becomes optional or derived from description).
-- `apps/web/src/env.ts` — no schema change needed; `PUBLIC_FEEDBACK_ENABLED` is
-  already wired.
-- Coolify env config — set `PUBLIC_FEEDBACK_ENABLED=true` on `hospeda-web-prod`
-  once the redesign is merged.
+### Web entry point (G-1, G-2)
+
+- `apps/web/src/layouts/BaseLayout.astro` — replace the visible `FeedbackFABClient`
+  mount with a **headless host** that only registers the `Ctrl+Shift+F` shortcut +
+  the `feedback:open` / `feedback:ack` CustomEvent listener (no visible button).
+- `apps/web/src/layouts/Footer.astro` (and/or the web `Footer` component) — add the
+  **"Reportar un problema"** link that navigates to `/[lang]/feedback/`.
+
+### Slim form (G-3)
+
+- `packages/feedback/src/components/FeedbackForm.tsx` + `steps/StepBasic.tsx` +
+  `steps/StepDetails.tsx` — collapse the two-step wizard into one visible step
+  (`type` + `title` + `description`) with the former Step 2 behind a collapsible
+  "agregar más detalles" expander. Reuse existing components; no rewrite.
+- `packages/schemas/src/feedback.ts` — `title` stays required, so the schema is
+  largely unchanged; verify the client schema and the API mirror
+  (`apps/api/src/routes/feedback/public/validation.ts`) stay in sync (risk R-4).
+
+### Anti-spam — Cloudflare Turnstile invisible (G-5)
+
+- Client: render an invisible Turnstile widget in the form, attach the token to the
+  submit payload.
+- Server: `apps/api/src/routes/feedback/public/submit.ts` — verify the Turnstile
+  token against the siteverify endpoint before creating the Linear issue; reject on
+  failure. Keep the existing honeypot + 30/IP/hr rate limit.
+- **New env vars** (follow the project env-var workflow — registry + Zod +
+  `.env.example` + doc + Coolify set):
+  - `PUBLIC_TURNSTILE_SITE_KEY` (web, public, client widget)
+  - `HOSPEDA_TURNSTILE_SECRET_KEY` (api, secret, server verify)
+
+### Admin alignment (G-8)
+
+- `apps/admin/src/routes/__root.tsx` — remove the default-on `FeedbackFAB` mount;
+  add an equivalent admin entry point (e.g. a header/help link) to the standalone
+  feedback page or the slim form.
+
+### Deploy / config
+
+- Coolify env: set `PUBLIC_FEEDBACK_ENABLED=true` + the two Turnstile keys on
+  `hospeda-web-prod` (and the relevant admin/api apps) once the redesign is merged.
 - No DB migrations needed (Linear remains the destination).
 
 ## 7. Risks
@@ -178,10 +217,11 @@ Once discovery is done, implementation is expected to touch:
   entry points (footer link, error pages, post-interaction nudge) must compensate.
   Validate with a quick usability sanity check before merging.
 - **R-2 — Spam on prod.** Enabling anonymous form submission on a public prod site
-  without a visible friction (no FAB ≈ lower surface area, but direct URL still
-  works) could invite bots. The existing IP rate limit + honeypot field in the
-  submit handler are the current guards. May need Cloudflare Turnstile or similar
-  if abuse appears. Decide in OQ-4.
+  without a visible friction could invite bots. **Resolved (OQ-4):** an invisible
+  Cloudflare Turnstile challenge is now part of the design, verified server-side,
+  on top of the existing IP rate limit + `website` honeypot. Residual risk: a
+  misconfigured/missing Turnstile secret must **fail closed** (reject the
+  submission) rather than silently letting bots through — covered by tests.
 - **R-3 — Field reduction loses signal.** Removing Step 2 fields (steps to
   reproduce, expected/actual) reduces the quality of reports filed. Auto-captured
   context (URL, console errors, Sentry event) partly compensates, but power users
@@ -197,31 +237,31 @@ Once discovery is done, implementation is expected to touch:
 
 ## 8. Open Questions
 
-- **OQ-1** — What replaces the FAB as the primary entry point? Options being
-  considered: (a) footer "Reportar un problema" link → standalone page; (b) site
-  header "?" or "help" dropdown item → opens the modal inline; (c) a small fixed
-  "feedback" text link in the page corner (much smaller than the current FAB, no
-  icon, collapses on mobile); (d) only error pages + keyboard shortcut (fully
-  implicit). **Owner decision needed.**
-- **OQ-2** — Minimal field set: what fields must the user fill in? Candidate A:
-  only `description` (type auto-set to "other", title derived from first 80 chars).
-  Candidate B: `type` dropdown + `description`. Candidate C: keep `type` + `title`
-  + `description` but hide everything else (Step 2 becomes an expander, not a
-  step). Candidate D: per-report-type adaptive form (bug → ask for reproduction
-  steps; feature-request → simpler). **Owner decision needed.**
+- **OQ-1** — ✅ **RESOLVED (2026-06-28):** the primary entry point is option (a) —
+  a footer **"Reportar un problema"** link that navigates to the standalone
+  `/[lang]/feedback/` page. The 404/500 links and the `Ctrl+Shift+F` shortcut
+  remain as additional surfaces.
+- **OQ-2** — ✅ **RESOLVED (2026-06-28):** Candidate C — keep `type` + `title` +
+  `description` visible; the former Step 2 (severity, stepsToReproduce,
+  expected/actual, attachments) moves into a collapsible "agregar más detalles"
+  expander instead of a separate step.
 - **OQ-3** — Should the keyboard shortcut `Ctrl+Shift+F` be surfaced somewhere
-  visible (e.g. a tooltip on the footer link, or in the help page)? Currently it
-  is only discoverable via the FAB tooltip.
-- **OQ-4** — Auth requirement in prod: allow fully anonymous submissions (current
-  behavior: form shows reporter email + name fields), require login, or use a
-  light challenge (Cloudflare Turnstile)? Impact on spam risk and submission
-  friction must be weighed. **Owner decision needed.**
+  visible (e.g. a tooltip on the footer link, or in the help page)? **Open, not
+  blocking.** Recommendation: add it as a `title`/tooltip on the footer link.
+  Decide during implementation of the footer surface.
+- **OQ-4** — ✅ **RESOLVED (2026-06-28):** allow **anonymous** submissions + add an
+  **invisible Cloudflare Turnstile** challenge verified server-side, on top of the
+  existing rate limit + honeypot. (Note: `reporterEmail`/`reporterName` are
+  currently required server-side even for authed users — confirm whether anonymous
+  flow keeps requiring them or relaxes to Turnstile-only during implementation.)
 - **OQ-5** — Should reports eventually be stored in a Hospeda DB table (for
   in-app admin triage), or is Linear sufficient as the permanent destination?
-  Out of scope for this spec but worth stating as a future consideration.
-- **OQ-6** — Is there a feedback entry point in the admin app that should be
-  reworked in parallel? The admin uses `@repo/feedback` indirectly but an admin
-  FAB was not confirmed during discovery. Confirm during audit.
+  **Out of scope for this spec** (future consideration). Linear stays the
+  destination.
+- **OQ-6** — ✅ **RESOLVED (2026-06-28):** the admin app DOES mount a default-on
+  `FeedbackFAB` (`apps/admin/src/routes/__root.tsx`, gated by
+  `VITE_FEEDBACK_ENABLED !== 'false'`). Decision: **align admin** with the web
+  rework (remove the FAB, add an equivalent entry point — see G-8).
 
 ## 9. Relationship to Existing Systems
 
@@ -243,6 +283,22 @@ Once discovery is done, implementation is expected to touch:
 
 ## 10. Revision History
 
+- 2026-06-28 — **Discovery closed; status → in-progress.** Code audit completed and
+  owner decisions locked:
+  - OQ-1 → footer "Reportar un problema" link → standalone page (primary surface),
+    keeping 404/500 links + `Ctrl+Shift+F`.
+  - OQ-2 → keep `type`+`title`+`description` visible; Step 2 → collapsible
+    "agregar más detalles" expander.
+  - OQ-4 → anonymous allowed + invisible Cloudflare Turnstile (server-verified),
+    plus existing rate limit + honeypot. Adds two env vars
+    (`PUBLIC_TURNSTILE_SITE_KEY`, `HOSPEDA_TURNSTILE_SECRET_KEY`).
+  - OQ-6 → admin FAB confirmed (default-on); decision = align admin (new G-8).
+  - Audit corrections vs the original draft: the FAB auto-collapses to icon after
+    2.2 s (not a permanent pill); `reporterEmail`/`reporterName` are required
+    server-side even when authenticated (`validation.ts`); if Linear + email
+    fallback both fail the API returns 503 (not a silent 200); honeypot field is
+    `website`; rate limit 30/IP/hr; no DB persistence (Linear only).
+  - Goals firmed (G-1…G-8). Admin removed from Non-Goals.
 - 2026-06-27 — Initial draft (allocated SPEC-301). Discovery-first; goals
   provisional pending owner decisions on OQ-1 (entry point), OQ-2 (field set),
   and OQ-4 (auth requirement). Audit of current system confirmed: `@repo/feedback`

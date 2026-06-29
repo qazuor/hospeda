@@ -27,6 +27,7 @@ import {
     type ProfileCompletionPayload,
     type SocialPlatform,
     computeDisplayName,
+    computeInitialDisplayNameOverride,
     validateProfileCompletionFields
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
@@ -93,7 +94,7 @@ export function ProfileCompletion({
     const [lastName, setLastName] = useState(initialLastName);
 
     const [displayNameOverride, setDisplayNameOverride] = useState(
-        initialDisplayName && !initialFirstName ? initialDisplayName : ''
+        computeInitialDisplayNameOverride({ initialDisplayName, initialFirstName })
     );
     const [displayNameTouched, setDisplayNameTouched] = useState(false);
 

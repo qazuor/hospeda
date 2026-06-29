@@ -139,6 +139,17 @@ const AdminEnvSchema = z.object({
             'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
         ),
 
+    // Integrations — Cloudflare Turnstile (SPEC-301 T-010)
+    // Public by design; ships in the admin browser bundle.
+    // When unset, the invisible widget is not rendered and the server applies
+    // its own fail-closed policy (admin feedback submissions would be rejected).
+    VITE_TURNSTILE_SITE_KEY: z
+        .string()
+        .optional()
+        .describe(
+            'Cloudflare Turnstile site key for the admin feedback form. Passed as turnstileSiteKey prop; never read inside @repo/feedback.'
+        ),
+
     // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
     // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
     // Per-env values come from Coolify; keys live in 1Password.
@@ -238,6 +249,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
             VITE_SENTRY_ENVIRONMENT: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+            VITE_TURNSTILE_SITE_KEY: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
             VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
             VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',

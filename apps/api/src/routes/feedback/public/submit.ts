@@ -26,6 +26,7 @@ import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { createSimpleRoute } from '../../../utils/route-factory';
+import { getTurnstileSecret, verifyCfTurnstileToken } from '../../../utils/turnstile.js';
 import {
     FIELD_LIMITS,
     FeedbackResponseSchema,
@@ -219,6 +220,95 @@ export const submitFeedbackRoute = createSimpleRoute({
         }
 
         const parsed = parseResult.data;
+
+        // ── 5c. Cloudflare Turnstile verification (FAIL-CLOSED — R-2) ─────────
+        //
+        // POLICY: fail-closed means ANY failure causes rejection.
+        //   • Secret not configured → reject (dev MUST set the test key).
+        //   • Token absent in payload → reject.
+        //   • siteverify returns success:false → reject.
+        //   • siteverify network error or timeout → reject (do not let through).
+        //
+        // The Cloudflare always-passes test key (1x0000000000000000000000000000000AA)
+        // makes dev/staging work without real Turnstile traffic.
+        const turnstileSecret = getTurnstileSecret();
+        if (!turnstileSecret) {
+            // FAIL-CLOSED: misconfigured/missing secret rejects the request.
+            // Set HOSPEDA_TURNSTILE_SECRET_KEY to the Cloudflare test key in dev.
+            apiLogger.warn(
+                'HOSPEDA_TURNSTILE_SECRET_KEY not configured — rejecting feedback submission (fail-closed R-2)'
+            );
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: 'Verificación de seguridad no configurada'
+                    }
+                },
+                403
+            );
+        }
+
+        const cfTurnstileToken = parsed.cfTurnstileToken;
+        if (!cfTurnstileToken) {
+            // FAIL-CLOSED: missing token when secret is configured → reject.
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: 'Token de verificación de seguridad requerido'
+                    }
+                },
+                403
+            );
+        }
+
+        try {
+            const verifyResult = await verifyCfTurnstileToken({
+                token: cfTurnstileToken,
+                secret: turnstileSecret,
+                ip:
+                    ctx.req.header('cf-connecting-ip') ??
+                    ctx.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+            });
+
+            if (!verifyResult.success) {
+                // FAIL-CLOSED: siteverify returned success:false.
+                apiLogger.warn(
+                    { errorCode: verifyResult.errorCode },
+                    'Cloudflare Turnstile verification failed — rejecting submission'
+                );
+                return ctx.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'FORBIDDEN',
+                            message: 'Verificación de seguridad fallida'
+                        }
+                    },
+                    403
+                );
+            }
+        } catch (verifyError) {
+            // FAIL-CLOSED: network error or timeout → reject, do not let through.
+            const errMsg = verifyError instanceof Error ? verifyError.message : String(verifyError);
+            apiLogger.error(
+                { error: errMsg },
+                'Cloudflare Turnstile siteverify network error/timeout — rejecting submission (fail-closed R-2)'
+            );
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'SERVICE_UNAVAILABLE',
+                        message: 'Verificación de seguridad no disponible'
+                    }
+                },
+                503
+            );
+        }
 
         // ── 5b. Sanitize ALL user-supplied fields against XSS ────────────
         const validated = {

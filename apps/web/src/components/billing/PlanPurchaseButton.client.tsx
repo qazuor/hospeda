@@ -57,6 +57,15 @@ export interface PlanPurchaseButtonProps {
     readonly ctaText: string;
     /** Current locale for translations and URL construction. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether to render the inline promo-code section under the CTA. Defaults to
+     * `true` (the full pricing-card context). Set to `false` when the button is
+     * mounted outside a card — e.g. inside the comparison table header cells —
+     * where the expandable promo form would stretch the shared sticky `<thead>`
+     * row and the card-decoration effects have no `.pricing-card` ancestor to
+     * target. The discount can still be applied later at checkout.
+     */
+    readonly showPromo?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +197,8 @@ export function PlanPurchaseButton({
     annualPrice,
     currency,
     ctaText,
-    locale
+    locale,
+    showPromo = true
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
@@ -344,7 +354,7 @@ export function PlanPurchaseButton({
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
     // Show the promo section only when the user can interact with checkout
-    const showPromoSection = isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
+    const showPromoSection = showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
 
     // ---------------------------------------------------------------------------
     // Promo helpers

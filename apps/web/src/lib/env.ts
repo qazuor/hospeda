@@ -173,3 +173,16 @@ export function isFeedbackEnabled(): boolean {
 export function getNoindexHosts(): string | undefined {
     return getEnv().HOSPEDA_NOINDEX_HOSTS;
 }
+
+/**
+ * Get the Cloudflare Turnstile site key for the invisible bot-detection widget.
+ *
+ * Public by design — used by the FeedbackHeadlessHost and standalone feedback page
+ * to pass the site key to the @repo/feedback widget. When unset, the widget is
+ * not rendered and the server applies fail-closed (reject).
+ *
+ * @returns The Turnstile site key string, or undefined when not configured
+ */
+export function getTurnstileSiteKey(): string | undefined {
+    return getEnv().PUBLIC_TURNSTILE_SITE_KEY;
+}

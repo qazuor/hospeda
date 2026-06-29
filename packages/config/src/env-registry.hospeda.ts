@@ -964,6 +964,63 @@ export const HOSPEDA_ENV_VARS = [
             'Email único que recibe los envíos de feedback cuando falla la API de Linear (para no perder feedback). Usá una casilla real que estés monitoreando.'
     },
     {
+        name: 'PUBLIC_TURNSTILE_SITE_KEY',
+        description:
+            'Cloudflare Turnstile site key (PUBLIC — ships in the browser bundle). Powers the invisible bot-detection widget on the public feedback form (SPEC-301). When unset, the widget is not rendered and the server applies its own fail-closed policy. Use the always-passes test key (1x00000000000000000000AA) locally.',
+        descriptionEs:
+            'Site key de Cloudflare Turnstile (PUBLIC — viaja en el bundle del navegador). Activa el widget invisible de detección de bots en el form de feedback público (SPEC-301). Cuando no está seteada, el widget no se renderiza y el servidor aplica su política fail-closed propia. Usá la clave de prueba always-passes (1x00000000000000000000AA) en local.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: '1x00000000000000000000AA',
+        apps: ['web'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → choose Invisible widget type → copy the Site Key. For local/staging use the always-passes test site key: 1x00000000000000000000AA. Set the real production key in Coolify for hospeda-web-prod. The site key is intentionally public (it ships in the browser bundle — that is by design).',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → elegí el tipo Invisible → copiá el Site Key. Para local/staging usá la clave de prueba always-passes: 1x00000000000000000000AA. La clave de producción real va en Coolify para hospeda-web-prod. La site key es intencionalmente pública (viaja en el bundle del browser — eso es por diseño).'
+    },
+    {
+        name: 'VITE_TURNSTILE_SITE_KEY',
+        description:
+            'Cloudflare Turnstile site key for the admin app (PUBLIC — ships in the browser bundle). Powers the invisible bot-detection widget on the admin feedback form (SPEC-301 T-010). When unset, the widget is not rendered and the server applies its own fail-closed policy. Use the always-passes test key (1x00000000000000000000AA) locally.',
+        descriptionEs:
+            'Site key de Cloudflare Turnstile para el admin (PUBLIC — viaja en el bundle del navegador). Activa el widget invisible de detección de bots en el form de feedback del admin (SPEC-301 T-010). Cuando no está seteada, el widget no se renderiza y el servidor aplica su política fail-closed propia. Usá la clave de prueba always-passes (1x00000000000000000000AA) en local.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: '1x00000000000000000000AA',
+        apps: ['admin'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → choose Invisible widget type → copy the Site Key. For local/staging use the always-passes test site key: 1x00000000000000000000AA. Set the real production key in Coolify for hospeda-admin-prod. The site key is intentionally public (it ships in the browser bundle — that is by design).',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → elegí el tipo Invisible → copiá el Site Key. Para local/staging usá la clave de prueba always-passes: 1x00000000000000000000AA. La clave de producción real va en Coolify para hospeda-admin-prod. La site key es intencionalmente pública (viaja en el bundle del browser — eso es por diseño).'
+    },
+    {
+        name: 'HOSPEDA_TURNSTILE_SECRET_KEY',
+        description:
+            'Cloudflare Turnstile secret key for server-side token verification (SPEC-301). When set, every public feedback submission must include a valid Turnstile token or be rejected (fail-closed, R-2). Use the always-passes test key (1x0000000000000000000000000000000AA) in dev/staging; provide a real key in production.',
+        descriptionEs:
+            'Clave secreta de Cloudflare Turnstile para verificar tokens del lado servidor (SPEC-301). Cuando está seteada, cada envío de feedback debe incluir un token Turnstile válido o es rechazado (fail-closed, R-2). Usá la clave de prueba always-passes (1x0000000000000000000000000000000AA) en dev/staging; en producción usá una clave real.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: '1x0000000000000000000000000000000AA',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → copy the Secret Key. For local/staging use the always-passes test key: 1x0000000000000000000000000000000AA (never charges users, always returns success:true). For failure-testing use: 2x0000000000000000000000000000000AA. Set the real production key in Coolify for hospeda-api-prod.',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → copiá el Secret Key. Para local/staging usá la clave de prueba always-passes: 1x0000000000000000000000000000000AA (nunca cobra, siempre devuelve success:true). Para probar fallos usá: 2x0000000000000000000000000000000AA. La clave de producción real va en Coolify para hospeda-api-prod.'
+    },
+    {
         name: 'HOSPEDA_EXCHANGE_RATE_API_KEY',
         description: 'ExchangeRate-API key',
         descriptionEs: 'API key de ExchangeRate-API',

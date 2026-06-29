@@ -81,7 +81,9 @@ vi.mock('@/hooks/use-translations', () => ({
         t: (key: string) => {
             const map: Record<string, string> = {
                 'admin-common.tour.replay': 'Ver guía',
-                'admin-common.tour.replayPage': 'Ver guía de esta página'
+                'admin-common.tour.replayPage': 'Ver guía de esta página',
+                // SPEC-301 T-010 — feedback entry point in user menu
+                'admin-nav.topbar.reportProblem': 'Reportar un problema'
             };
             return map[key] ?? key;
         },
@@ -133,6 +135,7 @@ vi.mock('@/hooks/use-tours', () => ({
 
 // Stub icons to text sentinels — avoids SVG rendering complexity.
 vi.mock('@repo/icons', () => ({
+    ChatIcon: () => <span data-testid="chat-icon" />,
     CompassIcon: () => <span data-testid="compass-icon" />,
     MapIcon: () => <span data-testid="map-icon" />
 }));
@@ -163,13 +166,57 @@ describe('HeaderUser — tour entry points', () => {
     // -------------------------------------------------------------------------
 
     describe('pre-existing menu items', () => {
-        it('renders Profile, Settings, and Sign out', async () => {
+        it('renders Profile, Settings, Sign out, and Reportar un problema', async () => {
             render(<HeaderUser />);
             await openMenu();
 
             expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /settings/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: 'Reportar un problema' })
+            ).toBeInTheDocument();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // SPEC-301 T-010 — "Reportar un problema" feedback entry point
+    // -------------------------------------------------------------------------
+
+    describe('"Reportar un problema" feedback button', () => {
+        it('dispatches feedback:open CustomEvent when clicked', async () => {
+            const user = userEvent.setup();
+            const dispatchedEvents: string[] = [];
+            window.addEventListener('feedback:open', () => dispatchedEvents.push('feedback:open'));
+
+            render(<HeaderUser />);
+            await openMenu();
+
+            const btn = screen.getByRole('button', { name: 'Reportar un problema' });
+            await user.click(btn);
+
+            expect(dispatchedEvents).toContain('feedback:open');
+        });
+
+        it('closes the dropdown after clicking "Reportar un problema"', async () => {
+            const user = userEvent.setup();
+            render(<HeaderUser />);
+            await openMenu();
+
+            await user.click(screen.getByRole('button', { name: 'Reportar un problema' }));
+
+            // Menu should be closed (button no longer visible)
+            expect(
+                screen.queryByRole('button', { name: 'Reportar un problema' })
+            ).not.toBeInTheDocument();
+        });
+
+        it('"Reportar un problema" button has aria-label', async () => {
+            render(<HeaderUser />);
+            await openMenu();
+
+            const btn = screen.getByRole('button', { name: 'Reportar un problema' });
+            expect(btn).toHaveAttribute('aria-label', 'Reportar un problema');
         });
     });
 
