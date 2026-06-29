@@ -5,6 +5,8 @@
     "trial": "{days} dias grátis",
     "includesEverything": "Tudo do plano {plan}, mais:",
     "inheritedSummary": "+{count} funções do plano {plan}",
+    "baseHighlightTitle": "Ideal para começar",
+    "baseHighlightText": "Tudo o essencial para começar, sem compromisso.",
     "features": {
         "label": "Inclui"
     },
