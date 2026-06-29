@@ -928,8 +928,11 @@
         {
             "specId": "SPEC-299",
             "title": "Plan Selector & Comparison Redesign",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "0/0",
+            "archived": true,
+            "archivedAt": "2026-06-29",
+            "archiveNote": "Implemented + merged to staging via PR #1886 (UI polish: cards redesign/balance/curation, teaser CTA, transactional comparison table with icons/scroll-hint/per-row descriptions). Doc-only spec — tasks never atomized, so progress stays 0/0.",
             "path": "SPEC-299-plan-selector-comparison-redesign",
             "branch": "spec/SPEC-299-plan-selector-comparison-redesign",
             "base": "staging",
