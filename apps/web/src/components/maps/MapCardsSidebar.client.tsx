@@ -319,6 +319,7 @@ export function MapCardsSidebar({
                                         <CompareButton
                                             accommodationId={item.id}
                                             accommodationName={item.name}
+                                            accommodationThumbnailUrl={item.thumbnailUrl}
                                             variant="standalone"
                                             locale={locale}
                                         />

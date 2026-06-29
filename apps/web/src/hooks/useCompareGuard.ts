@@ -18,6 +18,7 @@
  * @module hooks/useCompareGuard
  */
 
+import type { CompareItemMeta } from '@/store/compare-store';
 import {
     addToCompare,
     isInCompare,
@@ -130,8 +131,10 @@ export interface UseCompareGuardReturn {
     /**
      * Toggle an accommodation in the comparison list.
      * Removal is always allowed; adding is subject to {@link evaluateCompareAdd}.
+     * Optional display metadata (name + thumbnail) is stored when the toggle
+     * adds the accommodation, so the floating compare bar can render it.
      */
-    readonly toggle: (id: string) => CompareToggleResult;
+    readonly toggle: (id: string, meta?: CompareItemMeta) => CompareToggleResult;
 }
 
 /**
@@ -159,7 +162,7 @@ export function useCompareGuard(): UseCompareGuardReturn {
     const isFull = canCompare && Number.isFinite(maxItems) && maxItems >= 1 && count >= maxItems;
 
     const toggle = useCallback(
-        (id: string): CompareToggleResult => {
+        (id: string, meta?: CompareItemMeta): CompareToggleResult => {
             if (isInCompare(id)) {
                 removeFromCompare(id);
                 return { action: 'removed', reason: null };
@@ -172,7 +175,7 @@ export function useCompareGuard(): UseCompareGuardReturn {
             if (!evaluation.allowed) {
                 return { action: 'blocked', reason: evaluation.reason };
             }
-            addToCompare(id);
+            addToCompare(id, meta);
             return { action: 'added', reason: null };
         },
         [canCompare, maxItems, count]

@@ -144,7 +144,10 @@ describe('CompareButton — toggle outcomes', () => {
         render(<CompareButton {...buildProps()} />);
         fireEvent.click(screen.getByRole('button'));
 
-        expect(toggle).toHaveBeenCalledWith('acc-uuid-1');
+        expect(toggle).toHaveBeenCalledWith('acc-uuid-1', {
+            name: 'Cabaña del Río',
+            thumbnailUrl: undefined
+        });
         expect(mockAddToast).toHaveBeenCalledTimes(1);
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('success');

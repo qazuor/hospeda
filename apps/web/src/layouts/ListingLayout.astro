@@ -12,6 +12,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import WaveHeader from '@/components/shared/ui/WaveHeader.astro';
+import { CompareBar } from '@/components/shared/compare/CompareBar.client';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -109,6 +110,10 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		</div>
 	</div>
 	</WaveHeader>
+
+	<!-- Floating accommodation comparison bar (SPEC-288). Fixed-position island;
+	     renders nothing until the user selects accommodations to compare. -->
+	<CompareBar locale={locale} client:idle />
 </BaseLayout>
 
 <style>

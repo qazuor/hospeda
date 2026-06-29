@@ -38,8 +38,10 @@ export type CompareButtonVariant = 'standalone' | 'compact';
 export interface CompareButtonProps {
     /** UUID of the accommodation to toggle in the comparison list. */
     readonly accommodationId: string;
-    /** Accommodation name, used for the aria-label (and future toast copy). */
+    /** Accommodation name, used for the aria-label and the compare-bar label. */
     readonly accommodationName: string;
+    /** Thumbnail URL stored alongside the selection for the compare-bar preview. */
+    readonly accommodationThumbnailUrl?: string;
     /** Visual variant. Defaults to `standalone`. */
     readonly variant?: CompareButtonVariant;
     /** Locale for aria-label and toast messaging. Defaults to `es`. */
@@ -72,6 +74,7 @@ export interface CompareButtonProps {
 export const CompareButton: FC<CompareButtonProps> = ({
     accommodationId,
     accommodationName,
+    accommodationThumbnailUrl,
     variant = 'standalone',
     locale = 'es',
     className
@@ -102,7 +105,10 @@ export const CompareButton: FC<CompareButtonProps> = ({
         // Defer while entitlements are still loading (guard fails closed until known).
         if (isLoading) return;
 
-        const result = toggle(accommodationId);
+        const result = toggle(accommodationId, {
+            name: accommodationName,
+            thumbnailUrl: accommodationThumbnailUrl
+        });
 
         if (result.action === 'added') {
             addToast({
