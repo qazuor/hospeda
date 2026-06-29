@@ -834,18 +834,29 @@ export interface EventDetailData {
 // ---------------------------------------------------------------------------
 
 /**
+ * A single operating shift within a day: an open time and a close time, both
+ * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the commerce
+ * opening-hours schema (`@repo/schemas`).
+ */
+export interface GastronomyOpeningHoursShift {
+    /** Opening time string in `"HH:mm"` format. */
+    readonly open: string;
+    /** Closing time string in `"HH:mm"` format. */
+    readonly close: string;
+}
+
+/**
  * Opening hours entry for a single day of the week.
  * Produced by the gastronomy transform when `openingHours` is present on the API response.
+ *
+ * A day can carry MULTIPLE shifts (e.g. a restaurant open midday and again at
+ * night), so `shifts` is an ordered array rather than a single open/close pair.
  */
 export interface GastronomyOpeningHoursEntry {
-    /** Whether the establishment is open on this day. */
+    /** Whether the establishment is open on this day (has at least one shift). */
     readonly isOpen: boolean;
-    /** Opening time string in HH:mm format, absent when closed. */
-    readonly open?: string;
-    /** Closing time string in HH:mm format, absent when closed or open 24 h. */
-    readonly close?: string;
-    /** Whether the establishment is open 24 hours on this day. */
-    readonly open24h?: boolean;
+    /** Operating shifts for the day, in order. Empty when the day is closed. */
+    readonly shifts: ReadonlyArray<GastronomyOpeningHoursShift>;
 }
 
 /**
@@ -959,19 +970,13 @@ export interface GastronomyDetailData extends GastronomyCardData {
 
 /**
  * Opening hours entry for a single day of the week.
- * Shared shape with GastronomyOpeningHoursEntry — experience uses the same
- * structured hours sub-system from the SPEC-239 commerce-listing core.
+ *
+ * Experience listings reuse the gastronomy structured-hours sub-system verbatim
+ * (same `OpeningHoursSchema` source, same `OpeningHoursSection` renderer), so
+ * this is an alias of {@link GastronomyOpeningHoursEntry} — multi-shift aware —
+ * rather than a divergent copy.
  */
-export interface ExperienceOpeningHoursEntry {
-    /** Whether the experience is available on this day. */
-    readonly isOpen: boolean;
-    /** Opening time string in HH:mm format, absent when closed. */
-    readonly open?: string;
-    /** Closing time string in HH:mm format, absent when closed or open 24 h. */
-    readonly close?: string;
-    /** Whether available 24 hours on this day. */
-    readonly open24h?: boolean;
-}
+export type ExperienceOpeningHoursEntry = GastronomyOpeningHoursEntry;
 
 /**
  * Social networks map for an experience listing.

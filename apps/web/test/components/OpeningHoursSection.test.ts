@@ -1,12 +1,16 @@
 /**
  * @file OpeningHoursSection.test.ts
- * @description Unit tests for the opening-hours helper logic in gastronomy-hours.ts
- * and source-read assertions for OpeningHoursSection.astro (SPEC-239 T-054).
+ * @description Unit tests for the opening-hours pipeline (SPEC-239 T-054, Bug B8):
+ * the pure helpers in `gastronomy-hours.ts`, the `normalizeOpeningHours`
+ * transform (via the exported `toGastronomyCardProps`), and source-read
+ * assertions for `OpeningHoursSection.astro`.
  *
  * The Astro component cannot be rendered in Vitest so we:
  * 1. Unit-test the pure helpers (getDayKey, getTodayIndex, parseTimeToMinutes,
  *    computeOpenNowStatus) with an injectable `now` parameter.
- * 2. Source-read the component to assert structural correctness.
+ * 2. Verify the normalizer reads the real `{ days: { mon: { closed, shifts } } }`
+ *    schema shape and preserves multiple shifts.
+ * 3. Source-read the component to assert structural correctness.
  */
 
 import { readFileSync } from 'node:fs';
@@ -14,6 +18,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import type { GastronomyOpeningHoursEntry } from '../../src/data/types';
+import { toGastronomyCardProps } from '../../src/lib/api/transforms';
 import {
     ORDERED_DAY_KEYS,
     computeOpenNowStatus,
@@ -47,8 +52,9 @@ describe('OpeningHoursSection.astro (source assertions)', () => {
         expect(src).toContain('today');
     });
 
-    it('renders "open 24h" text for open24h entries', () => {
-        expect(src).toContain('open24h');
+    it('renders each shift window from the shifts array', () => {
+        expect(src).toContain('shifts');
+        expect(src).toContain('.map(');
     });
 
     it('shows closed state for isOpen = false entries', () => {
@@ -170,10 +176,15 @@ describe('parseTimeToMinutes', () => {
 });
 
 // ---------------------------------------------------------------------------
-// computeOpenNowStatus — the main logic under test
+// computeOpenNowStatus — the main logic under test (multi-shift, Bug B8)
 // ---------------------------------------------------------------------------
 
-/** Helper: build a minimal hours map with one entry for "monday". */
+/** Helper: build a single-day "monday" entry from a list of shifts. */
+function day(shifts: ReadonlyArray<{ open: string; close: string }>): GastronomyOpeningHoursEntry {
+    return { isOpen: shifts.length > 0, shifts };
+}
+
+/** Helper: a minimal hours map with one entry for "monday". */
 function mondayHours(
     entry: GastronomyOpeningHoursEntry
 ): Record<string, GastronomyOpeningHoursEntry> {
@@ -191,98 +202,162 @@ describe('computeOpenNowStatus', () => {
     describe('returns null', () => {
         it('when there is no entry for today', () => {
             // The map only has "tuesday" but today is "monday"
-            const hours = { tuesday: { isOpen: true, open: '09:00', close: '22:00' } };
+            const hours = { tuesday: day([{ open: '09:00', close: '22:00' }]) };
             expect(computeOpenNowStatus(hours, MON_10_00)).toBeNull();
         });
 
         it('when the map is empty', () => {
             expect(computeOpenNowStatus({}, MON_10_00)).toBeNull();
         });
-
-        it('when open time is missing (no open24h)', () => {
-            const hours = mondayHours({ isOpen: true });
-            expect(computeOpenNowStatus(hours, MON_10_00)).toBeNull();
-        });
     });
 
     describe('returns false', () => {
-        it('when isOpen is false', () => {
-            const hours = mondayHours({ isOpen: false });
+        it('when the day is closed (isOpen false)', () => {
+            const hours = mondayHours({ isOpen: false, shifts: [] });
+            expect(computeOpenNowStatus(hours, MON_10_00)).toBe(false);
+        });
+
+        it('when the day is open but has no shifts', () => {
+            const hours = mondayHours({ isOpen: true, shifts: [] });
             expect(computeOpenNowStatus(hours, MON_10_00)).toBe(false);
         });
 
         it('when current time is before opening', () => {
-            const hours = mondayHours({ isOpen: true, open: '12:00', close: '22:00' });
+            const hours = mondayHours(day([{ open: '12:00', close: '22:00' }]));
             // 10:00 < 12:00
             expect(computeOpenNowStatus(hours, MON_10_00)).toBe(false);
         });
 
         it('when current time is at or after closing', () => {
-            const hours = mondayHours({ isOpen: true, open: '09:00', close: '22:00' });
+            const hours = mondayHours(day([{ open: '09:00', close: '22:00' }]));
             // 22:30 >= 22:00
             expect(computeOpenNowStatus(hours, MON_22_30)).toBe(false);
         });
     });
 
     describe('returns true', () => {
-        it('when open24h is true regardless of time', () => {
-            const hours = mondayHours({ isOpen: true, open24h: true });
-            expect(computeOpenNowStatus(hours, MON_10_00)).toBe(true);
-            expect(computeOpenNowStatus(hours, MON_22_30)).toBe(true);
-        });
-
         it('when current time is within the open window', () => {
-            const hours = mondayHours({ isOpen: true, open: '08:00', close: '22:00' });
+            const hours = mondayHours(day([{ open: '08:00', close: '22:00' }]));
             // 10:00 is between 08:00 and 22:00
             expect(computeOpenNowStatus(hours, MON_10_00)).toBe(true);
         });
 
-        it('when current time is exactly at opening', () => {
-            const hours = mondayHours({ isOpen: true, open: '10:00', close: '22:00' });
+        it('when current time is exactly at opening (inclusive boundary)', () => {
+            const hours = mondayHours(day([{ open: '10:00', close: '22:00' }]));
             expect(computeOpenNowStatus(hours, MON_10_00)).toBe(true);
-        });
-
-        it('when close time is absent and current time is past opening', () => {
-            const hours = mondayHours({ isOpen: true, open: '08:00' });
-            expect(computeOpenNowStatus(hours, MON_10_00)).toBe(true);
-        });
-
-        it('during overnight span (e.g. 22:00 to 02:00) — current time before midnight', () => {
-            // open=22:00, close=02:00 → overnight
-            const hours = mondayHours({ isOpen: true, open: '22:00', close: '02:00' });
-            // 22:30 is in the overnight window
-            expect(computeOpenNowStatus(hours, MON_22_30)).toBe(true);
         });
     });
 
-    describe('overnight span edge cases', () => {
-        it('during overnight span — current time after midnight but before close', () => {
-            // open=22:00, close=02:00
-            const hours = mondayHours({ isOpen: true, open: '22:00', close: '02:00' });
-            // 01:00 < 02:00 → should be true
-            const afterMidnight = new Date('2024-01-15T01:00:00');
-            expect(computeOpenNowStatus(hours, afterMidnight)).toBe(true);
+    describe('split schedule (multiple shifts)', () => {
+        const split = mondayHours(
+            day([
+                { open: '12:00', close: '15:00' },
+                { open: '20:00', close: '23:59' }
+            ])
+        );
+
+        it('is open during the midday shift', () => {
+            expect(computeOpenNowStatus(split, new Date('2024-01-15T13:00:00'))).toBe(true);
         });
 
-        it('during overnight span — current time after close but before midnight', () => {
-            // open=22:00, close=02:00
-            const hours = mondayHours({ isOpen: true, open: '22:00', close: '02:00' });
+        it('is CLOSED between shifts (afternoon gap)', () => {
+            expect(computeOpenNowStatus(split, new Date('2024-01-15T17:00:00'))).toBe(false);
+        });
+
+        it('is open again during the night shift', () => {
+            expect(computeOpenNowStatus(split, new Date('2024-01-15T21:00:00'))).toBe(true);
+        });
+    });
+
+    describe('overnight span (defensive — the schema normally forbids it)', () => {
+        const overnight = mondayHours(day([{ open: '22:00', close: '02:00' }]));
+
+        it('is open before midnight', () => {
+            // 22:30 is in the overnight window
+            expect(computeOpenNowStatus(overnight, MON_22_30)).toBe(true);
+        });
+
+        it('is open after midnight but before close', () => {
+            const afterMidnight = new Date('2024-01-15T01:00:00');
+            expect(computeOpenNowStatus(overnight, afterMidnight)).toBe(true);
+        });
+
+        it('is closed after close but before open', () => {
             // 10:00 is between close (02:00) and open (22:00) → closed
-            expect(computeOpenNowStatus(hours, MON_10_00)).toBe(false);
+            expect(computeOpenNowStatus(overnight, MON_10_00)).toBe(false);
         });
     });
 
     describe('day key resolution', () => {
         it('resolves to the correct day for Sunday entries', () => {
-            const hours = { sunday: { isOpen: true, open: '10:00', close: '20:00' } };
+            const hours = { sunday: day([{ open: '10:00', close: '20:00' }]) };
             // SUN_14_00 = Sunday at 14:00 → should be open
             expect(computeOpenNowStatus(hours, SUN_14_00)).toBe(true);
         });
 
         it('returns null when hours exist for a different day', () => {
             // Monday entry exists but we check on Sunday
-            const hours = mondayHours({ isOpen: true, open: '09:00', close: '22:00' });
+            const hours = mondayHours(day([{ open: '09:00', close: '22:00' }]));
             expect(computeOpenNowStatus(hours, SUN_14_00)).toBeNull();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// normalizeOpeningHours (exercised via the exported toGastronomyCardProps)
+// ---------------------------------------------------------------------------
+
+describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
+    const baseItem = {
+        id: '11111111-1111-1111-1111-111111111111',
+        slug: 'la-parrilla',
+        name: 'La Parrilla',
+        type: 'PARRILLA'
+    };
+
+    it('reads the nested days map and preserves every shift', () => {
+        const card = toGastronomyCardProps({
+            item: {
+                ...baseItem,
+                openingHours: {
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    days: {
+                        mon: {
+                            closed: false,
+                            shifts: [
+                                { open: '12:00', close: '15:00' },
+                                { open: '20:00', close: '23:59' }
+                            ]
+                        },
+                        tue: { closed: true, shifts: [] }
+                    }
+                }
+            }
+        });
+
+        expect(card.openingHours).not.toBeNull();
+        expect(card.openingHours?.monday).toEqual({
+            isOpen: true,
+            shifts: [
+                { open: '12:00', close: '15:00' },
+                { open: '20:00', close: '23:59' }
+            ]
+        });
+        expect(card.openingHours?.tuesday).toEqual({ isOpen: false, shifts: [] });
+    });
+
+    it('returns null when openingHours is absent', () => {
+        const card = toGastronomyCardProps({ item: baseItem });
+        expect(card.openingHours).toBeNull();
+    });
+
+    it('returns null for the legacy top-level shape (no days key)', () => {
+        const card = toGastronomyCardProps({
+            item: {
+                ...baseItem,
+                openingHours: { monday: { isOpen: true, open: '09:00', close: '18:00' } }
+            }
+        });
+        expect(card.openingHours).toBeNull();
     });
 });
