@@ -77,6 +77,7 @@ vi.mock('@repo/media', () => ({
 }));
 
 vi.mock('@repo/icons', () => ({
+    ChatIcon: () => null,
     CompassIcon: () => null,
     MapIcon: () => null
 }));

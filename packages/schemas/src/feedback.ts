@@ -189,7 +189,10 @@ export const feedbackFormSchema = z.object({
     reporterName: z.string().min(2).max(100),
 
     // Auto-collected environment data
-    environment: feedbackEnvironmentSchema
+    environment: feedbackEnvironmentSchema,
+
+    /** Cloudflare Turnstile invisible-widget verification token (populated client-side, verified server-side). Optional so submissions without Turnstile configured still parse. */
+    cfTurnstileToken: z.string().optional()
 });
 
 /**

@@ -1,0 +1,619 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-301",
+    "title": "Feedback System Production Rework",
+    "created": "2026-06-28T22:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Complete discovery phase and resolve open questions",
+            "description": "Phase 0 — read-only audit + owner decisions. All four open questions resolved on 2026-06-28:\n- OQ-1: primary entry point = footer 'Reportar un problema' link to /[lang]/feedback/ (plus 404/500 links + Ctrl+Shift+F).\n- OQ-2: slim form = type + title + description visible; Step 2 fields behind a collapsible 'agregar más detalles' expander.\n- OQ-4: anonymous allowed + invisible Cloudflare Turnstile server-verified, plus existing rate limit + honeypot. Two new env vars: PUBLIC_TURNSTILE_SITE_KEY + HOSPEDA_TURNSTILE_SECRET_KEY.\n- OQ-6: admin FAB confirmed default-on (VITE_FEEDBACK_ENABLED !== 'false'); decision = align admin with web rework (G-8 added).\nSpec.md updated: status in-progress, goals G-1..G-8 firmed.\n\nAcceptance criteria:\n- All four OQs documented as RESOLVED in spec.md.\n- Goals G-1..G-8 confirmed firm.\n- spec.md frontmatter status = in-progress.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Audit current FeedbackFAB, FeedbackForm, BaseLayout, __root.tsx, submit.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm OQ-1 entry point with owner (footer link decision)",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm OQ-2 field reduction with owner (collapsible expander decision)",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm OQ-4 anti-spam approach (Turnstile + anon allowed)",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm OQ-6 admin scope (align admin with web rework)",
+                    "completed": true
+                },
+                {
+                    "title": "Update spec.md: OQs resolved, goals firmed, status in-progress",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "spec", "decision"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-28T22:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add i18n keys for footer link label in @repo/i18n (es/en/pt)",
+            "description": "Add the 'Reportar un problema' footer link label to all three locale files. This is a prerequisite for T-004 (footer link component).\n\nFiles to change:\n1. packages/i18n/src/locales/es/common.json — add key: 'reportProblemLink': 'Reportar un problema'\n2. packages/i18n/src/locales/en/common.json — add key: 'reportProblemLink': 'Report a problem'\n3. packages/i18n/src/locales/pt/common.json — add key: 'reportProblemLink': 'Relatar um problema'\n\nAfter editing, run: pnpm --filter @repo/i18n generate-types to regenerate TypeScript declarations.\n\nIf the footer already uses a different i18n namespace (e.g. 'layout' or 'footer'), use that namespace instead of 'common'. Inspect the existing Footer imports before writing.\n\nAcceptance criteria:\n- Keys present in all three locale files under the same namespace.\n- pnpm --filter @repo/i18n generate-types succeeds with no errors.\n- No existing keys deleted.\n- pnpm typecheck passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Confirm which i18n namespace the Footer uses (check Footer imports)",
+                    "completed": true
+                },
+                {
+                    "title": "Add reportProblemLink to es locale file",
+                    "completed": true
+                },
+                {
+                    "title": "Add reportProblemLink to en locale file",
+                    "completed": true
+                },
+                {
+                    "title": "Add reportProblemLink to pt locale file",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/i18n generate-types — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Replace FeedbackFABClient mount with headless host in BaseLayout.astro",
+            "description": "Replace the visible FeedbackFABClient island in apps/web/src/layouts/BaseLayout.astro with a headless host that keeps the Ctrl+Shift+F shortcut and the feedback:open / feedback:ack CustomEvent bridge active but renders NO visible button.\n\nApproach: create a minimal Astro component or inline <script> that:\n- Listens for Ctrl+Shift+F and dispatches feedback:open (or directly navigates to /[lang]/feedback/).\n- Listens for feedback:open CustomEvent and opens the standalone page or form.\n- Dispatches feedback:ack on open to acknowledge callers.\n- Preserves the Sentry event ID bridge (getSentryEventId / onSentryFeedback wiring) so error pages still get correlation.\n\nKey constraint: the headless host is only rendered when isFeedbackEnabled() is true (same gate as before). No visible UI whatsoever — zero screen real estate consumed.\n\nFiles to change:\n- apps/web/src/layouts/BaseLayout.astro (replace FeedbackFABClient island)\n- Possibly: apps/web/src/components/feedback/FeedbackHeadlessHost.astro (new headless island)\n- apps/web/src/components/feedback/FeedbackFAB.client.tsx may be left in place for the standalone page consumers that still need it; adjust scope accordingly.\n\nRegression checks (manual or test):\n- 404 and 500 page links to /[lang]/feedback/ still work.\n- Ctrl+Shift+F opens the form from any web page.\n- feedback:open CustomEvent dispatched by a page element still opens the form.\n- Standalone /[lang]/feedback/ page renders correctly.\n\nAcceptance criteria:\n- No visible floating button rendered in the web app.\n- Ctrl+Shift+F still works as a keyboard entry point.\n- feedback:open / feedback:ack events still function.\n- Sentry correlation preserved.\n- pnpm lint + pnpm typecheck pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Read FeedbackFABClient and BaseLayout to understand wiring (Sentry, keyboard, events)",
+                    "completed": true
+                },
+                {
+                    "title": "Create FeedbackHeadlessHost.astro (or inline script) with keyboard + event wiring",
+                    "completed": true
+                },
+                {
+                    "title": "Replace FeedbackFABClient island with headless host in BaseLayout.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Verify Sentry correlation bridge preserved",
+                    "completed": true
+                },
+                {
+                    "title": "Verify 404/500 standalone page links unaffected (regression)",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "frontend", "feedback"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add 'Reportar un problema' footer link to web Footer component",
+            "description": "Add the primary discovery entry point: a 'Reportar un problema' link in the web app footer that navigates to /[lang]/feedback/.\n\nFiles to change:\n- apps/web/src/layouts/Footer.astro and/or the web Footer component (whichever owns the footer links section). Read the file before editing to understand the existing link structure.\n\nImplementation:\n1. Add the link using the i18n key added in T-002 ('reportProblemLink' or whichever namespace applies).\n2. Build the href as a lang-prefixed URL: /[lang]/feedback/ (use the current lang from Astro context, same pattern as other locale-prefixed links in the file).\n3. OQ-3 (not blocking): optionally add a title attribute surfacing the Ctrl+Shift+F shortcut hint, e.g. title='Ctrl+Shift+F'.\n4. Ensure the link is keyboard-navigable and has a visible focus indicator (a11y bar per SPEC-294).\n\nAcceptance criteria:\n- 'Reportar un problema' link visible in web footer across all pages using BaseLayout.\n- Link href navigates to the lang-prefixed /[lang]/feedback/ page.\n- Uses i18n key from T-002 (no hardcoded Spanish string).\n- Link is keyboard-accessible (tab-navigable, visible focus ring).\n- pnpm lint + pnpm typecheck pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Read Footer.astro to locate existing link structure and lang context pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Add 'Reportar un problema' link using i18n key + lang-prefixed href",
+                    "completed": true
+                },
+                {
+                    "title": "Optionally add title attribute with Ctrl+Shift+F hint (OQ-3)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify keyboard-navigability and focus ring (a11y check)",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "frontend", "feedback", "a11y"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-28T23:05:00.000Z",
+                "completed": "2026-06-28T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Collapse two-step wizard into single step + collapsible expander in @repo/feedback",
+            "description": "Slim the feedback form from a two-step wizard to a single visible step with an optional expander. This is the largest change in the spec and the critical-path bottleneck.\n\nFiles to change:\n1. packages/feedback/src/components/FeedbackForm.tsx — remove step navigation (Next/Back buttons, step state); render step 1 fields always visible; add collapsible 'agregar más detalles' expander that wraps step 2 content.\n2. packages/feedback/src/components/steps/StepBasic.tsx — may need minor adjustments (remove step header/progress indicators if present).\n3. packages/feedback/src/components/steps/StepDetails.tsx — may need minor adjustments (remove step header; should now be rendered inside the expander).\n\nPreserve:\n- All auto-captured silent fields (URL, browser, OS, viewport, timestamp, app source, user ID, console errors, Sentry event ID, navigation history, etc.) — these are collected by the FAB/island wrapper, not the form wizard, but verify nothing is lost.\n- reporter email + name fields (required when user is not auth'd, pre-filled when auth'd). These stay in the visible step (StepBasic).\n- All Step 2 fields functional when expander is open (severity, stepsToReproduce, expectedResult, actualResult, attachments).\n- No architectural rewrite of @repo/feedback — prefer additive/reshaping changes.\n\nThe expander 'agregar más detalles' / 'ocultar detalles' label: add to i18n if the package uses @repo/i18n; otherwise use inline strings acceptable as a follow-up. Check existing i18n usage in the package first.\n\nAcceptance criteria:\n- Single visible step (type + title + description) when form mounts.\n- 'agregar más detalles' expander collapsed by default.\n- Expanding shows severity, stepsToReproduce, expectedResult, actualResult, attachments.\n- No Next/Back step buttons visible.\n- reporter email/name visible for non-auth'd users, pre-filled for auth'd.\n- All auto-captured context unchanged.\n- pnpm lint + pnpm typecheck pass.\n- pnpm --filter @repo/feedback test passes.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-008", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Read FeedbackForm.tsx, StepBasic.tsx, StepDetails.tsx to understand current step management",
+                    "completed": true
+                },
+                {
+                    "title": "Remove step navigation state and Next/Back buttons from FeedbackForm.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Render StepBasic fields always visible in FeedbackForm.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add collapsible expander wrapping StepDetails fields",
+                    "completed": true
+                },
+                {
+                    "title": "Add expander toggle label to i18n (or inline if package doesn't use @repo/i18n)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify all auto-captured silent fields still collected",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/feedback test — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "frontend", "packages"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/feedback test"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-28T22:30:00.000Z",
+                "completed": "2026-06-28T22:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Verify and sync client feedback schema with API validation schema",
+            "description": "Ensure packages/schemas/src/feedback.ts (client-side Zod schema) stays in sync with apps/api/src/routes/feedback/public/validation.ts (server-side validation) after the slim form changes from T-005. Schema drift = 400 on submission (risk R-4).\n\nSteps:\n1. Read packages/schemas/src/feedback.ts to understand the current submit payload schema.\n2. Read apps/api/src/routes/feedback/public/validation.ts to understand what the API expects.\n3. Compare: any field that the slim form sends (including the Turnstile token field 'cfTurnstileToken' from T-007/T-008) must be present and accepted in the API schema.\n4. Any field that is no longer sent by the slim form should be made optional (not removed) in the API schema to preserve backward compatibility with the standalone page.\n5. Verify from spec.md §10 audit note: reporterEmail and reporterName must remain required server-side (API schema) even when the user is authenticated.\n6. title remains required in both schemas.\n\nNote: the Turnstile token field ('cfTurnstileToken' or similar) will be ADDED to the client schema here so T-008 (client widget) and T-009 (server verify) can both reference it.\n\nFiles to change:\n- packages/schemas/src/feedback.ts (if needed)\n- apps/api/src/routes/feedback/public/validation.ts (if needed)\n\nAcceptance criteria:\n- Both schemas accept the same submit payload shape.\n- Turnstile token field defined in client schema and accepted (optional, string) in API schema.\n- reporterEmail + reporterName remain required in API schema.\n- title required in both schemas.\n- pnpm typecheck passes.\n- pnpm --filter @repo/schemas test passes (if schema tests exist).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Read packages/schemas/src/feedback.ts and apps/api validation.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add cfTurnstileToken (optional, string) to client schema for Turnstile integration",
+                    "completed": true
+                },
+                {
+                    "title": "Add cfTurnstileToken (optional, string) to API validation schema",
+                    "completed": true
+                },
+                {
+                    "title": "Verify reporterEmail + reporterName required server-side",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "feedback", "backend"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/schemas test"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-28T23:45:00.000Z",
+                "completed": "2026-06-29T00:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Register Turnstile env vars in @repo/config and add Zod validation to apps/web + apps/api",
+            "description": "Follow the full project env-var workflow for the two new Turnstile env vars. This is a hard project rule: all steps must happen in the same change.\n\nEnv vars:\n- PUBLIC_TURNSTILE_SITE_KEY — web app, public (client-visible), used by the Turnstile widget.\n- HOSPEDA_TURNSTILE_SECRET_KEY — API app, secret, used for server-side siteverify.\n\nSteps:\n1. Register both vars in packages/config/src/env-registry.*.ts with full metadata: description, type, required, secret (true for SECRET_KEY), defaultValue, exampleValue, apps (['web'] / ['api']), category ('security' or 'integrations').\n2. Add Zod validation in apps/web/src/lib/env.ts: PUBLIC_TURNSTILE_SITE_KEY as z.string().min(1) (it is a PUBLIC_ var, client-side).\n3. Add Zod validation in apps/api/src/utils/env.ts: HOSPEDA_TURNSTILE_SECRET_KEY as z.string().min(1) (secret, server only).\n4. Update apps/web/.env.example: add PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA (Cloudflare always-pass test key).\n5. Update apps/api/.env.example: add HOSPEDA_TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA (Cloudflare always-pass test secret).\n6. Document the vars if their purpose is non-obvious (can add a one-line comment in each .env.example).\n\nIMPORTANT: After this task is merged, the human must set these vars in Coolify for hospeda-web-prod and hospeda-api-prod. Claude cannot do this step. Add a note in the PR description: 'New env vars PUBLIC_TURNSTILE_SITE_KEY and HOSPEDA_TURNSTILE_SECRET_KEY must be set in Coolify before enabling PUBLIC_FEEDBACK_ENABLED=true on prod.'\n\nAcceptance criteria:\n- Both vars registered in packages/config registry with full metadata.\n- Zod validation in apps/web/src/lib/env.ts for PUBLIC_TURNSTILE_SITE_KEY.\n- Zod validation in apps/api/src/utils/env.ts for HOSPEDA_TURNSTILE_SECRET_KEY.\n- .env.example updated in both apps with Cloudflare always-pass test keys.\n- pnpm env:check:registry passes.\n- pnpm typecheck passes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Register PUBLIC_TURNSTILE_SITE_KEY in packages/config env-registry",
+                    "completed": true
+                },
+                {
+                    "title": "Register HOSPEDA_TURNSTILE_SECRET_KEY in packages/config env-registry",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation for PUBLIC_TURNSTILE_SITE_KEY in apps/web/src/lib/env.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation for HOSPEDA_TURNSTILE_SECRET_KEY in apps/api/src/utils/env.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update apps/web/.env.example with Cloudflare always-pass test key",
+                    "completed": true
+                },
+                {
+                    "title": "Update apps/api/.env.example with Cloudflare always-pass test secret",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm env:check:registry — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "web", "backend", "security"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm env:check:registry"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add invisible Cloudflare Turnstile widget to FeedbackForm client-side",
+            "description": "Integrate the Cloudflare Turnstile invisible widget into the slimmed FeedbackForm (built in T-005). The widget runs a silent challenge and produces a token that is attached to the submit payload.\n\nApproach:\n1. Add the Turnstile script tag or use the JS API (https://challenges.cloudflare.com/turnstile/v0/api.js) to render an invisible widget inside FeedbackForm.tsx. The widget sitekey comes from the PUBLIC_TURNSTILE_SITE_KEY env var (available on client-side).\n2. Capture the token produced by the widget on challenge completion.\n3. Attach the token as 'cfTurnstileToken' to the form submit payload (field name defined in T-006's schema update).\n4. If Turnstile fails to load, token is empty, or challenge times out: block form submit with a user-visible error message.\n5. In local dev: PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA (always-pass test key from T-007) allows testing without a real Cloudflare account.\n\nNote: Turnstile is 'invisible' — no visible CAPTCHA UI, no user interaction required for normal traffic.\n\nFiles to change:\n- packages/feedback/src/components/FeedbackForm.tsx (primary file)\n- Possibly a new packages/feedback/src/components/TurnstileWidget.tsx sub-component.\n\nAcceptance criteria:\n- Invisible Turnstile widget renders in the form without visible UI.\n- Token attached as cfTurnstileToken in submit payload.\n- Form submission blocked if token is absent or empty.\n- pnpm lint + pnpm typecheck pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-007"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add Turnstile script loading to FeedbackForm (or a new TurnstileWidget component)",
+                    "completed": true
+                },
+                {
+                    "title": "Capture Turnstile token on widget callback",
+                    "completed": true
+                },
+                {
+                    "title": "Attach cfTurnstileToken to form submit payload",
+                    "completed": true
+                },
+                {
+                    "title": "Block submission with error if token absent",
+                    "completed": true
+                },
+                {
+                    "title": "Verify Cloudflare always-pass test key works in local dev",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "frontend", "security", "packages"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Verify Cloudflare Turnstile token server-side in feedback submit handler",
+            "description": "Add server-side Turnstile token verification to apps/api/src/routes/feedback/public/submit.ts before the Linear issue creation. The verification MUST fail closed — if the secret is missing or the token is invalid, the submission is rejected.\n\nSteps:\n1. Extract the cfTurnstileToken field from the validated request body.\n2. Before creating the Linear issue, call the Cloudflare siteverify endpoint:\n   POST https://challenges.cloudflare.com/turnstile/v0/siteverify\n   body: { secret: HOSPEDA_TURNSTILE_SECRET_KEY, response: cfTurnstileToken, remoteip: req.ip }\n3. If HOSPEDA_TURNSTILE_SECRET_KEY is missing/empty: reject with appropriate HTTP error — FAIL CLOSED (do NOT let the submission through).\n4. If siteverify returns { success: false }: reject with 400 (or 403).\n5. If siteverify network call fails (timeout/error): reject with 503 — FAIL CLOSED.\n6. Only if siteverify returns { success: true }: proceed to create the Linear issue.\n7. Keep existing guards unchanged: website honeypot check, 30/IP/hr rate limit.\n\nFail-closed rule is non-negotiable (per spec risk R-2): a missing or misconfigured secret must never silently pass submissions through.\n\nFiles to change:\n- apps/api/src/routes/feedback/public/submit.ts\n\nAcceptance criteria:\n- Turnstile siteverify called before Linear issue creation.\n- Missing HOSPEDA_TURNSTILE_SECRET_KEY → submission rejected, Linear not called.\n- Invalid token (success: false) → 400/403 returned.\n- Siteverify network error → 503 returned.\n- Valid token → submission proceeds normally.\n- Existing honeypot + rate limit checks unchanged.\n- pnpm lint + pnpm typecheck pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Read submit.ts to understand current flow (honeypot, rate limit, Linear create)",
+                    "completed": true
+                },
+                {
+                    "title": "Add Turnstile siteverify call after honeypot/rate-limit checks",
+                    "completed": true
+                },
+                {
+                    "title": "Implement fail-closed guard for missing HOSPEDA_TURNSTILE_SECRET_KEY",
+                    "completed": true
+                },
+                {
+                    "title": "Reject on siteverify success=false (invalid token)",
+                    "completed": true
+                },
+                {
+                    "title": "Reject on siteverify network error (fail-closed)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify existing honeypot + rate limit guards unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "api", "feedback", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test feedback"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T00:45:00.000Z",
+                "completed": "2026-06-29T01:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Remove default-on FeedbackFAB from admin __root.tsx and add equivalent entry point",
+            "description": "Apply the same rework to the admin app (G-8): remove the default-on FeedbackFAB mount from apps/admin/src/routes/__root.tsx and add an equivalent low-friction entry point.\n\nSteps:\n1. Read apps/admin/src/routes/__root.tsx to locate the FeedbackFAB mount (gated by VITE_FEEDBACK_ENABLED !== 'false').\n2. Remove the FeedbackFAB mount and the VITE_FEEDBACK_ENABLED gate.\n3. Keep FeedbackErrorBoundary if it wraps other things beyond the FAB; remove it only if its sole purpose was to wrap the FAB.\n4. Add an equivalent admin entry point. Options (pick the least-invasive fit with the existing admin header/layout pattern):\n   a. A 'Reportar problema' link in the admin header's help menu or settings dropdown.\n   b. A 'Feedback' item in the admin sidebar under a utility section.\n   c. A keyboard shortcut wired similarly to T-003 (headless host).\n   The chosen option must navigate to the standalone /feedback/ page or open the slim form.\n\nAcceptance criteria:\n- No visible floating FAB in the admin app.\n- FeedbackErrorBoundary preserved if it serves other purposes.\n- At least one visible entry point to the feedback form/page added.\n- Entry point is keyboard-accessible.\n- pnpm lint + pnpm typecheck pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Read apps/admin/src/routes/__root.tsx to understand FeedbackFAB mount and FeedbackErrorBoundary",
+                    "completed": true
+                },
+                {
+                    "title": "Remove FeedbackFAB mount and VITE_FEEDBACK_ENABLED guard",
+                    "completed": true
+                },
+                {
+                    "title": "Assess FeedbackErrorBoundary scope and remove or retain accordingly",
+                    "completed": true
+                },
+                {
+                    "title": "Add equivalent entry point (header link / sidebar link / keyboard shortcut)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "frontend", "feedback"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T12:00:00.000Z",
+                "completed": "2026-06-29T12:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write unit/component tests for slim form and schema parity",
+            "description": "Write automated tests covering the slimmed FeedbackForm and the client/API schema parity assertion (no tests = not done).\n\nTest suite location: packages/feedback/test/ (create new file, e.g. FeedbackForm.slim.test.tsx).\n\nRequired test cases:\n1. Expander collapsed by default after mount.\n2. Clicking 'agregar más detalles' expander button shows Step 2 fields (severity, stepsToReproduce, expectedResult, actualResult).\n3. Clicking expander again collapses Step 2 fields.\n4. Submitting the form without type filled: blocked (required field validation).\n5. Submitting without title: blocked (required).\n6. Submitting without description: blocked (required).\n7. Submitting with all required fields (type + title + description): form is submittable (no blocking validation errors on those fields).\n\nSchema parity test (can be in packages/schemas/test/ or inline):\n8. The feedback submit payload schema in @repo/schemas and the API validation schema in apps/api/src/routes/feedback/public/validation.ts both accept the same required fields and reject the same missing-required fields. At minimum: assert both have title as required, both accept cfTurnstileToken as optional string.\n\nA11y note: the footer link keyboard-navigability is verified manually in T-004 and documented in the smoke (T-013); include a note here but no automated a11y test is required for this task.\n\nAcceptance criteria:\n- All 8 test cases pass.\n- No .only() or hard-coded .skip() directives.\n- pnpm --filter @repo/feedback test passes.\n- pnpm --filter @repo/schemas test passes (if schema parity test added there).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Create packages/feedback/test/FeedbackForm.slim.test.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: expander collapsed by default",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: expander click shows Step 2 fields",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: second expander click collapses fields",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests: required field validation blocks submit (type, title, description)",
+                    "completed": true
+                },
+                {
+                    "title": "Write schema parity assertion (title required + cfTurnstileToken accepted)",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/feedback test — must pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "feedback", "schemas"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter @repo/feedback test"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T12:50:00.000Z",
+                "completed": "2026-06-29T13:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write Turnstile server-verify unit tests — fail-closed path mandatory",
+            "description": "Write automated tests for the server-side Turnstile verification added in T-009. The fail-closed path is non-negotiable per spec risk R-2 and must be explicitly covered by tests.\n\nTest file: apps/api/test/routes/feedback/submit.test.ts (or extend existing if it exists). AAA pattern throughout.\n\nRequired test cases:\n1. Valid Turnstile token: siteverify returns { success: true } → submission proceeds, Linear issue created, 200 returned.\n2. Invalid Turnstile token: siteverify returns { success: false } → 400/403 returned, Linear issue NOT created.\n3. Missing HOSPEDA_TURNSTILE_SECRET_KEY (env var unset or empty): submission rejected immediately, siteverify NOT called, Linear NOT called — FAIL CLOSED.\n4. siteverify network error (timeout/exception): submission rejected, Linear NOT called — FAIL CLOSED.\n5. Honeypot field ('website') populated: submission rejected regardless of Turnstile token (existing guard regression).\n6. Rate limit exceeded (30/IP/hr): submission rejected regardless of Turnstile token (existing guard regression).\n\nTest cases 3 and 4 MUST be present — they are the fail-closed guarantee.\n\nAcceptance criteria:\n- All 6 test cases pass.\n- Test cases 3 and 4 explicitly assert fail-closed behavior.\n- No .only() or hard-coded .skip() directives.\n- pnpm --filter apps/api test feedback passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Create or extend apps/api/test/routes/feedback/submit.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: valid token → 200 + Linear issue created",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: invalid token → 400/403 + Linear not called",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: missing secret key → rejected, fail-closed (no siteverify, no Linear)",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: siteverify network error → rejected, fail-closed",
+                    "completed": true
+                },
+                {
+                    "title": "Write regression test: honeypot populated → rejected",
+                    "completed": true
+                },
+                {
+                    "title": "Write regression test: rate limit exceeded → rejected",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "backend", "security", "feedback"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "pnpm --filter apps/api test feedback"
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": "2026-06-29T12:50:00.000Z",
+                "completed": "2026-06-29T13:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Execute manual local smoke — end-to-end report to Linear with Turnstile test keys",
+            "description": "After all implementation tasks are complete (T-003 through T-012), run a manual local smoke to confirm the full flow end-to-end: form opens, Turnstile passes silently, Linear issue is created.\n\nSetup:\n- Set PUBLIC_FEEDBACK_ENABLED=true in apps/web/.env.\n- Set PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA (Cloudflare always-pass test key).\n- Set HOSPEDA_TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA (Cloudflare always-pass test secret).\n- Run pnpm dev (web + api).\n\nSmoke checklist:\n1. Web app: verify NO visible floating FAB button anywhere.\n2. Web footer: 'Reportar un problema' link visible and navigates to /[lang]/feedback/.\n3. Ctrl+Shift+F: opens feedback form from any page (keyboard shortcut preserved).\n4. Feedback:open CustomEvent: dispatch via browser console → form opens.\n5. Standalone page (/es/feedback/ or /en/feedback/): renders correctly, form visible.\n6. 404 page: link to feedback page present and navigates correctly.\n7. 500 page: link to feedback page present and navigates correctly.\n8. Submit form: fill type + title + description (minimal), submit → Turnstile challenge silent, Linear issue created in the correct Linear team/project.\n9. Submit form with expander open: add severity + stepsToReproduce, submit → all fields appear in Linear issue.\n10. Admin app: NO floating FAB, equivalent entry point (header/sidebar link) present and navigates to feedback.\n\nIf any bug is discovered during smoke: write a regression test first (per project bug-fix rule), then fix.\n\nAcceptance criteria:\n- All 10 checklist items PASS.\n- Linear issue created with correct fields.\n- No regression on 404/500 standalone page links.\n- Smoke result documented in this task's completed notes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-004", "T-008", "T-009", "T-010", "T-011", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up local env with Turnstile test keys + PUBLIC_FEEDBACK_ENABLED=true",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: no floating FAB in web app",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: footer link visible + navigates to /[lang]/feedback/",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: Ctrl+Shift+F opens form from any page",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: 404/500 page feedback links work",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: submit form → Linear issue created (Turnstile passes silently)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke: admin app — no FAB, entry point present",
+                    "completed": false
+                },
+                {
+                    "title": "Document smoke result in task notes",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "smoke", "process"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-28T22:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 12,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

@@ -2,13 +2,14 @@
  * RTL-based tests for the StepBasic component.
  *
  * Renders the actual component to cover all uncovered branches:
- * - All form fields and their onChange handlers (lines 74-233)
- * - showContactFields=true: email + name fields rendered (lines 161-210)
+ * - All form fields and their onChange handlers
+ * - showContactFields=true: email + name fields rendered
  * - showContactFields=false: email + name fields absent
  * - Validation error messages displayed when errors object is populated
  * - aria-invalid + aria-describedby attributes set on fields with errors
- * - Action buttons: "Agregar más detalles" and "Enviar"
- * - Button disabled state when isSubmitting=true
+ *
+ * Note: StepBasic no longer owns action buttons (step navigation was removed
+ * in T-005). Submit and expander toggle live in FeedbackForm.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,9 +34,6 @@ const makeProps = (overrides: Partial<Parameters<typeof StepBasic>[0]> = {}) => 
     onChange: vi.fn(),
     errors: {},
     showContactFields: false,
-    onGoToStep2: vi.fn(),
-    onSubmit: vi.fn(),
-    isSubmitting: false,
     ...overrides
 });
 
@@ -78,20 +76,6 @@ describe('StepBasic — always-rendered structure', () => {
         expect(textarea).toBeInTheDocument();
         expect((textarea as HTMLTextAreaElement).value).toBe('My desc');
     });
-
-    it('should render "Agregar más detalles" button', () => {
-        render(<StepBasic {...makeProps()} />);
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails })
-        ).toBeInTheDocument();
-    });
-
-    it('should render "Enviar" button', () => {
-        render(<StepBasic {...makeProps()} />);
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).toBeInTheDocument();
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -129,52 +113,6 @@ describe('StepBasic — onChange handlers', () => {
         fireEvent.change(textarea, { target: { value: 'New description' } });
 
         expect(onChange).toHaveBeenCalledWith('description', 'New description');
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Tests: button click handlers
-// ---------------------------------------------------------------------------
-
-describe('StepBasic — button handlers', () => {
-    it('should call onGoToStep2 when "Agregar más detalles" is clicked', () => {
-        const onGoToStep2 = vi.fn();
-        render(<StepBasic {...makeProps({ onGoToStep2 })} />);
-
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-
-        expect(onGoToStep2).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onSubmit when "Enviar" button is clicked', () => {
-        const onSubmit = vi.fn();
-        render(<StepBasic {...makeProps({ onSubmit })} />);
-
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
-
-        expect(onSubmit).toHaveBeenCalledTimes(1);
-    });
-
-    it('should disable both buttons when isSubmitting=true', () => {
-        render(<StepBasic {...makeProps({ isSubmitting: true })} />);
-
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails })
-        ).toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).toBeDisabled();
-    });
-
-    it('should enable both buttons when isSubmitting=false', () => {
-        render(<StepBasic {...makeProps({ isSubmitting: false })} />);
-
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails })
-        ).not.toBeDisabled();
-        expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit })
-        ).not.toBeDisabled();
     });
 });
 

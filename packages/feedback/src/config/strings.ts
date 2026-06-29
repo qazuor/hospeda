@@ -82,6 +82,7 @@ export const FEEDBACK_STRINGS = {
     buttons: {
         submit: 'Enviar',
         addDetails: 'Agregar más detalles',
+        hideDetails: 'Ocultar detalles',
         back: 'Volver',
         close: 'Cerrar',
         submitAnother: 'Enviar otro',

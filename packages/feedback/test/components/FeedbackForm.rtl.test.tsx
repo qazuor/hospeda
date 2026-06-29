@@ -342,61 +342,119 @@ describe('FeedbackForm — Step 1 validation on submit', () => {
         fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
         expect(mockSubmit).not.toHaveBeenCalled();
     });
+
+    // T-011 case 4: type set to an invalid value → validation blocks submit
+    it('should NOT call submit and should show a type field error when type value is invalid', () => {
+        // Arrange: start with logged-in user so email/name are pre-filled from props.
+        // Force an out-of-enum type value via direct DOM event — the select normally
+        // only exposes valid options, but this exercises the mapZodMessage fallback
+        // path and confirms the form does not call submit when Zod rejects 'type'.
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: '' } });
+        fillValidStep1(); // title + description are valid
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
+
+        // Assert
+        expect(mockSubmit).not.toHaveBeenCalled();
+        // The error element for the type field must appear (role="alert" inside the fieldGroup)
+        expect(document.getElementById('feedback-type-error')).toBeInTheDocument();
+    });
+
+    // T-011 case 6 complement: description empty → submit handler must NOT fire
+    it('should NOT call submit when description is empty', () => {
+        // Arrange
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.change(screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.title }), {
+            target: { value: 'A valid title for test' }
+        });
+        // description is intentionally left empty
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
+
+        // Assert: validation fails → submit handler returns early
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(screen.getByText(FEEDBACK_STRINGS.validation.descriptionMin)).toBeInTheDocument();
+    });
 });
 
 // ---------------------------------------------------------------------------
-// Tests: Step navigation (basic → details) — validation with step1 only
+// Tests: collapsible details expander (replaces two-step navigation)
 // ---------------------------------------------------------------------------
 
-describe('FeedbackForm — Step navigation', () => {
-    it('should NOT navigate to step 2 when title is empty', () => {
+describe('FeedbackForm — details expander', () => {
+    it('should render the expander toggle button (addDetails label when closed)', () => {
         render(<FeedbackForm {...LOGGED_IN_PROPS} />);
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        // Still shows step 1 title, not step 2
-        expect(screen.getByText(FEEDBACK_STRINGS.form.title)).toBeInTheDocument();
-        expect(screen.queryByText(FEEDBACK_STRINGS.form.step2Title)).not.toBeInTheDocument();
-    });
-
-    it('should navigate to step 2 when step 1 is valid (logged-in)', () => {
-        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
-        fillValidStep1();
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        expect(screen.getByText(FEEDBACK_STRINGS.form.step2Title)).toBeInTheDocument();
-    });
-
-    it('should render "Volver" button in step 2', () => {
-        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
-        fillValidStep1();
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
         expect(
-            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back })
+            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails })
         ).toBeInTheDocument();
     });
 
-    it('should navigate back to step 1 when "Volver" is clicked', () => {
+    it('should have aria-expanded=false on the toggle button when collapsed', () => {
         render(<FeedbackForm {...LOGGED_IN_PROPS} />);
-        fillValidStep1();
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        // Now in step 2
-        expect(screen.getByText(FEEDBACK_STRINGS.form.step2Title)).toBeInTheDocument();
-
-        // Click back
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.back }));
-        expect(screen.getByText(FEEDBACK_STRINGS.form.title)).toBeInTheDocument();
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.addDetails
+        });
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
     });
 
-    it('should show step 2 title in step 2', () => {
+    it('should have aria-controls pointing to the details panel id', () => {
         render(<FeedbackForm {...LOGGED_IN_PROPS} />);
-        fillValidStep1();
-        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        expect(screen.getByText(FEEDBACK_STRINGS.form.step2Title)).toBeInTheDocument();
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.addDetails
+        });
+        expect(toggle).toHaveAttribute('aria-controls', 'feedback-details-panel');
     });
 
-    it('should navigate to step 2 from anonymous user when all step-1 fields valid', () => {
+    it('should open the details panel and show severity when toggle is clicked', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.severity)).toBeInTheDocument();
+    });
+
+    it('should show aria-expanded=true after toggle is clicked', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.addDetails
+        });
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('should change toggle label to hideDetails when expanded', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(
+            screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.hideDetails })
+        ).toBeInTheDocument();
+    });
+
+    it('should collapse the panel again when toggle is clicked a second time', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        // open
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        // severity is now visible
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.severity)).toBeInTheDocument();
+        // close (button text changed to hideDetails)
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.hideDetails }));
+        // severity is gone from DOM
+        expect(screen.queryByText(FEEDBACK_STRINGS.fields.severity)).not.toBeInTheDocument();
+    });
+
+    it('should open expander regardless of whether title is empty', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        // Don't fill title — click expander anyway
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        // Expander opens; severity field appears
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.severity)).toBeInTheDocument();
+    });
+
+    it('should open expander for anonymous user without validation', () => {
         render(<FeedbackForm {...DEFAULT_PROPS} />);
-        fillValidStep1Full();
         fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        expect(screen.getByText(FEEDBACK_STRINGS.form.step2Title)).toBeInTheDocument();
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.severity)).toBeInTheDocument();
     });
 });
 
@@ -538,7 +596,7 @@ describe('FeedbackForm — onSentryFeedback callback', () => {
 // ---------------------------------------------------------------------------
 
 describe('FeedbackForm — isSubmitting state', () => {
-    it('should disable step-1 buttons when isSubmitting=true', () => {
+    it('should disable expander toggle and submit buttons when isSubmitting=true', () => {
         submitState.isSubmitting = true;
         render(<FeedbackForm {...DEFAULT_PROPS} />);
 
@@ -609,12 +667,12 @@ describe('FeedbackForm — full submit flow', () => {
         expect(formData.reporterName).toBe('Test User');
     });
 
-    it('should submit from step 2 correctly', async () => {
+    it('should submit with details panel open (expander visible)', async () => {
         render(<FeedbackForm {...LOGGED_IN_PROPS} />);
         fillValidStep1();
-        // Navigate to step 2
+        // Open the details expander
         fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
-        // Submit from step 2
+        // Submit (button always available at form level)
         fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
 
         await waitFor(() => {
@@ -652,5 +710,170 @@ describe('FeedbackForm — state updates (act)', () => {
         });
 
         expect(mockSubmit).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: T-005 single-step + collapsible expander (required test coverage)
+// ---------------------------------------------------------------------------
+
+describe('FeedbackForm — single-step + collapsible expander (T-005)', () => {
+    // (1) Form mounts with basic fields visible and NO step navigation buttons
+
+    it('should show type select on mount', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+
+    it('should show title input on mount', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(
+            screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.title })
+        ).toBeInTheDocument();
+    });
+
+    it('should show description textarea on mount', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(
+            screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.description })
+        ).toBeInTheDocument();
+    });
+
+    it('should NOT render a "Volver" back button at any point', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(
+            screen.queryByRole('button', { name: FEEDBACK_STRINGS.buttons.back })
+        ).not.toBeInTheDocument();
+    });
+
+    it('should have exactly one submit button always visible', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        const submitButtons = screen.getAllByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.submit
+        });
+        expect(submitButtons).toHaveLength(1);
+    });
+
+    // (2) Expander is collapsed by default — detail fields NOT in accessible tree
+
+    it('should not show severity field when expander is collapsed (default)', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(screen.queryByText(FEEDBACK_STRINGS.fields.severity)).not.toBeInTheDocument();
+    });
+
+    it('should not show stepsToReproduce label when expander is collapsed', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(
+            screen.queryByText(FEEDBACK_STRINGS.fields.stepsToReproduce)
+        ).not.toBeInTheDocument();
+    });
+
+    it('should not show expectedResult label when expander is collapsed', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(screen.queryByText(FEEDBACK_STRINGS.fields.expectedResult)).not.toBeInTheDocument();
+    });
+
+    it('should not show actualResult label when expander is collapsed', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(screen.queryByText(FEEDBACK_STRINGS.fields.actualResult)).not.toBeInTheDocument();
+    });
+
+    it('should not show attachments section when expander is collapsed', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(screen.queryByText(FEEDBACK_STRINGS.fields.attachments)).not.toBeInTheDocument();
+    });
+
+    it('should have aria-expanded=false on toggle button by default', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.addDetails
+        });
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('should have aria-controls set to the panel id on the toggle', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.addDetails
+        });
+        expect(toggle).toHaveAttribute('aria-controls', 'feedback-details-panel');
+    });
+
+    it('should render panel with matching id when expanded', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        const panel = document.getElementById('feedback-details-panel');
+        expect(panel).toBeInTheDocument();
+    });
+
+    // (3) Toggling expander reveals severity / stepsToReproduce / expected / actual / attachments
+
+    it('should show severity field after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.severity)).toBeInTheDocument();
+    });
+
+    it('should show stepsToReproduce field after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.stepsToReproduce)).toBeInTheDocument();
+    });
+
+    it('should show expectedResult placeholder after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(
+            screen.getByPlaceholderText(FEEDBACK_STRINGS.fields.expectedResultPlaceholder)
+        ).toBeInTheDocument();
+    });
+
+    it('should show actualResult placeholder after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(
+            screen.getByPlaceholderText(FEEDBACK_STRINGS.fields.actualResultPlaceholder)
+        ).toBeInTheDocument();
+    });
+
+    it('should show attachments upload zone after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        expect(screen.getByText(FEEDBACK_STRINGS.fields.uploadButton)).toBeInTheDocument();
+    });
+
+    it('should show aria-expanded=true on toggle after expanding', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.addDetails }));
+        const toggle = screen.getByRole('button', {
+            name: FEEDBACK_STRINGS.buttons.hideDetails
+        });
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    // (4) Reporter email/name visible when unauthenticated (no userId)
+
+    it('should show email input when user is NOT authenticated', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(
+            screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.email })
+        ).toBeInTheDocument();
+    });
+
+    it('should show name input when user is NOT authenticated', () => {
+        render(<FeedbackForm {...DEFAULT_PROPS} />);
+        expect(
+            screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.name })
+        ).toBeInTheDocument();
+    });
+
+    it('should hide email and name inputs when user IS authenticated', () => {
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        expect(
+            screen.queryByRole('textbox', { name: FEEDBACK_STRINGS.fields.email })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('textbox', { name: FEEDBACK_STRINGS.fields.name })
+        ).not.toBeInTheDocument();
     });
 });

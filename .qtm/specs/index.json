@@ -2412,7 +2412,7 @@
             "title": "Feedback System Production Rework",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-301-feedback-system-prod-rework",
             "created": "2026-06-27T00:00:00Z",
             "base": "staging",

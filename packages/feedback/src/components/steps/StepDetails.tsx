@@ -15,7 +15,6 @@ import type {
 import { useMemo, useState } from 'react';
 import { FEEDBACK_CONFIG, SEVERITY_LEVELS } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
-import { Button } from '../../ui/Button.js';
 import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
 import { Select } from '../../ui/Select.js';
@@ -129,10 +128,10 @@ export interface StepDetailsData {
 
 /** Props for the StepDetails component */
 export interface StepDetailsProps {
-    /** Current form values for step 2 fields */
+    /** Current form values for the detail fields */
     readonly data: StepDetailsData;
     /**
-     * Callback to update a single step 2 field.
+     * Callback to update a single detail field.
      * Uses a generic key constraint to keep type safety.
      */
     readonly onChange: <K extends keyof StepDetailsData>(
@@ -155,12 +154,6 @@ export interface StepDetailsProps {
         key: K,
         value: FeedbackEnvironment[K]
     ) => void;
-    /** Called when user clicks "Volver" */
-    readonly onBack: () => void;
-    /** Called when user clicks "Enviar" */
-    readonly onSubmit: () => void;
-    /** Whether form is currently submitting */
-    readonly isSubmitting: boolean;
 }
 
 /** Format bytes into a human-readable string (e.g. "1.2 MB") */
@@ -188,9 +181,6 @@ function formatFileSize(bytes: number): string {
  *   onRemoveAttachment={handleRemoveFile}
  *   environment={envData}
  *   onEnvironmentChange={(key, value) => setEnvField(key, value)}
- *   onBack={handleBack}
- *   onSubmit={handleSubmit}
- *   isSubmitting={false}
  * />
  * ```
  */
@@ -201,10 +191,7 @@ export function StepDetails({
     onAddAttachments,
     onRemoveAttachment,
     environment,
-    onEnvironmentChange,
-    onBack,
-    onSubmit,
-    isSubmitting
+    onEnvironmentChange
 }: StepDetailsProps) {
     const [techOpen, setTechOpen] = useState(false);
     const [fileRejections, setFileRejections] = useState<string[]>([]);
@@ -861,25 +848,6 @@ export function StepDetails({
                         </section>
                     </div>
                 )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="actions">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onBack}
-                    disabled={isSubmitting}
-                >
-                    {FEEDBACK_STRINGS.buttons.back}
-                </Button>
-                <Button
-                    type="button"
-                    onClick={onSubmit}
-                    disabled={isSubmitting}
-                >
-                    {FEEDBACK_STRINGS.buttons.submit}
-                </Button>
             </div>
         </div>
     );

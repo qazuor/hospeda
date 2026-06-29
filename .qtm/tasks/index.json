@@ -950,13 +950,13 @@
         {
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "12/13",
             "path": "SPEC-301-feedback-system-prod-rework",
-            "branch": null,
+            "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Make @repo/feedback prod-safe without always-on FAB, fewer fields. Already exists (PUBLIC_FEEDBACK_ENABLED default false, Linear destination, Ctrl+Shift+F, standalone /feedback page prod-safe). Smaller than expected. Discovery-first."
+            "note": "Implementation done (12/13). Only T-013 (manual local smoke to Linear with Turnstile test keys) remains — needs the app running + keys. T-011 form tests + T-012 turnstile tests complete (T-012 was covered by T-009). Fixed admin-integration.test.ts regression from T-010 (FAB->headless host). Owner must set Turnstile keys in Coolify."
         },
         {
             "specId": "SPEC-302",

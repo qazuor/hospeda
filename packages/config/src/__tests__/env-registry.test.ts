@@ -101,8 +101,15 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * - HOSPEDA_UNSPLASH_ACCESS_KEY (Unsplash API for stock image search)
  * - HOSPEDA_PEXELS_API_KEY (Pexels API for stock image search)
  * (integrations category, both optional, secret=false)
+ *
+ * 240 (staging drift): +2 integrations vars that landed on staging without
+ * updating this constant (discovered during SPEC-301 T-010 branch).
+ *
+ * 241 (SPEC-301 T-010): +1 admin Turnstile site key:
+ * - VITE_TURNSTILE_SITE_KEY (Cloudflare Turnstile for admin feedback form)
+ * (integrations category, optional, secret=false, apps: ['admin'])
  */
-const EXPECTED_VAR_COUNT = 238;
+const EXPECTED_VAR_COUNT = 241;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -453,12 +460,13 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 27 VITE_* admin variables', () => {
+        it('should contain all 28 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(27);
+            // 27 original VITE_* vars + VITE_TURNSTILE_SITE_KEY (SPEC-301 T-010)
+            expect(viteVars.length).toBe(28);
         });
     });
 
