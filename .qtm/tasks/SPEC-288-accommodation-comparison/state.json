@@ -284,31 +284,31 @@
             "id": "T-009",
             "title": "Integrate CompareButton into card render points",
             "description": "Insert CompareButton.client.tsx into AccommodationCard.astro acc-card__actions (client:visible, parallel to FavoriteButton) and into MapCardsSidebar.client.tsx so map view selection shares the same store. Pass isAuthenticated as needed. Tests: render smoke for both card surfaces showing the button.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Wire into AccommodationCard.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire into MapCardsSidebar.client.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T05:55:00.000Z",
+                "completed": "2026-06-29T06:00:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.4
     }
