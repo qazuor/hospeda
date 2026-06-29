@@ -195,10 +195,27 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         // ── Act: open the listing and add the first two accommodations ──────
         await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
 
+        // The CompareButton is a `client:visible` island: its SSR HTML is visible
+        // from first paint, but the onClick handler early-returns while
+        // `useMyEntitlements` is still loading (`if (isLoading) return`). isLoading
+        // only flips to false after the entitlements fetch resolves. Wait for that
+        // request before clicking, or both clicks are silent no-ops and the bar
+        // never appears.
+        await page.waitForResponse(
+            (r) =>
+                r.url().includes('/api/v1/protected/users/me/entitlements') && r.status() === 200,
+            { timeout: 15_000 }
+        );
+
         // CompareButton islands carry an aria-label containing "comparación"
         // (FavoriteButton uses "favoritos", so the regex isolates compare).
         const compareButtons = page.getByRole('button', { name: /comparaci[oó]n/i });
         await expect(compareButtons.first()).toBeVisible({ timeout: 15_000 });
+        // Guard against the hydration race: the island must have finished loading
+        // entitlements (aria-busy back to false) before the click handler will act.
+        await expect(compareButtons.first()).not.toHaveAttribute('aria-busy', 'true', {
+            timeout: 10_000
+        });
         await compareButtons.nth(0).click();
         await compareButtons.nth(1).click();
 
