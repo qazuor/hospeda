@@ -361,8 +361,7 @@
             "sectionTitle": "Promoções especiais",
             "validUntil": "Válido até {date}",
             "minNights": "Mínimo {n} noites",
-            "discountOff": "de desconto",
-            "noPromos": ""
+            "discountOff": "de desconto"
         }
     },
     "amenityNames": {
