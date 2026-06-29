@@ -95,7 +95,7 @@ const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
 	{ id: 'reviews',        labelKey: 'billing.comparison.row.reviews',        cell: { kind: 'all-yes' },                                           status: 'available' },
 	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'upcoming'  },
 	{ id: 'compare',        labelKey: 'billing.comparison.row.compare',        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
-	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'limit',    key: LimitKey.MAX_SEARCH_HISTORY_ENTRIES }, status: 'available' },
 	{ id: 'alertsOffers',   labelKey: 'billing.comparison.row.alertsOffers',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
 	{ id: 'whatsappDisplay',labelKey: 'billing.comparison.row.whatsappDisplay',cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
 	{ id: 'whatsappDirect', labelKey: 'billing.comparison.row.whatsappDirect', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },            status: 'available' },
