@@ -10,6 +10,7 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
 import { protectedAddMediaRoute } from './addMedia';
+import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
@@ -52,6 +53,10 @@ app.route('/', hostMarketComparisonRoute);
 
 // GET / - List own accommodations (no ownership check — filtered by actor.id in handler)
 app.route('/', protectedListOwnAccommodationsRoute);
+
+// POST /compare - Side-by-side comparison (SPEC-288 T-003)
+// CRITICAL: registered BEFORE GET /:id so "compare" is not captured as a UUID param.
+app.route('/', compareAccommodationsRoute);
 
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);

@@ -99,6 +99,25 @@ describe('PlanComparisonTable.astro', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Compare row activation (SPEC-288 T-013)
+    // -----------------------------------------------------------------------
+
+    it('should mark the compare row as available (no upcoming badge)', () => {
+        // The compare row config line must carry status 'available' now that
+        // SPEC-288 ships the feature — so the "Próximamente" badge is gone.
+        const compareRowLine = src.split('\n').find((line) => line.includes("id: 'compare'"));
+        expect(compareRowLine).toBeDefined();
+        expect(compareRowLine).toContain("status: 'available'");
+        expect(compareRowLine).not.toContain("status: 'upcoming'");
+    });
+
+    it('should keep per-tier compare cells reflecting Plus/VIP availability', () => {
+        // free=no, plus=yes, vip=yes — Plus and VIP can compare, free cannot.
+        const compareRowLine = src.split('\n').find((line) => line.includes("id: 'compare'"));
+        expect(compareRowLine).toContain("values: ['no', 'yes', 'yes']");
+    });
+
+    // -----------------------------------------------------------------------
     // Row notes
     // -----------------------------------------------------------------------
 

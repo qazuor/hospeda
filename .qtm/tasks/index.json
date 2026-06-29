@@ -807,13 +807,15 @@
         {
             "specId": "SPEC-288",
             "title": "Accommodation Comparison",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "14/14",
+            "archived": true,
+            "archivedAt": "2026-06-29",
             "path": "SPEC-288-accommodation-comparison",
-            "branch": null,
+            "branch": "spec/SPEC-288-accommodation-comparison",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom compare feature (CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS). Surfaced in SPEC-282 review."
+            "note": "Tasks atomized (14, all complexity<=3). Client-only ephemeral compare; gate already exists. Decisions D-1..D-4 in spec.md. Shipped 14/14; closed via the implementation PR (code + index archival together)."
         },
         {
             "specId": "SPEC-289",

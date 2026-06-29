@@ -7,6 +7,7 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import {
 	GalleryIcon,
 	LocationIcon,
@@ -142,6 +143,14 @@ const isNew = data.createdAt
 					showCount={true}
 					locale={locale}
 					isAuthenticated={isAuthenticated}
+				/>
+				<CompareButton
+					client:visible
+					accommodationId={data.id}
+					accommodationName={data.name}
+					accommodationThumbnailUrl={data.featuredImage.url}
+					variant="standalone"
+					locale={locale}
 				/>
 				{(data.photoCount ?? 0) > 0 && (
 					<div class="acc-card__photo-count" aria-hidden="true">

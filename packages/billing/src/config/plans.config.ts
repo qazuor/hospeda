@@ -71,7 +71,8 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
  * plan alongside {@link TOURIST_VIP_ENTITLEMENTS}, via {@link mergeLimits}
  * (plan-specific limits stay authoritative).
  *
- * Favorites/alerts/compare are unlimited at this tier. The AI consumer quotas
+ * Favorites/alerts are unlimited at this tier; compare is capped at 4 items
+ * (SPEC-288). The AI consumer quotas
  * (search + consumer-side chat) are the graduated top-tier value (200/month)
  * shared by tourist-VIP and every owner/complex plan as a CONSUMER
  * (SPEC-283 §5, OQ-4). They carry NO entitlement: `ai_search` is auth-baseline
@@ -82,7 +83,7 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
     limit(LimitKey.MAX_ACTIVE_ALERTS, -1),
-    limit(LimitKey.MAX_COMPARE_ITEMS, -1),
+    limit(LimitKey.MAX_COMPARE_ITEMS, 4), // SPEC-288: capped (was -1); cascades to owner/complex
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200)
@@ -459,7 +460,7 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
     limits: [
         limit(LimitKey.MAX_FAVORITES, 20),
         limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 4),
+        limit(LimitKey.MAX_COMPARE_ITEMS, 2), // SPEC-288: Plus tier (was 4)
         // AI consumer quotas — mid tier (SPEC-283 §5).
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
         limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50)
