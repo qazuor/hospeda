@@ -1,4 +1,67 @@
 {
+    "comparison": {
+        "button": {
+            "add": "Comparar",
+            "remove": "Remover da comparação",
+            "addAriaLabel": "Adicionar {{name}} à comparação",
+            "removeAriaLabel": "Remover {{name}} da comparação",
+            "inListLabel": "Em comparação"
+        },
+        "toast": {
+            "added": "Adicionado à comparação",
+            "removed": "Removido da comparação",
+            "view": "Comparar agora"
+        },
+        "upsell": {
+            "title": "Comparação de hospedagens",
+            "message": "Comparar hospedagens está disponível nos planos Plus e VIP.",
+            "cta": "Ver planos"
+        },
+        "limit": {
+            "title": "Você atingiu o máximo",
+            "message": "Seu plano permite comparar até {{max}} hospedagens por vez.",
+            "hint": "Remova uma para adicionar outra."
+        },
+        "bar": {
+            "title": "Comparar hospedagens",
+            "count_one": "{{count}} hospedagem selecionada",
+            "count_other": "{{count}} hospedagens selecionadas",
+            "compareNow": "Comparar agora",
+            "clear": "Limpar",
+            "removeItemAriaLabel": "Remover {{name}} da comparação",
+            "minRequired": "Escolha pelo menos {{min}} para comparar"
+        },
+        "page": {
+            "metaTitle": "Comparar hospedagens",
+            "metaDescription": "Compare hospedagens lado a lado: preço, localização, avaliação e mais.",
+            "heading": "Comparação de hospedagens",
+            "backToListing": "Voltar para hospedagens"
+        },
+        "empty": {
+            "title": "Nenhuma hospedagem para comparar",
+            "message": "Adicione hospedagens a partir da lista para vê-las lado a lado.",
+            "cta": "Explorar hospedagens"
+        },
+        "error": {
+            "title": "Não foi possível carregar a comparação",
+            "message": "Ocorreu um erro ao carregar as hospedagens. Tente novamente.",
+            "retry": "Tentar de novo"
+        },
+        "matrix": {
+            "attribute": "Atributo",
+            "photo": "Foto",
+            "name": "Nome",
+            "type": "Tipo",
+            "price": "Preço",
+            "location": "Localização",
+            "rating": "Avaliação",
+            "reviews": "Avaliações",
+            "featured": "Destaque",
+            "summary": "Descrição",
+            "viewDetails": "Ver detalhes",
+            "notAvailable": "N/D"
+        }
+    },
     "title": "Hospedagens",
     "description": "Descubra hospedagens unicas e encontre o lugar perfeito para a sua proxima aventura.",
     "emptyTitle": "Nenhuma hospedagem disponivel",

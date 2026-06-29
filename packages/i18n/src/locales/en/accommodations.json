@@ -1,4 +1,67 @@
 {
+    "comparison": {
+        "button": {
+            "add": "Compare",
+            "remove": "Remove from comparison",
+            "addAriaLabel": "Add {{name}} to comparison",
+            "removeAriaLabel": "Remove {{name}} from comparison",
+            "inListLabel": "In comparison"
+        },
+        "toast": {
+            "added": "Added to comparison",
+            "removed": "Removed from comparison",
+            "view": "Compare now"
+        },
+        "upsell": {
+            "title": "Accommodation comparison",
+            "message": "Comparing accommodations is available on the Plus and VIP plans.",
+            "cta": "View plans"
+        },
+        "limit": {
+            "title": "You've reached the maximum",
+            "message": "Your plan lets you compare up to {{max}} accommodations at a time.",
+            "hint": "Remove one to add another."
+        },
+        "bar": {
+            "title": "Compare accommodations",
+            "count_one": "{{count}} accommodation selected",
+            "count_other": "{{count}} accommodations selected",
+            "compareNow": "Compare now",
+            "clear": "Clear",
+            "removeItemAriaLabel": "Remove {{name}} from comparison",
+            "minRequired": "Pick at least {{min}} to compare"
+        },
+        "page": {
+            "metaTitle": "Compare accommodations",
+            "metaDescription": "Compare accommodations side by side: price, location, rating and more.",
+            "heading": "Accommodation comparison",
+            "backToListing": "Back to accommodations"
+        },
+        "empty": {
+            "title": "No accommodations to compare",
+            "message": "Add accommodations from the listing to see them side by side.",
+            "cta": "Browse accommodations"
+        },
+        "error": {
+            "title": "We couldn't load the comparison",
+            "message": "Something went wrong loading the accommodations. Please try again.",
+            "retry": "Retry"
+        },
+        "matrix": {
+            "attribute": "Attribute",
+            "photo": "Photo",
+            "name": "Name",
+            "type": "Type",
+            "price": "Price",
+            "location": "Location",
+            "rating": "Rating",
+            "reviews": "Reviews",
+            "featured": "Featured",
+            "summary": "Description",
+            "viewDetails": "View details",
+            "notAvailable": "N/A"
+        }
+    },
     "title": "Accommodations",
     "description": "Discover unique accommodations and find the perfect place for your next adventure.",
     "emptyTitle": "No accommodations available",
