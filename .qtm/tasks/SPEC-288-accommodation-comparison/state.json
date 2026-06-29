@@ -249,35 +249,35 @@
             "id": "T-008",
             "title": "Build CompareButton island with upsell",
             "description": "Create apps/web/src/components/shared/compare/CompareButton.client.tsx following FavoriteButton.client.tsx. Toggles the accommodation in compare-store; uses T-007 guard. Shown to everyone (D-4): free/anonymous -> upsell message ('requires Plus or VIP'); over-limit -> limit message. i18n via @repo/i18n (T-012 keys). Tests: component test for toggle, upsell on free, limit message.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007", "T-012"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Button island + toggle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Upsell + limit messaging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T05:45:00.000Z",
+                "completed": "2026-06-29T05:50:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.4
     }
