@@ -122,6 +122,35 @@ export function computeDisplayName({
 }
 
 /**
+ * Splits a full display name (e.g. the single `name` string an OAuth provider
+ * such as Google exposes) into a `{ firstName, lastName }` pair used to
+ * pre-fill the profile completion form. The first whitespace-delimited token
+ * becomes the first name and the remainder becomes the last name. Returns empty
+ * strings when there is nothing to split, so the inputs fall back to blank.
+ *
+ * Heuristic by design: providers hand us only a single full-name string, so
+ * compound names ("María José García") split imperfectly and the user can edit
+ * them. This only seeds the inputs; it never blocks submission or overrides a
+ * value the user already typed.
+ *
+ * @param fullName - The provider/display full name (may be empty or undefined).
+ * @returns Trimmed `{ firstName, lastName }`; both empty when the input is blank.
+ */
+export function splitFullName({ fullName }: { readonly fullName?: string }): {
+    readonly firstName: string;
+    readonly lastName: string;
+} {
+    const normalized = (fullName ?? '').trim().replace(/\s+/g, ' ');
+    if (!normalized) return { firstName: '', lastName: '' };
+    const spaceIdx = normalized.indexOf(' ');
+    if (spaceIdx === -1) return { firstName: normalized, lastName: '' };
+    return {
+        firstName: normalized.slice(0, spaceIdx),
+        lastName: normalized.slice(spaceIdx + 1)
+    };
+}
+
+/**
  * Parses a `dd/mm/yyyy` string into a `Date`, returning `null` when the string
  * is not a complete, calendar-valid date. Rejects roll-overs like `31/02/2000`
  * (which JS would otherwise silently coerce to early March).
