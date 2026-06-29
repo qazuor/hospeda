@@ -36,7 +36,12 @@ const setCompareCount: AppMiddleware = async (c, next) => {
     try {
         const raw = await c.req.json();
         if (raw && Array.isArray((raw as { ids?: unknown }).ids)) {
-            count = (raw as { ids: unknown[] }).ids.length;
+            // gateComparator delegates to checkLimit(), whose rule is
+            // `currentCount < maxAllowed` — it models "I already hold N items, may I
+            // add one more?". A comparison is a batch of N items, so to permit exactly
+            // `max_compare_items` items we report N-1: (N-1) < max  ⟺  N <= max.
+            // e.g. Plus (max 2) allows comparing 2 ids; VIP (max 4) allows 4.
+            count = Math.max(0, (raw as { ids: unknown[] }).ids.length - 1);
         }
     } catch {
         // Malformed / empty body — leave count at 0; OpenAPI validator will reject it
