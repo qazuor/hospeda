@@ -416,31 +416,31 @@
             "id": "T-013",
             "title": "Activate compare row in PlanComparisonTable",
             "description": "Flip the 'compare' row status from 'upcoming' to 'available' in apps/web/src/components/billing/PlanComparisonTable.astro (line ~95) and confirm the per-tier cells reflect Plus/VIP availability. Removes the 'Próximamente' badge for this row. Tests: snapshot/render assertion that the badge is gone and the row shows availability.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "upcoming -> available",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify per-tier cells",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "billing", "ui"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T02:24:00.000Z",
+                "completed": "2026-06-29T02:27:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.4
     }
