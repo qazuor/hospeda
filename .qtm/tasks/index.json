@@ -807,13 +807,15 @@
         {
             "specId": "SPEC-288",
             "title": "Accommodation Comparison",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "14/14",
+            "archived": true,
+            "archivedAt": "2026-06-29",
             "path": "SPEC-288-accommodation-comparison",
             "branch": "spec/SPEC-288-accommodation-comparison",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Tasks atomized (14, all complexity<=3). Client-only ephemeral compare; gate already exists. Decisions D-1..D-4 in spec.md."
+            "note": "Tasks atomized (14, all complexity<=3). Client-only ephemeral compare; gate already exists. Decisions D-1..D-4 in spec.md. Shipped 14/14; closed via the implementation PR (code + index archival together)."
         },
         {
             "specId": "SPEC-289",
