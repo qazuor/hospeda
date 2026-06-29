@@ -276,6 +276,8 @@
         "senior_friendly": "Apto adultos mayores"
     },
     "title": "Alojamientos",
+    "tagline": "Encontrá tu lugar ideal",
+    "typeInLocation": "{{type}} en {{location}}",
     "description": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura.",
     "emptyTitle": "No hay alojamientos disponibles",
     "emptyMessage": "Pronto agregaremos más opciones de hospedaje para ti.",

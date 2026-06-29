@@ -63,6 +63,8 @@
         }
     },
     "title": "Accommodations",
+    "tagline": "Find your ideal place",
+    "typeInLocation": "{{type}} in {{location}}",
     "description": "Discover unique accommodations and find the perfect place for your next adventure.",
     "emptyTitle": "No accommodations available",
     "emptyMessage": "We'll be adding more lodging options for you soon.",
