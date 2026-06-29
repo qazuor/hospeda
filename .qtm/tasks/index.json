@@ -773,13 +773,13 @@
         {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "4/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
-            "branch": null,
+            "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-286",

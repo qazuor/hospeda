@@ -2210,7 +2210,7 @@
             "title": "Owner Promotions — Tourist-Facing Display",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-285-owner-promotions-tourist-display",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
