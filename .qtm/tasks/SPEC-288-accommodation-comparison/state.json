@@ -113,31 +113,31 @@
             "id": "T-004",
             "title": "Remove PHANTOM-GATE note from gateComparator()",
             "description": "In apps/api/src/middlewares/tourist-entitlements.ts, remove the '// PHANTOM-GATE (SPEC-145): route not built yet' comment block (and the 'do NOT build without a spec' note) now that POST /compare ships. Update docs/billing/endpoint-gate-matrix.md to move the comparator out of the Phantom Gates section. No new tests; existing gate tests still apply.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Remove phantom-gate comment",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update endpoint-gate-matrix.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "docs", "cleanup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:42:00.000Z",
+                "completed": "2026-06-29T00:50:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }
