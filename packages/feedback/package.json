@@ -35,6 +35,7 @@
         "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "dependencies": {
+        "@marsidev/react-turnstile": "^1.5.3",
         "@repo/icons": "workspace:*",
         "@repo/schemas": "workspace:*",
         "clsx": "^2.1.1",

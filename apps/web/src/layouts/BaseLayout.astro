@@ -16,7 +16,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getApiUrl, getDeployVersion, isFeedbackEnabled } from '@/lib/env';
+import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
@@ -32,7 +32,7 @@ import PostHogScript from '@/components/analytics/PostHogScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
-import { FeedbackFABClient } from '@/components/feedback/FeedbackFAB.client';
+import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import '@/styles/global.css';
 // Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
@@ -71,6 +71,7 @@ const apiUrl = getApiUrl();
 // SPEC-157 REQ-4: API origin for the <head> preconnect hint (env-derived).
 const apiOrigin = new URL(apiUrl).origin;
 const deployVersion = getDeployVersion();
+const turnstileSiteKey = getTurnstileSiteKey();
 
 /**
  * Hint for client islands (UserMenu, GuestPreferenceNudge) about whether the
@@ -252,14 +253,15 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<PaginationLoading client:idle />
 
 		{feedbackEnabled && (
-			<FeedbackFABClient
+			<FeedbackHeadlessHost
 				client:idle
-				transition:persist="feedback-fab"
+				transition:persist="feedback-host"
 				apiUrl={apiUrl}
 				deployVersion={deployVersion}
 				userId={Astro.locals.user?.id}
 				userEmail={Astro.locals.user?.email}
 				userName={Astro.locals.user?.name}
+				turnstileSiteKey={turnstileSiteKey}
 			/>
 		)}
 
