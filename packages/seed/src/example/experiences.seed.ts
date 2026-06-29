@@ -37,6 +37,19 @@ interface DbRow {
     email?: string;
 }
 
+/** Seed-only media image shape (matches BaseMediaObjectSchema at runtime). */
+interface SeedMediaImage {
+    url: string;
+    alt: string;
+    moderationState: 'APPROVED';
+}
+
+/** Seed-only media JSONB payload written directly to the DB. */
+interface SeedMedia {
+    featuredImage: SeedMediaImage;
+    gallery: SeedMediaImage[];
+}
+
 interface ExperienceInsertInput {
     slug: string;
     name: string;
@@ -54,6 +67,7 @@ interface ExperienceInsertInput {
     ownerId: string;
     destinationId: string;
     createdById: string;
+    media: SeedMedia;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +113,26 @@ function buildExperienceInputs(
             isFeatured: true,
             ownerId: commerceOwnerId,
             destinationId: concepcion,
-            createdById: superAdminId
+            createdById: superAdminId,
+            media: {
+                featuredImage: {
+                    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
+                    alt: 'Excursión por el Río Uruguay entre islas y costas naturales',
+                    moderationState: 'APPROVED'
+                },
+                gallery: [
+                    {
+                        url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=600&fit=crop',
+                        alt: 'Vista del Río Uruguay desde la embarcación',
+                        moderationState: 'APPROVED'
+                    },
+                    {
+                        url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop',
+                        alt: 'Grupo en excursión fluvial con equipo de seguridad',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
         },
         {
             slug: 'alquiler-kayak-colon-termas',
@@ -118,7 +151,26 @@ function buildExperienceInputs(
             isFeatured: false,
             ownerId: commerceOwnerId,
             destinationId: colon,
-            createdById: superAdminId
+            createdById: superAdminId,
+            media: {
+                featuredImage: {
+                    url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop',
+                    alt: 'Alquiler de kayaks en el río frente a las Termas de Colón',
+                    moderationState: 'APPROVED'
+                },
+                gallery: [
+                    {
+                        url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop',
+                        alt: 'Kayakistas recorriendo el río en Colón',
+                        moderationState: 'APPROVED'
+                    },
+                    {
+                        url: 'https://images.unsplash.com/photo-1558030006-450675393462?w=800&h=600&fit=crop',
+                        alt: 'Equipamiento completo de kayak con chaleco salvavidas',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
         },
         {
             slug: 'guia-turistica-gualeguaychu-carnaval',
@@ -137,7 +189,26 @@ function buildExperienceInputs(
             isFeatured: false,
             ownerId: commerceOwnerId,
             destinationId: gualeguaychu,
-            createdById: superAdminId
+            createdById: superAdminId,
+            media: {
+                featuredImage: {
+                    url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=600&fit=crop',
+                    alt: 'Guía turística mostrando el Corsódromo del Carnaval de Gualeguaychú',
+                    moderationState: 'APPROVED'
+                },
+                gallery: [
+                    {
+                        url: 'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?w=800&h=600&fit=crop',
+                        alt: 'Trajes y plumas del carnaval de Gualeguaychú',
+                        moderationState: 'APPROVED'
+                    },
+                    {
+                        url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop',
+                        alt: 'Recorrido por el barrio histórico de Gualeguaychú',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
         },
         {
             slug: 'paseo-en-lancha-concordia-lago',
@@ -156,7 +227,26 @@ function buildExperienceInputs(
             isFeatured: false,
             ownerId: commerceOwnerId,
             destinationId: concordia,
-            createdById: superAdminId
+            createdById: superAdminId,
+            media: {
+                featuredImage: {
+                    url: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&h=600&fit=crop',
+                    alt: 'Paseo en lancha por el lago de Salto Grande en Concordia',
+                    moderationState: 'APPROVED'
+                },
+                gallery: [
+                    {
+                        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
+                        alt: 'Vista panorámica del Embalse de Salto Grande',
+                        moderationState: 'APPROVED'
+                    },
+                    {
+                        url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&h=600&fit=crop',
+                        alt: 'Lago artificial con la represa al fondo',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
         },
         {
             slug: 'tour-cultural-casas-historicas-concepcion',
@@ -176,7 +266,26 @@ function buildExperienceInputs(
             isFeatured: false,
             ownerId: commerceOwnerId,
             destinationId: concepcion,
-            createdById: superAdminId
+            createdById: superAdminId,
+            media: {
+                featuredImage: {
+                    url: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800&h=600&fit=crop',
+                    alt: 'Fachada histórica del Colegio del Uruguay en Concepción del Uruguay',
+                    moderationState: 'APPROVED'
+                },
+                gallery: [
+                    {
+                        url: 'https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=800&h=600&fit=crop',
+                        alt: 'Basílica Inmaculada Concepción de Concepción del Uruguay',
+                        moderationState: 'APPROVED'
+                    },
+                    {
+                        url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop',
+                        alt: 'Guía explicando la historia de las casas patrimoniales',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
         }
     ];
 }
@@ -269,12 +378,12 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                    (slug, name, summary, description, type,
                     price_from, price_unit, is_price_on_request, has_active_subscription,
                     visibility, lifecycle_state, moderation_state, is_featured,
-                    owner_id, destination_id, created_by_id, updated_by_id)
+                    owner_id, destination_id, created_by_id, updated_by_id, media)
                  VALUES
                    ($1, $2, $3, $4, $5,
                     $6, $7, $8, $9,
                     $10, $11, $12, $13,
-                    $14, $15, $16, $16)
+                    $14, $15, $16, $16, $17::jsonb)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -293,7 +402,8 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.isFeatured,
                     input.ownerId,
                     input.destinationId,
-                    input.createdById
+                    input.createdById,
+                    JSON.stringify(input.media)
                 ]
             );
 
