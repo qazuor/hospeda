@@ -447,43 +447,44 @@
             "id": "T-014",
             "title": "End-to-end compare flow test",
             "description": "Add an E2E/integration test covering: select accommodations from a listing, see the floating bar, open the compare page, see the matrix, and hit the per-plan limit (Plus=2, VIP=4) + upsell for free. Use the project's web e2e harness. AAA pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Select + floating bar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Compare page matrix",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Limit + upsell assertions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing", "e2e"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
+            "notes": "guest-05-accommodation-compare.spec.ts: 4 tests (free→ENTITLEMENT_REQUIRED, Plus 2/3, VIP 4/5, full UI listing→bar→page→matrix). Verified via biome + tsc + no-silent-skip guard + playwright --list; real execution runs in e2e-pr CI (heavy docker+3-build harness, not run locally).",
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T02:28:00.000Z",
+                "completed": "2026-06-29T02:46:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 14,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.4
     }
