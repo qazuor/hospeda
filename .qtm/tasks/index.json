@@ -951,12 +951,12 @@
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
             "status": "in-progress",
-            "progress": "10/13",
+            "progress": "12/13",
             "path": "SPEC-301-feedback-system-prod-rework",
             "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Done: discovery, slim form, web entry, schema parity, Turnstile (web+api), admin alignment (T-010: headless host + user-menu entry + VITE_TURNSTILE_SITE_KEY). Remaining: T-011 form tests, T-012 turnstile tests (mostly covered by T-009), T-013 smoke. Owner must set Turnstile keys in Coolify (web PUBLIC_, admin VITE_, api HOSPEDA_secret)."
+            "note": "Implementation done (12/13). Only T-013 (manual local smoke to Linear with Turnstile test keys) remains — needs the app running + keys. T-011 form tests + T-012 turnstile tests complete (T-012 was covered by T-009). Fixed admin-integration.test.ts regression from T-010 (FAB->headless host). Owner must set Turnstile keys in Coolify."
         },
         {
             "specId": "SPEC-302",

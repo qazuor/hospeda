@@ -38,45 +38,24 @@ describe('Admin app — package.json dependency', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. Root layout — FeedbackFAB integration
+// 2. Root layout — headless feedback host (SPEC-301 T-010: no visible FAB)
 // ---------------------------------------------------------------------------
 
-describe('Admin app — root layout has FeedbackFAB', () => {
-    it('should import FeedbackFAB from @repo/feedback', () => {
-        // Arrange
-        const rootPath = adminPath('src/routes/__root.tsx');
-
-        // Act
-        const content = readFileSync(rootPath, 'utf8');
-
-        // Assert
-        expect(content).toContain('@repo/feedback');
-        expect(content).toContain('FeedbackFAB');
-    });
-
-    it('should render <FeedbackFAB> in the JSX body', () => {
+describe('Admin app — root layout uses the headless feedback host', () => {
+    it('should NOT render the visible FeedbackFAB (removed in SPEC-301 T-010)', () => {
         // Arrange
         const content = readFileSync(adminPath('src/routes/__root.tsx'), 'utf8');
 
-        // Assert — FAB must appear in the rendered output, not just be imported
-        expect(content).toContain('<FeedbackFAB');
+        // Assert — the always-visible floating button was removed for prod safety
+        expect(content).not.toContain('<FeedbackFAB');
     });
 
-    it('should pass appSource="admin" to FeedbackFAB', () => {
+    it('should mount the AdminFeedbackHeadlessHost instead', () => {
         // Arrange
         const content = readFileSync(adminPath('src/routes/__root.tsx'), 'utf8');
 
-        // Assert — identifies the originating app in Linear issues
-        expect(content).toContain('appSource');
-        expect(content).toContain('"admin"');
-    });
-
-    it('should pass apiUrl to FeedbackFAB', () => {
-        // Arrange
-        const content = readFileSync(adminPath('src/routes/__root.tsx'), 'utf8');
-
-        // Assert — FAB must know where to POST submissions
-        expect(content).toContain('apiUrl');
+        // Assert — headless host keeps the Ctrl+Shift+F shortcut + feedback:open modal
+        expect(content).toContain('AdminFeedbackHeadlessHost');
     });
 });
 
@@ -127,17 +106,17 @@ describe('Admin app — root layout has FeedbackErrorBoundary', () => {
         expect(content).toContain('apiUrl');
     });
 
-    it('should import both FeedbackFAB and FeedbackErrorBoundary in a single import statement', () => {
+    it('should import FeedbackErrorBoundary from @repo/feedback without the removed FeedbackFAB', () => {
         // Arrange
         const content = readFileSync(adminPath('src/routes/__root.tsx'), 'utf8');
 
-        // Assert — both exports are consumed from the same package entry
+        // Assert — boundary still comes from the package; the FAB import is gone (T-010)
         const importLine = content
             .split('\n')
             .find((line) => line.includes('@repo/feedback') && line.includes('import'));
 
         expect(importLine).toBeDefined();
-        expect(importLine).toContain('FeedbackFAB');
         expect(importLine).toContain('FeedbackErrorBoundary');
+        expect(importLine).not.toContain('FeedbackFAB');
     });
 });

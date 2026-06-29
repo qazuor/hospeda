@@ -454,38 +454,38 @@
             "id": "T-011",
             "title": "Write unit/component tests for slim form and schema parity",
             "description": "Write automated tests covering the slimmed FeedbackForm and the client/API schema parity assertion (no tests = not done).\n\nTest suite location: packages/feedback/test/ (create new file, e.g. FeedbackForm.slim.test.tsx).\n\nRequired test cases:\n1. Expander collapsed by default after mount.\n2. Clicking 'agregar más detalles' expander button shows Step 2 fields (severity, stepsToReproduce, expectedResult, actualResult).\n3. Clicking expander again collapses Step 2 fields.\n4. Submitting the form without type filled: blocked (required field validation).\n5. Submitting without title: blocked (required).\n6. Submitting without description: blocked (required).\n7. Submitting with all required fields (type + title + description): form is submittable (no blocking validation errors on those fields).\n\nSchema parity test (can be in packages/schemas/test/ or inline):\n8. The feedback submit payload schema in @repo/schemas and the API validation schema in apps/api/src/routes/feedback/public/validation.ts both accept the same required fields and reject the same missing-required fields. At minimum: assert both have title as required, both accept cfTurnstileToken as optional string.\n\nA11y note: the footer link keyboard-navigability is verified manually in T-004 and documented in the smoke (T-013); include a note here but no automated a11y test is required for this task.\n\nAcceptance criteria:\n- All 8 test cases pass.\n- No .only() or hard-coded .skip() directives.\n- pnpm --filter @repo/feedback test passes.\n- pnpm --filter @repo/schemas test passes (if schema parity test added there).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Create packages/feedback/test/FeedbackForm.slim.test.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: expander collapsed by default",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: expander click shows Step 2 fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: second expander click collapses fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: required field validation blocks submit (type, title, description)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema parity assertion (title required + cfTurnstileToken accepted)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/feedback test — must pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "feedback", "schemas"],
@@ -497,46 +497,46 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T12:50:00.000Z",
+                "completed": "2026-06-29T13:05:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write Turnstile server-verify unit tests — fail-closed path mandatory",
             "description": "Write automated tests for the server-side Turnstile verification added in T-009. The fail-closed path is non-negotiable per spec risk R-2 and must be explicitly covered by tests.\n\nTest file: apps/api/test/routes/feedback/submit.test.ts (or extend existing if it exists). AAA pattern throughout.\n\nRequired test cases:\n1. Valid Turnstile token: siteverify returns { success: true } → submission proceeds, Linear issue created, 200 returned.\n2. Invalid Turnstile token: siteverify returns { success: false } → 400/403 returned, Linear issue NOT created.\n3. Missing HOSPEDA_TURNSTILE_SECRET_KEY (env var unset or empty): submission rejected immediately, siteverify NOT called, Linear NOT called — FAIL CLOSED.\n4. siteverify network error (timeout/exception): submission rejected, Linear NOT called — FAIL CLOSED.\n5. Honeypot field ('website') populated: submission rejected regardless of Turnstile token (existing guard regression).\n6. Rate limit exceeded (30/IP/hr): submission rejected regardless of Turnstile token (existing guard regression).\n\nTest cases 3 and 4 MUST be present — they are the fail-closed guarantee.\n\nAcceptance criteria:\n- All 6 test cases pass.\n- Test cases 3 and 4 explicitly assert fail-closed behavior.\n- No .only() or hard-coded .skip() directives.\n- pnpm --filter apps/api test feedback passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Create or extend apps/api/test/routes/feedback/submit.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: valid token → 200 + Linear issue created",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: invalid token → 400/403 + Linear not called",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: missing secret key → rejected, fail-closed (no siteverify, no Linear)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: siteverify network error → rejected, fail-closed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test: honeypot populated → rejected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write regression test: rate limit exceeded → rejected",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend", "security", "feedback"],
@@ -548,8 +548,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T12:50:00.000Z",
+                "completed": "2026-06-29T13:05:00.000Z"
             }
         },
         {

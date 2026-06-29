@@ -342,6 +342,42 @@ describe('FeedbackForm — Step 1 validation on submit', () => {
         fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
         expect(mockSubmit).not.toHaveBeenCalled();
     });
+
+    // T-011 case 4: type set to an invalid value → validation blocks submit
+    it('should NOT call submit and should show a type field error when type value is invalid', () => {
+        // Arrange: start with logged-in user so email/name are pre-filled from props.
+        // Force an out-of-enum type value via direct DOM event — the select normally
+        // only exposes valid options, but this exercises the mapZodMessage fallback
+        // path and confirms the form does not call submit when Zod rejects 'type'.
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: '' } });
+        fillValidStep1(); // title + description are valid
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
+
+        // Assert
+        expect(mockSubmit).not.toHaveBeenCalled();
+        // The error element for the type field must appear (role="alert" inside the fieldGroup)
+        expect(document.getElementById('feedback-type-error')).toBeInTheDocument();
+    });
+
+    // T-011 case 6 complement: description empty → submit handler must NOT fire
+    it('should NOT call submit when description is empty', () => {
+        // Arrange
+        render(<FeedbackForm {...LOGGED_IN_PROPS} />);
+        fireEvent.change(screen.getByRole('textbox', { name: FEEDBACK_STRINGS.fields.title }), {
+            target: { value: 'A valid title for test' }
+        });
+        // description is intentionally left empty
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: FEEDBACK_STRINGS.buttons.submit }));
+
+        // Assert: validation fails → submit handler returns early
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(screen.getByText(FEEDBACK_STRINGS.validation.descriptionMin)).toBeInTheDocument();
+    });
 });
 
 // ---------------------------------------------------------------------------
