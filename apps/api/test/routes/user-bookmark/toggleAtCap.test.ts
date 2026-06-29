@@ -101,6 +101,11 @@ vi.mock('../../../src/utils/logger', () => ({
 vi.mock('../../../src/middlewares/tourist-entitlements', () => ({
     gateFavorites: () => async (_c: unknown, next: () => Promise<void>) => {
         await next();
+    },
+    // gateComparator (SPEC-288) ships from the same module; the route graph
+    // loaded here imports it, so the mock must expose a pass-through too.
+    gateComparator: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
     }
 }));
 

@@ -105,6 +105,9 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
                 }
                 const items = result.data.items.map((item) =>
                     toAccommodationCardProps({
+                        // TYPE-WORKAROUND: compare-response items are typed by the
+                        // schema; toAccommodationCardProps takes the structurally
+                        // compatible Record<string, unknown> the transform expects.
                         item: item as unknown as Record<string, unknown>,
                         locale
                     })

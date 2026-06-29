@@ -8,7 +8,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: var(--z-sticky, 40);
+    z-index: var(--z-nav, 50);
     background-color: var(--core-card);
     border-top: 1px solid var(--border);
     box-shadow: var(--shadow-card-hover);
@@ -21,7 +21,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    max-width: var(--container-xl, 1280px);
+    max-width: var(--container-max, 1350px);
     margin: 0 auto;
 }
 
