@@ -78,35 +78,35 @@
             "id": "T-003",
             "title": "Build POST /protected/accommodations/compare route + handler",
             "description": "Create the route in apps/api/src/routes/accommodation/protected/ mounting entitlementMiddleware() + gateComparator(). Handler: validate body with T-001 schema, set currentCompareItemsCount in context so gateComparator enforces MAX_COMPARE_ITEMS, fetch the N accommodations by ids (via existing service/model), return the matrix payload. Register the route in the protected accommodation index. Tests: covered by T-005 (integration).",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005", "T-011"],
             "subtasks": [
                 {
                     "title": "Route + middleware mount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handler: set count + fetch by ids",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register in protected index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "entitlements"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:10:00.000Z",
+                "completed": "2026-06-29T00:40:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.4
     }
