@@ -774,7 +774,7 @@
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
             "status": "in-progress",
-            "progress": "4/9",
+            "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
             "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",

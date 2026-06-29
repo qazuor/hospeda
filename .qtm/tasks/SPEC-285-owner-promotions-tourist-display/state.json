@@ -80,92 +80,92 @@
             "id": "T-005",
             "title": "Web: ownerPromotionsApi public client",
             "description": "Add ownerPromotionsApi to apps/web/src/lib/api/endpoints.ts (BASE = '/api/v1/public' convention) with a method to fetch active promotions for an accommodation (by accommodationId, including owner-wide per D-4). Type the response with the public schema.\n\nAcceptance criteria:\n- Client method returns typed public promo list for an accommodation.\n- Graceful degradation (empty list) on error, matching sibling clients.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Add ownerPromotionsApi.list({ accommodationId }) to endpoints.ts", "completed": false }
+                { "title": "Add ownerPromotionsApi.list({ accommodationId }) to endpoints.ts", "completed": true }
             ],
             "tags": ["frontend", "web", "api-client"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
         },
         {
             "id": "T-006",
             "title": "Web: PromotionBanner display component (informational)",
             "description": "Create a tourist-facing promotion badge/banner component for the accommodation detail page (D-2: informational only, no CTA/redeem). Render title, discount (percentage/fixed/free_night via existing host.promotions.discountTypes labels), minNights, and validity window. Web styling convention (scoped Astro <style> or CSS Modules for an island). No new tourist component exists yet.\n\nAcceptance criteria:\n- Renders one or many active promos with correct discount formatting per type.\n- Sensible empty/none state (renders nothing when no active promos).\n- Follows web CSS + i18n conventions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Build PromotionBanner (badge/banner, discount formatting)", "completed": false },
-                { "title": "Empty-state handling", "completed": false }
+                { "title": "Build PromotionBanner (badge/banner, discount formatting)", "completed": true },
+                { "title": "Empty-state handling", "completed": true }
             ],
             "tags": ["frontend", "web", "component"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
         },
         {
             "id": "T-007",
             "title": "Web: mount promotions on accommodation detail page",
             "description": "In apps/web/src/pages/[lang]/alojamientos/[slug].astro, add the active-promotions fetch to the existing Promise.allSettled block (using ownerPromotionsApi + accommodation.id/ownerId) and render PromotionBanner at the chosen insertion point in the main content column. Use extractItems() for graceful degradation.\n\nAcceptance criteria:\n- Active promos appear on the detail page; failures degrade gracefully.\n- No layout regression; SSR path unaffected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-006"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add promo fetch to Promise.allSettled", "completed": false },
-                { "title": "Render PromotionBanner at insertion point", "completed": false }
+                { "title": "Add promo fetch to Promise.allSettled", "completed": true },
+                { "title": "Render PromotionBanner at insertion point", "completed": true }
             ],
             "tags": ["frontend", "web", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
         },
         {
             "id": "T-008",
             "title": "i18n: accommodations.detail.promotions.* keys (es/en/pt)",
             "description": "Add tourist-facing promotion strings (banner title, validity/until labels, discount format strings, empty state) under accommodations.detail.promotions.* in packages/i18n (types.ts + config.ts) for es/en/pt, then run i18n generate-types. Reuse host.promotions.discountTypes.* for type labels where possible.\n\nAcceptance criteria:\n- Keys present in all three locales; generate-types clean; no missing-key warnings.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Add keys to types.ts + config.ts (es/en/pt)", "completed": false },
-                { "title": "Run i18n generate-types", "completed": false }
+                { "title": "Add keys to types.ts + config.ts (es/en/pt)", "completed": true },
+                { "title": "Run i18n generate-types", "completed": true }
             ],
             "tags": ["i18n", "web"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
         },
         {
             "id": "T-009",
             "title": "Tests: component render + visibility integration",
             "description": "Add tests for the tourist-facing display: PromotionBanner rendering (discount types, validity, empty state) and an integration check that the detail page surfaces active promos and hides expired/plan-restricted ones. Respect the project's resource-care rule (run scoped, not the full suite).\n\nAcceptance criteria:\n- Component tests cover the three discount types + empty state.\n- Visibility integration asserts expired/plan-restricted promos are not shown.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "PromotionBanner component tests", "completed": false },
-                { "title": "Visibility integration test", "completed": false }
+                { "title": "PromotionBanner component tests", "completed": true },
+                { "title": "Visibility integration test", "completed": true }
             ],
             "tags": ["testing", "web"],
             "phase": "testing",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
         }
     ],
     "summary": {
         "total": 9,
-        "pending": 5,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.3
     }
