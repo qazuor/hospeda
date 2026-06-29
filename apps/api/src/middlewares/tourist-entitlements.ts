@@ -311,10 +311,13 @@ export function gateReviewPhotos(): AppMiddleware {
 }
 
 /**
- * Gate search history feature
+ * Gate search history feature (SPEC-289)
  *
- * Checks if user has the entitlement to view their search history.
- * Plus and VIP plans only.
+ * Entitlement-only gate: checks whether the actor holds the
+ * `CAN_VIEW_SEARCH_HISTORY` entitlement. No limit check is performed here —
+ * the actual entry cap (MAX_SEARCH_HISTORY_ENTRIES) is enforced by
+ * `SearchHistoryService.list()` which truncates the result set to the
+ * plan limit server-side.
  *
  * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
  * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
@@ -338,28 +341,26 @@ export function gateReviewPhotos(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for GET /search-history once that
-// route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateSearchHistory(): AppMiddleware {
     return async (c, next) => {
-        if (hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
-            await next();
-            return;
+        // Entitlement check: users without the feature get ENTITLEMENT_REQUIRED.
+        if (!hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
+            apiLogger.warn(
+                `gateSearchHistory: blocked — user lacks ${EntitlementKey.CAN_VIEW_SEARCH_HISTORY}`
+            );
+
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
+                {
+                    requiredEntitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+                    upgradeUrl: '/billing/plans'
+                }
+            );
         }
 
-        apiLogger.warn(
-            `gateSearchHistory: blocked — user lacks ${EntitlementKey.CAN_VIEW_SEARCH_HISTORY}`
-        );
-
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
-            {
-                requiredEntitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-                upgradeUrl: '/billing/plans'
-            }
-        );
+        // Entitlement OK — proceed.
+        await next();
     };
 }
 

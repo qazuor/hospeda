@@ -87,6 +87,11 @@
 | `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | none | - | n/a | Metadata update on own collection; cap-freeing op; ungated — T-145-05 |
 | `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 — T-145-05 |
 | `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
+| **SEARCH HISTORY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/search-history` | `search-history/protected/list.ts` | gate+limit | `can_view_search_history`, `max_search_history_entries` | wired | gateSearchHistory() — two-step: CAN_VIEW_SEARCH_HISTORY entitlement + MAX_SEARCH_HISTORY_ENTRIES limit (injected count=0, service caps page size to planLimit) — SPEC-289 |
+| `DELETE /api/v1/protected/search-history/{id}` | `search-history/protected/delete-one.ts` | none | - | n/a | Hard-delete own entry; ungated per BETA-42 — users at cap must still free slots — SPEC-289 |
+| `DELETE /api/v1/protected/search-history` | `search-history/protected/clear-all.ts` | none | - | n/a | Hard-delete all own entries (privacy op); ungated — SPEC-289 |
+| `PATCH /api/v1/protected/search-history/preferences` | `search-history/protected/preferences.ts` | none | - | n/a | Toggle opt-out; settings write via UserService.patchSearchHistoryPreferences — SPEC-289 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
@@ -924,7 +929,7 @@ eventually built, move its entry from this section to the main table.
 | `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateComparator` | `can_compare_accommodations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateSearchHistory` | `can_view_search_history` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |

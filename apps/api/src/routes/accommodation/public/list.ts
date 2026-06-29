@@ -25,6 +25,7 @@
  * - Stable `id DESC` tiebreaker is appended by the model to guarantee
  *           deterministic pagination across pages when leading sort keys tie.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
@@ -32,8 +33,11 @@ import {
     type SortField,
     httpToDomainAccommodationSearch
 } from '@repo/schemas';
-import { AccommodationService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
+import type { Context } from 'hono';
+import { hasEntitlement } from '../../../middlewares/entitlement';
+import type { AppBindings } from '../../../types';
+import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -60,6 +64,7 @@ function stripRichDescription<T extends { richDescription?: unknown }>(
 }
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
+const searchHistoryService = new SearchHistoryService({ logger: apiLogger });
 
 /**
  * Allowed sort fields for public accommodation list.
@@ -177,6 +182,55 @@ export const publicListAccommodationsRoute = createPublicListRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // SPEC-289 write-hook: fire-and-forget search history recording.
+        // Gate conditions (all must be true to record):
+        //   1. Actor is authenticated (not a GUEST)
+        //   2. Actor has CAN_VIEW_SEARCH_HISTORY entitlement (Plus / VIP plans)
+        //   3. User has not opted out (checked inside service.record())
+        // Never blocks or fails the search response — errors are caught and logged.
+        if (
+            !isGuestActor(actor) &&
+            hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)
+        ) {
+            void searchHistoryService
+                .record(actor, {
+                    queryText: httpQuery.q ?? null,
+                    filters: {
+                        destinationId: httpQuery.destinationId,
+                        minPrice: httpQuery.minPrice,
+                        maxPrice: httpQuery.maxPrice,
+                        currency: httpQuery.currency,
+                        minGuests: httpQuery.minGuests,
+                        maxGuests: httpQuery.maxGuests,
+                        minBedrooms: httpQuery.minBedrooms,
+                        maxBedrooms: httpQuery.maxBedrooms,
+                        minBathrooms: httpQuery.minBathrooms,
+                        maxBathrooms: httpQuery.maxBathrooms,
+                        minRating: httpQuery.minRating,
+                        maxRating: httpQuery.maxRating,
+                        isFeatured: httpQuery.isFeatured,
+                        isAvailable: httpQuery.isAvailable,
+                        hasPool: httpQuery.hasPool,
+                        hasWifi: httpQuery.hasWifi,
+                        allowsPets: httpQuery.allowsPets,
+                        hasParking: httpQuery.hasParking,
+                        type: httpQuery.type,
+                        types: httpQuery.types,
+                        amenities: httpQuery.amenities,
+                        features: httpQuery.features,
+                        checkIn: httpQuery.checkIn ? new Date(httpQuery.checkIn) : undefined,
+                        checkOut: httpQuery.checkOut ? new Date(httpQuery.checkOut) : undefined
+                    },
+                    resultCount: result.data?.total ?? null
+                })
+                .catch((err) => {
+                    apiLogger.warn(
+                        'SPEC-289 write-hook: search history record failed (fire-and-forget)',
+                        err instanceof Error ? err.message : String(err)
+                    );
+                });
         }
 
         // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
