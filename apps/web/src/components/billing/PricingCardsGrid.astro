@@ -15,8 +15,8 @@
 import { CheckIcon, SparkleIcon, StarIcon } from '@repo/icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
-import type { EntitlementKey } from '@/lib/billing-i18n';
+import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
+import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -46,6 +46,9 @@ interface Props {
 	readonly plans: ReadonlyArray<PricingPlan>;
 	readonly highlightedSlug: string;
 	readonly intlLocale: string;
+	/** Audience of the page — owner cards collapse the inherited tourist tier
+	    and the AI entitlements into grouped bullets to keep the list short. */
+	readonly audience: PricingAudience;
 	/** Section heading text (rendered sr-only as h2 for accessibility). */
 	readonly sectionHeading: string;
 	/** Aria label for the section. */
@@ -63,6 +66,7 @@ const {
 	plans,
 	highlightedSlug,
 	intlLocale,
+	audience,
 	sectionHeading,
 	emptyMessage,
 	emptyActionUrl,
@@ -217,6 +221,12 @@ function formatPriceArs(cents: number): string {
 				const previousPlan = i > 0 ? plans[i - 1] : undefined;
 				const visibleEntitlements = computeAddedEntitlements({ plan, previous: previousPlan });
 				const showsIncremental = i > 0 && visibleEntitlements !== plan.entitlements;
+					// Curate bullets per audience: owner cards collapse the inherited
+					// tourist tier + AI suite into grouped bullets to keep lists short.
+					const visibleFeatures = getDisplayFeatures({ keys: visibleEntitlements, audience, t });
+					const inheritedFeatures = previousPlan
+						? getDisplayFeatures({ keys: previousPlan.entitlements, audience, t })
+						: [];
 				const includesEverythingLabel = previousPlan
 					? includesEverythingTemplate.replace('{plan}', getPlanName({ plan: previousPlan, t }))
 					: '';
@@ -276,9 +286,9 @@ function formatPriceArs(cents: number): string {
 								{trialFallback.replace('{days}', String(plan.trialDays))}
 							</p>
 						)}
-						{visibleEntitlements.length > 0 && (
+						{visibleFeatures.length > 0 && (
 							<ul class="pricing-card__features" aria-label={featuresLabel}>
-								{visibleEntitlements.map((entitlementKey) => (
+								{visibleFeatures.map((feature) => (
 									<li class="pricing-card__feature">
 										<svg
 											class="pricing-card__feature-icon"
@@ -297,7 +307,7 @@ function formatPriceArs(cents: number): string {
 												stroke-linejoin="round"
 											/>
 										</svg>
-										<span>{getEntitlementName({ key: entitlementKey as EntitlementKey, t })}</span>
+										<span>{feature.label}</span>
 									</li>
 								))}
 							</ul>
@@ -311,12 +321,12 @@ function formatPriceArs(cents: number): string {
 									<span>{inheritedSummaryLabel}</span>
 								</p>
 								<ul class="pricing-card__inherited-list" aria-label={includesEverythingLabel}>
-									{previousPlan.entitlements.map((entitlementKey) => (
+									{inheritedFeatures.map((feature) => (
 										<li class="pricing-card__inherited-item">
 											<span class="pricing-card__inherited-check" aria-hidden="true">
 												<CheckIcon size="xs" weight="bold" color="currentColor" />
 											</span>
-											<span>{getEntitlementName({ key: entitlementKey as EntitlementKey, t })}</span>
+											<span>{feature.label}</span>
 										</li>
 									))}
 								</ul>

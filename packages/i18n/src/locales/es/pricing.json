@@ -7,6 +7,10 @@
     "inheritedSummary": "+{count} funciones del plan {plan}",
     "baseHighlightTitle": "Ideal para empezar",
     "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
+    "group": {
+        "tourist": "Todas las funciones de turista",
+        "ai": "Suite de IA: textos, traducción, importación y consultas"
+    },
     "features": {
         "label": "Incluye"
     },

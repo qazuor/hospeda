@@ -7,6 +7,10 @@
     "inheritedSummary": "+{count} features from the {plan} plan",
     "baseHighlightTitle": "Perfect to get started",
     "baseHighlightText": "Everything essential to begin, no commitment.",
+    "group": {
+        "tourist": "All tourist features",
+        "ai": "AI suite: text, translation, import and chat"
+    },
     "features": {
         "label": "Includes"
     },
