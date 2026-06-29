@@ -202,12 +202,14 @@ export const accommodationsApi = {
     },
 
     /**
-     * Get all accommodations for a destination.
+     * Get the first page of accommodations for a destination (preview strips).
      *
      * NOTE: This endpoint (`GET /public/accommodations/destination/:id`) returns
-     * `{ accommodations: AccommodationPublic[] }` — NOT a paginated envelope.
-     * It ignores page/pageSize and returns ALL accommodations for the destination.
-     * Do NOT assume `.items` or `.pagination` fields exist on the response data.
+     * `{ accommodations: AccommodationPublic[] }` — NOT a paginated envelope, and
+     * the API route hardcodes `page: 1, pageSize: 20`, so it returns at most the
+     * first 20 accommodations (never "all"). Do NOT assume `.items` or
+     * `.pagination` fields exist on the response data. For a paginated listing,
+     * use `list({ destinationId, page, pageSize })` instead.
      */
     getByDestination({
         destinationId

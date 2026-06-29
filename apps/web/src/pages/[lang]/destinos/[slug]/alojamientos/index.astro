@@ -11,6 +11,7 @@ import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astr
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { accommodationsApi, destinationsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -28,14 +29,21 @@ const dest = destResult.data as Record<string, unknown>;
 const destId = String(dest.id || '');
 const destName = String(dest.name || slug);
 
-// NOTE: getByDestination returns { accommodations: [...] } — NOT a paginated
-// envelope. The endpoint ignores page/pageSize and returns all items at once,
-// so client-side server pagination is not available here.
-const result = await accommodationsApi.getByDestination({ destinationId: destId });
+// Use the paginated `list` endpoint (filtered by destinationId) so the
+// destination accommodations page paginates like the other listings. The
+// non-paginated `getByDestination` is reserved for preview strips that only
+// need the first few cards.
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+const result = await accommodationsApi.list({ destinationId: destId, page, pageSize });
 const hasError = !result.ok;
-const items = result.ok ? result.data.accommodations : [];
-const total = items.length;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+
+const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 ---
 
 <ListingLayout locale={locale} title={`${t('accommodations.title', 'Alojamientos')} en ${destName}`} showFilters={false}>
@@ -46,6 +54,7 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 	{!hasError && cards.length > 0 && (
 		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><AccommodationCard data={card} locale={locale} /></div>))}</div>
 	)}
+	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
 </ListingLayout>
 
 <style>
