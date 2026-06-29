@@ -179,6 +179,7 @@ import { protectedWhatsNewRoutes } from './whats-new';
 import { ApiInfoSchema } from '@repo/schemas';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
+import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import { createSimpleRoute } from '../utils/route-factory';
 import {
@@ -331,6 +332,24 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // until they change their password via /api/v1/protected/auth/change-password.
         // The exempt path list is maintained inside the middleware itself.
         app.use('/api/v1/protected/*', mustChangePasswordGate());
+
+        // Per-user rate limit on ALL protected routes (rate-limit hardening,
+        // defence-in-depth). Keyed by actor.id — the global rateLimitMiddleware only
+        // keys by IP, which collapses NAT/CGNAT users and SSR traffic into a single
+        // bucket and made a lone user trip the limiter. This gives every authenticated
+        // user their own budget; the IP-keyed `general` tier stays in place purely as
+        // an anti-abuse guard (NOT lowered, so shared-IP users are not penalized).
+        // 200 req / 60s sits well above normal authenticated browsing yet still
+        // throttles a runaway client. The actor is already on the context here
+        // (authMiddleware + actorMiddleware run globally before route setup).
+        app.use(
+            '/api/v1/protected/*',
+            createSlidingWindowPerUserRateLimit({
+                windowMs: 60_000,
+                max: 200,
+                keyPrefix: 'prot:user'
+            })
+        );
 
         apiLogger.debug('🔗 Registering protected routes...');
 

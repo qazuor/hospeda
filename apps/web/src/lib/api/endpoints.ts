@@ -1254,7 +1254,14 @@ export interface GastronomyReviewPublicItem {
     readonly content?: string | null;
     readonly averageRating?: number | null;
     readonly rating?: Record<string, number> | null;
-    readonly user?: { readonly name: string | null; readonly image: string | null } | null;
+    /** Reviewer's public profile from the user relation (Bug B7b fix). */
+    readonly user?: {
+        readonly id: string;
+        readonly name?: string | null;
+        readonly displayName?: string | null;
+        readonly firstName?: string | null;
+        readonly image?: string | null;
+    } | null;
     readonly createdAt?: string | null;
 }
 
