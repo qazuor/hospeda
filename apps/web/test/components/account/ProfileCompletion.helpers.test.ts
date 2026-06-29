@@ -11,6 +11,7 @@ import {
     LOCATION_COUNTRIES,
     SOCIAL_PLATFORMS,
     computeDisplayName,
+    computeInitialDisplayNameOverride,
     splitFullName,
     validateProfileCompletionFields
 } from '../../../src/components/account/ProfileCompletion.helpers';
@@ -414,6 +415,37 @@ describe('computeDisplayName', () => {
             override: ''
         });
         expect(result).toBe('Maria');
+    });
+});
+
+// ─── computeInitialDisplayNameOverride ──────────────────────────────────────────
+
+describe('computeInitialDisplayNameOverride', () => {
+    it('seeds the override with the display name when no firstName is present', () => {
+        expect(
+            computeInitialDisplayNameOverride({
+                initialDisplayName: 'Juan Pérez',
+                initialFirstName: ''
+            })
+        ).toBe('Juan Pérez');
+    });
+
+    it('returns empty when a firstName is present so the name auto-derives (B1 keystone)', () => {
+        // Regression for B1: a Google sign-up now passes initialFirstName, which
+        // MUST leave the override empty — otherwise the display name freezes to
+        // the raw session name instead of tracking first/last name edits.
+        expect(
+            computeInitialDisplayNameOverride({
+                initialDisplayName: 'Juan Pérez',
+                initialFirstName: 'Juan'
+            })
+        ).toBe('');
+    });
+
+    it('returns empty when both inputs are empty', () => {
+        expect(
+            computeInitialDisplayNameOverride({ initialDisplayName: '', initialFirstName: '' })
+        ).toBe('');
     });
 });
 

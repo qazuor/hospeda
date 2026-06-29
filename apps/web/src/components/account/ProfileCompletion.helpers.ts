@@ -122,6 +122,33 @@ export function computeDisplayName({
 }
 
 /**
+ * Computes the initial value for the display-name override input. The override
+ * is only seeded with the session display name when there is NO separate
+ * `firstName` to derive it from. Once a `firstName` pre-fill is present (e.g. a
+ * Google sign-up where the full name was split into first/last),
+ * {@link computeDisplayName} auto-derives the display name from
+ * firstName + lastName, so the override must start empty and not shadow that
+ * derivation.
+ *
+ * This is the keystone of the B1 fix: passing `initialFirstName` must leave the
+ * override empty, otherwise the display name would freeze to the raw session
+ * name instead of tracking edits to the first/last name inputs.
+ *
+ * @param initialDisplayName - Full display name from the session (may be empty).
+ * @param initialFirstName - First-name pre-fill, if any (may be empty).
+ * @returns The override seed; empty string whenever a `firstName` is present.
+ */
+export function computeInitialDisplayNameOverride({
+    initialDisplayName,
+    initialFirstName
+}: {
+    readonly initialDisplayName: string;
+    readonly initialFirstName: string;
+}): string {
+    return initialDisplayName && !initialFirstName ? initialDisplayName : '';
+}
+
+/**
  * Splits a full display name (e.g. the single `name` string an OAuth provider
  * such as Google exposes) into a `{ firstName, lastName }` pair used to
  * pre-fill the profile completion form. The first whitespace-delimited token
