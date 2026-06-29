@@ -315,35 +315,35 @@
             "id": "T-010",
             "title": "Build floating comparison bar/drawer",
             "description": "Create a floating bar/drawer island (apps/web/src/components/shared/compare/) showing selected items (thumbnails + remove), a 'Comparar ahora' CTA linking to the compare page, and a clear-all action. Reads compare-store; hidden when empty. Tests: component test for render with N items, remove, clear, CTA href.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Bar/drawer island",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove / clear / CTA",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T06:05:00.000Z",
+                "completed": "2026-06-29T06:20:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.4
     }
