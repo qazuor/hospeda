@@ -144,35 +144,35 @@
             "id": "T-005",
             "title": "Integration tests for the compare endpoint",
             "description": "In apps/api test suite for the route: assert no-entitlement (tourist-free) -> ENTITLEMENT_REQUIRED; over-limit (Plus with 3 ids, VIP with 5 ids) -> LIMIT_REACHED; happy path Plus(2)/VIP(4) returns the matrix payload. Use the role x plan test users / existing auth test helpers. AAA pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "ENTITLEMENT_REQUIRED case",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "LIMIT_REACHED cases (Plus>2, VIP>4)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Happy path Plus(2)/VIP(4)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing", "integration"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-28T22:19:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T00:52:00.000Z",
+                "completed": "2026-06-29T01:05:00.000Z"
             }
         },
         {
@@ -481,9 +481,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.4
     }
