@@ -1,0 +1,81 @@
+/* CompareButton.module.css
+ * Scoped styles for the CompareButton React island (SPEC-288).
+ * All values use CSS custom properties from global.css — never hardcode.
+ * Mirrors FavoriteButton.module.css but tints with the brand color (compare is
+ * a neutral/positive action, not a destructive one).
+ */
+
+/* --- Base button --- */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--border);
+    background-color: var(--core-card);
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+    padding: 0;
+
+    transition:
+        color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        transform var(--duration-fast) var(--ease-bounce),
+        box-shadow var(--duration-fast) ease;
+}
+
+/* Hover — keep the card surface so the button stays visible over busy photos. */
+.button:hover {
+    color: var(--brand-primary);
+    transform: scale(1.08);
+    box-shadow: var(--shadow-card);
+}
+
+/* Focus-visible — accessible ring */
+.button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Active tap feedback */
+.button:active {
+    transform: scale(0.94);
+}
+
+/* --- Selected (accommodation is in the comparison list) --- */
+.button[aria-pressed="true"] {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a35);
+    background-color: var(--brand-primary-a08);
+}
+
+.button[aria-pressed="true"]:hover {
+    border-color: var(--brand-primary-a40);
+    background-color: var(--brand-primary-a12);
+}
+
+/* --- Variant: compact --- */
+.button[data-variant="compact"] {
+    width: 2rem;
+    height: 2rem;
+    border-width: 1px;
+}
+
+/* --- Busy (entitlements still loading) --- */
+.button[aria-busy="true"] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+    .button,
+    .button:hover,
+    .button:active {
+        transform: none;
+        transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+    }
+}
