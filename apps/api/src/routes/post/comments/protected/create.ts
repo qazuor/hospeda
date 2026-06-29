@@ -21,10 +21,20 @@ import {
 } from '@repo/schemas';
 import { EntityCommentService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { createPerRouteRateLimitMiddleware } from '../../../../middlewares/rate-limit';
+import {
+    createPerRouteRateLimitMiddleware,
+    createSlidingWindowPerUserRateLimit
+} from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
+
+/** Per-user hourly write budget: 30 comment submissions per hour. */
+const writeCommentRateLimit = createSlidingWindowPerUserRateLimit({
+    windowMs: 3_600_000,
+    max: 30,
+    keyPrefix: 'prot:write:comment'
+});
 
 export const protectedCreatePostCommentRoute = createProtectedRoute({
     method: 'post',
@@ -52,6 +62,13 @@ export const protectedCreatePostCommentRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        middlewares: [createPerRouteRateLimitMiddleware({ requests: 5, windowMs: 60_000 })]
+        // writeCommentRateLimit: per-user hourly ceiling (30/hr, keyed by actor.id).
+        // createPerRouteRateLimitMiddleware: per-IP short-burst guard (5/min, AC-14).
+        // The per-user check runs first — a user who exhausted their hourly budget
+        // gets a clear 429 before the IP burst limiter is consulted.
+        middlewares: [
+            writeCommentRateLimit,
+            createPerRouteRateLimitMiddleware({ requests: 5, windowMs: 60_000 })
+        ]
     }
 });

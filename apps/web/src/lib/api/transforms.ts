@@ -22,7 +22,6 @@ import type {
     ExperienceCardData,
     ExperienceContactInfo,
     ExperienceDetailData,
-    ExperienceOpeningHoursEntry,
     ExperienceSocialNetworks,
     GastronomyCardData,
     GastronomyDetailData,
@@ -1799,22 +1798,53 @@ export function transformOwnerPromotionList({
 // ---------------------------------------------------------------------------
 
 /**
+ * Maps the schema's ISO day abbreviations (`mon`–`sun`) to the lower-cased
+ * English day keys (`monday`–`sunday`) consumed by the web opening-hours
+ * helpers and components.
+ */
+const OPENING_HOURS_DAY_KEY: Readonly<Record<string, string>> = {
+    mon: 'monday',
+    tue: 'tuesday',
+    wed: 'wednesday',
+    thu: 'thursday',
+    fri: 'friday',
+    sat: 'saturday',
+    sun: 'sunday'
+} as const;
+
+/**
  * Normalize a raw `openingHours` value from the API into a typed map.
+ *
+ * The API shape (from `OpeningHoursSchema`) is
+ * `{ timezone, days: { mon: { closed, shifts: [{ open, close }] }, … } }`.
+ * This reads the nested `days` map, translates the ISO day abbreviations to the
+ * lower-cased English keys the web layer uses, and preserves every shift so a
+ * day with a split schedule (e.g. midday + night service) renders both windows.
+ *
  * Returns `null` when absent or in an unexpected shape.
  */
 function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHoursEntry> | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-    const obj = raw as Record<string, unknown>;
+    const days = (raw as Record<string, unknown>).days;
+    if (!days || typeof days !== 'object' || Array.isArray(days)) return null;
+
     const result: Record<string, GastronomyOpeningHoursEntry> = {};
-    for (const [day, value] of Object.entries(obj)) {
-        if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
-        const entry = value as Record<string, unknown>;
-        result[day] = {
-            isOpen: Boolean(entry.isOpen ?? entry.open),
-            open: entry.open ? String(entry.open) : undefined,
-            close: entry.close ? String(entry.close) : undefined,
-            open24h: entry.open24h ? Boolean(entry.open24h) : undefined
-        };
+    for (const [abbr, value] of Object.entries(days as Record<string, unknown>)) {
+        const dayKey = OPENING_HOURS_DAY_KEY[abbr];
+        if (!dayKey || !value || typeof value !== 'object' || Array.isArray(value)) continue;
+        const day = value as Record<string, unknown>;
+
+        const rawShifts = Array.isArray(day.shifts) ? day.shifts : [];
+        const shifts = rawShifts.flatMap((entry) => {
+            if (!entry || typeof entry !== 'object') return [];
+            const shift = entry as Record<string, unknown>;
+            const open = typeof shift.open === 'string' ? shift.open : null;
+            const close = typeof shift.close === 'string' ? shift.close : null;
+            return open && close ? [{ open, close }] : [];
+        });
+
+        const closed = Boolean(day.closed);
+        result[dayKey] = { isOpen: !closed && shifts.length > 0, shifts };
     }
     return Object.keys(result).length > 0 ? result : null;
 }
@@ -1954,29 +1984,6 @@ export function toGastronomyDetailPageProps({
 // ---------------------------------------------------------------------------
 
 /**
- * Normalize a raw `openingHours` value for experience listings.
- * Returns null when absent or empty. Mirrors normalizeOpeningHours for gastronomy.
- */
-function normalizeExperienceOpeningHours(
-    raw: unknown
-): Record<string, ExperienceOpeningHoursEntry> | null {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-    const obj = raw as Record<string, unknown>;
-    const result: Record<string, ExperienceOpeningHoursEntry> = {};
-    for (const [day, value] of Object.entries(obj)) {
-        if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
-        const entry = value as Record<string, unknown>;
-        result[day] = {
-            isOpen: Boolean(entry.isOpen ?? entry.open),
-            open: entry.open ? String(entry.open) : undefined,
-            close: entry.close ? String(entry.close) : undefined,
-            open24h: entry.open24h ? Boolean(entry.open24h) : undefined
-        };
-    }
-    return Object.keys(result).length > 0 ? result : null;
-}
-
-/**
  * Normalize a raw `socialNetworks` value for experience listings.
  * Returns null when absent or empty.
  */
@@ -2051,7 +2058,9 @@ export function toExperienceCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
-        openingHours: normalizeExperienceOpeningHours(item.openingHours),
+        // Experience reuses the gastronomy structured-hours normalizer (shared
+        // OpeningHoursSchema source); see normalizeOpeningHours (Bug B8 fix).
+        openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null
     };
 }

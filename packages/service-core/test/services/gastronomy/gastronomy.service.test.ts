@@ -371,16 +371,18 @@ describe('GastronomyService.updateOwn — AC-5 identity-field regression (SPEC-2
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService search filter forwarding', () => {
-    it('should call model.findAll with deletedAt: null filter', async () => {
+    it('should call model.findAllWithRelations with deletedAt: null filter (Bug B7a: relations loaded for destinationName)', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
 
-        expect(mockFindAll).toHaveBeenCalledWith(
+        // After B7a fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ destination: true, owner: true }),
             expect.objectContaining({ deletedAt: null }),
             expect.any(Object),
             undefined,
@@ -443,8 +445,9 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         const service = makeService(makeGastronomyEntity());
         const model = (service as AnyService).model;
         await service.search(otherUserActor, { page: 1, pageSize: 10 });
-        expect(model.findAll).toHaveBeenCalled();
-        expect(model.findAll.mock.calls[0][0]).toMatchObject({
+        // After B7a fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(model.findAllWithRelations).toHaveBeenCalled();
+        expect(model.findAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -525,5 +528,52 @@ describe('GastronomyService.listOwn', () => {
             undefined,
             undefined
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Bug B7a regression — _executeSearch loads destination+owner relations
+// Fixes: destinationName always empty on gastronomy card (findAll never joined
+// the destination table; findAllWithRelations does).
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService._executeSearch — B7a regression (destination relation loaded)', () => {
+    it('passes destination: true and owner: true to findAllWithRelations', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ destination: true, owner: true }),
+            expect.any(Object),
+            expect.any(Object),
+            undefined,
+            undefined
+        );
+    });
+
+    it('preserves the AC-6.2 security invariant (visibility=PUBLIC + lifecycleState=ACTIVE + deletedAt=null) in the where argument', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10, destinationId: DEST_ID }, staffActor, {});
+
+        // arg[1] is the where object in findAllWithRelations
+        expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+        // Scalar filters from caller are forwarded too
+        expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
+            destinationId: DEST_ID
+        });
     });
 });
