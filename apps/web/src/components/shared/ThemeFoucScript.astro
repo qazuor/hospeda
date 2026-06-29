@@ -52,7 +52,7 @@ const { cspNonce } = Astro.props;
 
         // Re-apply after every Astro ClientRouter (View Transitions) navigation.
         // The swap replaces <html> attributes from the freshly SSR'd document
-        // (which has no data-theme), and this is:inline script is NOT re-run on
+        // (which has no data-theme), and this inline script is NOT re-run on
         // navigation (Astro dedupes identical inline scripts), so without this
         // the saved theme is lost when moving between pages. The document object
         // survives swaps, so this listener is registered exactly once.
