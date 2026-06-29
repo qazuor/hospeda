@@ -15,6 +15,17 @@ vi.mock('../../../src/components/shared/favorite/FavoriteButton.client', () => (
     FavoriteButton: () => null
 }));
 
+// CompareButton pulls in entitlements/store deps; stub it so we can assert it
+// renders per card without touching the compare-store or entitlements hook.
+vi.mock('../../../src/components/shared/compare/CompareButton.client', () => ({
+    CompareButton: () => (
+        <button
+            type="button"
+            data-testid="compare-button"
+        />
+    )
+}));
+
 const i18n = {
     resultsHeading: 'Resultados en el mapa',
     resultsCount: (n: number) => `${n} resultados`,
@@ -68,5 +79,23 @@ describe('MapCardsSidebar — A1 loading overlay', () => {
             name: 'Resultados en el mapa'
         });
         expect(region).toHaveAttribute('aria-busy', 'false');
+    });
+});
+
+describe('MapCardsSidebar — CompareButton integration (SPEC-288)', () => {
+    it('renders a CompareButton for an accommodation card', () => {
+        // Arrange / Act
+        render(
+            <MapCardsSidebar
+                items={[{ id: 'acc-1', slug: 'casa-rio', name: 'Casa del Río' }]}
+                hoveredItemId={null}
+                onCardHover={() => {}}
+                isFetching={false}
+                i18n={i18n}
+            />
+        );
+
+        // Assert — the compare toggle shares the map sidebar surface.
+        expect(screen.getByTestId('compare-button')).toBeInTheDocument();
     });
 });
