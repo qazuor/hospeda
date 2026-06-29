@@ -415,26 +415,26 @@
             "id": "T-010",
             "title": "Remove default-on FeedbackFAB from admin __root.tsx and add equivalent entry point",
             "description": "Apply the same rework to the admin app (G-8): remove the default-on FeedbackFAB mount from apps/admin/src/routes/__root.tsx and add an equivalent low-friction entry point.\n\nSteps:\n1. Read apps/admin/src/routes/__root.tsx to locate the FeedbackFAB mount (gated by VITE_FEEDBACK_ENABLED !== 'false').\n2. Remove the FeedbackFAB mount and the VITE_FEEDBACK_ENABLED gate.\n3. Keep FeedbackErrorBoundary if it wraps other things beyond the FAB; remove it only if its sole purpose was to wrap the FAB.\n4. Add an equivalent admin entry point. Options (pick the least-invasive fit with the existing admin header/layout pattern):\n   a. A 'Reportar problema' link in the admin header's help menu or settings dropdown.\n   b. A 'Feedback' item in the admin sidebar under a utility section.\n   c. A keyboard shortcut wired similarly to T-003 (headless host).\n   The chosen option must navigate to the standalone /feedback/ page or open the slim form.\n\nAcceptance criteria:\n- No visible floating FAB in the admin app.\n- FeedbackErrorBoundary preserved if it serves other purposes.\n- At least one visible entry point to the feedback form/page added.\n- Entry point is keyboard-accessible.\n- pnpm lint + pnpm typecheck pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Read apps/admin/src/routes/__root.tsx to understand FeedbackFAB mount and FeedbackErrorBoundary",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove FeedbackFAB mount and VITE_FEEDBACK_ENABLED guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assess FeedbackErrorBoundary scope and remove or retain accordingly",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add equivalent entry point (header link / sidebar link / keyboard shortcut)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "feedback"],
@@ -446,8 +446,8 @@
             },
             "timestamps": {
                 "created": "2026-06-28T22:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-29T12:00:00.000Z",
+                "completed": "2026-06-29T12:40:00.000Z"
             }
         },
         {

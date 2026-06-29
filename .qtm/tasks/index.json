@@ -951,12 +951,12 @@
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
             "status": "in-progress",
-            "progress": "9/13",
+            "progress": "10/13",
             "path": "SPEC-301-feedback-system-prod-rework",
             "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Done: discovery, slim form, web entry point, schema parity, Cloudflare Turnstile invisible (T-007 env vars + T-008 client widget + T-009 server verify FAIL-CLOSED). Remaining: T-010 admin alignment, T-011 form tests, T-012 turnstile tests done-as-part-of-T-009, T-013 smoke. Owner must set PUBLIC_TURNSTILE_SITE_KEY (web) + HOSPEDA_TURNSTILE_SECRET_KEY (api) in Coolify."
+            "note": "Done: discovery, slim form, web entry, schema parity, Turnstile (web+api), admin alignment (T-010: headless host + user-menu entry + VITE_TURNSTILE_SITE_KEY). Remaining: T-011 form tests, T-012 turnstile tests (mostly covered by T-009), T-013 smoke. Owner must set Turnstile keys in Coolify (web PUBLIC_, admin VITE_, api HOSPEDA_secret)."
         },
         {
             "specId": "SPEC-302",

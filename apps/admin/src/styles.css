@@ -224,29 +224,6 @@ code {
     }
 }
 
-/*
- * Feedback FAB overrides for the admin app (SPEC-117 V-2 / V-4).
- *
- * The @repo/feedback package raises the FAB to 5.5rem on mobile so it clears
- * full-width sticky controls + the cookie consent banner used by apps/web.
- * The admin has neither: that default leaves the FAB floating mid-screen
- * over content. Anchor it to the standard bottom-right offset on every
- * viewport here, and apply the same to the minimized dot state so the
- * collapsed state lines up with the expanded one.
- */
-.feedback-root .fab,
-.feedback-root .minimizedDot {
-    bottom: 1.5rem;
-    right: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .feedback-root .fab,
-    .feedback-root .minimizedDot {
-        bottom: 1rem;
-        right: 1rem;
-    }
-}
 
 /*
  * driver.js CSS import + admin theme overrides (SPEC-174 T-010 §7.4).
