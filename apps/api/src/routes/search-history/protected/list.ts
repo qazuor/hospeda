@@ -42,7 +42,7 @@ export const listSearchHistoryRoute = createProtectedRoute({
         "Returns the authenticated user's accommodation search history entries, newest first, capped to the plan's MAX_SEARCH_HISTORY_ENTRIES limit (Plus = 50, VIP = 200).",
     tags: ['Search History'],
     responseSchema: z.object({
-        entries: z.array(UserSearchHistoryListItemSchema),
+        items: z.array(UserSearchHistoryListItemSchema),
         total: z.number()
     }),
     options: {
@@ -69,7 +69,7 @@ export const listSearchHistoryRoute = createProtectedRoute({
         }
 
         return {
-            entries: result.data?.entries ?? [],
+            items: result.data?.items ?? [],
             total: result.data?.total ?? 0
         };
     }

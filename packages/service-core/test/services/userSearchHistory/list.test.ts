@@ -33,8 +33,8 @@ describe('SearchHistoryService.list', () => {
     it('should return entries and total (success)', async () => {
         const result = await service.list(actor, { planLimit: 50 });
         expectSuccess(result);
-        expect(result.data?.entries).toHaveLength(1);
-        expect(result.data?.entries[0]).toEqual(entry);
+        expect(result.data?.items).toHaveLength(1);
+        expect(result.data?.items[0]).toEqual(entry);
         expect(result.data?.total).toBe(1);
     });
 
@@ -52,7 +52,7 @@ describe('SearchHistoryService.list', () => {
 
         const result = await service.list(actor, { planLimit: 50 });
         expectSuccess(result);
-        expect(result.data?.entries).toHaveLength(0);
+        expect(result.data?.items).toHaveLength(0);
         expect(result.data?.total).toBe(0);
     });
 

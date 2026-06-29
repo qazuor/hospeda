@@ -92,7 +92,7 @@ export type ListSearchHistoryInput = z.infer<typeof ListSearchHistoryInputSchema
  * Output of {@link SearchHistoryService.list}.
  */
 export interface ListSearchHistoryOutput {
-    readonly entries: readonly UserSearchHistoryEntry[];
+    readonly items: readonly UserSearchHistoryEntry[];
     readonly total: number;
 }
 
@@ -213,7 +213,7 @@ export class SearchHistoryService extends BaseService {
      * @param actor - The authenticated actor.
      * @param input - `{ planLimit }` — maximum entries allowed by the actor's plan.
      * @param ctx - Optional service context.
-     * @returns `{ entries, total }` — the capped list and the (uncapped) stored count.
+     * @returns `{ items, total }` — the capped list and the (uncapped) stored count.
      */
     public async list(
         actor: Actor,
@@ -240,7 +240,7 @@ export class SearchHistoryService extends BaseService {
                     execCtx.tx
                 );
 
-                return { entries: items, total };
+                return { items, total };
             }
         });
     }
