@@ -230,3 +230,7 @@ export type FeatureFlagIdType = z.infer<typeof FeatureFlagIdSchema>;
 
 export const FeatureFlagAuditIdSchema = BaseIdSchema;
 export type FeatureFlagAuditIdType = z.infer<typeof FeatureFlagAuditIdSchema>;
+
+// === Search History IDs (SPEC-289) ===
+export const UserSearchHistoryIdSchema = BaseIdSchema;
+export type UserSearchHistoryIdType = z.infer<typeof UserSearchHistoryIdSchema>;

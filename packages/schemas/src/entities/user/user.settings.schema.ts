@@ -113,6 +113,13 @@ export const UserSettingsSchema = z.object({
     newsletter: z.boolean().default(false).optional(),
 
     /**
+     * Whether the user has opted in to search history recording (SPEC-289).
+     * Defaults to `true` (recording enabled). Set to `false` to pause recording.
+     * Stored additively in the existing `settings` JSONB column — no DB migration needed.
+     */
+    searchHistoryEnabled: z.boolean().default(true).optional(),
+
+    /**
      * Onboarding progress namespace. Shared by SPEC-174 (welcome tour) and
      * SPEC-175 (What's New). Added additively — no DB migration required.
      *
