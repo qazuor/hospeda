@@ -272,11 +272,10 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 					/>
 				</div>
 
-				<div class="faq-category__list" role="list">
+				<div class="faq-category__list">
 					{cat.items.map((item, i) => (
 						<details
 							class="faq-item"
-							role="listitem"
 							data-reveal="up"
 							data-stagger-index={Math.min(i, 6)} data-stagger-step="60"
 						>

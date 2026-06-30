@@ -58,11 +58,10 @@ const items = [
 ];
 ---
 
-<div class="contact-faq" role="list">
+<div class="contact-faq">
 	{items.map((item, i) => (
 		<details
 			class="contact-faq__item"
-			role="listitem"
 			data-reveal="up"
 			data-stagger-index={Math.min(i, 6)} data-stagger-step="80"
 		>
