@@ -74,22 +74,22 @@
             "id": "T-003",
             "title": "Remove isFeatured from owner-facing schema and mapper",
             "description": "Close the owner self-featuring leak. Remove isFeatured (line ~228) from AccommodationUpdateHttpSchema in packages/schemas/src/accommodation/accommodation.http.schema.ts (the schema used at line 362 for owner PATCH). Also remove it from the httpToDomainAccommodationUpdate mapper in the same file or its companion, so the field is stripped before reaching accommodationService.update(). The admin schema (AccommodationPatchInputSchema in accommodation.crud.schema.ts:203) is NOT touched — admins retain manual isFeatured control via PATCH /api/v1/admin/accommodations/:id.\n\nVerify no other owner-facing route or mapper re-introduces isFeatured. The protected PATCH route (apps/api/src/routes/accommodation/protected/patch.ts) uses AccommodationUpdateHttpSchema.partial() — after this change, sending isFeatured in that body should be silently stripped or trigger a 422 (whichever the schema validator produces for unknown fields in this project).\n\nKey files:\n- packages/schemas/src/accommodation/accommodation.http.schema.ts (remove isFeatured ~line 228)\n- apps/api/src/routes/accommodation/protected/patch.ts (verify it uses the trimmed schema)\n\nAcceptance criteria:\n- AccommodationUpdateHttpSchema no longer contains isFeatured.\n- httpToDomainAccommodationUpdate does not map isFeatured to the domain update.\n- Admin schema (AccommodationPatchInputSchema) is untouched and still accepts isFeatured.\n- pnpm typecheck green.\n- Covered by T-007 owner-leak regression test.\n\nTesting requirements:\n- Covered by T-007: owner PATCH with { isFeatured: true } must not persist the value.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Remove isFeatured from AccommodationUpdateHttpSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove isFeatured from httpToDomainAccommodationUpdate mapper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify protected patch route uses the trimmed schema",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "api", "schemas", "security"],
@@ -101,8 +101,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {
