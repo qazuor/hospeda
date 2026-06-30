@@ -123,6 +123,7 @@ export function SelectSearchFilter({ config, value, onChange, locale }: SelectSe
                             {opt.featured && (
                                 <span
                                     className="featured-indicator"
+                                    role="img"
                                     aria-label={t('ui.filter.featuredOption', 'Destacado')}
                                 >
                                     <StarIcon

@@ -199,7 +199,9 @@ function TestimonialsCarouselInner({
                 </IconButton>
 
                 {/* Main carousel */}
+                {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" + aria-roledescription="carousel" is the WAI-ARIA APG carousel pattern. */}
                 <div
+                    role="group"
                     ref={mainRef}
                     className={styles.mainViewport}
                     aria-roledescription="carousel"
@@ -211,7 +213,9 @@ function TestimonialsCarouselInner({
                         aria-atomic="false"
                     >
                         {reviews.map((review, index) => (
+                            // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" + aria-roledescription="slide" is the WAI-ARIA APG carousel-slide pattern.
                             <div
+                                role="group"
                                 key={review.id}
                                 className={cn(
                                     styles.mainSlide,
