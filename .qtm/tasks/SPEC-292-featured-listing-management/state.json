@@ -222,26 +222,26 @@
             "id": "T-007",
             "title": "Tests — admin regression, owner leak, sync service, search sort",
             "description": "Four test scenarios covering all acceptance criteria of this spec. Run scoped (never the full suite) per the resource-care rule.\n\n1. Admin toggle regression (G-1 confirmed): test that admin PATCH /api/v1/admin/accommodations/:id with { isFeatured: true } still persists isFeatured=true. Uses AccommodationPatchInputSchema. Assert the DB row reflects the change. This is a regression guard — no new code was written for the admin path, but this confirms it stays working.\n\n2. Owner leak closure: test that owner PATCH /api/v1/protected/accommodations/:id with { isFeatured: true } does NOT persist isFeatured. After the patch, read the accommodation and assert isFeatured is unchanged (still false). The field should be stripped by the trimmed AccommodationUpdateHttpSchema.\n\n3. Sync service unit tests (packages/service-core/...): mock the Drizzle db, call syncFeaturedByPlan(ownerId, true) — assert UPDATE with featuredByPlan=true WHERE ownerId AND deletedAt IS NULL. Call syncFeaturedByPlan(ownerId, false) — assert featuredByPlan=false. Empty-owner case: assert { updated: 0 }. Soft-deleted exclusion: rows with deletedAt set must not be updated.\n\n4. Search sort integration: seed two accommodations — one with isFeatured=true, one with featuredByPlan=true, one with both false. Call the public list route (or buildAccommodationOrderBy directly) and assert the featured ones appear before the non-featured one. Also test that a listing with only featuredByPlan=true (isFeatured=false) still appears before a listing with both false.\n\nKey files:\n- packages/service-core/test/services/accommodation/featured-by-plan.sync.test.ts (new)\n- apps/api/test/routes/accommodation/ (admin regression + owner leak)\n- packages/db/test/ or apps/api/test/ (search sort integration)\n\nAcceptance criteria:\n- All four scenarios pass.\n- Admin toggle regression: PASS.\n- Owner leak: isFeatured NOT persisted via protected PATCH.\n- Sync service: set/clear/empty/soft-deleted-exclusion all correct.\n- Search sort: featuredByPlan=true prepends the listing correctly.\n- pnpm typecheck + lint green on test files.\n\nTesting requirements:\n- This IS the test task — run via: pnpm vitest run packages/service-core/test/services/accommodation/ and pnpm vitest run apps/api/test/routes/accommodation/ (scoped, not full suite).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-002", "T-003", "T-005", "T-006"],
             "blocks": ["T-008"],
             "subtasks": [
                 {
                     "title": "Admin toggle regression test (admin PATCH isFeatured persists)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Owner leak regression test (protected PATCH isFeatured not persisted)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "syncFeaturedByPlan unit tests (set/clear/empty/soft-deleted)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Search sort integration test (featuredByPlan=true prepends)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend", "regression"],
@@ -253,8 +253,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {
