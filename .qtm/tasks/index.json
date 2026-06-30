@@ -1037,10 +1037,10 @@
         {
             "specId": "SPEC-308",
             "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/6",
             "path": "SPEC-308-a11y-sweep-debt-remediation",
-            "branch": null,
+            "branch": "spec/SPEC-308-a11y-sweep-debt-remediation",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
