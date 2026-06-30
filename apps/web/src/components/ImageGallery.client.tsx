@@ -12,6 +12,7 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import {
     Dialog,
     DialogBody,
@@ -22,7 +23,7 @@ import { createTranslations } from '@/lib/i18n';
 import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
 import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 import type { MediaPreset } from '@repo/media';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styles from './ImageGallery.module.css';
 
 /**
@@ -228,12 +229,35 @@ interface LightboxProps {
 
 function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
     const [index, setIndex] = useState(initialIndex);
+    // Tracks whether the displayed image has finished loading, so a spinner can
+    // show while navigating between photos. Set true in the nav handlers (same
+    // update as the index change) rather than in an effect: `onLoad` then
+    // reliably clears it, including for cached images where an effect-based
+    // reset would race the load event and leave the spinner stuck.
+    const [isImgLoading, setIsImgLoading] = useState(true);
+    const imgRef = useRef<HTMLImageElement>(null);
+
+    // Belt-and-suspenders for the loading flag. `onLoad` can be missed when the
+    // image is already decoded: `img.complete` may be true before React attaches
+    // the handler (synchronous load in some WebKit cache paths), and `onLoad`
+    // never fires at all when navigating between two entries that share the same
+    // URL (the `key` is unchanged, so the <img> is not remounted). This layout
+    // effect runs synchronously after each commit and clears the flag if the
+    // image is already complete. Re-clearing via `onLoad` later is a no-op.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: `index` is the re-run trigger — the effect must re-check the freshly-mounted image's `complete` flag after each navigation; it intentionally does not read `index` in its body.
+    useLayoutEffect(() => {
+        if (imgRef.current?.complete) {
+            setIsImgLoading(false);
+        }
+    }, [index]);
 
     const prev = useCallback(() => {
+        setIsImgLoading(true);
         setIndex((i) => (i - 1 + images.length) % images.length);
     }, [images.length]);
 
     const next = useCallback(() => {
+        setIsImgLoading(true);
         setIndex((i) => (i + 1) % images.length);
     }, [images.length]);
 
@@ -254,6 +278,21 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
     }, [prev, next]);
 
     const current = images[index];
+
+    // Warm the browser cache for the adjacent images so sequential navigation
+    // usually resolves from cache, keeping spinner time minimal.
+    useEffect(() => {
+        if (images.length < 2) return;
+        const neighbors = [
+            images[(index - 1 + images.length) % images.length],
+            images[(index + 1) % images.length]
+        ];
+        for (const img of neighbors) {
+            if (!img) continue;
+            const preloader = new Image();
+            preloader.src = buildLightboxUrl(img.url);
+        }
+    }, [index, images]);
 
     return (
         <Dialog
@@ -294,11 +333,21 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
 
             <DialogBody bare>
                 <figure className={styles.lightboxFigure}>
+                    {isImgLoading && (
+                        <Spinner
+                            size="lg"
+                            label={t('common.loading', 'Cargando…')}
+                            className={styles.lightboxSpinner}
+                        />
+                    )}
                     <img
                         key={current?.url}
+                        ref={imgRef}
                         src={current ? buildLightboxUrl(current.url) : undefined}
                         alt={current?.alt ?? ''}
-                        className={`${styles.lightboxImg} ${styles.lightboxImgFade}`}
+                        className={`${styles.lightboxImg} ${styles.lightboxImgFade}${isImgLoading ? ` ${styles.lightboxImgLoading}` : ''}`}
+                        onLoad={() => setIsImgLoading(false)}
+                        onError={() => setIsImgLoading(false)}
                     />
                     {current?.caption && (
                         <figcaption className={styles.lightboxCaption}>
@@ -336,7 +385,11 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                                 ).replace('{{number}}', String(i + 1))}
                                 aria-current={i === index ? 'true' : undefined}
                                 className={`${styles.lightboxThumb} ${i === index ? styles.lightboxThumbActive : ''}`}
-                                onClick={() => setIndex(i)}
+                                onClick={() => {
+                                    if (i === index) return;
+                                    setIsImgLoading(true);
+                                    setIndex(i);
+                                }}
                             >
                                 <img
                                     src={buildCellUrl(img.url, 'galleryThumb')}
