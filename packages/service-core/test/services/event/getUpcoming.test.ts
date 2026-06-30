@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -13,6 +13,29 @@ import {
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
+/**
+ * Relations always requested by getUpcoming / the listing surfaces. `location`
+ * is loaded with its nested `destination` so cards can show the city (SPEC-095).
+ */
+const EXPECTED_LIST_RELATIONS = {
+    author: true,
+    organizer: true,
+    location: { destination: true }
+};
+
+/** A valid `destination` relation that satisfies CityDestinationRefSchema. */
+const cityRelation = {
+    id: 'c4dd293f-9c0a-4b2e-8ade-7f9c5e4d3c12',
+    slug: 'colon',
+    name: 'Colón',
+    summary: 'Ciudad turística sobre el río Uruguay',
+    destinationType: DestinationTypeEnum.CITY,
+    level: 4,
+    path: '/argentina/litoral/entre-rios/colon',
+    pathIds:
+        '00000000-0000-0000-0000-000000000001,00000000-0000-0000-0000-000000000002,00000000-0000-0000-0000-000000000003,22222222-2222-2222-2222-222222222222'
+};
+
 describe('EventService.getUpcoming', () => {
     let service: EventService;
     let modelMock: EventModel;
@@ -23,7 +46,7 @@ describe('EventService.getUpcoming', () => {
     const toDate = new Date('2024-06-30T23:59:59Z');
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(EventModel, ['findAll']);
+        modelMock = createTypedModelMock(EventModel, ['findAllWithRelations']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
@@ -40,7 +63,7 @@ describe('EventService.getUpcoming', () => {
                 visibility: VisibilityEnum.PRIVATE
             })
         ];
-        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
         const result = await service.getUpcoming(actorWithPerm, {
             daysAhead: 7,
@@ -53,7 +76,8 @@ describe('EventService.getUpcoming', () => {
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith(
+        expect(modelMock.findAllWithRelations).toHaveBeenCalledWith(
+            EXPECTED_LIST_RELATIONS,
             expect.objectContaining({
                 'date.start': expect.objectContaining({
                     $gte: expect.any(Date),
@@ -74,7 +98,7 @@ describe('EventService.getUpcoming', () => {
                 visibility: VisibilityEnum.PUBLIC
             })
         ];
-        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
         const result = await service.getUpcoming(actorNoPerm, {
             daysAhead: 7,
@@ -87,7 +111,8 @@ describe('EventService.getUpcoming', () => {
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
-        expect(modelMock.findAll).toHaveBeenCalledWith(
+        expect(modelMock.findAllWithRelations).toHaveBeenCalledWith(
+            EXPECTED_LIST_RELATIONS,
             expect.objectContaining({
                 'date.start': expect.objectContaining({
                     $gte: expect.any(Date),
@@ -109,7 +134,7 @@ describe('EventService.getUpcoming', () => {
                 visibility: VisibilityEnum.PUBLIC
             })
         ];
-        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
         const result = await service.getUpcoming(actorNoPerm, {
             daysAhead: 7,
@@ -121,7 +146,8 @@ describe('EventService.getUpcoming', () => {
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
-        expect(modelMock.findAll).toHaveBeenCalledWith(
+        expect(modelMock.findAllWithRelations).toHaveBeenCalledWith(
+            EXPECTED_LIST_RELATIONS,
             expect.objectContaining({
                 'date.start': expect.objectContaining({
                     $gte: expect.any(Date),
@@ -147,18 +173,18 @@ describe('EventService.getUpcoming', () => {
 
     it('should work with minimal required fields', async () => {
         // Test that the service works with just the required fields
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: [], total: 0 });
         const result = await service.getUpcoming(actorWithPerm, {
             daysAhead: 30,
             page: 1,
             pageSize: 10
         });
         expectSuccess(result);
-        expect(modelMock.findAll).toHaveBeenCalled();
+        expect(modelMock.findAllWithRelations).toHaveBeenCalled();
     });
 
     it('should return empty list if no events found', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: [], total: 0 });
         const result = await service.getUpcoming(actorWithPerm, {
             daysAhead: 7,
 
@@ -172,7 +198,7 @@ describe('EventService.getUpcoming', () => {
     });
 
     it('should throw internal error if model fails', async () => {
-        asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findAllWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.getUpcoming(actorWithPerm, {
             daysAhead: 7,
 
@@ -180,5 +206,67 @@ describe('EventService.getUpcoming', () => {
             pageSize: 10
         });
         expectInternalError(result);
+    });
+
+    // SPEC-095 / F2 regression: event cards must show the originating city. The
+    // service loads location.destination and projects it into
+    // location.cityDestination so the public response carries the city.
+    it('projects location.destination into location.cityDestination on each event', async () => {
+        // Arrange: an event whose eager-loaded location carries a destination relation
+        const eventWithCity = {
+            ...createMockEvent({
+                date: { start: fromDate, end: toDate },
+                visibility: VisibilityEnum.PUBLIC
+            }),
+            // Partial location on purpose: the projection only reads
+            // `location.destination`, so the other EventLocation fields are
+            // irrelevant to this assertion.
+            location: {
+                id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+                placeName: 'Anfiteatro Municipal',
+                destinationId: cityRelation.id,
+                destination: cityRelation
+            }
+        };
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+            items: [eventWithCity],
+            total: 1
+        });
+        // Act
+        const result = await service.getUpcoming(actorWithPerm, {
+            daysAhead: 7,
+            page: 1,
+            pageSize: 10
+        });
+        // Assert
+        expectSuccess(result);
+        const { data } = result;
+        if (!data) throw new Error('Expected data to be defined after expectSuccess');
+        const location = (data.items[0] as { location?: { cityDestination?: unknown } }).location;
+        expect(location?.cityDestination).toEqual(cityRelation);
+    });
+
+    it('leaves events without a loaded location untouched', async () => {
+        // Arrange: an event with no location relation (defensive — should not throw)
+        const eventNoLocation = createMockEvent({
+            date: { start: fromDate, end: toDate },
+            visibility: VisibilityEnum.PUBLIC
+        });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+            items: [eventNoLocation],
+            total: 1
+        });
+        // Act
+        const result = await service.getUpcoming(actorWithPerm, {
+            daysAhead: 7,
+            page: 1,
+            pageSize: 10
+        });
+        // Assert
+        expectSuccess(result);
+        const { data } = result;
+        if (!data) throw new Error('Expected data to be defined after expectSuccess');
+        const location = (data.items[0] as { location?: { cityDestination?: unknown } }).location;
+        expect(location?.cityDestination).toBeUndefined();
     });
 });

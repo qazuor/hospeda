@@ -802,7 +802,17 @@ function formatPriceArs(cents: number): string {
 		}
 	}
 
-	document.querySelectorAll<HTMLElement>('.pricing-cards__container[data-billing]').forEach(
-		(container) => initPricingToggle(container)
-	);
+	function initAllPricingToggles(): void {
+		document
+			.querySelectorAll<HTMLElement>('.pricing-cards__container[data-billing]')
+			.forEach((container) => initPricingToggle(container));
+	}
+
+	// Re-attach on every navigation. Astro's ClientRouter does not re-run module
+	// scripts after a View Transitions swap, so a module-level call would leave
+	// the toggle dead after in-app navigation (Bug B4 — clicking "Anual" did
+	// nothing once the user had navigated through the pricing page). astro:page-load
+	// also fires on the initial load, so first paint is covered too. Same pattern
+	// as BaseLayout and the other re-initialized components.
+	document.addEventListener('astro:page-load', initAllPricingToggles);
 </script>

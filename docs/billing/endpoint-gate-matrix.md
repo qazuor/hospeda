@@ -40,6 +40,7 @@
 | `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/import-from-url` | `accommodation/protected/import-from-url.ts` | gate+limit | `ai_accommodation_import`, `max_ai_accommodation_import_per_month` | wired | SPEC-222 T-020. Endpoint access is PermissionEnum OR-gated in the handler (ACCOMMODATION_CREATE \| ACCOMMODATION_UPDATE_OWN \| ACCOMMODATION_UPDATE_ANY), NOT entitlement-gated — any host can import. The AI entitlement + monthly quota apply ONLY to Strategy B (AI-assisted extraction for sparse generic pages), enforced LAZILY inside the injected `aiExtract` port and degrade-clean (structured-only partial + informational notice, never 403) when the plan lacks `ai_accommodation_import` or the monthly quota is spent. Successful AI calls metered via recordAiUsage. Per-user 10/h sliding-window rate limit (HOSPEDA_IMPORT_RATE_LIMIT_RPH) → 429. |
+| `POST /api/v1/protected/accommodations/compare` | `accommodation/protected/compare.ts` | gate+limit | `can_compare_accommodations`, `max_compare_items` | wired | SPEC-288 T-003. gateComparator() enforces the entitlement, then the per-plan MAX_COMPARE_ITEMS limit; the route's setCompareCount middleware feeds `ids.length` into context before the gate runs. Non-viewable items are silently omitted from the result. |
 | `POST /api/v1/protected/host-onboarding/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | Funnel exception: tourist-free users may enter onboarding without `publish_accommodations`; first-publish starts the owner trial. `enforceAccommodationLimit()` still prevents over-cap hosts from creating extra drafts. |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}` | `accommodation/protected/getById.ts` | none | - | n/a | Read own data only; auth + ownership check in handler |
@@ -924,10 +925,14 @@ and are **excepted** from the snapshot guard (T-145-12).
 Do NOT delete them and do NOT build the routes without a spec. When a route is
 eventually built, move its entry from this section to the main table.
 
+> **Wired since SPEC-288:** `gateComparator` (`can_compare_accommodations`) is now
+> mounted on `POST /api/v1/protected/accommodations/compare`
+> (`apps/api/src/routes/accommodation/protected/compare.ts`) and is no longer a
+> phantom gate.
+
 | Gate function | Intended EntitlementKey | Source file | Spec |
 |---|---|---|---|
 | `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateComparator` | `can_compare_accommodations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
@@ -964,7 +969,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
 | `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
-| `reserved` | 14 | 12 phantom gates + 2 limit stubs |
+| `reserved` | 13 | 11 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288) |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
 

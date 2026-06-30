@@ -1,11 +1,29 @@
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    EventCategoryEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+
+/** A valid `destination` relation that satisfies CityDestinationRefSchema. */
+const cityRelation = {
+    id: 'c4dd293f-9c0a-4b2e-8ade-7f9c5e4d3c12',
+    slug: 'colon',
+    name: 'Colón',
+    summary: 'Ciudad turística sobre el río Uruguay',
+    destinationType: DestinationTypeEnum.CITY,
+    level: 4,
+    path: '/argentina/litoral/entre-rios/colon',
+    pathIds:
+        '00000000-0000-0000-0000-000000000001,00000000-0000-0000-0000-000000000002,00000000-0000-0000-0000-000000000003,22222222-2222-2222-2222-222222222222'
+};
 
 /**
  * Test suite for EventService.search
@@ -64,6 +82,32 @@ describe('EventService.search', () => {
         (modelMock.findAllWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.search(actorWithPerm, { page, pageSize, ...filters });
         expectInternalError(result);
+    });
+
+    // SPEC-095 / F2 regression: the public listing path (_executeSearch) must
+    // project location.destination → location.cityDestination so event cards
+    // show the originating city. Mirrors the getUpcoming projection test.
+    it('projects location.destination into location.cityDestination on each event', async () => {
+        const eventWithCity = {
+            ...createMockEvent({ visibility: VisibilityEnum.PUBLIC }),
+            location: {
+                id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+                placeName: 'Anfiteatro Municipal',
+                destinationId: cityRelation.id,
+                destination: cityRelation
+            }
+        };
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+            items: [eventWithCity],
+            page,
+            pageSize,
+            total: 1
+        });
+        const result = await service.search(actorWithPerm, { page, pageSize, ...filters });
+        expectSuccess(result);
+        const location = (result.data?.items[0] as { location?: { cityDestination?: unknown } })
+            ?.location;
+        expect(location?.cityDestination).toEqual(cityRelation);
     });
 
     it('should return INTERNAL_ERROR if _afterSearch throws', async () => {

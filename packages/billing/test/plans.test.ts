@@ -7,6 +7,7 @@ import {
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
+    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN,
     getDefaultPlan,
     getPlanBySlug,
@@ -286,6 +287,57 @@ describe('Plan Configuration', () => {
                     searchLimit,
                     `plan "${plan.slug}" must carry MAX_AI_SEARCH_PER_MONTH (SPEC-283)`
                 ).toBeDefined();
+            }
+        });
+    });
+
+    describe('Accommodation comparison limits (SPEC-288)', () => {
+        const compareItems = (plan: { limits: ReadonlyArray<{ key: string; value: number }> }) =>
+            plan.limits.find((l) => l.key === LimitKey.MAX_COMPARE_ITEMS);
+
+        it('tourist-free has NO compare entitlement and NO MAX_COMPARE_ITEMS limit', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_FREE_PLAN)).toBeUndefined();
+        });
+
+        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 2', () => {
+            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(2);
+        });
+
+        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 4 (was unlimited)', () => {
+            expect(TOURIST_VIP_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(4);
+        });
+
+        it('owner/complex plans inherit the VIP-tier compare cap of 4 (not unlimited)', () => {
+            // The VIP limit lives in TOURIST_VIP_LIMITS, inherited via mergeLimits.
+            // None of the owner/complex plans override MAX_COMPARE_ITEMS, so they
+            // all land on 4 — never -1 (SPEC-288 D-1).
+            const inheriting = ALL_PLANS.filter(
+                (p) => p.category === 'owner' || p.category === 'complex'
+            );
+            expect(inheriting.length).toBeGreaterThan(0);
+            for (const plan of inheriting) {
+                const found = compareItems(plan);
+                expect(found, `plan "${plan.slug}" must carry MAX_COMPARE_ITEMS`).toBeDefined();
+                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(4);
+            }
+        });
+
+        it('NO client plan carries an unlimited (-1) compare cap (SPEC-288)', () => {
+            for (const plan of ALL_PLANS) {
+                const found = compareItems(plan);
+                if (found) {
+                    expect(found.value, `plan "${plan.slug}"`).not.toBe(-1);
+                    expect(found.value, `plan "${plan.slug}"`).toBeGreaterThan(0);
+                }
             }
         });
     });

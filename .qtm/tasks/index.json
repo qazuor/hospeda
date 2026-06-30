@@ -773,13 +773,13 @@
         {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
-            "branch": null,
+            "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-286",
@@ -807,13 +807,15 @@
         {
             "specId": "SPEC-288",
             "title": "Accommodation Comparison",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "14/14",
+            "archived": true,
+            "archivedAt": "2026-06-29",
             "path": "SPEC-288-accommodation-comparison",
-            "branch": null,
+            "branch": "spec/SPEC-288-accommodation-comparison",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom compare feature (CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS). Surfaced in SPEC-282 review."
+            "note": "Tasks atomized (14, all complexity<=3). Client-only ephemeral compare; gate already exists. Decisions D-1..D-4 in spec.md. Shipped 14/14; closed via the implementation PR (code + index archival together)."
         },
         {
             "specId": "SPEC-289",
@@ -928,8 +930,11 @@
         {
             "specId": "SPEC-299",
             "title": "Plan Selector & Comparison Redesign",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "0/0",
+            "archived": true,
+            "archivedAt": "2026-06-29",
+            "archiveNote": "Implemented + merged to staging via PR #1886 (UI polish: cards redesign/balance/curation, teaser CTA, transactional comparison table with icons/scroll-hint/per-row descriptions). Doc-only spec — tasks never atomized, so progress stays 0/0.",
             "path": "SPEC-299-plan-selector-comparison-redesign",
             "branch": "spec/SPEC-299-plan-selector-comparison-redesign",
             "base": "staging",
@@ -950,13 +955,16 @@
         {
             "specId": "SPEC-301",
             "title": "Feedback System Production Rework",
-            "status": "in-progress",
-            "progress": "12/13",
+            "status": "completed",
+            "progress": "13/13",
+            "archived": true,
+            "archivedAt": "2026-06-29",
             "path": "SPEC-301-feedback-system-prod-rework",
             "branch": "spec/SPEC-301-feedback-system-prod-rework",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Implementation done (12/13). Only T-013 (manual local smoke to Linear with Turnstile test keys) remains — needs the app running + keys. T-011 form tests + T-012 turnstile tests complete (T-012 was covered by T-009). Fixed admin-integration.test.ts regression from T-010 (FAB->headless host). Owner must set Turnstile keys in Coolify."
+            "note": "Implementation done (12/13). Only T-013 (manual local smoke to Linear with Turnstile test keys) remains — needs the app running + keys. T-011 form tests + T-012 turnstile tests complete (T-012 was covered by T-009). Fixed admin-integration.test.ts regression from T-010 (FAB->headless host). Owner must set Turnstile keys in Coolify.",
+            "archiveNote": "Closed 2026-06-29 by owner decision. Impl PR #1891 merged to staging. T-013 (manual local smoke to Linear with Turnstile test keys) was DEFERRED — not executed at close time; left as a post-merge operational check. Turnstile env vars still pending in Coolify (PUBLIC_TURNSTILE_SITE_KEY/web, VITE_TURNSTILE_SITE_KEY/admin, HOSPEDA_TURNSTILE_SECRET_KEY/api secret); without them the feedback endpoint fail-closes (403). Follow-up CI fix: ChatIcon added to @repo/icons mock in header-user test (commit 23f24c8f9)."
         },
         {
             "specId": "SPEC-302",

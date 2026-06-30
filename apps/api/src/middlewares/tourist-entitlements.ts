@@ -199,9 +199,8 @@ export function gateAlerts(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for POST /compare once that route ships.
-// Do NOT delete and do NOT build the route without a spec.
+// SPEC-288: mounted on POST /api/v1/protected/accommodations/compare
+// (apps/api/src/routes/accommodation/protected/compare.ts).
 export function gateComparator(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED

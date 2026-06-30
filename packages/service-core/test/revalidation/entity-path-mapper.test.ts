@@ -118,8 +118,9 @@ describe('getAffectedPaths — accommodation', () => {
         expect(paths.some((p) => p.includes('/alojamientos/tipo/hotel/'))).toBe(false);
     });
 
-    it('URL slugs match AccommodationTypeEnum (apartment, house, country-house, cabin, hotel, hostel, camping, room, motel, resort)', () => {
+    it('URL slugs match AccommodationTypeEnum (all 13: apartment, house, country-house, cabin, hotel, hostel, camping, room, motel, resort, apart-hotel, estancia, bed-and-breakfast)', () => {
         const paths = getAffectedPaths({ entityType: 'accommodation' });
+        // Original 10 types
         expect(paths).toContain('/alojamientos/tipo/apartment/');
         expect(paths).toContain('/alojamientos/tipo/house/');
         expect(paths).toContain('/alojamientos/tipo/country-house/');
@@ -130,8 +131,11 @@ describe('getAffectedPaths — accommodation', () => {
         expect(paths).toContain('/alojamientos/tipo/room/');
         expect(paths).toContain('/alojamientos/tipo/motel/');
         expect(paths).toContain('/alojamientos/tipo/resort/');
-        // Must NOT contain removed stale slugs
-        expect(paths.some((p) => p.includes('/tipo/estancia/'))).toBe(false);
+        // SPEC-213 additions (Bug B10 fix)
+        expect(paths).toContain('/alojamientos/tipo/apart-hotel/');
+        expect(paths).toContain('/alojamientos/tipo/estancia/');
+        expect(paths).toContain('/alojamientos/tipo/bed-and-breakfast/');
+        // Must NOT contain slugs not in the enum
         expect(paths.some((p) => p.includes('/tipo/posada/'))).toBe(false);
     });
 });
@@ -633,7 +637,10 @@ describe('getAffectedPaths — post author sub-route (T-061)', () => {
 // ---------------------------------------------------------------------------
 
 describe('ACCOMMODATION_TYPE_SLUGS — exact enum match (T-060)', () => {
-    it('contains exactly the 10 valid AccommodationTypeEnum slugs', () => {
+    it('contains exactly the 13 valid AccommodationTypeEnum slugs (SPEC-213 adds apart-hotel, estancia, bed-and-breakfast)', () => {
+        // Hardcoded on purpose: deriving `expected` with the same transformation
+        // as the implementation would be tautological. This list fails if a type
+        // is added without updating it, or if the slug transformation regresses.
         const expected = [
             'apartment',
             'house',
@@ -644,13 +651,15 @@ describe('ACCOMMODATION_TYPE_SLUGS — exact enum match (T-060)', () => {
             'camping',
             'room',
             'motel',
-            'resort'
-        ] as const;
+            'resort',
+            'apart-hotel',
+            'estancia',
+            'bed-and-breakfast'
+        ];
         expect([...ACCOMMODATION_TYPE_SLUGS].sort()).toEqual([...expected].sort());
     });
 
-    it('does not contain stale slugs estancia or posada', () => {
-        expect(ACCOMMODATION_TYPE_SLUGS).not.toContain('estancia');
+    it('does not contain posada (never added to AccommodationTypeEnum)', () => {
         expect(ACCOMMODATION_TYPE_SLUGS).not.toContain('posada');
     });
 });

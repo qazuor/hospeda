@@ -6,10 +6,12 @@
  * All exports are pure functions — no side effects, no I/O.
  *
  * URL slugs match the web app route definitions exactly:
- *  - Accommodation types: hotel, hostel, cabin, apartment, camping, estancia, posada
+ *  - Accommodation types: derived from AccommodationTypeEnum (lowercase, underscores→hyphens)
  *  - Event categories: festival, fair, sport, cultural, gastronomy
  *  - Posts use /publicaciones/ (not /posts/)
  */
+
+import { AccommodationTypeEnum } from '@repo/schemas';
 
 /** Supported locales for URL generation */
 export const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
@@ -18,22 +20,15 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 /**
  * Accommodation type URL slugs as accepted by the web app route
  * `/[lang]/alojamientos/tipo/[type]/`.
- * Source of truth: `apps/web/src/pages/[lang]/alojamientos/tipo/[type]/index.astro`
+ * Derived from `AccommodationTypeEnum` in `@repo/schemas` (single source of truth)
+ * so any new enum value is automatically included. Transformation: lowercase +
+ * underscores replaced with hyphens (e.g. APART_HOTEL → apart-hotel). (Bug B10 fix)
  */
-export const ACCOMMODATION_TYPE_SLUGS = [
-    'apartment',
-    'house',
-    'country-house',
-    'cabin',
-    'hotel',
-    'hostel',
-    'camping',
-    'room',
-    'motel',
-    'resort'
-] as const;
+export const ACCOMMODATION_TYPE_SLUGS = Object.values(AccommodationTypeEnum).map((v) =>
+    String(v).toLowerCase().replace(/_/g, '-')
+);
 
-export type AccommodationTypeSlug = (typeof ACCOMMODATION_TYPE_SLUGS)[number];
+export type AccommodationTypeSlug = string;
 
 /**
  * Event category URL slugs as accepted by the web app route

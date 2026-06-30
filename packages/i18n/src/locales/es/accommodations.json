@@ -1,4 +1,67 @@
 {
+    "comparison": {
+        "button": {
+            "add": "Comparar",
+            "remove": "Quitar de comparación",
+            "addAriaLabel": "Agregar {{name}} a la comparación",
+            "removeAriaLabel": "Quitar {{name}} de la comparación",
+            "inListLabel": "En comparación"
+        },
+        "toast": {
+            "added": "Agregado a la comparación",
+            "removed": "Quitado de la comparación",
+            "view": "Comparar ahora"
+        },
+        "upsell": {
+            "title": "Comparación de alojamientos",
+            "message": "Comparar alojamientos está disponible en los planes Plus y VIP.",
+            "cta": "Ver planes"
+        },
+        "limit": {
+            "title": "Llegaste al máximo",
+            "message": "Tu plan permite comparar hasta {{max}} alojamientos a la vez.",
+            "hint": "Quitá uno para agregar otro."
+        },
+        "bar": {
+            "title": "Comparar alojamientos",
+            "count_one": "{{count}} alojamiento seleccionado",
+            "count_other": "{{count}} alojamientos seleccionados",
+            "compareNow": "Comparar ahora",
+            "clear": "Limpiar",
+            "removeItemAriaLabel": "Quitar {{name}} de la comparación",
+            "minRequired": "Elegí al menos {{min}} para comparar"
+        },
+        "page": {
+            "metaTitle": "Comparar alojamientos",
+            "metaDescription": "Compará alojamientos lado a lado: precio, ubicación, calificación y más.",
+            "heading": "Comparación de alojamientos",
+            "backToListing": "Volver a alojamientos"
+        },
+        "empty": {
+            "title": "No hay alojamientos para comparar",
+            "message": "Agregá alojamientos desde el listado para verlos lado a lado.",
+            "cta": "Explorar alojamientos"
+        },
+        "error": {
+            "title": "No pudimos cargar la comparación",
+            "message": "Ocurrió un error al cargar los alojamientos. Intentá de nuevo.",
+            "retry": "Reintentar"
+        },
+        "matrix": {
+            "attribute": "Atributo",
+            "photo": "Foto",
+            "name": "Nombre",
+            "type": "Tipo",
+            "price": "Precio",
+            "location": "Ubicación",
+            "rating": "Calificación",
+            "reviews": "Reseñas",
+            "featured": "Destacado",
+            "summary": "Descripción",
+            "viewDetails": "Ver detalle",
+            "notAvailable": "N/D"
+        }
+    },
     "amenityNames": {
         "wifi": "WiFi",
         "air_conditioning": "Aire acondicionado",
@@ -569,7 +632,13 @@
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
         "bookmark_count_other": "Guardado por {{count}} personas",
-        "bookmark_count_zero": "Sé el primero en guardarlo"
+        "bookmark_count_zero": "Sé el primero en guardarlo",
+        "promotions": {
+            "sectionTitle": "Promociones especiales",
+            "validUntil": "Válido hasta el {date}",
+            "minNights": "Mínimo {n} noches",
+            "discountOff": "de descuento"
+        }
     },
     "list": {
         "searchContext": {

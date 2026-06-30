@@ -67,7 +67,11 @@ import {
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
 
-import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
+import {
+    adminOwnerPromotionRoutes,
+    protectedOwnerPromotionRoutes,
+    publicOwnerPromotionRoutes
+} from './owner-promotion';
 import {
     adminCreatePartnerRoute,
     adminDeletePartnerRoute,
@@ -310,6 +314,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
+
+        // Owner promotions (SPEC-285 — tourist-facing read-only display)
+        // Unregistered until SPEC-285 wired the public path. Requires no auth.
+        app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
 
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.
