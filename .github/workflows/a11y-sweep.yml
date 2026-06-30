@@ -92,8 +92,14 @@ jobs:
         run: pnpm --filter hospeda-web exec playwright install chromium --with-deps
 
       - name: Start API server
-        env:
-          NODE_ENV: production
+        # Deliberately NOT NODE_ENV=production: the sweep only needs the API to
+        # boot and serve public list endpoints for route discovery. Production
+        # mode makes the API env schema require deploy-only secrets (MercadoPago,
+        # Redis, AI vault master key, email, Linear, PostHog, Apify, Google
+        # Places…) that the sweep does not use — and supplying fake values is
+        # worse than omitting them: a bogus HOSPEDA_REDIS_URL or vault key can
+        # hang or crash the API on boot. e2e-pr.yml boots the same stack in
+        # non-production mode for exactly this reason. See SPEC-294.
         run: |
           node apps/api/dist/index.js &
           for i in $(seq 1 30); do
