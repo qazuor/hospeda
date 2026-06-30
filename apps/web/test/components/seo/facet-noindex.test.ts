@@ -21,7 +21,9 @@ const FACET_PAGES = [
     'alojamientos/tipo/[type]/index.astro',
     'alojamientos/caracteristicas/[slug]/index.astro',
     'alojamientos/comodidades/[slug]/index.astro',
-    'eventos/categoria/[category]/index.astro',
+    // 'eventos/categoria/[category]/index.astro' retired to a 301 redirect (U7);
+    // a redirect emits no HTML, so noindex no longer applies (search engines
+    // honor 301s directly).
     'publicaciones/categoria/[category]/index.astro',
     'publicaciones/etiqueta/[tag]/index.astro',
     'publicaciones/autor/[slug]/index.astro'
