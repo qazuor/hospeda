@@ -109,26 +109,26 @@
             "id": "T-004",
             "title": "Implement featuredByPlan bulk sync service",
             "description": "Create a focused sync service that sets or clears featuredByPlan on ALL accommodations belonging to a given owner in a single bulk UPDATE. This is the building block consumed by both the billing event wiring (T-005) and the reconciliation cron (T-006). The service does NOT resolve the entitlement itself — callers pass the resolved active boolean.\n\nCreate packages/service-core/src/services/accommodation/featured-by-plan.sync.ts:\n- Export syncFeaturedByPlan({ ownerId, active }: { ownerId: string; active: boolean }): Promise<{ updated: number }>\n- Uses a Drizzle bulk UPDATE: UPDATE accommodations SET featured_by_plan = $active WHERE owner_id = $ownerId AND deleted_at IS NULL\n- Logs the result via @repo/logger\n- Returns { updated } count for observability\n- Follows RO-RO pattern; JSDoc on the exported function\n\nKey files:\n- packages/service-core/src/services/accommodation/featured-by-plan.sync.ts (new)\n- packages/service-core/src/index.ts or relevant barrel (export the function)\n\nAcceptance criteria:\n- syncFeaturedByPlan(ownerId, true) sets featuredByPlan=true on ALL active (non-deleted) accommodations for that owner.\n- syncFeaturedByPlan(ownerId, false) sets featuredByPlan=false on all.\n- Soft-deleted accommodations (deletedAt IS NOT NULL) are excluded from the update.\n- Returns accurate { updated } count.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test with mocked Drizzle: set-true, set-false, empty-owner (updated=0), soft-deleted exclusion. Covered by T-007.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
                 {
                     "title": "Create featured-by-plan.sync.ts with syncFeaturedByPlan bulk UPDATE",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Exclude soft-deleted accommodations from the UPDATE WHERE clause",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add @repo/logger call and { updated } return",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from service-core barrel",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "service", "billing"],
@@ -140,8 +140,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {
