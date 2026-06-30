@@ -792,46 +792,52 @@ const emptyStateSuggestions = [
 		))}
 	</ScrollableNav>
 
-	{/* AI search entry — always available (incl. 0-results) when the page
-	    rendered, so users can reformulate exactly when they hit no matches. */}
+	{/* Listing toolbar: list/map switch (left) + AI search entry (right),
+	    aligned on a single row (desktop). On mobile the view toggle becomes a
+	    fixed bottom bar (out of flow), so the search entry spans full width.
+	    The AI entry stays available in the 0-results state too, so users can
+	    reformulate exactly when they hit no matches. */}
 	{!hasError && (
-		<div class="ai-search-slot">
-			<AiSearchEntry
-				client:load
-				locale={locale}
-				apiUrl={getApiUrl()}
-				isAuthenticated={isAuthenticated}
-				currentUrl={Astro.url.href}
-				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
-				pageType={typesArray[0]}
-			/>
-		</div>
-	)}
-
-{!hasError && cards.length > 0 && (
-		<div class="listing-header" role="group" aria-label={t('accommodations.header.ariaLabel', 'Controles de listado')}>
-			<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-				<span
-					class="view-toggle__btn view-toggle__btn--active"
-					role="tab"
-					aria-selected="true"
-				>
-					{t('accommodations.viewToggle.list', 'Lista')}
-				</span>
-				<a
-					href={(() => {
-						const sp = new URLSearchParams(url.searchParams);
-						sp.delete('page');
-						const qs = sp.toString();
-						const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-						return qs ? `${base}?${qs}` : base;
-					})()}
-					class="view-toggle__btn"
-					role="tab"
-					aria-selected="false"
-				>
-					{t('accommodations.viewToggle.map', 'Mapa')}
-				</a>
+		<div
+			class="listing-toolbar"
+			role={cards.length > 0 ? 'group' : undefined}
+			aria-label={cards.length > 0 ? t('accommodations.header.ariaLabel', 'Controles de listado') : undefined}
+		>
+			{cards.length > 0 && (
+				<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+					<span
+						class="view-toggle__btn view-toggle__btn--active"
+						role="tab"
+						aria-selected="true"
+					>
+						{t('accommodations.viewToggle.list', 'Lista')}
+					</span>
+					<a
+						href={(() => {
+							const sp = new URLSearchParams(url.searchParams);
+							sp.delete('page');
+							const qs = sp.toString();
+							const base = buildUrl({ locale, path: 'alojamientos/mapa' });
+							return qs ? `${base}?${qs}` : base;
+						})()}
+						class="view-toggle__btn"
+						role="tab"
+						aria-selected="false"
+					>
+						{t('accommodations.viewToggle.map', 'Mapa')}
+					</a>
+				</div>
+			)}
+			<div class="ai-search-slot">
+				<AiSearchEntry
+					client:load
+					locale={locale}
+					apiUrl={getApiUrl()}
+					isAuthenticated={isAuthenticated}
+					currentUrl={Astro.url.href}
+					destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
+					pageType={typesArray[0]}
+				/>
 			</div>
 		</div>
 	)}
@@ -1020,8 +1026,26 @@ const emptyStateSuggestions = [
 	   floating FAB takes over once it scrolls out of view (all viewports).
 	   ──────────────────────────────────────────────────────────────────────── */
 
+	/* Listing toolbar: list/map toggle (left) + AI search entry (right) aligned
+	   on one row. On mobile the toggle is a fixed bottom bar (out of flow), so
+	   the search entry naturally spans the full width. */
+	.listing-toolbar {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4, 16px);
+		margin: var(--space-5, 20px) 0 var(--space-6, 24px);
+	}
+
+	.listing-toolbar .view-toggle {
+		flex-shrink: 0;
+		margin: 0;
+	}
+
 	.ai-search-slot {
-		margin-top: var(--space-5, 20px);
-		margin-bottom: var(--space-6, 24px);
+		flex: 1 1 auto;
+		min-width: 0;
+		/* The AI search button's own CSS module already drops its bottom margin
+		   at >=768px (so it centers with the toggle on the toolbar row); no
+		   page-level override is needed here. */
 	}
 </style>
