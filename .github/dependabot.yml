@@ -57,12 +57,25 @@ updates:
     #     value under TS < 6, so the mobile typecheck fails with TS5103. Lift this
     #     ignore when the monorepo TS-major alignment chore lands (ADR-034
     #     follow-up: unify the repo on a single TS major so mobile stops diverging).
+    #   - better-auth: 1.4 -> 1.6 changes the auth type signatures, breaking
+    #     apps/api typecheck at src/lib/auth.ts (TS2322). Core auth surface —
+    #     merits a dedicated migration spec. Lift when that migration lands.
+    #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
+    #     packages/email/test/templates/verify-email.test.tsx. Lift when the
+    #     react-email render bump is taken on with its template snapshots.
+    #   - jsdom: 26 -> 29 changes the accessible-name computation (whitespace
+    #     concatenation), so role+name queries like DestinationReviewSidebarCard
+    #     stop matching. Dev-only (test env; real browsers unaffected). Lift
+    #     with a dedicated jsdom upgrade + test sweep.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
       - dependency-name: '@tanstack/react-router'
       - dependency-name: '@astrojs/node'
       - dependency-name: 'typescript'
+      - dependency-name: 'better-auth'
+      - dependency-name: '@react-email/render'
+      - dependency-name: 'jsdom'
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'

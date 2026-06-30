@@ -853,13 +853,16 @@
         {
             "specId": "SPEC-292",
             "title": "Featured Listing Management",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "8/8",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1930 (merged to staging 2026-06-30). Deferred review findings tracked in SPEC-309; operational backfill (M-2) in deploy notes.",
             "path": "SPEC-292-featured-listing-management",
-            "branch": null,
+            "branch": "spec/SPEC-292-featured-listing-management",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. isFeatured not settable (no route), FEATURED_LISTING unenforced. Surfaced in SPEC-282 owner audit."
+            "note": "Model locked 2026-06-30: admin manual isFeatured (ungated) + owner automatic featuredByPlan derived from FEATURED_LISTING entitlement (no cap); owner PATCH isFeatured leak closed. 8/8 tasks shipped."
         },
         {
             "specId": "SPEC-293",
@@ -875,13 +878,15 @@
         {
             "specId": "SPEC-294",
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "7/7",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
             "path": "SPEC-294-a11y-sweep-repair",
-            "branch": null,
+            "branch": "spec/SPEC-294-a11y-sweep-repair",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. A11y Sweep broken since SPEC-270 (post-merge trigger). B1-B3 (NODE_ENV, filter names, SENTRY) fixed in #1865/#1867; this spec owns B4+ and the pre-merge trigger."
+            "note": "SHIPPED via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: pull_request trigger + sync dispatch, sweep green end-to-end (chained failures fixed), 84 WCAG violations baseline-gated. Debt escalated to SPEC-308."
         },
         {
             "specId": "SPEC-295",
@@ -1031,6 +1036,28 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Coordinated tiptap v2->v3 migration carved from Dependabot #1890 (closed). Both rich-text editors (admin newsletter + entity-form, web host editor): setContent signature change, Link/Underline folded into StarterKit v3, Whats New render path re-verify, plus the missing mount/round-trip tests that let #1890 pass CI green."
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
         }
     ],
     "standalone": {

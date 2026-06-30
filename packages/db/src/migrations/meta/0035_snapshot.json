@@ -1,5 +1,5 @@
 {
-    "id": "77ea06c3-13f4-4378-b455-121137412b5a",
+    "id": "25d0a2ed-2d23-43d9-b731-bf0baf870c5f",
     "prevId": "171e7a0c-77d5-4f70-82f9-2bcf59435293",
     "version": "7",
     "dialect": "postgresql",
@@ -115,6 +115,13 @@
                 },
                 "is_featured": {
                     "name": "is_featured",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "featured_by_plan": {
+                    "name": "featured_by_plan",
                     "type": "boolean",
                     "primaryKey": false,
                     "notNull": true,
@@ -272,6 +279,69 @@
                     "columns": [
                         {
                             "expression": "is_featured",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "accommodations_featuredByPlan_idx": {
+                    "name": "accommodations_featuredByPlan_idx",
+                    "columns": [
+                        {
+                            "expression": "featured_by_plan",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "accommodations_visibility_featuredByPlan_idx": {
+                    "name": "accommodations_visibility_featuredByPlan_idx",
+                    "columns": [
+                        {
+                            "expression": "visibility",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "featured_by_plan",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "accommodations_destinationId_featuredByPlan_visibility_idx": {
+                    "name": "accommodations_destinationId_featuredByPlan_visibility_idx",
+                    "columns": [
+                        {
+                            "expression": "destination_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "featured_by_plan",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "visibility",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -24651,9 +24721,7 @@
                 "CONVERSATION",
                 "REVIEW",
                 "BILLING_SUBSCRIPTION",
-                "PAYMENT",
-                "EXPERIENCE",
-                "GASTRONOMY"
+                "PAYMENT"
             ]
         },
         "public.event_category_enum": {

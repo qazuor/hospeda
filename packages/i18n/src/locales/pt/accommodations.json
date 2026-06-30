@@ -63,6 +63,8 @@
         }
     },
     "title": "Hospedagens",
+    "tagline": "Encontre seu lugar ideal",
+    "typeInLocation": "{{type}} em {{location}}",
     "description": "Descubra hospedagens unicas e encontre o lugar perfeito para a sua proxima aventura.",
     "emptyTitle": "Nenhuma hospedagem disponivel",
     "emptyMessage": "Em breve adicionaremos mais opcoes de hospedagem para voce.",

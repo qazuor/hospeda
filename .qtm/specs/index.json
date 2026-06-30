@@ -2298,7 +2298,10 @@
             "title": "Featured Listing Management",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1930 (merged to staging 2026-06-30). 8/8 tasks. Plan-derived featuring (featuredByPlan) + admin manual isFeatured + owner-leak closure. Deferred review findings tracked in SPEC-309 (addon source H-1, ISR M-3, hook tests M-4, status alignment M-5); operational M-2 (db:migrate 0035 + reconcile cron backfill) in deploy notes.",
             "path": "SPEC-292-featured-listing-management",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2322,7 +2325,10 @@
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: A11y Sweep runs green end-to-end pre-merge (pull_request trigger), failures unmasked + fixed, 84 real WCAG violations baseline-gated. Debt escalated to SPEC-308.",
             "path": "SPEC-294-a11y-sweep-repair",
             "created": "2026-06-27T00:00:00Z",
             "base": "staging",
@@ -2494,7 +2500,48 @@
             "path": "SPEC-307-tiptap-v3-migration",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "tags": ["tiptap", "dependencies", "admin", "web", "rich-text-editor", "major-upgrade", "dependabot"]
+            "tags": [
+                "tiptap",
+                "dependencies",
+                "admin",
+                "web",
+                "rich-text-editor",
+                "major-upgrade",
+                "dependabot"
+            ]
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "type": "bugfix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-294 (PR #1914, 2026-06-30): once the A11y Sweep ran green end-to-end, axe-core reported 84 real WCAG violations (6 critical, 56 serious). SPEC-294 baselined them so the workflow gates on regressions; this spec owns clearing the baseline.",
+            "dependsOn": ["SPEC-294"],
+            "tags": [
+                "a11y",
+                "accessibility",
+                "wcag",
+                "web",
+                "spec-270-followup",
+                "spec-294-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Followup to SPEC-292 (merged PR #1930). The adversarial review surfaced one HIGH gap + Medium hardening items deferred from SPEC-292: H-1 the visibility-boost addons grant FEATURED_LISTING at the customer level but only the plan source was wired (loadEntitlements resolves plan UNION addon); M-3 syncFeaturedByPlan does not trigger ISR revalidation; M-4 the 8 billing hooks lack direct tests; M-5 paused/comp status divergence between hooks and the reconcile cron. This spec wires the addon source and hardens the wiring.",
+            "dependsOn": ["SPEC-292"],
+            "tags": ["owner", "featured", "addons", "entitlements", "billing", "hardening"]
         }
     ]
 }

@@ -29,6 +29,14 @@ const dest = destResult.data as Record<string, unknown>;
 const destId = String(dest.id || '');
 const destName = String(dest.name || slug);
 
+// Heading scoped to the destination — "Alojamientos en {Ciudad}" (localized).
+// The city moves into the H1 (and <title>); the decorative tagline reverts to
+// the generic listing tagline so the city is not shown twice.
+const heading = t('accommodations.typeInLocation', '{{type}} en {{location}}', {
+	type: t('accommodations.title', 'Alojamientos'),
+	location: destName
+});
+
 // Use the paginated `list` endpoint (filtered by destinationId) so the
 // destination accommodations page paginates like the other listings. The
 // non-paginated `getByDestination` is reserved for preview strips that only
@@ -46,9 +54,9 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 ---
 
-<ListingLayout locale={locale} title={`${t('accommodations.title', 'Alojamientos')} en ${destName}`} showFilters={false}>
+<ListingLayout locale={locale} title={heading} showFilters={false}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('accommodations.title', 'Alojamientos') }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={destName} title={t('accommodations.title', 'Alojamientos')} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')} title={heading} totalCount={total} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: `destinos/${slug}` })} />}
 	{!hasError && cards.length > 0 && (
