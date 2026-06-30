@@ -25,9 +25,9 @@
 .search-history__error {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
-    color: var(--error, oklch(0.6 0.22 25));
-    background-color: var(--error-subtle, oklch(0.97 0.03 25));
-    border: 1px solid var(--error-a20, oklch(0.6 0.22 25 / 20%));
+    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card);
     padding: var(--space-4) var(--space-5);
 }
@@ -151,9 +151,9 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--error, oklch(0.6 0.22 25));
+    color: var(--destructive, oklch(0.6 0.22 25));
     background: transparent;
-    border: 1px solid var(--error-a30, oklch(0.6 0.22 25 / 30%));
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-button);
     padding: var(--space-2) var(--space-3);
     cursor: pointer;
@@ -161,7 +161,7 @@
 }
 
 .search-history__clear-btn:hover:enabled {
-    background-color: var(--error-subtle, oklch(0.97 0.03 25));
+    background-color: var(--destructive-a08);
 }
 
 .search-history__clear-btn:disabled {
@@ -189,7 +189,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: #fff;
-    background-color: var(--error, oklch(0.6 0.22 25));
+    background-color: var(--destructive, oklch(0.6 0.22 25));
     border: none;
     border-radius: var(--radius-button);
     padding: var(--space-2) var(--space-3);
@@ -337,8 +337,8 @@
 }
 
 .search-history__delete-btn:hover:enabled {
-    color: var(--error, oklch(0.6 0.22 25));
-    border-color: var(--error-a30, oklch(0.6 0.22 25 / 30%));
+    color: var(--destructive, oklch(0.6 0.22 25));
+    border-color: var(--destructive-a25);
 }
 
 .search-history__delete-btn:disabled {

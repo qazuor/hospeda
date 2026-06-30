@@ -158,14 +158,14 @@ function buildRerunUrl({
             const d =
                 filtersJson.checkIn instanceof Date
                     ? filtersJson.checkIn
-                    : new Date(filtersJson.checkIn as unknown as string);
+                    : new Date(filtersJson.checkIn as unknown as string); // TYPE-WORKAROUND: JSON-parsed date fields are typed as `unknown` in the JSONB filter blob; after the `instanceof Date` guard fails we know the value is a date string.
             params.checkIn = d.toISOString().split('T')[0] ?? '';
         }
         if (filtersJson.checkOut) {
             const d =
                 filtersJson.checkOut instanceof Date
                     ? filtersJson.checkOut
-                    : new Date(filtersJson.checkOut as unknown as string);
+                    : new Date(filtersJson.checkOut as unknown as string); // TYPE-WORKAROUND: JSON-parsed date fields are typed as `unknown` in the JSONB filter blob; after the `instanceof Date` guard fails we know the value is a date string.
             params.checkOut = d.toISOString().split('T')[0] ?? '';
         }
     }
