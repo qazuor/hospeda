@@ -70,8 +70,9 @@ const navLinks = [
 
 const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
 
-/** Current pathname used to highlight the active nav link. */
+/** Current pathname (trailing-slash-normalized) used to highlight the active nav link. */
 const currentPath = Astro.url.pathname;
+const normalizedPath = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
 
 /** True when the page has a hero (homepage only). Header is transparent only on hero pages. */
 const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pathname);
@@ -140,7 +141,14 @@ const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN
         <nav class="header__nav" aria-label={t("nav.mainNavigation", "Main navigation")}>
             {
                 navLinks.map((link, i) => {
-                    const isActive = currentPath.includes(link.href.replace(/\/$/, '').split('/').pop() ?? '');
+                    // Match the full section href (which ends in `/`) as a prefix,
+                    // not just the last segment. The old `includes(lastSegment)`
+                    // marked two items active at once on nested routes — e.g.
+                    // `/es/destinos/colon/alojamientos/` contains both `destinos`
+                    // and `alojamientos`, so "Destinos" AND "Alojamientos" lit up.
+                    // `startsWith(href)` keeps the trailing slash, so sibling
+                    // sections with shared prefixes never collide.
+                    const isActive = normalizedPath.startsWith(link.href);
                     return (
                         <>
                             <a
