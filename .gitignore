@@ -159,3 +159,8 @@ apps/web-old
 
 # CodeGraph local index (do not commit, ~345MB)
 .codegraph/
+
+# Generated i18n translation-key types (source of truth: packages/i18n/src/locales/*.json).
+# Regenerated on install (root 'prepare') and via the Turbo '@repo/i18n#build' task.
+# Committing it caused constant merge conflicts — keep it out of git.
+packages/i18n/src/types.ts
