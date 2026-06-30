@@ -115,6 +115,11 @@ const iconMap: Record<string, typeof SparkleIcon> = {
         border-radius: 24px;
         z-index: 0;
     }
+    /* Dark: the sage/green panel reads as out-of-palette on the navy canvas;
+       move it into the blue family (kept as a distinct, branded surface). */
+    :global([data-theme="dark"]) .best-features-banner__panel {
+        background-color: oklch(0.32 0.055 255);
+    }
 
     /* ─── Container ─────────────────────────────────────────────────── */
     .best-features-banner__container {
