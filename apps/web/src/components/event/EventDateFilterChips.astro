@@ -6,7 +6,9 @@
  * preserving any other active query params (category, q, sortBy, sortOrder,
  * priceMin, priceMax, isFree).
  *
- * Active chip is highlighted with `aria-pressed="true"` for accessibility.
+ * Active chip is marked with `aria-current="true"` for accessibility (the
+ * chips are navigation links, so `aria-current` is the allowed attribute —
+ * `aria-pressed` is only valid on elements with a button role).
  * No client JavaScript — pure server-rendered anchor links.
  *
  * Rendering: Static (no client JavaScript).
@@ -95,7 +97,7 @@ function buildChipHref(value: EventDateFilter): string {
                     'event-date-chips__chip',
                     { 'event-date-chips__chip--active': isActive },
                 ]}
-                aria-pressed={isActive ? 'true' : 'false'}
+                aria-current={isActive ? 'true' : undefined}
                 rel="nofollow"
             >
                 {label}

@@ -279,7 +279,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 									'dest-attractions-filter__badge',
 									{ 'dest-attractions-filter__badge--active': active }
 								]}
-								aria-pressed={active ? 'true' : 'false'}
+								aria-current={active ? 'true' : undefined}
 								rel="nofollow"
 								data-attraction-id={attr.id}
 							>
@@ -751,7 +751,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 					if (matches) visibleCount++;
 				}
 
-				// Chips: active class + aria-pressed + refreshed href so
+				// Chips: active class + aria-current + refreshed href so
 				// modifier-clicks (new tab / copy link) keep producing a URL
 				// that round-trips to the current state.
 				var overflowActive = false;
@@ -761,7 +761,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 					if (!id) continue;
 					var isActive = active.has(id);
 					badge.classList.toggle(BADGE_ACTIVE_CLASS, isActive);
-					badge.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+					badge.setAttribute('aria-current', isActive ? 'true' : 'false');
 					badge.setAttribute('href', buildHrefToggling(id, active));
 					if (isActive && j >= VISIBLE_LIMIT) overflowActive = true;
 				}
