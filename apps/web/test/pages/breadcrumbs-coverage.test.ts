@@ -101,11 +101,9 @@ describe('T-031 — Events, posts, and author pages', () => {
         expect(src).toContain('{ label: name }');
     });
 
-    it('eventos/categoria/[category] has Breadcrumbs with category label', () => {
-        const src = readPage('eventos/categoria/[category]/index.astro');
-        assertHasBreadcrumbs(src, 'eventos/categoria/[category]');
-        expect(src).toContain('catLabel');
-    });
+    // eventos/categoria/[category] was retired to a 301 redirect (U7) — it no
+    // longer renders breadcrumbs (or any UI). Category filtering lives on the
+    // unified /eventos/ listing.
 
     it('publicaciones/[slug] has Breadcrumbs with post title', () => {
         const src = readPage('publicaciones/[slug].astro');

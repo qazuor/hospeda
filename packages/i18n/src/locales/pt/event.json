@@ -1,5 +1,7 @@
 {
-    "title": "Eventos e Atividades",
+    "title": "Eventos",
+    "tagline": "Não perca nada",
+    "typeInLocation": "{{type}} em {{location}}",
     "description": "Descubra eventos emocionantes e atividades unicas. Nao perca as melhores experiencias.",
     "heading": "Eventos e Atividades",
     "subheading": "Descubra experiencias unicas e eventos emocionantes que vao tornar a sua viagem inesquecivel",

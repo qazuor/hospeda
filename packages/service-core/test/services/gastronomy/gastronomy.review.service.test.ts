@@ -93,6 +93,10 @@ function makeReviewModel(review: GastronomyReview | null = null) {
         findAll: vi
             .fn()
             .mockResolvedValue({ items: review ? [review] : [], total: review ? 1 : 0 }),
+        // findAllWithRelations is used by listByGastronomy (Bug B7b fix)
+        findAllWithRelations: vi
+            .fn()
+            .mockResolvedValue({ items: review ? [review] : [], total: review ? 1 : 0 }),
         create: vi.fn().mockImplementation(async (data: Partial<GastronomyReview>) => ({
             id: REVIEW_ID,
             ...data
@@ -259,13 +263,15 @@ describe('GastronomyReviewService.listByGastronomy', () => {
         expect(result.data?.total).toBeGreaterThanOrEqual(0);
     });
 
-    it('should query with APPROVED + ACTIVE + deletedAt: null filters', async () => {
+    it('should query with APPROVED + ACTIVE + deletedAt: null filters via findAllWithRelations (Bug B7b fix)', async () => {
         const service = makeService();
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await service.listByGastronomy(GASTRONOMY_ID, staffActor);
 
-        expect(mockFindAll).toHaveBeenCalledWith(
+        // After B7b fix: listByGastronomy uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ user: true }),
             expect.objectContaining({
                 gastronomyId: GASTRONOMY_ID,
                 lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -375,5 +381,58 @@ describe('GastronomyReviewService permission hooks', () => {
 describe('GastronomyReviewService.ENTITY_NAME', () => {
     it('should be "gastronomyReview"', () => {
         expect(GastronomyReviewService.ENTITY_NAME).toBe('gastronomyReview');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Bug B7b regression — listByGastronomy loads user relation
+// Fixes: review authors always showing "Usuario" (findAll never joined the
+// users table; findAllWithRelations with { user: true } does).
+// ---------------------------------------------------------------------------
+
+describe('GastronomyReviewService.listByGastronomy — B7b regression (user relation loaded)', () => {
+    it('requests user: true in the relations argument of findAllWithRelations', async () => {
+        const review = makeReview({
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        // arg[0] must include user: true so the DB layer performs the JOIN
+        expect(mockFindAllWithRelations.mock.calls[0]?.[0]).toMatchObject({ user: true });
+    });
+
+    it('preserves the APPROVED + ACTIVE + deletedAt: null security invariant after loading relations', async () => {
+        const service = makeService();
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        // arg[1] is the where object — security filters must remain
+        expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
+            gastronomyId: GASTRONOMY_ID,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+    });
+
+    it('returns a result object with reviews and total', async () => {
+        const review = makeReview({
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+
+        const result = await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.reviews).toBeDefined();
+        expect(result.data?.total).toBeGreaterThanOrEqual(0);
     });
 });

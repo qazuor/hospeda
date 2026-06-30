@@ -110,6 +110,23 @@ export interface EnvVarDefinition {
     readonly category: string;
 
     /**
+     * Lifecycle stage in which the variable is consumed:
+     * - `'runtime'` — read by the running app/server (the default; assumed when omitted).
+     * - `'build'`   — consumed only during the build (Docker `ARG`, bundler config,
+     *                 `VITE_`/`PUBLIC_` values baked into the client, CI-only flags).
+     *                 These are NOT validated by the runtime Zod env schemas, so the
+     *                 `env:check:registry` cross-validation does not expect them in a
+     *                 runtime schema; they are instead enforced against the Dockerfiles.
+     * - `'both'`    — needed at build AND read at runtime (e.g. a release SHA baked into
+     *                 the bundle and also read by the server's Sentry init).
+     *
+     * Omitted ⇒ treated as `'runtime'`. Tooling (`.env.example` generation, the
+     * deploy ledger) uses this to know whether a value must be supplied as a build
+     * argument (Coolify build-arg) vs a runtime environment variable.
+     */
+    readonly stage?: 'runtime' | 'build' | 'both';
+
+    /**
      * Free-form instructions shown in interactive prompts to help the
      * developer obtain a valid value. Use plain text — multiple sentences
      * allowed. Should explain how to generate the value or where to find it

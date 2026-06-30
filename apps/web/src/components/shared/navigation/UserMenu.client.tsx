@@ -396,20 +396,41 @@ export function UserMenu({
     const texts = TEXTS[locale] ?? TEXTS.es;
 
     // ── Refine auth state from /auth/me on mount ────────────────────────
-    // Stale-while-revalidate: paint from cache instantly (if any) for perceived
-    // perf, but ALWAYS hit /auth/me in background to detect post-OAuth state
-    // changes that would otherwise be masked by a 60s-TTL cache poisoned with
-    // the pre-signin guest snapshot. See SPEC-103 T-093.
+    // TTL guard: if the sessionStorage cache is still within its 60s window,
+    // apply it immediately and skip the background refetch. This prevents a
+    // redundant /auth/me request on every View Transition navigation (the
+    // component remounts on each client-side nav but the cache from the
+    // previous mount is still fresh).
+    //
+    // When the cache is absent or expired (first load, post-signout, 60s
+    // elapsed) we fall through and fetch from the server. OAuth callbacks
+    // always trigger a full page reload which re-initialises the JS module
+    // and may produce an expired or missing cache, so the fetch still fires
+    // in that path. See SPEC-103 T-093 for original rationale.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only refine; initialUser is the SSR snapshot captured at mount
     useEffect(() => {
         let cancelled = false;
         const cached = readCachedAuthMe();
-        if (cached) {
+        // Only trust the cache when it AGREES with the server-rendered auth state.
+        // sessionStorage survives full-page reloads, so after a sign-in (OAuth does a
+        // full reload) a still-fresh GUEST cache would otherwise overwrite the
+        // authenticated `initialUser` the SSR just provided — hiding the avatar for up
+        // to the TTL window. The same applies in reverse after sign-out. When cache and
+        // SSR disagree, discard the cache and fall through to a fresh fetch.
+        // See SPEC-103 T-093.
+        const cacheMatchesSsr =
+            cached !== null && cached.isAuthenticated === (initialUser !== null);
+        if (cached && cacheMatchesSsr) {
             setUser(cached.user);
             setPermissions(cached.permissions);
             document.documentElement.setAttribute(
                 'data-user-authenticated',
                 cached.isAuthenticated ? 'true' : 'false'
             );
+            // Cache is within TTL and consistent with SSR — skip the server hit.
+            return () => {
+                cancelled = true;
+            };
         }
 
         fetchAuthMe()
@@ -424,9 +445,10 @@ export function UserMenu({
                 );
             })
             .catch(() => {
-                // Network error — keep whatever the cache or server-rendered
-                // initialUser hint already gave us.
-                if (!cancelled && !cached) setPermissions([]);
+                // Network error — keep whatever the server-rendered initialUser
+                // hint already gave us; set permissions to empty so gated items
+                // stay hidden rather than flashing briefly.
+                if (!cancelled) setPermissions([]);
             });
 
         return () => {

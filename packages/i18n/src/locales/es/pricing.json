@@ -4,6 +4,13 @@
     "recommended": "Recomendado",
     "trial": "{days} días gratis",
     "includesEverything": "Todo lo del plan {plan}, más:",
+    "inheritedSummary": "+{count} funciones del plan {plan}",
+    "baseHighlightTitle": "Ideal para empezar",
+    "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
+    "group": {
+        "tourist": "Todas las funciones de turista",
+        "ai": "Suite de IA: textos, traducción, importación y consultas"
+    },
     "features": {
         "label": "Incluye"
     },
@@ -44,6 +51,8 @@
     "comparison": {
         "link": "Ver comparativa detallada",
         "cta": "Elegir plan",
+        "teaserTitle": "¿No sabés cuál elegir?",
+        "teaserText": "Compará todas las funciones, beneficios y límites lado a lado.",
         "owner": {
             "heading": "Comparativa detallada de planes para propietarios",
             "title": "Comparativa de planes para propietarios — Hospeda",

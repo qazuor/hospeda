@@ -1,17 +1,21 @@
+import { Turnstile } from '@marsidev/react-turnstile';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '@repo/schemas';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '@repo/schemas';
 /**
  * @repo/feedback - FeedbackForm component
  *
- * Orchestrates the multi-step feedback form. Manages step navigation,
- * form state for both steps, attachment list, client-side validation,
- * and success/error states after submission.
+ * Renders a single-step feedback form with a collapsible "more details"
+ * expander. The visible step always shows type, title, description, and
+ * (when unauthenticated) reporter contact fields. The expander reveals
+ * severity, reproduction steps, expected/actual result, attachments, and
+ * the auto-collected technical environment section.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { FEEDBACK_CONFIG } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
+import { Button } from '../ui/Button.js';
 import './FeedbackForm.css';
 import { SuccessScreen } from './SuccessScreen.js';
 import { StepBasic } from './steps/StepBasic.js';
@@ -20,8 +24,8 @@ import { StepDetails } from './steps/StepDetails.js';
 import type { StepDetailsData } from './steps/StepDetails.js';
 import '../styles/tokens.css';
 
-/** Which step of the form is currently visible */
-type Step = 'basic' | 'details' | 'success';
+/** ID of the collapsible details panel, used for aria-controls linkage */
+const DETAILS_PANEL_ID = 'feedback-details-panel';
 
 /**
  * Payload passed to the optional Sentry feedback bridge callback after a
@@ -97,6 +101,15 @@ export interface FeedbackFormProps {
      * interactions) on every modal open.
      */
     readonly isOpen?: boolean;
+    /**
+     * Cloudflare Turnstile site key for the invisible bot-detection widget.
+     *
+     * When set, the invisible Turnstile widget is rendered and the resolved token
+     * is included as `cfTurnstileToken` in the submission payload. When undefined
+     * (e.g. local dev without config), the widget is NOT rendered and submission
+     * proceeds without a token — the server's fail-closed policy then decides.
+     */
+    readonly turnstileSiteKey?: string;
 }
 
 /**
@@ -159,10 +172,17 @@ function mapZodMessage(path: PropertyKey[], message: string): string {
 /**
  * FeedbackForm component.
  *
- * Orchestrates the two-step feedback flow:
- * - Step 1 (basic): type, title, description, optional contact fields
- * - Step 2 (details): severity, reproduction steps, attachments, environment
- * - Success: confirmation with Linear issue ID or fallback message
+ * Renders a single-step form with an inline collapsible expander for
+ * optional detail fields:
+ * - Always visible: type, title, description, reporter contact fields
+ *   (email/name shown only when unauthenticated)
+ * - Collapsible expander ("Agregar más detalles"): severity, steps to
+ *   reproduce, expected/actual result, attachments, and the technical
+ *   environment section
+ * - One submit button at the bottom
+ * - Success screen after a successful submission
+ *
+ * The honeypot `website` field is always present but hidden from real users.
  *
  * @param props - See {@link FeedbackFormProps}
  */
@@ -178,9 +198,10 @@ export function FeedbackForm({
     sentryEventId,
     onSentryFeedback,
     onClose,
-    isOpen
+    isOpen,
+    turnstileSiteKey
 }: FeedbackFormProps) {
-    const [step, setStep] = useState<Step>('basic');
+    const [detailsOpen, setDetailsOpen] = useState(false);
     const [basicData, setBasicData] = useState<StepBasicData>(() =>
         buildInitialBasicData(userEmail, userName, prefillData)
     );
@@ -189,6 +210,8 @@ export function FeedbackForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [honeypot, setHoneypot] = useState<string>('');
     const [hasNotifiedSentry, setHasNotifiedSentry] = useState<boolean>(false);
+    /** Turnstile token resolved by the invisible widget; null until verified. */
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
     const { environment, updateField: updateEnvField } = useAutoCollect({
         appSource,
@@ -243,34 +266,6 @@ export function FeedbackForm({
     // Validation
     // ------------------------------------------------------------------ //
 
-    const validateStep1 = useCallback((): boolean => {
-        const step1Schema = feedbackFormSchema.pick({
-            type: true,
-            title: true,
-            description: true,
-            reporterEmail: true,
-            reporterName: true
-        });
-
-        const result = step1Schema.safeParse(basicData);
-
-        if (result.success) {
-            setErrors({});
-            return true;
-        }
-
-        const fieldErrors: Record<string, string> = {};
-        for (const issue of result.error.issues) {
-            const key = String(issue.path[0] ?? 'form');
-            if (!fieldErrors[key]) {
-                fieldErrors[key] = mapZodMessage(issue.path, issue.message);
-            }
-        }
-
-        setErrors(fieldErrors);
-        return false;
-    }, [basicData]);
-
     const validate = useCallback((): boolean => {
         const combined = {
             ...basicData,
@@ -295,20 +290,8 @@ export function FeedbackForm({
         }
         setErrors(fieldErrors);
 
-        const step1Fields = new Set([
-            'type',
-            'title',
-            'description',
-            'reporterEmail',
-            'reporterName'
-        ]);
-        const hasStep1Error = Object.keys(fieldErrors).some((k) => step1Fields.has(k));
-        if (hasStep1Error && step !== 'basic') {
-            setStep('basic');
-        }
-
         return false;
-    }, [basicData, detailsData, attachments, environment, step]);
+    }, [basicData, detailsData, attachments, environment]);
 
     // ------------------------------------------------------------------ //
     // Submit
@@ -321,37 +304,44 @@ export function FeedbackForm({
             ...basicData,
             ...detailsData,
             attachments: attachments.length > 0 ? attachments : undefined,
-            environment
+            environment,
+            ...(turnstileToken != null ? { cfTurnstileToken: turnstileToken } : {})
         };
 
         const parsed = feedbackFormSchema.parse(combined);
 
         await submit(parsed, attachments.length > 0 ? attachments : undefined, honeypot);
-    }, [basicData, detailsData, attachments, environment, validate, submit, honeypot]);
+    }, [
+        basicData,
+        detailsData,
+        attachments,
+        environment,
+        validate,
+        submit,
+        honeypot,
+        turnstileToken
+    ]);
 
     // ------------------------------------------------------------------ //
     // Reset
     // ------------------------------------------------------------------ //
 
     const handleReset = useCallback(() => {
-        setStep('basic');
+        setDetailsOpen(false);
         setBasicData(buildInitialBasicData(userEmail, userName));
         setDetailsData({});
         setAttachments([]);
         setErrors({});
         setHasNotifiedSentry(false);
+        setTurnstileToken(null);
         resetSubmit();
     }, [userEmail, userName, resetSubmit]);
 
     // ------------------------------------------------------------------ //
-    // Transition to success step when submit result arrives
+    // Mirror to Sentry when submit result arrives
     // ------------------------------------------------------------------ //
 
     useEffect(() => {
-        if (submitState.result !== null && step !== 'success') {
-            setStep('success');
-        }
-
         // Mirror the report into Sentry's User Feedback channel (best-effort).
         // The package never imports a Sentry SDK directly — the consumer
         // (web/admin) provides the bridge callback. Wrapped in try/catch so
@@ -371,7 +361,6 @@ export function FeedbackForm({
         }
     }, [
         submitState.result,
-        step,
         hasNotifiedSentry,
         onSentryFeedback,
         basicData.reporterName,
@@ -384,7 +373,7 @@ export function FeedbackForm({
     // Success screen
     // ------------------------------------------------------------------ //
 
-    if (step === 'success' && submitState.result) {
+    if (submitState.result !== null) {
         return (
             <SuccessScreen
                 linearIssueId={submitState.result.linearIssueId ?? undefined}
@@ -396,41 +385,7 @@ export function FeedbackForm({
     }
 
     // ------------------------------------------------------------------ //
-    // Step 2
-    // ------------------------------------------------------------------ //
-
-    if (step === 'details') {
-        return (
-            <div className="formRoot">
-                <p className="formTitle">{FEEDBACK_STRINGS.form.step2Title}</p>
-
-                {submitState.error && (
-                    <div
-                        className="errorAlert"
-                        role="alert"
-                    >
-                        {submitState.error}
-                    </div>
-                )}
-
-                <StepDetails
-                    data={detailsData}
-                    onChange={handleDetailsChange}
-                    attachments={attachments}
-                    onAddAttachments={handleAddAttachments}
-                    onRemoveAttachment={handleRemoveAttachment}
-                    environment={environment as FeedbackEnvironment}
-                    onEnvironmentChange={updateEnvField}
-                    onBack={() => setStep('basic')}
-                    onSubmit={handleSubmit}
-                    isSubmitting={submitState.isSubmitting}
-                />
-            </div>
-        );
-    }
-
-    // ------------------------------------------------------------------ //
-    // Step 1 (default)
+    // Single-step form with collapsible details expander
     // ------------------------------------------------------------------ //
 
     return (
@@ -463,17 +418,80 @@ export function FeedbackForm({
                 />
             </div>
 
+            {/* Always-visible basic fields */}
             <StepBasic
                 data={basicData}
                 onChange={handleBasicChange}
                 errors={errors as Partial<Record<keyof StepBasicData, string>>}
                 showContactFields={!userId}
-                onGoToStep2={() => {
-                    if (validateStep1()) setStep('details');
-                }}
-                onSubmit={handleSubmit}
-                isSubmitting={submitState.isSubmitting}
             />
+
+            {/* Collapsible "agregar más detalles" expander toggle */}
+            <button
+                type="button"
+                className="detailsToggle"
+                aria-expanded={detailsOpen}
+                aria-controls={DETAILS_PANEL_ID}
+                onClick={() => setDetailsOpen((prev) => !prev)}
+                disabled={submitState.isSubmitting}
+            >
+                <span>
+                    {detailsOpen
+                        ? FEEDBACK_STRINGS.buttons.hideDetails
+                        : FEEDBACK_STRINGS.buttons.addDetails}
+                </span>
+                <span
+                    className="detailsToggleChevron"
+                    aria-hidden="true"
+                >
+                    {detailsOpen ? '▲' : '▼'}
+                </span>
+            </button>
+
+            {/* Collapsible details panel — only rendered when open so fields are
+                absent from the accessibility tree (and DOM) when collapsed */}
+            {detailsOpen && (
+                <div
+                    id={DETAILS_PANEL_ID}
+                    className="detailsPanel"
+                >
+                    <StepDetails
+                        data={detailsData}
+                        onChange={handleDetailsChange}
+                        attachments={attachments}
+                        onAddAttachments={handleAddAttachments}
+                        onRemoveAttachment={handleRemoveAttachment}
+                        environment={environment as FeedbackEnvironment}
+                        onEnvironmentChange={updateEnvField}
+                    />
+                </div>
+            )}
+
+            {/* Invisible Turnstile bot-detection widget (SPEC-301).
+                Renders only when the site key is configured; otherwise skipped.
+                The onSuccess callback stores the token so it can be included in
+                the submission payload. onExpire/onError resets the token so any
+                re-submission triggers a fresh challenge. */}
+            {turnstileSiteKey && (
+                <Turnstile
+                    siteKey={turnstileSiteKey}
+                    options={{ size: 'invisible' }}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onExpire={() => setTurnstileToken(null)}
+                    onError={() => setTurnstileToken(null)}
+                />
+            )}
+
+            {/* Single submit button */}
+            <div className="actions">
+                <Button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitState.isSubmitting}
+                >
+                    {FEEDBACK_STRINGS.buttons.submit}
+                </Button>
+            </div>
         </div>
     );
 }

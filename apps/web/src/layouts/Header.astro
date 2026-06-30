@@ -70,8 +70,9 @@ const navLinks = [
 
 const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
 
-/** Current pathname used to highlight the active nav link. */
+/** Current pathname (trailing-slash-normalized) used to highlight the active nav link. */
 const currentPath = Astro.url.pathname;
+const normalizedPath = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
 
 /** True when the page has a hero (homepage only). Header is transparent only on hero pages. */
 const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pathname);
@@ -140,7 +141,14 @@ const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN
         <nav class="header__nav" aria-label={t("nav.mainNavigation", "Main navigation")}>
             {
                 navLinks.map((link, i) => {
-                    const isActive = currentPath.includes(link.href.replace(/\/$/, '').split('/').pop() ?? '');
+                    // Match the full section href (which ends in `/`) as a prefix,
+                    // not just the last segment. The old `includes(lastSegment)`
+                    // marked two items active at once on nested routes — e.g.
+                    // `/es/destinos/colon/alojamientos/` contains both `destinos`
+                    // and `alojamientos`, so "Destinos" AND "Alojamientos" lit up.
+                    // `startsWith(href)` keeps the trailing slash, so sibling
+                    // sections with shared prefixes never collide.
+                    const isActive = normalizedPath.startsWith(link.href);
                     return (
                         <>
                             <a
@@ -255,7 +263,13 @@ const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN
     }
 
     .header:global(.navbar--scrolled) {
-        background-color: var(--core-card-a95);
+        /* Fully opaque once scrolled: the WaveHeader's warm bar sits directly
+           below the navbar, and a translucent surface (a95) let the wave color
+           bleed through during scroll, which looked off. An opaque surface
+           keeps the navbar clean against the wave. Blur is kept so the
+           background-color transition from the translucent at-top state still
+           fades smoothly. */
+        background-color: var(--core-card);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);

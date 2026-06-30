@@ -13,7 +13,6 @@ import { createLogger } from '@repo/logger';
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
-import { apiLogger } from './logger.js';
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -350,6 +349,13 @@ export const ApiEnvBaseSchema = z.object({
         .transform((v) => v !== 'false'),
     /** Override fallback email for feedback reports when Linear is down */
     HOSPEDA_FEEDBACK_FALLBACK_EMAIL: z.string().email().optional(),
+    /**
+     * Cloudflare Turnstile secret key for server-side token verification (SPEC-301).
+     * When set, every public feedback submission is verified via the Turnstile siteverify
+     * endpoint before creating a Linear issue. Missing token or siteverify failure → 403
+     * (fail-closed, R-2). When unset, the route also rejects — dev must set the test key.
+     */
+    HOSPEDA_TURNSTILE_SECRET_KEY: z.string().optional(),
 
     // Exchange rates
     HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
@@ -864,10 +870,11 @@ export let env: z.infer<typeof ApiEnvSchema>;
  */
 export const validateApiEnv = (): void => {
     env = _validateApiEnv() as z.infer<typeof ApiEnvSchema>;
-    // Guard against test environments where apiLogger may be a partial mock
-    if (typeof apiLogger.log === 'function') {
-        apiLogger.log(env, 'validateApiEnv');
-    }
+    // NOTE: intentionally does NOT log here. validateApiEnv() is called from
+    // more than one module (server bootstrap + response-validator), so logging
+    // inside it duplicated the line, and it ran before configureLogger() applied
+    // the prod JSON format — emitting the boot summary in ANSI. The server logs
+    // a single safe summary from index.ts AFTER configureLogger() instead (I3).
 };
 
 // Export the schema for testing

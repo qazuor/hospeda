@@ -11,7 +11,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { getApiUrl, getSiteUrl } from '@/lib/env';
+import { getApiUrl, getSiteUrl, getTurnstileSiteKey } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
 import { FeedbackForm, parseFeedbackParams } from '@repo/feedback';
 import type { ReportTypeId } from '@repo/feedback';
@@ -20,6 +20,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 const t = createT(locale);
 const apiUrl = getApiUrl();
 const siteUrl = getSiteUrl();
+const turnstileSiteKey = getTurnstileSiteKey();
 const homeUrl = buildUrl({ locale, path: '' });
 
 const user = Astro.locals.user as { id?: string; email?: string; name?: string } | undefined;
@@ -77,6 +78,7 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 					userEmail={user?.email}
 					userName={user?.name}
 					prefillData={prefillData}
+					turnstileSiteKey={turnstileSiteKey}
 				/>
 			</div>
 		</main>

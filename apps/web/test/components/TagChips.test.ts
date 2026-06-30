@@ -64,13 +64,19 @@ describe('TagChips.astro', () => {
         });
 
         it('renders each chip as an <a> anchor element', () => {
-            expect(src).toContain('<a href={href}');
+            expect(src).toContain('<a');
+            expect(src).toContain('href={href}');
         });
     });
 
     describe('chip rendering', () => {
         it('applies tag-chips__chip class to anchor elements', () => {
-            expect(src).toContain('class="tag-chips__chip"');
+            expect(src).toContain("'tag-chips__chip'");
+        });
+
+        it('supports an active/selected chip state', () => {
+            expect(src).toContain('tag-chips__chip--active');
+            expect(src).toContain('aria-current');
         });
 
         it('applies tag-chips__item class to list items', () => {

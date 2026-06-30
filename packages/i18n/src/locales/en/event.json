@@ -1,5 +1,7 @@
 {
-    "title": "Events & Activities",
+    "title": "Events",
+    "tagline": "Don't miss a thing",
+    "typeInLocation": "{{type}} in {{location}}",
     "description": "Discover exciting events and unique activities. Don't miss the best experiences.",
     "heading": "Events & Activities",
     "subheading": "Discover unique experiences and exciting events that will make your trip unforgettable",

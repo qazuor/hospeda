@@ -24,11 +24,11 @@ describe('buildAccommodationOrderBy', () => {
         expect(rendered[0]).toMatch(/"accommodations"."id" desc/i);
     });
 
-    it('prepends isFeatured DESC when featuredFirst is true', () => {
+    it('prepends (isFeatured OR featuredByPlan) DESC when featuredFirst is true', () => {
         const orderBy = buildAccommodationOrderBy({ featuredFirst: true });
         expect(orderBy).toHaveLength(2);
         const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured" desc/i);
+        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_plan".*desc/i);
         expect(rendered[1]).toMatch(/"id" desc/i);
     });
 
@@ -54,7 +54,7 @@ describe('buildAccommodationOrderBy', () => {
         expect(orderBy).toHaveLength(3);
         const rendered = renderOrderBy(orderBy);
         // Primary pin
-        expect(rendered[0]).toMatch(/"is_featured" desc/i);
+        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_plan".*desc/i);
         // The in-sorts isFeatured was dropped — second position is name
         expect(rendered[1]).toMatch(/"name" asc/i);
         expect(rendered[2]).toMatch(/"id" desc/i);
@@ -79,7 +79,7 @@ describe('buildAccommodationOrderBy', () => {
         });
         expect(orderBy).toHaveLength(2);
         const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured" desc/i);
+        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_plan".*desc/i);
         expect(rendered[1]).toMatch(/"id" desc/i);
         // No asc "is_featured" from the legacy fallback
         const hits = rendered.filter((r) => /"is_featured"/i.test(r));
@@ -159,7 +159,7 @@ describe('buildAccommodationOrderBy', () => {
         const orderBy = buildAccommodationOrderBy({ featuredFirst: true, sorts });
         expect(orderBy).toHaveLength(3);
         const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured" desc/i);
+        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_plan".*desc/i);
         expect(rendered[1]).toMatch(/"average_rating"/i);
         expect(rendered[1]).toMatch(/NULLS LAST/i);
         expect(rendered[2]).toMatch(/"id" desc/i);
@@ -237,7 +237,7 @@ describe('buildAccommodationOrderBy', () => {
             });
             expect(orderBy).toHaveLength(3);
             const rendered = renderOrderBy(orderBy);
-            expect(rendered[0]).toMatch(/"is_featured" desc/i);
+            expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_plan".*desc/i);
             expect(rendered[1]).toMatch(/asin/i);
             expect(rendered[2]).toMatch(/"id" desc/i);
         });

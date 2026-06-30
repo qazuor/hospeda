@@ -1,4 +1,5 @@
 export * from './accommodation/accommodation.service';
+export * from './accommodation/accommodation.sync-featured-by-plan';
 export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
 export * from './appLog/index.js';
@@ -40,6 +41,7 @@ export * from './user/user.service';
 export * from './weather/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
+export * from './userSearchHistory/index.js';
 export * from './billing';
 export * from './commerce';
 export * from './gastronomy';

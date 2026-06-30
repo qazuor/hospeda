@@ -23,6 +23,7 @@ import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { ProfileCompletion } from '@/components/account/ProfileCompletion.client';
+import { splitFullName } from '@/components/account/ProfileCompletion.helpers';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -43,6 +44,15 @@ const description = t(
 );
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Pre-fill the form from the OAuth/session profile so a Google sign-up does not
+// land on an empty form. `user.name` is the provider's full display name and
+// `user.image` its avatar; both already live in the session (Astro.locals.user).
+// firstName/lastName are derived heuristically (see splitFullName) and remain
+// editable by the user.
+const { firstName: initialFirstName, lastName: initialLastName } = splitFullName({
+    fullName: user.name
+});
 ---
 
 <BaseLayout locale={locale} title={title} description={description}>
@@ -60,5 +70,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         locale={locale}
         apiUrl={apiUrl}
         initialDisplayName={user.name}
+        initialFirstName={initialFirstName}
+        initialLastName={initialLastName}
+        initialAvatarUrl={user.image ?? undefined}
     />
 </BaseLayout>

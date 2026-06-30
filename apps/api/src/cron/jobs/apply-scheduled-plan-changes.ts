@@ -42,12 +42,14 @@
  */
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import {
     calculatePromoCodeEffect,
     getPromoCodeById,
-    resolveFullPlanPriceCentavos
+    resolveFullPlanPriceCentavos,
+    syncFeaturedByPlan
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -504,6 +506,53 @@ async function applyOne(
                         targetPlanSlug,
                         keepSelections
                     });
+                    // SPEC-292 T-005: sync featuredByPlan for the new (post-downgrade) plan.
+                    // The new plan might still grant FEATURED_LISTING (e.g. complex-premium →
+                    // complex-pro) or it might not (e.g. owner-pro → owner-basico).
+                    // Soft-fail: a featured-sync error must NOT break the cron or affect the
+                    // already-committed plan change (mirrors the treatment of restriction failure,
+                    // but uses warn-only since T-006 reconciliation cron is the backstop).
+                    try {
+                        // Guard: skip syncFeaturedByPlan when the plan slug is not in
+                        // ALL_PLANS (commerce/partner plans excluded by SPEC-239 would
+                        // resolve to undefined, causing a false active:false that clears
+                        // featuredByPlan for dual-subscription owners).
+                        const resolvedDowngradedPlan = getPlanBySlug(targetPlanSlug);
+                        if (resolvedDowngradedPlan) {
+                            const downgradedPlanHasFeatured =
+                                resolvedDowngradedPlan.entitlements.includes(
+                                    EntitlementKey.FEATURED_LISTING
+                                );
+                            await syncFeaturedByPlan({
+                                ownerId: userId,
+                                active: downgradedPlanHasFeatured
+                            });
+                            logger.info('Scheduled plan change: syncFeaturedByPlan applied', {
+                                subscriptionId,
+                                customerId,
+                                targetPlanSlug,
+                                active: downgradedPlanHasFeatured
+                            });
+                        } else {
+                            logger.warn(
+                                'Scheduled plan change: plan slug not found in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)',
+                                { subscriptionId, customerId, targetPlanSlug }
+                            );
+                        }
+                    } catch (featuredSyncErr) {
+                        logger.warn(
+                            'Scheduled plan change: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)',
+                            {
+                                subscriptionId,
+                                customerId,
+                                targetPlanSlug,
+                                error:
+                                    featuredSyncErr instanceof Error
+                                        ? featuredSyncErr.message
+                                        : String(featuredSyncErr)
+                            }
+                        );
+                    }
                 } else {
                     logger.warn(
                         'Scheduled plan change: skipping restriction — target plan slug unresolvable',

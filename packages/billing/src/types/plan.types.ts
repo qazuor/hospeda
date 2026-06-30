@@ -36,7 +36,14 @@ export enum LimitKey {
     /** Maximum number of AI content translation requests per month (-1 = unlimited) */
     MAX_AI_TRANSLATE_PER_MONTH = 'max_ai_translate_per_month',
     /** Maximum number of AI accommodation import requests per month (-1 = unlimited) */
-    MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month'
+    MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month',
+
+    /**
+     * Maximum number of search history entries persisted for the user (SPEC-289).
+     * Free plan has no entitlement so this limit is never evaluated for free users.
+     * Plus = 50, VIP = 200 (owner/complex inherit 200 via `TOURIST_VIP_LIMITS`).
+     */
+    MAX_SEARCH_HISTORY_ENTRIES = 'max_search_history_entries'
 }
 
 /**

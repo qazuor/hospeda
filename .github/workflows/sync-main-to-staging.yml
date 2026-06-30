@@ -17,6 +17,11 @@ name: Sync main to staging
 on:
   push:
     branches: [main]
+  # workflow_dispatch lets a failed back-merge be retried without a new push to
+  # main (the original failure mode in PR #1863, 2026-06-27): the sync run died
+  # on a permissions error and could not be re-run because it only triggered on
+  # push. See SPEC-294 B3.
+  workflow_dispatch:
 
 permissions:
   contents: write

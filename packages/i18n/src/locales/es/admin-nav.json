@@ -9,7 +9,8 @@
         "notifications": "Notificaciones",
         "profile": "Perfil",
         "settings": "Configuración",
-        "search": "Buscar…"
+        "search": "Buscar…",
+        "reportProblem": "Reportar un problema"
     },
     "breadcrumbs": {
         "breadcrumb": "Ruta de navegación"

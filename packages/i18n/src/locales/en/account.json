@@ -570,6 +570,10 @@
         "whatsNew": {
             "title": "What's New",
             "desc": "News and platform updates"
+        },
+        "searchHistory": {
+            "title": "Search History",
+            "description": "Review and re-run your recent searches on Hospeda"
         }
     },
     "newsletter": {
@@ -714,5 +718,45 @@
             "submitFailed": "Could not set password. Please try again.",
             "skipFailed": "Could not skip this step. Please try again."
         }
+    },
+    "searchHistory": {
+        "loading": "Loading history...",
+        "errorFetch": "Could not load search history",
+        "empty": {
+            "title": "No saved searches",
+            "body": "Your searches will appear here when you have an active Plus or VIP plan."
+        },
+        "clearAll": "Clear all",
+        "clearAllInline": "Yes, clear all",
+        "clearAllCancel": "Cancel",
+        "deleteOne": "Delete",
+        "deleteOneConfirm": "Yes, delete",
+        "deleteConfirmAria": "Confirm deletion",
+        "rerun": "Re-run search",
+        "noQuery": "Search without text",
+        "results": "{{count}} results",
+        "noResults": "No results",
+        "clearSuccess": "History cleared",
+        "deleteSuccess": "Search deleted",
+        "clearError": "Could not clear history",
+        "deleteError": "Could not delete search",
+        "optOut": {
+            "label": "Search history",
+            "description": "Save your recent searches to re-run them with one click.",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "error": "Could not update preference",
+            "saving": "Saving..."
+        },
+        "filters": {
+            "destination": "Destination",
+            "guests": "{{count}} guests",
+            "priceMin": "From $ {{min}}",
+            "priceMax": "Up to $ {{max}}",
+            "priceRange": "$ {{min}} – $ {{max}}",
+            "filterCount_one": "{{count}} filter",
+            "filterCount_other": "{{count}} filters"
+        },
+        "entitlementRequired": "This feature is available to Plus and VIP subscribers."
     }
 }

@@ -47,7 +47,10 @@ const formatActor = (actor: Actor | null | undefined): string => {
  * @param actor - The actor (user or system) executing the method.
  */
 export const logMethodStart = (methodName: string, input: unknown, actor: Actor): void => {
-    _logger.info(
+    // DEBUG, not INFO: this fires on every service call (265+ call sites) and
+    // serializes the full input — far too noisy for the default prod log level
+    // (I3). Visible only when the level is raised to debug.
+    _logger.debug(
         `Starting ${methodName} | input: ${JSON.stringify(input)} | actor: ${formatActor(actor)}`
     );
 };
@@ -58,7 +61,9 @@ export const logMethodStart = (methodName: string, input: unknown, actor: Actor)
  * @param output - The output data or result from the method.
  */
 export const logMethodEnd = (methodName: string, output: unknown): void => {
-    _logger.info(`Completed ${methodName} | output: ${JSON.stringify(output)}`);
+    // DEBUG, not INFO — see logMethodStart (I3). Serializing the full output
+    // (whole entities / result arrays) on every call dominated prod log volume.
+    _logger.debug(`Completed ${methodName} | output: ${JSON.stringify(output)}`);
 };
 
 /**

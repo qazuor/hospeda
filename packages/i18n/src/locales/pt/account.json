@@ -570,6 +570,10 @@
         "whatsNew": {
             "title": "Novidades",
             "desc": "Novidades e atualizações da plataforma"
+        },
+        "searchHistory": {
+            "title": "Histórico de buscas",
+            "description": "Revise e repita suas buscas recentes no Hospeda"
         }
     },
     "newsletter": {
@@ -714,5 +718,45 @@
             "submitFailed": "Não foi possível definir a senha. Tente novamente.",
             "skipFailed": "Não foi possível pular este passo. Tente novamente."
         }
+    },
+    "searchHistory": {
+        "loading": "Carregando histórico...",
+        "errorFetch": "Não foi possível carregar o histórico de buscas",
+        "empty": {
+            "title": "Sem buscas salvas",
+            "body": "Suas buscas aparecerão aqui quando você tiver um plano Plus ou VIP ativo."
+        },
+        "clearAll": "Limpar tudo",
+        "clearAllInline": "Sim, limpar tudo",
+        "clearAllCancel": "Cancelar",
+        "deleteOne": "Excluir",
+        "deleteOneConfirm": "Sim, excluir",
+        "deleteConfirmAria": "Confirmar exclusão",
+        "rerun": "Repetir busca",
+        "noQuery": "Busca sem texto",
+        "results": "{{count}} resultados",
+        "noResults": "Sem resultados",
+        "clearSuccess": "Histórico apagado",
+        "deleteSuccess": "Busca excluída",
+        "clearError": "Não foi possível limpar o histórico",
+        "deleteError": "Não foi possível excluir a busca",
+        "optOut": {
+            "label": "Histórico de buscas",
+            "description": "Salve suas buscas recentes para repeti-las com um clique.",
+            "enabled": "Ativado",
+            "disabled": "Desativado",
+            "error": "Não foi possível atualizar a preferência",
+            "saving": "Salvando..."
+        },
+        "filters": {
+            "destination": "Destino",
+            "guests": "{{count}} hóspedes",
+            "priceMin": "A partir de $ {{min}}",
+            "priceMax": "Até $ {{max}}",
+            "priceRange": "$ {{min}} – $ {{max}}",
+            "filterCount_one": "{{count}} filtro",
+            "filterCount_other": "{{count}} filtros"
+        },
+        "entitlementRequired": "Esta função está disponível para assinantes Plus e VIP."
     }
 }

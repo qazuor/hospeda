@@ -48,6 +48,7 @@ import { buildUrl } from '@/lib/urls';
 import { AlertTriangleIcon } from '@repo/icons';
 import { renderContent } from '@/lib/render-content';
 import { getDestinationSameAs } from '@/lib/destination-sameas';
+import { webLogger } from '@/lib/logger';
 import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -191,7 +192,6 @@ try {
 	const [
 		accResult,
 		eventsResult,
-		eventsCountResult,
 		statsResult,
 		postsResult,
 		siblingsResult
@@ -200,8 +200,10 @@ try {
 		// single non-paginated payload — pageSize is not accepted. One call serves both
 		// the preview cards (sliced below) and the total count (array length).
 		accommodationsApi.getByDestination({ destinationId: destId }),
+		// NOTE: eventsApi.list with pageSize:3 already carries pagination.total in its
+		// response. We derive eventsCount from that field via extractTotal() — no second
+		// pageSize:1 "count-only" call needed.
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
-		eventsApi.list({ pageSize: 1, destinationId: destId }),
 		destinationsApi.getStats({ id: destId }),
 		postsApi.getByRelatedDestination({ destinationId: destId }),
 		parentDestinationId
@@ -217,7 +219,7 @@ try {
 	eventCards = extractItems(eventsResult)
 		.slice(0, 3)
 		.map((item) => toEventCardProps({ item, locale }));
-	eventsCount = extractTotal(eventsCountResult);
+	eventsCount = extractTotal(eventsResult);
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
 		stats = {
@@ -295,6 +297,64 @@ if (isAuthenticated) {
 		}
 	} catch {
 		// Graceful degradation: FavoriteButton hydrates itself on mount
+	}
+}
+
+// --- Bulk favorite pre-check for event preview cards -------------------------
+// eventCards has up to 3 cards. One /check-bulk request replaces up to 3
+// per-card checkStatus calls that would fire on mount.
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let eventCardFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && eventCards.length > 0) {
+	try {
+		const bulkResult = await userBookmarksApi.checkBulk({
+			entityType: 'EVENT',
+			entityIds: eventCards.map((card) => card.id)
+		});
+		if (bulkResult.ok) {
+			eventCardFavoriteChecks = bulkResult.data.checks;
+		} else {
+			webLogger.warn('Bulk bookmark check failed on destinos/detail event cards; falling back to per-card hydration', {
+				error: bulkResult.error
+			});
+		}
+	} catch (error) {
+		webLogger.warn('Bulk bookmark check threw on destinos/detail event cards; falling back to per-card hydration', {
+			error: error instanceof Error ? error.message : String(error)
+		});
+	}
+}
+const resolvedEventCards = eventCards.map((card) => {
+	const entry = eventCardFavoriteChecks[card.id];
+	if (!entry) return card;
+	return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
+
+// --- Bulk favorite pre-check for nearby destination cards --------------------
+// nearbyDestinations has up to 8 items. One /check-bulk replaces N per-card calls.
+let nearbyDestFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && nearbyDestinations.length > 0) {
+	try {
+		const nearbyIds = nearbyDestinations
+			.map((d) => (d as Record<string, unknown>).id)
+			.filter((id): id is string => typeof id === 'string');
+		if (nearbyIds.length > 0) {
+			const bulkResult = await userBookmarksApi.checkBulk({
+				entityType: 'DESTINATION',
+				entityIds: nearbyIds
+			});
+			if (bulkResult.ok) {
+				nearbyDestFavoriteChecks = bulkResult.data.checks;
+			} else {
+				webLogger.warn('Bulk bookmark check failed on destinos/detail nearby cards; falling back to per-card hydration', {
+					error: bulkResult.error
+				});
+			}
+		}
+	} catch (error) {
+		webLogger.warn('Bulk bookmark check threw on destinos/detail nearby cards; falling back to per-card hydration', {
+			error: error instanceof Error ? error.message : String(error)
+		});
 	}
 }
 
@@ -560,9 +620,9 @@ const safeDescriptionHtml = renderContent({
 					</a>
 				)}
 			</div>
-			{eventCards.length > 0 ? (
+			{resolvedEventCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
-					{eventCards.map((card, i) => (
+					{resolvedEventCards.map((card, i) => (
 						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 							<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
 						</div>
@@ -618,6 +678,7 @@ const safeDescriptionHtml = renderContent({
 					destinations={nearbyDestinations}
 					locale={locale}
 					isAuthenticated={isAuthenticated}
+					favoriteChecks={nearbyDestFavoriteChecks}
 				/>
 			</section>
 		)}
