@@ -2298,7 +2298,10 @@
             "title": "Featured Listing Management",
             "type": "feat",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1930 (merged to staging 2026-06-30). 8/8 tasks. Plan-derived featuring (featuredByPlan) + admin manual isFeatured + owner-leak closure. Deferred review findings tracked in SPEC-309 (addon source H-1, ISR M-3, hook tests M-4, status alignment M-5); operational M-2 (db:migrate 0035 + reconcile cron backfill) in deploy notes.",
             "path": "SPEC-292-featured-listing-management",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2526,6 +2529,19 @@
                 "spec-270-followup",
                 "spec-294-followup"
             ]
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Followup to SPEC-292 (merged PR #1930). The adversarial review surfaced one HIGH gap + Medium hardening items deferred from SPEC-292: H-1 the visibility-boost addons grant FEATURED_LISTING at the customer level but only the plan source was wired (loadEntitlements resolves plan UNION addon); M-3 syncFeaturedByPlan does not trigger ISR revalidation; M-4 the 8 billing hooks lack direct tests; M-5 paused/comp status divergence between hooks and the reconcile cron. This spec wires the addon source and hardens the wiring.",
+            "dependsOn": ["SPEC-292"],
+            "tags": ["owner", "featured", "addons", "entitlements", "billing", "hardening"]
         }
     ]
 }

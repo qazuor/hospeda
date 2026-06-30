@@ -853,13 +853,16 @@
         {
             "specId": "SPEC-292",
             "title": "Featured Listing Management",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "8/8",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1930 (merged to staging 2026-06-30). Deferred review findings tracked in SPEC-309; operational backfill (M-2) in deploy notes.",
             "path": "SPEC-292-featured-listing-management",
             "branch": "spec/SPEC-292-featured-listing-management",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Model locked 2026-06-30: admin manual isFeatured (ungated) + owner automatic featuredByPlan derived from FEATURED_LISTING entitlement (no cap); owner PATCH isFeatured leak to be closed. Tasks to be atomized."
+            "note": "Model locked 2026-06-30: admin manual isFeatured (ungated) + owner automatic featuredByPlan derived from FEATURED_LISTING entitlement (no cap); owner PATCH isFeatured leak closed. 8/8 tasks shipped."
         },
         {
             "specId": "SPEC-293",
@@ -1044,6 +1047,17 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
         }
     ],
     "standalone": {
