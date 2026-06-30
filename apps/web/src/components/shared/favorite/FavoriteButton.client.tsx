@@ -30,7 +30,14 @@ import { getUserCollections } from './user-collections-cache';
  * Polymorphic entity types that can be favorited.
  * Must stay in sync with the EntityTypeEnum in @repo/schemas.
  */
-export type FavoriteEntityType = 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST' | 'ATTRACTION';
+export type FavoriteEntityType =
+    | 'ACCOMMODATION'
+    | 'ATTRACTION'
+    | 'DESTINATION'
+    | 'EVENT'
+    | 'EXPERIENCE'
+    | 'GASTRONOMY'
+    | 'POST';
 
 /**
  * Visual display variant for the favorite button.

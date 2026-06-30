@@ -456,13 +456,14 @@ describe('UserFavoritesList', () => {
 
     // ── T-049a: Tab navigation ─────────────────────────────────────────────────
 
-    it('renders a tablist with 5 tab buttons (ALL + 4 entity types)', async () => {
+    it('renders a tablist with 7 tab buttons (ALL + 6 entity types)', async () => {
         globalThis.fetch = vi.fn().mockImplementation(() => Promise.resolve(makeEmptyResponse()));
         renderList();
 
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
-        expect(tabs).toHaveLength(5);
+        // ALL + ACCOMMODATION, DESTINATION, EVENT, POST, GASTRONOMY, EXPERIENCE (F3).
+        expect(tabs).toHaveLength(7);
     });
 
     it('sets ALL tab as selected by default', async () => {

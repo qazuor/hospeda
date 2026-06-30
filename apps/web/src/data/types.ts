@@ -932,6 +932,25 @@ export interface GastronomyCardData {
     readonly openingHours: Record<string, GastronomyOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
     readonly createdAt?: string | null;
+    /**
+     * SPEC-098: Whether the current user has already favorited this gastronomy listing.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed (FavoriteButton single-check fallback
+     * handles this case on mount).
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when the entity is not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this gastronomy listing.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 /**
@@ -1072,6 +1091,25 @@ export interface ExperienceCardData {
     readonly openingHours: Record<string, ExperienceOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
     readonly createdAt?: string | null;
+    /**
+     * SPEC-098: Whether the current user has already favorited this experience listing.
+     * Populated by a bulk-check API call on listing pages. Undefined for guests or
+     * when the bulk-check was not performed (FavoriteButton single-check fallback
+     * handles this case on mount).
+     */
+    readonly isFavorited?: boolean;
+    /**
+     * SPEC-098: Bookmark id when the entity is already favorited by the current user.
+     * Required for explicit DELETE flows. Null when the entity is not yet favorited.
+     * Undefined when no bulk-check was performed.
+     */
+    readonly favoriteBookmarkId?: string | null;
+    /**
+     * SPEC-098: Total public count of users who have bookmarked this experience listing.
+     * Used by FavoriteButton's `pill` variant to render the count badge.
+     * Undefined when not returned by the API endpoint.
+     */
+    readonly bookmarkCount?: number;
 }
 
 /**

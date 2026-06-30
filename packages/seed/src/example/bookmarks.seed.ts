@@ -57,6 +57,17 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
         case EntityTypeEnum.USER:
             realEntityId = context.idMapper.getMappedUserId(seedEntityId);
             break;
+        case EntityTypeEnum.GASTRONOMY:
+            // Gastronomies register their mapping under the 'gastronomies' namespace.
+            realEntityId = context.idMapper.getRealId('gastronomies', seedEntityId);
+            break;
+        case EntityTypeEnum.EXPERIENCE:
+            // Experiences are not yet registered in the idMapper; a fixture using
+            // this type needs the experiences seed to call setMapping('experiences', …)
+            // first. Until then getRealId returns undefined and the guard below throws
+            // an explicit "No mapping found" (clearer than the generic default).
+            realEntityId = context.idMapper.getRealId('experiences', seedEntityId);
+            break;
         default:
             throw new Error(`Invalid entity type: ${seedEntityType}`);
     }
@@ -114,7 +125,9 @@ const getBookmarkInfo = (item: unknown, context: SeedContext) => {
         ACCOMMODATION: 'accommodations',
         EVENT: 'events',
         POST: 'posts',
-        USER: 'users'
+        USER: 'users',
+        GASTRONOMY: 'gastronomies',
+        EXPERIENCE: 'experiences'
     } as const;
 
     const userIdName = context.idMapper.getDisplayNameByRealId('users', userId);

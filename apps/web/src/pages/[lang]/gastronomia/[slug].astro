@@ -22,7 +22,8 @@ import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.ast
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
-import { gastronomyApi } from '@/lib/api/endpoints';
+import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
@@ -117,6 +118,38 @@ const galleryImages = (() => {
 
 const isAuthenticated = Boolean(Astro.locals.user);
 
+// --- SSR bookmark status for header ---
+let bookmarkCount: number | undefined;
+let initialIsFavorited: boolean | undefined;
+let initialBookmarkId: string | null = null;
+
+try {
+    const countResult = await userBookmarksPublicApi.count({
+        entityType: 'GASTRONOMY',
+        entityId: gastronomy.id
+    });
+    if (countResult.ok) {
+        bookmarkCount = countResult.data.count;
+    }
+} catch {
+    // graceful degradation
+}
+
+if (isAuthenticated) {
+    try {
+        const statusResult = await userBookmarksApi.checkStatus({
+            entityId: gastronomy.id,
+            entityType: 'GASTRONOMY'
+        });
+        if (statusResult.ok) {
+            initialIsFavorited = statusResult.data.isFavorited;
+            initialBookmarkId = statusResult.data.bookmarkId;
+        }
+    } catch {
+        // graceful degradation
+    }
+}
+
 const descriptionText = renderPlain({ raw: gastronomy.description });
 
 const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
@@ -160,7 +193,14 @@ const seoDescription =
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
-        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
+        <GastronomyDetailHeader
+            gastronomy={gastronomy}
+            locale={locale}
+            isAuthenticated={isAuthenticated}
+            initialIsFavorited={initialIsFavorited}
+            initialBookmarkId={initialBookmarkId}
+            bookmarkCount={bookmarkCount}
+        />
     </Fragment>
 
     <div class="gastro-detail">

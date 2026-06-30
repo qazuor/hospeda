@@ -1916,7 +1916,17 @@ export function toGastronomyCardProps({
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
         openingHours: normalizeOpeningHours(item.openingHours),
-        createdAt: item.createdAt ? String(item.createdAt) : null
+        createdAt: item.createdAt ? String(item.createdAt) : null,
+        // SPEC-098: pass through favorite/bookmark enrichment when present.
+        // These fields are populated by the listing page after a bulk-check API
+        // call. They are intentionally absent on unenriched responses so
+        // FavoriteButton can fall back to its own single-check on mount.
+        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        favoriteBookmarkId: (() => {
+            if (item.favoriteBookmarkId === undefined) return undefined;
+            return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
+        })(),
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
     };
 }
 
@@ -2061,7 +2071,17 @@ export function toExperienceCardProps({
         // Experience reuses the gastronomy structured-hours normalizer (shared
         // OpeningHoursSchema source); see normalizeOpeningHours (Bug B8 fix).
         openingHours: normalizeOpeningHours(item.openingHours),
-        createdAt: item.createdAt ? String(item.createdAt) : null
+        createdAt: item.createdAt ? String(item.createdAt) : null,
+        // SPEC-098: pass through favorite/bookmark enrichment when present.
+        // These fields are populated by the listing page after a bulk-check API
+        // call. They are intentionally absent on unenriched responses so
+        // FavoriteButton can fall back to its own single-check on mount.
+        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        favoriteBookmarkId: (() => {
+            if (item.favoriteBookmarkId === undefined) return undefined;
+            return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
+        })(),
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
     };
 }
 

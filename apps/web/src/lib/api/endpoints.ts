@@ -1105,7 +1105,14 @@ export const userBookmarksPublicApi = {
         entityType,
         entityId
     }: {
-        readonly entityType: 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST' | 'ATTRACTION';
+        readonly entityType:
+            | 'ACCOMMODATION'
+            | 'ATTRACTION'
+            | 'DESTINATION'
+            | 'EVENT'
+            | 'EXPERIENCE'
+            | 'GASTRONOMY'
+            | 'POST';
         readonly entityId: string;
     }): Promise<ApiResult<{ readonly count: number }>> {
         return apiClient.get({

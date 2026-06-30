@@ -8,12 +8,12 @@ import { EntityTypeEnumSchema } from '../entity-type.schema.js';
 // ============================================================================
 
 describe('EntityTypeEnum', () => {
-    it('should have exactly 9 values (5 original + 4 new from SPEC-086)', () => {
+    it('should have exactly 11 values (5 original + 4 from SPEC-086 + 2 from F3 favorites)', () => {
         // Arrange
         const values = Object.values(EntityTypeEnum);
 
-        // Assert (AC-F15)
-        expect(values).toHaveLength(9);
+        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks)
+        expect(values).toHaveLength(11);
     });
 
     describe('original 5 values', () => {
@@ -56,8 +56,18 @@ describe('EntityTypeEnum', () => {
         });
     });
 
+    describe('2 new values added in F3 (favorites for experiences + gastronomy)', () => {
+        it('should include EXPERIENCE', () => {
+            expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
+        });
+
+        it('should include GASTRONOMY', () => {
+            expect(EntityTypeEnum.GASTRONOMY).toBe('GASTRONOMY');
+        });
+    });
+
     describe('EntityTypeEnumSchema', () => {
-        it('should accept all 9 values', () => {
+        it('should accept every enum value', () => {
             for (const value of Object.values(EntityTypeEnum)) {
                 const result = EntityTypeEnumSchema.safeParse(value);
                 expect(result.success).toBe(true);
@@ -84,6 +94,16 @@ describe('EntityTypeEnum', () => {
 
         it('should accept PAYMENT', () => {
             const result = EntityTypeEnumSchema.safeParse('PAYMENT');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept EXPERIENCE', () => {
+            const result = EntityTypeEnumSchema.safeParse('EXPERIENCE');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept GASTRONOMY', () => {
+            const result = EntityTypeEnumSchema.safeParse('GASTRONOMY');
             expect(result.success).toBe(true);
         });
 

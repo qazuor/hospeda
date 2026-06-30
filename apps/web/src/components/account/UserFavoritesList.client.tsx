@@ -59,7 +59,13 @@ const COLLECTIONS_PATH = 'mi-cuenta/favoritos/colecciones';
 // ─── Entity tab types ─────────────────────────────────────────────────────────
 
 /** Supported entity types for the favorites tabs */
-type FavoritesEntityType = 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST';
+type FavoritesEntityType =
+    | 'ACCOMMODATION'
+    | 'DESTINATION'
+    | 'EVENT'
+    | 'EXPERIENCE'
+    | 'GASTRONOMY'
+    | 'POST';
 
 /**
  * Tab key extends entity types with a virtual "ALL" tab that aggregates every
@@ -122,6 +128,22 @@ const TABS: readonly TabDefinition[] = [
         tabId: 'tab-post',
         pathSegment: 'publicaciones',
         cardTypeKey: 'account.favorites.tabs.post'
+    },
+    {
+        key: 'GASTRONOMY',
+        labelKey: 'account.favorites.tabs.gastronomy',
+        panelId: 'tab-panel-gastronomy',
+        tabId: 'tab-gastronomy',
+        pathSegment: 'gastronomia',
+        cardTypeKey: 'account.favorites.tabs.gastronomy'
+    },
+    {
+        key: 'EXPERIENCE',
+        labelKey: 'account.favorites.tabs.experience',
+        panelId: 'tab-panel-experience',
+        tabId: 'tab-experience',
+        pathSegment: 'experiencias',
+        cardTypeKey: 'account.favorites.tabs.experience'
     }
 ] as const;
 
@@ -130,6 +152,8 @@ const ENTITY_PATH_SEGMENTS: Readonly<Record<FavoritesEntityType, string>> = {
     ACCOMMODATION: 'alojamientos',
     DESTINATION: 'destinos',
     EVENT: 'eventos',
+    EXPERIENCE: 'experiencias',
+    GASTRONOMY: 'gastronomia',
     POST: 'publicaciones'
 };
 
@@ -142,6 +166,8 @@ const INITIAL_TAB_COUNTS: TabCounts = {
     ACCOMMODATION: 0,
     DESTINATION: 0,
     EVENT: 0,
+    EXPERIENCE: 0,
+    GASTRONOMY: 0,
     POST: 0
 };
 
@@ -169,8 +195,8 @@ interface UserFavoritesListProps {
 
 /**
  * Favorites list island.
- * - Shows entity type tabs (Alojamientos, Destinos, Eventos, Blog).
- * - On mount fires 4 parallel pageSize=1 fetches to populate tab count badges.
+ * - Shows entity type tabs (Alojamientos, Destinos, Eventos, Blog, Gastronomía, Experiencias).
+ * - On mount fires one parallel pageSize=1 fetch per entity tab to populate count badges.
  * - On mount fetches all user collections (entity-agnostic, fetched once).
  * - Fetches user's bookmarks for the active tab on mount and tab/page change.
  * - AbortController cancels inflight requests when switching tabs rapidly.
@@ -697,6 +723,8 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             ACCOMMODATION: t('account.favorites.tabs.accommodation', 'Alojamientos'),
             DESTINATION: t('account.favorites.tabs.destination', 'Destinos'),
             EVENT: t('account.favorites.tabs.event', 'Eventos'),
+            EXPERIENCE: t('account.favorites.tabs.experience', 'Experiencias'),
+            GASTRONOMY: t('account.favorites.tabs.gastronomy', 'Gastronomía'),
             POST: t('account.favorites.tabs.post', 'Posts')
         };
 

@@ -50,7 +50,14 @@ export const authApi = {
 // --- User Bookmarks (Protected) ---
 
 /** Entity type allowed for bookmarks */
-type BookmarkEntityType = 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
+type BookmarkEntityType =
+    | 'ACCOMMODATION'
+    | 'ATTRACTION'
+    | 'DESTINATION'
+    | 'EVENT'
+    | 'EXPERIENCE'
+    | 'GASTRONOMY'
+    | 'POST';
 
 /** Protected user bookmark API endpoints */
 export const userBookmarksApi = {
