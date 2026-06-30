@@ -40,7 +40,8 @@
     "accommodations": {
         "badge": {
             "new": "Novo",
-            "featured": "Destaque"
+            "featured": "Destaque",
+            "aiChat": "Chat IA"
         },
         "price": {
             "from": "A partir de",

@@ -9,6 +9,7 @@
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import {
+	AskToAiIcon,
 	GalleryIcon,
 	LocationIcon,
 	StarIcon,
@@ -120,6 +121,17 @@ const isNew = data.createdAt
 				<div class="acc-card__featured-badge featured-badge">
 					<StarIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
+				</div>
+			)}
+
+			<!-- AI chat badge — the owner's plan grants the per-listing AI assistant.
+			     Shown to everyone (incl. guests) by design: it advertises the
+			     listing's capability, like the "Nuevo"/"Destacado" badges. The chat
+			     itself still gates on auth on the detail page. -->
+			{data.hasAiChat && (
+				<div class="acc-card__ai-badge">
+					<AskToAiIcon size={12} weight="fill" aria-hidden="true" />
+					<span>{t('home.accommodations.badge.aiChat', 'Chat IA')}</span>
 				</div>
 			)}
 
@@ -329,6 +341,29 @@ const isNew = data.createdAt
 		position: absolute;
 		bottom: 48px;
 		right: 12px;
+	}
+
+	/* AI chat badge — same height as the featured badge but on the OPPOSITE
+	 * bottom corner so the two never collide (featured: bottom-right desktop /
+	 * bottom-left mobile; this: bottom-left desktop / bottom-right mobile).
+	 * Its own `--brand-primary` surface reads apart from the accent featured
+	 * badge. Same pill metrics as the shared `.featured-badge`. */
+	.acc-card__ai-badge {
+		position: absolute;
+		bottom: 48px;
+		left: 12px;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		background-color: var(--brand-primary);
+		color: var(--primary-foreground);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 14px;
+		line-height: 22.4px;
+		padding: 4px 10px;
+		border-radius: var(--radius-pill);
+		white-space: nowrap;
 	}
 
 	/* Wave separator */
@@ -688,6 +723,15 @@ const isNew = data.createdAt
 			bottom: 48px;
 			left: 12px;
 			right: auto;
+			top: auto;
+		}
+
+		/* Mirror: featured moves to bottom-left on mobile, so the AI badge
+		 * takes bottom-right to keep the two from colliding. */
+		.acc-card__ai-badge {
+			bottom: 48px;
+			right: 12px;
+			left: auto;
 			top: auto;
 		}
 	}

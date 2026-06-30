@@ -163,7 +163,16 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * `location.number`, `location.floor`, and `location.apartment` from the
      * public payload.
      */
-    approximateLocation: ApproximateLocationSchema.optional()
+    approximateLocation: ApproximateLocationSchema.optional(),
+    /**
+     * Whether the owning host has the AI_CHAT entitlement — i.e. the per-listing
+     * AI chat assistant is available on this accommodation's detail page. This is
+     * NOT a stored column: it is resolved per-owner at the API route layer (the
+     * same entitlement the chat route gates on) and surfaced so the listing card
+     * can show a "Chat IA" badge. Optional: absent on responses that don't enrich
+     * it (only the public list endpoint populates it today).
+     */
+    hasAiChat: z.boolean().optional()
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
