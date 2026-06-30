@@ -2609,9 +2609,9 @@ servers, then runs `pnpm --filter hospeda-web a11y:sweep`. Notes:
 
 The sweep is **baseline-gated**: it fails only on **new** critical/serious
 violations, not on the full set. Pre-existing violations are recorded in
-`apps/web/scripts/a11y-sweep/a11y-baseline.json` (keyed by stable route **name**
-+ theme, because dynamic detail URLs vary per run) and accepted. Clearing that
-debt is tracked as a **SPEC-270 follow-up**.
+`apps/web/scripts/a11y-sweep/a11y-baseline.json` (keyed by stable route
+**name** and theme, because dynamic detail URLs vary per run) and accepted.
+Clearing that debt is tracked as a **SPEC-270 follow-up**.
 
 To accept a new, intentional, tracked violation set, re-baseline:
 
