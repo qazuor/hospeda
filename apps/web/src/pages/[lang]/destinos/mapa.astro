@@ -173,7 +173,8 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 	.view-toggle__btn:hover { color: var(--core-foreground); }
 	.view-toggle__btn--active {
 		background-color: var(--brand-accent);
-		color: white;
+		/* SPEC-308: dark ink on the vibrant orange fill (white fails AA). */
+		color: var(--accent-foreground);
 		font-weight: 500;
 		cursor: default;
 	}
