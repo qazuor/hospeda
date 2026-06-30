@@ -875,13 +875,15 @@
         {
             "specId": "SPEC-294",
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
-            "status": "in-progress",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "7/7",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
             "path": "SPEC-294-a11y-sweep-repair",
             "branch": "spec/SPEC-294-a11y-sweep-repair",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. A11y Sweep broken since SPEC-270 (post-merge trigger). B1-B3 (NODE_ENV, filter names, SENTRY) fixed in #1865/#1867; this spec owns B4+ and the pre-merge trigger."
+            "note": "SHIPPED via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: pull_request trigger + sync dispatch, sweep green end-to-end (chained failures fixed), 84 WCAG violations baseline-gated. Debt escalated to SPEC-308."
         },
         {
             "specId": "SPEC-295",
