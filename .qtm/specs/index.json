@@ -2322,7 +2322,7 @@
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-294-a11y-sweep-repair",
             "created": "2026-06-27T00:00:00Z",
             "base": "staging",
