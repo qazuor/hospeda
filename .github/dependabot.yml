@@ -63,6 +63,10 @@ updates:
     #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
     #     packages/email/test/templates/verify-email.test.tsx. Lift when the
     #     react-email render bump is taken on with its template snapshots.
+    #   - jsdom: 26 -> 29 changes the accessible-name computation (whitespace
+    #     concatenation), so role+name queries like DestinationReviewSidebarCard
+    #     stop matching. Dev-only (test env; real browsers unaffected). Lift
+    #     with a dedicated jsdom upgrade + test sweep.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
@@ -71,6 +75,7 @@ updates:
       - dependency-name: 'typescript'
       - dependency-name: 'better-auth'
       - dependency-name: '@react-email/render'
+      - dependency-name: 'jsdom'
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'
