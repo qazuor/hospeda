@@ -875,10 +875,10 @@
         {
             "specId": "SPEC-294",
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-294-a11y-sweep-repair",
-            "branch": null,
+            "branch": "spec/SPEC-294-a11y-sweep-repair",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. A11y Sweep broken since SPEC-270 (post-merge trigger). B1-B3 (NODE_ENV, filter names, SENTRY) fixed in #1865/#1867; this spec owns B4+ and the pre-merge trigger."

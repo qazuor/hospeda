@@ -1,6 +1,9 @@
 {
     "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
     "extends": ["../../packages/biome-config/biome.json"],
+    "files": {
+        "ignore": ["**/a11y-baseline.json"]
+    },
     "css": {
         "parser": {
             "cssModules": true
