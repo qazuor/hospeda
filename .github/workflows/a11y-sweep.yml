@@ -25,6 +25,13 @@ env:
   HOSPEDA_ADMIN_URL: http://localhost:3000
   PUBLIC_ADMIN_URL: http://localhost:3000
   HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+  # Required by the API runtime env schema (apps/api/src/utils/env.ts). Without
+  # them the API process aborts on boot with "environment validation FAILED", the
+  # health-wait loop times out silently, and the sweep's dynamic-route discovery
+  # fails with "fetch failed" against localhost:3001. Same placeholders as e2e-pr.yml.
+  HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
+  HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
+  HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
   # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are REQUIRED by the web env schema in
   # production, and `astro build` always runs in production mode regardless of
   # NODE_ENV — so they MUST be present at build time (an empty string fails the
@@ -96,20 +103,29 @@ jobs:
             fi
             sleep 2
           done
+          # Fail loudly if the API never became ready, instead of letting a dead
+          # server slip through to the sweep step (where it only shows as an opaque
+          # "fetch failed"). A boot failure must surface here. See SPEC-294.
+          curl -sf http://localhost:3001/health > /dev/null \
+            || { echo "::error::API failed to become ready within 60s"; exit 1; }
 
       - name: Start web server
         env:
           NODE_ENV: production
         run: |
           node apps/web/dist/server/entry.mjs &
+          READY=0
           for i in $(seq 1 30); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/es/ 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
               echo "Web ready"
+              READY=1
               break
             fi
             sleep 2
           done
+          # Fail loudly if the web server never became ready (see API note above).
+          [ "$READY" = "1" ] || { echo "::error::Web failed to become ready within 60s"; exit 1; }
 
       - name: Run a11y sweep
         run: pnpm --filter hospeda-web a11y:sweep
