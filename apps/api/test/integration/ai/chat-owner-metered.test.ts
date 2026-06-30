@@ -136,8 +136,15 @@ vi.mock('@repo/ai-core', () => {
         recordAiUsage: mockRecordAiUsage,
         resolveSystemPrompt: vi.fn(async () => ({
             content: 'System prompt',
+            rules: '',
             source: 'default'
         })),
+        composeSystemPrompt: vi.fn(
+            (input: { readonly content: string; readonly rules: string | null }) => {
+                const { content: c, rules: r } = input;
+                return r !== null && r.trim() !== '' ? `${c}\n\n${r}` : c;
+            }
+        ),
         resolveFeatureConfig: vi.fn(async () => ({
             enabled: true,
             primaryProvider: 'openai',
@@ -452,8 +459,9 @@ describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', ()
             // Drain the stream so augmentedMeta settles and recordAiUsage is called.
             await readSseFrames(res);
 
-            // AC-1.2: recordAiUsage MUST be called with the OWNER's userId.
-            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            // AC-1.2 + SPEC-283: recordAiUsage is called TWICE — owner-keyed (cost)
+            // then consumer-keyed (advances consumer quota).
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(2);
             expect(mockRecordAiUsage).toHaveBeenCalledWith(
                 expect.objectContaining({
                     userId: OWNER_ID,
@@ -462,11 +470,25 @@ describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', ()
                 })
             );
 
-            // Critical: the TOURIST's id must NOT appear as the userId.
-            const callArgs = mockRecordAiUsage.mock.calls[0] as unknown[] | undefined;
-            const callArg = callArgs?.[0] as { userId: string | null } | undefined;
-            expect(callArg?.userId).not.toBe(TOURIST_ID);
-            expect(callArg?.userId).toBe(OWNER_ID);
+            // SPEC-283: consumer-keyed call with actor.id (tourist), distinct from ownerId.
+            expect(mockRecordAiUsage).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: TOURIST_ID,
+                    feature: 'chat',
+                    status: 'success'
+                })
+            );
+
+            // calls[0] = owner-keyed call; calls[1] = consumer-keyed call.
+            const ownerCallArgs = mockRecordAiUsage.mock.calls[0] as unknown[] | undefined;
+            const ownerCallArg = ownerCallArgs?.[0] as { userId: string | null } | undefined;
+            expect(ownerCallArg?.userId).not.toBe(TOURIST_ID);
+            expect(ownerCallArg?.userId).toBe(OWNER_ID);
+
+            const consumerCallArgs = mockRecordAiUsage.mock.calls[1] as unknown[] | undefined;
+            const consumerCallArg = consumerCallArgs?.[0] as { userId: string | null } | undefined;
+            expect(consumerCallArg?.userId).toBe(TOURIST_ID);
+            expect(consumerCallArg?.userId).not.toBe(OWNER_ID);
         });
 
         it('passes correct provider/model/tokens from resolvedMeta to recordAiUsage', async () => {

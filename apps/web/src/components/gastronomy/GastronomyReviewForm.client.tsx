@@ -71,6 +71,10 @@ export function GastronomyReviewForm({
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
+    // Persists after the dialog closes so the page keeps a visible "under
+    // review" banner — moderated reviews never appear in the list immediately
+    // (Bug B9: make the pending state visible beyond the dialog).
+    const [submitted, setSubmitted] = useState<boolean>(false);
 
     const rated = overall >= 1;
 
@@ -151,6 +155,7 @@ export function GastronomyReviewForm({
                 }
 
                 setSuccess(true);
+                setSubmitted(true);
             } catch {
                 setError(
                     t(
@@ -192,11 +197,20 @@ export function GastronomyReviewForm({
                         id="gastronomy-review-card-title"
                         className={styles.cardTitle}
                     >
-                        {t('review.gastronomySidebar.title', 'Tu opinión')}
+                        {submitted
+                            ? t('review.gastronomySidebar.pendingTitle', 'Reseña en revisión')
+                            : t('review.gastronomySidebar.title', 'Tu opinión')}
                     </h3>
                 </div>
 
-                {isAuthenticated ? (
+                {submitted ? (
+                    <output className={styles.cardPending}>
+                        {t(
+                            'review.gastronomySidebar.pendingBanner',
+                            'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
+                        )}
+                    </output>
+                ) : isAuthenticated ? (
                     <>
                         <p className={styles.cardText}>
                             {t(

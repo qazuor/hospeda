@@ -1,11 +1,17 @@
 ---
 /**
  * @file [page].astro
- * @description Pagination rewrite. Validates page param, redirects page 1
- * to canonical URL, rewrites to parent listing with ?page=N.
+ * @description Permanent (301) redirect for the retired paginated event-category
+ * routes. Category filtering now lives on the unified listing
+ * (`/{lang}/eventos/?category=ENUM`), so `/categoria/{slug}/page/N/` URLs
+ * redirect straight there (preserving the page number) instead of chaining
+ * through the category index. See `../index.astro` and U7.
  */
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
-const { page: pageParam } = Astro.params;
+const locale = Astro.locals.locale as SupportedLocale;
+const { category: catSlug, page: pageParam } = Astro.params;
 const page = Number(pageParam);
 
 // Must be a positive integer
@@ -13,11 +19,24 @@ if (!Number.isInteger(page) || page < 1) {
 	return new Response(null, { status: 404 });
 }
 
-// Page 1 → redirect to canonical (no /page/1/ in URL)
-if (page === 1) {
-	return Astro.redirect(`/${Astro.params.lang}/eventos/categoria/${Astro.params.category}/`, 301);
-}
+/** Slug → EventCategoryEnum value that the listing's `?category=` param expects. */
+const VALID_CATEGORIES: Record<string, string> = {
+	music: 'MUSIC',
+	culture: 'CULTURE',
+	sports: 'SPORTS',
+	gastronomy: 'GASTRONOMY',
+	festival: 'FESTIVAL',
+	nature: 'NATURE',
+	theater: 'THEATER',
+	workshop: 'WORKSHOP',
+	other: 'OTHER'
+};
 
-// Rewrite to parent listing with page query param
-return Astro.rewrite(`/${Astro.params.lang}/eventos/categoria/${Astro.params.category}/?page=${page}`);
+const catEnum = catSlug ? VALID_CATEGORIES[catSlug] : undefined;
+if (!catEnum) return new Response(null, { status: 404 });
+
+const params = new URLSearchParams();
+params.set('category', catEnum);
+if (page > 1) params.set('page', String(page));
+return Astro.redirect(`${buildUrl({ locale, path: 'eventos' })}?${params.toString()}`, 301);
 ---

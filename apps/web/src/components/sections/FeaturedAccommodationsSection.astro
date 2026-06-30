@@ -35,10 +35,17 @@ const { locale } = Astro.props;
 
 const { t } = createTranslations(locale);
 
-/** All accommodation types derived from the canonical enum in @repo/schemas. */
-const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map(
-  (v) => String(v).toLowerCase()
-);
+/** All accommodation types from the canonical enum in @repo/schemas.
+ * `type` keeps the enum value (underscore form) for the badge's icon + i18n
+ * label resolution; `slug` is the hyphenated URL form for the route href
+ * (e.g. APART_HOTEL → type "APART_HOTEL", slug "apart-hotel"). Keeping them
+ * separate is required: the icon/label maps are keyed by the enum value, only
+ * the route segment uses hyphens. (Bug B10 fix)
+ */
+const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map((v) => {
+  const enumValue = String(v);
+  return { type: enumValue, slug: enumValue.toLowerCase().replace(/_/g, '-') };
+});
 
 // Fetch from API - empty array if unavailable
 let items: AccommodationCardData[] = [];
@@ -73,12 +80,12 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
       ariaLabel={t('home.featuredAccommodations.typesLabel', 'Filtrar por tipo')}
       innerClass="accommodations__types"
     >
-      {ACCOMMODATION_TYPES.map((type) => (
+      {ACCOMMODATION_TYPES.map(({ type, slug }) => (
         <AccommodationTypeBadge
           type={type}
           locale={locale}
           size="sm"
-          href={buildUrl({ locale, path: `/alojamientos/tipo/${type}/` })}
+          href={buildUrl({ locale, path: `/alojamientos/tipo/${slug}/` })}
         />
       ))}
     </ScrollableNav>

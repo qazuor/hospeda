@@ -8,11 +8,37 @@
  * when no translation is provided.
  */
 
-import { ENTITLEMENT_DEFINITIONS as DEFINITIONS, LIMIT_METADATA } from '@repo/billing';
+import {
+    ENTITLEMENT_DEFINITIONS as DEFINITIONS,
+    EntitlementKey as EK,
+    LIMIT_METADATA,
+    TOURIST_VIP_ENTITLEMENTS
+} from '@repo/billing';
 import type { LimitKey } from '@repo/billing';
 
 export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
 type Translator = (key: string, fallback?: string) => string;
+
+/** Audience for a pricing surface — drives owner-only display grouping. */
+export type PricingAudience = 'owner' | 'tourist';
+
+/** A renderable feature bullet: either a single entitlement or a collapsed group. */
+export interface DisplayFeature {
+    readonly id: string;
+    readonly label: string;
+}
+
+/**
+ * Owner-specific AI entitlements collapsed into one "AI suite" bullet on owner
+ * cards. Defined here (no grouping metadata exists on the entitlement config)
+ * but anchored to the real `EntitlementKey` enum so it can't drift from the keys.
+ */
+const AI_OWNER_ENTITLEMENTS: readonly string[] = [
+    EK.AI_TEXT_IMPROVE,
+    EK.AI_CHAT,
+    EK.AI_TRANSLATE,
+    EK.AI_ACCOMMODATION_IMPORT
+];
 
 /**
  * Minimal plan shape required by i18n helpers. Accepts both the static
@@ -63,6 +89,69 @@ export function getEntitlementName(input: { key: EntitlementKey; t: Translator }
     const def = ENTITLEMENT_BY_KEY.get(key as string);
     const fallback = def?.name ?? humanizeKey(key as string);
     return t(`billing.entitlement.${key}`, fallback);
+}
+
+/**
+ * Turn a plan's raw entitlement keys into the bullets shown on a pricing card.
+ *
+ * For the tourist audience this is a 1:1 mapping (each entitlement is a bullet).
+ * For the owner audience the list is curated to stay short (SPEC-299): the full
+ * inherited tourist tier collapses into a single "all tourist features" bullet,
+ * and the owner AI entitlements collapse into one "AI suite" bullet. Owner-core
+ * entitlements (publish, stats, calendar, …) stay individual. Groups are emitted
+ * at the position of their first member, preserving the original ordering.
+ *
+ * Nothing is hidden — collapsed groups still communicate their contents via the
+ * group label; they just don't enumerate every sub-feature.
+ */
+export function getDisplayFeatures(input: {
+    keys: readonly string[];
+    audience: PricingAudience;
+    t: Translator;
+}): DisplayFeature[] {
+    const { keys, audience, t } = input;
+    if (audience !== 'owner') {
+        return keys.map((k) => ({
+            id: k,
+            label: getEntitlementName({ key: k as EntitlementKey, t })
+        }));
+    }
+
+    const touristSet = new Set<string>(TOURIST_VIP_ENTITLEMENTS as readonly string[]);
+    const aiSet = new Set<string>(AI_OWNER_ENTITLEMENTS);
+    // Only collapse the tourist tier when the plan actually grants all of it.
+    const hasFullTouristTier = [...touristSet].every((k) => keys.includes(k));
+
+    const out: DisplayFeature[] = [];
+    let touristEmitted = false;
+    let aiEmitted = false;
+    for (const key of keys) {
+        if (hasFullTouristTier && touristSet.has(key)) {
+            if (!touristEmitted) {
+                out.push({
+                    id: 'group-tourist',
+                    label: t('pricing.group.tourist', 'Todas las funciones de turista')
+                });
+                touristEmitted = true;
+            }
+            continue;
+        }
+        if (aiSet.has(key)) {
+            if (!aiEmitted) {
+                out.push({
+                    id: 'group-ai',
+                    label: t(
+                        'pricing.group.ai',
+                        'Suite de IA: textos, traducción, importación y consultas'
+                    )
+                });
+                aiEmitted = true;
+            }
+            continue;
+        }
+        out.push({ id: key, label: getEntitlementName({ key: key as EntitlementKey, t }) });
+    }
+    return out;
 }
 
 /**

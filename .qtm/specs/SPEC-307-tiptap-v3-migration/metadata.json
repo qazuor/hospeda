@@ -1,0 +1,21 @@
+{
+    "specId": "SPEC-307",
+    "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-30T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": [],
+    "tags": [
+        "tiptap",
+        "dependencies",
+        "admin",
+        "web",
+        "rich-text-editor",
+        "major-upgrade",
+        "dependabot"
+    ]
+}

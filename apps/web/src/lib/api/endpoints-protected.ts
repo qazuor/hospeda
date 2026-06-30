@@ -6,6 +6,7 @@
  * The apiClient methods `getProtected` and `postProtected` handle this automatically.
  */
 import type {
+    AccommodationComparisonResponse,
     AccommodationImportResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
@@ -49,7 +50,14 @@ export const authApi = {
 // --- User Bookmarks (Protected) ---
 
 /** Entity type allowed for bookmarks */
-type BookmarkEntityType = 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
+type BookmarkEntityType =
+    | 'ACCOMMODATION'
+    | 'ATTRACTION'
+    | 'DESTINATION'
+    | 'EVENT'
+    | 'EXPERIENCE'
+    | 'GASTRONOMY'
+    | 'POST';
 
 /** Protected user bookmark API endpoints */
 export const userBookmarksApi = {
@@ -1749,6 +1757,30 @@ export const protectedAccommodationsApi = {
         id
     }: { readonly id: string }): Promise<ApiResult<Record<string, unknown> | null>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}` });
+    },
+
+    /**
+     * Hydrate a side-by-side accommodation comparison (SPEC-288).
+     *
+     * Sends the selected accommodation IDs and returns the matching
+     * accommodation summaries (ordered to match the request, non-viewable
+     * entries omitted). The server re-validates the per-plan `MAX_COMPARE_ITEMS`
+     * cap, so this can fail with `ENTITLEMENT_REQUIRED` (no compare entitlement)
+     * or `LIMIT_REACHED` (too many IDs for the caller's plan).
+     *
+     * @param body - The accommodation IDs to compare (min 2, max 10).
+     * @returns The matched accommodation summaries in `items`.
+     *
+     * @example
+     * ```ts
+     * const result = await protectedAccommodationsApi.compare({ ids: ['a', 'b'] });
+     * if (result.ok) console.log(result.data.items.length);
+     * ```
+     */
+    compare(body: {
+        readonly ids: readonly string[];
+    }): Promise<ApiResult<AccommodationComparisonResponse>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/accommodations/compare`, body });
     }
 };
 

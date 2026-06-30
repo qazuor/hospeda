@@ -384,9 +384,9 @@ export const HOSPEDA_ENV_VARS = [
         category: 'billing',
         helpUrl: 'https://www.mercadopago.com.ar/developers/panel/app',
         howToObtain:
-            'Create an application in the Mercado Pago developer panel → Credentials. The access token starts with "APP_USR-" for BOTH test and production — there is NO "TEST-" prefix on application credentials. Sandbox testing works by using the test credentials section + test users + test cards (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards), not by a different token prefix. Copy from "Test credentials" panel section for development/preview, "Production credentials" for production. Each environment must use its own pair.',
+            'Create an application in the Mercado Pago developer panel → Credentials. Use the access token from the "Test credentials" section for development/preview/staging and "Production credentials" for production; each environment must use its own pair. The token starts with "APP_USR-" for most applications, but some apps issue their Test credentials with a "TEST-" prefix — both formats are valid and accepted. Sandbox testing additionally relies on test users + test cards (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards).',
         howToObtainEs:
-            'Creá una aplicación en el panel de developers de Mercado Pago → Credenciales. El access token empieza con "APP_USR-" tanto para test como para producción — NO existe prefijo "TEST-" en credenciales de aplicación. El sandbox funciona usando la sección "Credenciales de prueba" + test users + tarjetas de prueba (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards), no con un prefijo distinto. Copiá desde "Credenciales de prueba" para development/preview, "Credenciales de producción" para producción. Cada entorno usa su propio par.'
+            'Creá una aplicación en el panel de developers de Mercado Pago → Credenciales. Usá el access token de la sección "Credenciales de prueba" para development/preview/staging y "Credenciales de producción" para producción; cada entorno usa su propio par. El token empieza con "APP_USR-" en la mayoría de las apps, pero algunas emiten sus credenciales de prueba con prefijo "TEST-" — ambos formatos son válidos y se aceptan. El sandbox además usa test users + tarjetas de prueba (https://www.mercadopago.com.ar/developers/en/docs/your-integrations/test/cards).'
     },
     {
         name: 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
@@ -964,6 +964,63 @@ export const HOSPEDA_ENV_VARS = [
             'Email único que recibe los envíos de feedback cuando falla la API de Linear (para no perder feedback). Usá una casilla real que estés monitoreando.'
     },
     {
+        name: 'PUBLIC_TURNSTILE_SITE_KEY',
+        description:
+            'Cloudflare Turnstile site key (PUBLIC — ships in the browser bundle). Powers the invisible bot-detection widget on the public feedback form (SPEC-301). When unset, the widget is not rendered and the server applies its own fail-closed policy. Use the always-passes test key (1x00000000000000000000AA) locally.',
+        descriptionEs:
+            'Site key de Cloudflare Turnstile (PUBLIC — viaja en el bundle del navegador). Activa el widget invisible de detección de bots en el form de feedback público (SPEC-301). Cuando no está seteada, el widget no se renderiza y el servidor aplica su política fail-closed propia. Usá la clave de prueba always-passes (1x00000000000000000000AA) en local.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: '1x00000000000000000000AA',
+        apps: ['web'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → choose Invisible widget type → copy the Site Key. For local/staging use the always-passes test site key: 1x00000000000000000000AA. Set the real production key in Coolify for hospeda-web-prod. The site key is intentionally public (it ships in the browser bundle — that is by design).',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → elegí el tipo Invisible → copiá el Site Key. Para local/staging usá la clave de prueba always-passes: 1x00000000000000000000AA. La clave de producción real va en Coolify para hospeda-web-prod. La site key es intencionalmente pública (viaja en el bundle del browser — eso es por diseño).'
+    },
+    {
+        name: 'VITE_TURNSTILE_SITE_KEY',
+        description:
+            'Cloudflare Turnstile site key for the admin app (PUBLIC — ships in the browser bundle). Powers the invisible bot-detection widget on the admin feedback form (SPEC-301 T-010). When unset, the widget is not rendered and the server applies its own fail-closed policy. Use the always-passes test key (1x00000000000000000000AA) locally.',
+        descriptionEs:
+            'Site key de Cloudflare Turnstile para el admin (PUBLIC — viaja en el bundle del navegador). Activa el widget invisible de detección de bots en el form de feedback del admin (SPEC-301 T-010). Cuando no está seteada, el widget no se renderiza y el servidor aplica su política fail-closed propia. Usá la clave de prueba always-passes (1x00000000000000000000AA) en local.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: '1x00000000000000000000AA',
+        apps: ['admin'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → choose Invisible widget type → copy the Site Key. For local/staging use the always-passes test site key: 1x00000000000000000000AA. Set the real production key in Coolify for hospeda-admin-prod. The site key is intentionally public (it ships in the browser bundle — that is by design).',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → elegí el tipo Invisible → copiá el Site Key. Para local/staging usá la clave de prueba always-passes: 1x00000000000000000000AA. La clave de producción real va en Coolify para hospeda-admin-prod. La site key es intencionalmente pública (viaja en el bundle del browser — eso es por diseño).'
+    },
+    {
+        name: 'HOSPEDA_TURNSTILE_SECRET_KEY',
+        description:
+            'Cloudflare Turnstile secret key for server-side token verification (SPEC-301). When set, every public feedback submission must include a valid Turnstile token or be rejected (fail-closed, R-2). Use the always-passes test key (1x0000000000000000000000000000000AA) in dev/staging; provide a real key in production.',
+        descriptionEs:
+            'Clave secreta de Cloudflare Turnstile para verificar tokens del lado servidor (SPEC-301). Cuando está seteada, cada envío de feedback debe incluir un token Turnstile válido o es rechazado (fail-closed, R-2). Usá la clave de prueba always-passes (1x0000000000000000000000000000000AA) en dev/staging; en producción usá una clave real.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: '1x0000000000000000000000000000000AA',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.cloudflare.com/turnstile/get-started/',
+        howToObtain:
+            'Cloudflare Dashboard → Turnstile → Add site → copy the Secret Key. For local/staging use the always-passes test key: 1x0000000000000000000000000000000AA (never charges users, always returns success:true). For failure-testing use: 2x0000000000000000000000000000000AA. Set the real production key in Coolify for hospeda-api-prod.',
+        howToObtainEs:
+            'Cloudflare Dashboard → Turnstile → Add site → copiá el Secret Key. Para local/staging usá la clave de prueba always-passes: 1x0000000000000000000000000000000AA (nunca cobra, siempre devuelve success:true). Para probar fallos usá: 2x0000000000000000000000000000000AA. La clave de producción real va en Coolify para hospeda-api-prod.'
+    },
+    {
         name: 'HOSPEDA_EXCHANGE_RATE_API_KEY',
         description: 'ExchangeRate-API key',
         descriptionEs: 'API key de ExchangeRate-API',
@@ -1352,6 +1409,7 @@ export const HOSPEDA_ENV_VARS = [
         exampleValue: 'sntrys_xxxxxxxxxxxxxxxxxxxx',
         apps: ['web', 'admin', 'api'],
         category: 'monitoring',
+        stage: 'build',
         helpUrl: 'https://docs.sentry.io/account/auth-tokens/',
         howToObtain:
             'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro (web), @sentry/vite-plugin (admin), and @sentry/esbuild-plugin (api) at build time to upload source maps so production stack traces are symbolicated. Build skips upload silently if missing. Org slug `qazuor` and per-app project slugs (`hospeda-web`, `hospeda-admin`, `hospeda-api`) are hardcoded in each app build config — the same org-scoped token works for all three.',
@@ -1469,10 +1527,113 @@ export const HOSPEDA_ENV_VARS = [
         exampleValue: 'abc123',
         apps: ['api'],
         category: 'build',
+        stage: 'build',
         howToObtain:
             'In CI/CD set this to the deployed git SHA (Coolify on the VPS does this automatically when wired up). Local: leave blank. Used to tie API responses to a specific commit so "which version was running?" is answerable from any error report.',
         howToObtainEs:
             'En CI/CD seteala al SHA del commit deployado (Coolify lo hace solo en el VPS si está conectado). En local: dejala vacía. Sirve para atar las respuestas de la API a un commit específico, así "qué versión estaba corriendo" se puede responder desde cualquier reporte de error.'
+    },
+    {
+        name: 'HOSPEDA_GIT_SHA',
+        description:
+            'Git commit SHA baked into the image at build time (Docker ARG, derived from SOURCE_COMMIT). Feeds the Sentry release identifiers (HOSPEDA_/VITE_/PUBLIC_SENTRY_RELEASE).',
+        descriptionEs:
+            'SHA del commit baked en la imagen en build time (ARG de Docker, derivado de SOURCE_COMMIT). Alimenta los identificadores de release de Sentry (HOSPEDA_/VITE_/PUBLIC_SENTRY_RELEASE).',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'abc123def456',
+        apps: ['docker'],
+        category: 'build',
+        // 'both': set as a build arg, but the api runner stage re-declares it as
+        // ENV and sentry.ts reads it from the process environment at runtime. It
+        // is read via the raw process env (not a Zod schema key), so it stays
+        // apps: ['docker'] to avoid the runtime cross-validation.
+        stage: 'both',
+        howToObtain:
+            'Pass as a Coolify build argument, or let it derive from SOURCE_COMMIT automatically (enable "Include Source Commit in Build"). Local builds can leave it blank.',
+        howToObtainEs:
+            'Pasala como build argument en Coolify, o dejá que se derive de SOURCE_COMMIT automáticamente (activá "Include Source Commit in Build"). En builds locales podés dejarla vacía.'
+    },
+    {
+        name: 'SOURCE_COMMIT',
+        description:
+            'Commit SHA auto-injected by Coolify into the Docker build when "Include Source Commit in Build" is enabled. Source value for HOSPEDA_GIT_SHA.',
+        descriptionEs:
+            'SHA del commit auto-inyectado por Coolify en el build de Docker cuando "Include Source Commit in Build" está activado. Valor de origen de HOSPEDA_GIT_SHA.',
+        type: 'string',
+        required: false,
+        platformInjected: true,
+        secret: false,
+        exampleValue: 'abc123def456',
+        apps: ['docker'],
+        category: 'build',
+        stage: 'build',
+        howToObtain:
+            'Injected automatically by Coolify — do not set manually. Enable the "Include Source Commit in Build" toggle on the app in Coolify.',
+        howToObtainEs:
+            'Lo inyecta Coolify automáticamente — no la setees a mano. Activá el toggle "Include Source Commit in Build" en la app en Coolify.'
+    },
+    {
+        name: 'HOSPEDA_LANDING_SITE_URL',
+        description:
+            'Public site URL of the landing app, baked into canonical/OG tags at build time.',
+        descriptionEs:
+            'URL pública del sitio de la landing, baked en los tags canonical/OG en build time.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://hospeda.com.ar',
+        apps: ['docker'],
+        category: 'build',
+        stage: 'build',
+        howToObtain:
+            'Pass as a Coolify build argument for the landing app. The Dockerfile defaults it to https://hospeda.com.ar.',
+        howToObtainEs:
+            'Pasala como build argument en Coolify para la app landing. El Dockerfile la deja con default https://hospeda.com.ar.'
+    },
+    {
+        name: 'ALLOW_PLACEHOLDER_ENV_URLS',
+        description:
+            'CI-only build flag that lets placeholder (.invalid) URLs pass the admin env validation during the Docker build. Never set in production.',
+        descriptionEs:
+            'Flag de build solo-CI que permite que URLs placeholder (.invalid) pasen la validación de env del admin durante el build de Docker. Nunca se setea en producción.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        exampleValue: 'true',
+        // NOT a Docker ARG: read via the raw process env in the admin vite build
+        // (and the env guard) and passed by the CI `env:` block, so the Dockerfile
+        // ARG gate does not enforce it. `apps: ['docker']` = consumed in the build
+        // context (keeps it out of the runtime cross-validation).
+        apps: ['docker'],
+        category: 'build',
+        stage: 'build',
+        howToObtain:
+            'Set to "true" only in CI build steps that build the admin image with placeholder URLs. Read at build time (admin vite config + env guard); not a runtime variable.',
+        howToObtainEs:
+            'Poné "true" solo en pasos de build de CI que construyen la imagen del admin con URLs placeholder. Se lee en build time (vite config + guard de env del admin); no es una variable de runtime.'
+    },
+    {
+        name: 'ANALYZE',
+        description:
+            'Developer build flag that enables bundle analysis (rollup-plugin-visualizer) in the web/admin builds.',
+        descriptionEs:
+            'Flag de build de developer que activa el análisis de bundle (rollup-plugin-visualizer) en los builds de web/admin.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        exampleValue: '1',
+        // NOT a Docker ARG: read via the raw process env in the web/admin vite
+        // builds; the Dockerfile ARG gate does not enforce it. `apps: ['docker']`
+        // = consumed in the build context (keeps it out of runtime cross-validation).
+        apps: ['docker'],
+        category: 'build',
+        stage: 'build',
+        howToObtain:
+            'Set to "1" locally to emit a bundle treemap (e.g. `pnpm build:analyze`). Not used in production builds.',
+        howToObtainEs:
+            'Poné "1" en local para emitir un treemap del bundle (ej. `pnpm build:analyze`). No se usa en builds de producción.'
     },
     {
         name: 'HOSPEDA_SUPPORTED_LOCALES',

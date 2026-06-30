@@ -17,6 +17,7 @@ import type {
     EventByOrganizerInput,
     EventCreateInput,
     EventFreeInput,
+    EventLocation,
     EventSearchInput,
     EventSummaryInput,
     EventSummaryOutput,
@@ -56,6 +57,7 @@ import type {
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
 import { checkCanFindOptions } from '../../utils';
+import { projectEventLocationCityDestination } from '../eventLocation/eventLocation.projections';
 import {
     buildEventDateConditions,
     buildEventPriceConditions,
@@ -104,6 +106,38 @@ export class EventService extends BaseCrudService<
         // query API cannot resolve polymorphic relations natively. Tags must
         // be loaded via a separate query in callers that need them.
         return { author: true, organizer: true, location: true };
+    }
+
+    /**
+     * Relations for public card surfaces (listing + home). Like the default
+     * list relations but `location` is loaded with its nested `destination` so
+     * cards can show the originating city (SPEC-095). The raw nested
+     * `destination` is projected into `location.cityDestination` via
+     * {@link projectEventLocationCity} before the response schema keeps
+     * `cityDestination` and strips the raw `destination`.
+     *
+     * Kept separate from `getDefaultListRelations` so detail (`getById`) and
+     * admin surfaces — which never surface the city — don't pay for an unused
+     * destinations JOIN.
+     */
+    private getCardListRelations() {
+        return { author: true, organizer: true, location: { destination: true } };
+    }
+
+    /**
+     * Projects an event's eager-loaded `location.destination` relation into the
+     * public `location.cityDestination` shape (SPEC-095) so event cards can
+     * render the originating city/destination. Mirrors EventLocationService's
+     * projection, reached one level down through the event's `location`
+     * relation. Events without a loaded location are returned unchanged.
+     */
+    private projectEventLocationCity(event: Event): Event {
+        const location = (event as { location?: EventLocation | null }).location;
+        if (!location) return event;
+        return {
+            ...event,
+            location: projectEventLocationCityDestination(location)
+        } as Event;
     }
 
     /**
@@ -762,8 +796,8 @@ export class EventService extends BaseCrudService<
         // ordering falls back to the default (id DESC) instead of bookmark count.
         // Accept this regression to keep card relations consistent; a future
         // change can implement mostSaved at the findAllWithRelations layer.
-        return this.model.findAllWithRelations(
-            this.getDefaultListRelations(),
+        const searchResult = await this.model.findAllWithRelations(
+            this.getCardListRelations(),
             filterParams,
             {
                 page: ctx.pagination?.page ?? 1,
@@ -773,6 +807,10 @@ export class EventService extends BaseCrudService<
             },
             additionalConditions.length > 0 ? additionalConditions : undefined
         );
+        return {
+            ...searchResult,
+            items: searchResult.items.map((event) => this.projectEventLocationCity(event))
+        };
     }
 
     /**
@@ -1054,12 +1092,22 @@ export class EventService extends BaseCrudService<
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
-                    return await this.model.findAll(
+                    // Load relations (incl. nested location.destination) so home
+                    // event cards can show the originating city (SPEC-095), then
+                    // project location.destination → location.cityDestination.
+                    const upcomingResult = await this.model.findAllWithRelations(
+                        this.getCardListRelations(),
                         filters,
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    return {
+                        ...upcomingResult,
+                        items: upcomingResult.items.map((event) =>
+                            this.projectEventLocationCity(event)
+                        )
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }

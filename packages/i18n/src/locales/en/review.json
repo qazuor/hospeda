@@ -69,7 +69,9 @@
         "canLeaveReview": "Share your experience at this place to help other diners.",
         "cta": "Leave a review",
         "signInCta": "Sign in to leave a review",
-        "signInCtaHint": "You need an account to leave your review."
+        "signInCtaHint": "You need an account to leave your review.",
+        "pendingTitle": "Review under moderation",
+        "pendingBanner": "Your review was submitted and will be published once our team approves it."
     },
     "dialog": {
         "close": "Close"

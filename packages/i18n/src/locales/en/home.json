@@ -40,7 +40,8 @@
     "accommodations": {
         "badge": {
             "new": "New",
-            "featured": "Featured"
+            "featured": "Featured",
+            "aiChat": "AI Chat"
         },
         "price": {
             "from": "From",

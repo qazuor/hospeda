@@ -295,6 +295,7 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -307,6 +308,8 @@ import type { AppBindings, AppMiddleware } from '../../../src/types';
 const TEST_PATH = '/test-chat';
 const STREAM_PATH = `${TEST_PATH}/`;
 const UNIQUE_USER_ID = '55555555-5555-4555-8555-555555555555';
+/** Listing owner ID — from mockOwnerQueryResult default, distinct from UNIQUE_USER_ID. */
+const OWNER_ID = '11111111-1111-1111-1111-111111111111';
 const ACCOMMODATION_ID = '66666666-6666-4666-8666-666666666666';
 const CONVERSATION_ID = '77777777-7777-4777-8777-777777777777';
 const PII_SENTINEL = 'pii-user-message-content';
@@ -838,5 +841,191 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(mockPostHogCapture).toHaveBeenCalledWith(
             expect.objectContaining({ event: 'ai_chat_opened' })
         );
+    });
+
+    // =========================================================================
+    // SPEC-283 — consumer-side chat quota gate
+    //
+    // These tests verify the second inline gate added by SPEC-283: the
+    // REQUESTING user's own MAX_AI_CHAT_CONSUMER_PER_MONTH limit loaded from
+    // context (injected by entitlementMiddleware → currentLimitsForTest here).
+    //
+    // Each test sets the owner side to PASS (owner has AI_CHAT entitlement +
+    // quota with headroom) so the consumer path is isolated. The two gates
+    // use DISTINCT user-facing copy:
+    //   owner-side block  → 'accommodations.aiChat.unavailable'
+    //   consumer-side block → 'accommodations.aiChat.consumerLimitReached'
+    // =========================================================================
+
+    describe('SPEC-283 — consumer-side chat quota gate', () => {
+        it('owner-block 403 carries the owner copy, NOT the consumer copy (ENTITLEMENT_REQUIRED)', async () => {
+            // Owner lacks AI_CHAT — gate fires on the owner side.
+            mockOwnerEntitlements.current = [];
+            // Consumer has headroom — irrelevant; owner gate fires first.
+            currentLimitsForTest.current = new Map([
+                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+            ]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { error: { code: string; message: string } };
+            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
+            // Must be the owner-side copy.
+            expect(body.error.message).toBe('accommodations.aiChat.unavailable');
+            // Must NOT be the consumer-side copy.
+            expect(body.error.message).not.toBe('accommodations.aiChat.consumerLimitReached');
+        });
+
+        it('consumer 403 LIMIT_REACHED when consumer monthly count >= plan limit', async () => {
+            // Owner passes: limit 300, usage 200 (200 < 300 → passes).
+            mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 300]]);
+            getMonthlyCallCountReturn.current = 200;
+            // Consumer limit 200, usage 200 → 200 >= 200 → blocked.
+            currentLimitsForTest.current = new Map([
+                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+            ]);
+
+            // Explicit actorId so the assertion below can prove the consumer gate
+            // counted against actor.id (UNIQUE_USER_ID), not the owner (OWNER_ID).
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: UNIQUE_USER_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { error: { code: string; message: string } };
+            expect(body.error.code).toBe('LIMIT_REACHED');
+            // Must be the consumer-side copy, NOT the owner-side copy.
+            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
+            expect(body.error.message).not.toBe('accommodations.aiChat.unavailable');
+            // No stream was opened.
+            expect(streamTextCalls).toHaveLength(0);
+            // Critical: the consumer gate must count against the REQUESTING user's bucket
+            // (actor.id = UNIQUE_USER_ID), not the owner's. A bug that forwarded ownerId
+            // to the consumer gate would not produce a call with userId=UNIQUE_USER_ID.
+            expect(vi.mocked(getMonthlyCallCount)).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: UNIQUE_USER_ID, feature: 'chat' })
+            );
+        });
+
+        it('200 SSE stream proceeds when both owner and consumer have headroom', async () => {
+            // Owner: limit 20 (default), usage 10 (10 < 20 → passes).
+            getMonthlyCallCountReturn.current = 10;
+            // Consumer: limit 200, usage 10 (10 < 200 → passes).
+            currentLimitsForTest.current = new Map([
+                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+            ]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
+        });
+
+        it('consumer 403 immediately when consumer limit is 0 (feature disabled, no count query)', async () => {
+            // Consumer limit exactly 0 → short-circuit block before getMonthlyCallCount for actor.id.
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { error: { code: string; message: string } };
+            expect(body.error.code).toBe('LIMIT_REACHED');
+            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
+            // Gate fires pre-stream — no AI call was made.
+            expect(streamTextCalls).toHaveLength(0);
+        });
+
+        // Pre-SPEC-283 / mid-rollout path: plans predating SPEC-283 will not carry
+        // MAX_AI_CHAT_CONSUMER_PER_MONTH in their limit map. getRemainingLimit returns -1
+        // (key absent) → the entire consumer block is skipped → fail-open, backward-compatible.
+        it('200 (fail-open) when consumer limit key is absent from context (pre-SPEC-283 backward-compat)', async () => {
+            // Only the OLD per-owner key in context — no MAX_AI_CHAT_CONSUMER_PER_MONTH.
+            // getRemainingLimit(c, MAX_AI_CHAT_CONSUMER_PER_MONTH) → -1 → gate bypassed.
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
+        });
+
+        it('successful chat records usage for BOTH owner (ownerId) AND consumer (actor.id) — SPEC-283', async () => {
+            // No consumer limit → fail-open; stream completes; recordAiUsage called twice.
+            currentLimitsForTest.current = new Map();
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: UNIQUE_USER_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: makeMessages(1)
+                })
+            });
+
+            expect(res.status).toBe(200);
+            // Drain so augmentedMeta settles and both recordAiUsage calls complete.
+            await readSseFrames(res);
+
+            const mockedRecord = vi.mocked(recordAiUsage);
+            // SPEC-283: two calls — owner-keyed (cost) then consumer-keyed (quota advance).
+            expect(mockedRecord).toHaveBeenCalledTimes(2);
+
+            // Owner call (SPEC-211).
+            expect(mockedRecord).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: OWNER_ID,
+                    feature: 'chat',
+                    status: 'success'
+                })
+            );
+
+            // Consumer call (SPEC-283) — keyed by actor.id, which is DISTINCT from ownerId.
+            expect(mockedRecord).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: UNIQUE_USER_ID,
+                    feature: 'chat',
+                    status: 'success'
+                })
+            );
+
+            // Sanity: the two IDs are different so the assertions above are not aliased.
+            expect(UNIQUE_USER_ID).not.toBe(OWNER_ID);
+        });
     });
 });

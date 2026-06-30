@@ -30,6 +30,7 @@ import {
 	MegaphoneIcon,
 	WrenchIcon,
 	SparkleIcon,
+	SearchIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
@@ -107,6 +108,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
 				? [{ section: 'comercio', label: t('commerce.owner.nav', 'Mi comercio'), path: 'mi-cuenta/comercio', Icon: BriefcaseIcon }]
 				: []),
 			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
+			{ section: 'historial-busquedas', label: t('account.nav.searchHistory', 'Historial de búsquedas'), path: 'mi-cuenta/historial-busquedas', Icon: SearchIcon },
 			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
 			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/consultas', Icon: ChatIcon },
 		],

@@ -11,7 +11,7 @@ import {
 } from '@repo/content-moderation/engine/index';
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
-import { LogFormat, configureLogger, registerCaptureHook } from '@repo/logger';
+import { LogFormat, LogLevel, configureLogger, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
@@ -52,12 +52,42 @@ import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 // Validate environment variables before starting the server
 validateApiEnv();
 
-// Apply the global logger output format (pretty | json) from API_LOG_FORMAT.
-// FORMAT is a process-wide setting, so it belongs at server bootstrap (here),
-// not in the shared logger module that test mocks import.
+// Apply the global logger LEVEL and output FORMAT at server bootstrap (both are
+// process-wide settings). Previously only FORMAT was wired, so the level stayed
+// at the package default `LOG` — which emits EVERYTHING including DEBUG (I3).
+//
+// LEVEL: map the validated API_LOG_LEVEL (default 'info') to the logger enum so
+// the effective level is actually honored. DEBUG-level logs (per-request auth /
+// billing / entitlement checks, service method start/end) are silenced unless
+// the operator explicitly sets API_LOG_LEVEL=debug.
+//
+// FORMAT: JSON in production (and staging, which also runs NODE_ENV=production)
+// so logs are parseable and free of chalk ANSI escapes that render as garbage in
+// the Coolify console; PRETTY in development. An explicit API_LOG_FORMAT=json
+// still forces JSON anywhere.
+const LOG_LEVEL_BY_NAME = {
+    debug: LogLevel.DEBUG,
+    info: LogLevel.INFO,
+    warn: LogLevel.WARN,
+    error: LogLevel.ERROR
+} as const;
 configureLogger({
-    FORMAT: env.API_LOG_FORMAT === 'json' ? LogFormat.JSON : LogFormat.PRETTY
+    LEVEL: LOG_LEVEL_BY_NAME[env.API_LOG_LEVEL],
+    FORMAT:
+        env.API_LOG_FORMAT === 'json' || env.NODE_ENV === 'production'
+            ? LogFormat.JSON
+            : LogFormat.PRETTY
 });
+
+// Log a small, safe env summary ONCE here, after configureLogger() so it honors
+// the prod JSON format (a log inside validateApiEnv ran before this and in two
+// modules, so it was duplicated and emitted in ANSI). The full validated env
+// (~100 vars, partial secrets) is never logged (I3).
+apiLogger.info(
+    `API env validated — NODE_ENV=${env.NODE_ENV}, API_PORT=${env.API_PORT}, ` +
+        `API_LOG_LEVEL=${env.API_LOG_LEVEL}, API_LOG_FORMAT=${env.API_LOG_FORMAT}`,
+    'validateApiEnv'
+);
 
 // SPEC-180 BETA-50: Warn early if the explicit Sentry environment override
 // is not set in a non-development context. Without it, both staging and
@@ -268,10 +298,14 @@ const startServer = async (): Promise<void> => {
             (info) => {
                 apiLogger.info(`🚀 Server running on port ${info.port}`);
 
-                // List all registered routes after a small delay to ensure all routes are registered
-                setTimeout(() => {
-                    listRoutes(app);
-                }, 100);
+                // List all registered routes (one INFO line per route, ~260 of
+                // them) only in local development — in staging/prod this just
+                // floods the boot logs with no operational value (I3).
+                if (env.NODE_ENV === 'development') {
+                    setTimeout(() => {
+                        listRoutes(app);
+                    }, 100);
+                }
 
                 // Start cron scheduler (only in non-test environments)
                 if (env.NODE_ENV !== 'test') {

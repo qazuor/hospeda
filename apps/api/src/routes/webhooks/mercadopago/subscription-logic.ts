@@ -11,10 +11,15 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
+import {
+    checkSubscriptionStatusTransition,
+    syncFeaturedByPlan,
+    withServiceTransaction
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
@@ -1017,6 +1022,55 @@ export async function processSubscriptionUpdated({
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription reactivated notification failed');
         });
+    }
+
+    // SPEC-292 T-005: sync featuredByPlan on status transitions that change
+    // FEATURED_LISTING entitlement reachability. Non-blocking — never blocks
+    // the webhook response. T-006 reconciliation cron is the backstop.
+    //
+    // Timing semantics:
+    //   active / trialing  → grant  (entitlement active)
+    //   cancelled / expired → revoke (entitlement lapsed)
+    //   past_due / paused / other → skip (grace period or intentional pause)
+    try {
+        const planHasFeatured =
+            getPlanBySlug(planName)?.entitlements.includes(EntitlementKey.FEATURED_LISTING) ??
+            false;
+
+        const shouldGrant =
+            mappedStatus === SubscriptionStatusEnum.ACTIVE ||
+            mappedStatus === SubscriptionStatusEnum.TRIALING;
+        const shouldRevoke =
+            mappedStatus === SubscriptionStatusEnum.CANCELLED ||
+            mappedStatus === SubscriptionStatusEnum.EXPIRED;
+
+        if (planHasFeatured && (shouldGrant || shouldRevoke) && userId) {
+            await syncFeaturedByPlan({ ownerId: userId, active: shouldGrant });
+            apiLogger.info(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    planSlug: planName,
+                    mappedStatus,
+                    active: shouldGrant
+                },
+                'Subscription status update: syncFeaturedByPlan applied'
+            );
+        }
+    } catch (featuredSyncErr) {
+        apiLogger.warn(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                planSlug: planName,
+                mappedStatus,
+                error:
+                    featuredSyncErr instanceof Error
+                        ? featuredSyncErr.message
+                        : String(featuredSyncErr)
+            },
+            'Subscription status update: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)'
+        );
     }
 
     // Step 10: Return success

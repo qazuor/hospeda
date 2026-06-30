@@ -1,5 +1,5 @@
 import type { OwnerPromotionModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnerPromotionService } from '../../../src/services/owner-promotion/ownerPromotion.service';
 import { createActor } from '../../factories/actorFactory';
@@ -44,15 +44,39 @@ describe('OwnerPromotionService.getById', () => {
         expect(modelMock.findOne).not.toHaveBeenCalled();
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should return FORBIDDEN if actor lacks permission for a non-public (DRAFT) promotion', async () => {
+        // SPEC-285 T-001: the public read path is permissive only for ACTIVE,
+        // non-plan-restricted promos. A DRAFT promo is not publicly visible, so an
+        // actor without view permission must still be FORBIDDEN.
         actor = createActor({ permissions: [] });
+        const draftPromo = createMockOwnerPromotion({
+            id,
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
-            where && where.id === id ? existing : null
+            where && where.id === id ? draftPromo : null
         );
         const result = await service.getById(actor, id);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
+    });
+
+    it('should allow a permissionless actor to view an ACTIVE, non-plan-restricted promotion', async () => {
+        // SPEC-285 T-001: tourist-facing public read path — a guest/permissionless
+        // actor can view an ACTIVE, non-plan-restricted promotion.
+        actor = createActor({ permissions: [] });
+        const activePublicPromo = createMockOwnerPromotion({
+            id,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            planRestricted: false
+        });
+        modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? activePublicPromo : null
+        );
+        const result = await service.getById(actor, id);
+        expect(result.error).toBeUndefined();
+        expect(result.data?.title).toEqual(activePublicPromo.title);
     });
 
     it('should return NOT_FOUND if entity does not exist', async () => {

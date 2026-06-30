@@ -1,0 +1,98 @@
+---
+/**
+ * @file mi-cuenta/historial-busquedas/index.astro
+ * @description Search history page — lists the user's past searches, lets them
+ * re-run any entry, delete individual entries, clear all, and toggle the
+ * opt-out preference.
+ *
+ * Auth protection: middleware redirects unauthenticated visitors. The in-page
+ * guard is a safety net for SSR edge cases.
+ *
+ * The initial `searchHistoryEnabled` state is fetched server-side from the user
+ * settings endpoint so the island renders in the correct toggle state immediately,
+ * avoiding a flash on mount.
+ *
+ * @route    /[lang]/mi-cuenta/historial-busquedas/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import { webLogger } from '@/lib/logger';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { SearchHistoryList } from '@/components/account/SearchHistoryList.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard — middleware should have redirected already, this is the safety net.
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.searchHistory.title', 'Historial de búsquedas');
+const description = t(
+    'account.pages.searchHistory.description',
+    'Revisá y repetí tus búsquedas recientes en Hospeda'
+);
+const apiUrl = getApiUrl();
+
+// ─── Server-side: fetch initial searchHistoryEnabled preference ───────────────
+// Non-blocking: on error we fall back to `true` (enabled) so the page still
+// renders and the island can correct the state on mount.
+let initialHistoryEnabled = true;
+
+try {
+    const cookieHeader = Astro.request.headers.get('cookie');
+    if (cookieHeader) {
+        const res = await fetch(
+            `${apiUrl}/api/v1/protected/users/${user.id}`,
+            {
+                headers: {
+                    cookie: cookieHeader,
+                    Accept: 'application/json'
+                }
+            }
+        );
+        if (res.ok) {
+            const body = (await res.json()) as {
+                data?: { settings?: { searchHistoryEnabled?: boolean } | null };
+            };
+            const enabled = body.data?.settings?.searchHistoryEnabled;
+            // Explicit `false` → opted out; everything else → enabled.
+            if (enabled === false) {
+                initialHistoryEnabled = false;
+            }
+        } else {
+            webLogger.warn('[historial-busquedas] user settings fetch returned status', res.status);
+        }
+    }
+} catch (err) {
+    webLogger.error('[historial-busquedas] failed to fetch user settings', err);
+}
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="historial-busquedas">
+    <h2 class="account-section__title">{title}</h2>
+
+    <SearchHistoryList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+        initialHistoryEnabled={initialHistoryEnabled}
+    />
+</AccountLayout>
+
+<style>
+    .account-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

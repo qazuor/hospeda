@@ -20,6 +20,9 @@ const reviewService = new GastronomyReviewService({ logger: apiLogger });
 /**
  * Safe public review projection — strips admin-only and moderation fields
  * before the response leaves the public tier.
+ *
+ * The `user` extension (Bug B7b fix) exposes only safe public fields from the
+ * eagerly-loaded user relation: no email, no role, no sensitive audit fields.
  */
 const GastronomyReviewPublicSchema = GastronomyReviewSchema.pick({
     id: true,
@@ -33,6 +36,17 @@ const GastronomyReviewPublicSchema = GastronomyReviewSchema.pick({
     reviewerName: true,
     createdAt: true,
     updatedAt: true
+}).extend({
+    /** Reviewer's public profile from the users JOIN (no email/role/sensitive fields). */
+    user: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().nullish(),
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            image: z.string().nullish()
+        })
+        .nullish()
 });
 
 /**

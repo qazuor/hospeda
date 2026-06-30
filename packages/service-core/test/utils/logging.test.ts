@@ -51,14 +51,18 @@ afterEach(() => {
  * The tests use a mocked logger and various scenarios to ensure all logging logic is covered.
  */
 describe('logging util', () => {
-    it('logs method start', () => {
+    // I3: method start/end log at DEBUG (not INFO) so they are silenced at the
+    // default prod level — they fire on every service call with full payloads.
+    it('logs method start at debug level', () => {
         logging.logMethodStart(mockMethodName, mockInput, mockActor);
-        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Starting'));
+        expect(loggerMock.debug).toHaveBeenCalledWith(expect.stringContaining('Starting'));
+        expect(loggerMock.info).not.toHaveBeenCalled();
     });
 
-    it('logs method end', () => {
+    it('logs method end at debug level', () => {
         logging.logMethodEnd(mockMethodName, mockOutput);
-        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Completed'));
+        expect(loggerMock.debug).toHaveBeenCalledWith(expect.stringContaining('Completed'));
+        expect(loggerMock.info).not.toHaveBeenCalled();
     });
 
     it('logs error', () => {

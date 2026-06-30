@@ -21,6 +21,7 @@ import {
     AccommodationAdminSearchSchema,
     type AccommodationByDestinationParams,
     AccommodationByDestinationParamsSchema,
+    AccommodationComparisonRequestSchema,
     type AccommodationCreateDraftHttp,
     AccommodationCreateDraftHttpSchema,
     type AccommodationCreateInput,
@@ -73,6 +74,7 @@ import {
     AccommodationSearchSchema,
     type AccommodationStats,
     type AccommodationStatsWrapper,
+    type AccommodationSummary,
     type AccommodationSummaryParams,
     AccommodationSummaryParamsSchema,
     type AccommodationSummaryWrapper,
@@ -2365,6 +2367,116 @@ export class AccommodationService extends BaseCrudService<
                     location: entity.location
                 };
                 return { accommodation };
+            }
+        });
+    }
+
+    /**
+     * Returns the summary shape for each requested accommodation, respecting per-item
+     * visibility rules. Items that the actor cannot view are silently excluded so a
+     * single non-viewable accommodation does not block the entire comparison.
+     *
+     * The caller is responsible for the entitlement + plan-limit gate
+     * (enforced by `gateComparator()` on the route before this method is reached).
+     *
+     * Projection pipeline (mirrors `_afterList`):
+     * - Composed media batch-read via {@link attachComposedMediaList}
+     * - Location privacy obfuscation via {@link applyAccommodationLocationPrivacyList}
+     *   (adds `approximateLocation`, strips exact coordinates for non-owners/non-admin)
+     *
+     * The result is reordered to match the order of `data.ids`; absent/invisible IDs
+     * are simply omitted from the output.
+     *
+     * @param actor - The actor performing the comparison
+     * @param data - Object containing the list of accommodation UUIDs to compare
+     * @param _ctx - Optional service context for transaction propagation
+     * @returns Viewable accommodations in summary shape, ordered to match `data.ids`
+     */
+    public async compareByIds(
+        actor: Actor,
+        data: { ids: string[] },
+        _ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: AccommodationSummary[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'compareByIds',
+            input: { ...data, actor },
+            schema: AccommodationComparisonRequestSchema,
+            execute: async (validated, _validatedActor, execCtx) => {
+                // Fetch all rows in one DB round-trip; does NOT filter soft-deleted
+                const rows = await this.model.findByIds(validated.ids, execCtx?.tx);
+
+                // Filter to viewable items. _canView throws a ServiceError for
+                // soft-deleted, inactive, plan-restricted, suspended, or RESTRICTED
+                // visibility accommodations the actor cannot access. We catch and drop
+                // those silently so a single invisible item does not 500 the request.
+                const viewableRows: Accommodation[] = [];
+                for (const row of rows) {
+                    try {
+                        this._canView(actor, row as Accommodation);
+                        viewableRows.push(row as Accommodation);
+                    } catch {
+                        // Non-viewable accommodation — excluded from comparison result
+                    }
+                }
+
+                // Batch-read composed media from the relational table (no N+1)
+                const withMedia = await attachComposedMediaList({
+                    items: viewableRows,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: execCtx?.tx
+                });
+
+                // Apply privacy-aware location projection:
+                // adds `approximateLocation`, strips exact fields for non-owners/non-admin
+                const salt = this.getLocationSalt();
+                const withPrivacy = salt
+                    ? applyAccommodationLocationPrivacyList(withMedia, { actor, salt })
+                    : withMedia;
+
+                // Cast to expose the dynamically-added `approximateLocation` field
+                // that `applyAccommodationLocationPrivacyList` injects at runtime but
+                // that the base `Accommodation` type does not declare.
+                type WithApproxLocation = Accommodation & {
+                    approximateLocation?: AccommodationSummary['approximateLocation'];
+                };
+                const projectedItems = withPrivacy as WithApproxLocation[];
+
+                // Build an id-keyed map for O(n) reordering
+                const summaryMap = new Map<string, AccommodationSummary>();
+                for (const item of projectedItems) {
+                    const summary: AccommodationSummary = {
+                        id: item.id,
+                        name: item.name,
+                        slug: item.slug,
+                        summary: item.summary,
+                        type: item.type,
+                        price: item.price,
+                        location: item.location,
+                        media: item.media,
+                        isFeatured: item.isFeatured,
+                        ownerId: item.ownerId,
+                        // Denormalized rating columns on the accommodations table —
+                        // surfaced so the comparison matrix can rank by quality.
+                        reviewsCount: item.reviewsCount ?? 0,
+                        averageRating: item.averageRating ?? 0,
+                        ...(item.approximateLocation !== undefined && {
+                            approximateLocation: item.approximateLocation
+                        })
+                    };
+                    summaryMap.set(item.id, summary);
+                }
+
+                // Reorder to match the original ids order (inArray/findByIds does NOT
+                // preserve order). IDs missing from the viewable set are simply omitted.
+                const items: AccommodationSummary[] = [];
+                for (const id of validated.ids) {
+                    const summary = summaryMap.get(id);
+                    if (summary) {
+                        items.push(summary);
+                    }
+                }
+
+                return { items };
             }
         });
     }

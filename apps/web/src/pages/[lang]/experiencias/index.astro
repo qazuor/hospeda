@@ -21,6 +21,7 @@ import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -28,6 +29,7 @@ import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const isAuthenticated = Boolean(Astro.locals.user);
 
 const url = Astro.url;
 
@@ -67,9 +69,33 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // --- Transform to card props ---
-const cards = items.map((item) =>
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+
+const baseCards = items.map((item) =>
     toExperienceCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
+
+// --- SSR bulk-check favorites for authenticated users ---
+let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && baseCards.length > 0) {
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'EXPERIENCE',
+            entityIds: baseCards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            favoriteChecks = bulkResult.data.checks;
+        }
+    } catch {
+        // graceful degradation — FavoriteButton will single-check on mount
+    }
+}
+
+const cards = baseCards.map((card) => {
+    const entry = favoriteChecks[card.id];
+    if (!entry) return card;
+    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
 
 // --- Experience types for filter (from the confirmed enum) ---
 const EXPERIENCE_TYPES = [
@@ -217,6 +243,7 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
                     <ExperienceCard
                         data={card}
                         locale={locale}
+                        isAuthenticated={isAuthenticated}
                         eager={i < 3}
                     />
                 </div>

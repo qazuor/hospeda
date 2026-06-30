@@ -38,12 +38,15 @@ const isPlaceholderUrl = (value: string): boolean => {
  * The flag is read inside the refinement (not at module scope) so it reflects
  * the environment at validation time.
  *
- * NOTE: `process.env` is only meaningful in Node contexts (build / SSR). Vite
- * replaces `process.env` with `{}` in the browser bundle, so in a hydrated
- * client this guard always sees the flag as absent and therefore always rejects
- * a placeholder — which is the intended behavior: `ALLOW_PLACEHOLDER_ENV_URLS`
- * is a build-time-only CI signal and must never relax the guard in a running
- * browser. The build-time counterpart of this guard lives in `vite.config.ts`.
+ * NOTE: `process` is only defined in Node contexts (build / SSR). Vite does NOT
+ * polyfill `process` in the browser bundle, so reading `process.env.*` in a
+ * hydrated client throws `ReferenceError: process is not defined`. The
+ * `typeof process !== 'undefined'` guard avoids that: in the browser it
+ * short-circuits, leaving the flag seen as absent and therefore always
+ * rejecting a placeholder — which is the intended behavior:
+ * `ALLOW_PLACEHOLDER_ENV_URLS` is a build-time-only CI signal and must never
+ * relax the guard in a running browser. The build-time counterpart of this
+ * guard lives in `vite.config.ts`.
  *
  * @param label - Field name, used in the rejection message.
  * @returns A Zod string schema enforcing the rules above.
@@ -54,7 +57,9 @@ const requiredUrl = (label: string) =>
         .url()
         .refine(
             (value) =>
-                process.env.ALLOW_PLACEHOLDER_ENV_URLS === 'true' || !isPlaceholderUrl(value),
+                (typeof process !== 'undefined' &&
+                    process.env.ALLOW_PLACEHOLDER_ENV_URLS === 'true') ||
+                !isPlaceholderUrl(value),
             {
                 message: `${label} is a placeholder (.invalid) URL; a real URL is required outside CI builds`
             }
@@ -132,6 +137,17 @@ const AdminEnvSchema = z.object({
         .optional()
         .describe(
             'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
+        ),
+
+    // Integrations — Cloudflare Turnstile (SPEC-301 T-010)
+    // Public by design; ships in the admin browser bundle.
+    // When unset, the invisible widget is not rendered and the server applies
+    // its own fail-closed policy (admin feedback submissions would be rejected).
+    VITE_TURNSTILE_SITE_KEY: z
+        .string()
+        .optional()
+        .describe(
+            'Cloudflare Turnstile site key for the admin feedback form. Passed as turnstileSiteKey prop; never read inside @repo/feedback.'
         ),
 
     // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
@@ -233,6 +249,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
             VITE_SENTRY_ENVIRONMENT: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+            VITE_TURNSTILE_SITE_KEY: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
             VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
             VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',

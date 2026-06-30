@@ -13,9 +13,17 @@ import {
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { requireEntitlement } from '../../../../middlewares/entitlement';
+import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
+
+/** Stricter per-user write budget: 30 review submissions per hour. */
+const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({
+    windowMs: 3_600_000,
+    max: 30,
+    keyPrefix: 'prot:write:review'
+});
 
 /**
  * POST /api/v1/protected/accommodations/:accommodationId/reviews
@@ -53,10 +61,12 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
+        // writeReviewRateLimit runs first (fast in-memory check, no DB hit) before
+        // requireEntitlement (which does a DB lookup for the user's plan tier).
         // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
         // plans (tourist-free, tourist-plus, tourist-vip) and on all owner/complex
         // plans (via tourist-VIP entitlement inheritance, SPEC-216). Free tourists
         // and owners can write reviews; unauthenticated access is blocked upstream.
-        middlewares: [requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
+        middlewares: [writeReviewRateLimit, requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
     }
 });

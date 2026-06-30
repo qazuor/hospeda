@@ -87,13 +87,15 @@ export function parseTimeToMinutes(timeStr: string | undefined): number | null {
  * Computes whether the gastronomy listing is currently open based on the
  * `openingHours` map and the current local time.
  *
+ * A day can have multiple shifts (e.g. midday and night service); the listing
+ * is "open now" when the current time falls inside ANY of today's shifts.
+ *
  * Rules:
  * - If the entry for today does not exist → `null` (badge omitted).
- * - If `isOpen === false` → `false` (closed today).
- * - If `open24h === true` → `true` (always open).
- * - Otherwise compare current local HH:mm to `[open, close]` window.
- *   - When `close` is absent → treat as open-ended (open until midnight).
- *   - When `close` < `open` (overnight span) the comparison wraps correctly.
+ * - If the day is closed or has no shifts → `false`.
+ * - Otherwise → `true` when the current local time is inside any shift window.
+ *   A shift whose `close` is not strictly after its `open` is treated as an
+ *   overnight span (defensive — the schema normally forbids it) and wraps.
  *
  * @param openingHours - The full week map from the API response.
  * @param now - Moment to evaluate. Defaults to `new Date()`.
@@ -106,25 +108,22 @@ export function computeOpenNowStatus(
     const dayKey = getDayKey(now);
     const entry = openingHours[dayKey];
     if (!entry) return null;
-    if (!entry.isOpen) return false;
-    if (entry.open24h) return true;
-
-    const openMinutes = parseTimeToMinutes(entry.open);
-    if (openMinutes === null) return null;
+    if (!entry.isOpen || entry.shifts.length === 0) return false;
 
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    if (entry.close) {
-        const closeMinutes = parseTimeToMinutes(entry.close);
-        if (closeMinutes === null) return null;
+    for (const shift of entry.shifts) {
+        const openMinutes = parseTimeToMinutes(shift.open);
+        const closeMinutes = parseTimeToMinutes(shift.close);
+        if (openMinutes === null || closeMinutes === null) continue;
 
-        // Overnight span: e.g. open=22:00, close=02:00
-        if (closeMinutes < openMinutes) {
-            return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+        if (closeMinutes <= openMinutes) {
+            // Overnight span: e.g. open=22:00, close=02:00 (defensive).
+            if (currentMinutes >= openMinutes || currentMinutes < closeMinutes) return true;
+        } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+            return true;
         }
-        return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
     }
 
-    // No close time: open from open-time until midnight
-    return currentMinutes >= openMinutes;
+    return false;
 }

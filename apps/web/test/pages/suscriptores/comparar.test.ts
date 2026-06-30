@@ -109,18 +109,26 @@ describe('Pricing pages comparison links', () => {
         'utf8'
     );
 
+    // The comparison CTA (heading + copy + button) was extracted into a shared
+    // ComparisonLinkTeaser component (SPEC-299). The pages pass the comparison
+    // href to it; the link label + GradientButton live in the component.
+    const teaserSrc = readFileSync(
+        resolve(__dirname, '../../../src/components/billing/ComparisonLinkTeaser.astro'),
+        'utf8'
+    );
+
     it('owner pricing page should link to owner comparison page', () => {
         expect(ownerPricingSrc).toContain('suscriptores/planes/comparar');
-        expect(ownerPricingSrc).toContain('pricing.comparison.link');
+        expect(ownerPricingSrc).toContain('ComparisonLinkTeaser');
     });
 
     it('tourist pricing page should link to tourist comparison page', () => {
         expect(touristPricingSrc).toContain('suscriptores/turistas/comparar');
-        expect(touristPricingSrc).toContain('pricing.comparison.link');
+        expect(touristPricingSrc).toContain('ComparisonLinkTeaser');
     });
 
-    it('both pages should use GradientButton for the link', () => {
-        expect(ownerPricingSrc).toContain('GradientButton');
-        expect(touristPricingSrc).toContain('GradientButton');
+    it('the shared teaser should render the comparison link with a GradientButton', () => {
+        expect(teaserSrc).toContain('pricing.comparison.link');
+        expect(teaserSrc).toContain('GradientButton');
     });
 });

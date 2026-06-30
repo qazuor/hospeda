@@ -39,3 +39,50 @@
     overflow: hidden;
     opacity: 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* Collapsible "agregar más detalles" expander                         */
+/* ------------------------------------------------------------------ */
+
+.feedback-root .detailsToggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    border-top: 1px dashed var(--fb-border);
+    padding: 0.625rem 0;
+    cursor: pointer;
+    font-family: var(--fb-font-family);
+    font-size: var(--fb-font-size-sm);
+    font-weight: var(--fb-font-weight-medium);
+    color: var(--fb-foreground-muted);
+    text-align: left;
+    transition: color var(--fb-duration-fast) var(--fb-easing);
+}
+
+.feedback-root .detailsToggle:hover:not(:disabled) {
+    color: var(--fb-foreground);
+}
+
+.feedback-root .detailsToggle:focus-visible {
+    outline: 2px solid var(--fb-ring, currentColor);
+    outline-offset: 2px;
+    border-radius: var(--fb-radius-sm);
+}
+
+.feedback-root .detailsToggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.feedback-root .detailsToggleChevron {
+    font-size: var(--fb-font-size-xs);
+}
+
+.feedback-root .detailsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fb-space-4);
+}

@@ -25,6 +25,9 @@ export * from './accommodation.relations.schema.js'; // Schemas with related ent
 // Batch operations
 export * from './accommodation.batch.schema.js'; // Batch request and response schemas
 
+// Comparison (SPEC-288)
+export * from './accommodation.comparison.schema.js'; // Side-by-side comparison request/response
+
 // Subtypes - all subtypes are now exported
 export * from './subtypes/index.js';
 

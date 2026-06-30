@@ -9,7 +9,12 @@ export default defineConfig({
     splitting: false,
     sourcemap: true,
     clean: true,
-    dts: true,
+    // No DTS: hospeda-api is the final server application, not a library —
+    // nothing imports its `.d.ts`. Generating declarations runs a separate
+    // tsup worker that OOMs (ERR_WORKER_OUT_OF_MEMORY) on the build host as
+    // the type surface grows. Disabling it removes the failure and speeds up
+    // the build with zero loss. Library packages (@repo/*) keep `dts: true`.
+    dts: false,
     bundle: true,
     tsconfig: './tsconfig.json',
     // Sentry source maps upload (build-time only).

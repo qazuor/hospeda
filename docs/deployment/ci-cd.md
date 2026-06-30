@@ -31,6 +31,12 @@ The Hospeda project follows a **quality-first, automated** approach to continuou
 4. **Documentation Quality**: Documentation is validated like code
 5. **Zero-Trust Security**: All deployments require passing security checks
 6. **Automated Maintenance**: Routine tasks run on schedules
+7. **Validate pre-merge, not post-merge**: a workflow that triggers only on
+   `push` to a branch is never exercised by the PR that introduces it — it can
+   merge broken and stay broken silently (this happened with the A11y Sweep,
+   SPEC-294). Prefer `pull_request` triggers for anything that should gate or
+   signal quality, and always add `workflow_dispatch` so a failed run can be
+   re-run without a new push.
 
 **Benefits:**
 
@@ -65,6 +71,7 @@ All CI/CD workflows run on **GitHub Actions** using:
 | **Docs CI** | Changes to docs/** | Validate documentation quality | 15 min | No |
 | **Docs Validation** | Changes to .claude/** | Validate .claude structure | 10 min | No |
 | **Search Refresh** | Schedule (daily) | Refresh database search indexes | 15 min | Yes (1) |
+| **A11y Sweep** | PR to staging + dispatch | axe-core WCAG sweep of the built site, baseline-gated | 20 min | No (CI placeholders) |
 
 ### Quick Links
 
@@ -75,6 +82,7 @@ All CI/CD workflows run on **GitHub Actions** using:
 - [.github/workflows/validate-docs.yml](../../.github/workflows/validate-docs.yml)
 - [.github/workflows/e2e-pr.yml](../../.github/workflows/e2e-pr.yml)
 - [.github/workflows/e2e-nightly.yml](../../.github/workflows/e2e-nightly.yml)
+- [.github/workflows/a11y-sweep.yml](../../.github/workflows/a11y-sweep.yml)
 
 **Related Documentation:**
 
@@ -2568,6 +2576,54 @@ git commit -m "feat(db): add User model with CRUD operations"
 
 ---
 
+## Workflow: A11y Sweep (a11y-sweep.yml)
+
+### Purpose
+
+Runs an automated [axe-core](https://github.com/dequelabs/axe-core) accessibility
+sweep (WCAG 2.0/2.1 A + AA + best-practice) against the **built** site across a
+fixed inventory of routes plus one live detail page per entity type, in both
+light and dark themes. It is a **quality signal**, not the merge gate (the gate
+remains `CI Pass`).
+
+### Triggers
+
+- `pull_request` targeting `staging` — so a regression is caught in review, not
+  silently after merge (see Philosophy principle 7; this is the SPEC-294 fix).
+- `workflow_dispatch` — manual runs, and the re-baseline path (below).
+
+### Contract
+
+The job builds `hospeda-api` + `hospeda-web`, applies migrations/extras, seeds
+the CI Postgres service, installs Playwright Chromium, boots the API and web
+servers, then runs `pnpm --filter hospeda-web a11y:sweep`. Notes:
+
+- The API boots in **non-production** mode on purpose: production mode would
+  require deploy-only secrets (MercadoPago, Redis, AI vault, email, …) the sweep
+  never uses. The web env still needs valid placeholder `PUBLIC_*` values
+  (mirrored from `ci.yml`) because `astro build` always runs in production mode.
+- Server-boot steps **fail loudly** if the health check never passes, so a boot
+  failure surfaces at the boot step instead of as an opaque `fetch failed` later.
+
+### Baseline gating (known a11y debt)
+
+The sweep is **baseline-gated**: it fails only on **new** critical/serious
+violations, not on the full set. Pre-existing violations are recorded in
+`apps/web/scripts/a11y-sweep/a11y-baseline.json` (keyed by stable route
+**name** and theme, because dynamic detail URLs vary per run) and accepted.
+Clearing that debt is tracked as a **SPEC-270 follow-up**.
+
+To accept a new, intentional, tracked violation set, re-baseline:
+
+1. Run the workflow via **dispatch** with the `update_baseline` input checked.
+2. Download the `a11y-sweep-report` artifact and commit the updated
+   `a11y-baseline.json`.
+
+The report + baseline are always uploaded as an artifact, so the current debt is
+visible — a green run means "no new violations", never "the sweep did not run".
+
+---
+
 ## Related Documentation
 
 - [Deployment Overview](./README.md)
@@ -2575,9 +2631,10 @@ git commit -m "feat(db): add User model with CRUD operations"
 - [First-Time Setup](./first-time-setup.md)
 - [Testing Standards](../../.claude/docs/testing-standards.md)
 - [Development Workflow](../../.claude/docs/development-workflow.md) (atomic commits section)
+- [Web Accessibility Manual Testing](../guides/web-accessibility-manual-testing.md)
 
 ---
 
-**Last Updated**: 2026-04-30
-**Version**: 1.0.0
+**Last Updated**: 2026-06-30
+**Version**: 1.1.0
 **Maintained By**: Tech Lead

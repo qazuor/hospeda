@@ -737,25 +737,27 @@
         {
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "14/15",
             "path": "SPEC-283-graduated-ai-usage-limits-per-plan",
             "parent": "SPEC-211",
-            "branch": "spec/SPEC-283-docs",
+            "branch": "spec/SPEC-283-graduated-ai-usage-limits-per-plan",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized yet. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-1/2/4/5/6 resolved; OQ-3 (values) deferred to implementation. Advertising half is SPEC-282."
+            "note": "Impl started 2026-06-27 (worktree spec/SPEC-283-graduated-ai-usage-limits-per-plan). 15 tasks atomized. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-3 (values) confirmed at impl (T-001). T-009 (advertising table) waits on SPEC-282 merge."
         },
         {
             "specId": "SPEC-282",
             "title": "Web — Plan comparison table page (detailed feature/entitlement/limit breakdown)",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "11/11",
             "path": "SPEC-282-web-plan-comparison-table",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00.000Z",
             "taskCount": 11,
-            "averageComplexity": 2.0
+            "averageComplexity": 2.0,
+            "archived": true,
+            "archivedAt": "2026-06-27"
         },
         {
             "specId": "SPEC-284",
@@ -771,13 +773,13 @@
         {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
-            "branch": null,
+            "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-286",
@@ -805,24 +807,26 @@
         {
             "specId": "SPEC-288",
             "title": "Accommodation Comparison",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "14/14",
+            "archived": true,
+            "archivedAt": "2026-06-29",
             "path": "SPEC-288-accommodation-comparison",
-            "branch": null,
+            "branch": "spec/SPEC-288-accommodation-comparison",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom compare feature (CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS). Surfaced in SPEC-282 review."
+            "note": "Tasks atomized (14, all complexity<=3). Client-only ephemeral compare; gate already exists. Decisions D-1..D-4 in spec.md. Shipped 14/14; closed via the implementation PR (code + index archival together)."
         },
         {
             "specId": "SPEC-289",
             "title": "Search History",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-289-search-history",
-            "branch": null,
+            "branch": "spec/SPEC-289-search-history",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom search-history feature (CAN_VIEW_SEARCH_HISTORY). Surfaced in SPEC-282 review."
+            "note": "OQs resolved 2026-06-29. Entry-count limit (Plus=50/VIP=200, new LimitKey.MAX_SEARCH_HISTORY_ENTRIES), full self-service privacy (delete-one/clear-all/opt-out), dedicated mi-cuenta page. Phasing P1 data+billing / P2 API / P3 web / P4 SPEC-282 table. Impl in progress."
         },
         {
             "specId": "SPEC-290",
@@ -849,13 +853,16 @@
         {
             "specId": "SPEC-292",
             "title": "Featured Listing Management",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "8/8",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1930 (merged to staging 2026-06-30). Deferred review findings tracked in SPEC-309; operational backfill (M-2) in deploy notes.",
             "path": "SPEC-292-featured-listing-management",
-            "branch": null,
+            "branch": "spec/SPEC-292-featured-listing-management",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. isFeatured not settable (no route), FEATURED_LISTING unenforced. Surfaced in SPEC-282 owner audit."
+            "note": "Model locked 2026-06-30: admin manual isFeatured (ungated) + owner automatic featuredByPlan derived from FEATURED_LISTING entitlement (no cap); owner PATCH isFeatured leak closed. 8/8 tasks shipped."
         },
         {
             "specId": "SPEC-293",
@@ -867,6 +874,190 @@
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit."
+        },
+        {
+            "specId": "SPEC-294",
+            "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
+            "status": "completed",
+            "progress": "7/7",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "path": "SPEC-294-a11y-sweep-repair",
+            "branch": "spec/SPEC-294-a11y-sweep-repair",
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "SHIPPED via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: pull_request trigger + sync dispatch, sweep green end-to-end (chained failures fixed), 84 WCAG violations baseline-gated. Debt escalated to SPEC-308."
+        },
+        {
+            "specId": "SPEC-295",
+            "title": "Versioned Seed Data Migrations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-295-versioned-seed-data-migrations",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Seed data evolvable on live DB like schema migrations: versioned data-migrations + ledger, hard-delete with FK guards, dual-write baseline+deltas, both required+example. 6 open questions; OQ-1 (example determinism) is the primary prerequisite."
+        },
+        {
+            "specId": "SPEC-296",
+            "title": "Feature Flags Audit & Toggle System",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-296-feature-flags-audit-and-toggles",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Activation spec: SPEC-276 already built feature-flag infra (tables/service/API/cache), zero flags wired. Audit all features + decide the flag-vs-billing-entitlement boundary. Discovery-first."
+        },
+        {
+            "specId": "SPEC-297",
+            "title": "Social Posts Module Overhaul",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-297-social-posts-module-overhaul",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Overhaul on top of SPEC-254 backend: GPT/MAKE config export, settings enforcement, multi-network+X, multi-format, batch/campaign, dashboard, phosphor, read hospeda.com.ar, date-range, thumbnails, platform multi-select, newsletter unification. Likely split into sub-specs. Discovery-first."
+        },
+        {
+            "specId": "SPEC-298",
+            "title": "Direct Booking Model for Hospeda",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-298-direct-booking-model",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Product-strategy research: subscription vs commission vs hybrid booking model. Greenfield (contact=WhatsApp-only today, subscription-only monetization). Phase 0 = market research + owner business decision before any engineering. Discovery-first."
+        },
+        {
+            "specId": "SPEC-299",
+            "title": "Plan Selector & Comparison Redesign",
+            "status": "completed",
+            "progress": "0/0",
+            "archived": true,
+            "archivedAt": "2026-06-29",
+            "archiveNote": "Implemented + merged to staging via PR #1886 (UI polish: cards redesign/balance/curation, teaser CTA, transactional comparison table with icons/scroll-hint/per-row descriptions). Doc-only spec — tasks never atomized, so progress stays 0/0.",
+            "path": "SPEC-299-plan-selector-comparison-redesign",
+            "branch": "spec/SPEC-299-plan-selector-comparison-redesign",
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Discovery resolved 2026-06-28 (OQ-1..8 locked). UI polish in progress: card highlight=border+tint (no scale), incremental+summary entitlements, mini-section CTA, per-column table CTA, mobile scroll+hint, row icons, neutral table column, owner+tourist both. Coordinate merge with SPEC-283 (PlanComparisonTable)."
+        },
+        {
+            "specId": "SPEC-300",
+            "title": "Admin Navigation & URL Coverage Audit",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-300-admin-navigation-url-audit",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Audit: verify every admin route is UI-reachable, add missing links, remove dead routes, reorder sidebar/menus. Nav in config/ia/sidebars.ts + sections.ts; ~167 routes; 5 gaps + 1 dup pre-found. Phase 1 = full coverage matrix. Discovery-first."
+        },
+        {
+            "specId": "SPEC-301",
+            "title": "Feedback System Production Rework",
+            "status": "completed",
+            "progress": "13/13",
+            "archived": true,
+            "archivedAt": "2026-06-29",
+            "path": "SPEC-301-feedback-system-prod-rework",
+            "branch": "spec/SPEC-301-feedback-system-prod-rework",
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Implementation done (12/13). Only T-013 (manual local smoke to Linear with Turnstile test keys) remains — needs the app running + keys. T-011 form tests + T-012 turnstile tests complete (T-012 was covered by T-009). Fixed admin-integration.test.ts regression from T-010 (FAB->headless host). Owner must set Turnstile keys in Coolify.",
+            "archiveNote": "Closed 2026-06-29 by owner decision. Impl PR #1891 merged to staging. T-013 (manual local smoke to Linear with Turnstile test keys) was DEFERRED — not executed at close time; left as a post-merge operational check. Turnstile env vars still pending in Coolify (PUBLIC_TURNSTILE_SITE_KEY/web, VITE_TURNSTILE_SITE_KEY/admin, HOSPEDA_TURNSTILE_SECRET_KEY/api secret); without them the feedback endpoint fail-closes (403). Follow-up CI fix: ChatIcon added to @repo/icons mock in header-user test (commit 23f24c8f9)."
+        },
+        {
+            "specId": "SPEC-302",
+            "title": "Visual Email Template Editor",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-302-visual-email-template-editor",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Editable email templates for newsletter + notifications. React Email already the engine (35+ templates, Brevo) + TipTap newsletter editor in prod. Real Q = code-only vs visual + who edits (dev vs admin). Maily candidate. Overlaps SPEC-297. Discovery-first."
+        },
+        {
+            "specId": "SPEC-303",
+            "title": "Inactive User Cleanup",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-303-inactive-user-cleanup",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Cleanup users inactive XX time with prior confirmation email. Blocker: no lastLoginAt column (only Better Auth session.createdAt proxy). LifecycleStatusEnum.INACTIVE exists. Cron pattern = trial-expiry.ts; legal/LPDP review. Discovery-first."
+        },
+        {
+            "specId": "SPEC-304",
+            "title": "Standalone Spec-Prioritization Tracker & Viewer",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-304-standalone-prioritization-tracker",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Extract specs-prioritization.csv + render-specs-prioritization.py viewer to a branch-independent standalone tool. Key tension: estado/avance derive from branch-dependent index.json (agent dual-writes today). OQ-1 = how the standalone tool sources/refreshes derived data. Discovery-first."
+        },
+        {
+            "specId": "SPEC-305",
+            "title": "Release Deploy Ledger (Env-Var + Merged-Spec Tracking)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-305-release-deploy-ledger",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-27T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Release/deploy ledger: track env-var deltas (what to hops env-set per app/env) + specs merged to staging (what to smoke-test), so deploy-prep stops being a manual re-audit (BETA-100/101/102). env:check gate has 3 blind spots (Dockerfile ARGs, direct-process-env, optional->required). Tension OQ-1: manual vs auto-derived vs hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-306",
+            "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-306-seo-aeo-category-pages",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Research-only strategy: which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landings vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are worst-of-both: separate pages (duplicate content, lost context) yet noindex (zero SEO). Defines decision rule + URL/canonical/sitemap/structured-data contract + migration reconciling post-U7 state (event /categoria/ now 301 via PR #1910; accommodations /tipo/ still indexable). NO implementation - strategy + child-spec list. Born from U7 hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Coordinated tiptap v2->v3 migration carved from Dependabot #1890 (closed). Both rich-text editors (admin newsletter + entity-form, web host editor): setContent signature change, Link/Underline folded into StarterKit v3, Whats New render path re-verify, plus the missing mount/round-trip tests that let #1890 pass CI green."
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
         }
     ],
     "standalone": {

@@ -111,7 +111,13 @@ export const feedbackSubmitSchema = z.object({
     actualResult: z.string().max(FIELD_LIMITS.actualResult).optional(),
     reporterEmail: z.string().email(),
     reporterName: z.string().min(2).max(FIELD_LIMITS.reporterName),
-    environment: environmentSchema
+    environment: environmentSchema,
+    /**
+     * Cloudflare Turnstile verification token forwarded from the client widget.
+     * Read from parsed JSON data; verified server-side before creating Linear issue.
+     * Optional in schema — presence/absence is enforced by fail-closed logic in submit.ts.
+     */
+    cfTurnstileToken: z.string().optional()
 });
 
 /** Response schema for a successful feedback submission. */

@@ -4,6 +4,13 @@
     "recommended": "Recomendado",
     "trial": "{days} dias grátis",
     "includesEverything": "Tudo do plano {plan}, mais:",
+    "inheritedSummary": "+{count} funções do plano {plan}",
+    "baseHighlightTitle": "Ideal para começar",
+    "baseHighlightText": "Tudo o essencial para começar, sem compromisso.",
+    "group": {
+        "tourist": "Todas as funções de turista",
+        "ai": "Suite de IA: textos, tradução, importação e consultas"
+    },
     "features": {
         "label": "Inclui"
     },
@@ -44,6 +51,8 @@
     "comparison": {
         "link": "Ver comparação detalhada",
         "cta": "Escolher plano",
+        "teaserTitle": "Não sabe qual escolher?",
+        "teaserText": "Compare todas as funções, benefícios e limites lado a lado.",
         "owner": {
             "heading": "Comparação detalhada de planos para anfitriões",
             "title": "Comparação de planos para anfitriões — Hospeda",

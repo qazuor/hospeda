@@ -26,6 +26,7 @@ import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
+import { AccommodationTypeEnum } from '@repo/schemas';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -315,9 +316,11 @@ const listHref = (() => {
 
 // Build per-id maps for popup enrichment. Resolved on the page so the island
 // stays i18n-agnostic and we don't need to serialize functions.
-const TYPE_KEYS = ['APARTMENT', 'HOUSE', 'COUNTRY_HOUSE', 'CABIN', 'HOTEL', 'HOSTEL', 'CAMPING', 'ROOM', 'RESORT'] as const;
+// Derived from the canonical enum so popup labels exist for every type,
+// including the SPEC-213 additions (apart_hotel, estancia, bed_and_breakfast)
+// and motel, which the previous hardcoded list omitted (Bug B10 fix).
 const typeLabels: Record<string, string> = {};
-for (const key of TYPE_KEYS) {
+for (const key of Object.values(AccommodationTypeEnum)) {
 	typeLabels[key] = getAccommodationTypeLabel({ type: key, t });
 }
 const detailHrefById: Record<string, string> = {};

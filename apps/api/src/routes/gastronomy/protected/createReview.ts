@@ -12,9 +12,17 @@ import type { z } from '@hono/zod-openapi';
 import { GastronomyReviewCreateInputSchema, GastronomyReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+
+/** Stricter per-user write budget: 30 review submissions per hour. */
+const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({
+    windowMs: 3_600_000,
+    max: 30,
+    keyPrefix: 'prot:write:review'
+});
 
 /**
  * Protected projection for the review response: omits admin-only moderation
@@ -76,5 +84,8 @@ export const protectedCreateGastronomyReviewRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        middlewares: [writeReviewRateLimit]
     }
 });

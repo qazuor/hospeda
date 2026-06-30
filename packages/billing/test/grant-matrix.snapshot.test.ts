@@ -1,11 +1,14 @@
 /**
- * AC-4.3 — Final AI grant-matrix snapshot test (SPEC-211 Phase 4 §6.2).
+ * AC-4.3 — AI grant-matrix snapshot test (SPEC-211 Phase 4 §6.2, revised by
+ * SPEC-283 — graduated per-plan AI usage limits).
  *
- * Asserts the COMPLETE, post-all-phases AI entitlement matrix across every
- * plan × every AI EntitlementKey. Any future change that:
- *   - re-adds ai_chat or ai_search to any plan, or
+ * Asserts the COMPLETE AI entitlement + limit matrix across every plan × every
+ * AI key. Any future change that:
+ *   - re-adds the ai_chat or ai_search ENTITLEMENT to a plan that should not
+ *     grant it (ai_search is auth-baseline — no entitlement on any plan), or
  *   - grants ai_support directly on a plan (instead of via addon), or
- *   - adds/removes ai_text_improve from any plan in the wrong direction,
+ *   - adds/removes ai_text_improve from any plan in the wrong direction, or
+ *   - drifts a per-plan AI LIMIT value away from the SPEC-283 graduated tiers,
  * will cause this test to fail immediately.
  *
  * Design
@@ -48,6 +51,7 @@ type AiEntitlementKey = (typeof AI_ENTITLEMENTS)[number];
 const AI_LIMIT_KEYS = [
     LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
     LimitKey.MAX_AI_CHAT_PER_MONTH,
+    LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
     LimitKey.MAX_AI_SEARCH_PER_MONTH,
     LimitKey.MAX_AI_SUPPORT_PER_MONTH
 ] as const;
@@ -55,14 +59,21 @@ const AI_LIMIT_KEYS = [
 // ─── Expected grant matrix (§6.2 final state) ─────────────────────────────
 
 /**
- * The authoritative expected AI grant matrix derived from SPEC-211 §6.2.
+ * The authoritative expected AI grant matrix derived from SPEC-211 §6.2 as
+ * revised by SPEC-283 (graduated per-plan AI usage limits).
  *
- * Rules encoded here:
+ * ENTITLEMENT rules (unchanged from SPEC-211):
  *   - AI_TEXT_IMPROVE: owner-* + complex-* = yes; tourist-* = no.
- *   - AI_CHAT:         owner-* + complex-* = yes; tourist-* = NO
- *                      (removed in T-003 / Phase 1).
- *   - AI_SEARCH:       NO plan (removed in T-004 / Phase 3; platform feature).
+ *   - AI_CHAT:         owner-* + complex-* = yes; tourist-* = NO (owner-paid).
+ *   - AI_SEARCH:       NO plan — auth-baseline, no entitlement (OQ-1).
  *   - AI_SUPPORT:      NO plan (addon-only, not a plan entitlement; Phase 4).
+ *
+ * LIMIT rules (SPEC-283 — graduated per CONSUMER tier):
+ *   - MAX_AI_SEARCH_PER_MONTH + MAX_AI_CHAT_CONSUMER_PER_MONTH are present on
+ *     EVERY plan, keyed on the consuming user: tourist-free=10, tourist-plus=50,
+ *     tourist-vip + all owner/complex (as consumers)=200 (OQ-4).
+ *   - MAX_AI_CHAT_PER_MONTH (owner-side cost cap) stays owner/complex-only.
+ *   - No AI limit is ever -1 (SPEC-211 §6.1 cost guardrail holds).
  */
 interface PlanAiExpectation {
     /** Which AI entitlements the plan MUST grant. */
@@ -82,50 +93,80 @@ interface PlanAiExpectation {
 const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
     'owner-basico': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        limitValues: [20, 20]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        limitValues: [20, 20, 200, 200]
     },
     'owner-pro': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        limitValues: [100, 100]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        limitValues: [100, 100, 200, 200]
     },
     'owner-premium': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        // Phase 0 §6.1: -1 replaced with finite values
-        limitValues: [1000, 2000]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        // Phase 0 §6.1: -1 replaced with finite values; SPEC-283 consumer quotas at 200
+        limitValues: [1000, 2000, 200, 200]
     },
     'complex-basico': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        limitValues: [30, 30]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        limitValues: [30, 30, 200, 200]
     },
     'complex-pro': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        limitValues: [150, 150]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        limitValues: [150, 150, 200, 200]
     },
     'complex-premium': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, LimitKey.MAX_AI_CHAT_PER_MONTH],
-        // Phase 0 §6.1: -1 replaced with finite values
-        limitValues: [2000, 5000]
+        limitsPresent: [
+            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_PER_MONTH,
+            LimitKey.MAX_AI_SEARCH_PER_MONTH,
+            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+        ],
+        // Phase 0 §6.1: -1 replaced with finite values; SPEC-283 consumer quotas at 200
+        limitValues: [2000, 5000, 200, 200]
     },
     'tourist-free': {
         grants: [],
-        limitsPresent: [],
-        limitValues: []
+        limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
+        limitValues: [10, 10]
     },
     'tourist-plus': {
         grants: [],
-        limitsPresent: [],
-        limitValues: []
+        limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
+        limitValues: [50, 50]
     },
     'tourist-vip': {
         grants: [],
-        limitsPresent: [],
-        limitValues: []
+        limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
+        limitValues: [200, 200]
     }
 } as const;
 
@@ -209,19 +250,52 @@ describe('AI grant-matrix snapshot (SPEC-211 §6.2 — AC-4.3)', () => {
     // ── Cross-plan structural invariants ──────────────────────────────────
 
     describe('cross-plan invariants', () => {
-        it('AI_SEARCH is absent from every plan (platform-only feature, Phase 3)', () => {
+        it('AI_SEARCH entitlement is absent from every plan (auth-baseline, no entitlement gate — SPEC-283 OQ-1)', () => {
             for (const plan of ALL_PLANS) {
                 expect(
                     plan.entitlements,
-                    `plan "${plan.slug}" must not grant AI_SEARCH`
+                    `plan "${plan.slug}" must not grant AI_SEARCH (auth-baseline)`
                 ).not.toContain(EntitlementKey.AI_SEARCH);
+            }
+        });
+
+        it('MAX_AI_SEARCH_PER_MONTH is present and finite on every plan (SPEC-283 graduated quota)', () => {
+            for (const plan of ALL_PLANS) {
                 const searchLimit = plan.limits.find(
                     (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
                 );
                 expect(
                     searchLimit,
-                    `plan "${plan.slug}" must not carry MAX_AI_SEARCH_PER_MONTH`
-                ).toBeUndefined();
+                    `plan "${plan.slug}" must carry MAX_AI_SEARCH_PER_MONTH (SPEC-283)`
+                ).toBeDefined();
+                expect(
+                    searchLimit?.value,
+                    `plan "${plan.slug}" search quota must be > 0`
+                ).toBeGreaterThan(0);
+                expect(
+                    searchLimit?.value,
+                    `plan "${plan.slug}" search quota must not be -1`
+                ).not.toBe(-1);
+            }
+        });
+
+        it('MAX_AI_CHAT_CONSUMER_PER_MONTH is present and finite on every plan (SPEC-283 two-sided chat)', () => {
+            for (const plan of ALL_PLANS) {
+                const consumerLimit = plan.limits.find(
+                    (l) => l.key === LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+                );
+                expect(
+                    consumerLimit,
+                    `plan "${plan.slug}" must carry MAX_AI_CHAT_CONSUMER_PER_MONTH (SPEC-283)`
+                ).toBeDefined();
+                expect(
+                    consumerLimit?.value,
+                    `plan "${plan.slug}" consumer chat quota must be > 0`
+                ).toBeGreaterThan(0);
+                expect(
+                    consumerLimit?.value,
+                    `plan "${plan.slug}" consumer chat quota must not be -1`
+                ).not.toBe(-1);
             }
         });
 
