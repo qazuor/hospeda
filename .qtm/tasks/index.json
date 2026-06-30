@@ -1044,6 +1044,17 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
+        },
+        {
+            "specId": "SPEC-309",
+            "title": "Featured Listing — Addon Source + Hardening",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-309-featured-listing-addon-source-and-hardening",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
         }
     ],
     "standalone": {
