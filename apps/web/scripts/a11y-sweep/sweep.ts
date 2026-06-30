@@ -29,7 +29,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/nosotros/', name: 'About' },
     { url: '/es/preguntas-frecuentes/', name: 'FAQ' },
     { url: '/es/contacto/', name: 'Contact' },
-    { url: '/es/suscriptores/precios/', name: 'Pricing' },
+    { url: '/es/suscriptores/planes/', name: 'Pricing' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];
