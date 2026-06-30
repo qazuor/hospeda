@@ -108,8 +108,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 241 (SPEC-301 T-010): +1 admin Turnstile site key:
  * - VITE_TURNSTILE_SITE_KEY (Cloudflare Turnstile for admin feedback form)
  * (integrations category, optional, secret=false, apps: ['admin'])
+ *
+ * 246 (I4 build-vars): +5 build-stage variables newly registered so the
+ * registry covers build-time inputs, enforced against the Dockerfiles:
+ * - HOSPEDA_GIT_SHA, SOURCE_COMMIT (platform-injected), HOSPEDA_LANDING_SITE_URL,
+ *   ALLOW_PLACEHOLDER_ENV_URLS, ANALYZE
+ * (all `category: 'build'`, `stage: 'build'`, `apps: ['docker']`, optional, non-secret)
  */
-const EXPECTED_VAR_COUNT = 241;
+const EXPECTED_VAR_COUNT = 246;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
