@@ -187,22 +187,22 @@
             "id": "T-006",
             "title": "Implement featuredByPlan reconciliation cron",
             "description": "Create a reconciliation cron that periodically audits featuredByPlan against the source-of-truth entitlement, correcting any drift that billing event hooks may have missed. Pattern mirrors apps/api/src/cron/jobs/trial-expiry.ts and other billing crons.\n\nCreate apps/api/src/cron/jobs/featured-by-plan-reconcile.ts:\n- Fetch all distinct ownerId values from accommodations (non-deleted)\n- For each ownerId, resolve their billing customer and call loadEntitlements + hasEntitlement(FEATURED_LISTING) (via the runtime gate at apps/api/src/middlewares/entitlement.ts:411/1014 or the underlying service)\n- Compare resolved active state against current featuredByPlan on their accommodations\n- Call syncFeaturedByPlan(ownerId, active) only when there is drift (avoid unnecessary writes)\n- Log corrected owner count and total updated rows via @repo/logger\n- Register the cron in the scheduler with an appropriate interval (suggested: every 6 hours, consistent with the cron-lag grace period documented in CLAUDE.md)\n\nKey files:\n- apps/api/src/cron/jobs/featured-by-plan-reconcile.ts (new)\n- apps/api/src/cron/index.ts or cron scheduler file (register the new cron)\n\nAcceptance criteria:\n- Cron runs without error when all featuredByPlan values are already correct (zero-drift fast path).\n- Cron corrects drift: an owner whose FEATURED_LISTING lapsed but still has featuredByPlan=true is cleared.\n- Cron corrects drift: an owner who has FEATURED_LISTING active but featuredByPlan=false is set.\n- Logs include corrected-count and total-updated for observability.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test: zero-drift path (no writes), drift-clear path, drift-set path. Covered by T-007.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Create featured-by-plan-reconcile.ts cron job file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement per-owner entitlement check + drift detection + selective sync",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register cron in scheduler with 6h interval",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "cron", "billing", "reconciliation"],
@@ -214,8 +214,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {

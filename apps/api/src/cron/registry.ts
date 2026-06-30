@@ -20,6 +20,7 @@ import {
     dunningJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
+    featuredByPlanReconcileJob,
     finalizeCancelledSubsJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
@@ -72,7 +73,8 @@ export const cronJobs: CronJobDefinition[] = [
     refreshExternalReputationJob,
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
-    partnerExpiryJob
+    partnerExpiryJob,
+    featuredByPlanReconcileJob
 ];
 
 /**
