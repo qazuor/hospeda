@@ -80,7 +80,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
-        "@commitlint/cli": "^19.8.1",
+        "@commitlint/cli": "^21.2.0",
         "@commitlint/config-conventional": "^21.1.0",
         "@inquirer/prompts": "^8.5.2",
         "@playwright/test": "^1.60.0",
