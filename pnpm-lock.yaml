@@ -287,8 +287,8 @@ importers:
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/extension-underline':
-        specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        specifier: ^3
+        version: 3.27.1(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/react':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -845,8 +845,8 @@ importers:
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/extension-underline':
-        specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        specifier: ^3
+        version: 3.27.1(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/react':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -6162,10 +6162,10 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.7.0
 
-  '@tiptap/extension-underline@2.27.2':
-    resolution: {integrity: sha512-gPOsbAcw1S07ezpAISwoO8f0RxpjcSH7VsHEFDVuXm4ODE32nhvSinvHQjv2icRLOXev+bnA7oIBu7Oy859gWQ==}
+  '@tiptap/extension-underline@3.27.1':
+    resolution: {integrity: sha512-N889J4nXN/TPfVt8uF9N1A0SY82E90zwc1y26lqOcw6KWNLmQrlhMh/9OD4ikLDbekmFpOBq/UicpHf/6S8hbQ==}
     peerDependencies:
-      '@tiptap/core': ^2.7.0
+      '@tiptap/core': 3.27.1
 
   '@tiptap/pm@2.27.2':
     resolution: {integrity: sha512-kaEg7BfiJPDQMKbjVIzEPO3wlcA+pZb2tlcK9gPrdDnEFaec2QTF1sXz2ak2IIb2curvnIrQ4yrfHgLlVA72wA==}
@@ -16339,9 +16339,7 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.85.3': {}
 
@@ -17883,7 +17881,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
-  '@tiptap/extension-underline@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
+  '@tiptap/extension-underline@3.27.1(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
