@@ -200,6 +200,13 @@ export interface AccommodationCardData {
      * can hide the photo-count badge.
      */
     readonly photoCount?: number;
+    /**
+     * F1: Whether the owning host has the AI chat assistant available on this
+     * listing (owner-level AI_CHAT entitlement, resolved server-side on the
+     * public list endpoint). Drives the "Chat IA" card badge. Undefined when the
+     * API response did not enrich it.
+     */
+    readonly hasAiChat?: boolean;
 }
 
 /**

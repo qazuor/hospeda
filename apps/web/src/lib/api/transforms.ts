@@ -273,7 +273,10 @@ export function toAccommodationCardProps({
             if (item.favoriteBookmarkId === undefined) return undefined;
             return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
         })(),
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
+        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined,
+        // F1: owner-level AI_CHAT entitlement, surfaced by the public list
+        // endpoint. Absent on responses that don't enrich it.
+        hasAiChat: item.hasAiChat !== undefined ? Boolean(item.hasAiChat) : undefined
     };
 }
 
