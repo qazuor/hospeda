@@ -44,7 +44,7 @@
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",
-        "prepare": "husky install || true",
+        "prepare": "husky install || true && pnpm --filter @repo/i18n generate-types || true",
         "build:api": "pnpm --filter hospeda-api build",
         "deploy:api": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Deployments moved off Vercel to Coolify (VPS) in Phase 16.3. Trigger a deploy from Coolify UI or:  hops redeploy api'); process.exit(2)\"",
         "deploy:web": "node -e \"console.error('\\x1b[33m[deprecated]\\x1b[0m Deployments moved off Vercel to Coolify (VPS) in Phase 16.3. Trigger a deploy from Coolify UI or:  hops redeploy web'); process.exit(2)\"",

@@ -46,6 +46,14 @@
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
             "outputs": [".output/**", ".tanstack/**", "src/routeTree.gen.ts"]
         },
+        "@repo/i18n#build": {
+            "dependsOn": ["^build"],
+            "inputs": ["src/locales/**/*.json", "scripts/generate-types.ts"],
+            "outputs": ["src/types.ts"]
+        },
+        "@repo/i18n#typecheck": {
+            "dependsOn": ["^build", "build"]
+        },
         "lint": {
             "dependsOn": ["^build"],
             "outputs": []

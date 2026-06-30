@@ -18,6 +18,7 @@
         "./locales/*": "./src/locales/*"
     },
     "scripts": {
+        "build": "tsx scripts/generate-types.ts",
         "generate-types": "tsx scripts/generate-types.ts",
         "check-locales": "tsx scripts/check-locales.ts",
         "test": "vitest run --passWithNoTests",
