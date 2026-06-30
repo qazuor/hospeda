@@ -151,7 +151,8 @@ function buildBasePriceConditions(
  * Compose the full ORDER BY list for accommodation search queries.
  *
  * Precedence (applied in order):
- *   1. `featuredFirst` pin     → `isFeatured DESC` prepended.
+ *   1. `featuredFirst` pin     → `(isFeatured OR featuredByPlan) DESC` prepended
+ *                                (SPEC-292: admin-curated OR plan-derived featuring).
  *   2. `sorts[]` if present    → iterated in declared order. Any `isFeatured`
  *                                entry is dropped when `featuredFirst` is pinned
  *                                (prevents a duplicated `ORDER BY is_featured`).
@@ -181,7 +182,11 @@ export function buildAccommodationOrderBy(params: {
     const orderBy: SQL[] = [];
 
     if (params.featuredFirst) {
-        orderBy.push(desc(accommodations.isFeatured));
+        // SPEC-292 — effective featured = admin-curated (`isFeatured`) OR
+        // plan-derived (`featuredByPlan`, set by the billing sync). Order by the
+        // disjunction so both surface first; PG's BitmapOr combines the parallel
+        // btree indexes on the two columns.
+        orderBy.push(desc(sql`(${accommodations.isFeatured} OR ${accommodations.featuredByPlan})`));
     }
 
     const legacyFallback: SortField[] =

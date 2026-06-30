@@ -854,7 +854,7 @@
             "specId": "SPEC-292",
             "title": "Featured Listing Management",
             "status": "in-progress",
-            "progress": "1/8",
+            "progress": "2/8",
             "path": "SPEC-292-featured-listing-management",
             "branch": "spec/SPEC-292-featured-listing-management",
             "base": "staging",

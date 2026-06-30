@@ -47,14 +47,14 @@
             "id": "T-002",
             "title": "Update buildAccommodationOrderBy to sort by effective featured disjunction",
             "description": "Modify buildAccommodationOrderBy in packages/db/src/models/accommodation/accommodation.model.ts (lines 166-196) to order by the effective featured boolean: sql<boolean>`${accommodations.isFeatured} OR ${accommodations.featuredByPlan}` descending, replacing the current desc(accommodations.isFeatured) at line 183-184. The forced featuredFirst: true in apps/api/src/routes/accommodation/public/list.ts:175 is unchanged — that call site still passes featuredFirst and is correct as-is.\n\nKey files:\n- packages/db/src/models/accommodation/accommodation.model.ts (buildAccommodationOrderBy)\n\nAcceptance criteria:\n- Public listing search returns accommodations with isFeatured=true OR featuredByPlan=true before non-featured ones.\n- Neither column alone is sufficient — both independently trigger the prepend.\n- pnpm typecheck green.\n- The forced featuredFirst path in list.ts is unchanged (no modification to that file).\n\nTesting requirements:\n- Covered by T-007 search integration test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Replace desc(accommodations.isFeatured) with sql OR disjunction in buildAccommodationOrderBy",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "database", "search"],
@@ -66,8 +66,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {
