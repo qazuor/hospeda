@@ -261,14 +261,14 @@
             "id": "T-008",
             "title": "Add SPEC-282 follow-up cross-reference note",
             "description": "The spec §8 notes that the Listing destacado — Proximamente row in the SPEC-282 plan-comparison table should be flipped to active once this spec ships. That flip is tracked in SPEC-282, not built here. This task is the signal: once T-007 is green and the PR is merged, leave a cross-reference note for the SPEC-282 owner.\n\nAdd a brief comment in the SPEC-292 progress.md (or this state.json archiveNote field at close-out) pointing to the SPEC-282 plan-comparison table and noting the Listing destacado row can now show as active. No code change is required — this is a post-ship handoff note only.\n\nAlternatively, if the featured listing row in the plan-comparison page is a simple i18n label change inside apps/web, and it is trivially doable (one-line change), include it here. Otherwise, defer to SPEC-282.\n\nAcceptance criteria:\n- A clear cross-reference exists in the task artifacts linking this spec to the SPEC-282 Listing destacado row follow-up.\n- If the flip is trivial (one-line i18n or config change), it is done here; otherwise a note is left.\n\nTesting requirements:\n- None beyond a visual check of the plan-comparison page if the flip is done here.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Leave cross-reference note linking SPEC-282 Listing destacado row to this spec",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "spec-282"],
@@ -280,16 +280,16 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 8,
-        "pending": 8,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.9
     }
