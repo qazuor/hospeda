@@ -36,6 +36,7 @@ import {
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { hasEntitlement } from '../../../middlewares/entitlement';
+import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
 import type { AppBindings } from '../../../types';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -65,6 +66,59 @@ function stripRichDescription<T extends { richDescription?: unknown }>(
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 const searchHistoryService = new SearchHistoryService({ logger: apiLogger });
+
+/**
+ * Read-through cache for the owner-level AI_CHAT availability used by the
+ * listing-card "Chat IA" badge (F1).
+ *
+ * `resolveOwnerEntitlementsForOwnerId` deliberately has NO cache of its own — it
+ * resolves a fresh set on every call (one owner-role DB query plus billing
+ * subscription/plan lookups). Without this cache every cold listing render would
+ * re-resolve every distinct owner on the page. A small per-owner cache with the
+ * same 5-minute TTL used elsewhere for owner billing data keeps the public
+ * listing cheap; a 5-minute-stale badge is purely cosmetic (the real chat gate
+ * is enforced server-side at message time, not from this value). Kept LOCAL to
+ * this route on purpose: it must not alter the freshness of the metered chat
+ * route's entitlement gate, which shares the same resolver.
+ */
+interface OwnerAiChatCacheEntry {
+    readonly value: boolean;
+    readonly timestamp: number;
+}
+const OWNER_AI_CHAT_TTL_MS = 5 * 60 * 1000;
+const OWNER_AI_CHAT_CACHE_MAX = 1000;
+const ownerAiChatCache = new Map<string, OwnerAiChatCacheEntry>();
+
+/**
+ * Resolve whether an owner's plan grants AI_CHAT, with a 5-minute read-through
+ * cache. Fail-closed: resolution errors return `false` and are NOT cached (so a
+ * transient billing outage doesn't pin a wrong value for 5 minutes).
+ */
+async function resolveOwnerHasAiChat(ownerId: string): Promise<boolean> {
+    const cached = ownerAiChatCache.get(ownerId);
+    if (cached && Date.now() - cached.timestamp < OWNER_AI_CHAT_TTL_MS) {
+        return cached.value;
+    }
+    try {
+        const ownerEntitlements = await resolveOwnerEntitlementsForOwnerId(ownerId);
+        const value = ownerEntitlements.includes(EntitlementKey.AI_CHAT);
+        // FIFO eviction once at capacity, mirroring the owner-limits cache.
+        if (ownerAiChatCache.size >= OWNER_AI_CHAT_CACHE_MAX) {
+            const oldest = ownerAiChatCache.keys().next().value;
+            if (oldest !== undefined) {
+                ownerAiChatCache.delete(oldest);
+            }
+        }
+        ownerAiChatCache.set(ownerId, { value, timestamp: Date.now() });
+        return value;
+    } catch (err) {
+        apiLogger.warn(
+            'F1: owner AI_CHAT entitlement resolution failed (badge omitted)',
+            err instanceof Error ? err.message : String(err)
+        );
+        return false;
+    }
+}
 
 /**
  * Allowed sort fields for public accommodation list.
@@ -238,7 +292,35 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // renders it, so the field is stripped here before reaching the response
         // payload — fail-closed and independent of any schema change.
         const rawItems = result.data?.items || [];
-        const items = rawItems.map(stripRichDescription);
+
+        // F1: surface whether each accommodation's owner has the AI_CHAT
+        // entitlement, so the listing card can show a "Chat IA" badge. This is
+        // the same owner-level entitlement the chat route gates on — there is no
+        // per-accommodation flag. OwnerIds are deduped per page and resolved
+        // through `resolveOwnerHasAiChat`, a 5-minute read-through cache, so a
+        // page costs at most one billing lookup per distinct, cache-cold owner.
+        // Fail-closed: any resolution error => no badge for that owner.
+        const uniqueOwnerIds = [
+            ...new Set(
+                rawItems
+                    .map((item) => (item as { ownerId?: string }).ownerId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        const aiChatByOwner = new Map<string, boolean>();
+        await Promise.all(
+            uniqueOwnerIds.map(async (ownerId) => {
+                aiChatByOwner.set(ownerId, await resolveOwnerHasAiChat(ownerId));
+            })
+        );
+
+        const items = rawItems.map((item) => {
+            const ownerId = (item as { ownerId?: string }).ownerId;
+            return {
+                ...stripRichDescription(item),
+                hasAiChat: ownerId ? (aiChatByOwner.get(ownerId) ?? false) : false
+            };
+        });
 
         return {
             items,

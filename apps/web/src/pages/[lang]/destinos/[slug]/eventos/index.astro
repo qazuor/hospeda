@@ -71,11 +71,19 @@ const resolvedCards = cards.map((card) => {
 });
 
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
+
+// Heading scoped to the destination — "Eventos en {Ciudad}" (localized). The
+// city moves into the H1 (and <title>); the decorative tagline reverts to the
+// generic listing tagline so the city is not shown twice.
+const heading = t('events.typeInLocation', '{{type}} en {{location}}', {
+	type: t('events.title', 'Eventos'),
+	location: destName
+});
 ---
 
-<ListingLayout locale={locale} title={`${t('events.title', 'Eventos')} en ${destName}`} showFilters={false}>
+<ListingLayout locale={locale} title={heading} showFilters={false}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('events.title', 'Eventos') }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={destName} title={t('events.title', 'Eventos')} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.tagline', 'No te pierdas nada')} title={heading} totalCount={total} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && resolvedCards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: 'eventos' })} actionLabel={t('events.viewAll', 'Ver todos los eventos')} />}
 	{!hasError && resolvedCards.length > 0 && (

@@ -875,13 +875,15 @@
         {
             "specId": "SPEC-294",
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "7/7",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
             "path": "SPEC-294-a11y-sweep-repair",
-            "branch": null,
+            "branch": "spec/SPEC-294-a11y-sweep-repair",
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. A11y Sweep broken since SPEC-270 (post-merge trigger). B1-B3 (NODE_ENV, filter names, SENTRY) fixed in #1865/#1867; this spec owns B4+ and the pre-merge trigger."
+            "note": "SHIPPED via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: pull_request trigger + sync dispatch, sweep green end-to-end (chained failures fixed), 84 WCAG violations baseline-gated. Debt escalated to SPEC-308."
         },
         {
             "specId": "SPEC-295",
@@ -1020,6 +1022,28 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Research-only strategy: which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landings vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are worst-of-both: separate pages (duplicate content, lost context) yet noindex (zero SEO). Defines decision rule + URL/canonical/sitemap/structured-data contract + migration reconciling post-U7 state (event /categoria/ now 301 via PR #1910; accommodations /tipo/ still indexable). NO implementation - strategy + child-spec list. Born from U7 hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Coordinated tiptap v2->v3 migration carved from Dependabot #1890 (closed). Both rich-text editors (admin newsletter + entity-form, web host editor): setContent signature change, Link/Underline folded into StarterKit v3, Whats New render path re-verify, plus the missing mount/round-trip tests that let #1890 pass CI green."
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
         }
     ],
     "standalone": {

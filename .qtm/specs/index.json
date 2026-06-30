@@ -2322,7 +2322,10 @@
             "title": "Repair the A11y Sweep CI workflow (broken since SPEC-270) + move it pre-merge",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-30T00:00:00Z",
+            "archiveNote": "Shipped via PR #1914 (merged to staging 2026-06-30). All 7 tasks done: A11y Sweep runs green end-to-end pre-merge (pull_request trigger), failures unmasked + fixed, 84 real WCAG violations baseline-gated. Debt escalated to SPEC-308.",
             "path": "SPEC-294-a11y-sweep-repair",
             "created": "2026-06-27T00:00:00Z",
             "base": "staging",
@@ -2484,6 +2487,45 @@
             "base": "staging",
             "origin": "Split out of U7 (events-filter UX) as the 'do-it-right' half of a hybrid decision. Research-only strategy spec: decide which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landing pages vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are the worst of both worlds: separate pages (duplicate content, lost context) that are noindex (zero SEO benefit). Defines the decision rule + URL/canonical/sitemap/structured-data/metadata contract + a migration reconciling the post-U7 state (event /categoria/ now 301-redirected by PR #1910; accommodations /tipo/ still indexable). NO implementation - produces strategy + child-spec list. OQ-1: concrete criterion for landing-vs-filter. OQ-2: canonical = path or query. OQ-4: reconcile the U7 redirects. Doc-only discovery-first.",
             "tags": ["seo", "aeo", "ia", "listings", "facets", "strategy", "discovery"]
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "tags": [
+                "tiptap",
+                "dependencies",
+                "admin",
+                "web",
+                "rich-text-editor",
+                "major-upgrade",
+                "dependabot"
+            ]
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "type": "bugfix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-294 (PR #1914, 2026-06-30): once the A11y Sweep ran green end-to-end, axe-core reported 84 real WCAG violations (6 critical, 56 serious). SPEC-294 baselined them so the workflow gates on regressions; this spec owns clearing the baseline.",
+            "dependsOn": ["SPEC-294"],
+            "tags": [
+                "a11y",
+                "accessibility",
+                "wcag",
+                "web",
+                "spec-270-followup",
+                "spec-294-followup"
+            ]
         }
     ]
 }
