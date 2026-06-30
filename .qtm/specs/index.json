@@ -2262,7 +2262,7 @@
             "title": "Search History",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-289-search-history",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",

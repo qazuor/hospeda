@@ -820,13 +820,13 @@
         {
             "specId": "SPEC-289",
             "title": "Search History",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-289-search-history",
-            "branch": null,
+            "branch": "spec/SPEC-289-search-history",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom search-history feature (CAN_VIEW_SEARCH_HISTORY). Surfaced in SPEC-282 review."
+            "note": "OQs resolved 2026-06-29. Entry-count limit (Plus=50/VIP=200, new LimitKey.MAX_SEARCH_HISTORY_ENTRIES), full self-service privacy (delete-one/clear-all/opt-out), dedicated mi-cuenta page. Phasing P1 data+billing / P2 API / P3 web / P4 SPEC-282 table. Impl in progress."
         },
         {
             "specId": "SPEC-290",

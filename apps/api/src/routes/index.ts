@@ -140,6 +140,7 @@ import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js'
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
+import { protectedSearchHistoryRoutes } from './search-history';
 import { publicSearchRoutes } from './search/public';
 import {
     adminGetGptActionSchemaRoute,
@@ -371,6 +372,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
             '/api/v1/protected/user-bookmark-collections',
             protectedUserBookmarkCollectionRoutes
         );
+        // Search history (SPEC-289 — entitlement-gated, plan-limited)
+        app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

@@ -40,6 +40,7 @@ export * from './user/user.service';
 export * from './weather/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
+export * from './userSearchHistory/index.js';
 export * from './billing';
 export * from './commerce';
 export * from './gastronomy';

@@ -510,6 +510,39 @@ export function createDbMock() {
             }
         },
 
+        // SPEC-289: UserSearchHistoryModel — instantiated at module scope in
+        // routes/accommodation/public/list.ts (SearchHistoryService constructor).
+        // Expose both a class (for new UserSearchHistoryModel()) and a singleton
+        // (for the `userSearchHistoryModel` import) so initApp() loads cleanly.
+        UserSearchHistoryModel: class MockUserSearchHistoryModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown, _pagination?: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return { id: 'search_history_mock_id', createdAt: new Date() };
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return 0;
+            }
+            async count(_filters: unknown, _opts?: unknown) {
+                return 0;
+            }
+            raw = vi.fn().mockResolvedValue(undefined);
+        },
+        userSearchHistoryModel: {
+            findById: vi.fn().mockResolvedValue(null),
+            findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            create: vi
+                .fn()
+                .mockResolvedValue({ id: 'search_history_mock_id', createdAt: new Date() }),
+            hardDelete: vi.fn().mockResolvedValue(0),
+            count: vi.fn().mockResolvedValue(0),
+            raw: vi.fn().mockResolvedValue(undefined)
+        },
+
         // Mock UserIdentityModel
         UserIdentityModel: class MockUserIdentityModel {
             async findById(_id: string) {

@@ -42,7 +42,8 @@ export type IdTypes =
     | 'ownerPromotion'
     | 'sponsorship'
     | 'sponsorshipLevel'
-    | 'sponsorshipPackage';
+    | 'sponsorshipPackage'
+    | 'userSearchHistory';
 
 function generateValidUuidFromLabel(label: string): string {
     const hash = crypto.createHash('md5').update(label).digest('hex');

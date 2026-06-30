@@ -1,0 +1,395 @@
+/**
+ * SearchHistoryList.module.css
+ * Colocated CSS Module for the SearchHistoryList React island (SPEC-289 P3).
+ * Uses design tokens only — no Tailwind utility classes.
+ */
+
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.search-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ─── Loading / error states ─────────────────────────────────────────────── */
+
+.search-history__loading {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    padding: var(--space-8) 0;
+    text-align: center;
+}
+
+.search-history__error {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    padding: var(--space-4) var(--space-5);
+}
+
+.search-history__retry-btn {
+    align-self: flex-start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.search-history__retry-btn:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+/* ─── Opt-out preference toggle ────────────────────────────────────────────── */
+
+.search-history__opt-out {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+}
+
+.search-history__opt-out-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1 1 auto;
+}
+
+.search-history__opt-out-label {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.search-history__opt-out-desc {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* Switch-style toggle button */
+.search-history__toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+    flex-shrink: 0;
+}
+
+.search-history__toggle--on {
+    background-color: var(--brand-primary);
+}
+
+.search-history__toggle--off {
+    background-color: var(--core-muted-foreground-a40);
+}
+
+.search-history__toggle:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.search-history__toggle-thumb {
+    position: absolute;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform var(--duration-fast) ease;
+    pointer-events: none;
+}
+
+.search-history__toggle--on .search-history__toggle-thumb {
+    transform: translateX(22px);
+}
+
+.search-history__toggle--off .search-history__toggle-thumb {
+    transform: translateX(3px);
+}
+
+/* Screen-reader only label */
+.search-history__toggle-label-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ─── Header (clear-all) ────────────────────────────────────────────────────── */
+
+.search-history__header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.search-history__clear-btn {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--destructive, oklch(0.6 0.22 25));
+    background: transparent;
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.search-history__clear-btn:hover:enabled {
+    background-color: var(--destructive-a08);
+}
+
+.search-history__clear-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Inline confirmation row */
+.search-history__confirm-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.search-history__confirm-question {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin-right: var(--space-1);
+}
+
+.search-history__confirm-yes {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: var(--destructive, oklch(0.6 0.22 25));
+    border: none;
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: opacity var(--duration-fast) ease;
+}
+
+.search-history__confirm-yes:hover {
+    opacity: 0.85;
+}
+
+.search-history__confirm-no {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    background: transparent;
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.search-history__confirm-no:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+/* ─── List ────────────────────────────────────────────────────────────────── */
+
+.search-history__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ─── Entry card ────────────────────────────────────────────────────────────── */
+
+.search-history__item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    transition: opacity var(--duration-fast) ease;
+}
+
+.search-history__item--deleting {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.search-history__item-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.search-history__item-query {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-history__item-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.search-history__filter-badge {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    background-color: var(--brand-primary-a10);
+    border-radius: var(--radius-pill);
+    padding: 2px var(--space-2);
+    white-space: nowrap;
+}
+
+.search-history__result-count {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+.search-history__item-time {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+/* ─── Per-item actions ────────────────────────────────────────────────────── */
+
+.search-history__item-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.search-history__rerun-btn {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    background: transparent;
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.search-history__rerun-btn:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+}
+
+.search-history__delete-btn {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+
+.search-history__delete-btn:hover:enabled {
+    color: var(--destructive, oklch(0.6 0.22 25));
+    border-color: var(--destructive-a25);
+}
+
+.search-history__delete-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.search-history__delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.search-history__empty {
+    padding: var(--space-12) var(--space-4);
+    text-align: center;
+}
+
+.search-history__empty-title {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3);
+}
+
+.search-history__empty-body {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 36ch;
+    margin: 0 auto;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .search-history__item {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .search-history__item-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .search-history__opt-out {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

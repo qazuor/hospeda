@@ -13,14 +13,25 @@
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
-                { "title": "Relax checkCanSearch/checkCanView for public read path", "completed": true },
+                {
+                    "title": "Relax checkCanSearch/checkCanView for public read path",
+                    "completed": true
+                },
                 { "title": "Keep write-path permissions intact", "completed": true },
                 { "title": "Add regression test (guest 403→200)", "completed": true }
             ],
             "tags": ["backend", "api", "permissions", "blocker"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped"
+            },
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-002",
@@ -36,8 +47,16 @@
             ],
             "tags": ["backend", "api", "routing"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped"
+            },
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-003",
@@ -48,15 +67,35 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Add validFrom/validUntil window filter in _executeSearch/_executeCount", "completed": true },
-                { "title": "Implement owner-wide (accommodationId=null) resolution for an accommodation", "completed": true },
-                { "title": "Fix pagination to read from ctx.pagination + dedicated count query", "completed": true },
-                { "title": "Unit tests: window edges + owner-wide OR + pagination", "completed": true }
+                {
+                    "title": "Add validFrom/validUntil window filter in _executeSearch/_executeCount",
+                    "completed": true
+                },
+                {
+                    "title": "Implement owner-wide (accommodationId=null) resolution for an accommodation",
+                    "completed": true
+                },
+                {
+                    "title": "Fix pagination to read from ctx.pagination + dedicated count query",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: window edges + owner-wide OR + pagination",
+                    "completed": true
+                }
             ],
             "tags": ["backend", "service", "correctness"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped"
+            },
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-004",
@@ -67,14 +106,25 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Create ownerPromotion.lifecycle-events.ts (typed union + emit, @repo/logger)", "completed": true },
+                {
+                    "title": "Create ownerPromotion.lifecycle-events.ts (typed union + emit, @repo/logger)",
+                    "completed": true
+                },
                 { "title": "Override _afterCreate / _afterUpdate to emit", "completed": true },
                 { "title": "Test emit on create + activate transition", "completed": true }
             ],
             "tags": ["backend", "service", "events", "spec-286-contract"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped"
+            },
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-005",
@@ -85,12 +135,19 @@
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Add ownerPromotionsApi.list({ accommodationId }) to endpoints.ts", "completed": true }
+                {
+                    "title": "Add ownerPromotionsApi.list({ accommodationId }) to endpoints.ts",
+                    "completed": true
+                }
             ],
             "tags": ["frontend", "web", "api-client"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-006",
@@ -101,13 +158,20 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Build PromotionBanner (badge/banner, discount formatting)", "completed": true },
+                {
+                    "title": "Build PromotionBanner (badge/banner, discount formatting)",
+                    "completed": true
+                },
                 { "title": "Empty-state handling", "completed": true }
             ],
             "tags": ["frontend", "web", "component"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-007",
@@ -124,7 +188,11 @@
             "tags": ["frontend", "web", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-008",
@@ -141,7 +209,11 @@
             "tags": ["i18n", "web"],
             "phase": "integration",
             "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         },
         {
             "id": "T-009",
@@ -157,8 +229,16 @@
             ],
             "tags": ["testing", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
-            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped"
+            },
+            "timestamps": {
+                "created": "2026-06-29T00:00:00.000Z",
+                "started": "2026-06-29T00:00:00.000Z",
+                "completed": "2026-06-29T12:00:00.000Z"
+            }
         }
     ],
     "summary": {
