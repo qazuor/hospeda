@@ -879,7 +879,7 @@
         "dark": {
             "core-background": {
                 "name": "core-background",
-                "value": "oklch(0.14 0.02 220)",
+                "value": "oklch(0.205 0.035 258)",
                 "category": "core-palette",
                 "line": 231
             },
@@ -891,25 +891,25 @@
             },
             "core-card": {
                 "name": "core-card",
-                "value": "oklch(0.19 0.02 220)",
+                "value": "oklch(0.275 0.042 258)",
                 "category": "core-palette",
                 "line": 233
             },
             "card-foreground": {
                 "name": "card-foreground",
-                "value": "oklch(0.92 0.01 210)",
+                "value": "oklch(0.93 0.012 250)",
                 "category": "core-palette",
                 "line": 234
             },
             "popover": {
                 "name": "popover",
-                "value": "oklch(0.19 0.02 220)",
+                "value": "oklch(0.3 0.042 258)",
                 "category": "core-palette",
                 "line": 235
             },
             "popover-foreground": {
                 "name": "popover-foreground",
-                "value": "oklch(0.92 0.01 210)",
+                "value": "oklch(0.93 0.012 250)",
                 "category": "core-palette",
                 "line": 236
             },
@@ -945,13 +945,13 @@
             },
             "muted": {
                 "name": "muted",
-                "value": "oklch(0.22 0.02 220)",
+                "value": "oklch(0.255 0.035 258)",
                 "category": "core-palette",
                 "line": 242
             },
             "core-muted-foreground": {
                 "name": "core-muted-foreground",
-                "value": "oklch(0.6 0.03 261)",
+                "value": "oklch(0.68 0.03 261)",
                 "category": "core-palette",
                 "line": 243
             },
@@ -993,13 +993,13 @@
             },
             "border": {
                 "name": "border",
-                "value": "oklch(0.28 0.02 220)",
+                "value": "oklch(0.4 0.03 258)",
                 "category": "core-palette",
                 "line": 250
             },
             "input": {
                 "name": "input",
-                "value": "oklch(0.28 0.02 220)",
+                "value": "oklch(0.32 0.03 258)",
                 "category": "core-palette",
                 "line": 251
             },
@@ -1095,19 +1095,19 @@
             },
             "surface-warm": {
                 "name": "surface-warm",
-                "value": "oklch(0.2 0.03 50)",
+                "value": "oklch(0.255 0.035 258)",
                 "category": "surface-tokens",
                 "line": 273
             },
             "surface-dark": {
                 "name": "surface-dark",
-                "value": "oklch(0.1 0.02 160)",
+                "value": "oklch(0.185 0.03 258)",
                 "category": "surface-tokens",
                 "line": 274
             },
             "surface-elevated": {
                 "name": "surface-elevated",
-                "value": "oklch(0.24 0.025 220)",
+                "value": "oklch(0.285 0.04 258)",
                 "category": "surface-tokens",
                 "line": 277
             },

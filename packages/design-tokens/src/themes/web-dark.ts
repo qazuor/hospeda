@@ -27,24 +27,31 @@ export const webDark: Theme = {
     // ========================================================================
     // Core palette dark overrides — global.css lines 231–257
     // ========================================================================
-    'core-background': oklchValue(0.14, 0.02, 220),
+    'core-background': oklchValue(0.205, 0.035, 258),
     'core-foreground': oklchValue(0.92, 0.01, 210),
-    'core-card': oklchValue(0.19, 0.02, 220),
-    'card-foreground': oklchValue(0.92, 0.01, 210),
-    popover: oklchValue(0.19, 0.02, 220),
-    'popover-foreground': oklchValue(0.92, 0.01, 210),
+    'core-card': oklchValue(0.275, 0.042, 258),
+    'card-foreground': oklchValue(0.93, 0.012, 250),
+    popover: oklchValue(0.3, 0.042, 258),
+    'popover-foreground': oklchValue(0.93, 0.012, 250),
 
     'brand-primary': oklchValue(0.68, 0.17, 259),
     'brand-primary-text': oklchValue(0.68, 0.17, 259),
+    // SPEC-308: on dark surfaces the vibrant blue already clears AA, so the
+    // text/link token keeps the bright value (mirrors brand-primary).
+    'brand-primary-link': oklchValue(0.68, 0.17, 259),
     'primary-foreground': oklchValue(0.1, 0.02, 259),
     'brand-secondary': oklchValue(0.25, 0.05, 255),
     'brand-secondary-foreground': oklchValue(0.8, 0.08, 255),
     'brand-tertiary': oklchValue(0.28, 0.05, 155),
 
-    muted: oklchValue(0.22, 0.02, 220),
-    'core-muted-foreground': oklchValue(0.6, 0.03, 261),
+    muted: oklchValue(0.255, 0.035, 258),
+    'core-muted-foreground': oklchValue(0.68, 0.03, 261),
 
     'brand-accent': oklchValue(0.72, 0.19, 55),
+    // SPEC-308: vibrant orange already clears AA as text on dark surfaces, so
+    // both orange-text tokens keep the bright value here.
+    'brand-accent-strong': oklchValue(0.72, 0.19, 55),
+    'brand-accent-text': oklchValue(0.72, 0.19, 55),
     'rating-star': oklchValue(0.85, 0.19, 95),
     'accent-foreground': oklchValue(0.1, 0.01, 55),
 
@@ -52,8 +59,8 @@ export const webDark: Theme = {
     'destructive-foreground': oklchValue(0.98, 0, 0),
 
     overlay: 'oklch(0.05 0.01 220 / 0.7)',
-    border: oklchValue(0.28, 0.02, 220),
-    input: oklchValue(0.28, 0.02, 220),
+    border: oklchValue(0.4, 0.03, 258),
+    input: oklchValue(0.32, 0.03, 258),
     ring: oklchValue(0.68, 0.17, 259),
 
     'chart-1': oklchValue(0.68, 0.17, 259),
@@ -83,9 +90,15 @@ export const webDark: Theme = {
     // ========================================================================
     // Surface tokens (dark) — global.css lines 273–277
     // ========================================================================
-    'surface-warm': oklchValue(0.2, 0.03, 50),
-    'surface-dark': oklchValue(0.1, 0.02, 160),
-    'surface-elevated': oklchValue(0.24, 0.025, 220),
+    'surface-warm': oklchValue(0.255, 0.035, 258),
+    'surface-dark': oklchValue(0.185, 0.03, 258),
+    'surface-elevated': oklchValue(0.285, 0.04, 258),
+
+    // Hero bottom-wave fill. In dark it must follow the page canvas so the
+    // wave blends into the section below (the SVG hardcodes --core-card, which
+    // is lighter and showed a seam). Only defined for dark; in light the wave's
+    // inline `fill` falls back to --core-card.
+    'hero-wave-fill': 'var(--core-background)',
 
     // ========================================================================
     // Footer surface tokens (dark) — global.css lines 280–288
