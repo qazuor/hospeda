@@ -220,9 +220,10 @@ export function DestinationsMap({
         destinations.findIndex((d) => d.slug === slug);
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" is the correct ARIA for an interactive map widget that contains focusable destination pins.
         <div
+            role="group"
             className={styles.mapContainer}
-            role="img"
             aria-label={mapLabel ?? 'Interactive map of destinations in Entre Ríos, Argentina'}
         >
             {/* Background: river SVG */}

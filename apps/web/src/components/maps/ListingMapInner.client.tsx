@@ -480,10 +480,11 @@ export function ListingMapInner(props: ListingMapProps) {
     }, [isAccommodationMode, onMarkerClick, i18nStrings, isAuthenticated, locale]);
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" is the correct ARIA for an interactive map widget that contains focusable Leaflet controls.
         <div
+            role="group"
             className={styles.root}
             aria-label={ariaLabel}
-            role="img"
         >
             <MapContainer
                 center={initialCenter}
