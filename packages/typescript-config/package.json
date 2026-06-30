@@ -13,7 +13,7 @@
         "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "devDependencies": {
-        "@vitest/coverage-v8": "^3.1.3",
+        "@vitest/coverage-v8": "^4.1.9",
         "vitest": "^3.1.3"
     }
 }
