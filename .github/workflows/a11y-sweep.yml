@@ -2,7 +2,7 @@ name: A11y Sweep
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - staging
 
