@@ -130,7 +130,9 @@ const isNew = experience.createdAt
         padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--hospeda-forest);
-        color: var(--primary-foreground);
+        /* SPEC-308: white ink on the saturated green badge (primary-foreground
+           flips to dark in dark mode and fails AA on green). */
+        color: white;
         font-family: var(--font-sans);
         font-size: 13px;
         font-weight: 600;

@@ -59,7 +59,7 @@ const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRT
 const newColors = getBadgeStatusColor({ status: 'new' });
 
 const newStyle =
-  `background-color: ${newColors.bg}; color: ${newColors.text}; border-color: ${newColors.border};`;
+  `background-color: ${newColors.bg}; color: ${newColors.onFill}; border-color: ${newColors.border};`;
 ---
 
 <header class="detail-header">
