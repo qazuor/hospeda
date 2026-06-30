@@ -10,6 +10,7 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     and,
     billingAddonPurchases,
@@ -27,7 +28,8 @@ import {
     calculatePromoCodeEffect,
     checkSubscriptionStatusTransition,
     getPromoCodeById,
-    resolveFullPlanPriceCentavos
+    resolveFullPlanPriceCentavos,
+    syncFeaturedByPlan
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
@@ -115,7 +117,8 @@ export async function confirmAnnualSubscription(input: {
         .select({
             id: billingSubscriptions.id,
             customerId: billingSubscriptions.customerId,
-            status: billingSubscriptions.status
+            status: billingSubscriptions.status,
+            planId: billingSubscriptions.planId
         })
         .from(billingSubscriptions)
         .where(
@@ -245,6 +248,40 @@ export async function confirmAnnualSubscription(input: {
     // annual plan and sees their features blocked until the TTL expires.
     // Synchronous, in-process, no I/O — safe to call unconditionally.
     clearEntitlementCache(sub.customerId);
+
+    // SPEC-292 T-005: grant featuredByPlan if the annual subscription's plan
+    // includes FEATURED_LISTING. Soft-fail: a sync error must not block the
+    // activation path (the plan change already committed above).
+    try {
+        const annualPlan = await billing.plans.get(sub.planId);
+        const annualPlanSlug = annualPlan?.name ?? '';
+        const annualPlanHasFeatured =
+            getPlanBySlug(annualPlanSlug)?.entitlements.includes(EntitlementKey.FEATURED_LISTING) ??
+            false;
+        if (annualPlanHasFeatured) {
+            const ownerId = await resolveOwnerUserId({ customerId: sub.customerId });
+            if (ownerId) {
+                await syncFeaturedByPlan({ ownerId, active: true });
+                apiLogger.info(
+                    { annualSubscriptionId, customerId: sub.customerId, planSlug: annualPlanSlug },
+                    'Annual subscription activation: featuredByPlan granted'
+                );
+            }
+        }
+    } catch (featuredSyncErr) {
+        apiLogger.warn(
+            {
+                annualSubscriptionId,
+                customerId: sub.customerId,
+                source,
+                error:
+                    featuredSyncErr instanceof Error
+                        ? featuredSyncErr.message
+                        : String(featuredSyncErr)
+            },
+            'Annual subscription activation: syncFeaturedByPlan failed (non-blocking)'
+        );
+    }
 
     // SPEC-143 Finding #21 fallback cleanup. Mark any active polling job
     // for this annual subscription as `succeeded` so the cron stops
@@ -452,6 +489,42 @@ async function confirmPlanUpgrade(input: {
                 customerId: changeResult.subscription.customerId,
                 newPlanId
             });
+            // SPEC-292 T-005: sync featuredByPlan to reflect the new (post-upgrade) plan.
+            // The upgraded plan may or may not grant FEATURED_LISTING — check explicitly
+            // rather than assuming an upgrade always grants it (e.g. owner-basico → owner-pro
+            // adds it, but complex-basico → complex-basico-annual would not change it).
+            try {
+                const upgradedPlan = await billing.plans.get(newPlanId);
+                const upgradedPlanSlug = upgradedPlan?.name ?? '';
+                const upgradedPlanHasFeatured =
+                    getPlanBySlug(upgradedPlanSlug)?.entitlements.includes(
+                        EntitlementKey.FEATURED_LISTING
+                    ) ?? false;
+                await syncFeaturedByPlan({ ownerId: userId, active: upgradedPlanHasFeatured });
+                apiLogger.info(
+                    {
+                        planChangeUpgradeId,
+                        newPlanId,
+                        planSlug: upgradedPlanSlug,
+                        active: upgradedPlanHasFeatured,
+                        customerId: changeResult.subscription.customerId
+                    },
+                    'Plan upgrade: featuredByPlan synced'
+                );
+            } catch (featuredSyncErr) {
+                apiLogger.warn(
+                    {
+                        planChangeUpgradeId,
+                        newPlanId,
+                        customerId: changeResult.subscription.customerId,
+                        error:
+                            featuredSyncErr instanceof Error
+                                ? featuredSyncErr.message
+                                : String(featuredSyncErr)
+                    },
+                    'Plan upgrade: syncFeaturedByPlan failed (non-blocking)'
+                );
+            }
         } else {
             apiLogger.warn(
                 {

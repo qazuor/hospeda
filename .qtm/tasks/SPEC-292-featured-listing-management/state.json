@@ -148,26 +148,26 @@
             "id": "T-005",
             "title": "Wire syncFeaturedByPlan to billing lifecycle events",
             "description": "Hook the sync service into the billing lifecycle so that featuredByPlan is set/cleared automatically when the FEATURED_LISTING entitlement activates or lapses. Identify the billing event dispatch points in apps/api/src/ — look at subscription activation webhooks, cancellation handlers, past-due dunning outcome, and expiry cron paths (e.g. packages/service-core/src/services/billing/, apps/api/src/cron/jobs/, billing webhook handlers). Pattern: after any state transition that changes hasEntitlement(FEATURED_LISTING) for an owner, call syncFeaturedByPlan(ownerId, newActive).\n\nThe entitlement key is packages/billing/src/types/entitlement.types.ts:13. Plans that grant it: owner-basico, owner-premium, complex-pro, complex-premium (packages/billing/src/config/plans.config.ts). NOT complex-basico.\n\nKey sites to hook (verify against current code):\n- Subscription activation (webhook subscription_authorized_payment or status change to active)\n- Subscription cancellation / soft-cancel after currentPeriodEnd\n- Subscription expiry / past-due that crosses into entitlement loss\n- Plan downgrade to a plan that does not grant FEATURED_LISTING\n\nKey files (to read and modify):\n- apps/api/src/routes/billing/ (webhook handlers)\n- apps/api/src/cron/jobs/ (dunning, finalize-cancelled-subs, trial-expiry)\n- packages/service-core/src/services/billing/subscription/ (status change helpers)\n\nAcceptance criteria:\n- Activating a FEATURED_LISTING-bearing plan triggers syncFeaturedByPlan(ownerId, true).\n- Cancellation/expiry/past-due lapse triggers syncFeaturedByPlan(ownerId, false).\n- No call on billing events for plans that do not grant FEATURED_LISTING (e.g. tourist plans, complex-basico).\n- pnpm typecheck green.\n\nTesting requirements:\n- Integration tests in T-007 cover the activate + lapse transitions via mocked billing state.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Identify all billing state-change sites that affect FEATURED_LISTING",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hook syncFeaturedByPlan(ownerId, true) on activation paths",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hook syncFeaturedByPlan(ownerId, false) on cancellation/expiry/lapse paths",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard: only call for plans that grant FEATURED_LISTING",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "integration", "service"],
@@ -179,8 +179,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-30T00:00:00.000Z",
+                "completed": "2026-06-30T00:00:00.000Z"
             }
         },
         {

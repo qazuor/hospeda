@@ -24,6 +24,7 @@
  */
 
 import type { QZPayAdminLifecycleHooks } from '@qazuor/qzpay-hono';
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     billingAddonPurchases,
     billingSubscriptionEvents,
@@ -32,6 +33,7 @@ import {
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
+import { syncFeaturedByPlan } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getActorFromContext } from '../../../middlewares/actor';
@@ -511,6 +513,32 @@ const onAfterSubscriptionChangePlan: NonNullable<
                             targetPlanSlug: newPlan.name,
                             keepSelections: undefined
                         });
+                        // SPEC-292 T-005: sync featuredByPlan to reflect new plan's
+                        // FEATURED_LISTING entitlement after the downgrade commits.
+                        // Soft-fail: a sync error must not block the admin response.
+                        try {
+                            const newPlanHasFeatured =
+                                getPlanBySlug(newPlan.name)?.entitlements.includes(
+                                    EntitlementKey.FEATURED_LISTING
+                                ) ?? false;
+                            await syncFeaturedByPlan({
+                                ownerId: userId,
+                                active: newPlanHasFeatured
+                            });
+                        } catch (featuredSyncErr) {
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    newPlanId,
+                                    error:
+                                        featuredSyncErr instanceof Error
+                                            ? featuredSyncErr.message
+                                            : String(featuredSyncErr)
+                                },
+                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                            );
+                        }
                     } else {
                         apiLogger.warn(
                             {
@@ -531,6 +559,32 @@ const onAfterSubscriptionChangePlan: NonNullable<
                             customerId: subscription.customerId,
                             newPlanId
                         });
+                        // SPEC-292 T-005: sync featuredByPlan to reflect new plan's
+                        // FEATURED_LISTING entitlement after the upgrade commits.
+                        // Soft-fail: a sync error must not block the admin response.
+                        try {
+                            const newPlanHasFeatured =
+                                getPlanBySlug(newPlan.name)?.entitlements.includes(
+                                    EntitlementKey.FEATURED_LISTING
+                                ) ?? false;
+                            await syncFeaturedByPlan({
+                                ownerId: userId,
+                                active: newPlanHasFeatured
+                            });
+                        } catch (featuredSyncErr) {
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    newPlanId,
+                                    error:
+                                        featuredSyncErr instanceof Error
+                                            ? featuredSyncErr.message
+                                            : String(featuredSyncErr)
+                                },
+                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                            );
+                        }
                     } else {
                         apiLogger.warn(
                             {
@@ -542,7 +596,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                         );
                     }
                 }
-                // direction === 'same' → no remediation needed
+                // direction === 'same' → no FEATURED_LISTING change, no remediation needed
             } else {
                 apiLogger.warn(
                     {
