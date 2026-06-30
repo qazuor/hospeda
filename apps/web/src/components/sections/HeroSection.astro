@@ -73,7 +73,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 	<!-- Wave at bottom of blue bg -->
 	<div class="hero__bg-wave" aria-hidden="true">
 		<svg viewBox="0 0 1440 160" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-			<path d="M0,60 C180,120 360,160 540,130 C720,100 900,30 1080,20 C1200,14 1350,40 1440,60 L1440,160 L0,160 Z" fill="var(--core-card)"/>
+			<path d="M0,60 C180,120 360,160 540,130 C720,100 900,30 1080,20 C1200,14 1350,40 1440,60 L1440,160 L0,160 Z" fill="var(--hero-wave-fill, var(--core-card))"/>
 		</svg>
 	</div>
 
@@ -406,7 +406,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 	}
 
 	.social-proof__star { color: var(--rating-star); font-size: 14px; }
-	.social-proof__score { font-size: 13px; font-weight: 700; color: var(--brand-primary); }
+	.social-proof__score { font-size: 13px; font-weight: 700; color: var(--brand-primary-link); }
 	.social-proof__separator { font-size: 13px; color: var(--core-muted-foreground); }
 	.social-proof__subtext { font-size: 13px; color: var(--core-muted-foreground); }
 

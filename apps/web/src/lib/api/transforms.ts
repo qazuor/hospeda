@@ -1905,7 +1905,13 @@ export function toGastronomyCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        // Fall back to the legacy flat `name` when the i18n map resolves empty.
+        // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
+        // while `name` holds the real value; without this guard the card and
+        // detail headings render empty (a11y empty-heading violation, SPEC-308).
+        name:
+            resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale) ||
+            String(item.name ?? ''),
         type: String(item.type || ''),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,

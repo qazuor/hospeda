@@ -435,7 +435,7 @@
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--brand-primary, oklch(0.55 0.17 264));
+    color: var(--brand-primary-link, oklch(0.55 0.17 264));
     text-decoration: none;
 }
 

@@ -31,13 +31,14 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 209 web :root tokens', () => {
+    it('declares all 213 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
-        // and sponsor-type (3) token families. Adding or removing entries should
-        // be intentional.
-        expect(Object.keys(webLight)).toHaveLength(209); // + brand-primary-text
+        // and sponsor-type (3) token families. The dark-mode refresh + SPEC-308
+        // a11y pass then added hospeda-forest-link and the dark navy-ramp
+        // companions. Adding or removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(213);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
@@ -151,19 +152,26 @@ describe('webLight — radius / spacing / typography / shadows / motion / z-inde
 });
 
 describe('webDark — coverage', () => {
-    it('declares 57 dark overrides', () => {
-        // 57 matches the current extractor count for tokens.dark after adding brand-primary-text.
-        expect(Object.keys(webDark)).toHaveLength(57);
+    it('declares 63 dark overrides', () => {
+        // 57 was the count after brand-primary-text; the dark-mode navy refresh
+        // (hero-wave-fill) and the SPEC-308 a11y pass (brand-primary-link,
+        // hospeda-forest-link, surface-warm-foreground) brought it to 63.
+        expect(Object.keys(webDark)).toHaveLength(63);
     });
+
+    // Dark tokens that intentionally have NO light counterpart (the light value
+    // falls back to another token via cascade), so they are exempt from the
+    // strict-subset rule below.
+    const KNOWN_DARK_ONLY = ['hero-wave-fill'];
 
     it('every dark key has a corresponding light declaration', () => {
         // Dark MUST be a strict subset of light — a dark override with no
         // light default is dead CSS. The Phase 0 extractor's integrity
         // check enforces this at the seed level; this assertion enforces
-        // it at the TS theme level.
+        // it at the TS theme level. (KNOWN_DARK_ONLY are deliberate exceptions.)
         const orphans: string[] = [];
         for (const key of Object.keys(webDark)) {
-            if (!(key in webLight)) orphans.push(key);
+            if (!(key in webLight) && !KNOWN_DARK_ONLY.includes(key)) orphans.push(key);
         }
         expect(orphans).toEqual([]);
     });
@@ -171,15 +179,15 @@ describe('webDark — coverage', () => {
 
 describe('webDark — sample dark values match seed byte-for-byte', () => {
     it.each([
-        ['core-background', 'oklch(0.14 0.02 220)'],
+        ['core-background', 'oklch(0.205 0.035 258)'],
         ['core-foreground', 'oklch(0.92 0.01 210)'],
         ['brand-primary', 'oklch(0.68 0.17 259)'],
         ['destructive', 'oklch(0.6 0.22 27)'],
         ['success', 'oklch(0.65 0.16 150)'],
         ['warning', 'oklch(0.78 0.18 85)'],
         ['info', 'oklch(0.68 0.17 259)'],
-        ['surface-warm', 'oklch(0.2 0.03 50)'],
-        ['surface-elevated', 'oklch(0.24 0.025 220)'],
+        ['surface-warm', 'oklch(0.255 0.035 258)'],
+        ['surface-elevated', 'oklch(0.285 0.04 258)'],
         ['footer-bg', 'oklch(0.12 0.02 220)'],
         ['avatar-1-from', 'oklch(0.3 0.1 255)']
     ])('%s = %s', (key, expected) => {
