@@ -235,7 +235,15 @@
             "comp": "Grátis para sempre",
             "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
             "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
-            "errorGeneric": "Não conseguimos verificar o código. Tente novamente."
+            "errorGeneric": "Não conseguimos verificar o código. Tente novamente.",
+            "errorNotFound": "Não encontramos esse código. Verifique se está escrito corretamente.",
+            "errorInactive": "Este código não está mais ativo.",
+            "errorExpired": "Este código expirou.",
+            "errorMaxUses": "Este código atingiu seu limite de usos.",
+            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
+            "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
+            "errorNewUsersOnly": "Este código é apenas para novos clientes.",
+            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código."
         }
     },
     "limit": {

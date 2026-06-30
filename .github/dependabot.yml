@@ -60,6 +60,9 @@ updates:
     #   - better-auth: 1.4 -> 1.6 changes the auth type signatures, breaking
     #     apps/api typecheck at src/lib/auth.ts (TS2322). Core auth surface —
     #     merits a dedicated migration spec. Lift when that migration lands.
+    #     The whole @better-auth/* scope must be gated together: a lone
+    #     @better-auth/expo minor bump desyncs against @better-auth/core and
+    #     breaks apps/mobile build (Unable to resolve @better-auth/core/utils/json).
     #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
     #     packages/email/test/templates/verify-email.test.tsx. Lift when the
     #     react-email render bump is taken on with its template snapshots.
@@ -67,6 +70,11 @@ updates:
     #     concatenation), so role+name queries like DestinationReviewSidebarCard
     #     stop matching. Dev-only (test env; real browsers unaffected). Lift
     #     with a dedicated jsdom upgrade + test sweep.
+    #   - @tiptap/*: the editor extensions move from v2 to v3 as a coordinated
+    #     breaking migration (core + every extension must bump in lockstep, or
+    #     a lone extension at v3 peer-mismatches the v2 core at runtime). Gating
+    #     the whole scope prevents a single-extension PR (e.g. extension-underline
+    #     2 -> 3) from landing a split-version state. Owner: SPEC-307 (tiptap v3).
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
@@ -74,8 +82,14 @@ updates:
       - dependency-name: '@astrojs/node'
       - dependency-name: 'typescript'
       - dependency-name: 'better-auth'
+      - dependency-name: '@better-auth/*'
       - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
+      - dependency-name: '@tiptap/*'
+    cooldown:
+      # Supply-chain hardening: wait 7 days before bumping a newly published
+      # version (satisfies semgrep dependabot-missing-cooldown).
+      default-days: 7
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'
@@ -93,6 +107,10 @@ updates:
       github-actions:
         patterns:
           - '*'
+    cooldown:
+      # Supply-chain hardening: wait 7 days before bumping a newly published
+      # version (satisfies semgrep dependabot-missing-cooldown).
+      default-days: 7
     commit-message:
       prefix: 'ci'
     labels:

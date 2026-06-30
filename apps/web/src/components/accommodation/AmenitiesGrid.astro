@@ -5,8 +5,9 @@
  * Renders all items in a single grid. The first 8 are visible by default;
  * the rest are hidden via CSS until the user clicks "Ver todas las N", which
  * lives ALWAYS at the bottom of the section (so it never ends up between
- * items after expansion). A tiny inline script toggles `aria-expanded` on
- * the list to flip the CSS state.
+ * items after expansion). A tiny inline script toggles `data-expanded` on
+ * the list (a div, where `aria-expanded` is not an allowed ARIA attribute) to
+ * flip the CSS state, while `aria-expanded` lives on the controlling button.
  */
 import type { AccommodationAmenityItem } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
@@ -56,7 +57,7 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
     class="amenities-grid"
     id="amenities-list"
     data-amenities-list
-    aria-expanded="false"
+    data-expanded="false"
   >
     {amenities.map((amenity) => {
       const Icon = getIcon(amenity.icon);
@@ -102,9 +103,9 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
       ?.querySelector<HTMLElement>('[data-amenities-list]');
     if (!list) return;
     btn.addEventListener('click', () => {
-      const isOpen = list.getAttribute('aria-expanded') === 'true';
+      const isOpen = list.getAttribute('data-expanded') === 'true';
       const next = isOpen ? 'false' : 'true';
-      list.setAttribute('aria-expanded', next);
+      list.setAttribute('data-expanded', next);
       btn.setAttribute('aria-expanded', next);
       btn.textContent = next === 'true' ? btn.dataset.labelLess ?? '' : btn.dataset.labelMore ?? '';
     });
@@ -137,7 +138,7 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
   }
   /* Collapsed: hide everything past the first 8 items.
      Keep this :nth-child threshold in sync with VISIBLE_COUNT in the script. */
-  .amenities-grid[aria-expanded="false"] > .amenity-item:nth-child(n+9) {
+  .amenities-grid[data-expanded="false"] > .amenity-item:nth-child(n+9) {
     display: none;
   }
   .amenity-item {

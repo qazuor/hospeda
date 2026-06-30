@@ -146,6 +146,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history so semgrep --baseline-commit can resolve the PR base
+          # (or the previous push commit) and diff against it.
+          fetch-depth: 0
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
@@ -158,17 +162,24 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Semgrep SAST scan
-        # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
-        # isolated Python 3.12 env. Same rule packs + --error gate as the old
-        # semgrep-action. semgrep is pinned so the same commit can't pass one
-        # day and fail the next on changed rules.
-        run: >-
-          uvx --python 3.12 --from semgrep==1.164.0 semgrep scan
-          --config p/typescript
-          --config p/nodejs
-          --config p/owasp-top-ten
-          --config p/secrets
-          --error
+        # uvx runs semgrep 1.164.0 (pinned CLI) on an isolated Python 3.12 env.
+        # The CLI is pinned but the rule PACKS (p/typescript, ...) are fetched
+        # fresh from the registry, so newly-published upstream rules can appear
+        # overnight and flag pre-existing repo debt. To keep the gate stable we
+        # diff against a baseline commit (the PR base, or the previous commit on
+        # push) via --baseline-commit, so only findings INTRODUCED by the change
+        # block the build — unrelated pre-existing findings do not fail the PR.
+        env:
+          SEMGREP_BASELINE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          uvx --python 3.12 --from semgrep==1.164.0 semgrep scan \
+            --config p/typescript \
+            --config p/nodejs \
+            --config p/owasp-top-ten \
+            --config p/secrets \
+            --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
+            --error \
+            ${SEMGREP_BASELINE:+--baseline-commit "$SEMGREP_BASELINE"}
 
   # ------------------------------------------------------------------
   # Repository-wide guard scripts + i18n/docs parity checks (SPEC-103

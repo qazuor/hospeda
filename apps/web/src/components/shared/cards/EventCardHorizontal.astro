@@ -92,8 +92,11 @@ const locationLabel = data.location
         : cityLabel
     : cityLabel || null;
 
-/** Inline style for the date block background (category color as solid token). */
-const dateBlockStyle = `background-color: ${categoryColors.text}; color: var(--primary-foreground);`;
+/** Inline style for the date block background (category color as solid fill).
+ *  SPEC-308: use the saturated `fill` as bg and the contrast-safe `onFill` as
+ *  text so dark category fills (e.g. forest green) get white text and light
+ *  ones get black — AA in both themes. */
+const dateBlockStyle = `background-color: ${categoryColors.fill}; color: ${categoryColors.onFill};`;
 
 /** Inline style for the image placeholder gradient. */
 const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, var(--core-card-lm03) 100%);`;
@@ -341,7 +344,10 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-size: 1.875rem;
         line-height: 1;
         letter-spacing: 0.05em;
-        color: var(--primary-foreground-a30);
+        /* Inherit the date-block's onFill ink at reduced strength via opacity
+           (no relative-color math — SPEC-176 old-browser support). */
+        color: inherit;
+        opacity: 0.3;
         user-select: none;
         flex-shrink: 0;
         margin-left: -0.125rem;
@@ -357,7 +363,9 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-family: var(--font-heading);
         font-size: var(--text-body-sm);
         font-weight: 600;
-        color: var(--primary-foreground);
+        /* Inherit the date-block's contrast-safe onFill (white on dark fills,
+           black on light) instead of hardcoding dark ink — SPEC-308. */
+        color: inherit;
         line-height: 1.25;
         white-space: pre-line;
     }
@@ -365,7 +373,10 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     .event-card-h__time {
         font-family: var(--font-sans);
         font-size: var(--text-caption);
-        color: var(--primary-foreground-a80);
+        color: inherit;
+        /* Slightly dimmed for hierarchy but kept ≥0.95 so it still clears AA
+           against the green date-block fill (SPEC-308). */
+        opacity: 0.95;
         line-height: 1;
     }
 
@@ -438,7 +449,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         gap: 0.25rem;
         font-family: var(--font-sans);
         font-size: var(--text-caption);
-        color: var(--brand-primary);
+        color: var(--brand-primary-link);
         background-color: var(--brand-primary-a10);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.6rem;

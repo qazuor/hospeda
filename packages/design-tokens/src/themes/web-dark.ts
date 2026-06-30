@@ -27,24 +27,39 @@ export const webDark: Theme = {
     // ========================================================================
     // Core palette dark overrides — global.css lines 231–257
     // ========================================================================
-    'core-background': oklchValue(0.14, 0.02, 220),
+    'core-background': oklchValue(0.205, 0.035, 258),
     'core-foreground': oklchValue(0.92, 0.01, 210),
-    'core-card': oklchValue(0.19, 0.02, 220),
-    'card-foreground': oklchValue(0.92, 0.01, 210),
-    popover: oklchValue(0.19, 0.02, 220),
-    'popover-foreground': oklchValue(0.92, 0.01, 210),
+    'core-card': oklchValue(0.275, 0.042, 258),
+    'card-foreground': oklchValue(0.93, 0.012, 250),
+    popover: oklchValue(0.3, 0.042, 258),
+    'popover-foreground': oklchValue(0.93, 0.012, 250),
 
     'brand-primary': oklchValue(0.68, 0.17, 259),
     'brand-primary-text': oklchValue(0.68, 0.17, 259),
+    // SPEC-308: the vibrant blue (0.68) clears AA on the page canvas, but as
+    // text on the faint blue-tinted chips (8-15% brand over navy) it lands at
+    // ~4.0-4.49 — just under 4.5. Lift the link/AA text token to 0.74 so brand
+    // text on those tinted chips clears AA. Used by dest-card chips, event-card
+    // location, and the category chips (repointed to this token in lib/colors).
+    'brand-primary-link': oklchValue(0.74, 0.16, 259),
     'primary-foreground': oklchValue(0.1, 0.02, 259),
     'brand-secondary': oklchValue(0.25, 0.05, 255),
     'brand-secondary-foreground': oklchValue(0.8, 0.08, 255),
     'brand-tertiary': oklchValue(0.28, 0.05, 155),
+    // SPEC-308: AA-safe green text token for category chips on dark. The base
+    // forest (0.5) reads at only ~2.4:1 as text on the navy-tinted green chip;
+    // lift to 0.72 so it clears AA. Only the chip *text* uses this — the solid
+    // forest fill (date-block bg) stays the saturated base green.
+    'hospeda-forest-link': oklchValue(0.72, 0.15, 155),
 
-    muted: oklchValue(0.22, 0.02, 220),
-    'core-muted-foreground': oklchValue(0.6, 0.03, 261),
+    muted: oklchValue(0.255, 0.035, 258),
+    'core-muted-foreground': oklchValue(0.68, 0.03, 261),
 
     'brand-accent': oklchValue(0.72, 0.19, 55),
+    // SPEC-308: vibrant orange already clears AA as text on dark surfaces, so
+    // both orange-text tokens keep the bright value here.
+    'brand-accent-strong': oklchValue(0.72, 0.19, 55),
+    'brand-accent-text': oklchValue(0.72, 0.19, 55),
     'rating-star': oklchValue(0.85, 0.19, 95),
     'accent-foreground': oklchValue(0.1, 0.01, 55),
 
@@ -52,8 +67,8 @@ export const webDark: Theme = {
     'destructive-foreground': oklchValue(0.98, 0, 0),
 
     overlay: 'oklch(0.05 0.01 220 / 0.7)',
-    border: oklchValue(0.28, 0.02, 220),
-    input: oklchValue(0.28, 0.02, 220),
+    border: oklchValue(0.4, 0.03, 258),
+    input: oklchValue(0.32, 0.03, 258),
     ring: oklchValue(0.68, 0.17, 259),
 
     'chart-1': oklchValue(0.68, 0.17, 259),
@@ -83,9 +98,21 @@ export const webDark: Theme = {
     // ========================================================================
     // Surface tokens (dark) — global.css lines 273–277
     // ========================================================================
-    'surface-warm': oklchValue(0.2, 0.03, 50),
-    'surface-dark': oklchValue(0.1, 0.02, 160),
-    'surface-elevated': oklchValue(0.24, 0.025, 220),
+    'surface-warm': oklchValue(0.255, 0.035, 258),
+    'surface-dark': oklchValue(0.185, 0.03, 258),
+    'surface-elevated': oklchValue(0.285, 0.04, 258),
+    // SPEC-308: the dark navy ramp flipped surface-warm to a dark fill, but
+    // --surface-warm-foreground was only defined in web-light.ts (dark ink for
+    // the light cream surface). Without a dark override it inherited that dark
+    // ink → dark-on-dark inversion (e.g. ContributionBanner title/desc contrast
+    // 1.4). Provide a light foreground so text on this surface clears AA in dark.
+    'surface-warm-foreground': oklchValue(0.92, 0.01, 210),
+
+    // Hero bottom-wave fill. In dark it must follow the page canvas so the
+    // wave blends into the section below (the SVG hardcodes --core-card, which
+    // is lighter and showed a seam). Only defined for dark; in light the wave's
+    // inline `fill` falls back to --core-card.
+    'hero-wave-fill': 'var(--core-background)',
 
     // ========================================================================
     // Footer surface tokens (dark) — global.css lines 280–288

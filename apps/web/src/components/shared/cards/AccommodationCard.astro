@@ -192,7 +192,7 @@ const isNew = data.createdAt
 
 			<!-- Amenities row: dynamic loop over actual amenities data -->
 			{visibleAmenities.length > 0 && (
-				<div class="acc-card__amenities" aria-label={t('home.accommodations.amenities.label', 'Amenidades')}>
+				<div class="acc-card__amenities" role="group" aria-label={t('home.accommodations.amenities.label', 'Amenidades')}>
 					{visibleAmenities.map((amenity) => {
 						const IconComponent = resolveAmenityIcon(amenity);
 						return (
@@ -663,7 +663,7 @@ const isNew = data.createdAt
 		font-weight: 700;
 		font-size: 16px;
 		line-height: 24px;
-		color: var(--brand-accent);
+		color: var(--brand-accent-text);
 	}
 
 	.acc-card__cta-btn {

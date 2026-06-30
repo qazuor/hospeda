@@ -157,7 +157,7 @@
 .viewAllLink {
     font-family: var(--font-sans);
     font-size: var(--text-body-sm);
-    color: var(--brand-accent);
+    color: var(--brand-accent-text);
     text-decoration: none;
 }
 

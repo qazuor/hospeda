@@ -14,12 +14,25 @@ import { PostCategoryEnum } from '@repo/schemas';
  * Apply via inline style: `background-color: ${scheme.bg}; color: ${scheme.text}; border-color: ${scheme.border};`
  */
 export interface ColorScheme {
-    /** CSS background-color value (e.g. 'var(--brand-accent-a15)') */
+    /** CSS background-color value for the tinted pill (e.g. 'var(--brand-accent-a15)') */
     readonly bg: string;
-    /** CSS color value (e.g. 'var(--brand-accent)') */
+    /** CSS text color for the tinted pill — AA-safe on `bg` (e.g. 'var(--brand-accent)') */
     readonly text: string;
     /** CSS border-color value (e.g. 'var(--brand-accent-a30)') */
     readonly border: string;
+    /**
+     * Solid, fully-saturated brand color for placements that use the category
+     * color as a FILL (e.g. the event card date block). Distinct from `text`,
+     * which may be a lightened AA link variant for legibility on the tint.
+     */
+    readonly fill: string;
+    /**
+     * Contrast-safe text color for text drawn ON `fill`, chosen per category at
+     * author time (no relative-color math, so old browsers stay supported —
+     * SPEC-176). Dark fills (forest green) pass `'white'`; light/mid fills keep
+     * the default dark `--primary-foreground` ink.
+     */
+    readonly onFill: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,7 +53,12 @@ const TOKEN_TO_CSS_VAR: Record<string, string> = {
     'muted-foreground': 'core-muted-foreground',
     'primary-foreground': 'primary-foreground',
     'info-foreground': 'info-foreground',
-    'warning-foreground': 'warning-foreground'
+    'warning-foreground': 'warning-foreground',
+    // SPEC-308: AA-safe link/text variants. These keep their base value in
+    // light but lift to a lighter shade in dark so category chip TEXT clears AA
+    // on the navy-tinted pills, while the saturated base token stays the fill.
+    'primary-link': 'brand-primary-link',
+    'forest-link': 'hospeda-forest-link'
 };
 
 /** Resolves a short token name to its full CSS custom property name. */
@@ -59,19 +77,33 @@ function resolveToken(token: string): string {
 function scheme({
     token,
     textToken,
+    fillToken,
+    onFill = 'var(--primary-foreground)',
     bgOpacity = 0.15
 }: {
     readonly token: string;
     readonly textToken?: string;
+    readonly fillToken?: string;
+    readonly onFill?: string;
     readonly bgOpacity?: number;
 }): ColorScheme {
     const cssToken = resolveToken(token);
     const cssText = resolveToken(textToken ?? token);
+    const cssFill = resolveToken(fillToken ?? token);
     const borderOpacity = Math.min(bgOpacity * 2, 1);
     return {
         bg: `oklch(from var(--${cssToken}) l c h / ${bgOpacity})`,
         text: `var(--${cssText})`,
-        border: `oklch(from var(--${cssToken}) l c h / ${borderOpacity})`
+        border: `oklch(from var(--${cssToken}) l c h / ${borderOpacity})`,
+        // Saturated signature color for solid-fill placements (date block, badge
+        // dot, accent bar). Distinct from `text`, which may be a lightened AA
+        // link variant for legibility on the tinted pill. SPEC-308.
+        fill: `var(--${cssFill})`,
+        // Contrast-safe text ON `fill`. Defaults to the dark primary-foreground
+        // ink (legible on the light/mid brand fills); dark fills (forest green)
+        // pass `onFill: 'white'` explicitly. No relative-color math so old
+        // browsers stay supported (SPEC-176) — the choice is baked per category.
+        onFill
     };
 }
 
@@ -97,7 +129,12 @@ function schemeSolid({
     return {
         bg: `oklch(from var(--${cssToken}) ${clampedL} c h)`,
         text: `var(--${cssText})`,
-        border: `oklch(from var(--${cssToken}) calc(${clampedL} * 0.7) c h)`
+        border: `oklch(from var(--${cssToken}) calc(${clampedL} * 0.7) c h)`,
+        // Reuse the raw token as the fill and the (contrast-safe) text token as
+        // onFill. No relative-color math here (SPEC-176) — the solid bg above is
+        // the only relative-color expression this helper emits.
+        fill: `var(--${cssToken})`,
+        onFill: `var(--${cssText})`
     };
 }
 
@@ -125,7 +162,10 @@ export function getAccommodationTypeColor({ type }: { readonly type: string }): 
     // saturated hue, and `contrast` derives a legible light fill + dark text
     // from it. This intentionally changes the web badge look (product-owner
     // approved) from the previous translucent 0.15-alpha pill.
-    return getAccommodationTypeColorScheme({ type, variant: 'contrast' });
+    const s = getAccommodationTypeColorScheme({ type, variant: 'contrast' });
+    // The `contrast` variant already pairs a legible fill (`bg`) with safe text
+    // (`text`); reuse them for the ColorScheme fill/onFill contract.
+    return { ...s, fill: s.bg, onFill: s.text };
 }
 
 /**
@@ -210,26 +250,58 @@ export function getEventCategoryColor({
         case 'music':
             return scheme({ token: 'accent', bgOpacity });
         case 'sports':
-            return scheme({ token: 'primary', bgOpacity });
+            return scheme({ token: 'primary', textToken: 'primary-link', bgOpacity });
         case 'cultural':
         case 'culture':
-            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
+            return scheme({
+                token: 'hospeda-sky',
+                textToken: 'primary-link',
+                fillToken: 'hospeda-river',
+                bgOpacity
+            });
         case 'gastronomy':
-            return scheme({ token: 'hospeda-forest', bgOpacity });
+            return scheme({
+                token: 'hospeda-forest',
+                textToken: 'forest-link',
+                fillToken: 'hospeda-forest',
+                onFill: 'white',
+                bgOpacity
+            });
         case 'festival':
-            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
+            return scheme({
+                token: 'hospeda-sky',
+                textToken: 'primary-link',
+                fillToken: 'hospeda-river',
+                bgOpacity
+            });
         case 'wellness':
-            return scheme({ token: 'hospeda-river', bgOpacity });
+            return scheme({ token: 'hospeda-river', textToken: 'primary-link', bgOpacity });
         case 'art':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
+            return scheme({
+                token: 'hospeda-sand',
+                textToken: 'foreground',
+                fillToken: 'foreground',
+                bgOpacity
+            });
         case 'family':
-            return scheme({ token: 'info', bgOpacity });
+            return scheme({ token: 'info', textToken: 'primary-link', bgOpacity });
         case 'nature':
-            return scheme({ token: 'hospeda-forest', bgOpacity });
+            return scheme({
+                token: 'hospeda-forest',
+                textToken: 'forest-link',
+                fillToken: 'hospeda-forest',
+                onFill: 'white',
+                bgOpacity
+            });
         case 'theater':
-            return scheme({ token: 'hospeda-river', bgOpacity });
+            return scheme({ token: 'hospeda-river', textToken: 'primary-link', bgOpacity });
         case 'workshop':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
+            return scheme({
+                token: 'hospeda-sand',
+                textToken: 'foreground',
+                fillToken: 'foreground',
+                bgOpacity
+            });
         case 'other':
             return scheme({ token: 'muted-foreground', bgOpacity });
         default:
@@ -243,24 +315,48 @@ export function getEventCategoryColor({
 
 /** Color mapping keyed by PostCategoryEnum values (UPPERCASE). */
 const POST_CATEGORY_COLOR: Readonly<Record<string, ColorScheme>> = {
-    [PostCategoryEnum.TOURISM]: scheme({ token: 'primary' }),
+    [PostCategoryEnum.TOURISM]: scheme({ token: 'primary', textToken: 'primary-link' }),
     [PostCategoryEnum.TIPS]: scheme({ token: 'accent' }),
-    [PostCategoryEnum.GASTRONOMY]: scheme({ token: 'hospeda-forest' }),
-    [PostCategoryEnum.CULTURE]: scheme({ token: 'hospeda-river', textToken: 'foreground' }),
-    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river' }),
-    [PostCategoryEnum.EVENTS]: scheme({ token: 'info' }),
-    [PostCategoryEnum.SPORT]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
+    [PostCategoryEnum.GASTRONOMY]: scheme({ token: 'hospeda-forest', textToken: 'forest-link' }),
+    [PostCategoryEnum.CULTURE]: scheme({
+        token: 'hospeda-river',
+        textToken: 'foreground',
+        fillToken: 'foreground'
+    }),
+    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river', textToken: 'primary-link' }),
+    [PostCategoryEnum.EVENTS]: scheme({ token: 'info', textToken: 'primary-link' }),
+    [PostCategoryEnum.SPORT]: scheme({
+        token: 'hospeda-sky',
+        textToken: 'primary-link',
+        fillToken: 'hospeda-river'
+    }),
     [PostCategoryEnum.CARNIVAL]: scheme({ token: 'accent' }),
-    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river' }),
-    [PostCategoryEnum.HISTORY]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
-    [PostCategoryEnum.TRADITIONS]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
-    [PostCategoryEnum.WELLNESS]: scheme({ token: 'hospeda-forest' }),
-    [PostCategoryEnum.FAMILY]: scheme({ token: 'info' }),
-    [PostCategoryEnum.ART]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
-    [PostCategoryEnum.BEACH]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
-    [PostCategoryEnum.RURAL]: scheme({ token: 'hospeda-forest' }),
+    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river', textToken: 'primary-link' }),
+    [PostCategoryEnum.HISTORY]: scheme({
+        token: 'hospeda-sand',
+        textToken: 'foreground',
+        fillToken: 'foreground'
+    }),
+    [PostCategoryEnum.TRADITIONS]: scheme({
+        token: 'hospeda-sand',
+        textToken: 'foreground',
+        fillToken: 'foreground'
+    }),
+    [PostCategoryEnum.WELLNESS]: scheme({ token: 'hospeda-forest', textToken: 'forest-link' }),
+    [PostCategoryEnum.FAMILY]: scheme({ token: 'info', textToken: 'primary-link' }),
+    [PostCategoryEnum.ART]: scheme({
+        token: 'hospeda-sand',
+        textToken: 'foreground',
+        fillToken: 'foreground'
+    }),
+    [PostCategoryEnum.BEACH]: scheme({
+        token: 'hospeda-sky',
+        textToken: 'primary-link',
+        fillToken: 'hospeda-river'
+    }),
+    [PostCategoryEnum.RURAL]: scheme({ token: 'hospeda-forest', textToken: 'forest-link' }),
     [PostCategoryEnum.FESTIVALS]: scheme({ token: 'accent' }),
-    [PostCategoryEnum.GENERAL]: scheme({ token: 'primary' })
+    [PostCategoryEnum.GENERAL]: scheme({ token: 'primary', textToken: 'primary-link' })
 };
 
 /**
@@ -302,7 +398,7 @@ const POST_CATEGORY_I18N_KEY: Readonly<Record<string, string>> = {
  * ```
  */
 export function getPostCategoryColor({ category }: { readonly category: string }): ColorScheme {
-    return POST_CATEGORY_COLOR[category] ?? scheme({ token: 'primary' });
+    return POST_CATEGORY_COLOR[category] ?? scheme({ token: 'primary', textToken: 'primary-link' });
 }
 
 /**
@@ -387,7 +483,13 @@ function solidScheme({
     return {
         bg: `var(--${cssBg})`,
         text: `var(--${cssText})`,
-        border: `var(--${cssBg})`
+        border: `var(--${cssBg})`,
+        fill: `var(--${cssBg})`,
+        // The solid bg is luminance-clamped to ≤0.6 (a dark-ish fill), so white
+        // is the contrast-safe text in BOTH themes — unlike `text`
+        // (--primary-foreground) which flips to dark ink in dark mode and fails
+        // on the green 'new' badge. SPEC-308.
+        onFill: 'white'
     };
 }
 
@@ -418,7 +520,9 @@ export function getBadgeStatusColor({ status }: { readonly status: string }): Co
             return {
                 bg: 'var(--muted)',
                 text: 'var(--core-muted-foreground)',
-                border: 'var(--muted)'
+                border: 'var(--muted)',
+                fill: 'var(--muted)',
+                onFill: 'var(--core-muted-foreground)'
             };
         case 'cancelled':
             return scheme({ token: 'destructive' });
@@ -444,7 +548,7 @@ export function getBadgeStatusColor({ status }: { readonly status: string }): Co
  * ```
  */
 export function getDestinationBadgeColor(): ColorScheme {
-    return scheme({ token: 'primary' });
+    return scheme({ token: 'primary', textToken: 'primary-link' });
 }
 
 // ---------------------------------------------------------------------------
@@ -467,7 +571,9 @@ export function getMutedColorScheme(): ColorScheme {
     return {
         bg: 'var(--core-muted-foreground-a08)',
         text: 'var(--core-muted-foreground)',
-        border: 'var(--core-muted-foreground-a20)'
+        border: 'var(--core-muted-foreground-a20)',
+        fill: 'var(--core-muted-foreground)',
+        onFill: 'var(--core-background)'
     };
 }
 
@@ -491,6 +597,8 @@ export function getWarmColorScheme(): ColorScheme {
     return {
         bg: 'var(--surface-warm)',
         text: 'var(--brand-accent)',
-        border: 'transparent'
+        border: 'transparent',
+        fill: 'var(--brand-accent)',
+        onFill: 'var(--accent-foreground)'
     };
 }
