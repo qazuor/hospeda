@@ -1009,6 +1009,17 @@
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Release/deploy ledger: track env-var deltas (what to hops env-set per app/env) + specs merged to staging (what to smoke-test), so deploy-prep stops being a manual re-audit (BETA-100/101/102). env:check gate has 3 blind spots (Dockerfile ARGs, direct-process-env, optional->required). Tension OQ-1: manual vs auto-derived vs hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-306",
+            "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-306-seo-aeo-category-pages",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Research-only strategy: which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landings vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are worst-of-both: separate pages (duplicate content, lost context) yet noindex (zero SEO). Defines decision rule + URL/canonical/sitemap/structured-data contract + migration reconciling post-U7 state (event /categoria/ now 301 via PR #1910; accommodations /tipo/ still indexable). NO implementation - strategy + child-spec list. Born from U7 hybrid. Discovery-first."
         }
     ],
     "standalone": {
