@@ -2298,7 +2298,7 @@
             "title": "Featured Listing Management",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-292-featured-listing-management",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2497,7 +2497,15 @@
             "path": "SPEC-307-tiptap-v3-migration",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "tags": ["tiptap", "dependencies", "admin", "web", "rich-text-editor", "major-upgrade", "dependabot"]
+            "tags": [
+                "tiptap",
+                "dependencies",
+                "admin",
+                "web",
+                "rich-text-editor",
+                "major-upgrade",
+                "dependabot"
+            ]
         },
         {
             "specId": "SPEC-308",
@@ -2510,7 +2518,14 @@
             "base": "staging",
             "origin": "Surfaced during SPEC-294 (PR #1914, 2026-06-30): once the A11y Sweep ran green end-to-end, axe-core reported 84 real WCAG violations (6 critical, 56 serious). SPEC-294 baselined them so the workflow gates on regressions; this spec owns clearing the baseline.",
             "dependsOn": ["SPEC-294"],
-            "tags": ["a11y", "accessibility", "wcag", "web", "spec-270-followup", "spec-294-followup"]
+            "tags": [
+                "a11y",
+                "accessibility",
+                "wcag",
+                "web",
+                "spec-270-followup",
+                "spec-294-followup"
+            ]
         }
     ]
 }

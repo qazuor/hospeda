@@ -80,6 +80,7 @@
  * @module cron/jobs/finalize-cancelled-subs
  */
 
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     and,
     billingSubscriptionEvents,
@@ -95,12 +96,17 @@ import {
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import type { SubscriptionStatusFull } from '@repo/service-core';
-import { BILLING_EVENT_TYPES, validateSubscriptionStatusTransition } from '@repo/service-core';
+import {
+    BILLING_EVENT_TYPES,
+    syncFeaturedByPlan,
+    validateSubscriptionStatusTransition
+} from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -157,6 +163,7 @@ const D3_WINDOW_END_DAYS = 4;
 interface DueSoftCancelledRow {
     readonly id: string;
     readonly customerId: string;
+    readonly planId: string;
     readonly status: string;
 }
 
@@ -200,6 +207,7 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
         .select({
             id: billingSubscriptions.id,
             customerId: billingSubscriptions.customerId,
+            planId: billingSubscriptions.planId,
             status: billingSubscriptions.status
         })
         .from(billingSubscriptions)
@@ -530,6 +538,41 @@ async function finalizeOne(
             subscriptionStatus: 'cancelled',
             source: 'finalize-cancelled-cron'
         });
+
+        // ── Step 3c: Revoke featuredByPlan on FEATURED_LISTING plans (SPEC-292 T-005) ──
+        // Non-blocking — a failure here must not re-queue the sub for finalization.
+        // T-006 reconciliation cron is the backstop for any missed syncs.
+        try {
+            const cancelledPlan = billing ? await billing.plans.get(row.planId) : null;
+            const cancelledPlanSlug = cancelledPlan?.name ?? '';
+            const hadFeatured =
+                getPlanBySlug(cancelledPlanSlug)?.entitlements.includes(
+                    EntitlementKey.FEATURED_LISTING
+                ) ?? false;
+            if (hadFeatured) {
+                const ownerId = await resolveOwnerUserId({ customerId });
+                if (ownerId) {
+                    await syncFeaturedByPlan({ ownerId, active: false });
+                    logger.info('finalize-cancelled-subs: syncFeaturedByPlan revoked', {
+                        subscriptionId,
+                        customerId,
+                        planSlug: cancelledPlanSlug
+                    });
+                }
+            }
+        } catch (featuredSyncErr) {
+            logger.warn(
+                'finalize-cancelled-subs: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)',
+                {
+                    subscriptionId,
+                    customerId,
+                    error:
+                        featuredSyncErr instanceof Error
+                            ? featuredSyncErr.message
+                            : String(featuredSyncErr)
+                }
+            );
+        }
 
         logger.info('finalize-cancelled-subs: subscription finalized', {
             subscriptionId,

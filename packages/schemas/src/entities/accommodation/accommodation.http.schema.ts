@@ -225,7 +225,10 @@ export const AccommodationCreateHttpSchema = z.object({
     currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.USD),
 
     // Boolean properties
-    isFeatured: z.coerce.boolean().default(false),
+    // isFeatured is intentionally omitted: owners cannot set featured status.
+    // Featuring is derived automatically from the FEATURED_LISTING entitlement
+    // (featuredByPlan column) — the admin-only path keeps manual isFeatured control
+    // via AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292).
     isAvailable: z.coerce.boolean().default(true),
     allowsPets: z.coerce.boolean().default(false),
 
@@ -579,7 +582,10 @@ export const httpToDomainAccommodationCreate = (
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId: httpData.ownerId,
-    isFeatured: httpData.isFeatured,
+    // isFeatured is always false on owner-created accommodations (SPEC-292).
+    // Owners cannot set featured status — it is derived from the FEATURED_LISTING
+    // entitlement (featuredByPlan). Admin keeps manual control via the admin path.
+    isFeatured: false,
 
     // Required fields with sensible defaults using proper enums
     moderationState: ModerationStatusEnum.PENDING,
@@ -801,12 +807,14 @@ export const httpToDomainAccommodationCreateDraft = (
 export const httpToDomainAccommodationUpdate = (
     httpData: AccommodationUpdateHttp
 ): AccommodationUpdateInput => ({
-    // Only map fields that exist in both schemas
+    // Only map fields that exist in both schemas.
+    // isFeatured is intentionally absent: owner PATCH must not carry it.
+    // The field stays undefined (AccommodationUpdateInput is .partial()), so
+    // the service layer sees no instruction to flip the featured flag (SPEC-292).
     name: httpData.name,
     summary: httpData.summary,
     description: httpData.description,
     type: httpData.type,
-    isFeatured: httpData.isFeatured,
     destinationId: httpData.destinationId,
 
     // ✅ COMPLETED: Nested object mappings for location, price, extraInfo

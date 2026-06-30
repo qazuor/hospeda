@@ -24,6 +24,7 @@
  */
 
 import type { QZPayAdminLifecycleHooks } from '@qazuor/qzpay-hono';
+import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     billingAddonPurchases,
     billingSubscriptionEvents,
@@ -32,6 +33,7 @@ import {
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
+import { syncFeaturedByPlan } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getActorFromContext } from '../../../middlewares/actor';
@@ -511,6 +513,49 @@ const onAfterSubscriptionChangePlan: NonNullable<
                             targetPlanSlug: newPlan.name,
                             keepSelections: undefined
                         });
+                        // SPEC-292 T-005: sync featuredByPlan to reflect new plan's
+                        // FEATURED_LISTING entitlement after the downgrade commits.
+                        // Guard: skip when the plan slug is not in ALL_PLANS (commerce/
+                        // partner plans excluded by SPEC-239 would resolve to undefined,
+                        // causing a false active:false that clears featuredByPlan for
+                        // dual-subscription owners).
+                        // Soft-fail: a sync error must not block the admin response.
+                        try {
+                            const resolvedNewPlanDowngrade = getPlanBySlug(newPlan.name);
+                            if (resolvedNewPlanDowngrade) {
+                                const newPlanHasFeatured =
+                                    resolvedNewPlanDowngrade.entitlements.includes(
+                                        EntitlementKey.FEATURED_LISTING
+                                    );
+                                await syncFeaturedByPlan({
+                                    ownerId: userId,
+                                    active: newPlanHasFeatured
+                                });
+                            } else {
+                                apiLogger.warn(
+                                    {
+                                        subscriptionId: subscription.id,
+                                        customerId: subscription.customerId,
+                                        newPlanId,
+                                        planSlug: newPlan.name
+                                    },
+                                    'Admin change-plan hook (downgrade): plan not in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                                );
+                            }
+                        } catch (featuredSyncErr) {
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    newPlanId,
+                                    error:
+                                        featuredSyncErr instanceof Error
+                                            ? featuredSyncErr.message
+                                            : String(featuredSyncErr)
+                                },
+                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                            );
+                        }
                     } else {
                         apiLogger.warn(
                             {
@@ -531,6 +576,49 @@ const onAfterSubscriptionChangePlan: NonNullable<
                             customerId: subscription.customerId,
                             newPlanId
                         });
+                        // SPEC-292 T-005: sync featuredByPlan to reflect new plan's
+                        // FEATURED_LISTING entitlement after the upgrade commits.
+                        // Guard: skip when the plan slug is not in ALL_PLANS (commerce/
+                        // partner plans excluded by SPEC-239 would resolve to undefined,
+                        // causing a false active:false that clears featuredByPlan for
+                        // dual-subscription owners).
+                        // Soft-fail: a sync error must not block the admin response.
+                        try {
+                            const resolvedNewPlanUpgrade = getPlanBySlug(newPlan.name);
+                            if (resolvedNewPlanUpgrade) {
+                                const newPlanHasFeatured =
+                                    resolvedNewPlanUpgrade.entitlements.includes(
+                                        EntitlementKey.FEATURED_LISTING
+                                    );
+                                await syncFeaturedByPlan({
+                                    ownerId: userId,
+                                    active: newPlanHasFeatured
+                                });
+                            } else {
+                                apiLogger.warn(
+                                    {
+                                        subscriptionId: subscription.id,
+                                        customerId: subscription.customerId,
+                                        newPlanId,
+                                        planSlug: newPlan.name
+                                    },
+                                    'Admin change-plan hook (upgrade): plan not in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                                );
+                            }
+                        } catch (featuredSyncErr) {
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    newPlanId,
+                                    error:
+                                        featuredSyncErr instanceof Error
+                                            ? featuredSyncErr.message
+                                            : String(featuredSyncErr)
+                                },
+                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                            );
+                        }
                     } else {
                         apiLogger.warn(
                             {
@@ -542,7 +630,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                         );
                     }
                 }
-                // direction === 'same' → no remediation needed
+                // direction === 'same' → no FEATURED_LISTING change, no remediation needed
             } else {
                 apiLogger.warn(
                     {
