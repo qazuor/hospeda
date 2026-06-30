@@ -177,6 +177,11 @@ jobs:
             --config p/nodejs \
             --config p/owasp-top-ten \
             --config p/secrets \
+            # github-actions-mutable-action-tag is excluded: the repo pins
+            # action versions by readable tag (@vN) + Dependabot's github-actions
+            # ecosystem keeps them current, rather than 40-char SHAs. The rest of
+            # the supply-chain/owasp/secrets rules stay active.
+            --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag \
             --error \
             ${SEMGREP_BASELINE:+--baseline-commit "$SEMGREP_BASELINE"}
 
