@@ -101,15 +101,12 @@ export const webDark: Theme = {
     'surface-warm': oklchValue(0.255, 0.035, 258),
     'surface-dark': oklchValue(0.185, 0.03, 258),
     'surface-elevated': oklchValue(0.285, 0.04, 258),
-    // SPEC-308: the dark navy ramp flipped surface-warm/dark/elevated to dark
-    // fills, but the *-foreground tokens were only defined in web-light.ts (dark
-    // ink for the light cream surfaces). Without a dark override they inherited
-    // that dark ink → dark-on-dark inversion (e.g. ContributionBanner title/desc
-    // contrast 1.4). Provide light foregrounds so text on these surfaces clears
-    // AA in dark.
+    // SPEC-308: the dark navy ramp flipped surface-warm to a dark fill, but
+    // --surface-warm-foreground was only defined in web-light.ts (dark ink for
+    // the light cream surface). Without a dark override it inherited that dark
+    // ink → dark-on-dark inversion (e.g. ContributionBanner title/desc contrast
+    // 1.4). Provide a light foreground so text on this surface clears AA in dark.
     'surface-warm-foreground': oklchValue(0.92, 0.01, 210),
-    'surface-dark-foreground': oklchValue(0.9, 0.01, 210),
-    'surface-elevated-foreground': oklchValue(0.92, 0.01, 210),
 
     // Hero bottom-wave fill. In dark it must follow the page canvas so the
     // wave blends into the section below (the SVG hardcodes --core-card, which
