@@ -49,11 +49,20 @@ updates:
     #     internals, which only exists in astro >= 6.4.0. apps/web pins astro
     #     ^6.3.3, so the web build fails with [MISSING_EXPORT]. Lift this ignore
     #     when web is moved to astro >= 6.4. Owner: SPEC-219 (astro 6.4 alignment).
+    #   - typescript: the dev group aligns ALL workspaces to a single version,
+    #     which DOWNGRADES apps/mobile from its pinned 6.0.3 (required by Expo
+    #     SDK 56) down to the group version. Mobile's tsconfig sets
+    #     `ignoreDeprecations: "6.0"` (TS 6 deprecated `baseUrl`, which Expo/Metro
+    #     needs to resolve `@/*` aliases at bundle time), and "6.0" is an invalid
+    #     value under TS < 6, so the mobile typecheck fails with TS5103. Lift this
+    #     ignore when the monorepo TS-major alignment chore lands (ADR-034
+    #     follow-up: unify the repo on a single TS major so mobile stops diverging).
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
       - dependency-name: '@tanstack/react-router'
       - dependency-name: '@astrojs/node'
+      - dependency-name: 'typescript'
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'
