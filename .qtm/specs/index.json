@@ -2495,6 +2495,19 @@
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "tags": ["tiptap", "dependencies", "admin", "web", "rich-text-editor", "major-upgrade", "dependabot"]
+        },
+        {
+            "specId": "SPEC-308",
+            "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
+            "type": "bugfix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-308-a11y-sweep-debt-remediation",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-294 (PR #1914, 2026-06-30): once the A11y Sweep ran green end-to-end, axe-core reported 84 real WCAG violations (6 critical, 56 serious). SPEC-294 baselined them so the workflow gates on regressions; this spec owns clearing the baseline.",
+            "dependsOn": ["SPEC-294"],
+            "tags": ["a11y", "accessibility", "wcag", "web", "spec-270-followup", "spec-294-followup"]
         }
     ]
 }
