@@ -138,19 +138,19 @@ const categoryTiles = [
     {
         title: t("home.categoryTiles.tiles.music.title", "Música"),
         description: t("home.categoryTiles.tiles.music.description", "Festivales y shows en vivo para todos los gustos"),
-        href: buildUrl({ locale, path: "/eventos/categoria/music/" }),
+        href: `${buildUrl({ locale, path: "/eventos/" })}?category=MUSIC`,
         image: musicImg,
     },
     {
         title: t("home.categoryTiles.tiles.culture.title", "Cultura"),
         description: t("home.categoryTiles.tiles.culture.description", "Arte, historia y patrimonio del Litoral Entrerriano"),
-        href: buildUrl({ locale, path: "/eventos/categoria/culture/" }),
+        href: `${buildUrl({ locale, path: "/eventos/" })}?category=CULTURE`,
         image: cultureImg,
     },
     {
         title: t("home.categoryTiles.tiles.gastronomy.title", "Gastronomía"),
         description: t("home.categoryTiles.tiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
-        href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }),
+        href: `${buildUrl({ locale, path: "/eventos/" })}?category=GASTRONOMY`,
         image: gastronomyImg,
     },
     {
