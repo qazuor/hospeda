@@ -291,9 +291,10 @@ export const createBaseFaqFields = () => ({
                     const adminNotes = faker.helpers.maybe(() => faker.lorem.sentence(), {
                         probability: 0.3
                     });
-                    const category = faker.helpers.maybe(() => faker.lorem.word(), {
-                        probability: 0.6
-                    });
+                    const category = faker.helpers.maybe(
+                        () => faker.lorem.word({ length: { min: 2, max: 20 } }),
+                        { probability: 0.6 }
+                    );
 
                     return {
                         // Base audit fields

@@ -74,7 +74,10 @@ export const createValidAccommodation = () => ({
                     // FAQ-specific fields
                     question: faker.lorem.sentence().slice(0, 300),
                     answer: faker.lorem.paragraph().slice(0, 2000),
-                    category: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.6 })
+                    category: faker.helpers.maybe(
+                        () => faker.lorem.word({ length: { min: 2, max: 20 } }),
+                        { probability: 0.6 }
+                    )
                 }),
                 { count: { min: 1, max: 5 } }
             ),

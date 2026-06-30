@@ -155,8 +155,8 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.3)
       '@faker-js/faker':
-        specifier: 9.6.0
-        version: 9.6.0
+        specifier: 10.5.0
+        version: 10.5.0
       '@github/relative-time-element':
         specifier: ^4.4.8
         version: 4.4.8
@@ -1619,8 +1619,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@faker-js/faker':
-        specifier: ^9.3.0
-        version: 9.6.0
+        specifier: ^10.5.0
+        version: 10.5.0
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -3029,9 +3029,9 @@ packages:
     resolution: {integrity: sha512-4aQzz9vgxcNXFfo/iyNgDDYfsU5XGKKxWxZopw0cVotHiW+U8IJbIxMaxsINs6bHhtkG3StKNPcOrn3eBuxKPw==}
     hasBin: true
 
-  '@faker-js/faker@9.6.0':
-    resolution: {integrity: sha512-3vm4by+B5lvsFPSyep3ELWmZfE3kicDtmemVpuwl1yH7tqtnHdsA6hG8fbXedMVdkzgtvzWoRgjSB4Q+FHnZiw==}
-    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
+  '@faker-js/faker@10.5.0':
+    resolution: {integrity: sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@fastify/busboy@3.2.0':
     resolution: {integrity: sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA==}
@@ -14339,7 +14339,7 @@ snapshots:
       chalk: 4.1.2
       js-yaml: 4.2.0
 
-  '@faker-js/faker@9.6.0': {}
+  '@faker-js/faker@10.5.0': {}
 
   '@fastify/busboy@3.2.0':
     optional: true
