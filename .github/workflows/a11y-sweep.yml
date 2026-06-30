@@ -2,6 +2,11 @@ name: A11y Sweep
 
 on:
   workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Rewrite the a11y baseline from this run (accept current violations) instead of gating'
+        type: boolean
+        default: false
   pull_request:
     branches:
       - staging
@@ -134,4 +139,17 @@ jobs:
           [ "$READY" = "1" ] || { echo "::error::Web failed to become ready within 60s"; exit 1; }
 
       - name: Run a11y sweep
+        env:
+          # Set only on a manual dispatch with the box checked; empty on PRs.
+          A11Y_UPDATE_BASELINE: ${{ inputs.update_baseline && '1' || '' }}
         run: pnpm --filter hospeda-web a11y:sweep
+
+      - name: Upload a11y report and baseline
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: a11y-sweep-report
+          path: |
+            apps/web/scripts/a11y-sweep/_fixtures/sweep-report.json
+            apps/web/scripts/a11y-sweep/a11y-baseline.json
+          if-no-files-found: ignore

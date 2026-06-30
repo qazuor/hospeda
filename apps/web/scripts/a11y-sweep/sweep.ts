@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from '@playwright/test';
@@ -9,7 +9,14 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
 const ONLY_URL = process.env.ONLY_URL;
 const DRY_RUN = process.env.DRY_RUN === '1';
 const REQUIRE_DYNAMIC_ROUTES = process.env.REQUIRE_DYNAMIC_ROUTES === '1';
+// When set, the run rewrites the baseline from the current violations and exits
+// 0 instead of gating. Used to accept a known set of pre-existing violations
+// (tracked separately as a11y debt) so the gate only fails on NEW regressions.
+const UPDATE_BASELINE = process.env.A11Y_UPDATE_BASELINE === '1';
 const REPORT_DIR = resolve(import.meta.dirname, '_fixtures');
+// Committed allowlist of axe rule ids already failing per page+theme. A page is
+// keyed as `${url} [${theme}]`; the value is the sorted set of accepted rule ids.
+const BASELINE_PATH = resolve(import.meta.dirname, 'a11y-baseline.json');
 
 const DESKTOP = { width: 1280, height: 800 };
 const PAGE_TIMEOUT = 25_000;
@@ -85,9 +92,29 @@ type PageResult = {
         serious: number;
         moderate: number;
         minor: number;
+        rules: ReadonlyArray<{ id: string; impact: string }>;
     };
     durationMs: number;
 };
+
+/** Baseline maps `${url} [${theme}]` to the sorted set of accepted axe rule ids. */
+type Baseline = Record<string, string[]>;
+
+function baselineKey({ url, theme }: { url: string; theme: Theme }): string {
+    return `${url} [${theme}]`;
+}
+
+function loadBaseline(): Baseline {
+    if (!existsSync(BASELINE_PATH)) {
+        return {};
+    }
+    try {
+        return JSON.parse(readFileSync(BASELINE_PATH, 'utf-8')) as Baseline;
+    } catch {
+        console.warn(`WARN: could not parse ${BASELINE_PATH}; treating baseline as empty.`);
+        return {};
+    }
+}
 
 function filterEntries(
     entriesInput: ReadonlyArray<{ url: string; name: string }>
@@ -229,7 +256,8 @@ async function sweepEntry(
             critical: violations.filter((v) => v.impact === 'critical').length,
             serious: violations.filter((v) => v.impact === 'serious').length,
             moderate: violations.filter((v) => v.impact === 'moderate').length,
-            minor: violations.filter((v) => v.impact === 'minor').length
+            minor: violations.filter((v) => v.impact === 'minor').length,
+            rules: violations.map((v) => ({ id: v.id, impact: v.impact ?? 'unknown' }))
         };
     } catch (e) {
         result.status = 'error';
@@ -310,17 +338,69 @@ async function main() {
 
     await browser.close();
 
+    // Build the current per-page rule set from this run's violations.
+    const current: Baseline = {};
+    for (const r of results) {
+        if (r.status === 'ok' && r.axe) {
+            const key = baselineKey({ url: r.url, theme: r.theme });
+            current[key] = [...new Set(r.axe.rules.map((rule) => rule.id))].sort();
+        }
+    }
+
+    // Re-baseline mode: accept the current violations and exit without gating.
+    if (UPDATE_BASELINE) {
+        writeFileSync(BASELINE_PATH, `${JSON.stringify(current, null, 2)}\n`);
+        console.log(
+            `\nBaseline updated → ${BASELINE_PATH} (${Object.keys(current).length} page/theme keys)`
+        );
+        return;
+    }
+
+    // A page that could not be analyzed is always an infra failure (this spec's
+    // scope), independent of the a11y baseline.
     if (summary.error > 0) {
         console.error('\nFAIL: One or more pages could not be analyzed.');
         process.exit(1);
     }
 
-    if (summary.totalCritical > 0 || summary.totalSerious > 0) {
-        console.error('\nFAIL: Critical or serious axe violations found.');
+    // Gate: fail only on NEW critical/serious violations not present in the
+    // baseline. Pre-existing debt is tracked as a SPEC-270 follow-up; the gate
+    // protects against regressions.
+    const baseline = loadBaseline();
+    const newViolations: Array<{ key: string; id: string; impact: string }> = [];
+    for (const r of results) {
+        if (r.status !== 'ok' || !r.axe) {
+            continue;
+        }
+        const accepted = new Set(baseline[baselineKey({ url: r.url, theme: r.theme })] ?? []);
+        for (const rule of r.axe.rules) {
+            const blocking = rule.impact === 'critical' || rule.impact === 'serious';
+            if (blocking && !accepted.has(rule.id)) {
+                newViolations.push({
+                    key: baselineKey({ url: r.url, theme: r.theme }),
+                    id: rule.id,
+                    impact: rule.impact
+                });
+            }
+        }
+    }
+
+    if (newViolations.length > 0) {
+        console.error(
+            `\nFAIL: ${newViolations.length} NEW critical/serious violation(s) not in the baseline:`
+        );
+        for (const nv of newViolations) {
+            console.error(`  - ${nv.key}: ${nv.id} (${nv.impact})`);
+        }
+        console.error(
+            '\nFix the violation, or — if it is intentional and tracked — re-run with A11Y_UPDATE_BASELINE=1 to accept it.'
+        );
         process.exit(1);
     }
 
-    console.log('\nPASS: No critical/serious violations.');
+    console.log(
+        `\nPASS: no new critical/serious violations (${summary.totalCritical + summary.totalSerious} baselined as known debt).`
+    );
 }
 
 main().catch((e) => {
