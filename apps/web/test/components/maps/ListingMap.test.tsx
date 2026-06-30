@@ -71,9 +71,12 @@ import { ListingMap } from '../../../src/components/maps/ListingMap.client';
 
 // Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
 // default findBy timeout even on a cold module graph when this file runs alone.
+// The explicit 30s hookTimeout (default is 10s) prevents this beforeAll from
+// timing out on saturated CI runners where the dynamic import alone can take
+// >10s (observed collect/environment times of 140s+).
 beforeAll(async () => {
     await import('../../../src/components/maps/ListingMapInner.client');
-});
+}, 30_000);
 
 const i18n = {
     attribution: '© OSM',
