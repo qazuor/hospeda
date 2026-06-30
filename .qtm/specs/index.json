@@ -2298,7 +2298,7 @@
             "title": "Featured Listing Management",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-292-featured-listing-management",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",

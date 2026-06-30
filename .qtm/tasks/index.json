@@ -853,13 +853,13 @@
         {
             "specId": "SPEC-292",
             "title": "Featured Listing Management",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "1/8",
             "path": "SPEC-292-featured-listing-management",
-            "branch": null,
+            "branch": "spec/SPEC-292-featured-listing-management",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. isFeatured not settable (no route), FEATURED_LISTING unenforced. Surfaced in SPEC-282 owner audit."
+            "note": "Model locked 2026-06-30: admin manual isFeatured (ungated) + owner automatic featuredByPlan derived from FEATURED_LISTING entitlement (no cap); owner PATCH isFeatured leak to be closed. Tasks to be atomized."
         },
         {
             "specId": "SPEC-293",
