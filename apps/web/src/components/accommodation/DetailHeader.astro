@@ -99,9 +99,6 @@ const newStyle =
         {bookmarkCount !== undefined && (
           <span
             class="detail-header__bookmark-count"
-            aria-label={bookmarkCount === 0
-              ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-              : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
           >
             <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
             {bookmarkCount === 0
@@ -116,9 +113,6 @@ const newStyle =
       <div class="detail-header__rating">
         <span
           class="detail-header__bookmark-count"
-          aria-label={bookmarkCount === 0
-            ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-            : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
         >
           <span class="detail-header__bookmark-icon" aria-hidden="true">♥</span>
           {bookmarkCount === 0
