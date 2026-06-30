@@ -15,7 +15,10 @@ const REQUIRE_DYNAMIC_ROUTES = process.env.REQUIRE_DYNAMIC_ROUTES === '1';
 const UPDATE_BASELINE = process.env.A11Y_UPDATE_BASELINE === '1';
 const REPORT_DIR = resolve(import.meta.dirname, '_fixtures');
 // Committed allowlist of axe rule ids already failing per page+theme. A page is
-// keyed as `${url} [${theme}]`; the value is the sorted set of accepted rule ids.
+// keyed by its stable route NAME (e.g. "Accommodation Detail") + theme, NOT its
+// URL: dynamic detail routes resolve to a different entity slug on each run
+// (the API's first item is not deterministic), so a URL key would drift and
+// report known violations as new. The value is the sorted set of accepted rule ids.
 const BASELINE_PATH = resolve(import.meta.dirname, 'a11y-baseline.json');
 
 const DESKTOP = { width: 1280, height: 800 };
@@ -97,11 +100,11 @@ type PageResult = {
     durationMs: number;
 };
 
-/** Baseline maps `${url} [${theme}]` to the sorted set of accepted axe rule ids. */
+/** Baseline maps `${name} [${theme}]` to the sorted set of accepted axe rule ids. */
 type Baseline = Record<string, string[]>;
 
-function baselineKey({ url, theme }: { url: string; theme: Theme }): string {
-    return `${url} [${theme}]`;
+function baselineKey({ name, theme }: { name: string; theme: Theme }): string {
+    return `${name} [${theme}]`;
 }
 
 function loadBaseline(): Baseline {
@@ -342,7 +345,7 @@ async function main() {
     const current: Baseline = {};
     for (const r of results) {
         if (r.status === 'ok' && r.axe) {
-            const key = baselineKey({ url: r.url, theme: r.theme });
+            const key = baselineKey({ name: r.name, theme: r.theme });
             current[key] = [...new Set(r.axe.rules.map((rule) => rule.id))].sort();
         }
     }
@@ -367,20 +370,17 @@ async function main() {
     // baseline. Pre-existing debt is tracked as a SPEC-270 follow-up; the gate
     // protects against regressions.
     const baseline = loadBaseline();
-    const newViolations: Array<{ key: string; id: string; impact: string }> = [];
+    const newViolations: Array<{ key: string; url: string; id: string; impact: string }> = [];
     for (const r of results) {
         if (r.status !== 'ok' || !r.axe) {
             continue;
         }
-        const accepted = new Set(baseline[baselineKey({ url: r.url, theme: r.theme })] ?? []);
+        const key = baselineKey({ name: r.name, theme: r.theme });
+        const accepted = new Set(baseline[key] ?? []);
         for (const rule of r.axe.rules) {
             const blocking = rule.impact === 'critical' || rule.impact === 'serious';
             if (blocking && !accepted.has(rule.id)) {
-                newViolations.push({
-                    key: baselineKey({ url: r.url, theme: r.theme }),
-                    id: rule.id,
-                    impact: rule.impact
-                });
+                newViolations.push({ key, url: r.url, id: rule.id, impact: rule.impact });
             }
         }
     }
@@ -390,7 +390,7 @@ async function main() {
             `\nFAIL: ${newViolations.length} NEW critical/serious violation(s) not in the baseline:`
         );
         for (const nv of newViolations) {
-            console.error(`  - ${nv.key}: ${nv.id} (${nv.impact})`);
+            console.error(`  - ${nv.key} (${nv.url}): ${nv.id} (${nv.impact})`);
         }
         console.error(
             '\nFix the violation, or — if it is intentional and tracked — re-run with A11Y_UPDATE_BASELINE=1 to accept it.'
