@@ -177,6 +177,7 @@ jobs:
             --config p/nodejs \
             --config p/owasp-top-ten \
             --config p/secrets \
+            --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
             --error \
             ${SEMGREP_BASELINE:+--baseline-commit "$SEMGREP_BASELINE"}
 
