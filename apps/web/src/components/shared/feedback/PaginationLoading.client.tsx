@@ -15,6 +15,9 @@ export function PaginationLoading() {
         function showOverlay() {
             if (overlay) return;
             overlay = document.createElement('div');
+            // Shared marker so the global NavigationProgress overlay doesn't
+            // stack a second full-screen overlay on top of this one.
+            overlay.dataset.navOverlay = 'pagination';
             overlay.setAttribute('role', 'status');
             overlay.setAttribute('aria-label', 'Cargando');
             overlay.style.cssText = [

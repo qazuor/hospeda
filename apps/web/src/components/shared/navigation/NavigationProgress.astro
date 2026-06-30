@@ -1,88 +1,59 @@
 ---
 /**
  * @file NavigationProgress.astro
- * @description Thin progress bar shown at the top of the viewport during page navigation.
+ * @description Global navigation loading feedback during page transitions.
  *
- * Integrates with Astro View Transitions events (`astro:before-preparation` and
- * `astro:after-swap`) to animate a slim progress indicator. Also includes a click
- * fallback for non-View Transitions navigation (internal link clicks) and a
- * `pageshow` handler to complete the bar after regular navigations.
+ * Two layers, both driven by Astro View Transitions (ClientRouter) lifecycle
+ * events:
+ *   1. A slim top progress bar that appears instantly when a navigation starts
+ *      (`astro:before-preparation`, the document-fetch phase) and completes on
+ *      `astro:after-swap`.
+ *   2. A threshold-gated full-screen overlay with a centered spinner, shown only
+ *      when the navigation takes longer than `THRESHOLD_MS` (e.g. an SSR page
+ *      with a cold cache). The threshold prevents a flash on fast navigations.
+ *   3. `cursor: progress` on <html> for the whole navigation (desktop pointer
+ *      affordance).
  *
- * Purely decorative — hidden from assistive technologies via `aria-hidden="true"`.
- * Uses `--brand-accent` for color and `--z-modal` for stacking context.
- * No Tailwind classes.
+ * Why re-query the bar on every event: the element lives in the swapped <body>
+ * (no `transition:persist`), so ClientRouter recreates it on each navigation.
+ * The hoisted module script runs once and is NOT re-executed across swaps, so a
+ * reference cached at module load would point at a detached node after the first
+ * SPA navigation — leaving the bar dead from the second navigation onward.
+ * `getBar()` reads the live node every time instead.
+ *
+ * The overlay coordinates with `PaginationLoading` (which shows its own
+ * immediate overlay) via the shared `[data-nav-overlay]` marker so the two
+ * never stack.
+ *
+ * Bar is decorative (`aria-hidden`); the overlay is a `role="status"` live
+ * region labelled with `common.loading`.
  */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+const loadingLabel = t('common.loading', 'Cargando...');
 ---
 
 <div
     id="nav-progress"
-    class="nav-progress is-reveal-initial"
+    class="nav-progress"
+    data-loading-label={loadingLabel}
     aria-hidden="true"
 ></div>
 
 <script>
-    const progressBar = document.getElementById('nav-progress');
+    import { createNavigationProgress } from './nav-progress';
 
-    if (progressBar) {
-        let animationFrame: number | null = null;
-
-        function startProgress(): void {
-            if (!progressBar) return;
-            progressBar.style.opacity = '1';
-            progressBar.style.width = '0%';
-
-            let width = 0;
-            const animate = (): void => {
-                if (width < 90) {
-                    // Quick start, then gradually slow down
-                    const increment = width < 30 ? 3 : width < 60 ? 1 : 0.5;
-                    width += increment;
-                    progressBar.style.width = `${width}%`;
-                    animationFrame = requestAnimationFrame(animate);
-                }
-            };
-            animationFrame = requestAnimationFrame(animate);
-        }
-
-        function completeProgress(): void {
-            if (!progressBar) return;
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-            progressBar.style.width = '100%';
-            setTimeout(() => {
-                if (!progressBar) return;
-                progressBar.style.opacity = '0';
-                setTimeout(() => {
-                    if (!progressBar) return;
-                    progressBar.style.width = '0%';
-                }, 300);
-            }, 200);
-        }
-
-        // Astro View Transitions lifecycle events
-        document.addEventListener('astro:before-preparation', startProgress);
-        document.addEventListener('astro:after-swap', completeProgress);
-
-        // Fallback for non-View Transitions internal link clicks
-        document.addEventListener('click', (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            const anchor = target.closest('a');
-            if (
-                anchor &&
-                anchor.href &&
-                !anchor.href.startsWith('#') &&
-                !anchor.target &&
-                anchor.origin === window.location.origin
-            ) {
-                startProgress();
-            }
-        });
-
-        // Complete the bar when a regular (non-VT) navigation finishes
-        window.addEventListener('pageshow', completeProgress);
-    }
+    // Runs once per full load; the hoisted module script is not re-executed
+    // across ClientRouter swaps, so the document/window listeners persist.
+    createNavigationProgress().attach();
 </script>
 
 <style>
@@ -90,11 +61,84 @@
         position: fixed;
         top: 0;
         left: 0;
-        height: 3px;
+        width: 0;
+        height: 4px;
+        opacity: 0;
         background-color: var(--brand-accent);
         z-index: var(--z-modal);
-        transition: width var(--duration-fast) ease-out,
-                    opacity 0.3s ease-out;
+        transition:
+            width var(--duration-fast) ease-out,
+            opacity 0.25s ease-out;
         pointer-events: none;
+    }
+
+    /* Active state: opacity appears instantly (no fade-in), only width animates. */
+    .nav-progress.is-active {
+        opacity: 1;
+        transition: width var(--duration-fast) ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav-progress,
+        .nav-progress.is-active {
+            transition: none;
+        }
+    }
+</style>
+
+<style is:global>
+    /*
+     * Overlay is created imperatively and appended to <body>, so it carries no
+     * scoped `data-astro-cid` — its styles must be global. Namespaced under
+     * `.nav-overlay` to avoid collisions. Visual mirrors PaginationLoading for
+     * consistency. Sits just below the top bar (`--z-modal` - 1) so the bar
+     * stays visible above it, and above the sticky header.
+     */
+    .nav-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--z-modal) - 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--core-background-a70);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        animation: nav-overlay-fade 0.2s ease-out;
+    }
+
+    .nav-overlay__ring {
+        box-sizing: border-box;
+        width: 44px;
+        height: 44px;
+        border: 3px solid var(--brand-primary-a25);
+        border-top-color: var(--brand-primary);
+        border-radius: var(--radius-pill, 9999px);
+        animation: nav-overlay-spin 0.7s linear infinite;
+    }
+
+    @keyframes nav-overlay-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes nav-overlay-fade {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav-overlay {
+            animation: none;
+        }
+
+        .nav-overlay__ring {
+            animation: none;
+        }
     }
 </style>
