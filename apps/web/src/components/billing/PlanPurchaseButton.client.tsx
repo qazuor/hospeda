@@ -11,6 +11,7 @@
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
+import { TagIcon } from '@repo/icons';
 import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -298,6 +299,68 @@ export function PlanPurchaseButton({
         'No pudimos verificar el código. Intentá de nuevo.'
     );
 
+    /**
+     * Map a server `errorCode` from the validate endpoint to a localized,
+     * user-facing message.
+     *
+     * The endpoint also returns an `errorMessage`, but that string is hardcoded
+     * in ENGLISH server-side (see `promo-code.validation.ts`), so it is
+     * intentionally DISCARDED here. The typed `errorCode` is the stable contract
+     * we translate against. Unknown or missing codes fall back to the generic
+     * "invalid code" copy, so a new server-side code can never leak raw English.
+     *
+     * @param errorCode - Stable error code from the validate response (or undefined)
+     * @returns Localized message for the current locale
+     */
+    function resolvePromoError(errorCode: string | undefined): string {
+        switch (errorCode) {
+            case 'PROMO_CODE_NOT_FOUND':
+                return t(
+                    'billing.checkout.promoApply.errorNotFound',
+                    'No encontramos ese código. Revisá que esté bien escrito.'
+                );
+            case 'PROMO_CODE_INACTIVE':
+                return t(
+                    'billing.checkout.promoApply.errorInactive',
+                    'Este código ya no está activo.'
+                );
+            case 'PROMO_CODE_EXPIRED':
+                return t('billing.checkout.promoApply.errorExpired', 'Este código ya venció.');
+            case 'PROMO_CODE_MAX_USES':
+                return t(
+                    'billing.checkout.promoApply.errorMaxUses',
+                    'Este código alcanzó su límite de usos.'
+                );
+            case 'PROMO_CODE_MAX_USES_PER_USER':
+                return t(
+                    'billing.checkout.promoApply.errorMaxUsesPerUser',
+                    'Ya usaste este código la cantidad máxima de veces.'
+                );
+            case 'PROMO_CODE_PLAN_RESTRICTION':
+                return t(
+                    'billing.checkout.promoApply.errorPlanRestriction',
+                    'Este código no es válido para el plan seleccionado.'
+                );
+            case 'PROMO_CODE_NEW_USERS_ONLY':
+                return t(
+                    'billing.checkout.promoApply.errorNewUsersOnly',
+                    'Este código es solo para clientes nuevos.'
+                );
+            case 'PROMO_CODE_MIN_AMOUNT':
+                return t(
+                    'billing.checkout.promoApply.errorMinAmount',
+                    'Tu compra no alcanza el mínimo requerido para este código.'
+                );
+            case 'PROMO_CODE_VALIDATION_ERROR':
+                return promoErrorGeneric;
+            default:
+                return t(
+                    'billing.checkout.promoApply.errorInvalid',
+                    'El código ingresado no es válido. Revisalo e intentá de nuevo.'
+                );
+        }
+    }
+
     // Fetch the user's current subscription once they're authenticated. Shared
     // across every PlanPurchaseButton on the page via subscriptionPromise so a
     // pricing grid with N tiers issues exactly one request, not N.
@@ -450,18 +513,13 @@ export function PlanPurchaseButton({
                 return;
             }
 
-            const { valid, errorMessage, effectPreview } = result.data;
+            const { valid, errorCode, effectPreview } = result.data;
 
             if (!valid || !effectPreview) {
                 setPromo((prev) => ({
                     ...prev,
                     status: 'error',
-                    errorMsg:
-                        errorMessage ??
-                        t(
-                            'billing.checkout.promoApply.errorInvalid',
-                            'El código ingresado no es válido. Revisalo e intentá de nuevo.'
-                        ),
+                    errorMsg: resolvePromoError(errorCode),
                     appliedCode: null
                 }));
                 return;
@@ -808,7 +866,12 @@ export function PlanPurchaseButton({
                             className={styles.promoToggle}
                             onClick={() => setPromo((prev) => ({ ...prev, expanded: true }))}
                         >
-                            {promoToggleLabel}
+                            <TagIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            <span>{promoToggleLabel}</span>
                         </button>
                     )}
                 </div>

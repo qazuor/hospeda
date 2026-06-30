@@ -170,31 +170,38 @@
     width: 100%;
 }
 
-/* Toggle link to reveal promo field */
+/* Toggle chip to reveal promo field — a bordered pill (not a faint link) so the
+ * discount-code entry point is clearly discoverable on each plan card (U8). */
 .promoToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    min-height: 44px; /* WCAG 2.5.5 touch target */
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     background: none;
-    border: none;
-    padding: 0;
+    border: 1px solid var(--brand-accent);
+    border-radius: var(--radius-pill, 9999px);
     color: var(--brand-accent);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    text-decoration: underline;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
     cursor: pointer;
-    display: inline-block;
-    width: 100%;
-    text-align: center;
     line-height: 1.4;
-    transition: color var(--duration-fast, 0.15s) ease;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
 }
 
 .promoToggle:hover {
-    color: var(--brand-accent-lm06);
+    background-color: color-mix(in srgb, var(--brand-accent) 10%, transparent);
+    color: var(--brand-accent);
 }
 
 .promoToggle:focus-visible {
     outline: 2px solid var(--brand-accent);
     outline-offset: 2px;
-    border-radius: 2px;
 }
 
 /* Container for the expanded promo input */
