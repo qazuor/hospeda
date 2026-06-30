@@ -265,6 +265,8 @@
             "accommodation": "Accommodations",
             "destination": "Destinations",
             "event": "Events",
+            "experience": "Experiences",
+            "gastronomy": "Gastronomy",
             "post": "Blog"
         },
         "collections": {

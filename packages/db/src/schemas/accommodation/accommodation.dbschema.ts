@@ -69,6 +69,14 @@ export const accommodations = pgTable(
         location: jsonb('location').$type<AccommodationLocationType>(),
         media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
+        // Denormalized billing-state flag (SPEC-292): true when the owner holds an
+        // active FEATURED_LISTING entitlement. Set/cleared by the billing-sync
+        // reconciler — never written by admin curation. Distinct from isFeatured,
+        // which is the admin-curated flag. Effective featured status is the
+        // disjunction: isFeatured OR featuredByPlan. This column is the hot-path
+        // denormalization so public queries do not join billing tables. Flipped in
+        // bulk on entitlement grant/revoke events.
+        featuredByPlan: boolean('featured_by_plan').notNull().default(false),
         /**
          * SPEC-237: master toggle — when false the public detail page hides all
          * external reputation blocks (links + review snippets) regardless of
@@ -120,6 +128,18 @@ export const accommodations = pgTable(
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
+        // SPEC-292: parallel indexes for featuredByPlan, mirroring the isFeatured family.
+        // BitmapOr of (isFeatured_idx, featuredByPlan_idx) serves "isFeatured OR featuredByPlan"
+        // efficiently without an expression index (kept in the structural carril).
+        accommodations_featuredByPlan_idx: index('accommodations_featuredByPlan_idx').on(
+            table.featuredByPlan
+        ),
+        accommodations_visibility_featuredByPlan_idx: index(
+            'accommodations_visibility_featuredByPlan_idx'
+        ).on(table.visibility, table.featuredByPlan),
+        accommodations_destinationId_featuredByPlan_visibility_idx: index(
+            'accommodations_destinationId_featuredByPlan_visibility_idx'
+        ).on(table.destinationId, table.featuredByPlan, table.visibility),
         accommodations_ownerSuspended_idx: index('accommodations_ownerSuspended_idx').on(
             table.ownerSuspended
         ),
