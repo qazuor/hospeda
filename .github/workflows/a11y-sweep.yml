@@ -25,9 +25,14 @@ env:
   HOSPEDA_ADMIN_URL: http://localhost:3000
   PUBLIC_ADMIN_URL: http://localhost:3000
   HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
-  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are intentionally OMITTED (not set to
-  # ''): the web env schema validates SENTRY_DSN as a URL, so an empty string
-  # fails ("Invalid URL") during prerender. Absent = Sentry/PostHog disabled.
+  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are REQUIRED by the web env schema in
+  # production, and `astro build` always runs in production mode regardless of
+  # NODE_ENV — so they MUST be present at build time (an empty string fails the
+  # URL check; omitting them fails the required check). Use the same
+  # syntactically-valid placeholders as the CI workflow's build job: the sweep
+  # bundle is never deployed, so fake values are fine. Keep in sync with ci.yml.
+  PUBLIC_SENTRY_DSN: 'https://ci-placeholder.invalid'
+  PUBLIC_POSTHOG_KEY: 'phc_ci_placeholder'
   # NODE_ENV is intentionally NOT set to production at the job level: a
   # production install skips devDependencies (husky, turbo, playwright, …),
   # which breaks `pnpm install` and the turbo build. It is applied only to the
