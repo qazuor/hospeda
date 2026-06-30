@@ -1399,4 +1399,64 @@ export class UserService extends BaseCrudService<
             }
         });
     }
+
+    // -----------------------------------------------------------------------
+    // SPEC-289 — Search History preference methods
+    // -----------------------------------------------------------------------
+
+    /**
+     * Toggles the `settings.searchHistoryEnabled` preference for the actor.
+     *
+     * Performs a **defensive read-modify-write** so all sibling settings keys
+     * are preserved (same pattern as {@link markWhatsNewSeen}). Setting
+     * `enabled = false` pauses search history recording without deleting
+     * existing entries; setting it back to `true` resumes recording.
+     *
+     * @param actor - The authenticated actor performing the action (self-only).
+     * @param input - `{ enabled }` — `true` to enable, `false` to pause.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async patchSearchHistoryPreferences(
+        actor: Actor,
+        input: { enabled: boolean },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ success: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'patchSearchHistoryPreferences',
+            input: { ...input, actor },
+            schema: z.object({ enabled: z.boolean() }),
+            ctx,
+            execute: async ({ enabled }, validatedActor, execCtx) => {
+                // Defensive read-modify-write: preserve all sibling settings keys.
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    searchHistoryEnabled: enabled
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update search history preferences'
+                    );
+                }
+
+                return { success: true as const };
+            }
+        });
+    }
 }

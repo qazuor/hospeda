@@ -773,13 +773,13 @@
         {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
-            "branch": null,
+            "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-286",
@@ -820,13 +820,13 @@
         {
             "specId": "SPEC-289",
             "title": "Search History",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-289-search-history",
-            "branch": null,
+            "branch": "spec/SPEC-289-search-history",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build phantom search-history feature (CAN_VIEW_SEARCH_HISTORY). Surfaced in SPEC-282 review."
+            "note": "OQs resolved 2026-06-29. Entry-count limit (Plus=50/VIP=200, new LimitKey.MAX_SEARCH_HISTORY_ENTRIES), full self-service privacy (delete-one/clear-all/opt-out), dedicated mi-cuenta page. Phasing P1 data+billing / P2 API / P3 web / P4 SPEC-282 table. Impl in progress."
         },
         {
             "specId": "SPEC-290",
@@ -1009,6 +1009,28 @@
             "base": "staging",
             "createdAt": "2026-06-27T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Release/deploy ledger: track env-var deltas (what to hops env-set per app/env) + specs merged to staging (what to smoke-test), so deploy-prep stops being a manual re-audit (BETA-100/101/102). env:check gate has 3 blind spots (Dockerfile ARGs, direct-process-env, optional->required). Tension OQ-1: manual vs auto-derived vs hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-306",
+            "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-306-seo-aeo-category-pages",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Research-only strategy: which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landings vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are worst-of-both: separate pages (duplicate content, lost context) yet noindex (zero SEO). Defines decision rule + URL/canonical/sitemap/structured-data contract + migration reconciling post-U7 state (event /categoria/ now 301 via PR #1910; accommodations /tipo/ still indexable). NO implementation - strategy + child-spec list. Born from U7 hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Coordinated tiptap v2->v3 migration carved from Dependabot #1890 (closed). Both rich-text editors (admin newsletter + entity-form, web host editor): setContent signature change, Link/Underline folded into StarterKit v3, Whats New render path re-verify, plus the missing mount/round-trip tests that let #1890 pass CI green."
         }
     ],
     "standalone": {

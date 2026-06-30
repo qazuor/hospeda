@@ -202,12 +202,14 @@ export const accommodationsApi = {
     },
 
     /**
-     * Get all accommodations for a destination.
+     * Get the first page of accommodations for a destination (preview strips).
      *
      * NOTE: This endpoint (`GET /public/accommodations/destination/:id`) returns
-     * `{ accommodations: AccommodationPublic[] }` — NOT a paginated envelope.
-     * It ignores page/pageSize and returns ALL accommodations for the destination.
-     * Do NOT assume `.items` or `.pagination` fields exist on the response data.
+     * `{ accommodations: AccommodationPublic[] }` — NOT a paginated envelope, and
+     * the API route hardcodes `page: 1, pageSize: 20`, so it returns at most the
+     * first 20 accommodations (never "all"). Do NOT assume `.items` or
+     * `.pagination` fields exist on the response data. For a paginated listing,
+     * use `list({ destinationId, page, pageSize })` instead.
      */
     getByDestination({
         destinationId
@@ -1434,6 +1436,68 @@ export const commerceLeadApi = {
      */
     submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.post({ path: `${BASE}/commerce/leads`, body });
+    }
+};
+
+// --- Owner Promotions (SPEC-285) ---
+
+/**
+ * Public shape for a single owner promotion returned by the list endpoint.
+ *
+ * `discountValue` semantics by type:
+ *  - `percentage`: plain integer (e.g. 20 → 20 %)
+ *  - `fixed`: integer in ARS centavos (e.g. 5000 → $50)
+ *  - `free_night`: integer count of free nights
+ */
+export interface OwnerPromotionPublicItem {
+    readonly id: string;
+    readonly slug: string;
+    /** Null when the promotion applies to all of the owner's accommodations. */
+    readonly accommodationId: string | null | undefined;
+    readonly title: string;
+    readonly description?: string | null;
+    readonly discountType: 'percentage' | 'fixed' | 'free_night';
+    readonly discountValue: number;
+    readonly minNights?: number | null;
+    readonly validFrom: string;
+    readonly validUntil?: string | null;
+}
+
+/**
+ * Public owner-promotions API endpoints (SPEC-285).
+ *
+ * The API resolves owner-wide promotions (accommodationId=null) server-side
+ * when an accommodationId is provided — the client only passes one param.
+ */
+export const ownerPromotionsApi = {
+    /**
+     * List active promotions for an accommodation, including owner-wide
+     * (accommodationId=null) promotions resolved via the accommodation's owner.
+     *
+     * Maps to: GET /api/v1/public/owner-promotions?accommodationId=:id
+     *
+     * Graceful degradation: returns an empty list on any fetch / HTTP error.
+     *
+     * @param params - The accommodation UUID
+     * @returns Paginated list of active public promotions
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionsApi.listByAccommodation({ accommodationId: 'acc-uuid' });
+     * if (result.ok) {
+     *   const promos = result.data.items;
+     * }
+     * ```
+     */
+    listByAccommodation({
+        accommodationId
+    }: {
+        readonly accommodationId: string;
+    }): Promise<ApiResult<PaginatedResponse<OwnerPromotionPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/owner-promotions`,
+            params: { accommodationId }
+        });
     }
 };
 

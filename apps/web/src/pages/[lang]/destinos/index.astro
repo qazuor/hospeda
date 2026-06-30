@@ -2,7 +2,7 @@
 /**
  * @file destinos/index.astro
  * @description Destinations listing page with card grid (no pagination).
- * Uses DefaultLayout (no filter sidebar - hierarchy serves as filter).
+ * Uses ListingLayout (sticky WaveHeader, consistent with all other listings).
  *
  * Renders all destinations in a single grid: the catalog is small enough
  * that pagination only adds friction. Default order is "featured first, then
@@ -22,7 +22,7 @@
  * @rendering SSR + ISR 24h
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
@@ -232,10 +232,11 @@ const itemListEntries = sortedCards.map((card) => ({
 const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
-<DefaultLayout
+<ListingLayout
 	locale={locale}
 	title={t('destinations.title', 'Destinos')}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
+	showFilters={false}
 >
 	<ItemListJsonLd
 		slot="head-extra"
@@ -244,186 +245,155 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		numberOfItems={total}
 	/>
 
-	<div class="dest-listing">
-		<div class="dest-listing__header section section--warm">
-			<div class="dest-listing__header-container">
-				<Breadcrumbs locale={locale} items={[{ label: t('destinations.title', 'Destinos') }]} />
-				<ListingPageHeader
-					locale={locale}
-					tagline={t('destinations.tagline', 'Explorá la región')}
-					title={t('destinations.title', 'Destinos')}
-					totalCount={total}
-				/>
-			</div>
-		</div>
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos') }]} />
 
-		<!-- Wave separator -->
-		<div class="dest-listing__wave" aria-hidden="true">
-			<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-				<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm)" />
-			</svg>
-		</div>
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('destinations.tagline', 'Explorá la región')}
+		title={t('destinations.title', 'Destinos')}
+		totalCount={total}
+	/>
 
-		<div class="dest-listing__body">
-			<div class="dest-listing__container">
-				{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
 
-				{!hasError && sortedCards.length === 0 && (
-					<EmptyState locale={locale} variant="empty" />
-				)}
+	{!hasError && sortedCards.length === 0 && (
+		<EmptyState locale={locale} variant="empty" />
+	)}
 
-				{!hasError && sortedCards.length > 0 && availableAttractions.length > 0 && (
-					<nav
-						id="dest-filter-top"
-						class="dest-attractions-filter"
-						aria-label={t('destinations.filter.attractionsAriaLabel', 'Filtrar por atracciones')}
-					>
-						<ul class="dest-attractions-filter__list">
-							{availableAttractions.map((attr) => {
-								const active = activeIds.has(attr.id);
-								const Icon = getAttractionIcon({ icon: attr.icon });
-								return (
-									<li>
-										<a
-											href={buildBadgeHref(attr.id)}
-											class:list={[
-												'dest-attractions-filter__badge',
-												{ 'dest-attractions-filter__badge--active': active }
-											]}
-											aria-pressed={active ? 'true' : 'false'}
-											rel="nofollow"
-											data-attraction-id={attr.id}
-										>
-											<span class="dest-attractions-filter__badge-icon" aria-hidden="true">
-												<Icon size={14} weight="regular" />
-											</span>
-											<span>{attr.name}</span>
-											<span class="dest-attractions-filter__badge-remove" aria-hidden="true">
-												<CloseIcon size={11} weight="bold" />
-											</span>
-										</a>
-									</li>
-								);
-							})}
-						</ul>
-
-						{hasOverflowAttractions && (
-							<details class="dest-attractions-filter__more" open={anyOverflowActive}>
-								<summary class="dest-attractions-filter__more-toggle">
-									<span class="dest-attractions-filter__more-label-closed">
-										{t('destinations.filter.showMore', 'Ver más')}
-									</span>
-									<span class="dest-attractions-filter__more-label-open">
-										{t('destinations.filter.showLess', 'Ver menos')}
-									</span>
-									<span class="dest-attractions-filter__more-count">
-										{overflowCount}
-									</span>
-								</summary>
-							</details>
-						)}
-
-					</nav>
-				)}
-
-				{!hasError && sortedCards.length > 0 && (
-					<div class="dest-listing__controls">
-						<nav class="view-toggle" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-							<span
-								class="view-toggle__btn view-toggle__btn--active"
-								aria-current="page"
-							>
-								{t('accommodations.viewToggle.list', 'Lista')}
-							</span>
+	{!hasError && sortedCards.length > 0 && availableAttractions.length > 0 && (
+		<nav
+			id="dest-filter-top"
+			class="dest-attractions-filter"
+			aria-label={t('destinations.filter.attractionsAriaLabel', 'Filtrar por atracciones')}
+		>
+			<ul class="dest-attractions-filter__list">
+				{availableAttractions.map((attr) => {
+					const active = activeIds.has(attr.id);
+					const Icon = getAttractionIcon({ icon: attr.icon });
+					return (
+						<li>
 							<a
-								href={mapHref}
-								class="view-toggle__btn"
+								href={buildBadgeHref(attr.id)}
+								class:list={[
+									'dest-attractions-filter__badge',
+									{ 'dest-attractions-filter__badge--active': active }
+								]}
+								aria-pressed={active ? 'true' : 'false'}
+								rel="nofollow"
+								data-attraction-id={attr.id}
 							>
-								{t('accommodations.viewToggle.map', 'Mapa')}
+								<span class="dest-attractions-filter__badge-icon" aria-hidden="true">
+									<Icon size={14} weight="regular" />
+								</span>
+								<span>{attr.name}</span>
+								<span class="dest-attractions-filter__badge-remove" aria-hidden="true">
+									<CloseIcon size={11} weight="bold" />
+								</span>
 							</a>
-						</nav>
-					</div>
-				)}
+						</li>
+					);
+				})}
+			</ul>
 
-				{!hasError && sortedCards.length > 0 && (
-					<div class="dest-grid">
-						{sortedCards.map((card) => {
-							const matches = cardMatchesFilter(card);
-							const attractionIdsAttr = (card.attractions ?? [])
-								.map((a) => a.id)
-								.join(',');
-							return (
-								<div
-									class:list={[
-										'dest-card-wrap',
-										{ 'dest-card-wrap--hidden': !matches }
-									]}
-									data-attraction-ids={attractionIdsAttr}
-								>
-									<DestinationCard
-										destination={card}
-										locale={locale}
-										variant="grid"
-										isAuthenticated={isAuthenticated}
-										initialIsFavorited={favoriteChecks[card.id]?.isBookmarked}
-										initialBookmarkId={favoriteChecks[card.id]?.bookmarkId ?? null}
-									/>
-								</div>
-							);
-						})}
-					</div>
-				)}
+			{hasOverflowAttractions && (
+				<details class="dest-attractions-filter__more" open={anyOverflowActive}>
+					<summary class="dest-attractions-filter__more-toggle">
+						<span class="dest-attractions-filter__more-label-closed">
+							{t('destinations.filter.showMore', 'Ver más')}
+						</span>
+						<span class="dest-attractions-filter__more-label-open">
+							{t('destinations.filter.showLess', 'Ver menos')}
+						</span>
+						<span class="dest-attractions-filter__more-count">
+							{overflowCount}
+						</span>
+					</summary>
+				</details>
+			)}
 
-				{!hasError && sortedCards.length > 0 && (
-					<div class="dest-listing__empty-filter" hidden={!showEmptyBanner}>
-						<p class="dest-listing__empty-filter-msg">
-							{t(
-								'destinations.filter.empty',
-								'No hay destinos que coincidan con los filtros seleccionados.'
-							)}
-						</p>
-						<a href={buildClearHref()} class="dest-listing__empty-filter-clear">
-							{t('destinations.filter.clear', 'Limpiar filtros')}
-						</a>
-					</div>
-				)}
+		</nav>
+	)}
 
-				<!-- Photo-contribution banner (SPEC-191 FR-8): after the grid.
-				     page/[page].astro is a 301 redirect — this single mount
-				     covers the whole listing. -->
-				<ContributionBanner
-					title={t('contributions.banner.photosListing.title', '¿Tenés fotos de estos destinos?')}
-					description={t(
-						'contributions.banner.photosListing.description',
-						'Sumá tus fotos y ayudá a mostrar el Litoral como se merece.'
-					)}
-					ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
-					ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
-					source="destination_listing"
-					variant="photos"
-				/>
-			</div>
+	{!hasError && sortedCards.length > 0 && (
+		<div class="dest-listing__controls">
+			<nav class="view-toggle" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+				<span
+					class="view-toggle__btn view-toggle__btn--active"
+					aria-current="page"
+				>
+					{t('accommodations.viewToggle.list', 'Lista')}
+				</span>
+				<a
+					href={mapHref}
+					class="view-toggle__btn"
+				>
+					{t('accommodations.viewToggle.map', 'Mapa')}
+				</a>
+			</nav>
 		</div>
-	</div>
-</DefaultLayout>
+	)}
+
+	{!hasError && sortedCards.length > 0 && (
+		<div class="dest-grid">
+			{sortedCards.map((card) => {
+				const matches = cardMatchesFilter(card);
+				const attractionIdsAttr = (card.attractions ?? [])
+					.map((a) => a.id)
+					.join(',');
+				return (
+					<div
+						class:list={[
+							'dest-card-wrap',
+							{ 'dest-card-wrap--hidden': !matches }
+						]}
+						data-attraction-ids={attractionIdsAttr}
+					>
+						<DestinationCard
+							destination={card}
+							locale={locale}
+							variant="grid"
+							isAuthenticated={isAuthenticated}
+							initialIsFavorited={favoriteChecks[card.id]?.isBookmarked}
+							initialBookmarkId={favoriteChecks[card.id]?.bookmarkId ?? null}
+						/>
+					</div>
+				);
+			})}
+		</div>
+	)}
+
+	{!hasError && sortedCards.length > 0 && (
+		<div class="dest-listing__empty-filter" hidden={!showEmptyBanner}>
+			<p class="dest-listing__empty-filter-msg">
+				{t(
+					'destinations.filter.empty',
+					'No hay destinos que coincidan con los filtros seleccionados.'
+				)}
+			</p>
+			<a href={buildClearHref()} class="dest-listing__empty-filter-clear">
+				{t('destinations.filter.clear', 'Limpiar filtros')}
+			</a>
+		</div>
+	)}
+
+	<!-- Photo-contribution banner (SPEC-191 FR-8): after the grid.
+	     page/[page].astro is a 301 redirect — this single mount
+	     covers the whole listing. -->
+	<ContributionBanner
+		title={t('contributions.banner.photosListing.title', '¿Tenés fotos de estos destinos?')}
+		description={t(
+			'contributions.banner.photosListing.description',
+			'Sumá tus fotos y ayudá a mostrar el Litoral como se merece.'
+		)}
+		ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
+		ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
+		source="destination_listing"
+		variant="photos"
+	/>
+</ListingLayout>
 
 <style>
-	.dest-listing__header-container,
-	.dest-listing__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.dest-listing__header {
-		padding: 3rem 0 1.5rem;
-	}
-
-	.dest-listing__wave { margin-top: -1px; line-height: 0; }
-	.dest-listing__wave svg { width: 100%; height: 80px; display: block; }
-
-	.dest-listing__body { padding: var(--space-section-sm) 0; }
-
 	.dest-grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
@@ -466,10 +436,11 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		gap: 0.5rem;
 		margin: 0 0 1.25rem;
 		/* Used as the anchor target after each badge click. Without scroll
-		 * margin the nav lands flush against the (potentially sticky) site
-		 * header. The value is intentionally a bit generous so the user can
-		 * see the filter row + the first row of cards in one viewport. */
-		scroll-margin-top: 6rem;
+		 * margin the nav lands flush against the sticky stack: the site navbar
+		 * (~80px) plus the ListingLayout WaveHeader compact bar (~50px). Account
+		 * for both so the no-JS hash-link fallback lands below the sticky header
+		 * (JS navigation uses pushState and never scrolls). */
+		scroll-margin-top: calc(var(--navbar-height, 80px) + 80px);
 	}
 
 	.dest-attractions-filter__list {

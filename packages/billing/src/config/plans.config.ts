@@ -86,7 +86,9 @@ const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_COMPARE_ITEMS, 4), // SPEC-288: capped (was -1); cascades to owner/complex
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
-    limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200)
+    limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
+    // Search history cap — VIP tier (SPEC-289). tourist-plus overrides with 50.
+    limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 200)
 ];
 
 // ─── OWNER PLANS ───────────────────────────────────────────────
@@ -463,7 +465,9 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_COMPARE_ITEMS, 2), // SPEC-288: Plus tier (was 4)
         // AI consumer quotas — mid tier (SPEC-283 §5).
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
-        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50)
+        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),
+        // Search history cap — Plus tier (SPEC-289). VIP/owner/complex inherit 200.
+        limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 50)
     ]
 };
 

@@ -387,17 +387,9 @@ const resolvedCards = cards.map((card) => {
     return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
 });
 
-/** Quick-filter chips: top event categories */
-const categoryChips = [
-    { label: t('events.categories.music',      'Música'),      href: buildUrl({ locale, path: '/eventos/categoria/music/'      }) },
-    { label: t('events.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/eventos/categoria/culture/'    }) },
-    { label: t('events.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/eventos/categoria/gastronomy/' }) },
-    { label: t('events.categories.festival',   'Festival'),    href: buildUrl({ locale, path: '/eventos/categoria/festival/'   }) },
-    { label: t('events.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/eventos/categoria/nature/'     }) },
-    { label: t('events.categories.theater',    'Teatro'),      href: buildUrl({ locale, path: '/eventos/categoria/theater/'    }) },
-    { label: t('events.categories.sports',     'Deportes'),    href: buildUrl({ locale, path: '/eventos/categoria/sports/'     }) },
-    { label: t('events.categories.workshop',   'Taller'),      href: buildUrl({ locale, path: '/eventos/categoria/workshop/'   }) },
-] as const;
+// Category quick-filter chips are built after `paginationParams` (below) so
+// they can filter the listing in place via `?category=ENUM` (preserving the
+// active filters) instead of navigating to a separate /categoria/ page.
 
 /**
  * Build the `initialParams` record for FilterSidebar so server-rendered state
@@ -431,6 +423,36 @@ sidebarInitialParams['sortBy'] = sortKey;
  */
 const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
+
+/**
+ * Category quick-filter chips. Like the temporal chips, these filter the
+ * listing in place via `?category=ENUM` (preserving every active filter and
+ * resetting to page 1) instead of navigating to a separate /categoria/ page.
+ * The chip matching the active category is highlighted; clicking it clears the
+ * filter (toggle). Values are the EventCategoryEnum members the API expects.
+ */
+const CATEGORY_CHIP_DEFS = [
+    { value: 'MUSIC', label: t('events.categories.music', 'Música') },
+    { value: 'CULTURE', label: t('events.categories.culture', 'Cultura') },
+    { value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
+    { value: 'FESTIVAL', label: t('events.categories.festival', 'Festival') },
+    { value: 'NATURE', label: t('events.categories.nature', 'Naturaleza') },
+    { value: 'THEATER', label: t('events.categories.theater', 'Teatro') },
+    { value: 'SPORTS', label: t('events.categories.sports', 'Deportes') },
+    { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
+] as const;
+
+const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
+    const isActive = category === value;
+    const params = new URLSearchParams(paginationParams);
+    if (isActive) {
+        params.delete('category');
+    } else {
+        params.set('category', value);
+    }
+    const qs = params.toString();
+    return { label, href: qs ? `${baseUrl}?${qs}` : baseUrl, active: isActive };
+});
 
 // ItemList JSON-LD entries — the visible page of event cards, routed through
 // the reusable ItemListJsonLd component (SPEC-157 D-1 canonical JSON-LD path).

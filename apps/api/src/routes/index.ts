@@ -67,7 +67,11 @@ import {
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
 
-import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
+import {
+    adminOwnerPromotionRoutes,
+    protectedOwnerPromotionRoutes,
+    publicOwnerPromotionRoutes
+} from './owner-promotion';
 import {
     adminCreatePartnerRoute,
     adminDeletePartnerRoute,
@@ -136,6 +140,7 @@ import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js'
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
+import { protectedSearchHistoryRoutes } from './search-history';
 import { publicSearchRoutes } from './search/public';
 import {
     adminGetGptActionSchemaRoute,
@@ -310,6 +315,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
 
+        // Owner promotions (SPEC-285 — tourist-facing read-only display)
+        // Unregistered until SPEC-285 wired the public path. Requires no auth.
+        app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
+
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.
         app.route('/api/v1/public', viewsRoutes);
@@ -363,6 +372,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
             '/api/v1/protected/user-bookmark-collections',
             protectedUserBookmarkCollectionRoutes
         );
+        // Search history (SPEC-289 — entitlement-gated, plan-limited)
+        app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

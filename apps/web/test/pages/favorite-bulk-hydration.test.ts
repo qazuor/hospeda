@@ -128,22 +128,17 @@ describe('pages/[lang]/eventos/index.astro — event bulk check', () => {
 // eventos/categoria/[category]/index.astro — category page
 // ---------------------------------------------------------------------------
 
-describe('pages/[lang]/eventos/categoria/[category]/index.astro — event bulk check', () => {
+// Retired to a 301 redirect (U7): category filtering now happens on the unified
+// /eventos/ listing, which has its own bulk-favorite precheck. This page no
+// longer renders an event grid, so the bulk-check invariant does not apply.
+describe('pages/[lang]/eventos/categoria/[category]/index.astro — retired to redirect (U7)', () => {
     const src = readSrc('pages/[lang]/eventos/categoria/[category]/index.astro');
 
-    assertBulkCheckPattern(src, 'eventos/categoria');
-
-    it('calls checkBulk with entityType EVENT', () => {
-        expect(src).toContain("entityType: 'EVENT'");
-    });
-
-    it('creates resolvedCards with injected isFavorited', () => {
-        expect(src).toContain('resolvedCards');
-        expect(src).toContain('isFavorited: entry.isBookmarked');
-    });
-
-    it('renders resolvedCards in the grid', () => {
-        expect(src).toContain('resolvedCards.map(');
+    it('is a 301 redirect to the unified listing, not an event grid', () => {
+        expect(src).toContain('Astro.redirect');
+        expect(src).toContain('category=');
+        expect(src).not.toContain('checkBulk');
+        expect(src).not.toContain('resolvedCards');
     });
 });
 

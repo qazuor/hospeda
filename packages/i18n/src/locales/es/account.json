@@ -570,6 +570,10 @@
         "whatsNew": {
             "title": "Novedades",
             "desc": "Novedades y actualizaciones de la plataforma"
+        },
+        "searchHistory": {
+            "title": "Historial de búsquedas",
+            "description": "Revisá y repetí tus búsquedas recientes en Hospeda"
         }
     },
     "newsletter": {
@@ -714,5 +718,45 @@
             "submitFailed": "No se pudo establecer la contraseña. Intentá nuevamente.",
             "skipFailed": "No se pudo saltar el paso. Intentá nuevamente."
         }
+    },
+    "searchHistory": {
+        "loading": "Cargando historial...",
+        "errorFetch": "No se pudo cargar el historial de búsquedas",
+        "empty": {
+            "title": "Sin búsquedas guardadas",
+            "body": "Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo."
+        },
+        "clearAll": "Borrar todo",
+        "clearAllInline": "Sí, borrar todo",
+        "clearAllCancel": "Cancelar",
+        "deleteOne": "Eliminar",
+        "deleteOneConfirm": "Sí, eliminar",
+        "deleteConfirmAria": "Confirmar eliminación",
+        "rerun": "Repetir búsqueda",
+        "noQuery": "Búsqueda sin texto",
+        "results": "{{count}} resultados",
+        "noResults": "Sin resultados",
+        "clearSuccess": "Historial borrado",
+        "deleteSuccess": "Búsqueda eliminada",
+        "clearError": "No se pudo borrar el historial",
+        "deleteError": "No se pudo eliminar la búsqueda",
+        "optOut": {
+            "label": "Historial de búsquedas",
+            "description": "Guardá tus búsquedas recientes para repetirlas con un clic.",
+            "enabled": "Activado",
+            "disabled": "Desactivado",
+            "error": "No se pudo actualizar la preferencia",
+            "saving": "Guardando..."
+        },
+        "filters": {
+            "destination": "Destino",
+            "guests": "{{count}} huéspedes",
+            "priceMin": "Desde $ {{min}}",
+            "priceMax": "Hasta $ {{max}}",
+            "priceRange": "$ {{min}} – $ {{max}}",
+            "filterCount_one": "{{count}} filtro",
+            "filterCount_other": "{{count}} filtros"
+        },
+        "entitlementRequired": "Esta función está disponible para suscriptores Plus y VIP."
     }
 }

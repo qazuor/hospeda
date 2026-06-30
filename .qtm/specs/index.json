@@ -2210,7 +2210,7 @@
             "title": "Owner Promotions — Tourist-Facing Display",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-285-owner-promotions-tourist-display",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2262,7 +2262,7 @@
             "title": "Search History",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-289-search-history",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2472,6 +2472,29 @@
             "base": "staging",
             "origin": "Owner request (2026-06-27): maintain a running TEXT ledger of env-var deltas (added/removed/modified) per change so the VPS/Coolify env changes don't have to be re-investigated at release time, PLUS a running log of specs merged to staging (what entered, what to smoke-test). DISCOVERY-FIRST. Anchored in the env-registry + env:check:registry gate, which has 3 blind spots: Dockerfile ARGs, direct-process-env reads, optional->required Zod drift (BETA-100/101/102). Central tension OQ-1: incremental-manual vs auto-derived-at-release vs hybrid. Risk: no git tag at Coolify deploy time makes the auto-diff window hard.",
             "tags": ["devops", "deploy", "env", "release", "tracking", "devx"]
+        },
+        {
+            "specId": "SPEC-306",
+            "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
+            "type": "research",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-306-seo-aeo-category-pages",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "origin": "Split out of U7 (events-filter UX) as the 'do-it-right' half of a hybrid decision. Research-only strategy spec: decide which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landing pages vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are the worst of both worlds: separate pages (duplicate content, lost context) that are noindex (zero SEO benefit). Defines the decision rule + URL/canonical/sitemap/structured-data/metadata contract + a migration reconciling the post-U7 state (event /categoria/ now 301-redirected by PR #1910; accommodations /tipo/ still indexable). NO implementation - produces strategy + child-spec list. OQ-1: concrete criterion for landing-vs-filter. OQ-2: canonical = path or query. OQ-4: reconcile the U7 redirects. Doc-only discovery-first.",
+            "tags": ["seo", "aeo", "ia", "listings", "facets", "strategy", "discovery"]
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "created": "2026-06-30T00:00:00Z",
+            "base": "staging",
+            "tags": ["tiptap", "dependencies", "admin", "web", "rich-text-editor", "major-upgrade", "dependabot"]
         }
     ]
 }

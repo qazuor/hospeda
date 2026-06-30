@@ -104,5 +104,11 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         name: 'AI accommodation imports per month',
         description:
             'Maximum number of AI-powered accommodation import requests allowed per calendar month'
+    },
+    // Search history entry limit (SPEC-289)
+    [LimitKey.MAX_SEARCH_HISTORY_ENTRIES]: {
+        name: 'Search history entries',
+        description:
+            'Maximum number of past search entries retained for the user. Oldest entries beyond this cap are pruned after each new record. Free plan users have no entitlement and this limit is never evaluated for them.'
     }
 };

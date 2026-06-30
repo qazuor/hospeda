@@ -634,7 +634,13 @@
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
         "bookmark_count_other": "Guardado por {{count}} personas",
-        "bookmark_count_zero": "Sé el primero en guardarlo"
+        "bookmark_count_zero": "Sé el primero en guardarlo",
+        "promotions": {
+            "sectionTitle": "Promociones especiales",
+            "validUntil": "Válido hasta el {date}",
+            "minNights": "Mínimo {n} noches",
+            "discountOff": "de descuento"
+        }
     },
     "list": {
         "searchContext": {

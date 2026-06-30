@@ -263,7 +263,13 @@ const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN
     }
 
     .header:global(.navbar--scrolled) {
-        background-color: var(--core-card-a95);
+        /* Fully opaque once scrolled: the WaveHeader's warm bar sits directly
+           below the navbar, and a translucent surface (a95) let the wave color
+           bleed through during scroll, which looked off. An opaque surface
+           keeps the navbar clean against the wave. Blur is kept so the
+           background-color transition from the translucent at-top state still
+           fades smoothly. */
+        background-color: var(--core-card);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
