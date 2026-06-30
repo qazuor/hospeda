@@ -12,6 +12,8 @@
  *     status 'quota_exceeded' (AC-6 metering).
  *   - recordAiUsage throwing → still 403 (enforcement independent of metering).
  *   - Each of the 4 features maps to its correct entitlement/limit key.
+ *   - skipEntitlementGate=true (SPEC-283 auth-baseline) → step 3 skipped but
+ *     steps 1/2/4/5 (auth, billing-load, limit=0, quota) still enforced.
  *
  * Uses Hono test app + context-injection middleware (same idiom as
  * entitlement.test.ts). `@repo/ai-core` is fully mocked so no real DB
@@ -602,5 +604,93 @@ describe('createAiQuotaMiddleware', () => {
                 });
             });
         }
+    });
+
+    // -----------------------------------------------------------------------
+    // skipEntitlementGate: auth-baseline features skip ONLY step 3 (SPEC-283)
+    //
+    // ai_search is auth-baseline — no plan grants AI_SEARCH, so the entitlement
+    // gate must be bypassed. These tests prove the bypass is surgical: step 3
+    // is skipped, but steps 1/2/4/5 (auth, billing-load, limit=0, quota count)
+    // remain fully enforced.
+    // -----------------------------------------------------------------------
+
+    describe('when created with { skipEntitlementGate: true }', () => {
+        it('should pass through (200) even when the user lacks the entitlement (step 3 skipped)', async () => {
+            // Arrange: NO entitlement, finite limit, usage under quota
+            mockGetMonthlyCallCount.mockResolvedValue(5);
+            injectContext({
+                app,
+                actor: makeActor('user-auth-baseline'),
+                entitlements: new Set<EntitlementKey>(), // none — would 403 without the flag
+                limits: new Map<LimitKey, number>([[LIMIT_KEY, 20]])
+            });
+            app.use(createAiQuotaMiddleware(FEATURE, { skipEntitlementGate: true }));
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert: entitlement gate skipped → request proceeds
+            expect(res.status).toBe(200);
+        });
+
+        it('should STILL return 503 when billingLoadFailed is true (step 2 enforced)', async () => {
+            // Arrange
+            injectContext({
+                app,
+                actor: makeActor('user-auth-baseline-billing-fail'),
+                entitlements: new Set<EntitlementKey>(),
+                billingLoadFailed: true
+            });
+            app.use(createAiQuotaMiddleware(FEATURE, { skipEntitlementGate: true }));
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert: billing-load guard runs before the (skipped) entitlement gate
+            expect(res.status).toBe(503);
+        });
+
+        it('should STILL return 403 LIMIT_REACHED when plan limit is 0 (step 4 enforced)', async () => {
+            // Arrange: no entitlement, limit disabled in plan
+            injectContext({
+                app,
+                actor: makeActor('user-auth-baseline-disabled'),
+                entitlements: new Set<EntitlementKey>(),
+                limits: new Map<LimitKey, number>([[LIMIT_KEY, 0]])
+            });
+            app.use(createAiQuotaMiddleware(FEATURE, { skipEntitlementGate: true }));
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert: limit-value gate still rejects; no DB count query
+            expect(res.status).toBe(403);
+            expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
+        });
+
+        it('should STILL return 403 LIMIT_REACHED when monthly quota is exhausted (step 5 enforced)', async () => {
+            // Arrange: no entitlement, finite limit, usage at quota
+            mockGetMonthlyCallCount.mockResolvedValue(20);
+            injectContext({
+                app,
+                actor: makeActor('user-auth-baseline-at-quota'),
+                entitlements: new Set<EntitlementKey>(),
+                limits: new Map<LimitKey, number>([[LIMIT_KEY, 20]])
+            });
+            app.use(createAiQuotaMiddleware(FEATURE, { skipEntitlementGate: true }));
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert: quota gate still rejects even with entitlement gate skipped
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { error: { code: string } };
+            expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
+        });
     });
 });

@@ -566,7 +566,13 @@ export class GastronomyReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: GastronomyReview[]; total: number }>> {
         try {
-            const result = await this.model.findAll(
+            // Load the `user` relation so the public review list can display
+            // reviewer names without a separate N+1 per-review query (Bug B7b fix).
+            // The security force-filter (APPROVED + ACTIVE + deletedAt: null) is
+            // applied INSIDE the where argument after any caller-supplied overrides
+            // to uphold the same invariant as _executeSearch.
+            const result = await this.model.findAllWithRelations(
+                { user: true },
                 {
                     gastronomyId,
                     lifecycleState: LifecycleStatusEnum.ACTIVE,

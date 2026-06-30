@@ -40,6 +40,7 @@
 | `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/import-from-url` | `accommodation/protected/import-from-url.ts` | gate+limit | `ai_accommodation_import`, `max_ai_accommodation_import_per_month` | wired | SPEC-222 T-020. Endpoint access is PermissionEnum OR-gated in the handler (ACCOMMODATION_CREATE \| ACCOMMODATION_UPDATE_OWN \| ACCOMMODATION_UPDATE_ANY), NOT entitlement-gated — any host can import. The AI entitlement + monthly quota apply ONLY to Strategy B (AI-assisted extraction for sparse generic pages), enforced LAZILY inside the injected `aiExtract` port and degrade-clean (structured-only partial + informational notice, never 403) when the plan lacks `ai_accommodation_import` or the monthly quota is spent. Successful AI calls metered via recordAiUsage. Per-user 10/h sliding-window rate limit (HOSPEDA_IMPORT_RATE_LIMIT_RPH) → 429. |
+| `POST /api/v1/protected/accommodations/compare` | `accommodation/protected/compare.ts` | gate+limit | `can_compare_accommodations`, `max_compare_items` | wired | SPEC-288 T-003. gateComparator() enforces the entitlement, then the per-plan MAX_COMPARE_ITEMS limit; the route's setCompareCount middleware feeds `ids.length` into context before the gate runs. Non-viewable items are silently omitted from the result. |
 | `POST /api/v1/protected/host-onboarding/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | Funnel exception: tourist-free users may enter onboarding without `publish_accommodations`; first-publish starts the owner trial. `enforceAccommodationLimit()` still prevents over-cap hosts from creating extra drafts. |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}` | `accommodation/protected/getById.ts` | none | - | n/a | Read own data only; auth + ownership check in handler |
@@ -87,6 +88,11 @@
 | `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | none | - | n/a | Metadata update on own collection; cap-freeing op; ungated — T-145-05 |
 | `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 — T-145-05 |
 | `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
+| **SEARCH HISTORY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/search-history` | `search-history/protected/list.ts` | gate+limit | `can_view_search_history`, `max_search_history_entries` | wired | gateSearchHistory() — two-step: CAN_VIEW_SEARCH_HISTORY entitlement + MAX_SEARCH_HISTORY_ENTRIES limit (injected count=0, service caps page size to planLimit) — SPEC-289 |
+| `DELETE /api/v1/protected/search-history/{id}` | `search-history/protected/delete-one.ts` | none | - | n/a | Hard-delete own entry; ungated per BETA-42 — users at cap must still free slots — SPEC-289 |
+| `DELETE /api/v1/protected/search-history` | `search-history/protected/clear-all.ts` | none | - | n/a | Hard-delete all own entries (privacy op); ungated — SPEC-289 |
+| `PATCH /api/v1/protected/search-history/preferences` | `search-history/protected/preferences.ts` | none | - | n/a | Toggle opt-out; settings write via UserService.patchSearchHistoryPreferences — SPEC-289 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
@@ -124,8 +130,8 @@
 | `GET /api/v1/protected/geocoding/reverse` | `geocoding/protected/index.ts` | none | - | n/a | Protected geocoding proxy; auth-only — any logged-in user can reverse-geocode, no billing gate needed |
 | **AI — PROTECTED (SPEC-198)** | | | | | |
 | `POST /api/v1/protected/ai/text-improve` | `ai/protected/text-improve.ts` | gate+limit | `ai_text_improve`, `max_ai_text_improve_per_month` | wired | createAiQuotaMiddleware('text_improve') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-198 T-004) |
-| `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month` | wired | createAiQuotaMiddleware('chat') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-200 T-005) |
-| `POST /api/v1/protected/ai/search-chat` | `ai/protected/search-chat.ts` | none | - | n/a | Platform feature (SPEC-211 §7.7 / SPEC-212): auth + per-user/IP rate-limit only, NO billing entitlement or quota gate. The USD cost ceiling is enforced inside the AI engine. Mounted at /api/v1/protected/ai via routes/ai/protected/index.ts. Supersedes the retired /ai/search-intent route (SPEC-199, removed in SPEC-212 T-013). |
+| `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month`, `max_ai_chat_consumer_per_month` | wired | Two-sided INLINE gate (no createAiQuotaMiddleware — single-actor middleware cannot express it). OWNER side: listing owner's `ai_chat` entitlement + `max_ai_chat_per_month` quota, owner-metered (SPEC-211 §7.3). CONSUMER side: requesting user's `max_ai_chat_consumer_per_month`, consumer-metered (SPEC-283 §2.3). Distinct 403 copy per side (`aiChat.unavailable` vs `aiChat.consumerLimitReached`). Consumer side is fail-open when the key is absent. Mounted at /api/v1/protected/ai via routes/ai/protected/index.ts. |
+| `POST /api/v1/protected/ai/search-chat` | `ai/protected/search-chat.ts` | limit | `max_ai_search_per_month` | wired | Auth-baseline (SPEC-283, revising SPEC-211 §7.7): `createAiQuotaMiddleware('search', { skipEntitlementGate: true })` enforces a per-plan monthly quota keyed on the requesting user with NO entitlement gate (no plan grants AI_SEARCH). Fails closed (503) on billing-load failure. USD cost ceiling enforced inside the AI engine as backstop. Mounted at /api/v1/protected/ai via routes/ai/protected/index.ts. Supersedes the retired /ai/search-intent route (SPEC-199, removed in SPEC-212 T-013). |
 | `POST /api/v1/protected/ai/translate` | `ai/protected/translate.ts` | gate+limit | `ai_translate`, `max_ai_translate_per_month` | wired | createAiQuotaMiddleware('translate') enforces entitlement + monthly quota + billing-outage guard; entitlementMiddleware + per-user/IP rate-limit applied first; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-212 T-006). Note: one quota pre-check covers the fields×locales AI calls fanned out per request; per-call cost is still metered in ai_usage. |
 | **AI — ADMIN (SPEC-212)** | | | | | |
 | `POST /api/v1/admin/ai/translate` | `ai/admin/translate.ts` | none | - | n/a | Admin single-entity translate ("Translate now" in the admin TranslationSection); gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212). |
@@ -919,12 +925,16 @@ and are **excepted** from the snapshot guard (T-145-12).
 Do NOT delete them and do NOT build the routes without a spec. When a route is
 eventually built, move its entry from this section to the main table.
 
+> **Wired since SPEC-288:** `gateComparator` (`can_compare_accommodations`) is now
+> mounted on `POST /api/v1/protected/accommodations/compare`
+> (`apps/api/src/routes/accommodation/protected/compare.ts`) and is no longer a
+> phantom gate.
+
 | Gate function | Intended EntitlementKey | Source file | Spec |
 |---|---|---|---|
 | `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateComparator` | `can_compare_accommodations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateSearchHistory` | `can_view_search_history` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
@@ -959,7 +969,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
 | `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
-| `reserved` | 14 | 12 phantom gates + 2 limit stubs |
+| `reserved` | 13 | 11 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288) |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
 

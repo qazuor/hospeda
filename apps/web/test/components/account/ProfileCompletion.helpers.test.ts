@@ -11,6 +11,8 @@ import {
     LOCATION_COUNTRIES,
     SOCIAL_PLATFORMS,
     computeDisplayName,
+    computeInitialDisplayNameOverride,
+    splitFullName,
     validateProfileCompletionFields
 } from '../../../src/components/account/ProfileCompletion.helpers';
 
@@ -413,6 +415,83 @@ describe('computeDisplayName', () => {
             override: ''
         });
         expect(result).toBe('Maria');
+    });
+});
+
+// ─── computeInitialDisplayNameOverride ──────────────────────────────────────────
+
+describe('computeInitialDisplayNameOverride', () => {
+    it('seeds the override with the display name when no firstName is present', () => {
+        expect(
+            computeInitialDisplayNameOverride({
+                initialDisplayName: 'Juan Pérez',
+                initialFirstName: ''
+            })
+        ).toBe('Juan Pérez');
+    });
+
+    it('returns empty when a firstName is present so the name auto-derives (B1 keystone)', () => {
+        // Regression for B1: a Google sign-up now passes initialFirstName, which
+        // MUST leave the override empty — otherwise the display name freezes to
+        // the raw session name instead of tracking first/last name edits.
+        expect(
+            computeInitialDisplayNameOverride({
+                initialDisplayName: 'Juan Pérez',
+                initialFirstName: 'Juan'
+            })
+        ).toBe('');
+    });
+
+    it('returns empty when both inputs are empty', () => {
+        expect(
+            computeInitialDisplayNameOverride({ initialDisplayName: '', initialFirstName: '' })
+        ).toBe('');
+    });
+});
+
+// ─── splitFullName ────────────────────────────────────────────────────────────
+
+describe('splitFullName', () => {
+    // Regression for B1: a Google sign-up landed on an empty completion form
+    // because user.name was never split into the firstName/lastName inputs.
+    it('splits a two-token name into first + last', () => {
+        expect(splitFullName({ fullName: 'Juan Pérez' })).toEqual({
+            firstName: 'Juan',
+            lastName: 'Pérez'
+        });
+    });
+
+    it('puts every token after the first into lastName (compound names)', () => {
+        expect(splitFullName({ fullName: 'María José García López' })).toEqual({
+            firstName: 'María',
+            lastName: 'José García López'
+        });
+    });
+
+    it('returns the single token as firstName with empty lastName', () => {
+        expect(splitFullName({ fullName: 'Cher' })).toEqual({
+            firstName: 'Cher',
+            lastName: ''
+        });
+    });
+
+    it('collapses internal and surrounding whitespace before splitting', () => {
+        expect(splitFullName({ fullName: '  Juan   Carlos  Pérez  ' })).toEqual({
+            firstName: 'Juan',
+            lastName: 'Carlos Pérez'
+        });
+    });
+
+    it('returns empty strings for an empty name', () => {
+        expect(splitFullName({ fullName: '' })).toEqual({ firstName: '', lastName: '' });
+    });
+
+    it('returns empty strings for a whitespace-only name', () => {
+        expect(splitFullName({ fullName: '   ' })).toEqual({ firstName: '', lastName: '' });
+    });
+
+    it('returns empty strings when fullName is undefined', () => {
+        expect(splitFullName({})).toEqual({ firstName: '', lastName: '' });
     });
 });
 

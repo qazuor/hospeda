@@ -1,5 +1,5 @@
 import type { OwnerPromotion, OwnerPromotionCreateInput } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, hasPermission } from '../../utils';
@@ -109,14 +109,26 @@ export function checkCanRestore(actor: Actor, entity: OwnerPromotion): void {
 
 /**
  * Checks if an actor has permission to view an owner promotion.
- * Requires `OWNER_PROMOTION_VIEW_ANY` or `OWNER_PROMOTION_VIEW_OWN`.
- * If `_OWN` is used, verifies the actor is the owner of the promotion.
+ *
+ * Public read path: ACTIVE and non-plan-restricted promotions are visible to
+ * any actor (including guests), mirroring accommodation's PUBLIC-visibility
+ * pass-through in `checkCanView`. This lets the public `getById` endpoint serve
+ * any guest without a permission gate.
+ *
+ * Non-public promotions (DRAFT / ARCHIVED / plan-restricted) still require
+ * `OWNER_PROMOTION_VIEW_ANY` (admin/staff) or `OWNER_PROMOTION_VIEW_OWN`
+ * (owner) to prevent UUID-probing of non-public entities.
  *
  * @param actor - The actor performing the action.
  * @param entity - The owner promotion entity to be viewed.
  * @throws {ServiceError} With `FORBIDDEN` code if permission is denied.
  */
 export function checkCanView(actor: Actor, entity: OwnerPromotion): void {
+    // ACTIVE + non-plan-restricted promotions are publicly visible (no auth needed).
+    if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && !entity.planRestricted) {
+        return;
+    }
+    // Non-public states require ownership or admin access.
     checkGenericPermission(
         actor,
         PermissionEnum.OWNER_PROMOTION_VIEW_ANY,
@@ -147,40 +159,33 @@ export function checkCanList(actor: Actor): void {
 
 /**
  * Checks if an actor has permission to search owner promotions.
- * Requires either `OWNER_PROMOTION_VIEW_ANY` or `OWNER_PROMOTION_VIEW_OWN`.
  *
- * @param actor - The actor performing the action.
- * @throws {ServiceError} With `FORBIDDEN` code if permission is denied.
+ * The public search path is open to any actor (including guests).
+ * Security is enforced at the model layer: `_executeSearch` forces
+ * `lifecycleState=ACTIVE`, `planRestricted=false`, and the valid-from/until
+ * date window, so no sensitive data leaks regardless of actor permissions.
+ *
+ * Mirrors accommodation's `checkCanList` no-op pattern.
+ *
+ * @param _actor - The actor performing the action (unused).
  */
-export function checkCanSearch(actor: Actor): void {
-    if (
-        !hasPermission(actor, PermissionEnum.OWNER_PROMOTION_VIEW_ANY) &&
-        !hasPermission(actor, PermissionEnum.OWNER_PROMOTION_VIEW_OWN)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to search owner promotions'
-        );
-    }
+export function checkCanSearch(_actor: Actor): void {
+    return;
 }
 
 /**
  * Checks if an actor has permission to count owner promotions.
- * Requires either `OWNER_PROMOTION_VIEW_ANY` or `OWNER_PROMOTION_VIEW_OWN`.
  *
- * @param actor - The actor performing the action.
- * @throws {ServiceError} With `FORBIDDEN` code if permission is denied.
+ * The public count path is open to any actor (including guests).
+ * The count mirrors the `_executeSearch` filter (ACTIVE + non-restricted +
+ * in-window) so no sensitive data leaks regardless of actor permissions.
+ *
+ * Mirrors accommodation's `checkCanList` no-op pattern.
+ *
+ * @param _actor - The actor performing the action (unused).
  */
-export function checkCanCount(actor: Actor): void {
-    if (
-        !hasPermission(actor, PermissionEnum.OWNER_PROMOTION_VIEW_ANY) &&
-        !hasPermission(actor, PermissionEnum.OWNER_PROMOTION_VIEW_OWN)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to count owner promotions'
-        );
-    }
+export function checkCanCount(_actor: Actor): void {
+    return;
 }
 
 /**

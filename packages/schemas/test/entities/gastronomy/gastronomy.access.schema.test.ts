@@ -78,3 +78,43 @@ describe('GastronomyAdminSchema', () => {
         expect(keys).toContain('moderationState');
     });
 });
+
+// ---------------------------------------------------------------------------
+// Bug B7a regression — GastronomyPublicSchema exposes destination relation
+// Fixes: destinationName always empty on card (schema must allow the joined
+// destination object so stripWithSchema does not drop it from the response).
+// ---------------------------------------------------------------------------
+
+describe('GastronomyPublicSchema — B7a regression (destination relation field)', () => {
+    it('should include destination in its shape', () => {
+        const keys = Object.keys(GastronomyPublicSchema.shape ?? {});
+        expect(keys).toContain('destination');
+    });
+
+    it('should accept a valid destination object on parse', () => {
+        const data = {
+            ...createMinimalGastronomy(),
+            destination: {
+                id: '123e4567-e89b-12d3-a456-426614174001',
+                name: 'Concepción del Uruguay',
+                slug: 'concepcion-del-uruguay'
+            }
+        };
+        const result = GastronomyPublicSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.destination?.name).toBe('Concepción del Uruguay');
+        }
+    });
+
+    it('should accept null destination (nullish — FK may not resolve in edge cases)', () => {
+        const data = { ...createMinimalGastronomy(), destination: null };
+        const result = GastronomyPublicSchema.safeParse(data);
+        expect(result.success).toBe(true);
+    });
+
+    it('should NOT include ownerId (still excluded from public schema)', () => {
+        const keys = Object.keys(GastronomyPublicSchema.shape ?? {});
+        expect(keys).not.toContain('ownerId');
+    });
+});

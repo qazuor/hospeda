@@ -20,6 +20,13 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('FavoriteButton');
         });
 
+        it('should import and render the CompareButton island (SPEC-288)', () => {
+            expect(src).toContain("from '@/components/shared/compare/CompareButton.client'");
+            expect(src).toContain('<CompareButton');
+            expect(src).toContain('accommodationId={data.id}');
+            expect(src).toContain('accommodationName={data.name}');
+        });
+
         it('should NOT import FavoriteIcon directly (delegated to FavoriteButton island)', () => {
             // FavoriteIcon is now rendered internally by FavoriteButton — the card
             // should not import it to avoid shipping a duplicate icon bundle.

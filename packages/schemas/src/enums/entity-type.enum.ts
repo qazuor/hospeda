@@ -13,6 +13,12 @@
  * `POST` remains valid — users may apply personal USER tags to posts for
  * their own organization (D-019 from SPEC-086). This is orthogonal to the
  * PostTag subsystem, which lives in a separate `post_tags` table.
+ *
+ * `EXPERIENCE` and `GASTRONOMY` were appended so they can participate in the
+ * user-bookmark (favorites) subsystem, reaching parity with accommodations,
+ * destinations, events and posts. They are first-class domain entities
+ * (SPEC-239 gastronomy, SPEC-240 experience) with their own tables, but had
+ * never been added to this shared enum.
  */
 export enum EntityTypeEnum {
     ACCOMMODATION = 'ACCOMMODATION',
@@ -23,5 +29,7 @@ export enum EntityTypeEnum {
     CONVERSATION = 'CONVERSATION',
     REVIEW = 'REVIEW',
     BILLING_SUBSCRIPTION = 'BILLING_SUBSCRIPTION',
-    PAYMENT = 'PAYMENT'
+    PAYMENT = 'PAYMENT',
+    EXPERIENCE = 'EXPERIENCE',
+    GASTRONOMY = 'GASTRONOMY'
 }

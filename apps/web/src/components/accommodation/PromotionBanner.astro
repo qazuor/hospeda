@@ -1,0 +1,185 @@
+---
+/**
+ * @file PromotionBanner.astro
+ * @description Tourist-facing informational promotion display for the
+ * accommodation detail page (SPEC-285 T-006, D-2).
+ *
+ * Renders active promotions as static badges. No CTA, no redeem flow,
+ * no client-side JavaScript. Renders nothing when the list is empty.
+ *
+ * Discount rendering by type:
+ *  - percentage  → "{value}% de descuento" (locale-aware suffix)
+ *  - fixed       → formatted ARS centavos via formatPrice + suffix
+ *  - free_night  → reuses host.promotions.discountTypes.free_night label
+ */
+
+import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
+import { formatDate, formatPrice } from '@/lib/format-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+    /** Active promotions to display (server-filtered by the API). */
+    readonly promos: readonly OwnerPromotionPublicItem[];
+    /** Active page locale for i18n and date/price formatting. */
+    readonly locale: SupportedLocale;
+}
+
+const { promos, locale } = Astro.props;
+
+// Render nothing when there are no active promotions.
+if (promos.length === 0) return;
+
+const { t } = createTranslations(locale);
+
+/**
+ * Returns a locale-aware discount label for a given promotion.
+ *
+ * @param promo - Public promotion item from the API
+ * @returns Formatted discount string
+ */
+function formatDiscount(promo: OwnerPromotionPublicItem): string {
+    const { discountType, discountValue } = promo;
+    const off = t('accommodations.detail.promotions.discountOff');
+
+    if (discountType === 'percentage') {
+        return `${discountValue}% ${off}`;
+    }
+    if (discountType === 'fixed') {
+        const formatted = formatPrice({ amount: discountValue, locale });
+        return `${formatted} ${off}`;
+    }
+    if (discountType === 'free_night') {
+        return t('host.promotions.discountTypes.free_night');
+    }
+    // Fallback for any future discount type
+    return String(discountValue);
+}
+---
+
+<section class="promo-banner" aria-label={t('accommodations.detail.promotions.sectionTitle')}>
+    <h2 class="promo-banner__title">{t('accommodations.detail.promotions.sectionTitle')}</h2>
+
+    <ul class="promo-banner__list" role="list">
+        {promos.map((promo) => {
+            const discountLabel = formatDiscount(promo);
+            const validUntilLabel = promo.validUntil
+                ? t('accommodations.detail.promotions.validUntil', undefined, {
+                      date: formatDate({ date: promo.validUntil, locale })
+                  })
+                : null;
+            const minNightsLabel = promo.minNights != null
+                ? t('accommodations.detail.promotions.minNights', undefined, {
+                      n: promo.minNights
+                  })
+                : null;
+
+            return (
+                <li class="promo-item">
+                    <span class="promo-item__tag" aria-hidden="true">%</span>
+                    <div class="promo-item__body">
+                        <p class="promo-item__title">{promo.title}</p>
+                        <p class="promo-item__discount">{discountLabel}</p>
+                        {(validUntilLabel || minNightsLabel) && (
+                            <p class="promo-item__meta">
+                                {minNightsLabel && <span>{minNightsLabel}</span>}
+                                {validUntilLabel && <span>{validUntilLabel}</span>}
+                            </p>
+                        )}
+                    </div>
+                </li>
+            );
+        })}
+    </ul>
+</section>
+
+<style>
+    .promo-banner {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .promo-banner__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .promo-banner__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .promo-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3, 12px);
+        background-color: var(--success-a12);
+        border: 1px solid var(--success-a30);
+        border-radius: var(--radius-md, 8px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+
+    .promo-item__tag {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        flex-shrink: 0;
+        background-color: var(--success);
+        color: #fff;
+        border-radius: 50%;
+        font-size: 0.85rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .promo-item__body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        min-width: 0;
+    }
+
+    .promo-item__title {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .promo-item__discount {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--success);
+        margin: 0;
+    }
+
+    .promo-item__meta {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    .promo-item__meta span::before {
+        content: "· ";
+    }
+
+    .promo-item__meta span:first-child::before {
+        content: "";
+    }
+</style>

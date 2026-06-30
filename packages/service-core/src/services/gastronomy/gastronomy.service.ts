@@ -355,7 +355,10 @@ export class GastronomyService extends BaseCommerceListingService<
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
         // the caller's scalar filters so no query param can widen the result set.
-        const result = await this.model.findAll(
+        // Relations (destination, owner) are loaded so the web card transform can
+        // read destinationName without an N+1 query (Bug B7a fix).
+        const result = await this.model.findAllWithRelations(
+            { destination: true, owner: true },
             {
                 ...scalarFilters,
                 deletedAt: null,

@@ -13,6 +13,8 @@ interface ChipItem {
     readonly label: string;
     /** Target URL for the chip anchor. */
     readonly href: string;
+    /** When true, the chip renders in the active/selected state. */
+    readonly active?: boolean;
 }
 
 interface Props {
@@ -28,9 +30,13 @@ const { chips, ariaLabel } = Astro.props;
 <nav class="tag-chips" aria-label={ariaLabel}>
     <div class="tag-chips__fade-wrapper">
         <ul class="tag-chips__list" role="list">
-            {chips.map(({ label, href }) => (
+            {chips.map(({ label, href, active }) => (
                 <li class="tag-chips__item">
-                    <a href={href} class="tag-chips__chip">
+                    <a
+                        href={href}
+                        class:list={['tag-chips__chip', { 'tag-chips__chip--active': active }]}
+                        aria-current={active ? 'true' : undefined}
+                    >
                         {label}
                     </a>
                 </li>
@@ -120,6 +126,14 @@ const { chips, ariaLabel } = Astro.props;
         color: var(--accent-foreground, #fff);
         border-color: var(--brand-accent);
         box-shadow: 0 2px 8px var(--brand-accent-a30);
+    }
+
+    /* Active/selected chip — matches the temporal quick-filter chips so both
+       rows of filters read as the same control. */
+    .tag-chips__chip--active {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground, #fff);
+        border-color: var(--brand-accent);
     }
 
     .tag-chips__chip:focus-visible {

@@ -74,7 +74,13 @@ export default defineConfig({
     }),
 
     prefetch: {
-        defaultStrategy: 'hover'
+        // 'tap' (not 'hover'): prefetching an SSR page re-runs its full
+        // frontmatter (detail pages fire 9-12 API calls each). With 'hover',
+        // merely moving the mouse over listing cards fired hundreds of API
+        // calls and tripped the rate limiter for a single normal user. 'tap'
+        // prefetches on pointerdown — navigation still feels instant without
+        // amplifying SSR/API load.
+        defaultStrategy: 'tap'
     },
 
     server: {

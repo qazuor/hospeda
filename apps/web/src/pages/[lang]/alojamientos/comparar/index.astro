@@ -1,0 +1,79 @@
+---
+/**
+ * @file alojamientos/comparar/index.astro
+ * @description Accommodation comparison page (SPEC-288 T-011). Renders the
+ * side-by-side comparison matrix for the client-only selection. The matrix
+ * island reads the compare-store, hydrates the accommodations through the
+ * protected compare endpoint, and re-validates the per-plan cap server-side.
+ *
+ * @route /{lang}/alojamientos/comparar/
+ * @rendering SSR (prerender=false) — the matrix itself is client-only because
+ *   the selection lives in localStorage; the page is noindex (transient view).
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { ComparisonMatrix } from '@/components/shared/compare/ComparisonMatrix.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+export const prerender = false;
+
+const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('accommodations.comparison.page.metaTitle', 'Comparar alojamientos');
+const description = t(
+	'accommodations.comparison.page.metaDescription',
+	'Compará alojamientos lado a lado: precio, ubicación, calificación y más.'
+);
+const heading = t('accommodations.comparison.page.heading', 'Comparación de alojamientos');
+const backLabel = t('accommodations.comparison.page.backToListing', 'Volver a alojamientos');
+---
+
+<DefaultLayout locale={locale} title={title} description={description} noindex={true}>
+	<main class="compare-page">
+		<header class="compare-page__header">
+			<h1 class="compare-page__title">{heading}</h1>
+			<a class="compare-page__back" href={`/${locale}/alojamientos/`}>{backLabel}</a>
+		</header>
+
+		<ComparisonMatrix client:only="react" locale={locale} />
+	</main>
+</DefaultLayout>
+
+<style>
+	.compare-page {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: var(--space-section-sm) var(--space-container-x);
+	}
+
+	.compare-page__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: var(--space-6);
+	}
+
+	.compare-page__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h2, 1.75rem);
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.compare-page__back {
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: var(--text-body-sm, 0.875rem);
+		color: var(--brand-primary);
+		text-decoration: none;
+	}
+
+	.compare-page__back:hover {
+		text-decoration: underline;
+	}
+</style>

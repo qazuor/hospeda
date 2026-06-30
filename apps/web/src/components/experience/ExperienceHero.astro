@@ -3,9 +3,11 @@
  * @file ExperienceHero.astro
  * @description Detail page hero for an experience listing (SPEC-240 T-027).
  * Shows name, type badge, pricing info (ExperiencePriceTag), average rating,
- * and a featured star. Mirrors GastronomyDetailHeader pattern.
+ * and a featured star. The FavoriteButton island lives in a right-side column
+ * (mirrors EventDetailHeader / GastronomyDetailHeader pattern).
  */
 
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { StarIcon, LocationIcon } from '@repo/icons';
 import type { ExperienceDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
@@ -15,9 +17,24 @@ import ExperiencePriceTag from './ExperiencePriceTag.astro';
 interface Props {
     readonly experience: ExperienceDetailData;
     readonly locale: SupportedLocale;
+    /** Whether the current user is authenticated (forwarded to FavoriteButton). */
+    readonly isAuthenticated?: boolean;
+    /** SSR-resolved initial favorite state for the current user. */
+    readonly initialIsFavorited?: boolean;
+    /** SSR-resolved bookmark id for toggling off without a re-check. */
+    readonly initialBookmarkId?: string | null;
+    /** Total bookmark count from the public API. */
+    readonly bookmarkCount?: number;
 }
 
-const { experience, locale } = Astro.props;
+const {
+    experience,
+    locale,
+    isAuthenticated = false,
+    initialIsFavorited,
+    initialBookmarkId = null,
+    bookmarkCount,
+} = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 const typeLabel = t(`experience.type.${experience.type}`, experience.type);
@@ -31,76 +48,111 @@ const isNew = experience.createdAt
 ---
 
 <header class="exp-hero">
-    <div class="exp-hero__badges">
-        <span class="exp-hero__type-badge">{typeLabel}</span>
-        {experience.isFeatured && (
-            <span class="featured-badge">
-                <StarIcon size={12} weight="fill" aria-hidden="true" />
-                <span>{t('experience.card.featured', 'Destacada')}</span>
-            </span>
-        )}
-        {isNew && (
-            <span class="exp-hero__new-badge">
-                {t('home.accommodations.badge.new', 'Nuevo')}
-            </span>
-        )}
-    </div>
-
-    <h1 class="exp-hero__name">{experience.name}</h1>
-
-    {experience.destinationName && (
-        <div class="exp-hero__location">
-            <LocationIcon size={16} weight="fill" aria-hidden="true" />
-            <span>{experience.destinationName}</span>
-        </div>
-    )}
-
-    <!-- Pricing -->
-    <div class="exp-hero__pricing">
-        <ExperiencePriceTag
-            priceFrom={experience.priceFrom}
-            priceUnit={experience.priceUnit}
-            isPriceOnRequest={experience.isPriceOnRequest}
-            locale={locale}
-        />
-    </div>
-
-    {experience.averageRating > 0 && (
-        <div class="exp-hero__rating">
-            <div class="exp-hero__stars" aria-hidden="true">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <span
-                        class={
-                            i < fullStars
-                                ? 'exp-hero__star--filled'
-                                : 'exp-hero__star--empty'
-                        }
-                    >
-                        <StarIcon
-                            size={16}
-                            weight={i < fullStars ? 'fill' : 'regular'}
-                            aria-hidden="true"
-                        />
-                    </span>
-                ))}
-            </div>
-            <span class="exp-hero__rating-value">
-                {experience.averageRating.toFixed(1)}
-            </span>
-            {experience.reviewsCount > 0 && (
-                <span class="exp-hero__reviews-count">
-                    · {tPlural('review.list.totalReviews', experience.reviewsCount, { count: experience.reviewsCount })}
+    <!-- Main column: badges, title, location, pricing, rating -->
+    <div class="exp-hero__main">
+        <div class="exp-hero__badges">
+            <span class="exp-hero__type-badge">{typeLabel}</span>
+            {experience.isFeatured && (
+                <span class="featured-badge">
+                    <StarIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{t('experience.card.featured', 'Destacada')}</span>
+                </span>
+            )}
+            {isNew && (
+                <span class="exp-hero__new-badge">
+                    {t('home.accommodations.badge.new', 'Nuevo')}
                 </span>
             )}
         </div>
-    )}
+
+        <h1 class="exp-hero__name">{experience.name}</h1>
+
+        {experience.destinationName && (
+            <div class="exp-hero__location">
+                <LocationIcon size={16} weight="fill" aria-hidden="true" />
+                <span>{experience.destinationName}</span>
+            </div>
+        )}
+
+        <!-- Pricing -->
+        <div class="exp-hero__pricing">
+            <ExperiencePriceTag
+                priceFrom={experience.priceFrom}
+                priceUnit={experience.priceUnit}
+                isPriceOnRequest={experience.isPriceOnRequest}
+                locale={locale}
+            />
+        </div>
+
+        {experience.averageRating > 0 && (
+            <div class="exp-hero__rating">
+                <div class="exp-hero__stars" aria-hidden="true">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <span
+                            class={
+                                i < fullStars
+                                    ? 'exp-hero__star--filled'
+                                    : 'exp-hero__star--empty'
+                            }
+                        >
+                            <StarIcon
+                                size={16}
+                                weight={i < fullStars ? 'fill' : 'regular'}
+                                aria-hidden="true"
+                            />
+                        </span>
+                    ))}
+                </div>
+                <span class="exp-hero__rating-value">
+                    {experience.averageRating.toFixed(1)}
+                </span>
+                {experience.reviewsCount > 0 && (
+                    <span class="exp-hero__reviews-count">
+                        · {tPlural('review.list.totalReviews', experience.reviewsCount, { count: experience.reviewsCount })}
+                    </span>
+                )}
+            </div>
+        )}
+    </div>
+
+    <!-- Favorite column -->
+    <div class="exp-hero__fav">
+        <FavoriteButton
+            client:load
+            entityId={experience.id}
+            entityType="EXPERIENCE"
+            initialIsFavorited={initialIsFavorited}
+            initialBookmarkId={initialBookmarkId}
+            count={bookmarkCount}
+            variant="standalone"
+            showCount={true}
+            locale={locale}
+            isAuthenticated={isAuthenticated}
+        />
+    </div>
 </header>
 
 <style>
+    /* Outer row: main column (flex:1) + fav column (shrink:0) */
     .exp-hero {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .exp-hero__main {
         display: flex;
         flex-direction: column;
         gap: var(--space-3, 12px);
+        flex: 1;
+        min-width: 0;
+        transition: gap 0.3s ease;
+    }
+
+    .exp-hero__fav {
+        flex-shrink: 0;
+        padding-top: 4px;
     }
 
     .exp-hero__badges {
@@ -144,6 +196,7 @@ const isNew = experience.createdAt
         line-height: 1.2;
         color: var(--core-foreground);
         margin: 0;
+        transition: font-size 0.3s ease;
     }
 
     .exp-hero__location {
@@ -158,12 +211,16 @@ const isNew = experience.createdAt
     .exp-hero__pricing {
         display: flex;
         align-items: center;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
     .exp-hero__rating {
         display: flex;
         align-items: center;
         gap: 8px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
     .exp-hero__stars {
@@ -196,25 +253,9 @@ const isNew = experience.createdAt
         color: var(--core-muted-foreground);
     }
 
-    /* Smooth collapse into a single short line when the wave header compacts. */
-    .exp-hero {
-        transition: gap 0.3s ease;
-    }
-
-    .exp-hero__name {
-        transition: font-size 0.3s ease;
-    }
-
-    .exp-hero__pricing,
-    .exp-hero__rating {
-        overflow: hidden;
-        transition: max-height 0.3s ease, opacity 0.3s ease;
-    }
-
-    /* Compact state: triggered by the `.wave-header--compact` ancestor (mirrors
-       the accommodation DetailHeader). Collapse badges + title + location onto
-       one line and hide pricing + rating so the compact wave band stays short. */
-    :global(.wave-header--compact) .exp-hero {
+    /* Compact state: triggered by the `.wave-header--compact` ancestor.
+       Collapse badges + title + location onto one row inside __main. */
+    :global(.wave-header--compact) .exp-hero__main {
         flex-direction: row;
         align-items: center;
         flex-wrap: wrap;
@@ -254,7 +295,7 @@ const isNew = experience.createdAt
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .exp-hero,
+        .exp-hero__main,
         .exp-hero__name,
         .exp-hero__pricing,
         .exp-hero__rating {

@@ -1,0 +1,82 @@
+---
+/**
+ * @file ComparisonLinkTeaser.astro
+ * @description Teaser mini-section (SPEC-299 OQ-3) that links a plan selector
+ * page to its full comparison table. Shared by the owner (/suscriptores/planes/)
+ * and tourist (/suscriptores/turistas/) selectors so the heading, copy, and
+ * layout never drift between them; only the target `href` differs.
+ *
+ * Replaces the previous bare standalone button, which had no context and was
+ * easy to overlook in surrounding whitespace.
+ */
+
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Destination comparison-page URL (already locale-resolved by the caller). */
+	readonly href: string;
+}
+
+const { locale, href } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<div class="comparison-link__container">
+	<div class="comparison-link__teaser">
+		<h2 class="comparison-link__title">
+			{t('pricing.comparison.teaserTitle', '¿No sabés cuál elegir?')}
+		</h2>
+		<p class="comparison-link__text">
+			{t(
+				'pricing.comparison.teaserText',
+				'Compará todas las funciones, beneficios y límites lado a lado.'
+			)}
+		</p>
+	</div>
+	<GradientButton
+		href={href}
+		label={t('pricing.comparison.link', 'Ver comparativa detallada')}
+		variant="outline-primary"
+		icon="true"
+	/>
+</div>
+
+<style>
+	.comparison-link__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		text-align: center;
+	}
+
+	.comparison-link__teaser {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		/* Keep the short teaser copy at a readable measure. Uses the narrow
+		   container token (no dedicated prose-width token exists). */
+		max-width: var(--container-narrow);
+	}
+
+	.comparison-link__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.comparison-link__text {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+</style>

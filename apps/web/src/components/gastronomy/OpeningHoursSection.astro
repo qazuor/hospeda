@@ -61,7 +61,6 @@ const DAY_KEY_TO_GETDAY: Record<string, number> = {
 };
 
 const closedLabel = t('gastronomy.detail.openingHours.closed', 'Cerrado');
-const open24hLabel = t('gastronomy.detail.openingHours.open24h', 'Abierto las 24 horas');
 const todayLabel = t('gastronomy.detail.openingHours.today', 'Hoy');
 const sectionTitle = t('gastronomy.detail.openingHours.title', 'Horarios de atención');
 
@@ -73,18 +72,11 @@ const rows = ORDERED_DAY_KEYS.map((dayKey) => {
     const isToday = DAY_KEY_TO_GETDAY[dayKey] === todayDayIndex;
     const label = DAY_LABELS[dayKey] ?? dayKey;
 
-    let hoursText: string;
-    if (!entry || !entry.isOpen) {
-        hoursText = closedLabel;
-    } else if (entry.open24h) {
-        hoursText = open24hLabel;
-    } else {
-        const open = entry.open ?? '';
-        const close = entry.close ?? '';
-        hoursText = close ? `${open} – ${close}` : open;
-    }
-
-    const isClosed = !entry || !entry.isOpen;
+    const isClosed = !entry || !entry.isOpen || entry.shifts.length === 0;
+    const hoursText =
+        entry && !isClosed
+            ? entry.shifts.map((shift) => `${shift.open} – ${shift.close}`).join(', ')
+            : closedLabel;
 
     return { dayKey, label, hoursText, isToday, isClosed };
 });

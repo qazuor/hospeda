@@ -37,6 +37,7 @@ function StarRating({ rating }: { readonly rating: number }) {
     return (
         <span
             className={styles.starRating}
+            role="img"
             aria-label={`${clamped} de 5 estrellas`}
         >
             {Array.from({ length: 5 }, (_, i) => (

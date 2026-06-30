@@ -7,6 +7,7 @@ import {
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
+    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN,
     getDefaultPlan,
     getPlanBySlug,
@@ -163,12 +164,14 @@ describe('Plan Configuration', () => {
             expect(chatLimit).toBeUndefined();
         });
 
-        it('tourist-vip should NOT have AI_SEARCH entitlement or MAX_AI_SEARCH_PER_MONTH limit (SPEC-211 T-004)', () => {
+        it('tourist-vip should NOT grant AI_SEARCH entitlement but CARRIES MAX_AI_SEARCH_PER_MONTH=200 (SPEC-283 auth-baseline)', () => {
+            // ai_search is auth-baseline: no entitlement gate (OQ-1), but a
+            // graduated per-plan quota (SPEC-283 reverts SPEC-211 T-004's removal).
             expect(TOURIST_VIP_PLAN.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
             const searchLimit = TOURIST_VIP_PLAN.limits.find(
                 (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
             );
-            expect(searchLimit).toBeUndefined();
+            expect(searchLimit?.value).toBe(200);
         });
 
         it('owner-pro max_ai_text_improve_per_month should be 100', () => {
@@ -179,33 +182,37 @@ describe('Plan Configuration', () => {
             expect(found?.value).toBe(100);
         });
 
-        it('complex-premium AI limits should be finite — text 2000, chat 5000; search absent (SPEC-211 T-004)', () => {
-            // SPEC-211 cost guardrail: no -1 on AI limits. ai_search removed (T-004).
+        it('complex-premium AI limits should be finite — text 2000, chat 5000, search 200, consumer-chat 200 (SPEC-283)', () => {
+            // SPEC-211 cost guardrail: no -1 on AI limits. SPEC-283 adds the
+            // consumer-tier search + consumer-side chat quotas (200 at top tier).
             const presentLimits: ReadonlyArray<readonly [LimitKey, number]> = [
                 [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000],
-                [LimitKey.MAX_AI_CHAT_PER_MONTH, 5000]
+                [LimitKey.MAX_AI_CHAT_PER_MONTH, 5000],
+                [LimitKey.MAX_AI_SEARCH_PER_MONTH, 200],
+                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ] as const;
             for (const [key, value] of presentLimits) {
                 const found = COMPLEX_PREMIUM_PLAN.limits.find((l) => l.key === key);
                 expect(found).toBeDefined();
                 expect(found?.value).toBe(value);
             }
-            // search is absent (SPEC-211 T-004)
+            // ai_search carries a quota but NO entitlement (auth-baseline, SPEC-283)
             expect(COMPLEX_PREMIUM_PLAN.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
-            const searchLimit = COMPLEX_PREMIUM_PLAN.limits.find(
-                (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
-            );
-            expect(searchLimit).toBeUndefined();
         });
 
         it('every plan with an AI gate should have the matching AI limit and vice versa', () => {
-            // ai_support is ungranted on all plans (SPEC-200 pending). The other
-            // active AI gates (text_improve, chat, search, translate,
+            // ai_support is ungranted on all plans (SPEC-200 pending). The
+            // entitlement-gated AI features (text_improve, chat, translate,
             // accommodation_import) must each be co-present with their limit.
+            //
+            // ai_search and the consumer-side chat quota are DELIBERATELY excluded:
+            // they are metering-only limits with no entitlement gate (ai_search is
+            // auth-baseline per SPEC-283 OQ-1; MAX_AI_CHAT_CONSUMER_PER_MONTH gates
+            // the consumer by count while AI_CHAT gates the owner). A limit without
+            // a matching gate is correct by design for those two keys.
             const aiGateToLimit: ReadonlyArray<readonly [EntitlementKey, LimitKey]> = [
                 [EntitlementKey.AI_TEXT_IMPROVE, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH],
                 [EntitlementKey.AI_CHAT, LimitKey.MAX_AI_CHAT_PER_MONTH],
-                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH],
                 [EntitlementKey.AI_TRANSLATE, LimitKey.MAX_AI_TRANSLATE_PER_MONTH],
                 [
                     EntitlementKey.AI_ACCOMMODATION_IMPORT,
@@ -268,13 +275,69 @@ describe('Plan Configuration', () => {
             }
         });
 
-        // AC-3.1 (SPEC-211 T-004): no plan of any category grants AI_SEARCH or carries MAX_AI_SEARCH_PER_MONTH
-        it('AC-3.1: NO plan grants AI_SEARCH entitlement or carries MAX_AI_SEARCH_PER_MONTH limit (SPEC-211 T-004)', () => {
+        // AC-3.1 (SPEC-211 T-004) as revised by SPEC-283: ai_search carries no
+        // entitlement on any plan (auth-baseline) but DOES carry a per-plan quota.
+        it('AC-3.1 (SPEC-283): NO plan grants AI_SEARCH entitlement, but every plan carries MAX_AI_SEARCH_PER_MONTH', () => {
             for (const plan of ALL_PLANS) {
                 expect(plan.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
-                expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(
-                    false
+                const searchLimit = plan.limits.find(
+                    (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
                 );
+                expect(
+                    searchLimit,
+                    `plan "${plan.slug}" must carry MAX_AI_SEARCH_PER_MONTH (SPEC-283)`
+                ).toBeDefined();
+            }
+        });
+    });
+
+    describe('Accommodation comparison limits (SPEC-288)', () => {
+        const compareItems = (plan: { limits: ReadonlyArray<{ key: string; value: number }> }) =>
+            plan.limits.find((l) => l.key === LimitKey.MAX_COMPARE_ITEMS);
+
+        it('tourist-free has NO compare entitlement and NO MAX_COMPARE_ITEMS limit', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_FREE_PLAN)).toBeUndefined();
+        });
+
+        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 2', () => {
+            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(2);
+        });
+
+        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 4 (was unlimited)', () => {
+            expect(TOURIST_VIP_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            );
+            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(4);
+        });
+
+        it('owner/complex plans inherit the VIP-tier compare cap of 4 (not unlimited)', () => {
+            // The VIP limit lives in TOURIST_VIP_LIMITS, inherited via mergeLimits.
+            // None of the owner/complex plans override MAX_COMPARE_ITEMS, so they
+            // all land on 4 — never -1 (SPEC-288 D-1).
+            const inheriting = ALL_PLANS.filter(
+                (p) => p.category === 'owner' || p.category === 'complex'
+            );
+            expect(inheriting.length).toBeGreaterThan(0);
+            for (const plan of inheriting) {
+                const found = compareItems(plan);
+                expect(found, `plan "${plan.slug}" must carry MAX_COMPARE_ITEMS`).toBeDefined();
+                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(4);
+            }
+        });
+
+        it('NO client plan carries an unlimited (-1) compare cap (SPEC-288)', () => {
+            for (const plan of ALL_PLANS) {
+                const found = compareItems(plan);
+                if (found) {
+                    expect(found.value, `plan "${plan.slug}"`).not.toBe(-1);
+                    expect(found.value, `plan "${plan.slug}"`).toBeGreaterThan(0);
+                }
             }
         });
     });

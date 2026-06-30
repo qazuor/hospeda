@@ -9,7 +9,8 @@
         "notifications": "Notifications",
         "profile": "Profile",
         "settings": "Settings",
-        "search": "Search…"
+        "search": "Search…",
+        "reportProblem": "Report a problem"
     },
     "breadcrumbs": {
         "breadcrumb": "Breadcrumb"

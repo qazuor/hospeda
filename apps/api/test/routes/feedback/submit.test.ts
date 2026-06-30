@@ -50,11 +50,20 @@ import type { AppOpenAPI } from '../../../src/types.js';
  * `linearApiKeyOverride` allows individual tests to simulate the absence of
  * HOSPEDA_LINEAR_API_KEY without relying on process.env mutation (values are
  * already captured at module-load time by the env module).
+ *
+ * Turnstile mocks: `mockGetTurnstileSecret` controls whether a Turnstile secret
+ * is "configured" without touching the real env module; `mockVerifyTurnstile`
+ * replaces the real siteverify fetch so tests never make network calls.
  */
-const { mockCreateIssue, mockSendNotification } = vi.hoisted(() => ({
-    mockCreateIssue: vi.fn(),
-    mockSendNotification: vi.fn().mockResolvedValue(undefined)
-}));
+const { mockCreateIssue, mockSendNotification, mockGetTurnstileSecret, mockVerifyTurnstile } =
+    vi.hoisted(() => ({
+        mockCreateIssue: vi.fn(),
+        mockSendNotification: vi.fn().mockResolvedValue(undefined),
+        /** Default: secret "configured" with the Cloudflare always-passes test key */
+        mockGetTurnstileSecret: vi.fn().mockReturnValue('1x0000000000000000000000000000000AA'),
+        /** Default: siteverify always succeeds */
+        mockVerifyTurnstile: vi.fn().mockResolvedValue({ success: true })
+    }));
 
 /**
  * Mock LinearFeedbackService so that unit tests do not make real network calls.
@@ -73,9 +82,31 @@ vi.mock('../../../src/utils/notification-helper.js', () => ({
     sendNotification: mockSendNotification
 }));
 
+/**
+ * Mock the Turnstile verification utility (SPEC-301) so tests do not call the
+ * real Cloudflare siteverify endpoint and can control the verification outcome.
+ *
+ * - `getTurnstileSecret` is mocked so tests can simulate "secret configured" vs
+ *   "secret not set" without touching the real env module.
+ * - `verifyCfTurnstileToken` is mocked to prevent any outbound network calls.
+ *
+ * Defaults (reset in beforeEach): secret = always-passes test key, verify = success.
+ */
+vi.mock('../../../src/utils/turnstile.js', () => ({
+    getTurnstileSecret: mockGetTurnstileSecret,
+    verifyCfTurnstileToken: mockVerifyTurnstile
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-/** Minimal valid feedback payload (JSON-serializable, sent in FormData `data` field) */
+/**
+ * Minimal valid feedback payload (JSON-serializable, sent in FormData `data` field).
+ *
+ * Includes `cfTurnstileToken` so submissions that pass through the Turnstile
+ * check (step 5c) return 200. The token value here is the official Cloudflare
+ * dummy token for test environments. The actual verification is intercepted by
+ * `mockVerifyTurnstile` — no real network call is made.
+ */
 const validFeedbackData = {
     type: 'bug-js',
     title: 'Something is broken',
@@ -85,7 +116,8 @@ const validFeedbackData = {
     environment: {
         timestamp: new Date().toISOString(),
         appSource: 'web'
-    }
+    },
+    cfTurnstileToken: 'XXXX.DUMMY.TOKEN.XXXX'
 } as const;
 
 /** Standard request headers required by the validation middleware */
@@ -159,6 +191,12 @@ describe('POST /api/v1/public/feedback', () => {
         await clearRateLimitStore();
         // Reset notification mock between tests
         mockSendNotification.mockReset().mockResolvedValue(undefined);
+        // Reset Turnstile mocks to sane defaults for each test:
+        //   - secret "configured" (always-passes test key)
+        //   - siteverify returns success
+        // Individual tests that need different Turnstile behaviour override these.
+        mockGetTurnstileSecret.mockReturnValue('1x0000000000000000000000000000000AA');
+        mockVerifyTurnstile.mockResolvedValue({ success: true });
     });
 
     // ── Route reachability ────────────────────────────────────────────────────

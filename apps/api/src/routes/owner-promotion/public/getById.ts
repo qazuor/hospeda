@@ -42,9 +42,15 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // Gate: only ACTIVE records are visible on the public tier.
-        const row = result.data as { lifecycleState?: string } | null | undefined;
-        if (!row || row.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+        // Gate: only ACTIVE, non-deleted records are visible on the public tier.
+        // - lifecycleState !== ACTIVE  → DRAFT/ARCHIVED promos must not be probed by UUID.
+        // - deletedAt != null          → soft-deleted promos must not remain fetchable
+        //   even when their lifecycleState is still ACTIVE (SPEC-285 FIX 2).
+        const row = result.data as
+            | { lifecycleState?: string; deletedAt?: unknown }
+            | null
+            | undefined;
+        if (!row || row.lifecycleState !== LifecycleStatusEnum.ACTIVE || row.deletedAt != null) {
             return null;
         }
 

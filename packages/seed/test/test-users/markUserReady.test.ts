@@ -9,6 +9,7 @@ import { UserSettingsSchema } from '@repo/schemas';
 import type { User } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    ALL_ADMIN_TOUR_IDS,
     type MarkUserReadyResult,
     TOUR_READY_SENTINEL,
     type UserReadyModelPort,
@@ -167,6 +168,21 @@ describe('markUserReady (SPEC-264)', () => {
 
         it('TOUR_READY_SENTINEL equals 9999', () => {
             expect(TOUR_READY_SENTINEL).toBe(9999);
+        });
+
+        it('marks EVERY admin tour seen (all roles, welcome + contextual)', async () => {
+            storedUser = makeUser();
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            const settings = capturedUpdatePayload?.settings as Record<string, unknown>;
+            const onboarding = settings?.onboarding as Record<string, unknown>;
+            const adminTours = onboarding?.adminTours as Record<string, number>;
+            for (const tourId of ALL_ADMIN_TOUR_IDS) {
+                expect(adminTours[tourId]).toBe(TOUR_READY_SENTINEL);
+            }
+            // superAdmin.welcome was the original gap that left the super admin tour firing.
+            expect(adminTours['superAdmin.welcome']).toBe(TOUR_READY_SENTINEL);
         });
     });
 
@@ -382,6 +398,50 @@ describe('markUserReady (SPEC-264)', () => {
             const onboarding = secondSettings?.onboarding as Record<string, unknown>;
             const adminTours = onboarding?.adminTours as Record<string, number>;
             expect(adminTours['host.welcome']).toBe(TOUR_READY_SENTINEL);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // adminInfo.passwordChangeRequired — admin forced-change-password gate
+    // The /auth/me gate reads adminInfo.passwordChangeRequired (JSONB), not the
+    // mustChangePassword column, so markUserReady must clear it for the seeded
+    // super admin to skip the change-password redirect in local dev.
+    // -----------------------------------------------------------------------
+
+    describe('adminInfo.passwordChangeRequired (admin change-password gate)', () => {
+        it('clears passwordChangeRequired when true, preserving sibling adminInfo keys', async () => {
+            storedUser = makeUser({
+                adminInfo: { notes: 'keep me', favorite: true, passwordChangeRequired: true }
+            } as Partial<User>);
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            const adminInfo = (capturedUpdatePayload as Record<string, unknown>)?.adminInfo as
+                | Record<string, unknown>
+                | undefined;
+            expect(adminInfo).toBeTruthy();
+            expect(adminInfo?.passwordChangeRequired).toBe(false);
+            // Sibling keys must survive the read-modify-write.
+            expect(adminInfo?.notes).toBe('keep me');
+            expect(adminInfo?.favorite).toBe(true);
+        });
+
+        it('does NOT touch adminInfo when the user has none (typical test user)', async () => {
+            storedUser = makeUser();
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            expect((capturedUpdatePayload as Record<string, unknown>)?.adminInfo).toBeUndefined();
+        });
+
+        it('does NOT write adminInfo when passwordChangeRequired is already false', async () => {
+            storedUser = makeUser({
+                adminInfo: { notes: 'x', favorite: false, passwordChangeRequired: false }
+            } as Partial<User>);
+
+            await markUserReady({ email: 'test@local.test', model });
+
+            expect((capturedUpdatePayload as Record<string, unknown>)?.adminInfo).toBeUndefined();
         });
     });
 });

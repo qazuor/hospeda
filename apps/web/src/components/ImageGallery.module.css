@@ -560,6 +560,33 @@
     }
 }
 
+/**
+ * .lightboxSpinner — centered loading indicator shown over the lightbox while
+ * the active image is still loading (i.e. while navigating between photos).
+ * Fixed-centered so it stays put even though the <figure> briefly collapses
+ * while the <img> has no loaded content. `pointer-events: none` keeps the
+ * prev/next controls clickable underneath.
+ */
+.lightboxSpinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/**
+ * .lightboxImgLoading — hides the <img> while it loads so the spinner shows
+ * instead of a blank frame. The fade animation is suppressed during load and
+ * plays once this class is removed (on load), since restoring `animation`
+ * restarts the keyframes.
+ */
+.lightboxImgLoading {
+    opacity: 0;
+    animation: none;
+}
+
 .lightboxCaption {
     margin-top: var(--space-2, 8px);
     color: oklch(1 0 0 / 0.7);

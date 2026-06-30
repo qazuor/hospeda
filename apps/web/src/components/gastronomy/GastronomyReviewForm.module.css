@@ -92,6 +92,20 @@
     transform: translateX(2px);
 }
 
+/* Persistent "under review" banner shown after a review is submitted. */
+.cardPending {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--core-foreground);
+    margin: 0;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    background: var(--brand-accent-a08);
+    border: 1px solid var(--brand-accent-a20);
+    border-radius: var(--radius-button, 10px);
+}
+
 /* ── Dialog ────────────────────────────────────────────────────────────── */
 
 .dialog {

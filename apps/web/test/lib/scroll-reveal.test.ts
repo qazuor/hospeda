@@ -123,6 +123,92 @@ describe('scroll-reveal', () => {
         expect(disconnectSpy).toHaveBeenCalledTimes(1);
     });
 
+    const motionNotReduced = () =>
+        vi.spyOn(window, 'matchMedia').mockReturnValue({
+            matches: false,
+            media: '(prefers-reduced-motion: reduce)',
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
+        } as MediaQueryList);
+
+    // Lets the jsdom MutationObserver flush its (microtask-scheduled) callback.
+    const flushMutations = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+    it('observes a [data-reveal] element inserted after init (Bug B5 — Server Island late content)', async () => {
+        motionNotReduced();
+        const observeSpy = vi.fn();
+        vi.stubGlobal(
+            'IntersectionObserver',
+            vi.fn(() => ({ observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() }))
+        );
+
+        initScrollReveal();
+        observeSpy.mockClear(); // ignore the element added in beforeEach
+
+        // Simulate a Server Island injecting its content after astro:page-load.
+        const late = document.createElement('div');
+        late.setAttribute('data-reveal', 'up');
+        document.body.appendChild(late);
+        await flushMutations();
+
+        expect(observeSpy).toHaveBeenCalledWith(late);
+    });
+
+    it('observes [data-reveal] descendants of an inserted subtree (Bug B5)', async () => {
+        motionNotReduced();
+        const observeSpy = vi.fn();
+        vi.stubGlobal(
+            'IntersectionObserver',
+            vi.fn(() => ({ observe: observeSpy, unobserve: vi.fn(), disconnect: vi.fn() }))
+        );
+
+        initScrollReveal();
+        observeSpy.mockClear();
+
+        // A Server Island inserts a wrapper containing the [data-reveal] cards.
+        const wrapper = document.createElement('section');
+        const card = document.createElement('div');
+        card.setAttribute('data-reveal', 'left');
+        wrapper.appendChild(card);
+        document.body.appendChild(wrapper);
+        await flushMutations();
+
+        expect(observeSpy).toHaveBeenCalledWith(card);
+    });
+
+    it('stops observing late content after destroyScrollReveal (no leak)', async () => {
+        // Run in reduced-motion: handleElement adds .revealed immediately,
+        // BEFORE touching activeObserver. So a still-live (not disconnected)
+        // MutationObserver would betray itself by revealing the late element —
+        // this proves the disconnect independently of activeObserver being null.
+        vi.spyOn(window, 'matchMedia').mockReturnValue({
+            matches: true,
+            media: '(prefers-reduced-motion: reduce)',
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
+        } as MediaQueryList);
+
+        initScrollReveal();
+        destroyScrollReveal();
+
+        const late = document.createElement('div');
+        late.setAttribute('data-reveal', 'up');
+        document.body.appendChild(late);
+        await flushMutations();
+
+        // If lateContentObserver was NOT disconnected, the reduced-motion path
+        // would have added .revealed via the MutationObserver callback.
+        expect(late.classList.contains('revealed')).toBe(false);
+    });
+
     it('destroyScrollReveal should disconnect observer', () => {
         vi.spyOn(window, 'matchMedia').mockReturnValue({
             matches: false,

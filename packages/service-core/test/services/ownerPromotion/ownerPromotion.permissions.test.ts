@@ -1,5 +1,5 @@
 import type { OwnerPromotion, UserIdType } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkCanCount,
@@ -240,7 +240,14 @@ describe('OwnerPromotion Permissions', () => {
 
     // -------------------------------------------------------------------- view
     describe('checkCanView', () => {
-        it('allows with OWNER_PROMOTION_VIEW_ANY permission', () => {
+        // ── Public (ACTIVE + non-planRestricted) entities ─────────────────────
+        it('allows any actor to view an ACTIVE non-planRestricted promotion', () => {
+            // T-001 regression: guest actor (no permissions) must NOT get FORBIDDEN
+            // for ACTIVE public promotions. Security is in the route layer.
+            expect(() => checkCanView(createActor([]), withOwner(mockUserId))).not.toThrow();
+        });
+
+        it('allows with OWNER_PROMOTION_VIEW_ANY permission on ACTIVE promotion', () => {
             expect(() =>
                 checkCanView(
                     createActor([PermissionEnum.OWNER_PROMOTION_VIEW_ANY]),
@@ -249,7 +256,7 @@ describe('OwnerPromotion Permissions', () => {
             ).not.toThrow();
         });
 
-        it('allows with OWNER_PROMOTION_VIEW_OWN when actor is the owner', () => {
+        it('allows with OWNER_PROMOTION_VIEW_OWN when actor is the owner of ACTIVE promotion', () => {
             expect(() =>
                 checkCanView(
                     createActor([PermissionEnum.OWNER_PROMOTION_VIEW_OWN], mockUserId),
@@ -258,20 +265,66 @@ describe('OwnerPromotion Permissions', () => {
             ).not.toThrow();
         });
 
-        it('forbids with OWNER_PROMOTION_VIEW_OWN when actor is not the owner', () => {
+        // ── Non-public (DRAFT / planRestricted) entities require permissions ──
+        it('allows with OWNER_PROMOTION_VIEW_ANY on DRAFT promotion', () => {
+            expect(() =>
+                checkCanView(
+                    createActor([PermissionEnum.OWNER_PROMOTION_VIEW_ANY]),
+                    createMockOwnerPromotion({
+                        ownerId: mockUserId,
+                        lifecycleState: LifecycleStatusEnum.DRAFT
+                    })
+                )
+            ).not.toThrow();
+        });
+
+        it('allows with OWNER_PROMOTION_VIEW_OWN on own DRAFT promotion', () => {
+            expect(() =>
+                checkCanView(
+                    createActor([PermissionEnum.OWNER_PROMOTION_VIEW_OWN], mockUserId),
+                    createMockOwnerPromotion({
+                        ownerId: mockUserId,
+                        lifecycleState: LifecycleStatusEnum.DRAFT
+                    })
+                )
+            ).not.toThrow();
+        });
+
+        it('forbids with OWNER_PROMOTION_VIEW_OWN when actor is not the owner of DRAFT promotion', () => {
             expectForbidden(
                 () =>
                     checkCanView(
                         createActor([PermissionEnum.OWNER_PROMOTION_VIEW_OWN], otherUserId),
-                        withOwner(mockUserId)
+                        createMockOwnerPromotion({
+                            ownerId: mockUserId,
+                            lifecycleState: LifecycleStatusEnum.DRAFT
+                        })
                     ),
                 'view owner promotion'
             );
         });
 
-        it('forbids without any permission', () => {
+        it('forbids any actor without permission from viewing a DRAFT promotion', () => {
             expectForbidden(
-                () => checkCanView(createActor([]), withOwner(mockUserId)),
+                () =>
+                    checkCanView(
+                        createActor([]),
+                        createMockOwnerPromotion({
+                            ownerId: mockUserId,
+                            lifecycleState: LifecycleStatusEnum.DRAFT
+                        })
+                    ),
+                'view owner promotion'
+            );
+        });
+
+        it('forbids any actor without permission from viewing a planRestricted promotion', () => {
+            expectForbidden(
+                () =>
+                    checkCanView(
+                        createActor([]),
+                        createMockOwnerPromotion({ ownerId: mockUserId, planRestricted: true })
+                    ),
                 'view owner promotion'
             );
         });
@@ -298,39 +351,41 @@ describe('OwnerPromotion Permissions', () => {
 
     // ------------------------------------------------------------------ search
     describe('checkCanSearch', () => {
-        it('allows with OWNER_PROMOTION_VIEW_ANY permission', () => {
+        // T-001: public search path is open to any actor (no-op).
+        it('allows any actor regardless of permissions (no-op)', () => {
+            expect(() => checkCanSearch(createActor([]))).not.toThrow();
+        });
+
+        it('allows actor with OWNER_PROMOTION_VIEW_ANY', () => {
             expect(() =>
                 checkCanSearch(createActor([PermissionEnum.OWNER_PROMOTION_VIEW_ANY]))
             ).not.toThrow();
         });
 
-        it('allows with OWNER_PROMOTION_VIEW_OWN permission', () => {
+        it('allows actor with OWNER_PROMOTION_VIEW_OWN', () => {
             expect(() =>
                 checkCanSearch(createActor([PermissionEnum.OWNER_PROMOTION_VIEW_OWN]))
             ).not.toThrow();
-        });
-
-        it('forbids without any view permission', () => {
-            expectForbidden(() => checkCanSearch(createActor([])), 'search owner promotions');
         });
     });
 
     // ------------------------------------------------------------------ count
     describe('checkCanCount', () => {
-        it('allows with OWNER_PROMOTION_VIEW_ANY permission', () => {
+        // T-001: public count path is open to any actor (no-op).
+        it('allows any actor regardless of permissions (no-op)', () => {
+            expect(() => checkCanCount(createActor([]))).not.toThrow();
+        });
+
+        it('allows actor with OWNER_PROMOTION_VIEW_ANY', () => {
             expect(() =>
                 checkCanCount(createActor([PermissionEnum.OWNER_PROMOTION_VIEW_ANY]))
             ).not.toThrow();
         });
 
-        it('allows with OWNER_PROMOTION_VIEW_OWN permission', () => {
+        it('allows actor with OWNER_PROMOTION_VIEW_OWN', () => {
             expect(() =>
                 checkCanCount(createActor([PermissionEnum.OWNER_PROMOTION_VIEW_OWN]))
             ).not.toThrow();
-        });
-
-        it('forbids without any view permission', () => {
-            expectForbidden(() => checkCanCount(createActor([])), 'count owner promotions');
         });
     });
 

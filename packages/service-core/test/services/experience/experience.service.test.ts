@@ -6,7 +6,7 @@
  * Coverage:
  * - updateOwn: schema validation, ownership gate, per-section permission gates,
  *   staff bypass, delegation to base update.
- * - _executeSearch: scalar filters forwarded to model.findAll.
+ * - _executeSearch: scalar filters forwarded to model.findAllWithRelations.
  * - _executeCount: scalar filters forwarded to model.count.
  * - Permission hook delegation via _canCreate / _canUpdate / _canSoftDelete.
  * - Public projection: _projectPublicEntity strips adminInfo + ownerId.
@@ -436,16 +436,18 @@ describe('ExperienceService.updateOwn — AC-5 identity-field regression (SPEC-2
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService search filter forwarding', () => {
-    it('should call model.findAll with deletedAt: null filter', async () => {
+    it('should call model.findAllWithRelations with deletedAt: null filter (Bug B3: relations loaded for destinationName)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
 
-        expect(mockFindAll).toHaveBeenCalledWith(
+        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ destination: true, owner: true }),
             expect.objectContaining({ deletedAt: null }),
             expect.any(Object),
             undefined,
@@ -453,10 +455,10 @@ describe('ExperienceService search filter forwarding', () => {
         );
     });
 
-    it('should forward type filter to model.findAll', async () => {
+    it('should forward type filter to model.findAllWithRelations', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
@@ -466,7 +468,9 @@ describe('ExperienceService search filter forwarding', () => {
             {}
         );
 
-        expect(mockFindAll).toHaveBeenCalledWith(
+        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ destination: true, owner: true }),
             expect.objectContaining({ type: ExperienceTypeEnum.TOUR_GUIDE, deletedAt: null }),
             expect.any(Object),
             undefined,
@@ -474,16 +478,18 @@ describe('ExperienceService search filter forwarding', () => {
         );
     });
 
-    it('should forward hasActiveSubscription filter to model.findAll', async () => {
+    it('should forward hasActiveSubscription filter to model.findAllWithRelations', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch({ hasActiveSubscription: true, page: 1, pageSize: 10 }, staffActor, {});
 
-        expect(mockFindAll).toHaveBeenCalledWith(
+        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ destination: true, owner: true }),
             expect.objectContaining({ hasActiveSubscription: true }),
             expect.any(Object),
             undefined,
@@ -516,13 +522,15 @@ describe('ExperienceService search filter forwarding', () => {
 describe('ExperienceService public search visibility filter (AC-6.2)', () => {
     it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeExperienceEntity());
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch({ page: 1, pageSize: 10 }, otherUserActor, {});
 
-        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
+        expect(mockFindAllWithRelations).toHaveBeenCalled();
+        expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -531,7 +539,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
 
     it('cannot be widened by a caller-supplied visibility/lifecycle param', async () => {
         const service = makeService(makeExperienceEntity());
-        const mockFindAll = (service as AnyService).model.findAll;
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
@@ -547,7 +555,8 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
         );
 
         // The forced gates are applied AFTER the spread, so they win.
-        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+        // arg[1] is the where object in findAllWithRelations
+        expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE
         });
