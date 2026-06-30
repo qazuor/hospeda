@@ -496,21 +496,37 @@ async function confirmPlanUpgrade(input: {
             try {
                 const upgradedPlan = await billing.plans.get(newPlanId);
                 const upgradedPlanSlug = upgradedPlan?.name ?? '';
-                const upgradedPlanHasFeatured =
-                    getPlanBySlug(upgradedPlanSlug)?.entitlements.includes(
+                // Guard: skip syncFeaturedByPlan when the plan slug is not in ALL_PLANS
+                // (commerce/partner plans are excluded by SPEC-239 and would resolve to
+                // undefined, causing a false active:false that clears featuredByPlan for
+                // dual-subscription owners).
+                const resolvedUpgradedPlan = getPlanBySlug(upgradedPlanSlug);
+                if (resolvedUpgradedPlan) {
+                    const upgradedPlanHasFeatured = resolvedUpgradedPlan.entitlements.includes(
                         EntitlementKey.FEATURED_LISTING
-                    ) ?? false;
-                await syncFeaturedByPlan({ ownerId: userId, active: upgradedPlanHasFeatured });
-                apiLogger.info(
-                    {
-                        planChangeUpgradeId,
-                        newPlanId,
-                        planSlug: upgradedPlanSlug,
-                        active: upgradedPlanHasFeatured,
-                        customerId: changeResult.subscription.customerId
-                    },
-                    'Plan upgrade: featuredByPlan synced'
-                );
+                    );
+                    await syncFeaturedByPlan({ ownerId: userId, active: upgradedPlanHasFeatured });
+                    apiLogger.info(
+                        {
+                            planChangeUpgradeId,
+                            newPlanId,
+                            planSlug: upgradedPlanSlug,
+                            active: upgradedPlanHasFeatured,
+                            customerId: changeResult.subscription.customerId
+                        },
+                        'Plan upgrade: featuredByPlan synced'
+                    );
+                } else {
+                    apiLogger.warn(
+                        {
+                            planChangeUpgradeId,
+                            newPlanId,
+                            planSlug: upgradedPlanSlug,
+                            customerId: changeResult.subscription.customerId
+                        },
+                        'Plan upgrade: plan slug not found in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                    );
+                }
             } catch (featuredSyncErr) {
                 apiLogger.warn(
                     {

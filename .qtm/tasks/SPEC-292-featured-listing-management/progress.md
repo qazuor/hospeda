@@ -109,10 +109,43 @@ complex-pro, complex-premium).
   `featuredByPlan` for already-subscribed owners on first run, so no manual data
   backfill is required.
 
-### Review note (for the PR review)
+### Adversarial review (2026-06-30) — verdict: SHIP-WITH-FOLLOWUPS
 
-- T-005 derives `active` from the changed subscription's plan config but does **not**
-  filter by `isAccommodationSubscription` (SPEC-239), whereas the T-006 cron does. An
-  owner holding both an accommodation and a commerce subscription could see a brief
-  `featuredByPlan` flap on a commerce-sub transition; the 6h reconcile cron corrects
-  it. Consider tightening the T-005 hooks to skip non-accommodation subscriptions.
+Full review run before PR. Nothing Critical. Confirmed solid: leak closure, sort SQL
+(no injection), soft-delete scoping, grace handling (`past_due`/`paused` don't
+revoke), non-vacuous tests.
+
+**Fixed in this PR (post-review):**
+
+- **M-1** — 4 sites (`payment-logic.confirmPlanUpgrade`, `apply-scheduled-plan-changes`,
+  `qzpay-admin-hooks` up+down) called `syncFeaturedByPlan` unconditionally with
+  `active = getPlanBySlug(slug)?...​.​includes(...) ?? false`, which turned an
+  unresolved plan (commerce/partner — out of `ALL_PLANS` per SPEC-239 — or config
+  drift) into a destructive revoke. Now guarded: capture `getPlanBySlug` and skip the
+  sync entirely when the plan does not resolve (no-op, not a clear).
+- **L-1** — `subscription-logic.ts` used `(mappedStatus as string) === 'expired'`; now
+  `SubscriptionStatusEnum.EXPIRED`.
+- **L-3** — corrected the misleading "BitmapOr serves the sort" comment in
+  `accommodation.model.ts` (BitmapOr is filter-phase; the disjunction sort is
+  evaluated per-row; the 0035 indexes serve WHERE-filtered queries).
+
+**Followups (NOT in this PR — tracked):**
+
+- **H-1 (owner decision: separate followup spec)** — the `visibility-boost-7d/30d`
+  addons grant `FEATURED_LISTING` at the CUSTOMER level
+  (`billing.entitlements.getByCustomerId`). `loadEntitlements` resolves plan UNION
+  addon entitlements, but SPEC-292 (T-005 hooks + T-006 cron) only checks the PLAN.
+  So addon-granted featuring is not wired. Accepted as followup because the addons are
+  not sold yet and `FEATURED_LISTING` had zero runtime consumers before this branch
+  (no observable regression). A followup spec must: make both resolvers mirror
+  `loadEntitlements` (plan ∪ addon) and add an addon purchase/expiry hook.
+- **M-2 (operational)** — the column ships `DEFAULT false` with no backfill. Run the
+  `featured-by-plan-reconcile` cron once immediately post-deploy to backfill
+  already-subscribed featured owners (≤6h transient gap otherwise). Add to release ledger.
+- **M-3** — `syncFeaturedByPlan` does not trigger ISR revalidation, unlike the sibling
+  `subscription-pause.service.ts`. If the public featured ordering surfaces on cached
+  pages, mirror that revalidation; else confirm it's intentionally dynamic.
+- **M-4** — the 8 T-005 billing call-sites have no direct unit tests (the rest is
+  well-covered). Add transition→active mapping tests.
+- **M-5** — `paused`/`comp` status divergence between the T-005 hooks and the T-006
+  cron / `loadEntitlements`; self-heals within ≤6h via the cron.

@@ -1042,7 +1042,7 @@ export async function processSubscriptionUpdated({
             mappedStatus === SubscriptionStatusEnum.TRIALING;
         const shouldRevoke =
             mappedStatus === SubscriptionStatusEnum.CANCELLED ||
-            (mappedStatus as string) === 'expired';
+            mappedStatus === SubscriptionStatusEnum.EXPIRED;
 
         if (planHasFeatured && (shouldGrant || shouldRevoke) && userId) {
             await syncFeaturedByPlan({ ownerId: userId, active: shouldGrant });

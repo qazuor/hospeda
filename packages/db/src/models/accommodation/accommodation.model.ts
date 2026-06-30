@@ -184,8 +184,10 @@ export function buildAccommodationOrderBy(params: {
     if (params.featuredFirst) {
         // SPEC-292 — effective featured = admin-curated (`isFeatured`) OR
         // plan-derived (`featuredByPlan`, set by the billing sync). Order by the
-        // disjunction so both surface first; PG's BitmapOr combines the parallel
-        // btree indexes on the two columns.
+        // disjunction so both surface first; the expression is evaluated per-row
+        // for sorting (not index-driven). The composite and partial indexes added
+        // in migration 0035 on these columns serve filtered queries (WHERE clauses),
+        // not this computed ORDER BY expression.
         orderBy.push(desc(sql`(${accommodations.isFeatured} OR ${accommodations.featuredByPlan})`));
     }
 
