@@ -1,0 +1,172 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-285",
+    "title": "Owner Promotions — Tourist-Facing Display",
+    "created": "2026-06-29T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Make owner-promotion public read path permission-permissive (unblock 403)",
+            "description": "The guest actor only holds ACCESS_API_PUBLIC, but checkCanSearch()/checkCanView() in packages/service-core/src/services/owner-promotion/ownerPromotion.permissions.ts throw FORBIDDEN, so the public list/getById routes 403 at runtime. Mirror accommodation's no-op checkCanList: allow the public read path (search + view) for any actor, while keeping create/update/delete gated. Add a regression test proving a guest actor can search/getById active promos.\n\nAcceptance criteria:\n- Guest actor (ACCESS_API_PUBLIC only) can call ownerPromotionService.search and getById without FORBIDDEN.\n- Owner/admin write permissions unchanged.\n- Regression test added and green.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Relax checkCanSearch/checkCanView for public read path", "completed": true },
+                { "title": "Keep write-path permissions intact", "completed": true },
+                { "title": "Add regression test (guest 403→200)", "completed": true }
+            ],
+            "tags": ["backend", "api", "permissions", "blocker"],
+            "phase": "core",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-002",
+            "title": "Register publicOwnerPromotionRoutes in routes/index.ts",
+            "description": "publicOwnerPromotionRoutes is exported from apps/api/src/routes/owner-promotion/index.ts but never imported/mounted. Add it to the destructured import (line ~70) and mount at /api/v1/public/owner-promotions in the PUBLIC ROUTES block. Add a route-registration smoke test.\n\nAcceptance criteria:\n- GET /api/v1/public/owner-promotions and /:id resolve (no 404).\n- Mounted in the public block, consistent with sibling public routes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Add import + app.route mount in routes/index.ts", "completed": true },
+                { "title": "Add deletedAt guard to public getById", "completed": true }
+            ],
+            "tags": ["backend", "api", "routing"],
+            "phase": "core",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-003",
+            "title": "Service: active-window filter (G-3) + owner-wide null resolution (D-4)",
+            "description": "Two visibility-correctness changes in ownerPromotion.service.ts. (G-3) Add a validFrom <= now AND (validUntil IS NULL OR validUntil >= now) filter in _executeSearch()/_executeCount() so expired-but-ACTIVE promos no longer show. (D-4) Provide an 'active promotions for accommodation' read that returns promos where accommodationId == X OR (accommodationId IS NULL AND ownerId == the accommodation's owner). Resolve the owner from the accommodation. Pagination read from ctx.pagination. Tests for both rules.\n\nAcceptance criteria:\n- Expired ACTIVE promos excluded.\n- For a given accommodation, both its own and the owner's accommodationId=null promos returned; other owners' null promos excluded.\n- Unit tests cover window edges and owner-wide resolution.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Add validFrom/validUntil window filter in _executeSearch/_executeCount", "completed": true },
+                { "title": "Implement owner-wide (accommodationId=null) resolution for an accommodation", "completed": true },
+                { "title": "Fix pagination to read from ctx.pagination + dedicated count query", "completed": true },
+                { "title": "Unit tests: window edges + owner-wide OR + pagination", "completed": true }
+            ],
+            "tags": ["backend", "service", "correctness"],
+            "phase": "core",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-004",
+            "title": "Emit owner-promotion lifecycle event on create/activate (G-4)",
+            "description": "No event bus exists; mirror packages/service-core/src/services/billing/addon/addon-lifecycle-events.ts. Create ownerPromotion.lifecycle-events.ts with a typed discriminated union (created/activated) and an emit function (in-process log+metrics, TODO(SPEC-286) stub). Override _afterCreate() (emit created) and _afterUpdate() (emit activated when lifecycleState transitions ->ACTIVE) in OwnerPromotionService. No consumers wired yet. Test the emit fires on the right transitions.\n\nAcceptance criteria:\n- Event emitted on create and on ->ACTIVE transition only.\n- No behavior change to existing create/update flow beyond emit.\n- Test asserts emit on create + activate, not on no-op updates.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create ownerPromotion.lifecycle-events.ts (typed union + emit, @repo/logger)", "completed": true },
+                { "title": "Override _afterCreate / _afterUpdate to emit", "completed": true },
+                { "title": "Test emit on create + activate transition", "completed": true }
+            ],
+            "tags": ["backend", "service", "events", "spec-286-contract"],
+            "phase": "core",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-005",
+            "title": "Web: ownerPromotionsApi public client",
+            "description": "Add ownerPromotionsApi to apps/web/src/lib/api/endpoints.ts (BASE = '/api/v1/public' convention) with a method to fetch active promotions for an accommodation (by accommodationId, including owner-wide per D-4). Type the response with the public schema.\n\nAcceptance criteria:\n- Client method returns typed public promo list for an accommodation.\n- Graceful degradation (empty list) on error, matching sibling clients.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Add ownerPromotionsApi.list({ accommodationId }) to endpoints.ts", "completed": true }
+            ],
+            "tags": ["frontend", "web", "api-client"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-006",
+            "title": "Web: PromotionBanner display component (informational)",
+            "description": "Create a tourist-facing promotion badge/banner component for the accommodation detail page (D-2: informational only, no CTA/redeem). Render title, discount (percentage/fixed/free_night via existing host.promotions.discountTypes labels), minNights, and validity window. Web styling convention (scoped Astro <style> or CSS Modules for an island). No new tourist component exists yet.\n\nAcceptance criteria:\n- Renders one or many active promos with correct discount formatting per type.\n- Sensible empty/none state (renders nothing when no active promos).\n- Follows web CSS + i18n conventions.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Build PromotionBanner (badge/banner, discount formatting)", "completed": true },
+                { "title": "Empty-state handling", "completed": true }
+            ],
+            "tags": ["frontend", "web", "component"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-007",
+            "title": "Web: mount promotions on accommodation detail page",
+            "description": "In apps/web/src/pages/[lang]/alojamientos/[slug].astro, add the active-promotions fetch to the existing Promise.allSettled block (using ownerPromotionsApi + accommodation.id/ownerId) and render PromotionBanner at the chosen insertion point in the main content column. Use extractItems() for graceful degradation.\n\nAcceptance criteria:\n- Active promos appear on the detail page; failures degrade gracefully.\n- No layout regression; SSR path unaffected.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add promo fetch to Promise.allSettled", "completed": true },
+                { "title": "Render PromotionBanner at insertion point", "completed": true }
+            ],
+            "tags": ["frontend", "web", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-008",
+            "title": "i18n: accommodations.detail.promotions.* keys (es/en/pt)",
+            "description": "Add tourist-facing promotion strings (banner title, validity/until labels, discount format strings, empty state) under accommodations.detail.promotions.* in packages/i18n (types.ts + config.ts) for es/en/pt, then run i18n generate-types. Reuse host.promotions.discountTypes.* for type labels where possible.\n\nAcceptance criteria:\n- Keys present in all three locales; generate-types clean; no missing-key warnings.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Add keys to types.ts + config.ts (es/en/pt)", "completed": true },
+                { "title": "Run i18n generate-types", "completed": true }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        },
+        {
+            "id": "T-009",
+            "title": "Tests: component render + visibility integration",
+            "description": "Add tests for the tourist-facing display: PromotionBanner rendering (discount types, validity, empty state) and an integration check that the detail page surfaces active promos and hides expired/plan-restricted ones. Respect the project's resource-care rule (run scoped, not the full suite).\n\nAcceptance criteria:\n- Component tests cover the three discount types + empty state.\n- Visibility integration asserts expired/plan-restricted promos are not shown.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "PromotionBanner component tests", "completed": true },
+                { "title": "Visibility integration test", "completed": true }
+            ],
+            "tags": ["testing", "web"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": "scoped" },
+            "timestamps": { "created": "2026-06-29T00:00:00.000Z", "started": "2026-06-29T00:00:00.000Z", "completed": "2026-06-29T12:00:00.000Z" }
+        }
+    ],
+    "summary": {
+        "total": 9,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 9,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
