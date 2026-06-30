@@ -1020,6 +1020,17 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Research-only strategy: which filter facets (event category, accommodation type, destination, amenities/features, post category/tag) deserve first-class INDEXABLE SEO/AEO landings vs ephemeral QUERY-PARAM filters (noindex). Today facet routes are worst-of-both: separate pages (duplicate content, lost context) yet noindex (zero SEO). Defines decision rule + URL/canonical/sitemap/structured-data contract + migration reconciling post-U7 state (event /categoria/ now 301 via PR #1910; accommodations /tipo/ still indexable). NO implementation - strategy + child-spec list. Born from U7 hybrid. Discovery-first."
+        },
+        {
+            "specId": "SPEC-307",
+            "title": "Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-307-tiptap-v3-migration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Coordinated tiptap v2->v3 migration carved from Dependabot #1890 (closed). Both rich-text editors (admin newsletter + entity-form, web host editor): setContent signature change, Link/Underline folded into StarterKit v3, Whats New render path re-verify, plus the missing mount/round-trip tests that let #1890 pass CI green."
         }
     ],
     "standalone": {
