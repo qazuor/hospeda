@@ -149,8 +149,8 @@ export const UserSearchHistoryEntrySchema = z.object({
     id: UserSearchHistoryIdSchema,
     /** Owner user UUID */
     userId: z
-        .string({ message: 'zodError.userSearchHistory.userId.required' })
-        .uuid({ message: 'zodError.userSearchHistory.userId.invalidUuid' }),
+        .string({ message: 'zodError.common.id.required' })
+        .uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
      * The free-text query component of the search (the `q` parameter).
      * `null` when the user searched without a text query.
