@@ -109,7 +109,8 @@ const socialLabel = t('gastronomy.detail.social', 'Redes sociales');
         padding: 10px 24px;
         border-radius: var(--radius-button, 8px);
         background-color: var(--brand-accent);
-        color: white;
+        /* SPEC-308: dark ink on the vibrant orange fill (white fails AA). */
+        color: var(--accent-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 0.95rem;

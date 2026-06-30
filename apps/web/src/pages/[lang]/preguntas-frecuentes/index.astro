@@ -272,11 +272,10 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 					/>
 				</div>
 
-				<div class="faq-category__list" role="list">
+				<div class="faq-category__list">
 					{cat.items.map((item, i) => (
 						<details
 							class="faq-item"
-							role="listitem"
 							data-reveal="up"
 							data-stagger-index={Math.min(i, 6)} data-stagger-step="60"
 						>
@@ -379,7 +378,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		font-family: var(--font-decorative);
 		font-weight: 700;
 		font-size: var(--text-tagline);
-		color: var(--brand-accent);
+		color: var(--brand-accent-strong);
 		margin: 0 0 var(--space-2, 0.5rem);
 	}
 
@@ -477,7 +476,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		padding: 0.5rem 0.875rem;
 		border-radius: var(--radius-pill);
 		background-color: var(--brand-primary-a08);
-		color: var(--brand-primary);
+		color: var(--brand-primary-link);
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		font-weight: 500;

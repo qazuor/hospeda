@@ -125,7 +125,9 @@ describe('LocationMap', () => {
 
         // Wait for the lazy inner map to mount before reading the wrapper.
         await screen.findByTestId('circle');
-        const root = container.querySelector('[role="img"]');
+        // SPEC-308: the wrapper role moved from img → group (a role="img" that
+        // contains focusable Leaflet controls is nested-interactive under axe).
+        const root = container.querySelector('[role="group"]');
         expect(root?.getAttribute('aria-label')).toBe('my-label');
     });
 });

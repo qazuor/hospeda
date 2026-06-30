@@ -232,7 +232,7 @@
 }
 
 .loginLink {
-    color: var(--brand-primary);
+    color: var(--brand-primary-link);
     font-weight: 600;
     text-decoration: none;
 }

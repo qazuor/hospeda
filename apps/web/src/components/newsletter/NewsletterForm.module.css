@@ -358,3 +358,32 @@
     opacity: 0.5;
     cursor: progress;
 }
+
+/* ---- Dark mode (SPEC-308) ----
+   This island uses --core-card as a stand-in for "light text on the dark
+   footer" — which holds in light mode (--core-card is near-white) but inverts
+   in dark mode, where --core-card flips to dark navy: dark ink on the dark
+   input/footer (measured contrast 1.2 / 1.36). The footer surface is dark in
+   BOTH themes, so re-point the text/inputs to the footer-newsletter tokens
+   (dark bg + light fg) only under [data-theme="dark"], leaving light untouched.
+   Class-based module rules survive Astro View Transitions (element-rule
+   overrides in a global sheet would not). */
+:global([data-theme="dark"]) .emailInput {
+    background-color: var(--footer-newsletter-bg);
+    color: var(--footer-newsletter-fg);
+    border-color: var(--footer-newsletter-border);
+}
+
+:global([data-theme="dark"]) .emailInput::placeholder {
+    color: var(--footer-fg-muted);
+}
+
+:global([data-theme="dark"]) .consentNote,
+:global([data-theme="dark"]) .authedEmailLabel {
+    color: var(--footer-fg-muted);
+}
+
+:global([data-theme="dark"]) .authedEmailValue,
+:global([data-theme="dark"]) .bannerText {
+    color: var(--footer-newsletter-fg);
+}

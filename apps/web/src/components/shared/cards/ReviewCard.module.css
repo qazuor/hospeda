@@ -93,7 +93,7 @@
 }
 
 .entityNameLink:hover .entityName {
-    color: var(--brand-primary);
+    color: var(--brand-primary-link);
     text-decoration: underline;
     text-underline-offset: 3px;
 }

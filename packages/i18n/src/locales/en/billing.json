@@ -235,7 +235,15 @@
             "comp": "Free forever",
             "errorInvalid": "The code you entered is not valid. Please check it and try again.",
             "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
-            "errorGeneric": "We could not verify the code. Please try again."
+            "errorGeneric": "We could not verify the code. Please try again.",
+            "errorNotFound": "We couldn't find that code. Check the spelling and try again.",
+            "errorInactive": "This code is no longer active.",
+            "errorExpired": "This code has expired.",
+            "errorMaxUses": "This code has reached its usage limit.",
+            "errorMaxUsesPerUser": "You've already used this code the maximum number of times.",
+            "errorPlanRestriction": "This code isn't valid for the selected plan.",
+            "errorNewUsersOnly": "This code is only for new customers.",
+            "errorMinAmount": "Your purchase doesn't meet the minimum required for this code."
         }
     },
     "limit": {

@@ -4,8 +4,9 @@
  *
  * Covers: unauthenticated redirect, loading state, checkout success, API errors,
  * network errors, double-submit prevention, error clearing, correct POST payload,
- * promo code field reveal, validate → preview, invalid code → error, and
- * checkout forwarding the promoCode (including comp sentinel URL path).
+ * promo code field reveal, validate → preview, invalid code → localized error
+ * (errorCode → i18n mapping, English errorMessage discarded), and checkout
+ * forwarding the promoCode (including comp sentinel URL path).
  */
 
 import { act, render, screen, waitFor } from '@testing-library/react';
@@ -883,7 +884,9 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Assert — the toggle text comes from the mocked t() which returns the fallback
-            expect(screen.getByText('¿Tenés un código de descuento?')).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            ).toBeInTheDocument();
         });
 
         it('does not show promo toggle when user is unauthenticated', () => {
@@ -902,7 +905,9 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
 
             // Assert
             expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
@@ -916,7 +921,9 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
 
             // Assert
             expect(screen.getByText('Código de descuento')).toBeInTheDocument();
@@ -933,7 +940,9 @@ describe('PlanPurchaseButton', () => {
                 />
             );
 
-            expect(screen.getByText('¿Tenés un código de descuento?')).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            ).toBeInTheDocument();
         });
 
         it('promo section is hidden when the annual interval is selected but the plan has no annual price', async () => {
@@ -990,7 +999,9 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Expand promo section
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
 
             // Type code and click Apply
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
@@ -1031,7 +1042,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1070,7 +1083,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1107,7 +1122,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X3');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1144,7 +1161,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1189,7 +1208,9 @@ describe('PlanPurchaseButton', () => {
             );
 
             // Apply a promo on the monthly interval.
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => {
@@ -1237,7 +1258,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1274,7 +1297,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('button', { name: 'Quitar' }));
@@ -1292,8 +1317,10 @@ describe('PlanPurchaseButton', () => {
     // -----------------------------------------------------------------------
 
     describe('promo code — invalid code shows error', () => {
-        it('shows error message when validate returns valid: false', async () => {
-            // Arrange
+        it('maps the server errorCode to a localized message and DISCARDS the English errorMessage', async () => {
+            // Regression (U8): the API always returns `errorMessage` in hardcoded
+            // English. The component must ignore it and translate `errorCode`
+            // instead, so the user never sees raw English at checkout.
             mockAuthenticated();
             vi.stubGlobal(
                 'fetch',
@@ -1304,8 +1331,8 @@ describe('PlanPurchaseButton', () => {
                         Promise.resolve({
                             data: {
                                 valid: false,
-                                errorCode: 'PROMO_EXPIRED',
-                                errorMessage: 'El código ha vencido'
+                                errorCode: 'PROMO_CODE_EXPIRED',
+                                errorMessage: 'This promo code has expired'
                             }
                         })
                 })
@@ -1313,14 +1340,94 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'EXPIRED');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
-            // Assert — error rendered with role="alert"
+            // Assert — localized message shown (mocked t() returns the fallback arg);
+            // the English errorMessage must NOT appear.
             await waitFor(() => {
-                expect(screen.getByRole('alert')).toHaveTextContent('El código ha vencido');
+                expect(screen.getByRole('alert')).toHaveTextContent('Este código ya venció.');
             });
+            expect(screen.getByRole('alert')).not.toHaveTextContent('This promo code has expired');
+        });
+
+        // One assertion per mapped code path. `it.each` gives each code its own
+        // test node so a single regression is reported in isolation (a `for`
+        // loop would mask cases after the first failure). Covers ALL 9 codes
+        // returned by `validatePromoCode()` — including the catch-all
+        // `PROMO_CODE_VALIDATION_ERROR`, which maps to the generic "couldn't
+        // verify" copy (a distinct switch arm from the `default`).
+        it.each([
+            ['PROMO_CODE_NOT_FOUND', 'No encontramos ese código. Revisá que esté bien escrito.'],
+            ['PROMO_CODE_INACTIVE', 'Este código ya no está activo.'],
+            ['PROMO_CODE_EXPIRED', 'Este código ya venció.'],
+            ['PROMO_CODE_MAX_USES', 'Este código alcanzó su límite de usos.'],
+            ['PROMO_CODE_MAX_USES_PER_USER', 'Ya usaste este código la cantidad máxima de veces.'],
+            ['PROMO_CODE_PLAN_RESTRICTION', 'Este código no es válido para el plan seleccionado.'],
+            ['PROMO_CODE_NEW_USERS_ONLY', 'Este código es solo para clientes nuevos.'],
+            ['PROMO_CODE_MIN_AMOUNT', 'Tu compra no alcanza el mínimo requerido para este código.'],
+            ['PROMO_CODE_VALIDATION_ERROR', 'No pudimos verificar el código. Intentá de nuevo.']
+        ] as const)('maps errorCode %s to its localized message', async (errorCode, expected) => {
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve({ data: { valid: false, errorCode } })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'CODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent(expected);
+            });
+        });
+
+        it('falls back to the generic invalid message for an unknown errorCode', async () => {
+            // A future/unrecognized server code must never leak raw English; it
+            // routes to the generic "invalid code" copy.
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: false,
+                                errorCode: 'PROMO_CODE_SOME_NEW_CODE',
+                                errorMessage: 'Brand new English reason'
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'NEWCODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent(
+                    'El código ingresado no es válido. Revisalo e intentá de nuevo.'
+                );
+            });
+            expect(screen.getByRole('alert')).not.toHaveTextContent('Brand new English reason');
         });
 
         it('shows generic error when validate API returns non-ok status', async () => {
@@ -1337,7 +1444,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1356,7 +1465,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1386,7 +1497,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1447,7 +1560,9 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Expand and apply promo
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'SUMMER50');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));
@@ -1506,7 +1621,9 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));

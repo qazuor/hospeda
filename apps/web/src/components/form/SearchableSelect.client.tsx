@@ -435,6 +435,7 @@ export function SearchableSelect<T extends SelectableItem>({
                                 {item.featured && (
                                     <span
                                         className="featured-indicator"
+                                        role="img"
                                         aria-label={t(
                                             'form.searchableSelect.featuredLabel',
                                             'Destacado'
