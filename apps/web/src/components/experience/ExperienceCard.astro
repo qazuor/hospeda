@@ -8,6 +8,7 @@
  * Hydration: none — fully static Astro component.
  */
 
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { StarIcon, LocationIcon } from '@repo/icons';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
@@ -19,6 +20,12 @@ interface Props {
     readonly data: ExperienceCardData;
     readonly locale: SupportedLocale;
     /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or
+     * auth-required popover. Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
+    /**
      * When true the card image renders with `loading="eager"` and
      * `fetchpriority="high"` — set this on cards in the first visible row
      * so the browser treats them as LCP candidates. Defaults to false.
@@ -26,7 +33,7 @@ interface Props {
     readonly eager?: boolean;
 }
 
-const { data, locale, eager = false } = Astro.props;
+const { data, locale, isAuthenticated = false, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `experiencias/${data.slug}/` });
@@ -78,6 +85,22 @@ const featuredLabel = t('experience.card.featured', 'Destacada');
                     <span>{featuredLabel}</span>
                 </div>
             )}
+
+            <!-- Top-right actions: FavoriteButton island -->
+            <div class="exp-card__actions">
+                <FavoriteButton
+                    client:visible
+                    entityId={data.id}
+                    entityType="EXPERIENCE"
+                    initialIsFavorited={data.isFavorited}
+                    initialBookmarkId={data.favoriteBookmarkId ?? null}
+                    count={data.bookmarkCount}
+                    variant="standalone"
+                    showCount={true}
+                    locale={locale}
+                    isAuthenticated={isAuthenticated}
+                />
+            </div>
 
             <!-- Wave separator -->
             <div class="exp-card__wave" aria-hidden="true">
@@ -245,6 +268,18 @@ const featuredLabel = t('experience.card.featured', 'Destacada');
         position: absolute;
         bottom: 48px;
         right: 12px;
+    }
+
+    /* Top-right actions overlay (FavoriteButton) */
+    .exp-card__actions {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+        z-index: 2;
     }
 
     /* Wave separator */
