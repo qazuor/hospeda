@@ -36,13 +36,21 @@ export const webDark: Theme = {
 
     'brand-primary': oklchValue(0.68, 0.17, 259),
     'brand-primary-text': oklchValue(0.68, 0.17, 259),
-    // SPEC-308: on dark surfaces the vibrant blue already clears AA, so the
-    // text/link token keeps the bright value (mirrors brand-primary).
-    'brand-primary-link': oklchValue(0.68, 0.17, 259),
+    // SPEC-308: the vibrant blue (0.68) clears AA on the page canvas, but as
+    // text on the faint blue-tinted chips (8-15% brand over navy) it lands at
+    // ~4.0-4.49 — just under 4.5. Lift the link/AA text token to 0.74 so brand
+    // text on those tinted chips clears AA. Used by dest-card chips, event-card
+    // location, and the category chips (repointed to this token in lib/colors).
+    'brand-primary-link': oklchValue(0.74, 0.16, 259),
     'primary-foreground': oklchValue(0.1, 0.02, 259),
     'brand-secondary': oklchValue(0.25, 0.05, 255),
     'brand-secondary-foreground': oklchValue(0.8, 0.08, 255),
     'brand-tertiary': oklchValue(0.28, 0.05, 155),
+    // SPEC-308: AA-safe green text token for category chips on dark. The base
+    // forest (0.5) reads at only ~2.4:1 as text on the navy-tinted green chip;
+    // lift to 0.72 so it clears AA. Only the chip *text* uses this — the solid
+    // forest fill (date-block bg) stays the saturated base green.
+    'hospeda-forest-link': oklchValue(0.72, 0.15, 155),
 
     muted: oklchValue(0.255, 0.035, 258),
     'core-muted-foreground': oklchValue(0.68, 0.03, 261),
@@ -93,6 +101,15 @@ export const webDark: Theme = {
     'surface-warm': oklchValue(0.255, 0.035, 258),
     'surface-dark': oklchValue(0.185, 0.03, 258),
     'surface-elevated': oklchValue(0.285, 0.04, 258),
+    // SPEC-308: the dark navy ramp flipped surface-warm/dark/elevated to dark
+    // fills, but the *-foreground tokens were only defined in web-light.ts (dark
+    // ink for the light cream surfaces). Without a dark override they inherited
+    // that dark ink → dark-on-dark inversion (e.g. ContributionBanner title/desc
+    // contrast 1.4). Provide light foregrounds so text on these surfaces clears
+    // AA in dark.
+    'surface-warm-foreground': oklchValue(0.92, 0.01, 210),
+    'surface-dark-foreground': oklchValue(0.9, 0.01, 210),
+    'surface-elevated-foreground': oklchValue(0.92, 0.01, 210),
 
     // Hero bottom-wave fill. In dark it must follow the page canvas so the
     // wave blends into the section below (the SVG hardcodes --core-card, which

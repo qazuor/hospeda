@@ -164,6 +164,11 @@ export const webLight: Theme = {
     'hospeda-sky-light': skyLight,
     'hospeda-river': river[500],
     'hospeda-forest': forest[500],
+    // SPEC-308: AA-safe forest text token. In light it equals the base forest
+    // (already legible on the pale forest-tinted chips); web-dark.ts lifts it so
+    // green category chip text clears AA on the navy-tinted chips. Keeps the
+    // saturated forest as the fill color (used as date-block bg) untouched.
+    'hospeda-forest-link': forest[500],
     'hospeda-sand': sand[500],
 
     // ========================================================================
