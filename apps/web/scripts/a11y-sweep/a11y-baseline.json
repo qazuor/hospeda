@@ -1,0 +1,162 @@
+{
+  "/es/ [light]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/ [dark]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/alojamientos/ [light]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/alojamientos/ [dark]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/destinos/ [light]": [
+    "aria-allowed-attr",
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/destinos/ [dark]": [
+    "aria-allowed-attr",
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/eventos/ [light]": [
+    "aria-allowed-attr",
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/eventos/ [dark]": [
+    "aria-allowed-attr",
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/gastronomia/ [light]": [
+    "aria-prohibited-attr",
+    "color-contrast",
+    "empty-heading"
+  ],
+  "/es/gastronomia/ [dark]": [
+    "aria-prohibited-attr",
+    "color-contrast",
+    "empty-heading"
+  ],
+  "/es/experiencias/ [light]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/experiencias/ [dark]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/publicaciones/ [light]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/publicaciones/ [dark]": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/es/nosotros/ [light]": [
+    "color-contrast"
+  ],
+  "/es/nosotros/ [dark]": [
+    "color-contrast"
+  ],
+  "/es/preguntas-frecuentes/ [light]": [
+    "aria-allowed-role",
+    "color-contrast"
+  ],
+  "/es/preguntas-frecuentes/ [dark]": [
+    "aria-allowed-role",
+    "color-contrast"
+  ],
+  "/es/contacto/ [light]": [
+    "aria-allowed-role",
+    "color-contrast",
+    "nested-interactive"
+  ],
+  "/es/contacto/ [dark]": [
+    "aria-allowed-role",
+    "color-contrast",
+    "nested-interactive"
+  ],
+  "/es/suscriptores/planes/ [light]": [
+    "color-contrast"
+  ],
+  "/es/suscriptores/planes/ [dark]": [
+    "color-contrast"
+  ],
+  "/en/ [light]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/en/ [dark]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/pt/ [light]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/pt/ [dark]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/alojamientos/camping-sendero-maravilloso-camping/ [light]": [
+    "aria-allowed-attr",
+    "color-contrast",
+    "heading-order",
+    "nested-interactive"
+  ],
+  "/es/alojamientos/camping-sendero-maravilloso-camping/ [dark]": [
+    "aria-allowed-attr",
+    "color-contrast",
+    "heading-order",
+    "nested-interactive"
+  ],
+  "/es/destinos/argentina/ [light]": [
+    "color-contrast",
+    "heading-order",
+    "nested-interactive"
+  ],
+  "/es/destinos/argentina/ [dark]": [
+    "color-contrast",
+    "heading-order",
+    "nested-interactive"
+  ],
+  "/es/eventos/gastronomy-festival-gastronomico-termas-de-federacion-2025-2026-07-18/ [light]": [
+    "color-contrast",
+    "nested-interactive"
+  ],
+  "/es/eventos/gastronomy-festival-gastronomico-termas-de-federacion-2025-2026-07-18/ [dark]": [
+    "color-contrast",
+    "nested-interactive"
+  ],
+  "/es/publicaciones/tourism-los-10-destinos-imperdibles-de-entre-rios-en-2024/ [light]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/publicaciones/tourism-los-10-destinos-imperdibles-de-entre-rios-en-2024/ [dark]": [
+    "color-contrast",
+    "heading-order"
+  ],
+  "/es/gastronomia/la-parrilla-del-puerto/ [light]": [
+    "color-contrast",
+    "empty-heading"
+  ],
+  "/es/gastronomia/la-parrilla-del-puerto/ [dark]": [
+    "color-contrast",
+    "empty-heading"
+  ],
+  "/es/experiencias/excursion-rio-uruguay-concepcion/ [light]": [
+    "color-contrast"
+  ],
+  "/es/experiencias/excursion-rio-uruguay-concepcion/ [dark]": [
+    "color-contrast"
+  ]
+}
