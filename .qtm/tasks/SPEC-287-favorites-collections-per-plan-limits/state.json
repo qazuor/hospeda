@@ -8,21 +8,34 @@
             "id": "T-001",
             "title": "Add CAN_USE_COLLECTIONS and MAX_COLLECTIONS enum keys",
             "description": "Add `CAN_USE_COLLECTIONS = 'can_use_collections'` to `EntitlementKey` in packages/billing/src/types/entitlement.types.ts, and `MAX_COLLECTIONS = 'max_collections'` to `LimitKey` in packages/billing/src/types/plan.types.ts. This is the foundational step: LIMIT_METADATA and RESOURCE_NAMES are `Record<LimitKey, ...>` and will fail to compile until their entries are added in later tasks. Test requirements: extend packages/billing/test/entitlements.test.ts and packages/billing/test/limits.test.ts to assert the new enum members exist with the expected string values.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-004", "T-005"],
             "subtasks": [
-                { "title": "Add CAN_USE_COLLECTIONS to EntitlementKey enum", "completed": false },
-                { "title": "Add MAX_COLLECTIONS to LimitKey enum", "completed": false },
-                { "title": "Add unit test assertions for both new enum values", "completed": false }
+                {
+                    "title": "Add CAN_USE_COLLECTIONS to EntitlementKey enum",
+                    "completed": false
+                },
+                {
+                    "title": "Add MAX_COLLECTIONS to LimitKey enum",
+                    "completed": false
+                },
+                {
+                    "title": "Add unit test assertions for both new enum values",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "types", "collections"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
+                "started": "2026-07-01T14:42:15Z",
                 "completed": null
             }
         },
@@ -35,7 +48,10 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-004"],
             "subtasks": [
-                { "title": "Add metadata entry to entitlements.config.ts", "completed": false },
+                {
+                    "title": "Add metadata entry to entitlements.config.ts",
+                    "completed": false
+                },
                 {
                     "title": "Verify/extend completeness test in entitlements.test.ts",
                     "completed": false
@@ -43,7 +59,11 @@
             ],
             "tags": ["billing", "config", "collections"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -59,13 +79,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-008"],
             "subtasks": [
-                { "title": "Add LIMIT_METADATA entry in limits.config.ts", "completed": false },
-                { "title": "Add RESOURCE_NAMES entry in limit-check.ts", "completed": false },
-                { "title": "Extend limits.test.ts and limit-check.test.ts", "completed": false }
+                {
+                    "title": "Add LIMIT_METADATA entry in limits.config.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add RESOURCE_NAMES entry in limit-check.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Extend limits.test.ts and limit-check.test.ts",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "config", "collections"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -81,17 +114,30 @@
             "blockedBy": ["T-001", "T-002", "T-003"],
             "blocks": ["T-008", "T-010", "T-011", "T-012", "T-014", "T-015"],
             "subtasks": [
-                { "title": "Add entitlement + limit(10) to TOURIST_PLUS_PLAN", "completed": false },
+                {
+                    "title": "Add entitlement + limit(10) to TOURIST_PLUS_PLAN",
+                    "completed": false
+                },
                 {
                     "title": "Add entitlement + limit(25) to shared TOURIST_VIP_ENTITLEMENTS/LIMITS",
                     "completed": false
                 },
-                { "title": "Verify TOURIST_FREE_PLAN is untouched", "completed": false },
-                { "title": "Extend plans.test.ts with per-plan assertions", "completed": false }
+                {
+                    "title": "Verify TOURIST_FREE_PLAN is untouched",
+                    "completed": false
+                },
+                {
+                    "title": "Extend plans.test.ts with per-plan assertions",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "config", "collections", "plans"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -115,11 +161,18 @@
                     "title": "Add JSDoc following existing gate function conventions",
                     "completed": false
                 },
-                { "title": "Add unit tests to entitlement.test.ts", "completed": false }
+                {
+                    "title": "Add unit tests to entitlement.test.ts",
+                    "completed": false
+                }
             ],
             "tags": ["api", "middleware", "collections"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -154,7 +207,11 @@
             ],
             "tags": ["service-core", "collections", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -170,13 +227,26 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Mount gate on getById/update/delete routes", "completed": false },
-                { "title": "Mount gate on addBookmark/removeBookmark routes", "completed": false },
-                { "title": "Add 403 test coverage for each of the 5 routes", "completed": false }
+                {
+                    "title": "Mount gate on getById/update/delete routes",
+                    "completed": false
+                },
+                {
+                    "title": "Mount gate on addBookmark/removeBookmark routes",
+                    "completed": false
+                },
+                {
+                    "title": "Add 403 test coverage for each of the 5 routes",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -192,17 +262,30 @@
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Mount gateCollections() on create route", "completed": false },
-                { "title": "Resolve planLimit via getRemainingLimit()", "completed": false },
+                {
+                    "title": "Mount gateCollections() on create route",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve planLimit via getRemainingLimit()",
+                    "completed": false
+                },
                 {
                     "title": "Pass { hookState: { planLimit } } into createCollection()",
                     "completed": false
                 },
-                { "title": "Add/extend create.test.ts boundary cases", "completed": false }
+                {
+                    "title": "Add/extend create.test.ts boundary cases",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -218,9 +301,18 @@
             "blockedBy": ["T-006", "T-014"],
             "blocks": [],
             "subtasks": [
-                { "title": "Remove from env-registry.hospeda.ts", "completed": false },
-                { "title": "Remove from apps/api/src/utils/env.ts", "completed": false },
-                { "title": "Remove from .env.example", "completed": false },
+                {
+                    "title": "Remove from env-registry.hospeda.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Remove from apps/api/src/utils/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Remove from .env.example",
+                    "completed": false
+                },
                 {
                     "title": "Remove getMaxCollectionsPerUser() from the service",
                     "completed": false
@@ -228,7 +320,11 @@
             ],
             "tags": ["env", "config", "cleanup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -244,7 +340,10 @@
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "Resolve next extras migration number", "completed": false },
+                {
+                    "title": "Resolve next extras migration number",
+                    "completed": false
+                },
                 {
                     "title": "Write OR-PRESERVE guarded UPDATE for entitlements array",
                     "completed": false
@@ -260,7 +359,11 @@
             ],
             "tags": ["db", "migration", "billing", "collections"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -276,16 +379,26 @@
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "Change status to 'available' for collections row", "completed": false },
+                {
+                    "title": "Change status to 'available' for collections row",
+                    "completed": false
+                },
                 {
                     "title": "Change cell to limit-kind using LimitKey.MAX_COLLECTIONS",
                     "completed": false
                 },
-                { "title": "Update PlanComparisonTable.test.ts assertions", "completed": false }
+                {
+                    "title": "Update PlanComparisonTable.test.ts assertions",
+                    "completed": false
+                }
             ],
             "tags": ["web", "billing", "collections", "spec-282"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -301,11 +414,18 @@
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add gate-matrix rows for all 7 collection routes", "completed": false }
+                {
+                    "title": "Add gate-matrix rows for all 7 collection routes",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "billing"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -321,13 +441,26 @@
             "blockedBy": ["T-007", "T-008", "T-014"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test tourist-free 403 across all routes", "completed": false },
-                { "title": "Test tourist-plus quota boundary at 10", "completed": false },
-                { "title": "Test tourist-vip quota boundary at 25", "completed": false }
+                {
+                    "title": "Test tourist-free 403 across all routes",
+                    "completed": false
+                },
+                {
+                    "title": "Test tourist-plus quota boundary at 10",
+                    "completed": false
+                },
+                {
+                    "title": "Test tourist-vip quota boundary at 25",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "integration", "collections"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -343,16 +476,26 @@
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-009", "T-013"],
             "subtasks": [
-                { "title": "Mount gateCollections() on list route", "completed": false },
+                {
+                    "title": "Mount gateCollections() on list route",
+                    "completed": false
+                },
                 {
                     "title": "Replace getMaxCollectionsPerUser() with getRemainingLimit()",
                     "completed": false
                 },
-                { "title": "Extend list route test for usage.max and 403 case", "completed": false }
+                {
+                    "title": "Extend list route test for usage.max and 403 case",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -368,7 +511,10 @@
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add Superseded status line to ADR-026", "completed": false },
+                {
+                    "title": "Add Superseded status line to ADR-026",
+                    "completed": false
+                },
                 {
                     "title": "Add addendum explaining the entitlement-gate divergence",
                     "completed": false
@@ -376,7 +522,11 @@
             ],
             "tags": ["docs", "billing", "adr"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": null,
@@ -386,8 +536,8 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 15,
-        "inProgress": 0,
+        "pending": 14,
+        "inProgress": 1,
         "completed": 0,
         "blocked": 0,
         "averageComplexity": 1.9

@@ -798,7 +798,7 @@
         {
             "specId": "SPEC-287",
             "title": "Favorites Collections — Per-Plan Limits",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/15",
             "path": "SPEC-287-favorites-collections-per-plan-limits",
             "branch": "spec/SPEC-287-favorites-collections-per-plan-limits",
