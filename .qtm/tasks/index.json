@@ -763,12 +763,12 @@
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
             "status": "in-progress",
-            "progress": "0/0",
+            "progress": "0/16",
             "path": "SPEC-284-recommendations-feed",
             "branch": "spec/SPEC-284-recommendations-feed",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In-progress: signal design resolved (OQ-1/OQ-2) — heuristic preference-profile recommender (favorites+recently-viewed+search-history). Tasks not yet atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS)."
+            "note": "In-progress: signal design resolved (OQ-1..OQ-4) — heuristic preference-profile recommender (favorites+recently-viewed+search-history). Atomized into 16 tasks (core 6 / integration 8 / testing 2, avg complexity 1.94). Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS)."
         },
         {
             "specId": "SPEC-285",
