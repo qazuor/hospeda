@@ -46,6 +46,7 @@ import {
     buildEventListingSummary,
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
+import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
@@ -53,6 +54,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
+import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { EventCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -257,71 +260,11 @@ const filterSummary = buildEventListingSummary({
 /**
  * Build the `filterGroups` config for FilterSidebar.
  * Includes: search, category (checkbox), free toggle, price dual-range.
- * The `isFree` toggle uses the existing `type: 'toggle'` group.
- * The price range uses the existing `type: 'dual-range'` group.
+ * Extracted to `@/lib/filters/events-filter-groups` (SPEC-306) so the
+ * per-category facet landings share the exact same config (minus the
+ * category group, which is fixed by the URL there).
  */
-const filterGroups = [
-    {
-        id: 'q',
-        label: t('events.filters.search', 'Buscar'),
-        type: 'search' as const,
-    },
-    {
-        id: 'isFeatured',
-        label: t('events.filters.featured', 'Solo destacados'),
-        type: 'toggle' as const,
-    },
-    {
-        id: 'category',
-        label: t('events.filters.category', 'Categoría'),
-        type: 'checkbox' as const,
-        options: [
-            { value: 'MUSIC',      label: t('events.categories.music',      'Música') },
-            { value: 'CULTURE',    label: t('events.categories.culture',    'Cultura') },
-            { value: 'SPORTS',     label: t('events.categories.sports',     'Deportes') },
-            { value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
-            { value: 'FESTIVAL',   label: t('events.categories.festival',   'Festival') },
-            { value: 'NATURE',     label: t('events.categories.nature',     'Naturaleza') },
-            { value: 'THEATER',    label: t('events.categories.theater',    'Teatro') },
-            { value: 'WORKSHOP',   label: t('events.categories.workshop',   'Taller') },
-            { value: 'OTHER',      label: t('events.categories.other',      'Otros') },
-        ],
-    },
-    {
-        id: 'date',
-        label: t('events.filters.date', 'Fecha'),
-        type: 'date-range' as const,
-        checkInPlaceholder: t('events.filters.dateFrom', 'Desde'),
-        checkOutPlaceholder: t('events.filters.dateTo', 'Hasta'),
-        fromParam: 'startDateAfter',
-        toParam: 'startDateBefore',
-        mode: 'bounds' as const,
-        allowPastDates: true,
-    },
-    {
-        id: 'destinationId',
-        label: t('events.filters.location', 'Lugar'),
-        type: 'select-search' as const,
-        options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
-        maxVisible: 8,
-        maxSelections: 1,
-    },
-    {
-        id: 'price',
-        label: t('events.filters.price', 'Precio'),
-        type: 'price-composite' as const,
-        min: 0,
-        max: 10000,
-        step: 100,
-        format: 'currency' as const,
-        includeUnpricedLabel: t(
-            'events.filters.includeUnpricedToggle',
-            'Incluir eventos sin información de precio'
-        ),
-        isFreeLabel: t('events.filters.onlyFree', 'Solo eventos gratuitos'),
-        rangeLabel: t('events.filters.priceRange', 'Rango de precio'),
-    },
-] as const;
+const filterGroups = buildEventsFilterGroups({ t, destinations });
 
 /**
  * `mostSaved` is intentionally NOT exposed in the UI options here: the
@@ -343,12 +286,39 @@ const sortOptions = [
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
 
+// SPEC-306 OQ-3: when `category` is the ONLY active facet/filter (no other
+// query params refining the result set), canonicalize to the category's
+// first-class landing instead of the base listing — that's the single URL
+// search engines should credit for this exact result set. Any additional
+// filter active alongside `category` falls through to the base-listing
+// canonical (OQ-3's "combinations canonicalize to base" rule).
+const hasOtherEventFilters = Boolean(
+    q ||
+        when !== 'all' ||
+        isFree !== undefined ||
+        priceMin !== undefined ||
+        priceMax !== undefined ||
+        includeUnpriced === false ||
+        isFeatured ||
+        destinationId ||
+        startDateAfterFilter ||
+        startDateBeforeFilter
+);
+const singlePromotedCategory = resolvePromotedFacetCanonical({
+    facetValues: category ? [category] : [],
+    hasOtherFilters: hasOtherEventFilters,
+    validEnumValues: Object.values(EventCategoryEnum)
+});
+const canonicalBaseUrl = singlePromotedCategory
+    ? buildUrl({ locale, path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}` })
+    : baseUrl;
+
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
 // `?page=n`; the rewrite drops the `/page/n/` segment from Astro.url.pathname,
 // so we rebuild the crawlable URL from the page number to keep each paginated
 // page self-canonical and indexable (instead of canonicalizing to page 1).
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).

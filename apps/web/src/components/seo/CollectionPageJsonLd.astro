@@ -1,0 +1,37 @@
+---
+/**
+ * @file CollectionPageJsonLd.astro
+ * @description Reusable CollectionPage schema.org JSON-LD block for
+ * facet-landing pages (e.g. event category, accommodation type). Renders a
+ * `CollectionPage` node through the canonical JsonLd wrapper (which escapes
+ * `<`, `>`, `&` to prevent script injection — SPEC-157 decision D-1, single
+ * canonical JSON-LD path).
+ *
+ * Used by first-class facet landings (SPEC-306) alongside `ItemListJsonLd`
+ * (the listing results) and `BreadcrumbJsonLd` (vertical → facet value), the
+ * same three-node structured-data pattern already proven on `/destinos/`.
+ */
+
+import JsonLd from '@/components/seo/JsonLd.astro';
+
+interface Props {
+    /** Name of the collection page (e.g. the facet landing's title). */
+    readonly name: string;
+    /** Description of the collection page (matches the page's meta description). */
+    readonly description: string;
+    /** Absolute URL of the collection page. */
+    readonly url: string;
+}
+
+const { name, description, url } = Astro.props;
+
+const data = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url
+};
+---
+
+<JsonLd data={data} />

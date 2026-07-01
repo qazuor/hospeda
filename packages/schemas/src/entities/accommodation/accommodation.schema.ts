@@ -169,6 +169,13 @@ export const AccommodationSchema = z.object({
      */
     showExternalReputation: z.boolean().default(false),
 
+    /** Admin-verified flag (SPEC-291). Set only by the verify admin action. */
+    isVerified: z.boolean().default(false),
+    /** Timestamp of the last verification action. Null when never verified. */
+    verifiedAt: z.coerce.date().nullable().optional(),
+    /** Admin user who performed the last verify/unverify action. */
+    verifiedById: UserIdSchema.nullable().optional(),
+
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),
     faqs: z.array(BaseFaqSchema).optional(),

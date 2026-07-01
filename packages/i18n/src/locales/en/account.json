@@ -413,7 +413,9 @@
                 "myPropertiesDesc": "Manage your published accommodations",
                 "hostDashboard": "Host dashboard",
                 "hostDashboardDesc": "Summary of your activity as a host",
-                "promotions": "My Promotions"
+                "promotions": "My Promotions",
+                "recommendations": "Recommendations",
+                "recommendationsDesc": "Accommodations picked for you"
             },
             "stats": {
                 "favorites": "My Favorites",
@@ -580,6 +582,10 @@
         "alerts": {
             "title": "Price alerts",
             "description": "Manage your price-drop alerts on Hospeda"
+        },
+        "recommendations": {
+            "title": "For you",
+            "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
         }
     },
     "newsletter": {
@@ -791,5 +797,20 @@
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts"
+    },
+    "recommendations": {
+        "loading": "Loading recommendations...",
+        "errorFetch": "We couldn't load your recommendations",
+        "listLabel": "Recommendations for you",
+        "viewDetails": "View accommodation",
+        "coldStart": {
+            "title": "We're still getting to know your taste",
+            "body": "In the meantime, here are some popular accommodations. Save favorites, browse listings, or run a search to get more accurate recommendations."
+        },
+        "empty": {
+            "title": "No recommendations right now",
+            "body": "Check back later or browse our full accommodation catalog."
+        },
+        "entitlementRequired": "This feature isn't available for your account."
     }
 }

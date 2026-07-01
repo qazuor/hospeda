@@ -97,6 +97,8 @@
 | `POST /api/v1/protected/price-alerts` | `price-alert/protected/create.ts` | gate+limit | `price_alerts`, `max_active_alerts` | wired | gateAlerts() — two-step: PRICE_ALERTS entitlement + MAX_ACTIVE_ALERTS limit, pre-populated via `AlertSubscriptionService.countActive()` in a route middleware before the gate runs — SPEC-286 T-005 |
 | `DELETE /api/v1/protected/price-alerts/{alertId}` | `price-alert/protected/remove.ts` | none | - | n/a | Cancellation (soft-delete) ungated; ownership enforced in the service layer — users at cap must still free slots — SPEC-286 T-005 |
 | `GET /api/v1/protected/price-alerts` | `price-alert/protected/list.ts` | none | - | n/a | Read own data only; self-scoped via service `_beforeList` — SPEC-286 T-005 |
+| **RECOMMENDATIONS — PROTECTED** | | | | | |
+| `GET /api/v1/protected/recommendations` | `recommendations/protected/get.ts` | gate | `can_view_recommendations` | wired | gateRecommendations() — binary in v1 (OQ-3): every plan carrying the entitlement sees the same feed. RecommendationService.getFeed() also enforces PermissionEnum.RECOMMENDATION_VIEW (role axis, separate from the plan-axis entitlement gate) — SPEC-284 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
@@ -307,6 +309,7 @@
 | `DELETE /api/v1/admin/accommodations/{id}` | `accommodation/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/hard` | `accommodation/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/restore` | `accommodation/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/verify` | `accommodation/admin/verify.ts` | none | - | n/a | Admin verify/unverify; PermissionEnum-gated (ACCOMMODATION_VERIFY) |
 | `POST /api/v1/admin/accommodations/batch` | `accommodation/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
 | `GET /api/v1/admin/accommodations/options` | `accommodation/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/accommodations/{id}/faqs` | `accommodation/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
@@ -939,7 +942,7 @@ eventually built, move its entry from this section to the main table.
 | ~~`gateAlerts`~~ | ~~`price_alerts`~~ | `middlewares/tourist-entitlements.ts` | SPEC-286 — **promoted to main table** (route built in SPEC-286 T-005; moved out of phantom gates) |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
-| `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateRecommendations`~~ | ~~`can_view_recommendations`~~ | `middlewares/tourist-entitlements.ts` | SPEC-284 — **promoted to main table** (route built in SPEC-284 T-008; moved out of phantom gates) |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
@@ -973,7 +976,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 4 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired), price-alert create (wired, SPEC-286) |
 | `none` | ~330 | Admin PermissionEnum-gated or pure auth-sufficient reads |
-| `reserved` | 12 | 10 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288, gateAlerts wired by SPEC-286) |
+| `reserved` | 9 | 7 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288, gateAlerts wired by SPEC-286, gateSearchHistory wired by SPEC-289, gateRecommendations wired by SPEC-284) |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
 

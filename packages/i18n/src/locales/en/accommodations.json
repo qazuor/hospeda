@@ -272,6 +272,81 @@
             "emptyTitle": "No {type} accommodations available"
         }
     },
+    "byType": {
+        "tagline": "Accommodation type",
+        "types": {
+            "APARTMENT": {
+                "name": "Apartments",
+                "description": "Fully equipped apartments in Concepción del Uruguay and the Entre Ríos Litoral, ideal for short and long stays with the comfort of feeling at home.",
+                "pageTitle": "Apartments for Rent"
+            },
+            "HOUSE": {
+                "name": "Houses",
+                "description": "Full houses for rent in the Argentine Litoral, with all the space and privacy to enjoy with family or friends.",
+                "pageTitle": "Houses for Rent"
+            },
+            "COUNTRY_HOUSE": {
+                "name": "Country Houses",
+                "description": "Country houses with gardens and pools on the outskirts of Concepción del Uruguay, perfect for unwinding surrounded by nature.",
+                "pageTitle": "Country Houses"
+            },
+            "CABIN": {
+                "name": "Cabins",
+                "description": "Cozy cabins in natural settings across the Entre Ríos Litoral. Perfect for romantic getaways or family vacations.",
+                "pageTitle": "Cabins for Rent"
+            },
+            "HOTEL": {
+                "name": "Hotels",
+                "description": "The best hotels in Concepción del Uruguay and the Argentine Litoral region, with comfort and quality services for your stay.",
+                "pageTitle": "Hotels"
+            },
+            "HOSTEL": {
+                "name": "Hostels",
+                "description": "Budget-friendly hostels with a youthful atmosphere in the Argentine Litoral, ideal for travelers looking to connect with other adventurers.",
+                "pageTitle": "Hostels"
+            },
+            "CAMPING": {
+                "name": "Campgrounds",
+                "description": "Campgrounds with complete infrastructure to enjoy the outdoors and connect with nature in the Litoral region.",
+                "pageTitle": "Campgrounds"
+            },
+            "ROOM": {
+                "name": "Rooms",
+                "description": "Private rooms for rent in Concepción del Uruguay, a practical and affordable option for your stay.",
+                "pageTitle": "Rooms for Rent"
+            },
+            "MOTEL": {
+                "name": "Motels",
+                "description": "Motels in the Entre Ríos Litoral for quick rest stops and short stays.",
+                "pageTitle": "Motels"
+            },
+            "RESORT": {
+                "name": "Resorts",
+                "description": "Resorts with multiple services and activities in the Argentine Litoral, ideal for a complete getaway.",
+                "pageTitle": "Resorts"
+            },
+            "APART_HOTEL": {
+                "name": "Apart Hotels",
+                "description": "Apart hotels combining the comfort of an apartment with hotel-style services, in Concepción del Uruguay and the region.",
+                "pageTitle": "Apart Hotels"
+            },
+            "ESTANCIA": {
+                "name": "Ranch Houses",
+                "description": "Traditional Argentine ranch houses offering authentic countryside and gaucho culture experiences in the Entre Ríos Litoral.",
+                "pageTitle": "Ranch Houses"
+            },
+            "BED_AND_BREAKFAST": {
+                "name": "Bed & Breakfast",
+                "description": "Bed & Breakfast stays with warmth and local hospitality in Concepción del Uruguay and the Argentine Litoral.",
+                "pageTitle": "Bed & Breakfast"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Home",
+            "breadcrumbAccommodations": "Accommodations",
+            "emptyTitle": "No {{type}} accommodations available"
+        }
+    },
     "listPage": {
         "title": "Accommodations",
         "description": "Discover the best accommodations in the Argentine Litoral",
@@ -416,7 +491,8 @@
         },
         "badges": {
             "new": "New",
-            "featured": "Featured"
+            "featured": "Featured",
+            "verified": "Verified"
         },
         "bookmark_count": "Saved by {{count}} people",
         "bookmark_count_one": "Saved by {{count}} person",

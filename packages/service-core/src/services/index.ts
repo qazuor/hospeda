@@ -48,6 +48,7 @@ export * from './commerce';
 export * from './gastronomy';
 export * from './experience';
 export * from './moderation';
+export * from './recommendation';
 export * from './social';
 export * from './feature-flags';
 export * from './media';

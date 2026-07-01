@@ -241,6 +241,12 @@
             "description": "Mark as a featured accommodation",
             "placeholder": "Is it featured?"
         },
+        "isVerified": {
+            "title": "Verified",
+            "label": "Verified accommodation",
+            "description": "Mark as verified by the Hospeda team",
+            "placeholder": "Is it verified?"
+        },
         "destinationId": {
             "title": "Destination",
             "label": "Tourist destination",

@@ -353,7 +353,10 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('</urlset>');
     });
 
-    it('returns valid empty XML when all fetches fail', async () => {
+    it('returns valid XML with only the static facet-landing entries when all API-backed fetches fail', async () => {
+        // SPEC-306: event category / accommodation type entries are static
+        // (enum-derived, no API fetch), so they still appear even when every
+        // API-backed entity fetch fails.
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('All down')));
 
         const response = await GET({});
@@ -363,8 +366,14 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('<?xml version="1.0"');
         expect(body).toContain('<urlset');
         expect(body).toContain('</urlset>');
-        // No <url> entries
-        expect(body).not.toContain('<url>');
+        // No API-backed entity entries
+        expect(body).not.toContain('/alojamientos/hotel');
+        expect(body).not.toContain('/destinos/');
+        expect(body).not.toContain('/eventos/festival');
+        expect(body).not.toContain('/publicaciones/');
+        // Static facet-landing entries are still present
+        expect(body).toContain('/eventos/categoria/music/');
+        expect(body).toContain('/alojamientos/tipo/hotel/');
     });
 
     it('returns HTTP 503 when env is not configured', async () => {
@@ -413,6 +422,77 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             expect(body).toContain(
                 '<xhtml:link rel="alternate" hreflang="x-default" href="https://hospeda.test/es/alojamientos/casa-rio/"'
             );
+        });
+    });
+
+    // SPEC-306: event category and accommodation type facet landings are
+    // static (enum-derived) entries, independent of the API fetches above.
+    describe('facet-landing static entries (SPEC-306)', () => {
+        it('emits all 9 event category landings with /eventos/categoria/ path for all 3 locales', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
+
+            const response = await GET({});
+            const body = await response.text();
+
+            const categorySlugs = [
+                'music',
+                'culture',
+                'sports',
+                'gastronomy',
+                'festival',
+                'nature',
+                'theater',
+                'workshop',
+                'other'
+            ];
+
+            for (const slug of categorySlugs) {
+                expect(body).toContain(`https://hospeda.test/es/eventos/categoria/${slug}/`);
+                expect(body).toContain(`https://hospeda.test/en/eventos/categoria/${slug}/`);
+                expect(body).toContain(`https://hospeda.test/pt/eventos/categoria/${slug}/`);
+            }
+        });
+
+        it('emits all 13 accommodation type landings with /alojamientos/tipo/ path for all 3 locales', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
+
+            const response = await GET({});
+            const body = await response.text();
+
+            const typeSlugs = [
+                'apartment',
+                'house',
+                'country-house',
+                'cabin',
+                'hotel',
+                'hostel',
+                'camping',
+                'room',
+                'motel',
+                'resort',
+                'apart-hotel',
+                'estancia',
+                'bed-and-breakfast'
+            ];
+
+            for (const slug of typeSlugs) {
+                expect(body).toContain(`https://hospeda.test/es/alojamientos/tipo/${slug}/`);
+                expect(body).toContain(`https://hospeda.test/en/alojamientos/tipo/${slug}/`);
+                expect(body).toContain(`https://hospeda.test/pt/alojamientos/tipo/${slug}/`);
+            }
+        });
+
+        it('uses changefreq=monthly and priority=0.7 for facet-landing entries (no lastmod)', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
+
+            const response = await GET({});
+            const body = await response.text();
+
+            const musicEntryStart = body.indexOf('/eventos/categoria/music/');
+            const musicEntryBlock = body.slice(musicEntryStart, musicEntryStart + 300);
+            expect(musicEntryBlock).toContain('<changefreq>monthly</changefreq>');
+            expect(musicEntryBlock).toContain('<priority>0.7</priority>');
+            expect(musicEntryBlock).not.toContain('<lastmod>');
         });
     });
 });

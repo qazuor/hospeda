@@ -26,6 +26,7 @@ import { adminRestoreMediaRoute } from './restoreMedia';
 import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
+import { adminVerifyAccommodationRoute } from './verify';
 
 const app = createRouter();
 
@@ -64,6 +65,9 @@ app.route('/', adminHardDeleteAccommodationRoute);
 
 // POST /:id/restore - Restore accommodation
 app.route('/', adminRestoreAccommodationRoute);
+
+// POST /:id/verify - Verify / unverify accommodation
+app.route('/', adminVerifyAccommodationRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for an accommodation
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param

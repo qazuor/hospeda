@@ -272,6 +272,81 @@
             "emptyTitle": "Não há acomodações do tipo {type} disponíveis"
         }
     },
+    "byType": {
+        "tagline": "Tipo de hospedagem",
+        "types": {
+            "APARTMENT": {
+                "name": "Apartamentos",
+                "description": "Apartamentos equipados em Concepción del Uruguay e no Litoral entrerriano, ideais para estadias curtas e longas com o conforto de se sentir em casa.",
+                "pageTitle": "Apartamentos para Alugar"
+            },
+            "HOUSE": {
+                "name": "Casas",
+                "description": "Casas inteiras para alugar no Litoral argentino, com todo o espaço e privacidade para curtir em família ou com amigos.",
+                "pageTitle": "Casas para Alugar"
+            },
+            "COUNTRY_HOUSE": {
+                "name": "Chácaras",
+                "description": "Chácaras com jardim e piscina nos arredores de Concepción del Uruguay, perfeitas para relaxar em contato com a natureza.",
+                "pageTitle": "Chácaras"
+            },
+            "CABIN": {
+                "name": "Cabanas",
+                "description": "Cabanas aconchegantes em ambientes naturais do Litoral entrerriano. Perfeitas para escapadas românticas ou férias em família.",
+                "pageTitle": "Cabanas para Alugar"
+            },
+            "HOTEL": {
+                "name": "Hotéis",
+                "description": "Os melhores hotéis em Concepción del Uruguay e na região do Litoral argentino, com conforto e serviços de qualidade para sua estadia.",
+                "pageTitle": "Hotéis"
+            },
+            "HOSTEL": {
+                "name": "Hostels",
+                "description": "Hostels econômicos com ambiente jovem no Litoral argentino, ideais para viajantes que buscam conectar com outros aventureiros.",
+                "pageTitle": "Hostels"
+            },
+            "CAMPING": {
+                "name": "Campings",
+                "description": "Campings com infraestrutura completa para aproveitar ao ar livre e se conectar com a natureza na região do Litoral.",
+                "pageTitle": "Campings"
+            },
+            "ROOM": {
+                "name": "Quartos",
+                "description": "Quartos privativos para alugar em Concepción del Uruguay, uma opção prática e econômica para sua estadia.",
+                "pageTitle": "Quartos para Alugar"
+            },
+            "MOTEL": {
+                "name": "Motéis",
+                "description": "Motéis no Litoral entrerriano para paradas rápidas de descanso e estadias curtas.",
+                "pageTitle": "Motéis"
+            },
+            "RESORT": {
+                "name": "Resorts",
+                "description": "Resorts com múltiplos serviços e atividades no Litoral argentino, ideais para umas férias completas.",
+                "pageTitle": "Resorts"
+            },
+            "APART_HOTEL": {
+                "name": "Apart Hotéis",
+                "description": "Apart hotéis que combinam o conforto de um apartamento com os serviços de um hotel, em Concepción del Uruguay e na região.",
+                "pageTitle": "Apart Hotéis"
+            },
+            "ESTANCIA": {
+                "name": "Estâncias",
+                "description": "Estâncias tradicionais argentinas que oferecem experiências autênticas de campo e cultura gaúcha no Litoral entrerriano.",
+                "pageTitle": "Estâncias"
+            },
+            "BED_AND_BREAKFAST": {
+                "name": "Bed & Breakfast",
+                "description": "Hospedagens Bed & Breakfast com calor e hospitalidade local em Concepción del Uruguay e no Litoral argentino.",
+                "pageTitle": "Bed & Breakfast"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Início",
+            "breadcrumbAccommodations": "Acomodações",
+            "emptyTitle": "Não há hospedagens do tipo {{type}} disponíveis"
+        }
+    },
     "listPage": {
         "title": "Hospedagens",
         "description": "Descubra as melhores hospedagens no Litoral argentino",
@@ -416,7 +491,8 @@
         },
         "badges": {
             "new": "Novo",
-            "featured": "Destaque"
+            "featured": "Destaque",
+            "verified": "Verificado"
         },
         "bookmark_count": "Salvo por {{count}} pessoas",
         "bookmark_count_one": "Salvo por {{count}} pessoa",

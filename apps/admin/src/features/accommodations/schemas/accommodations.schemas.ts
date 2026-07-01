@@ -32,6 +32,8 @@ export const AccommodationListItemSchema = BaseAccommodationListItemSchema.exten
         visibility: VisibilityEnumSchema.optional(),
         lifecycleState: LifecycleStatusEnumSchema.optional(),
         moderationState: ModerationStatusEnumSchema.optional(),
+        // Admin-verified flag (SPEC-291) — not in the public list-item pick.
+        isVerified: AccommodationSchema.shape.isVerified.optional(),
         // The admin list API exposes the linked destination as the SPEC-095
         // `cityDestination` projection (not a `destination` relation), so the
         // schema must keep it to survive response validation.

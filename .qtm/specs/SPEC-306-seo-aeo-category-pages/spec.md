@@ -3,8 +3,9 @@ specId: SPEC-306
 title: SEO/AEO Landing-Page Strategy for Filter Facets
 type: research
 complexity: medium
-status: draft
+status: completed
 created: 2026-06-30
+decided: 2026-06-30
 tags: [seo, aeo, ia, listings, facets, strategy, discovery]
 ---
 
@@ -86,38 +87,89 @@ For each facet, the research must record: cardinality, search intent / volume si
 whether it's combinable, current implementation, and the recommended bucket
 (landing vs filter).
 
-| Facet | Surfaces | Today | Candidate bucket |
-|---|---|---|---|
-| Event category | `/eventos/` chips | query param (post-U7); old path → 301 | TBD (landing?) |
-| Accommodation type | `/alojamientos/` badges | indexable path `/tipo/[type]/` | TBD |
-| Accommodation amenities | sidebar + `/comodidades/[slug]/` | noindex path + query | TBD (likely filter) |
-| Accommodation features | sidebar + `/caracteristicas/[slug]/` | noindex path + query | TBD (likely filter) |
-| Destination (as a facet of listings) | `/destinos/[slug]/...` | path (already first-class) | landing (confirm) |
-| Post category / tag | `/publicaciones/categoria|etiqueta/` | path | TBD |
-| Price / date / sort | sidebar / chips | query | filter (never a landing) |
+> Cardinalities and current-state facts below were verified directly against the
+> route source (`apps/web/src/pages/[lang]/...`), the `facet-noindex.test.ts`
+> invariant, and `sitemap-dynamic.xml.ts` on 2026-06-30 (staging HEAD `eaecf06f5`).
 
-## 5. Open questions (discovery)
+| Facet | Surfaces | Cardinality | Today | **Decision** |
+|---|---|---|---|---|
+| Event category | `/eventos/` chips + `/categoria/[slug]/` | 9 (enum) | query param (post-U7); old path → 301 redirect | **LANDING** (path, first-class) |
+| Accommodation type | `/alojamientos/` badges + `/tipo/[type]/` | 13 (enum) | indexable path but noindex + degraded stub (no sidebar) | **LANDING** (path, first-class) |
+| Accommodation amenities | sidebar + `/comodidades/[slug]/` | dynamic (DB, unbounded) | noindex path + query | **FILTER** (stays noindex) |
+| Accommodation features | sidebar + `/caracteristicas/[slug]/` | dynamic (DB, unbounded) | noindex path + query | **FILTER** (stays noindex) |
+| Destination (as a facet of listings) | `/destinos/[slug]/...` | dynamic (DB) | path, already first-class (Place+Breadcrumb+FAQ JSON-LD, sitemap 0.8) | **LANDING** (confirmed, no change) |
+| Post category | `/publicaciones/categoria/[slug]/` | 18 (enum) | noindex path | **FILTER** (cardinality too high, not a primary search-intent term — stays noindex) |
+| Post tag | `/publicaciones/etiqueta/[slug]/` | dynamic (DB, unbounded) | noindex path | **FILTER** (stays noindex) |
+| Post author | `/publicaciones/autor/[slug]/` | dynamic (DB, unbounded) | noindex path | **FILTER** (stays noindex) — *not in the original facet list above; found during discovery, same treatment as tags* |
+| Price / date / sort | sidebar / chips | n/a | query | **FILTER** (never a landing) |
 
-- **OQ-1 (central):** Which facet values cross the bar from "filter" to "indexable
-  landing"? Define a concrete, checkable criterion (cardinality cap + intent signal),
-  not a vibe.
-- **OQ-2:** For an indexable single-facet landing, is the canonical the PATH
-  (`/eventos/categoria/musica/`) or the query (`/eventos/?category=MUSIC`)? Pick one
-  globally and justify it (path recommended for stability/citeability).
-- **OQ-3:** How are combinations canonicalized — to the base listing, or to the
-  "primary" single facet? What gets `noindex` vs `canonical`?
-- **OQ-4:** Reconcile with U7: the event `/categoria/` routes are now 301 redirects.
-  If the answer is "category IS a landing", the spec must un-retire them as
-  first-class pages (and align accommodations `/tipo/` the same way). Define the
-  migration.
-- **OQ-5:** Structured data per landing (ItemList, BreadcrumbList, CollectionPage?)
-  and `<title>`/meta/H1 templates per facet, in all 3 locales.
-- **OQ-6:** Sitemap policy — which facet landings enter the sitemap; how to cap.
-- **OQ-7:** Hreflang / locale handling for facet landings across es/en/pt.
+## 5. Open questions (discovery) — RESOLVED
+
+- **OQ-1 (central) — DECIDED.** A facet value crosses from "filter" to "indexable
+  landing" when ALL three hold:
+  1. **Bounded cardinality** — a static enum, not an unbounded DB-generated table.
+  2. **Primary search intent** — the value is something a person would search on its
+     own, combined with a place ("cabañas en Colón", "eventos de música"), not just
+     a modifier of another concept.
+  3. **Not a secondary modifier** — it's the main axis of the query, not a refinement
+     someone adds after already picking something else (amenities/features refine
+     "which cabin", they aren't themselves the search).
+
+  Applying it: **event category** and **accommodation type** cross the bar (bounded
+  enums, primary intent). **Post category**, despite being a bounded enum (18
+  values), does NOT — 18 is high relative to event/type, and "publicaciones de
+  gastronomía" is not how people search (blog-category browsing is secondary
+  navigation, not a landing-worthy query). Amenities, features, post tags, and post
+  author are all unbounded DB tables and/or modifiers — they stay filters
+  regardless of the other two conditions.
+
+- **OQ-2 — DECIDED.** Canonical form for an indexable single-facet landing is the
+  **PATH** (`/eventos/categoria/musica/`), not the query. Matches the destination
+  pattern already in production and the AEO citeability rationale in §2 (answer
+  engines cite stable, descriptive URLs over query-string permutations).
+
+- **OQ-3 — DECIDED.** Any URL carrying 2+ active facet params (e.g.
+  `?category=music&when=week`) canonicalizes to the **base listing** (`/eventos/`),
+  regardless of which facets are active, and is served `noindex,follow`. No
+  "primary facet wins" logic — simpler, and avoids an ambiguous tie-break when two+
+  promoted facets are active simultaneously (e.g. a future case with both category
+  and a second promoted facet). A single active facet param when a matching
+  landing exists (e.g. `?category=music` alone) redirects/canonicalizes to that
+  landing's path, consistent with OQ-2.
+
+- **OQ-4 — DECIDED.** Both promoted facets are rebuilt as first-class pages —
+  Reverts the U7 301 for events (§2) and upgrades accommodations `/tipo/` from its
+  current noindex-degraded-stub. Both facet families get: the full listing UI
+  (sidebar + the same combinable query-param filters for further refinement within
+  the landing), indexable meta, structured data per OQ-5, and a sitemap entry per
+  OQ-6. This is a deliberate reversal of the U7 quick-fix — U7 explicitly deferred
+  the SEO direction to this spec, not a permanent decision. Execution happens in
+  child specs (§7), not here.
+
+- **OQ-5 — DECIDED.** Structured data for the new landings reuses the JSON-LD
+  pattern already proven on `/destinos/`: **CollectionPage** (the landing itself,
+  e.g. "Alojamientos tipo cabaña") + **ItemList** (the listing results) +
+  **BreadcrumbList** (vertical → facet value). `<title>`/meta/H1 templates follow
+  the existing per-facet i18n key convention (`@repo/i18n`), one template per
+  facet family, parameterized by the enum value's display label, across es/en/pt.
+  Concrete templates are a child-spec deliverable, not decided here.
+
+- **OQ-6 — DECIDED.** All newly-indexable landings enter the sitemap: 9 event
+  category + 13 accommodation type = 22 URLs, at the same priority band as the
+  existing listing pages (~0.7, consistent with `sitemap-dynamic.xml.ts`'s current
+  scheme). No cap needed at this volume. If a future facet is promoted from an
+  unbounded source, that child spec must define its own cap — this spec does not
+  pre-approve open-ended sitemap growth.
+
+- **OQ-7 — DECIDED (inherited, not a fresh fork).** New landings get the same
+  hreflang/locale treatment `sitemap-dynamic.xml.ts` already applies to every other
+  indexed route (es/en/pt alternates + x-default, per SPEC-157 REQ-12) — no new
+  policy needed, just extend the existing generator to include the 22 new URLs.
 
 ## 6. Scope & non-goals
 
 **In scope (research deliverables):**
+
 - The decision rule + the per-facet recommendation table (§4 filled in).
 - The URL / canonical / noindex / sitemap / structured-data / metadata contract.
 - A migration plan that reconciles the post-U7 state (events redirected,
@@ -130,10 +182,31 @@ under this spec — it produces the strategy doc + child-spec list only.
 
 ## 7. Deliverables
 
-1. This `spec.md`, evolved through discovery into a decided strategy (with §4 filled
-   and §5 OQs resolved + recorded in a Revision History).
-2. A child-spec plan (titles + one-line scope each), to be allocated when the owner
-   prioritizes implementation.
+1. This `spec.md`, evolved through discovery into a decided strategy (§4 filled,
+   §5 OQs resolved, recorded in the Revision History below). **Done.**
+2. Child-spec plan (titles + one-line scope each). SPEC numbers are NOT allocated
+   here — per project convention, allocation happens when the owner prioritizes
+   implementation (see `~/.claude/CLAUDE.md` spec-allocation rule).
+
+   1. **Facet-landing shared infra** — generalize the `SEOHead` canonical/robots
+      logic and the destination-page JSON-LD components (CollectionPage,
+      ItemList, BreadcrumbList) into a reusable "facet landing" contract (layout
+      - structured-data helper + sitemap-entry helper) that both facet families
+      below adopt, instead of each hand-rolling its own. Update
+      `facet-noindex.test.ts`'s invariant to a positive "facet landings must have
+      CollectionPage + Breadcrumb + sitemap entry" assertion for the promoted
+      routes, keeping the existing noindex assertion for the ones that stay
+      filters.
+   2. **Event category first-class landing** — revert the U7 301
+      (`/eventos/categoria/[category]/`) into a real page: full listing UI
+      (sidebar + combinable query filters), indexable meta, structured data via
+      the shared infra, i18n title/meta/H1 templates (es/en/pt), sitemap entry
+      (9 URLs). Depends on child spec 1.
+   3. **Accommodation type first-class landing** — upgrade
+      `/alojamientos/tipo/[type]/` from its current noindex degraded stub to the
+      same first-class treatment as event category (sidebar + filters,
+      indexable, structured data, i18n templates, sitemap entry — 13 URLs).
+      Depends on child spec 1.
 
 ## 8. Dependencies / related
 
@@ -143,3 +216,20 @@ under this spec — it produces the strategy doc + child-spec list only.
 - Same antipattern lives in **accommodations** (`/tipo/[type]/`) — must be reconciled.
 - Touches the `facet-noindex` test invariant (`apps/web/test/components/seo/facet-noindex.test.ts`)
   — any facet promoted to indexable must move from FACET_PAGES to MAIN/landing.
+
+## 9. Revision History
+
+- **2026-06-30** — Discovery pass. Verified current state directly against staging
+  HEAD (`eaecf06f5`): route source, `facet-noindex.test.ts`, `sitemap-dynamic.xml.ts`.
+  Confirmed the events `/categoria/` 301 redirect (U7) is real and matches the
+  spec's premise. Found an additional facet not in the original §4 table —
+  `/publicaciones/autor/[slug]/` (post author) — added with the same "filter"
+  treatment as tags. Resolved all 7 OQs with the owner (decisions recorded in §5):
+  landing criterion (OQ-1), PATH canonical (OQ-2), base-listing canonicalization
+  for combinations (OQ-3), full migration reverting U7 for both event category and
+  accommodation type (OQ-4), CollectionPage+ItemList+Breadcrumb structured data
+  (OQ-5), uncapped sitemap inclusion at current volume (OQ-6), inherited hreflang
+  policy (OQ-7). Filled §4 with final bucket decisions. Wrote the 3-item child-spec
+  plan (§7). Status flipped `draft` → `completed` — this spec's deliverables
+  (decided strategy + child-spec plan) are both done; implementation is out of
+  scope and lives in the child specs once allocated.

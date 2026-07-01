@@ -21,7 +21,7 @@ import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon } from '@repo/icons';
+import { CheckCircleIcon, StarIcon } from '@repo/icons';
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
@@ -75,6 +75,12 @@ const newStyle =
         <span class="featured-badge">
           <StarIcon size={12} weight="fill" aria-hidden="true" />
           <span>{t('accommodations.detail.badges.featured')}</span>
+        </span>
+      )}
+      {accommodation.isVerified && (
+        <span class="featured-badge detail-header__verified-badge">
+          <CheckCircleIcon size={12} weight="fill" aria-hidden="true" />
+          <span>{t('accommodations.detail.badges.verified')}</span>
         </span>
       )}
       {isNew && (
@@ -167,6 +173,15 @@ const newStyle =
     gap: var(--space-2, 8px);
     align-items: center;
     transition: gap 0.3s ease;
+  }
+
+  /* Verified badge — reuses the shared `.featured-badge` shape (padding,
+   * font, radius, icon gap) from components.css but swaps to the semantic
+   * "info" (trust) token so it reads apart from the accent-colored featured
+   * badge, mirroring the AccommodationCard verified-badge treatment. */
+  .detail-header__verified-badge {
+    background-color: var(--info);
+    color: var(--info-foreground);
   }
 
   /* Status pills: rendered inline (not via the Badge primitive) so they share

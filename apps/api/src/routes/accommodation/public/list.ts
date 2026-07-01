@@ -36,9 +36,14 @@ import {
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { hasEntitlement } from '../../../middlewares/entitlement';
-import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+import {
+    resolveOwnerEntitlementsForOwnerId,
+    resolveOwnerEntitlementsForOwnerIds
+} from '../../../middlewares/owner-entitlement';
 import type { AppBindings } from '../../../types';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
+import type { AccommodationData } from '../../../utils/entitlement-filter';
+import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -293,13 +298,9 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // payload — fail-closed and independent of any schema change.
         const rawItems = result.data?.items || [];
 
-        // F1: surface whether each accommodation's owner has the AI_CHAT
-        // entitlement, so the listing card can show a "Chat IA" badge. This is
-        // the same owner-level entitlement the chat route gates on — there is no
-        // per-accommodation flag. OwnerIds are deduped per page and resolved
-        // through `resolveOwnerHasAiChat`, a 5-minute read-through cache, so a
-        // page costs at most one billing lookup per distinct, cache-cold owner.
-        // Fail-closed: any resolution error => no badge for that owner.
+        // Deduplicate ownerIds for this page — shared by the AI_CHAT badge (F1)
+        // and the isVerified badge gate (SPEC-291 Phase 3b). Computing once avoids
+        // a second pass over the items array.
         const uniqueOwnerIds = [
             ...new Set(
                 rawItems
@@ -307,20 +308,43 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                     .filter((id): id is string => typeof id === 'string' && id.length > 0)
             )
         ];
-        const aiChatByOwner = new Map<string, boolean>();
-        await Promise.all(
-            uniqueOwnerIds.map(async (ownerId) => {
-                aiChatByOwner.set(ownerId, await resolveOwnerHasAiChat(ownerId));
-            })
-        );
 
-        const items = rawItems.map((item) => {
+        // F1: surface whether each accommodation's owner has the AI_CHAT
+        // entitlement, so the listing card can show a "Chat IA" badge. This is
+        // the same owner-level entitlement the chat route gates on — there is no
+        // per-accommodation flag. OwnerIds are deduped per page and resolved
+        // through `resolveOwnerHasAiChat`, a 5-minute read-through cache, so a
+        // page costs at most one billing lookup per distinct, cache-cold owner.
+        // Fail-closed: any resolution error => no badge for that owner.
+        //
+        // SPEC-291 Phase 3b: resolve owner entitlements for the badge gate in
+        // parallel with the AI_CHAT resolution to avoid sequential latency.
+        // `resolveOwnerEntitlementsForOwnerIds` does ONE DB query for all roles
+        // then parallel billing calls — matches the uniqueOwnerIds already above.
+        const aiChatByOwner = new Map<string, boolean>();
+        const [, ownerEntitlementsMap] = await Promise.all([
+            Promise.all(
+                uniqueOwnerIds.map(async (ownerId) => {
+                    aiChatByOwner.set(ownerId, await resolveOwnerHasAiChat(ownerId));
+                })
+            ),
+            resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds)
+        ]);
+
+        const rawMappedItems = rawItems.map((item) => {
             const ownerId = (item as { ownerId?: string }).ownerId;
             return {
                 ...stripRichDescription(item),
                 hasAiChat: ownerId ? (aiChatByOwner.get(ownerId) ?? false) : false
             };
         });
+
+        // SPEC-291 Phase 3b: gate isVerified by owner billing entitlement.
+        // Pure synchronous pass over the already-mapped items — no extra DB calls.
+        const items = filterAccommodationListByOwnerEntitlements(
+            rawMappedItems as AccommodationData[],
+            ownerEntitlementsMap
+        );
 
         return {
             items,

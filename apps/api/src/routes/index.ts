@@ -140,6 +140,7 @@ import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js'
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { protectedSearchHistoryRoutes } from './search-history';
 import { publicSearchRoutes } from './search/public';
@@ -377,6 +378,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
         // Price alerts (SPEC-286 — entitlement-gated, plan-limited)
         app.route('/api/v1/protected/price-alerts', protectedPriceAlertRoutes);
+        // Personalized recommendations feed (SPEC-284 — entitlement-gated, binary in v1)
+        app.route('/api/v1/protected/recommendations', protectedRecommendationsRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

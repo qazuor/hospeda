@@ -98,6 +98,12 @@ All open questions were resolved with the owner before implementation:
   to alerts; the misleading name is corrected. Scope: entitlement key/enum, seed,
   the 8 checks in `accommodation.service.ts`, and any billing plan mapping. No
   change to what it does.
+- **D-6 (was OQ-6) — Price-history baseline:** Hospeda has no dedicated
+  per-accommodation price-history table, so the alert stores its own baseline:
+  `tourist_price_alerts.base_price_snapshot` captures the accommodation's price
+  at subscription time. The monitoring cron compares the current price against
+  this per-alert snapshot rather than a global history table — no separate
+  price-history feature is a prerequisite.
 
 ## 6. Dependencies & relationship
 
@@ -110,9 +116,18 @@ All open questions were resolved with the owner before implementation:
   T-002..T-007. SPEC-312 is archived (obsolete) — not implemented as a separate
   spec. Limit values follow D-2 (free=0/plus=5/vip=20), reconfirmed by the owner
   on 2026-06-30 over SPEC-310's initial "vip unlimited" (SPEC-310 working-notes
-  updated to match).
-- **Absorbs SPEC-313 (Tourist Exclusive Deals):** owner-promotion offers surfaced
-  to tourists are G-2 + T-012 here. SPEC-313 is archived (obsolete).
+  updated to match). SPEC-312 was a duplicate stub generated independently by
+  the SPEC-310 roadmap audit (created 2026-06-30, same `PRICE_ALERTS`/
+  `gateAlerts` phantom gate); the price-history baseline question it raised is
+  D-6 above.
+- **Overlaps SPEC-313 (Tourist Exclusive Deals & VIP Promotions):** owner-promotion
+  offers surfaced to tourists are G-2 + T-012 here, but SPEC-313's "curated
+  exclusive deals" concept (plus/vip visibility into a deals catalog) may be a
+  distinct feature, not fully subsumed by this spec's alert/digest model.
+  `staging` independently consolidated SPEC-313 with SPEC-316, explicitly
+  blocked on this spec's OQ-5 (now resolved by D-5). Whether SPEC-313 proceeds
+  standalone or is archived as absorbed here is a pending owner decision — see
+  the conflict note in SPEC-313's own spec.md.
 - **Reconciles SPEC-316 (VIP Promotions Access):** D-5 renames the *visibility*
   entitlement `VIP_PROMOTIONS_ACCESS` → `VIP_VISIBILITY_ACCESS` — it is a
   visibility perk today (8 checks in `accommodation.service.ts`), not a promos
