@@ -114,8 +114,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * - HOSPEDA_GIT_SHA, SOURCE_COMMIT (platform-injected), HOSPEDA_LANDING_SITE_URL,
  *   ALLOW_PLACEHOLDER_ENV_URLS, ANALYZE
  * (all `category: 'build'`, `stage: 'build'`, `apps: ['docker']`, optional, non-secret)
+ *
+ * 244 (NOSPEC:remove-landing): -2 vars now that apps/landing was removed
+ * pre-launch: HOSPEDA_LANDING_SITE_URL (build category, only consumed by the
+ * removed Dockerfile) and HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID (email
+ * category, only consumed by the removed landing-only newsletter endpoint).
  */
-const EXPECTED_VAR_COUNT = 246;
+const EXPECTED_VAR_COUNT = 244;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

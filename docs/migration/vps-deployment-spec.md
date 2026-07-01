@@ -3025,6 +3025,7 @@ staging-api.hospeda.com.ar  → API staging cuando llegue tracción
 - **Defense-in-depth**: X-Robots-Tag via Traefik labels en los 3 staging hosts (web global label porque solo sirve staging; admin/api router-level porque también sirven prod-naming). Validado con curls que prod-naming NO recibe el header.
 - **Staging real con DB separada**: deferred indefinidamente hasta "first paying customer + RAM bump".
 - **Pendiente menor**: seed de example data en staging (DB tiene solo super-admin + system + test users de signups, faltan destinations/accommodations/events/posts para demo realistic). Tracked en engram `vps-migration/pre-launch-sprint-final-state` paso 2.
+- **SUPERSEDIDO (2026-07-01)**: `apps/landing` y el endpoint `POST /api/v1/public/newsletter` fueron eliminados por completo — ya no hace falta la landing pre-launch porque se sale a prod con la app real. Esta sección queda como registro histórico de lo que se construyó y por qué.
 
 **Lecciones de Phase 1 + 2**:
 

@@ -133,8 +133,7 @@ import { adminModerationRoutes } from './moderation/admin';
 import {
     newsletterAdminRoutes,
     newsletterProtectedRoutes,
-    newsletterPublicRoutes,
-    newsletterRoutes
+    newsletterPublicRoutes
 } from './newsletter';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
@@ -282,7 +281,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
-        app.route('/api/v1/public', newsletterRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
