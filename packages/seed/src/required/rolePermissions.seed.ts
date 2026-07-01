@@ -53,6 +53,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCOMMODATION: Specific field permissions
         PermissionEnum.ACCOMMODATION_OWNER_CHANGE,
         PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+        PermissionEnum.ACCOMMODATION_VERIFY,
         PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
@@ -445,6 +446,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCOMMODATION: Specific field permissions
         PermissionEnum.ACCOMMODATION_OWNER_CHANGE,
         PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+        PermissionEnum.ACCOMMODATION_VERIFY,
         PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,

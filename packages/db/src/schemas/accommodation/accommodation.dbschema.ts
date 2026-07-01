@@ -84,6 +84,11 @@ export const accommodations = pgTable(
          * so that the feature ships dark and the host opts in explicitly.
          */
         showExternalReputation: boolean('show_external_reputation').notNull().default(false),
+        // SPEC-291: Admin-set verification badge. NO KYC — manual admin action only.
+        // verifiedAt and verifiedById are audit columns tracking who last verified/unverified.
+        isVerified: boolean('is_verified').notNull().default(false),
+        verifiedAt: timestamp('verified_at', { withTimezone: true }),
+        verifiedById: uuid('verified_by_id').references(() => users.id, { onDelete: 'set null' }),
         // Denormalized flag (SPEC-143 #29): true when the owner's subscription is
         // paused WITH service suspension. Public reads filter it out and the
         // accommodation write path rejects edits while true. Canonical source is
@@ -128,6 +133,8 @@ export const accommodations = pgTable(
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
+        // SPEC-291: index for admin verified-badge queries/filters.
+        accommodations_isVerified_idx: index('accommodations_isVerified_idx').on(table.isVerified),
         // SPEC-292: parallel indexes for featuredByPlan, mirroring the isFeatured family.
         // BitmapOr of (isFeatured_idx, featuredByPlan_idx) serves "isFeatured OR featuredByPlan"
         // efficiently without an expression index (kept in the structural carril).
