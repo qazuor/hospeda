@@ -95,8 +95,8 @@ All open questions were resolved with the owner before implementation:
   to scale to WhatsApp/push, but only the email transport is wired.
 - **D-5 (was OQ-5) — `VIP_PROMOTIONS_ACCESS`:** **rename** the entitlement key to
   `VIP_VISIBILITY_ACCESS` (behavior unchanged). It is a visibility perk unrelated
-  to alerts; the misleading name is corrected. Scope: entitlement key/enum + seed
-  - the 8 checks in `accommodation.service.ts` + any billing plan mapping. No
+  to alerts; the misleading name is corrected. Scope: entitlement key/enum, seed,
+  the 8 checks in `accommodation.service.ts`, and any billing plan mapping. No
   change to what it does.
 
 ## 6. Dependencies & relationship
