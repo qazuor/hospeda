@@ -3122,6 +3122,34 @@
     "postTags": {
         "required": "[EN] El post tags es obligatorio"
     },
+    "priceAlert": {
+        "accommodationName": {
+            "required": "[EN] El nombre del alojamiento es obligatorio"
+        },
+        "basePriceSnapshot": {
+            "int": "[EN] El precio base debe ser un número entero",
+            "min": "[EN] El precio base debe tener al menos {{min}} caracteres",
+            "required": "[EN] El precio base es obligatorio"
+        },
+        "createdAt": {
+            "required": "[EN] La fecha de creación es obligatoria"
+        },
+        "deletedAt": {
+            "required": "[EN] La fecha de eliminación es obligatoria"
+        },
+        "isActive": {
+            "required": "[EN] El activo es obligatorio"
+        },
+        "targetPercentDrop": {
+            "int": "[EN] El porcentaje objetivo de caída debe ser un número entero",
+            "max": "[EN] El porcentaje objetivo de caída no puede superar los {{max}} caracteres",
+            "min": "[EN] El porcentaje objetivo de caída debe tener al menos {{min}} caracteres",
+            "required": "[EN] El porcentaje objetivo de caída es obligatorio"
+        },
+        "updatedAt": {
+            "required": "[EN] La fecha de actualización es obligatoria"
+        }
+    },
     "priceRange": {
         "budgetLevel": {
             "enum": "[EN] El budget level debe ser uno de los valores permitidos"

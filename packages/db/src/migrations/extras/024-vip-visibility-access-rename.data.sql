@@ -10,7 +10,7 @@
 --
 -- Three tables are updated:
 --   1. billing_entitlements              — catalog row (key + name)
---   2. billing_plans.entitlements        — JSONB array of entitlement key strings
+--   2. billing_plans.entitlements        — text[] array of entitlement key strings
 --   3. billing_customer_entitlements     — per-customer overrides / grants
 --
 -- The old key ('vip_promotions_access') was a misleading name: this entitlement
@@ -39,24 +39,14 @@ SET
 WHERE key = 'vip_promotions_access';
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- 2. billing_plans.entitlements  (JSONB array of entitlement key strings)
---    Replace each occurrence of "vip_promotions_access" in the array with
---    "vip_visibility_access". The CASE compares JSONB values (string literals
---    are automatically cast to jsonb). Only rows that actually contain the old
---    key are touched (the @> operator is the fast path via GIN index).
+-- 2. billing_plans.entitlements  (text[] array of entitlement key strings)
+--    Replace the "vip_promotions_access" element with "vip_visibility_access"
+--    in-place via array_replace(). Only rows that actually contain the old key
+--    are touched (the @> operator is the array-containment check).
 -- ──────────────────────────────────────────────────────────────────────────────
 UPDATE billing_plans
-SET entitlements = (
-    SELECT jsonb_agg(
-        CASE
-            WHEN elem = '"vip_promotions_access"'::jsonb
-            THEN '"vip_visibility_access"'::jsonb
-            ELSE elem
-        END
-    )
-    FROM jsonb_array_elements(entitlements) AS elem
-)
-WHERE entitlements @> '["vip_promotions_access"]'::jsonb;
+SET entitlements = array_replace(entitlements, 'vip_promotions_access', 'vip_visibility_access')
+WHERE entitlements @> ARRAY['vip_promotions_access'];
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- 3. billing_customer_entitlements  (per-customer override rows)
