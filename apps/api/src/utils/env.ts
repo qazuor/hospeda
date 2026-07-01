@@ -572,14 +572,6 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_RATE_LIMIT_BACKEND: z.enum(['memory', 'redis']).default('memory'),
 
     /**
-     * Maximum number of active collections (wishlists) a user may have.
-     * Soft-deleted collections are excluded from this count.
-     * Used by `UserBookmarkCollectionService._canCreate` to enforce the limit.
-     * Default: 10. Range: 1–10000.
-     */
-    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10),
-
-    /**
      * Platform-wide default minimum price-drop percentage (SPEC-286 G-1)
      * that triggers a tourist's price-drop alert when the alert's own
      * `targetPercentDrop` is `null` ("notify on any drop"). Read directly by

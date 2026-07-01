@@ -810,13 +810,15 @@
         {
             "specId": "SPEC-287",
             "title": "Favorites Collections — Per-Plan Limits",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "15/15",
             "path": "SPEC-287-favorites-collections-per-plan-limits",
-            "branch": null,
+            "branch": "spec/SPEC-287-favorites-collections-per-plan-limits",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Move built collections feature from env-var cap to per-plan billing LimitKey (free tourist excluded). Surfaced in SPEC-282 review."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "Tasks atomized + spec-realigned (15 tasks, avg complexity 1.9/3): move built collections feature from env-var cap to per-plan billing LimitKey. CAN_USE_COLLECTIONS/MAX_COLLECTIONS (free=none, plus=10, vip=25 shared w/ owner-complex). spec-realign found list.ts also reads the env cap (T-014) and ADR-026 needs a superseded addendum (T-015); corrected T-006/T-008 to route the limit via ctx.hookState. Merged to staging via PR #1974."
         },
         {
             "specId": "SPEC-288",
@@ -1218,13 +1220,13 @@
         {
             "specId": "SPEC-321",
             "title": "AI Text-Improve in Web Owner Editor",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "6/6",
             "path": "SPEC-321-ai-text-improve-web-editor",
-            "branch": null,
+            "branch": "spec/SPEC-321-ai-text-improve-web-editor",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Stub from SPEC-310 audit. PARTIAL (API works; missing web editor button). Small — possibly NOSPEC. Needs minimal discovery."
+            "note": "All 6 tasks done. Manual smoke (T-006) against real local Ollama confirmed the full chain end-to-end and caught a real bug: global Accept-header validation middleware rejected text/event-stream (fixed, apps/api/src/middlewares/validation.ts + regression test). PR #1975 open to staging, awaiting CI + merge. Run /closeSpec 321 once merged."
         },
         {
             "specId": "SPEC-322",

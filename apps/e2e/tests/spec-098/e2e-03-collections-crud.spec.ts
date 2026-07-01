@@ -1,13 +1,23 @@
 /**
  * E2E-03 (SPEC-098 T-059b) — Collections CRUD: create, edit, delete.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USER on the tourist-plus plan.
  *
  * Tags: @p0 @favorites @collections @crud @spec-098
  *
  * Preconditions:
  *   - Protected user-bookmark-collections endpoints mounted.
  *   - At least one ACTIVE/PUBLIC accommodation in seed (needed to create bookmarks).
+ *   - Suite seed has the `tourist-plus` billing plan in `billing_plans`
+ *     (`name = slug`, `livemode = false`). Seeded by
+ *     `packages/seed/src/required/billingPlans.seed.ts` (part of e2e:seed).
+ *
+ * SPEC-287 (2026-07-01): collections moved from universally-available
+ * (env-var cap only) to entitlement-gated (`CAN_USE_COLLECTIONS`, tourist-free
+ * excluded). A plain fresh USER now resolves to tourist-free and gets 403
+ * ENTITLEMENT_REQUIRED on every route below — actors here are upgraded to
+ * tourist-plus (MAX_COLLECTIONS=10) so the CRUD flow itself can still be
+ * exercised, mirroring the pattern in guest-05-accommodation-compare.spec.ts.
  *
  * What this validates (AC-03.1, AC-03.2, AC-04.2, AC-05.1):
  *   1. Create collection → response 201, collection visible in GET list.
@@ -15,14 +25,31 @@
  *   3. Delete collection → 200/204; its bookmarks are preserved (collectionId → NULL).
  *
  * @see SPEC-098 spec.md § US-03, US-04, US-05, AC-03.1, AC-03.2, AC-04.2, AC-05.1
+ * @see SPEC-287 spec.md (entitlement gating)
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { createSubscription, createUser } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+
+type PlanRow = { id: string } & Record<string, unknown>;
+
+/**
+ * Resolve a seeded tourist plan id by slug. The seed stores the plan slug in
+ * `billing_plans.name` (see billingPlans.seed.ts) and the e2e sandbox runs with
+ * livemode = false, so the QZPay adapter only sees livemode = false rows.
+ * Mirrors the identically-named helper in guest-05-accommodation-compare.spec.ts.
+ */
+async function resolvePlanIdBySlug(slug: string): Promise<string | null> {
+    const rows = await execSQL<PlanRow>(
+        'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
+        [slug]
+    );
+    return rows[0]?.id ?? null;
+}
 
 interface CollectionResponse {
     readonly success?: boolean;
@@ -59,6 +86,11 @@ interface BookmarkListResponse {
 
 test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-098', () => {
     let userId: string | null = null;
+    let plusPlanId: string | null = null;
+
+    test.beforeAll(async () => {
+        plusPlanId = await resolvePlanIdBySlug('tourist-plus');
+    });
 
     test.afterEach(async () => {
         if (userId) {
@@ -81,8 +113,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.2 — create collection: 201, appears in list', async ({ page }) => {
         // Arrange
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Act: create collection
@@ -125,8 +160,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-04.2 — edit collection name and color: 200, values updated', async ({ page }) => {
         // Arrange
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         const createRes = await page.request.post(
@@ -173,8 +211,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
             return;
         }
 
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create a collection
@@ -239,8 +280,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.3 — duplicate collection name returns 409', async ({ page }) => {
         // Arrange
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         await page.request.post(`${API_URL}/api/v1/protected/user-bookmark-collections`, {

@@ -118,6 +118,30 @@ describe('PlanComparisonTable.astro', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Collections row activation (SPEC-287 T-011)
+    // -----------------------------------------------------------------------
+
+    it('should mark the collections row as available (no upcoming badge)', () => {
+        // The collections row config line must carry status 'available' now
+        // that SPEC-287 enforces the gating — so the "Próximamente" badge is gone.
+        const collectionsRowLine = src
+            .split('\n')
+            .find((line) => line.includes("id: 'collections'"));
+        expect(collectionsRowLine).toBeDefined();
+        expect(collectionsRowLine).toContain("status: 'available'");
+        expect(collectionsRowLine).not.toContain("status: 'upcoming'");
+    });
+
+    it('should use a limit-kind cell with LimitKey.MAX_COLLECTIONS for the collections row', () => {
+        const collectionsRowLine = src
+            .split('\n')
+            .find((line) => line.includes("id: 'collections'"));
+        expect(collectionsRowLine).toContain("kind: 'limit'");
+        expect(collectionsRowLine).toContain('LimitKey.MAX_COLLECTIONS');
+        expect(collectionsRowLine).not.toContain("kind: 'literals'");
+    });
+
+    // -----------------------------------------------------------------------
     // Row notes
     // -----------------------------------------------------------------------
 

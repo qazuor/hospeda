@@ -805,6 +805,10 @@
             "archiveNote": "Shipped via PR #1771 (merge c280a24b8). translateApiError centralized in @repo/i18n; web shim + 3 user-facing web sites migrated; 12 admin sites adopt a translateAdminApiError adapter bridging admin's (key, params?) t signature; 9 missing common.apiError keys added (es/en/pt) — the new CI coverage guard surfaced 4 provider/plan codes beyond the 5 the spec listed. T-014 closeout done in this entry."
         },
         {
+            "specId": "SPEC-284",
+            "title": "Personalized Recommendations Feed",
+            "type": "feat",
+            "complexity": "medium",
             "status": "completed",
             "archived": true,
             "archivedAt": "2026-07-01",
@@ -847,12 +851,14 @@
             "title": "Favorites Collections — Per-Plan Limits",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-287-favorites-collections-per-plan-limits",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
             "origin": "Surfaced during SPEC-282 review: collections feature is built but capped by env var, not billing. Move to a per-plan billing LimitKey (free tourist excluded, paid plans graduated).",
-            "tags": ["tourist", "favorites", "collections", "billing", "limits"]
+            "tags": ["tourist", "favorites", "collections", "billing", "limits"],
+            "archived": true,
+            "archivedAt": "2026-07-01"
         },
         {
             "specId": "SPEC-288",
@@ -1313,11 +1319,11 @@
             "title": "AI Text-Improve in Web Owner Editor",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-321-ai-text-improve-web-editor",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "origin": "SPEC-310 roadmap. PARTIAL: API POST /ai/text-improve + quota work and admin uses it, but the WEB owner editor (RichTextEditor) has no improve-with-AI button. Mostly wiring existing API into web editor UI. Could be NOSPEC given small size. OQ: which fields get the button.",
+            "origin": "SPEC-310 roadmap. All 6 tasks implemented and committed on spec/SPEC-321-ai-text-improve-web-editor (hook, panel, description+summary wiring, integration tests). Manual smoke against real local Ollama confirmed the full chain works end-to-end and surfaced+fixed a real production bug: the global Accept-header validation middleware rejected text/event-stream, 400ing every real (non-mocked) call to all 3 AI streaming routes (also affects admin SPEC-198). Ready for PR to staging.",
             "tags": ["ai", "owner", "web", "editor"]
         },
         {
