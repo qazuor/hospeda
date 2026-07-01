@@ -67,24 +67,37 @@ spec only adds new transports with no rework of the subscription/evaluation core
 
 ## 4. Non-Goals
 
-- No change to the `VIP_PROMOTIONS_ACCESS` visibility behavior in v1 (OQ-5).
+- No change to the `VIP_PROMOTIONS_ACCESS` **visibility behavior** — only its key
+  is renamed to `VIP_VISIBILITY_ACCESS` (D-5); the 8 checks in
+  `accommodation.service.ts` keep the exact same semantics.
 - No new payment/checkout for offers — alerts are informational.
 - **No WhatsApp or push delivery in v1.** Only email ships here; the other
   channels (and their external infra) are a dedicated follow-up spec. The
   per-plan channel matrix is built to scale to them but only email is wired.
 
-## 5. Open Questions
+## 5. Resolved decisions (2026-06-30)
 
-- **OQ-1** Per-plan channel matrix shape. v1 is email-only across the entitled
-  tiers; the question of WhatsApp/push availability by tier moves to the
-  follow-up channels spec, but the data model for the matrix is defined here.
-- **OQ-2** Alert triggers: price drop threshold, availability, new promo on a saved
-  listing/destination.
-- **OQ-3** Per-plan limit values (active alerts, channels) — confirm at
-  implementation.
-- **OQ-4** Delivery cadence + digest vs immediate.
-- **OQ-5** Do we keep `VIP_PROMOTIONS_ACCESS` as a visibility perk, fold it in, or
-  rename it?
+All open questions were resolved with the owner before implementation:
+
+- **D-1 (was OQ-2) — Triggers:** two triggers in v1: (a) **price drop** on a
+  subscribed accommodation, past a configurable **percentage threshold**; and
+  (b) **new owner promotion** on a subscribed accommodation/destination
+  (consumes the SPEC-285 promo event). **No availability trigger** — Hospeda has
+  no availability/calendar engine today (contact is WhatsApp-only).
+- **D-2 (was OQ-3) — Per-plan active-alert limits:** tourist tiers
+  **free = 0, plus = 5, vip = 20**. Free has no alerts (paid feature); enforced
+  via `MAX_ACTIVE_ALERTS`.
+- **D-3 (was OQ-4) — Cadence:** **daily digest**. One cron collects the day's
+  matched events and sends a single email per user. No immediate/per-event send
+  in v1 (better deliverability, one job, simpler dedupe/rate-limit).
+- **D-4 (was OQ-1) — Channel matrix:** **email-only** in v1 across the entitled
+  tiers (see Phasing decision). The per-plan channel matrix data model is built
+  to scale to WhatsApp/push, but only the email transport is wired.
+- **D-5 (was OQ-5) — `VIP_PROMOTIONS_ACCESS`:** **rename** the entitlement key to
+  `VIP_VISIBILITY_ACCESS` (behavior unchanged). It is a visibility perk unrelated
+  to alerts; the misleading name is corrected. Scope: entitlement key/enum + seed
+  - the 8 checks in `accommodation.service.ts` + any billing plan mapping. No
+  change to what it does.
 
 ## 6. Dependencies & relationship
 
@@ -94,4 +107,5 @@ spec only adds new transports with no rework of the subscription/evaluation core
   shows *Próximamente* until this ships (email v1 lifts the badge).
 - **Follow-up (future spec):** WhatsApp + push transports on top of the
   channel-agnostic delivery layer built here. Adds external infra + the per-plan
-  channel availability decision (OQ-1); no change to the core built in SPEC-286.
+  channel availability decision (deferred from D-4); no change to the core built
+  in SPEC-286.
