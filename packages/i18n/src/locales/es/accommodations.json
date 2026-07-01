@@ -556,7 +556,8 @@
         },
         "labels": {
             "breadcrumbHome": "Inicio",
-            "breadcrumbAccommodations": "Alojamientos"
+            "breadcrumbAccommodations": "Alojamientos",
+            "emptyTitle": "No hay alojamientos de tipo {{type}} disponibles"
         }
     },
     "listPage": {

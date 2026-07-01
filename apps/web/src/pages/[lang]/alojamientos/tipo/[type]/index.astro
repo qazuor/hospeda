@@ -246,6 +246,100 @@ if (hasGeoRadius) {
 const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
 
+// ---------------------------------------------------------------------------
+// Empty state recovery: removable filter chips (mirrors alojamientos/index.astro,
+// minus a `types` chip — the type is fixed by this landing's URL, not removable).
+// ---------------------------------------------------------------------------
+const activeFilterChips: { label: string; removeUrl: string }[] = [];
+
+/** Build a URL identical to the current one minus the given keys. */
+const urlWithoutKeys = (keys: readonly string[]): string => {
+	const sp = new URLSearchParams(url.searchParams);
+	for (const k of keys) sp.delete(k);
+	sp.delete('page');
+	const qs = sp.toString();
+	return qs ? `${baseUrl}?${qs}` : baseUrl;
+};
+
+/** Build a URL with a single value removed from a comma-separated list param. */
+const urlWithoutListValue = (key: string, value: string): string => {
+	const sp = new URLSearchParams(url.searchParams);
+	const current = (sp.get(key) ?? '').split(',').filter(Boolean);
+	const next = current.filter((v) => v !== value);
+	if (next.length > 0) sp.set(key, next.join(','));
+	else sp.delete(key);
+	sp.delete('page');
+	const qs = sp.toString();
+	return qs ? `${baseUrl}?${qs}` : baseUrl;
+};
+
+if (q) {
+	activeFilterChips.push({ label: `"${q}"`, removeUrl: urlWithoutKeys(['q']) });
+}
+if (destinationIds) {
+	for (const id of destinationIds.split(',').filter(Boolean)) {
+		const dest = destinations.find((d) => d.id === id);
+		if (dest) {
+			activeFilterChips.push({
+				label: dest.name,
+				removeUrl: urlWithoutListValue('destinationIds', id)
+			});
+		}
+	}
+}
+if (amenitiesParam) {
+	for (const id of amenitiesParam.split(',').filter(Boolean)) {
+		const a = amenities.find((x) => x.id === id);
+		if (a) {
+			activeFilterChips.push({
+				label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
+				removeUrl: urlWithoutListValue('amenities', id)
+			});
+		}
+	}
+}
+if (featuresParam) {
+	for (const id of featuresParam.split(',').filter(Boolean)) {
+		const f = features.find((x) => x.id === id);
+		if (f) {
+			activeFilterChips.push({
+				label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
+				removeUrl: urlWithoutListValue('features', id)
+			});
+		}
+	}
+}
+if (minPrice !== undefined || maxPrice !== undefined) {
+	activeFilterChips.push({
+		label: t('accommodations.emptyChip.price', 'Precio'),
+		removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice'])
+	});
+}
+if (isFeatured) {
+	activeFilterChips.push({
+		label: t('accommodations.emptyChip.featured', 'Solo destacados'),
+		removeUrl: urlWithoutKeys(['isFeatured'])
+	});
+}
+if (minRating !== undefined) {
+	activeFilterChips.push({
+		label: `${minRating}+ ★`,
+		removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews'])
+	});
+}
+if (minBedrooms !== undefined && minBedrooms > 0) {
+	activeFilterChips.push({
+		label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
+		removeUrl: urlWithoutKeys(['minBedrooms'])
+	});
+}
+if (minBathrooms !== undefined && minBathrooms > 0) {
+	activeFilterChips.push({
+		label: `${minBathrooms}+ ${t('accommodations.sidebar.bathrooms', 'Baños')}`,
+		removeUrl: urlWithoutKeys(['minBathrooms'])
+	});
+}
+
 // ItemList JSON-LD — the visible page of accommodation cards.
 const itemListEntries = cards.map((card) => ({
 	url: new URL(buildUrl({ locale, path: `alojamientos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
@@ -326,6 +420,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 				apiUrl={getApiUrl()}
 				isAuthenticated={isAuthenticated}
 				currentUrl={Astro.url.href}
+				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 				pageType={typeEnum}
 			/>
 		</div>
@@ -334,7 +429,15 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 
 	{!hasError && cards.length === 0 && (
-		<EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />
+		<EmptyState
+			locale={locale}
+			variant="no-results"
+			actionUrl={baseUrl}
+			activeFilters={activeFilterChips}
+			message={t('accommodations.byType.labels.emptyTitle', 'No hay alojamientos de tipo {{type}} disponibles', {
+				type: typeName
+			})}
+		/>
 	)}
 
 	{!hasError && cards.length > 0 && (
