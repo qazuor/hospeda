@@ -857,31 +857,34 @@
             "id": "T-022",
             "title": "Unit tests — sync primitives exclusion/guard (T-005)",
             "description": "Extend/replace packages/service-core/test/services/accommodation/sync-featured-by-plan.test.ts (rename to sync-featured-by-entitlement.test.ts alongside T-005's file rename), keeping its existing hoisted-mock scaffolding.\n\nCases:\n- `syncFeaturedByEntitlementForOwner(active: false)` excludes owner accommodations present in the addon-protected set (mock `getOwnerAccommodationIdsWithActiveFeaturedAddon` to return a non-empty set, assert the WHERE clause includes the exclusion).\n- `syncFeaturedByEntitlementForOwner(active: true)` unconditional bulk update, unaffected by the addon-protected set (regression, existing SPEC-292 case).\n- `syncFeaturedByEntitlementForAccommodation(active: false)` is a no-op (`{ updated: 0 }`, no DB write) when `resolveOwnerPlanGrantsFeatured` mocks to true.\n- `syncFeaturedByEntitlementForAccommodation(active: false)` writes normally when the plan does NOT grant it.\n- `syncFeaturedByEntitlementForAccommodation(active: true)` always writes.\n- Both functions' `.returning()` includes `slug`.\n\nKey files:\n- packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts (renamed)\n\nAcceptance criteria: all cases above pass; existing set/clear/empty/soft-deleted-exclusion cases from SPEC-292 still pass unmodified.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Owner-scope exclusion-on-revoke test", "completed": false },
-                { "title": "Owner-scope unconditional-grant regression test", "completed": false },
-                { "title": "Accommodation-scope plan-guard no-op test", "completed": false },
+                { "title": "Owner-scope exclusion-on-revoke test", "completed": true },
+                { "title": "Owner-scope unconditional-grant regression test", "completed": true },
+                { "title": "Accommodation-scope plan-guard no-op test", "completed": true },
                 {
                     "title": "Accommodation-scope normal-write test (grant + revoke)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "slug present in returning() assertion", "completed": false }
+                { "title": "slug present in returning() assertion", "completed": true }
             ],
             "tags": ["testing", "backend"],
             "phase": "testing",
             "qualityGate": {
                 "lint": "pnpm lint",
                 "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "tests": "scoped",
+                "status": "passed",
+                "details": "Extended sync-featured-by-entitlement.test.ts (kept existing scaffolding, no rename needed — already renamed by T-005): added notInArray mock (from 'drizzle-orm', separate from the fully-mocked '@repo/db') and mockResolveOwnerPlanGrantsFeatured to the hoisted set. New cases: owner-scope notInArray(id, protectedIds) exclusion when protected set non-empty vs absent when empty; active:true ignores a populated protected set (regression); syncFeaturedByEntitlementForAccommodation plan-guard no-op (no DB write) vs normal write on revoke, unconditional write on grant (no guard call); .returning() includes slug for both functions; empty-result case for the accommodation-scope function. 18/18 pass (9 pre-existing + 9 new), full accommodation test directory 483/483 green (no regressions). Scoped biome + typecheck on @repo/service-core green.",
+                "timestamp": "2026-07-01T23:10:00.000Z"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T22:45:00.000Z",
+                "completed": "2026-07-01T23:10:00.000Z"
             }
         },
         {
