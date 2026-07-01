@@ -5,7 +5,6 @@ export * from './entities/index.js';
 export * from './enums/index.js';
 export * from './feedback.js';
 export * from './metrics/index.js';
-export * from './newsletter/index.js';
 export * from './search/index.js';
 export * from './user/index.js';
 export * from './utils/index.js';
