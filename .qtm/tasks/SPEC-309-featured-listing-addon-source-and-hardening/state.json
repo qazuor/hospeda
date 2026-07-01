@@ -48,29 +48,41 @@
             "id": "T-002",
             "title": "Migration: new featured_listing_addon_grants link table + generate",
             "description": "Implements the OQ-3 scoping mechanism. `billing_addon_purchases` (packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts) has no accommodation reference and a unique-active-per-(customerId, addonSlug) constraint, so a NEW link table is required to tie one addon purchase to exactly one accommodation, following the `commerce_listing_subscriptions` pattern (packages/db/src/schemas/commerce/commerce_listing_subscription.dbschema.ts) referenced in CLAUDE.md.\n\nCreate packages/db/src/schemas/billing/featured_listing_addon_grant.dbschema.ts:\n- Table `featured_listing_addon_grants`: `id` uuid PK default random, `purchaseId` uuid NOT NULL references `billingAddonPurchases.id` onDelete cascade, `accommodationId` uuid NOT NULL references `accommodations.id` onDelete cascade, `createdAt`/`updatedAt` timestamps.\n- `uniqueIndex` on `purchaseId` (one purchase links to exactly one accommodation).\n- `index` on `accommodationId` (resolver lookup path, see T-004).\n- No denormalized `status`/`expiresAt` columns — the resolver JOINs to `billingAddonPurchases` for `status = 'active' AND (expiresAt IS NULL OR expiresAt > now())` to avoid duplicated/stale state.\n- Export relations (`one` to both `billingAddonPurchases` and `accommodations`) mirroring `commerce_listing_subscriptions`'s relations block.\n- Register the new table in the relevant `packages/db/src/schemas/billing/index.ts` (or equivalent) barrel.\n\nThis task runs `pnpm db:generate` AFTER T-001's schema edit is in place (blockedBy T-001) so BOTH the column rename and the new table land in ONE migration file (0039_<slug>.sql). Verify no other unrelated drift is swept in.\n\nAcceptance criteria:\n- `featured_listing_addon_grants` table exists with the columns/constraints above.\n- `pnpm db:generate` produces exactly one clean migration covering the T-001 rename + this new table, no other drift.\n- `pnpm db:migrate` applies cleanly on a fresh DB.\n- pnpm typecheck green for the new schema file and its barrel export.\n\nTesting requirements:\n- Verify both changes via Drizzle Studio or `psql \\d accommodations` / `\\d featured_listing_addon_grants`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-007"],
             "subtasks": [
                 {
                     "title": "Create featured_listing_addon_grant.dbschema.ts with table + relations",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Register in schemas barrel", "completed": false },
+                { "title": "Register in schemas barrel", "completed": true },
                 {
                     "title": "Run pnpm db:generate (covers T-001 + T-002) and commit migration 0039",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify fresh-DB pnpm db:migrate applies cleanly", "completed": false }
+                { "title": "Verify fresh-DB pnpm db:migrate applies cleanly", "completed": true }
             ],
             "tags": ["backend", "database", "migration", "addons"],
             "phase": "setup",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T16:20:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:20:00Z",
+                    "details": "scoped to packages/db"
+                },
+                "tests": {
+                    "status": "exempt",
+                    "timestamp": "2026-07-01T16:20:00Z",
+                    "details": "migration-only task, verified via psql schema inspection on worktree_spec_309 (fresh DB clone of hospeda_template): column rename + new table/FKs/indexes/unique constraint all confirmed present"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T16:05:00Z",
+                "completed": "2026-07-01T16:20:00Z"
             }
         },
         {
@@ -912,9 +924,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 29,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.3
     }
