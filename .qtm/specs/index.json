@@ -1311,11 +1311,11 @@
             "title": "AI Text-Improve in Web Owner Editor",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-321-ai-text-improve-web-editor",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "origin": "SPEC-310 roadmap. PARTIAL: API POST /ai/text-improve + quota work and admin uses it, but the WEB owner editor (RichTextEditor) has no improve-with-AI button. Mostly wiring existing API into web editor UI. Could be NOSPEC given small size. OQ: which fields get the button.",
+            "origin": "SPEC-310 roadmap. All 6 tasks implemented and committed on spec/SPEC-321-ai-text-improve-web-editor (hook, panel, description+summary wiring, integration tests). Manual smoke against real local Ollama confirmed the full chain works end-to-end and surfaced+fixed a real production bug: the global Accept-header validation middleware rejected text/event-stream, 400ing every real (non-mocked) call to all 3 AI streaming routes (also affects admin SPEC-198). Ready for PR to staging.",
             "tags": ["ai", "owner", "web", "editor"]
         },
         {
