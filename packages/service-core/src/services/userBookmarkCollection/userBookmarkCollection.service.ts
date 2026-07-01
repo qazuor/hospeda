@@ -41,25 +41,12 @@ import {
  * no plan-resolved limit is available (e.g. `ctx.hookState.planLimit` absent).
  *
  * SPEC-287 (2026-07-01): this used to be configurable via the
- * `HOSPEDA_MAX_COLLECTIONS_PER_USER` env var (ADR-026). The cap is now
- * plan-driven (`LimitKey.MAX_COLLECTIONS`, resolved at the route layer and
- * threaded in via `ctx.hookState.planLimit`) — this constant is now only a
+ * `HOSPEDA_MAX_COLLECTIONS_PER_USER` env var (ADR-026, now removed). The cap
+ * is plan-driven (`LimitKey.MAX_COLLECTIONS`, resolved at the route layer and
+ * threaded in via `ctx.hookState.planLimit`) — this constant is only a
  * safety-net default, not the primary source of truth.
  */
 const DEFAULT_MAX_COLLECTIONS_PER_USER = 10;
-
-/**
- * Returns the fallback per-user collection limit.
- *
- * SPEC-287: kept as a thin wrapper around {@link DEFAULT_MAX_COLLECTIONS_PER_USER}
- * for `list.ts`'s `usage.max` response field. Will be removed once T-014
- * migrates that route to `getRemainingLimit(ctx, LimitKey.MAX_COLLECTIONS)`.
- *
- * @returns The default maximum number of active bookmark collections allowed per user.
- */
-export function getMaxCollectionsPerUser(): number {
-    return DEFAULT_MAX_COLLECTIONS_PER_USER;
-}
 
 /**
  * Service for managing user bookmark collections (wishlists).

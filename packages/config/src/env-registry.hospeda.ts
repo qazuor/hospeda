@@ -1155,32 +1155,6 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
-    // Features / User limits
-    // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_MAX_COLLECTIONS_PER_USER',
-        /**
-         * Maximum number of active collections (wishlists) a user may have.
-         * Soft-deleted collections are excluded from this count. Default 10.
-         */
-        description:
-            'Maximum number of active collections (wishlists) a user may have. Soft-deleted collections are excluded from this count. Default 10.',
-        descriptionEs:
-            'Cantidad máxima de colecciones activas (wishlists) que un usuario puede tener. Las soft-deleted no cuentan. Por defecto 10.',
-        type: 'number',
-        required: false,
-        secret: false,
-        defaultValue: '10',
-        exampleValue: '10',
-        apps: ['api'],
-        category: 'features',
-        howToObtain:
-            'Per-user wishlist quota. Default 10. Bump up if you want power users to organize favorites in many lists.',
-        howToObtainEs:
-            'Cuota de wishlists por usuario. Por defecto 10. Subilo si querés que los power users puedan organizar favoritos en muchas listas.'
-    },
-
-    // -------------------------------------------------------------------------
     // Messaging
     // -------------------------------------------------------------------------
     {

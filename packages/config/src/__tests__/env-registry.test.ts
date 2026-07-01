@@ -12,7 +12,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
 /**
  * Total number of environment variable definitions across all categories.
  * Breakdown:
- *  - HOSPEDA_*    : 45 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
+ *  - HOSPEDA_*    : 45 vars (server-side platform)
  *  - API_*        : 78 vars (Hono middleware configuration)
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
@@ -114,8 +114,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * - HOSPEDA_GIT_SHA, SOURCE_COMMIT (platform-injected), HOSPEDA_LANDING_SITE_URL,
  *   ALLOW_PLACEHOLDER_ENV_URLS, ANALYZE
  * (all `category: 'build'`, `stage: 'build'`, `apps: ['docker']`, optional, non-secret)
+ *
+ * 245 (2026-07-01, SPEC-287 T-009): -1, removed HOSPEDA_MAX_COLLECTIONS_PER_USER
+ * (features category). Favorites collections moved from an env-var cap to a
+ * per-plan billing LimitKey (MAX_COLLECTIONS); the env var no longer exists.
  */
-const EXPECTED_VAR_COUNT = 246;
+const EXPECTED_VAR_COUNT = 245;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

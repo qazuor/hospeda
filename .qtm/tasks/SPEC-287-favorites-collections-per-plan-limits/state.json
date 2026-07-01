@@ -296,39 +296,39 @@
             "id": "T-009",
             "title": "Remove HOSPEDA_MAX_COLLECTIONS_PER_USER env var",
             "description": "Remove the now-unused `HOSPEDA_MAX_COLLECTIONS_PER_USER` variable: delete its Zod schema entry from apps/api/src/utils/env.ts, its registry entry from packages/config/src/env-registry.hospeda.ts, and its line from apps/api/.env.example (and apps/api/.env.local if present, locally only — do not commit .env.local). Also remove `getMaxCollectionsPerUser()` / `DEFAULT_MAX_COLLECTIONS_PER_USER` from userBookmarkCollection.service.ts now that both consumers (T-006's `_canCreate`, T-014's `list.ts`) are migrated off it. Test requirements: run `pnpm env:check:registry` to confirm registry/schema stay in sync; update apps/api/test/utils/env.test.ts if it references this variable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Remove from env-registry.hospeda.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove from apps/api/src/utils/env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove from .env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove getMaxCollectionsPerUser() from the service",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["env", "config", "cleanup"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:42:21Z",
+                "completed": "2026-07-01T15:49:31Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.9
     }
