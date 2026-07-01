@@ -749,28 +749,35 @@
             "id": "T-019",
             "title": "G-6: owner self-service featured toggle — API route + entitlement gate",
             "description": "SPEC-292 deliberately removed `isFeatured` from the owner-facing `AccommodationUpdateHttpSchema` (owner-leak closure, T-003 of that spec) — this task does NOT reopen that schema. Instead, add a NEW, narrowly-scoped protected endpoint whose write path is gated by a live entitlement check, not just field presence.\n\nAdd `PATCH /api/v1/protected/accommodations/:id/featured-toggle` (new route file under apps/api/src/routes/accommodation/protected/, e.g. `featured-toggle.ts`) with a minimal Zod body schema `{ isFeatured: boolean }`. In the route/service handler: resolve the accommodation, verify the requesting user owns it, then call a combined check — `resolveOwnerPlanGrantsFeatured({ ownerId })` OR `resolveAccommodationHasActiveFeaturedAddon({ accommodationId })` (both from T-004) — and reject with 403/`FORBIDDEN` if neither holds (the owner has no active FEATURED_LISTING entitlement for this accommodation, from either source). If entitled, write `isFeatured` directly via the accommodation model (no rotation/queue logic per OQ-4 — this is a pure visibility switch).\n\nKey files:\n- apps/api/src/routes/accommodation/protected/featured-toggle.ts (new)\n- packages/schemas/src/accommodation/ (new minimal toggle schema, kept separate from `AccommodationUpdateHttpSchema`)\n\nAcceptance criteria:\n- An owner WITHOUT an active FEATURED_LISTING entitlement (plan or addon) for the target accommodation gets 403 when calling this endpoint.\n- An owner WITH an active entitlement can toggle `isFeatured` true/false freely, uncapped (OQ-4).\n- The general `AccommodationUpdateHttpSchema` remains unchanged — `isFeatured` is still stripped there (SPEC-292 regression guard, verify via existing test).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-028.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "New minimal Zod schema for the toggle body", "completed": false },
+                { "title": "New minimal Zod schema for the toggle body", "completed": true },
                 {
                     "title": "New protected route with ownership + entitlement gate (plan OR addon)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm AccommodationUpdateHttpSchema untouched (regression guard)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "api", "owner", "featured", "entitlements"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:53:21.000Z",
+                "details": "biome check clean on all 6 new/modified files; pnpm --filter @repo/schemas typecheck clean; pnpm --filter @repo/service-core typecheck clean; pnpm --filter hospeda-api typecheck clean; accommodation.spec-292.test.ts (regression guard, AccommodationUpdateHttpSchema still strips isFeatured) 14/14 passed. New: AccommodationFeaturedToggleHttpSchema (packages/schemas/src/entities/accommodation/accommodation.featured-toggle.schema.ts) kept separate from AccommodationUpdateHttpSchema; setAccommodationFeaturedToggle (packages/service-core/src/services/accommodation/accommodation.featured-toggle.ts) — standalone function (not BaseCrudService, matches T-005 precedent) doing ownership check (ACCOMMODATION_UPDATE_OWN+ownerId match, or ACCOMMODATION_UPDATE_ANY) then the plan-OR-addon entitlement gate via T-004's resolvers, then accommodationModel.update({isFeatured}); PATCH /api/v1/protected/accommodations/:id/featured-toggle (apps/api/src/routes/accommodation/protected/featured-toggle.ts) — no declarative ownership: config (mirrors masterToggle.ts SPEC-237 T-008 pattern), safe to mount outside the ownership-middleware sub-router. Dedicated route-level test coverage deferred to T-028 per task spec."
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T20:41:14.000Z",
+                "completed": "2026-07-01T20:53:21.000Z"
             }
         },
         {

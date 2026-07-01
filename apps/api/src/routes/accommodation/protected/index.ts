@@ -14,6 +14,7 @@ import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
+import { protectedFeaturedToggleRoute } from './featured-toggle';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
@@ -72,6 +73,11 @@ app.route('/', protectedImportFromUrlRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);
+
+// PATCH /:id/featured-toggle - Owner self-service featured toggle (SPEC-309 T-019)
+// Ownership + entitlement gate enforced inside setAccommodationFeaturedToggle,
+// no declarative ownership middleware — safe to mount directly.
+app.route('/', protectedFeaturedToggleRoute);
 
 // FAQ management (auth required, no ownership)
 app.route('/', getFaqsRoute);

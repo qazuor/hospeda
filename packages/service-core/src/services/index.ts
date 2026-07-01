@@ -1,4 +1,5 @@
 export * from './accommodation/accommodation.service';
+export * from './accommodation/accommodation.featured-toggle';
 export * from './accommodation/accommodation.sync-featured-by-entitlement';
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';
