@@ -343,7 +343,8 @@
         },
         "labels": {
             "breadcrumbHome": "Home",
-            "breadcrumbAccommodations": "Accommodations"
+            "breadcrumbAccommodations": "Accommodations",
+            "emptyTitle": "No {{type}} accommodations available"
         }
     },
     "listPage": {

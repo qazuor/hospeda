@@ -343,7 +343,8 @@
         },
         "labels": {
             "breadcrumbHome": "Início",
-            "breadcrumbAccommodations": "Acomodações"
+            "breadcrumbAccommodations": "Acomodações",
+            "emptyTitle": "Não há hospedagens do tipo {{type}} disponíveis"
         }
     },
     "listPage": {
