@@ -10,7 +10,6 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     and,
     billingAddonPurchases,
@@ -29,6 +28,7 @@ import {
     checkSubscriptionStatusTransition,
     getPromoCodeById,
     resolveFullPlanPriceCentavos,
+    resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
@@ -249,22 +249,20 @@ export async function confirmAnnualSubscription(input: {
     // Synchronous, in-process, no I/O — safe to call unconditionally.
     clearEntitlementCache(sub.customerId);
 
-    // SPEC-292 T-005: grant featuredByPlan if the annual subscription's plan
-    // includes FEATURED_LISTING. Soft-fail: a sync error must not block the
-    // activation path (the plan change already committed above).
+    // SPEC-309 T-010: sync featuredByEntitlement via the shared resolver
+    // (T-004) — the subscription's status was flipped to ACTIVE just above,
+    // so resolveOwnerPlanGrantsFeatured observes the post-commit state
+    // directly. Soft-fail: a sync error must not block the activation path
+    // (the status change already committed above).
     try {
-        const annualPlan = await billing.plans.get(sub.planId);
-        const annualPlanSlug = annualPlan?.name ?? '';
-        const annualPlanHasFeatured =
-            getPlanBySlug(annualPlanSlug)?.entitlements.includes(EntitlementKey.FEATURED_LISTING) ??
-            false;
-        if (annualPlanHasFeatured) {
-            const ownerId = await resolveOwnerUserId({ customerId: sub.customerId });
-            if (ownerId) {
+        const ownerId = await resolveOwnerUserId({ customerId: sub.customerId });
+        if (ownerId) {
+            const annualPlanHasFeatured = await resolveOwnerPlanGrantsFeatured({ ownerId });
+            if (annualPlanHasFeatured) {
                 await syncFeaturedByEntitlementForOwner({ ownerId, active: true });
                 apiLogger.info(
-                    { annualSubscriptionId, customerId: sub.customerId, planSlug: annualPlanSlug },
-                    'Annual subscription activation: featuredByPlan granted'
+                    { annualSubscriptionId, customerId: sub.customerId },
+                    'Annual subscription activation: featuredByEntitlement granted'
                 );
             }
         }
@@ -489,47 +487,28 @@ async function confirmPlanUpgrade(input: {
                 customerId: changeResult.subscription.customerId,
                 newPlanId
             });
-            // SPEC-292 T-005: sync featuredByPlan to reflect the new (post-upgrade) plan.
-            // The upgraded plan may or may not grant FEATURED_LISTING — check explicitly
-            // rather than assuming an upgrade always grants it (e.g. owner-basico → owner-pro
-            // adds it, but complex-basico → complex-basico-annual would not change it).
+            // SPEC-309 T-010: sync featuredByEntitlement to reflect the
+            // post-upgrade plan via the shared resolver (T-004), which
+            // already excludes non-accommodation (commerce/partner)
+            // subscriptions via SPEC-239 domain isolation — no separate
+            // ALL_PLANS guard needed here.
             try {
-                const upgradedPlan = await billing.plans.get(newPlanId);
-                const upgradedPlanSlug = upgradedPlan?.name ?? '';
-                // Guard: skip syncFeaturedByEntitlementForOwner when the plan slug is not in ALL_PLANS
-                // (commerce/partner plans are excluded by SPEC-239 and would resolve to
-                // undefined, causing a false active:false that clears featuredByPlan for
-                // dual-subscription owners).
-                const resolvedUpgradedPlan = getPlanBySlug(upgradedPlanSlug);
-                if (resolvedUpgradedPlan) {
-                    const upgradedPlanHasFeatured = resolvedUpgradedPlan.entitlements.includes(
-                        EntitlementKey.FEATURED_LISTING
-                    );
-                    await syncFeaturedByEntitlementForOwner({
-                        ownerId: userId,
-                        active: upgradedPlanHasFeatured
-                    });
-                    apiLogger.info(
-                        {
-                            planChangeUpgradeId,
-                            newPlanId,
-                            planSlug: upgradedPlanSlug,
-                            active: upgradedPlanHasFeatured,
-                            customerId: changeResult.subscription.customerId
-                        },
-                        'Plan upgrade: featuredByPlan synced'
-                    );
-                } else {
-                    apiLogger.warn(
-                        {
-                            planChangeUpgradeId,
-                            newPlanId,
-                            planSlug: upgradedPlanSlug,
-                            customerId: changeResult.subscription.customerId
-                        },
-                        'Plan upgrade: plan slug not found in ALL_PLANS — syncFeaturedByEntitlementForOwner skipped (commerce/partner plan?)'
-                    );
-                }
+                const upgradedPlanHasFeatured = await resolveOwnerPlanGrantsFeatured({
+                    ownerId: userId
+                });
+                await syncFeaturedByEntitlementForOwner({
+                    ownerId: userId,
+                    active: upgradedPlanHasFeatured
+                });
+                apiLogger.info(
+                    {
+                        planChangeUpgradeId,
+                        newPlanId,
+                        active: upgradedPlanHasFeatured,
+                        customerId: changeResult.subscription.customerId
+                    },
+                    'Plan upgrade: featuredByEntitlement synced'
+                );
             } catch (featuredSyncErr) {
                 apiLogger.warn(
                     {

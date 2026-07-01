@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 9/30 tasks (30%)
+## Progress: 10/30 tasks (33%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -58,7 +58,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-005 · Blocks: T-023
 - [x] **T-009** (complexity: 2) - G-1/G-5: wire subscription-logic.ts to the union resolver [DONE]
   - Blocked by: T-005 · Blocks: T-023
-- [ ] **T-010** (complexity: 2) - G-1/G-5: wire payment-logic.ts to the union resolver
+- [x] **T-010** (complexity: 2) - G-1/G-5: wire payment-logic.ts to the union resolver [DONE]
   - Blocked by: T-005 · Blocks: T-023
 - [ ] **T-011** (complexity: 2) - G-1/G-5: wire finalize-cancelled-subs.ts to the union resolver
   - Blocked by: T-005 · Blocks: T-024

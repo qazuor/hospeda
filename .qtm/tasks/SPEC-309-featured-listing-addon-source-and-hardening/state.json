@@ -410,27 +410,42 @@
             "id": "T-010",
             "title": "G-1/G-5: wire payment-logic.ts to the union resolver",
             "description": "Update both call-sites in apps/api/src/routes/webhooks/mercadopago/payment-logic.ts: line 264 (annual subscription activation) and line 508 (plan-change upgrade webhook). Replace the local `getPlanBySlug(annualPlanSlug)?.entitlements.includes(...)` / equivalent derivation at each site with `resolveOwnerPlanGrantsFeatured` (T-004). Audit both sites' status handling against the reconcile cron's active set (active|trialing|comp) and PAUSED-as-revoke rule (G-5) — apply only where the local logic actually branches on subscription status (some sites may be unconditional activation paths where G-5 doesn't apply; verify and only change what's relevant). Call the renamed `syncFeaturedByEntitlementForOwner` (T-005) at both sites.\n\nKey files:\n- apps/api/src/routes/webhooks/mercadopago/payment-logic.ts:253-264, 493-508\n\nAcceptance criteria:\n- Both sites use T-004's shared resolver instead of a local plan check.\n- Both sites call the renamed sync function.\n- G-5 status alignment applied wherever the site's own logic branches on subscription status.\n- Non-blocking soft-fail wrapper preserved.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Annual activation site (line ~264): resolver + renamed sync call",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Plan-change upgrade site (line ~508): resolver + renamed sync call + G-5 audit",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z",
+                    "details": "apps/api/test/routes/webhooks/payment-logic.test.ts + payment-logic.cutover.test.ts 56/56 — no regressions (dedicated union-resolver coverage deferred to T-023)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:10:00.000Z",
+                "completed": "2026-07-01T19:20:00.000Z"
             }
         },
         {
