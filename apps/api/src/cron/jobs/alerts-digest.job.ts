@@ -4,8 +4,7 @@
  * Sends every subscribed tourist a single daily email summarizing:
  * - Accommodations they have a price-drop alert on that dropped past
  *   threshold in the evaluation window ({@link PriceDropEvaluatorService}, T-006).
- * - Active promo offers relevant to them (T-012 — stubbed as a no-op until
- *   that evaluator lands, see {@link evaluatePromoOffersStub}).
+ * - Active promo offers relevant to them ({@link PromoOfferEvaluatorService}, T-012).
  *
  * Schedule: '0 8 * * *' (8 AM daily).
  *
@@ -39,8 +38,8 @@ import {
     EmailAlertChannel,
     createEmailClient
 } from '@repo/notifications';
-import type { AlertDigestPayload, PromoOfferMatch } from '@repo/notifications';
-import { PriceDropEvaluatorService } from '@repo/service-core';
+import type { AlertDigestPayload } from '@repo/notifications';
+import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -61,25 +60,6 @@ const DIGEST_WINDOW_HOURS = 24;
 
 /** Number of users delivered per `AlertDigestDeliveryService.deliverBatch()` call. */
 const DIGEST_BATCH_SIZE = 50;
-
-// ---------------------------------------------------------------------------
-// T-012 stub
-// ---------------------------------------------------------------------------
-
-/**
- * STUB (SPEC-286 T-007): `PromoOfferEvaluator` (T-012) has not landed yet.
- *
- * Returns an empty map so the digest never includes promo-offer items until
- * T-012 wires the real evaluator. Called directly from the handler below
- * (see the `evaluatePromoOffers` local) — when T-012 lands, swapping this
- * for `new PromoOfferEvaluatorService().evaluatePromoOffers` is a one-line
- * change at that single call site; no other part of this file needs to move.
- */
-async function evaluatePromoOffersStub(_input: {
-    since: Date;
-}): Promise<Map<string, PromoOfferMatch[]>> {
-    return new Map();
-}
 
 // ---------------------------------------------------------------------------
 // Job definition
@@ -128,10 +108,11 @@ export const alertsDigestJob: CronJobDefinition = {
             const since = new Date(startedAt.getTime() - DIGEST_WINDOW_HOURS * 60 * 60 * 1000);
 
             const priceDropEvaluator = new PriceDropEvaluatorService();
+            const promoOfferEvaluator = new PromoOfferEvaluatorService();
             const userModel = new UserModel();
 
             const priceDropsByUser = await priceDropEvaluator.evaluatePriceDrops({ since });
-            const promoOffersByUser = await evaluatePromoOffersStub({ since });
+            const promoOffersByUser = await promoOfferEvaluator.evaluatePromoOffers({ since });
 
             // Merge into one entry per user that has at least one match from
             // either evaluator. Neither evaluator ever stores an empty-array

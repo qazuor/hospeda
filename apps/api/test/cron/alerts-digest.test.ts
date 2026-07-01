@@ -29,8 +29,15 @@ import type { Mock } from 'vitest';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockEvaluatePriceDrops, mockFindByIds, mockDeliverBatch, mockEnv } = vi.hoisted(() => ({
+const {
+    mockEvaluatePriceDrops,
+    mockEvaluatePromoOffers,
+    mockFindByIds,
+    mockDeliverBatch,
+    mockEnv
+} = vi.hoisted(() => ({
     mockEvaluatePriceDrops: vi.fn(),
+    mockEvaluatePromoOffers: vi.fn(),
     mockFindByIds: vi.fn(),
     mockDeliverBatch: vi.fn().mockResolvedValue(undefined),
     mockEnv: {
@@ -43,6 +50,9 @@ const { mockEvaluatePriceDrops, mockFindByIds, mockDeliverBatch, mockEnv } = vi.
 vi.mock('@repo/service-core', () => ({
     PriceDropEvaluatorService: vi.fn().mockImplementation(() => ({
         evaluatePriceDrops: mockEvaluatePriceDrops
+    })),
+    PromoOfferEvaluatorService: vi.fn().mockImplementation(() => ({
+        evaluatePromoOffers: mockEvaluatePromoOffers
     }))
 }));
 
@@ -76,7 +86,7 @@ vi.mock('../../src/utils/logger.js', () => ({
 }));
 
 import { AlertDigestDeliveryService } from '@repo/notifications';
-import { PriceDropEvaluatorService } from '@repo/service-core';
+import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { alertsDigestJob } from '../../src/cron/jobs/alerts-digest.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 
@@ -121,6 +131,7 @@ describe('Alerts Digest Cron Job', () => {
 
         mockEnv.HOSPEDA_EMAIL_API_KEY = 'test-brevo-key';
         mockEvaluatePriceDrops.mockResolvedValue(new Map());
+        mockEvaluatePromoOffers.mockResolvedValue(new Map());
         mockFindByIds.mockResolvedValue([]);
         mockDeliverBatch.mockResolvedValue(undefined);
     });
@@ -156,7 +167,7 @@ describe('Alerts Digest Cron Job', () => {
     // -------------------------------------------------------------------------
 
     describe('Email not configured', () => {
-        it('skips dispatch and never calls the price-drop evaluator', async () => {
+        it('skips dispatch and never calls either evaluator', async () => {
             mockEnv.HOSPEDA_EMAIL_API_KEY = undefined;
 
             const result = await alertsDigestJob.handler(mockContext);
@@ -166,6 +177,7 @@ describe('Alerts Digest Cron Job', () => {
             expect(result.processed).toBe(0);
             expect(result.errors).toBe(0);
             expect(mockEvaluatePriceDrops).not.toHaveBeenCalled();
+            expect(mockEvaluatePromoOffers).not.toHaveBeenCalled();
             expect(mockFindByIds).not.toHaveBeenCalled();
         });
     });
@@ -325,6 +337,49 @@ describe('Alerts Digest Cron Job', () => {
             expect(PriceDropEvaluatorService).toHaveBeenCalledOnce();
             expect(mockEvaluatePriceDrops).toHaveBeenCalledWith({
                 since: new Date(mockContext.startedAt.getTime() - 24 * 60 * 60 * 1000)
+            });
+        });
+
+        it('constructs PromoOfferEvaluatorService and calls evaluatePromoOffers({ since })', async () => {
+            mockEvaluatePromoOffers.mockResolvedValue(new Map());
+
+            await alertsDigestJob.handler(mockContext);
+
+            expect(PromoOfferEvaluatorService).toHaveBeenCalledOnce();
+            expect(mockEvaluatePromoOffers).toHaveBeenCalledWith({
+                since: new Date(mockContext.startedAt.getTime() - 24 * 60 * 60 * 1000)
+            });
+        });
+
+        it('merges promo-offer matches into the digest payload alongside price drops', async () => {
+            const PROMO_OFFER_MATCH = {
+                promotionId: 'promo-1',
+                accommodationId: 'acc-1',
+                accommodationName: 'Casa del Sol',
+                accommodationSlug: 'casa-del-sol',
+                promotionTitle: 'Summer 20% off',
+                discountType: 'percentage',
+                discountValue: 20,
+                validUntil: null
+            };
+            mockEvaluatePriceDrops.mockResolvedValue(new Map());
+            mockEvaluatePromoOffers.mockResolvedValue(new Map([['user-1', [PROMO_OFFER_MATCH]]]));
+            mockFindByIds.mockResolvedValue([
+                { id: 'user-1', email: 'user1@example.com', settings: { languageWeb: 'es' } }
+            ]);
+
+            const result = await alertsDigestJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(mockDeliverBatch).toHaveBeenCalledOnce();
+            const [deliveredBatch] = mockDeliverBatch.mock.calls[0] as [
+                Array<{ userId: string; priceDrop: unknown[]; promoOffers: unknown[] }>
+            ];
+            expect(deliveredBatch[0]).toMatchObject({
+                userId: 'user-1',
+                priceDrop: [],
+                promoOffers: [PROMO_OFFER_MATCH]
             });
         });
     });
