@@ -105,6 +105,19 @@ All open questions were resolved with the owner before implementation:
   event source.
 - **SPEC-282:** the "Alertas y ofertas" row (grouping price alerts + promo offers)
   shows *Próximamente* until this ships (email v1 lifts the badge).
+- **Absorbs SPEC-312 (Tourist Price Alerts):** the price-alert core (table, CRUD,
+  monitoring cron, web UI, `MAX_ACTIVE_ALERTS` enforcement) is built here as
+  T-002..T-007. SPEC-312 is archived (obsolete) — not implemented as a separate
+  spec. Limit values follow D-2 (free=0/plus=5/vip=20), NOT the stub's "vip
+  unlimited".
+- **Absorbs SPEC-313 (Tourist Exclusive Deals):** owner-promotion offers surfaced
+  to tourists are G-2 + T-012 here. SPEC-313 is archived (obsolete).
+- **Reconciles SPEC-316 (VIP Promotions Access):** D-5 renames the *visibility*
+  entitlement `VIP_PROMOTIONS_ACCESS` → `VIP_VISIBILITY_ACCESS` — it is a
+  visibility perk today (8 checks in `accommodation.service.ts`), not a promos
+  feature. If SPEC-316 later builds real VIP promotions, it MUST define a NEW
+  entitlement; it may not reuse the renamed visibility key. SPEC-316 stays
+  backlog / discovery-first.
 - **Follow-up (future spec):** WhatsApp + push transports on top of the
   channel-agnostic delivery layer built here. Adds external infra + the per-plan
   channel availability decision (deferred from D-4); no change to the core built

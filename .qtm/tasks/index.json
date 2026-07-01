@@ -791,7 +791,7 @@
             "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In-progress (started 2026-06-30). Phasing decision: build the full multichannel codebase foundation but ship EMAIL-ONLY in v1; WhatsApp/push deferred to a follow-up spec (external infra). Merges phantom price alerts + owner-promo offers, per-plan limits. Depends on SPEC-285. Tasks not yet atomized."
+            "note": "In-progress (started 2026-06-30). EMAIL-ONLY v1 (full multichannel core built, WhatsApp/push deferred to a follow-up spec). Absorbs SPEC-312 (price alerts) + SPEC-313 (exclusive deals/offers). 12 tasks across 6 phases. VIP entitlement renamed to VIP_VISIBILITY_ACCESS (D-5); SPEC-316 VIP promotions reconciled to a future NEW entitlement. Depends on SPEC-285 (merged, PR #1900)."
         },
         {
             "specId": "SPEC-287",
@@ -1058,6 +1058,144 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
+        },
+        {
+            "specId": "SPEC-310",
+            "title": "Plan Packaging Recalibration (Entitlements & Limits Sanitation)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-310-plan-packaging-recalibration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Discovery-first. Source of truth for target packaging. Hide complex (option A reversible), remove AD_FREE, recalibrate tourist+owner limits, move recommendations free->plus, grant CREATE_PROMOTIONS to owner-basico. Missing features = SPEC-311..321. Consumer AI = SPEC-283. 3 OQs (featured-in-basico, AI-import level, accommodations-basico). Tasks NOT atomized."
+        },
+        {
+            "specId": "SPEC-311",
+            "title": "WhatsApp Contact (Display + Direct) for Accommodations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-311-whatsapp-contact",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Two-layer phantom (no model fields + PHANTOM-GATE) yet advertised as available. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-312",
+            "title": "Tourist Price Alerts",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-312-tourist-price-alerts",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateAlerts). Needs price-history prerequisite check. Needs full discovery.",
+            "archived": true,
+            "archivedAt": "2026-06-30",
+            "archiveNote": "Absorbed by SPEC-286 (unified Alerts & Offers). Price-alert core = SPEC-286 T-002..T-007."
+        },
+        {
+            "specId": "SPEC-313",
+            "title": "Tourist Exclusive Deals",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-313-tourist-exclusive-deals",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateExclusiveDeals). Relates to SPEC-316. Needs full discovery.",
+            "archived": true,
+            "archivedAt": "2026-06-30",
+            "archiveNote": "Absorbed by SPEC-286 (unified Alerts & Offers). Owner-promo offers to tourists = SPEC-286 G-2 + T-012."
+        },
+        {
+            "specId": "SPEC-314",
+            "title": "Review Photo Attachments",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-314-review-photo-attachments",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewPhotos). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-315",
+            "title": "Personalized Recommendations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-315-personalized-recommendations",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateRecommendations). SPEC-310 moves entitlement free->plus. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-316",
+            "title": "VIP Promotions Access (Tourist)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-316-vip-promotions-access",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. Gives tourist-vip a real exclusive. Relates to SPEC-313. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-317",
+            "title": "Owner Review Responses",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-317-owner-review-responses",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewResponse). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-318",
+            "title": "Owner Custom Branding (Premium)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-318-owner-custom-branding",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. One of two owner-premium real exclusives. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-319",
+            "title": "Accommodation Verification Badge (Premium)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-319-accommodation-verification-badge",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. Second owner-premium real exclusive. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-320",
+            "title": "Featured Listing Automation (Auto-activation + Self-service)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-320-featured-listing-automation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. PARTIAL (admin manual toggle exists; no auto-activation/self-service). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-321",
+            "title": "AI Text-Improve in Web Owner Editor",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-321-ai-text-improve-web-editor",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. PARTIAL (API works; missing web editor button). Small — possibly NOSPEC. Needs minimal discovery."
         }
     ],
     "standalone": {
