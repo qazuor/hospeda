@@ -1117,13 +1117,13 @@
         {
             "specId": "SPEC-315",
             "title": "Personalized Recommendations",
-            "status": "draft",
+            "status": "obsolete",
             "progress": "0/0",
             "path": "SPEC-315-personalized-recommendations",
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Stub from SPEC-310 audit. Phantom (gateRecommendations). SPEC-310 moves entitlement free->plus. Needs full discovery."
+            "note": "Superseded by SPEC-284 (Personalized Recommendations Feed, 17/17 tasks complete) — same feature, spec'd independently the same day. Never started here; no code to reconcile."
         },
         {
             "specId": "SPEC-316",

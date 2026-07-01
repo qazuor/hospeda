@@ -2608,12 +2608,14 @@
             "title": "Personalized Recommendations",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-315-personalized-recommendations",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom gate (gateRecommendations; no route/service/algorithm/UI; /similar is public+unpersonalized+unrelated). SPEC-310 moved this entitlement free->plus. Build personalized recommendations from history/favorites/search-history. OQ: personalization signal, heuristic vs ranking.",
-            "tags": ["tourist", "recommendations", "discovery"]
+            "tags": ["tourist", "recommendations", "discovery"],
+            "supersededBy": "SPEC-284",
+            "obsoleteNote": "Superseded by SPEC-284 (Personalized Recommendations Feed), which was independently spec'd and fully implemented (17/17 tasks) on 2026-06-30/07-01, discovered on this same day via a different path. This stub's premises are also stale: CAN_VIEW_RECOMMENDATIONS remains on the free tourist plan in plans.config.ts (never moved to plus), matching SPEC-284's OQ-3 binary-in-v1 decision."
         },
         {
             "specId": "SPEC-316",
