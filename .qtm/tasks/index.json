@@ -873,7 +873,7 @@
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit."
+            "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit. Absorbed duplicate SPEC-318 (2026-07-01); related to SPEC-319 (verification badge, the other owner-premium exclusive)."
         },
         {
             "specId": "SPEC-294",
@@ -1150,12 +1150,15 @@
         {
             "specId": "SPEC-318",
             "title": "Owner Custom Branding (Premium)",
-            "status": "draft",
+            "status": "obsolete",
             "progress": "0/0",
             "path": "SPEC-318-owner-custom-branding",
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-293 (Owner Custom Branding). Consolidated 2026-07-01; SPEC-319 relation moved to SPEC-293.",
             "note": "Stub from SPEC-310 audit. Phantom. One of two owner-premium real exclusives. Needs full discovery."
         },
         {
