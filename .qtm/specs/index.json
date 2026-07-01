@@ -643,7 +643,7 @@
             "title": "Sentry Error Metrics Integration",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-163-sentry-error-metrics",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. SUPER_ADMIN 'Sentry errors 24h' widget: Sentry is write-only in our stack, not queryable. Lowest-priority extracted spec (external integration, dashboard ships fine without it).",
@@ -658,7 +658,11 @@
                 "backend",
                 "phase-2",
                 "backlog"
-            ]
+            ],
+            "supersededBy": "SPEC-225",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-225 (Admin Sentry errors dashboard, created 2026-06-13). SPEC-225's own spec.md states verbatim: 'Card H sub-slot 3 hard-codes phaseSpec: SPEC-163 ... This spec supersedes SPEC-163 for this slot.' Both specs targeted the exact same artifact (Card H sub-slot 3, the Sentry-read proxy) yet remained independently draft with no cross-link. Marked obsolete 2026-07-01 per ground-truth audit; implement under SPEC-225 instead."
         },
         {
             "specId": "SPEC-166",
@@ -767,7 +771,7 @@
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "type": "fix",
             "complexity": "medium-high",
-            "status": "approved",
+            "status": "completed",
             "path": "SPEC-180-sentry-observability",
             "created": "2026-06-01T00:00:00.000Z",
             "branch": "spec/SPEC-180-sentry-observability",
@@ -785,7 +789,9 @@
                 "admin",
                 "ops"
             ],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-25T00:00:00.000Z",
+            "archiveNote": "14/14 tasks done; PR #1854 (impl) + PR #1855 (closeout) merged to staging 2026-06-25. Source-maps upload wired in apps/api (tsup+sentryEsbuildPlugin), apps/admin (vite+sentryVitePlugin), apps/web (@sentry/astro); logger-driven capture in packages/logger + apps/api sentry middleware. This entry was silently reverted to its pre-closeout snapshot by an unrelated merge-conflict resolution commit (c5ba1df1b, 'fix(db): resolve migration conflict with staging (SPEC-276)') that rewrote the whole index.json file. Restored 2026-07-01 per ground-truth audit against git/PR history."
         },
         {
             "specId": "SPEC-183",
@@ -797,6 +803,20 @@
             "archived": true,
             "archivedAt": "2026-06-22",
             "archiveNote": "Shipped via PR #1771 (merge c280a24b8). translateApiError centralized in @repo/i18n; web shim + 3 user-facing web sites migrated; 12 admin sites adopt a translateAdminApiError adapter bridging admin's (key, params?) t signature; 9 missing common.apiError keys added (es/en/pt) — the new CI coverage guard surfaced 4 provider/plan codes beyond the 5 the spec listed. T-014 closeout done in this entry."
+        },
+        {
+            "specId": "SPEC-184",
+            "title": "API Log Observability",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-184-api-log-observability",
+            "created": "2026-06-02T00:00:00.000Z",
+            "driver": "BETA-82 (Linear)",
+            "tags": ["logging", "observability", "api", "admin", "db", "cron", "beta-82"],
+            "archived": true,
+            "archivedAt": "2026-06-03T21:57:52.000Z",
+            "archiveNote": "16/16 tasks done, 28 atomic commits; PR #1412 merged to staging 2026-06-03 (+ 4 follow-ups #1423/#1430/#1434/#1438). NDJSON log format toggle (API_LOG_FORMAT), logger hook registry, app_log_entries DB sink with cooldown guard (migration 0030), 30d purge cron (app-log-purge.job.ts), admin /platform/ops/logs viewer. This entry was moved into a short-lived index.archive.json split (2026-06-01..03) that was later abandoned in favor of inline archived:true, and was never migrated back — restored 2026-07-01 per ground-truth audit against git/PR history. index.archive.json is a frozen historical snapshot, not read by tooling; do not rely on it going forward."
         },
         {
             "specId": "SPEC-185",

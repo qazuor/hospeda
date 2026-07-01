@@ -735,6 +735,16 @@
             "archivedAt": "2026-06-25"
         },
         {
+            "specId": "SPEC-184",
+            "title": "API Log Observability",
+            "status": "completed",
+            "progress": "16/16",
+            "path": "SPEC-184-api-log-observability",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "archiveNote": "All 16 tasks done; PR #1412 merged to staging 2026-06-03 (+ 4 follow-ups #1423/#1430/#1434/#1438). Stranded in a short-lived index.archive.json split (2026-06-01..03) that was abandoned in favor of inline archived:true and never migrated back — restored 2026-07-01 per ground-truth audit against git/PR history."
+        },
+        {
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
             "status": "in-progress",
