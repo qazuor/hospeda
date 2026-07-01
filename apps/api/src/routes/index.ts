@@ -138,6 +138,7 @@ import {
 } from './newsletter';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { protectedSearchHistoryRoutes } from './search-history';
@@ -374,6 +375,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         );
         // Search history (SPEC-289 — entitlement-gated, plan-limited)
         app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
+        // Price alerts (SPEC-286 — entitlement-gated, plan-limited)
+        app.route('/api/v1/protected/price-alerts', protectedPriceAlertRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

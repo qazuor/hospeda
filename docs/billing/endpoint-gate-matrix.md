@@ -93,6 +93,10 @@
 | `DELETE /api/v1/protected/search-history/{id}` | `search-history/protected/delete-one.ts` | none | - | n/a | Hard-delete own entry; ungated per BETA-42 — users at cap must still free slots — SPEC-289 |
 | `DELETE /api/v1/protected/search-history` | `search-history/protected/clear-all.ts` | none | - | n/a | Hard-delete all own entries (privacy op); ungated — SPEC-289 |
 | `PATCH /api/v1/protected/search-history/preferences` | `search-history/protected/preferences.ts` | none | - | n/a | Toggle opt-out; settings write via UserService.patchSearchHistoryPreferences — SPEC-289 |
+| **PRICE ALERTS — PROTECTED** | | | | | |
+| `POST /api/v1/protected/price-alerts` | `price-alert/protected/create.ts` | gate+limit | `price_alerts`, `max_active_alerts` | wired | gateAlerts() — two-step: PRICE_ALERTS entitlement + MAX_ACTIVE_ALERTS limit, pre-populated via `AlertSubscriptionService.countActive()` in a route middleware before the gate runs — SPEC-286 T-005 |
+| `DELETE /api/v1/protected/price-alerts/{alertId}` | `price-alert/protected/remove.ts` | none | - | n/a | Cancellation (soft-delete) ungated; ownership enforced in the service layer — users at cap must still free slots — SPEC-286 T-005 |
+| `GET /api/v1/protected/price-alerts` | `price-alert/protected/list.ts` | none | - | n/a | Read own data only; self-scoped via service `_beforeList` — SPEC-286 T-005 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
@@ -932,7 +936,7 @@ eventually built, move its entry from this section to the main table.
 
 | Gate function | Intended EntitlementKey | Source file | Spec |
 |---|---|---|---|
-| `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateAlerts`~~ | ~~`price_alerts`~~ | `middlewares/tourist-entitlements.ts` | SPEC-286 — **promoted to main table** (route built in SPEC-286 T-005; moved out of phantom gates) |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
@@ -967,9 +971,9 @@ update the counter logic and set `Status = wired` in the main table.
 |---|---|---|
 | `gate` | 11 | All `to-wire` (T-145-03); `PATCH /accommodations/{id}` partially wired (rich-desc + video) |
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
-| `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
-| `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
-| `reserved` | 13 | 11 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288) |
+| `gate+limit` | 4 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired), price-alert create (wired, SPEC-286) |
+| `none` | ~330 | Admin PermissionEnum-gated or pure auth-sufficient reads |
+| `reserved` | 12 | 10 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288, gateAlerts wired by SPEC-286) |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
 
