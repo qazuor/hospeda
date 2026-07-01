@@ -2728,7 +2728,7 @@
             "path": "SPEC-321-ai-text-improve-web-editor",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "origin": "SPEC-310 roadmap. Discovery complete (/task-master:spec-review, 2026-07-01): scope confirmed to description+summary fields only (API fieldType enum has no title support), UX pattern = replicate admin's SPEC-198 button/panel/Accept-Discard exactly, kept as formal spec (user confirmed) rather than NOSPEC. Tasks generated (6, T-001 done).",
+            "origin": "SPEC-310 roadmap. All 6 tasks implemented and committed on spec/SPEC-321-ai-text-improve-web-editor (hook, panel, description+summary wiring, integration tests). Manual smoke against real local Ollama confirmed the full chain works end-to-end and surfaced+fixed a real production bug: the global Accept-header validation middleware rejected text/event-stream, 400ing every real (non-mocked) call to all 3 AI streaming routes (also affects admin SPEC-198). Ready for PR to staging.",
             "tags": ["ai", "owner", "web", "editor"]
         },
         {

@@ -143,3 +143,12 @@ Error status codes (before the stream opens): `403 ENTITLEMENT_REQUIRED` (missin
 - Divergences found: 5 (see Divergence Report above).
 - External refs verified: none (no external service/library involved).
 **Open questions remaining:** none.
+
+## Implementation Notes (2026-07-01)
+
+All 6 tasks (T-001..T-006) implemented and committed on `spec/SPEC-321-ai-text-improve-web-editor`. T-006's manual smoke was run against a real local Ollama instance (`qwen2.5-coder:7b`), configured through the admin AI settings/credentials UI, rather than just relying on mocked tests — this surfaced a real, previously-undetected production bug:
+
+- **Bug found**: the global Accept-header validation middleware (`apps/api/src/middlewares/validation.ts`) rejected any request whose `Accept` header didn't include `application/json` or `*/*`. All 3 AI SSE streaming routes (`chat`, `text-improve`, `search-chat` — built via `createStreamingRoute`/`createProtectedStreamingRoute`) correctly send `Accept: text/event-stream` per the SSE spec, but never had a `skipValidation` opt-out wired in (the streaming route factory doesn't attach `c.routeOptions` the way the CRUD/simple route factories do). Every real (non-mocked) call to any of these 3 routes 400'd with `INVALID_ACCEPT_HEADER` — this affected admin's existing SPEC-198 AI text-improve UI too, not just this new web wiring. It went undetected because every existing test suite (admin's and this spec's own) mocks `fetch`/the hook, never exercising the real middleware chain.
+- **Fix**: widened the Accept-header allowlist to also accept `text/event-stream`, plus a regression test in `apps/api/test/middlewares/validation.test.ts`.
+- **Verified live**: after the fix, the description/summary "Improve with AI" buttons render correctly (gated by `ai_text_improve`), clicking streams a real suggestion from Ollama, and Accept correctly writes it back into the field.
+- **Not manually re-verified live** (relying on existing automated coverage instead): the TipTap-rendered `description` write-back path (already covered by a real-DOM `RichTextEditor` test in T-003) and the hidden-for-non-entitled-owner case (no seeded owner tier lacks `ai_text_improve` — all owner/complex tiers have it per `packages/billing/src/config/plans.config.ts`).
