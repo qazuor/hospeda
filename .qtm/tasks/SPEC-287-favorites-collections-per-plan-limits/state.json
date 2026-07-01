@@ -506,39 +506,39 @@
             "id": "T-015",
             "title": "Mark ADR-026 as superseded by SPEC-287",
             "description": "Found during spec-realign (2026-07-01): docs/decisions/ADR-026-collections-limit-strategy.md documented the exact 'if collections become a monetization lever' migration this spec performs, and predicted mirroring `enforceFavoritesLimit`. That prediction undershoots: collections excludes tourist-free entirely (OQ-2/OQ-3), which `enforceFavoritesLimit` (a limit-only middleware, no entitlement check, since favorites is available on every tourist plan) cannot express — the entitlement gate (`gateCollections`, T-005) is required. Add a 'Status: Superseded by SPEC-287 (2026-07-01)' line and a short addendum section to ADR-026 explaining the actual mechanism shipped (LimitKey + EntitlementKey + gateCollections + ctx.hookState) and why it diverged from the ADR's predicted migration path. Do not delete or rewrite the original decision/rationale — ADRs are append-only history. Test requirements: none (documentation).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add Superseded status line to ADR-026",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add addendum explaining the entitlement-gate divergence",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing", "adr"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a (docs)",
+                "typecheck": "n/a (docs)",
+                "tests": "n/a (docs)"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T16:04:05Z",
+                "completed": "2026-07-01T16:04:52Z"
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 1.9
     }
