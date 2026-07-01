@@ -471,35 +471,35 @@
             "id": "T-014",
             "title": "Mount gate and migrate usage.max on list-collections route",
             "description": "Found during spec-realign (2026-07-01): apps/api/src/routes/user-bookmark-collection/protected/list.ts ALSO calls `getMaxCollectionsPerUser()` (env var) to populate its `usage: { current, max }` response field — the original T-007 scope missed this second consumer. In list.ts: mount `gateCollections()` via `options.middlewares`, and replace the `getMaxCollectionsPerUser()` call with `getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS)` (same resolution pattern as T-008's create.ts), mapping -1/unlimited and 0/disabled to safe values for the `usage.max` field. Test requirements: extend the list route test to assert `usage.max` reflects the actor's plan limit (10 for plus, 25 for vip) instead of the old env default, plus the standard 403 ENTITLEMENT_REQUIRED case without the entitlement.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-009", "T-013"],
             "subtasks": [
                 {
                     "title": "Mount gateCollections() on list route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace getMaxCollectionsPerUser() with getRemainingLimit()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Extend list route test for usage.max and 403 case",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:36:22Z",
+                "completed": "2026-07-01T15:41:57Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.9
     }
