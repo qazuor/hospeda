@@ -132,6 +132,7 @@ export enum PermissionEnum {
     // ACCOMMODATION: Specific field permissions
     ACCOMMODATION_OWNER_CHANGE = 'accommodation.owner.change', // Allows changing accommodation owner
     ACCOMMODATION_FEATURED_TOGGLE = 'accommodation.featured.toggle', // Allows toggling featured status
+    ACCOMMODATION_VERIFY = 'accommodation.verify', // Verify/unverify accommodations (admin-only)
     ACCOMMODATION_VISIBILITY_CHANGE = 'accommodation.visibility.change', // Allows changing accommodation visibility
     ACCOMMODATION_LIFECYCLE_CHANGE = 'accommodation.lifecycle.change', // Allows changing accommodation lifecycle state
     ACCOMMODATION_MODERATION_CHANGE = 'accommodation.moderation.change', // Allows changing accommodation moderation state

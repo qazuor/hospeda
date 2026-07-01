@@ -842,13 +842,13 @@
         {
             "specId": "SPEC-291",
             "title": "Accommodation Verification Badge",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-291-accommodation-verification-badge",
-            "branch": null,
+            "branch": "spec/SPEC-291-accommodation-verification-badge",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. HAS_VERIFICATION_BADGE is dead filter code. Surfaced in SPEC-282 owner audit."
+            "note": "PR #1963 open to staging (all layers done: DB/schema/service/API/entitlement-filter/web/admin). Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized."
         },
         {
             "specId": "SPEC-292",
@@ -1018,7 +1018,7 @@
         {
             "specId": "SPEC-306",
             "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-306-seo-aeo-category-pages",
             "branch": null,
@@ -1058,6 +1058,149 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
+        },
+        {
+            "specId": "SPEC-310",
+            "title": "Plan Packaging Recalibration (Entitlements & Limits Sanitation)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-310-plan-packaging-recalibration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Discovery-first. Source of truth for target packaging. Hide complex (option A reversible), remove AD_FREE, recalibrate tourist+owner limits, move recommendations free->plus, grant CREATE_PROMOTIONS to owner-basico. Missing features = SPEC-311..321. Consumer AI = SPEC-283. 3 OQs (featured-in-basico, AI-import level, accommodations-basico). Tasks NOT atomized."
+        },
+        {
+            "specId": "SPEC-311",
+            "title": "WhatsApp Contact (Display + Direct) for Accommodations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-311-whatsapp-contact",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Two-layer phantom (no model fields + PHANTOM-GATE) yet advertised as available. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-312",
+            "title": "Tourist Price Alerts",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-312-tourist-price-alerts",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateAlerts). Needs price-history prerequisite check. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-313",
+            "title": "Tourist Exclusive Deals",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-313-tourist-exclusive-deals",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateExclusiveDeals). Relates to SPEC-316. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-314",
+            "title": "Review Photo Attachments",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-314-review-photo-attachments",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewPhotos). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-315",
+            "title": "Personalized Recommendations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-315-personalized-recommendations",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateRecommendations). SPEC-310 moves entitlement free->plus. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-316",
+            "title": "VIP Promotions Access (Tourist)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-316-vip-promotions-access",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. Gives tourist-vip a real exclusive. Relates to SPEC-313. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-317",
+            "title": "Owner Review Responses",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-317-owner-review-responses",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewResponse). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-318",
+            "title": "Owner Custom Branding (Premium)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-318-owner-custom-branding",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. One of two owner-premium real exclusives. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-319",
+            "title": "Accommodation Verification Badge (Premium)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-319-accommodation-verification-badge",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom. Second owner-premium real exclusive. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-320",
+            "title": "Featured Listing Automation (Auto-activation + Self-service)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-320-featured-listing-automation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. PARTIAL (admin manual toggle exists; no auto-activation/self-service). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-321",
+            "title": "AI Text-Improve in Web Owner Editor",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-321-ai-text-improve-web-editor",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. PARTIAL (API works; missing web editor button). Small — possibly NOSPEC. Needs minimal discovery."
+        },
+        {
+            "specId": "SPEC-322",
+            "title": "Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-322-react-query-5101-migration",
+            "base": "staging",
+            "createdAt": "2026-07-01T00:00:00.000Z",
+            "taskCount": 8,
+            "averageComplexity": 2.0
         }
     ],
     "standalone": {

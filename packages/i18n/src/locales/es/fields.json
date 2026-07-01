@@ -241,6 +241,12 @@
             "description": "Marcar como alojamiento destacado",
             "placeholder": "¿Es destacado?"
         },
+        "isVerified": {
+            "title": "Verificado",
+            "label": "Alojamiento verificado",
+            "description": "Marcar como alojamiento verificado por el equipo de Hospeda",
+            "placeholder": "¿Está verificado?"
+        },
         "destinationId": {
             "title": "Destino",
             "label": "Destino turístico",

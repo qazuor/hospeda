@@ -41,7 +41,8 @@
         "badge": {
             "new": "Nuevo",
             "featured": "Destacado",
-            "aiChat": "Chat IA"
+            "aiChat": "Chat IA",
+            "verified": "Verificado"
         },
         "price": {
             "from": "Desde",

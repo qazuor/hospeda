@@ -144,6 +144,7 @@ import {
     checkCanRestore,
     checkCanSoftDelete,
     checkCanUpdate,
+    checkCanVerify,
     checkCanView
 } from './accommodation.permissions';
 import {
@@ -3755,6 +3756,101 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
                 return { media: restored };
+            }
+        });
+    }
+
+    /**
+     * Verifies or unverifies an accommodation (SPEC-291).
+     *
+     * Sets the admin-trust verification badge on the accommodation. This is an
+     * admin-only action gated by `ACCOMMODATION_VERIFY` — owners cannot self-verify.
+     *
+     * Behaviour:
+     * - `isVerified === true`  → stamps `isVerified=true`, `verifiedAt=<now>`,
+     *   `verifiedById=actor.id`.
+     * - `isVerified === false` → clears `isVerified=false`, `verifiedAt=null`,
+     *   `verifiedById=null`.
+     *
+     * Cache revalidation is scheduled as a best-effort side-effect (non-blocking)
+     * so the public detail page reflects the badge change promptly.
+     *
+     * @param actor     - The actor performing the action (must hold `ACCOMMODATION_VERIFY`).
+     * @param id        - The UUID of the accommodation to verify/unverify.
+     * @param isVerified - `true` to verify, `false` to unverify.
+     * @param ctx       - Optional service context (transaction propagation).
+     * @returns A `ServiceOutput` containing the updated accommodation.
+     *
+     * @throws {ServiceError} FORBIDDEN    — actor lacks `ACCOMMODATION_VERIFY`.
+     * @throws {ServiceError} NOT_FOUND    — no accommodation with the given id exists.
+     * @throws {ServiceError} INTERNAL_ERROR — DB update returned nothing.
+     */
+    public async verifyAccommodation(
+        actor: Actor,
+        id: string,
+        isVerified: boolean,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `verifyAccommodation(id=${id}, isVerified=${String(isVerified)})`,
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                checkCanVerify(validatedActor);
+
+                const accommodation = await this.model.findById(id, execCtx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Accommodation ${id} not found`
+                    );
+                }
+
+                const verificationPatch: Partial<Accommodation> = isVerified
+                    ? {
+                          isVerified: true,
+                          verifiedAt: new Date(),
+                          verifiedById: validatedActor.id
+                      }
+                    : {
+                          isVerified: false,
+                          verifiedAt: null,
+                          verifiedById: null
+                      };
+
+                const updated = await this.model.update(
+                    { id },
+                    { ...verificationPatch, updatedById: validatedActor.id },
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update accommodation verification status'
+                    );
+                }
+
+                const destinationSlug = updated.destinationId
+                    ? await this._resolveDestinationSlug(updated.destinationId)
+                    : undefined;
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'accommodation',
+                        id: updated.id,
+                        slug: updated.slug,
+                        destinationSlug,
+                        accommodationType: updated.type?.toLowerCase()
+                    });
+                } catch (error) {
+                    this.logger.warn(
+                        { error, entityType: 'accommodation' },
+                        '[accommodation.verifyAccommodation] Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated;
             }
         });
     }

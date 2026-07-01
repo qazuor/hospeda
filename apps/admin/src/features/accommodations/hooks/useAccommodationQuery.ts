@@ -281,6 +281,44 @@ export const useUpdateAccommodationMutation = (id: string) => {
 };
 
 /**
+ * Mutation hook for verifying/unverifying accommodations (SPEC-291).
+ *
+ * Hits the dedicated `POST /:id/verify` admin endpoint instead of the generic
+ * PATCH — `isVerified`/`verifiedAt`/`verifiedById` are server-managed and are
+ * intentionally excluded from `AccommodationUpdateInputSchema`.
+ */
+export const useVerifyAccommodationMutation = (id: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data: { isVerified: boolean }): Promise<AccommodationCore> => {
+            const response = await fetchApi({
+                path: `/api/v1/admin/accommodations/${id}/verify`,
+                method: 'POST',
+                body: data
+            });
+
+            // The API returns: { success: true, data: AccommodationCore, metadata: {...} }
+            // We need to extract just the data part
+            const apiResponse = response.data as {
+                success: boolean;
+                data: AccommodationCore;
+                metadata: unknown;
+            };
+
+            return apiResponse.data;
+        },
+        onSuccess: (updatedAccommodation) => {
+            // Update the cache with the accommodation data
+            queryClient.setQueryData(accommodationQueryKeys.detail(id), updatedAccommodation);
+
+            // Invalidate lists to reflect changes
+            queryClient.invalidateQueries({ queryKey: invalidateAccommodationLists() });
+        }
+    });
+};
+
+/**
  * Mutation hook for deleting accommodations
  */
 export const useDeleteAccommodationMutation = () => {

@@ -261,6 +261,25 @@ export function checkCanFindOptions(actor: Actor): void {
 }
 
 /**
+ * Checks if an actor has permission to verify or unverify an accommodation (SPEC-291).
+ *
+ * This is a sensitive admin-only operation that requires `ACCOMMODATION_VERIFY`.
+ * There is no `_OWN` equivalent — the verification badge is an admin-trust signal and
+ * must never be self-applied by the owner.
+ *
+ * @param actor The actor performing the action.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks `ACCOMMODATION_VERIFY`.
+ */
+export function checkCanVerify(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_VERIFY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied to verify accommodation'
+        );
+    }
+}
+
+/**
  * Checks if an actor may view the ADMIN detail of an accommodation (SPEC-169 §2.1/§5.2).
  *
  * This is intentionally NOT the generic {@link checkCanView}: that one grants access to
