@@ -279,36 +279,47 @@
             "id": "T-007",
             "title": "Thread accommodationId through confirm flow and write the link row",
             "description": "Second half of OQ-3 checkout wiring. In `confirmAddonPurchase` (apps/api/src/services/addon.checkout.ts:558) — the point where a `billing_addon_purchases` row is finalized/activated — read back the `accommodationId` carried from T-006's checkout-time context, and when `addon.requiresAccommodationTarget` is true, insert a row into `featured_listing_addon_grants` (T-002) linking the new `purchaseId` to that `accommodationId`. If the accommodationId is unexpectedly missing at confirm time for a target-required addon (should not happen if T-006 validated correctly, but MercadoPago webhooks are async and can race), log a Sentry-visible error and soft-fail the link-write WITHOUT blocking the purchase confirmation itself (the purchase still activates; a follow-up manual reconciliation is out of scope here — leave a TODO comment referencing this task).\n\nKey files:\n- apps/api/src/services/addon.checkout.ts:558 (confirmAddonPurchase)\n\nAcceptance criteria:\n- A confirmed purchase of a target-required addon produces exactly one `featured_listing_addon_grants` row linking `purchaseId` -> `accommodationId`.\n- Confirming any other addon (not target-required) does not touch the new table.\n- Missing accommodationId at confirm time never blocks purchase confirmation (soft-fail + Sentry).\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test in apps/api/test/services/addon.checkout.test.ts: confirm target-required purchase -> link row exists; confirm non-target addon -> no link row; missing-accommodationId-at-confirm -> purchase still confirms, error logged (mock Sentry.captureException, assert called).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-006"],
             "blocks": ["T-015", "T-016", "T-025"],
             "subtasks": [
-                { "title": "Read accommodationId at confirm time", "completed": false },
+                { "title": "Read accommodationId at confirm time", "completed": true },
                 {
                     "title": "Insert featured_listing_addon_grants row on confirm for target-required addons",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Soft-fail + Sentry capture on unexpected missing accommodationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: link-row created / not created / soft-fail path",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "addons", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z",
+                    "details": "scoped to apps/api (only the 8 pre-existing T-008..T-014 errors remain)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z",
+                    "details": "apps/api/test/services/addon.checkout.test.ts 60/60 (4 new: link row on confirm, no link row for unrelated addon, soft-fail on missing accommodationId, soft-fail on insert throw — captureBillingError asserted); addon.service.test.ts + inv1-cache-invalidation.guard.test.ts 74/74 — no regressions"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T18:25:00Z",
+                "completed": "2026-07-01T18:50:00Z"
             }
         },
         {
@@ -968,9 +979,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.27
     }

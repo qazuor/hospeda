@@ -819,6 +819,72 @@ export async function confirmAddonPurchase(
             'Inserted add-on purchase into billing_addon_purchases table'
         );
 
+        // SPEC-309 T-007: link the purchase to its target accommodation. T-006
+        // validated and carried the accommodationId through checkout.create's
+        // metadata; read it back here from the confirmation payload. Soft-fail —
+        // a missing/failed grant link must never block purchase confirmation,
+        // since the purchase row is already committed and is the source of
+        // truth for the customer's limit/entitlement adjustments.
+        if (addon.requiresAccommodationTarget) {
+            const confirmedAccommodationId =
+                typeof input.metadata?.accommodationId === 'string'
+                    ? input.metadata.accommodationId
+                    : undefined;
+
+            if (confirmedAccommodationId) {
+                try {
+                    const { getDb } = await import('@repo/db');
+                    const { featuredListingAddonGrants } = await import('@repo/db/schemas/billing');
+                    await getDb()
+                        .insert(featuredListingAddonGrants)
+                        .values({ purchaseId, accommodationId: confirmedAccommodationId });
+                } catch (grantLinkError) {
+                    apiLogger.error(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId,
+                            accommodationId: confirmedAccommodationId,
+                            error:
+                                grantLinkError instanceof Error
+                                    ? grantLinkError.message
+                                    : String(grantLinkError)
+                        },
+                        'Failed to write featured_listing_addon_grants row'
+                    );
+                    captureBillingError(
+                        grantLinkError instanceof Error
+                            ? grantLinkError
+                            : new Error(String(grantLinkError)),
+                        {
+                            addonIds: [addon.slug],
+                            transactionId: purchaseId,
+                            operation: 'featured_listing_addon_grant_write'
+                        },
+                        'error'
+                    );
+                }
+            } else {
+                // Should not happen if T-006 validated correctly at checkout time,
+                // but MercadoPago webhooks are async and can race. Manual
+                // reconciliation is out of scope here (SPEC-309 T-007) — this is
+                // logged for follow-up investigation only.
+                apiLogger.error(
+                    { customerId: input.customerId, addonSlug: input.addonSlug, purchaseId },
+                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written'
+                );
+                captureBillingError(
+                    new Error('Missing accommodationId at addon purchase confirmation'),
+                    {
+                        addonIds: [addon.slug],
+                        transactionId: purchaseId,
+                        operation: 'featured_listing_addon_grant_write'
+                    },
+                    'error'
+                );
+            }
+        }
+
         // Clear entitlement cache so the new add-on is reflected immediately
         clearEntitlementCache(input.customerId);
 

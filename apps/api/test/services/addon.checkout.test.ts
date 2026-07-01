@@ -110,9 +110,25 @@ vi.mock('@repo/db/client', () => ({
     withTransaction: mockWithTransaction
 }));
 
+// SPEC-309 T-007: `featured_listing_addon_grants` link-table insert (dynamic
+// `@repo/db/schemas/billing` + `@repo/db` getDb() import inside
+// confirmAddonPurchase). mockDbUpdateWhere backs the pre-existing
+// needsEntitlementSync flag write (also a plain getDb() call, unrelated to
+// T-007) so that path keeps resolving instead of hitting the real DB client.
+const { mockGrantInsertValues, mockFeaturedGrantsTable, mockDbUpdateWhere } = vi.hoisted(() => ({
+    mockGrantInsertValues: vi.fn().mockResolvedValue(undefined),
+    mockFeaturedGrantsTable: {
+        id: 'id',
+        purchaseId: 'purchase_id',
+        accommodationId: 'accommodation_id'
+    },
+    mockDbUpdateWhere: vi.fn().mockResolvedValue(undefined)
+}));
+
 // Mock @repo/db/schemas/billing - dynamic import used inside confirmAddonPurchase
 vi.mock('@repo/db/schemas/billing', () => ({
-    billingAddonPurchases: mockBillingAddonPurchasesTable
+    billingAddonPurchases: mockBillingAddonPurchasesTable,
+    featuredListingAddonGrants: mockFeaturedGrantsTable
 }));
 
 // SPEC-309 T-006: AccommodationModel is imported statically at the top of
@@ -130,6 +146,12 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         AccommodationModel: vi.fn().mockImplementation(() => ({
             findById: mockAccommodationFindById
+        })),
+        // SPEC-309 T-007: backs both the featured_listing_addon_grants insert
+        // and the pre-existing needsEntitlementSync update.
+        getDb: vi.fn(() => ({
+            insert: vi.fn(() => ({ values: mockGrantInsertValues })),
+            update: vi.fn(() => ({ set: vi.fn(() => ({ where: mockDbUpdateWhere })) }))
         }))
     };
 });
@@ -349,7 +371,9 @@ describe('confirmAddonPurchase', () => {
                         sortOrder: 2,
                         affectsLimitKey: null,
                         limitIncrease: null,
-                        grantsEntitlement: 'featured_listing'
+                        grantsEntitlement: 'featured_listing',
+                        // SPEC-309 T-006/T-007: this addon requires an accommodationId target.
+                        requiresAccommodationTarget: true
                     }
                 };
             }
@@ -803,6 +827,69 @@ describe('confirmAddonPurchase', () => {
                 addonSlug: 'visibility-boost-7d',
                 purchaseId: expectedPurchaseId
             });
+        });
+    });
+
+    // =========================================================================
+    // SPEC-309 T-007: featured_listing_addon_grants link-row write on confirm.
+    // requiresAccommodationTarget is set on the shared 'visibility-boost-7d'
+    // catalog mock above.
+    // =========================================================================
+
+    describe('featured_listing_addon_grants link write (SPEC-309 T-007)', () => {
+        it('writes a link row for a confirmed target-required purchase', async () => {
+            const expectedPurchaseId = 'purchase_boost_uuid';
+            mockDbInsertReturning.mockResolvedValue([{ id: expectedPurchaseId }]);
+
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d',
+                metadata: { accommodationId: 'accom_own' }
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockGrantInsertValues).toHaveBeenCalledWith({
+                purchaseId: expectedPurchaseId,
+                accommodationId: 'accom_own'
+            });
+        });
+
+        it('does NOT write a link row when confirming a non-target-required addon', async () => {
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'extra-photos-20'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockGrantInsertValues).not.toHaveBeenCalled();
+        });
+
+        it('soft-fails when accommodationId is missing at confirm time: purchase still confirms, error logged', async () => {
+            const { captureBillingError } = await import('../../src/lib/sentry');
+
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d'
+                // no metadata.accommodationId
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockGrantInsertValues).not.toHaveBeenCalled();
+            expect(vi.mocked(captureBillingError)).toHaveBeenCalledOnce();
+        });
+
+        it('soft-fails when the grant insert itself throws: purchase still confirms, error logged', async () => {
+            const { captureBillingError } = await import('../../src/lib/sentry');
+            mockGrantInsertValues.mockRejectedValueOnce(new Error('unique_violation'));
+
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d',
+                metadata: { accommodationId: 'accom_own' }
+            });
+
+            expect(result.success).toBe(true);
+            expect(vi.mocked(captureBillingError)).toHaveBeenCalledOnce();
         });
     });
 
