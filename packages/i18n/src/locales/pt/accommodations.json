@@ -416,7 +416,8 @@
         },
         "badges": {
             "new": "Novo",
-            "featured": "Destaque"
+            "featured": "Destaque",
+            "verified": "Verificado"
         },
         "bookmark_count": "Salvo por {{count}} pessoas",
         "bookmark_count_one": "Salvo por {{count}} pessoa",

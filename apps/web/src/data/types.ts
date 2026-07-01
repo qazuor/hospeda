@@ -145,6 +145,13 @@ export interface AccommodationCardData {
     readonly reviewsCount: number;
     /** Whether this accommodation appears in featured/promoted slots. */
     readonly isFeatured: boolean;
+    /**
+     * SPEC-291: Whether this accommodation has been manually verified.
+     * Drives the "Verificado" card badge. The owner's HAS_VERIFICATION_BADGE
+     * entitlement gate is already applied server-side, so the frontend only
+     * needs this flag to decide whether to render the badge.
+     */
+    readonly isVerified: boolean;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
     readonly createdAt?: string;
     /** Optional list of amenity items (wifi, pool, parking, …). */
@@ -592,6 +599,12 @@ export interface AccommodationDetailData {
     readonly richDescription?: string | null;
     readonly type: string;
     readonly isFeatured: boolean;
+    /**
+     * SPEC-291: Whether this accommodation has been manually verified.
+     * Drives the "Verificado" detail-header badge, gated server-side on the
+     * owner's HAS_VERIFICATION_BADGE entitlement.
+     */
+    readonly isVerified: boolean;
     readonly createdAt: string;
     readonly averageRating: number;
     readonly reviewsCount: number;

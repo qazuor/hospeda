@@ -1,11 +1,11 @@
 /**
- * SPEC-187 P2-T5 — owner-gated richDescription omission tests.
+ * SPEC-187 P2-T5 / SPEC-291 Phase 3a — owner-gated richDescription and isVerified tests.
  *
- * The public accommodation payload now follows a strict contract:
- * `richDescription` presence means the OWNING HOST is entitled to publish it.
- * The viewer does NOT decide this field. Viewer-gated branches (video,
- * WhatsApp, verification badge) remain unchanged and still depend on
- * `hasEntitlement(c, ...)` / `userEntitlements`.
+ * The public accommodation payload follows a strict contract:
+ * - `richDescription` presence means the OWNING HOST is entitled to publish it (CAN_USE_RICH_DESCRIPTION).
+ * - `isVerified` presence (truthy) means the OWNING HOST has the HAS_VERIFICATION_BADGE entitlement.
+ * The viewer does NOT decide these owner-gated fields. Viewer-gated branches (video,
+ * WhatsApp) still depend on `hasEntitlement(c, ...)` / `userEntitlements`.
  */
 
 import { EntitlementKey } from '@repo/billing';
@@ -22,7 +22,7 @@ const BASE_ACCOMMODATION = {
     whatsappNumber: '+5493442123456',
     whatsappDirectLink: true,
     enableWhatsAppDirect: true,
-    verificationBadge: true,
+    isVerified: true,
     media: [{ type: 'video', url: 'https://youtube.com/watch?v=demo' }]
 } as const;
 
@@ -42,7 +42,6 @@ describe('filterAccommodationByEntitlements', () => {
             EntitlementKey.CAN_EMBED_VIDEO,
             EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
             EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-            EntitlementKey.HAS_VERIFICATION_BADGE,
             // viewer DOES have rich-description entitlement, but that must NOT matter anymore
             EntitlementKey.CAN_USE_RICH_DESCRIPTION
         ]);
@@ -65,7 +64,8 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
-                EntitlementKey.CAN_USE_RICH_DESCRIPTION
+                EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+                EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
         });
@@ -76,7 +76,7 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.richDescription).toBe('## Premium\n\n**luxury**');
     });
 
-    it('returns richDescription raw when ownerEntitlements parameter is omitted (admin/non-owner-gated call sites)', async () => {
+    it('returns richDescription and isVerified raw when ownerEntitlements parameter is omitted (admin/internal call sites)', async () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
@@ -88,14 +88,16 @@ describe('filterAccommodationByEntitlements', () => {
         const body = await res.json();
 
         expect(body.richDescription).toBe('## Premium\n\n**luxury**');
+        expect(body.isVerified).toBe(true);
     });
 
-    it('keeps viewer-gated branches unchanged for video, WhatsApp, and verification badge', async () => {
+    it('keeps viewer-gated branches (video, WhatsApp) stripped when viewer lacks entitlements', async () => {
         const app = createViewerContext([]);
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
-                EntitlementKey.CAN_USE_RICH_DESCRIPTION
+                EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+                EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
         });
@@ -109,6 +111,84 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.whatsappNumber).toBeUndefined();
         expect(body.whatsappDirectLink).toBe(false);
         expect(body.enableWhatsAppDirect).toBe(false);
-        expect(body.verificationBadge).toBe(false);
+    });
+
+    // -------------------------------------------------------------------------
+    // SPEC-291 Phase 3a: owner-gated isVerified tests
+    // -------------------------------------------------------------------------
+
+    it('forces isVerified=false when owner lacks HAS_VERIFICATION_BADGE', async () => {
+        const app = createViewerContext();
+
+        app.get('/', (c) => {
+            // ownerEntitlements provided but WITHOUT HAS_VERIFICATION_BADGE
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+                EntitlementKey.CAN_USE_RICH_DESCRIPTION
+                // HAS_VERIFICATION_BADGE intentionally omitted
+            ]);
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        expect(body.isVerified).toBe(false);
+    });
+
+    it('preserves isVerified=true when owner has HAS_VERIFICATION_BADGE', async () => {
+        const app = createViewerContext();
+
+        app.get('/', (c) => {
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+                EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+                EntitlementKey.HAS_VERIFICATION_BADGE
+            ]);
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        expect(body.isVerified).toBe(true);
+    });
+
+    it('does NOT consult the VIEWER entitlement for isVerified (viewer with HAS_VERIFICATION_BADGE, owner without)', async () => {
+        // Viewer has HAS_VERIFICATION_BADGE — must NOT unlock isVerified if the owner lacks it
+        const app = createViewerContext([EntitlementKey.HAS_VERIFICATION_BADGE]);
+
+        app.get('/', (c) => {
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+                // owner entitlements: does NOT include HAS_VERIFICATION_BADGE
+                EntitlementKey.CAN_USE_RICH_DESCRIPTION
+            ]);
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        // isVerified must still be forced false because the OWNER lacks the entitlement
+        expect(body.isVerified).toBe(false);
+    });
+
+    it('richDescription behaviour is unchanged (regression): owner-gate still works', async () => {
+        const app = createViewerContext([EntitlementKey.CAN_USE_RICH_DESCRIPTION]);
+
+        app.get('/', (c) => {
+            // owner does NOT have CAN_USE_RICH_DESCRIPTION
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+                EntitlementKey.HAS_VERIFICATION_BADGE
+            ]);
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        // richDescription stripped because owner lacks CAN_USE_RICH_DESCRIPTION,
+        // regardless of viewer having it
+        expect(body.richDescription).toBeUndefined();
+        // isVerified preserved because owner has HAS_VERIFICATION_BADGE
+        expect(body.isVerified).toBe(true);
     });
 });

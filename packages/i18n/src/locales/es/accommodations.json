@@ -629,7 +629,8 @@
         },
         "badges": {
             "new": "Nuevo",
-            "featured": "Destacado"
+            "featured": "Destacado",
+            "verified": "Verificado"
         },
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",

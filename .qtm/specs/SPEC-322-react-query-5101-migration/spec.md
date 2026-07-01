@@ -94,22 +94,26 @@ Cover every failing file: `ListWidget`, `ChecklistWidget`, `StatusWidget`,
 ## 5. Tasks
 
 ### WS-1 — Root-cause
+
 - T-1 Reproduce the widget failures on 5.101 locally; capture the exact query
   flag / render timing that differs from 5.59.
 - T-2 Classify: real production regression vs test-harness brittleness. Document
   the finding in this spec.
 
 ### WS-2 — Fix
+
 - T-3 Apply the fix (widget code and/or shared test setup) so all dashboard
   widget tests pass under 5.101.
 - T-4 If a production behavior change: manually verify the admin dashboards
   render data (not stuck on skeleton) against a running admin app.
 
 ### WS-3 — Bump + ungate
+
 - T-5 Bump react-query to the target 5.101.x in admin + mobile, relock.
 - T-6 Remove the react-query ignore entry from `.github/dependabot.yml`.
 
 ### WS-4 — Verify
+
 - T-7 Full admin unit suite green; targeted dashboard run green.
 - T-8 PR to `staging` with `[SPEC-322]` title; CI green.
 

@@ -68,6 +68,8 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     planRestricted: false,
     // Server-managed (SPEC-237): owner-controlled master toggle for external reputation block.
     showExternalReputation: false,
+    // SPEC-291: verification badge fields. Default unverified.
+    isVerified: false,
 
     // Base review fields
     reviewsCount: 0,

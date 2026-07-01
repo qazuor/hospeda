@@ -9,5 +9,13 @@
     "approved": null,
     "completed": null,
     "planFileRef": null,
-    "tags": ["admin", "dependencies", "tanstack", "react-query", "dashboard", "widgets", "migration"]
+    "tags": [
+        "admin",
+        "dependencies",
+        "tanstack",
+        "react-query",
+        "dashboard",
+        "widgets",
+        "migration"
+    ]
 }

@@ -237,6 +237,9 @@ export function toAccommodationCardProps({
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
         isFeatured: Boolean(item.isFeatured),
+        // SPEC-291: manual verification flag. Owner entitlement gating
+        // (HAS_VERIFICATION_BADGE) is already applied server-side.
+        isVerified: Boolean(item.isVerified),
         createdAt: item.createdAt ? String(item.createdAt) : undefined,
         price:
             priceData?.price != null || priceData?.amount != null
@@ -651,6 +654,9 @@ export function toAccommodationDetailPageProps({
                 : undefined,
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
+        // SPEC-291: manual verification flag. Owner entitlement gating
+        // (HAS_VERIFICATION_BADGE) is already applied server-side.
+        isVerified: Boolean(item.isVerified),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),

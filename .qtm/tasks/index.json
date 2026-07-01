@@ -842,13 +842,13 @@
         {
             "specId": "SPEC-291",
             "title": "Accommodation Verification Badge",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-291-accommodation-verification-badge",
-            "branch": null,
+            "branch": "spec/SPEC-291-accommodation-verification-badge",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. HAS_VERIFICATION_BADGE is dead filter code. Surfaced in SPEC-282 owner audit."
+            "note": "PR #1963 open to staging (all layers done: DB/schema/service/API/entitlement-filter/web/admin). Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized."
         },
         {
             "specId": "SPEC-292",
