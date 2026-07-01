@@ -148,35 +148,35 @@
             "id": "T-005",
             "title": "Add gateCollections() entitlement middleware",
             "description": "Add a `gateCollections()` middleware to apps/api/src/middlewares/tourist-entitlements.ts, modeled exactly on `gateSearchHistory()`: entitlement-only check for `EntitlementKey.CAN_USE_COLLECTIONS`, throws `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` with an upgrade message ('Las colecciones de favoritos solo están disponibles en los planes Plus y VIP...') and `{ requiredEntitlement, upgradeUrl: '/billing/plans' }` details when missing. Staff bypass works automatically via `entitlementMiddleware()` loading the unlimited set first (INV-6), same as the other gate functions in this file. Test requirements: extend apps/api/test/middlewares/entitlement.test.ts with cases for gateCollections (blocks without entitlement, passes with entitlement, staff bypass).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007", "T-008", "T-014"],
             "subtasks": [
                 {
                     "title": "Implement gateCollections() in tourist-entitlements.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add JSDoc following existing gate function conventions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add unit tests to entitlement.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "middleware", "collections"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T14:58:50Z",
+                "completed": "2026-07-01T15:01:14Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.9
     }
