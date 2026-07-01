@@ -1,21 +1,54 @@
 ---
 /**
  * @file eventos/categoria/[category]/index.astro
- * @description Permanent (301) redirect to the unified events listing filtered
- * by category (`/{lang}/eventos/?category=ENUM`). The standalone category page
- * was retired (U7): category filtering now happens in place on the main
- * listing, so the sidebar, the other active filters, and filter combination are
- * all preserved. A future SEO spec may reintroduce first-class, indexable
- * category landing pages.
+ * @description First-class, indexable event category landing page. Gets the
+ * full listing UI (sidebar + every combinable query-param filter used on the
+ * main `/eventos/` listing) minus the category control itself, since the
+ * category is fixed by the URL path here (SPEC-306 OQ-1/OQ-4).
+ *
+ * Structured data: `CollectionPage` (this landing) + `ItemList` (the visible
+ * page of results) + `BreadcrumbList` (Inicio / Eventos / {category}), all
+ * mounted via `slot="head-extra"` — same three-node pattern already proven
+ * on `/destinos/`.
+ *
+ * Canonical (OQ-2/OQ-3): the clean path itself, without query string,
+ * regardless of which OTHER filters are active via query params — this is
+ * `ListingLayout`'s default `canonicalPath = Astro.url.pathname` behavior,
+ * left untouched here.
+ *
  * @route /{lang}/eventos/categoria/{category}/
+ * @rendering SSR + ISR 24h
  */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
+import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { toEventCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
 
-/** Slug → EventCategoryEnum value that the listing's `?category=` param expects. */
+/** Slug → EventCategoryEnum value (preserved from the retired 301 redirect). */
 const VALID_CATEGORIES: Record<string, string> = {
 	music: 'MUSIC',
 	culture: 'CULTURE',
@@ -31,8 +64,378 @@ const VALID_CATEGORIES: Record<string, string> = {
 const catEnum = catSlug ? VALID_CATEGORIES[catSlug] : undefined;
 if (!catEnum) return new Response(null, { status: 404 });
 
-// Forward any existing query params (e.g. `page`) and add the category filter.
-const params = new URLSearchParams(Astro.url.searchParams);
-params.set('category', catEnum);
-return Astro.redirect(`${buildUrl({ locale, path: 'eventos' })}?${params.toString()}`, 301);
+const categoryName = t(`events.categoryPage.categories.${catEnum}.name`, catEnum);
+const categoryPageTitle = t(`events.categoryPage.categories.${catEnum}.pageTitle`, categoryName);
+const categoryDescription = t(`events.categoryPage.categories.${catEnum}.description`, categoryName);
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 9;
+const q = url.searchParams.get('q') ?? undefined;
+
+/**
+ * Maps the URL's user-friendly sort key to the backend `(sortBy, sortOrder)`
+ * pair. Mirrors `eventos/index.astro` — see that file for the full rationale.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+	upcoming: { sortBy: 'startDate', sortOrder: 'asc' },
+	farthest: { sortBy: 'startDate', sortOrder: 'desc' },
+	nameAsc: { sortBy: 'name', sortOrder: 'asc' },
+	nameDesc: { sortBy: 'name', sortOrder: 'desc' },
+	newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+	oldest: { sortBy: 'createdAt', sortOrder: 'asc' },
+	featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+	mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' }
+};
+const DEFAULT_SORT_KEY = 'upcoming';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+
+/** Parse the temporal quick-filter from the `when` query param. */
+const rawWhen = url.searchParams.get('when');
+const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
+const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
+	? (rawWhen as EventDateFilter)
+	: 'all';
+
+/** Parse price and free-toggle params (see events-filter-groups price-composite group). */
+const isFreeParam = url.searchParams.get('isFree');
+const isFree: boolean | undefined = isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
+const priceMinParam = url.searchParams.get('minPrice');
+const priceMaxParam = url.searchParams.get('maxPrice');
+const priceMin: number | undefined = priceMinParam ? Number(priceMinParam) : undefined;
+const priceMax: number | undefined = priceMaxParam ? Number(priceMaxParam) : undefined;
+/**
+ * `includeUnpriced` defaults to TRUE server-side; the URL only carries
+ * `?includeUnpriced=false` when the user explicitly turns the toggle OFF.
+ */
+const includeUnpricedParam = url.searchParams.get('includeUnpriced');
+const includeUnpriced: boolean | undefined = includeUnpricedParam === 'false' ? false : undefined;
+
+const isFeaturedParam = url.searchParams.get('isFeatured');
+const isFeatured: boolean | undefined = isFeaturedParam === 'true' ? true : undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const startDateAfterFilter = url.searchParams.get('startDateAfter') ?? undefined;
+const startDateBeforeFilter = url.searchParams.get('startDateBefore') ?? undefined;
+
+/** Compute date range from the `when` temporal filter. */
+const now = new Date();
+
+/** Returns a copy of `now` at 00:00:00.000 local time. */
+function startOfToday(): Date {
+	const d = new Date(now);
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
+/** Returns a copy of `now` at 23:59:59.999 local time. */
+function endOfToday(): Date {
+	const d = new Date(now);
+	d.setHours(23, 59, 59, 999);
+	return d;
+}
+
+/** Returns a date N days ahead of `startOfToday()` at 23:59:59.999. */
+function daysAhead(n: number): Date {
+	const d = startOfToday();
+	d.setDate(d.getDate() + n);
+	d.setHours(23, 59, 59, 999);
+	return d;
+}
+
+let startDateAfter: string | undefined;
+let startDateBefore: string | undefined;
+
+/**
+ * Fetch destinations once for the sidebar's location filter. Filter to CITY
+ * type only — listings show events by city, not by country/region/department.
+ */
+const destinationsResult = await destinationsApi.list({
+	destinationType: 'CITY',
+	pageSize: 100
+});
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+
+switch (when) {
+	case 'today':
+		startDateAfter = startOfToday().toISOString();
+		startDateBefore = endOfToday().toISOString();
+		break;
+	case 'week':
+		startDateAfter = startOfToday().toISOString();
+		startDateBefore = daysAhead(7).toISOString();
+		break;
+	case 'month':
+		startDateAfter = startOfToday().toISOString();
+		startDateBefore = daysAhead(30).toISOString();
+		break;
+	case 'next60':
+		startDateAfter = startOfToday().toISOString();
+		startDateBefore = daysAhead(60).toISOString();
+		break;
+	case 'past':
+		startDateBefore = startOfToday().toISOString();
+		break;
+}
+
+/** Sidebar date-range filter takes precedence over the temporal chips when present. */
+if (startDateAfterFilter) startDateAfter = `${startDateAfterFilter}T00:00:00`;
+if (startDateBeforeFilter) startDateBefore = `${startDateBeforeFilter}T23:59:59`;
+
+const result = await eventsApi.list({
+	page,
+	pageSize,
+	q,
+	category: catEnum,
+	sortBy: sortResolved.sortBy,
+	sortOrder: sortResolved.sortOrder,
+	startDateAfter,
+	startDateBefore,
+	isFree: isFree ?? undefined,
+	minPrice: priceMin,
+	maxPrice: priceMax,
+	includeUnpriced: includeUnpriced ?? undefined,
+	isFeatured: isFeatured ?? undefined,
+	destinationId
+});
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+
+/**
+ * `filterGroups` for FilterSidebar — the same config as `/eventos/`, minus
+ * the `category` checkbox group (fixed by the URL path here).
+ */
+const filterGroups = buildEventsFilterGroups({ t, destinations, excludeCategory: true });
+
+const sortOptions = [
+	{ value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
+	{ value: 'farthest', label: t('events.sort.farthest', 'Última fecha primero') },
+	{ value: 'newest', label: t('events.sort.newest', 'Recién agregados') },
+	{ value: 'oldest', label: t('events.sort.oldest', 'Más antiguos') },
+	{ value: 'featured', label: t('events.sort.featured', 'Destacados primero') },
+	{ value: 'nameAsc', label: t('events.sort.nameAsc', 'Nombre (A-Z)') },
+	{ value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') }
+] as const;
+
+const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
+
+// Self-canonical for paginated pages (mirrors eventos/index.astro). Pages 2+
+// are served at `/{locale}/eventos/categoria/{category}/page/{n}/` via an
+// Astro.rewrite to this page with `?page=n`; since the rewrite makes
+// `Astro.url.pathname` the base path (dropping `/page/n/`), ListingLayout's
+// default `canonicalPath = Astro.url.pathname` would canonicalize every
+// paginated page back to page 1. Rebuild the real crawlable URL instead.
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
+// Auth state forwarded to FavoriteButton via EventCard so authenticated users
+// see their saved state on listing cards (instead of a guest-default heart).
+type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
+let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
+if (isAuthenticated && cards.length > 0) {
+	try {
+		const bulkResult = await userBookmarksApi.checkBulk({
+			entityType: 'EVENT',
+			entityIds: cards.map((card) => card.id)
+		});
+		if (bulkResult.ok) {
+			eventFavoriteChecks = bulkResult.data.checks;
+		} else {
+			webLogger.warn('Bulk bookmark check failed on event category landing; falling back to per-card hydration', {
+				error: bulkResult.error
+			});
+		}
+	} catch (error) {
+		webLogger.warn('Bulk bookmark check threw on event category landing; falling back to per-card hydration', {
+			error: error instanceof Error ? error.message : String(error)
+		});
+	}
+}
+
+const resolvedCards = cards.map((card) => {
+	const entry = eventFavoriteChecks[card.id];
+	if (!entry) return card;
+	return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+});
+
+/**
+ * Build the `initialParams` record for FilterSidebar so server-rendered state
+ * matches the URL on first paint (avoids hydration flash). No `category` key
+ * here — the group is excluded, the category comes from the URL path.
+ */
+const sidebarInitialParams: Record<string, string> = {};
+if (q) sidebarInitialParams.q = q;
+if (isFeaturedParam === 'true') sidebarInitialParams.isFeatured = 'true';
+if (destinationId) sidebarInitialParams.destinationId = destinationId;
+if (startDateAfterFilter) sidebarInitialParams.startDateAfter = startDateAfterFilter;
+if (startDateBeforeFilter) sidebarInitialParams.startDateBefore = startDateBeforeFilter;
+if (isFreeParam) sidebarInitialParams.isFree = isFreeParam;
+if (priceMinParam) sidebarInitialParams.minPrice = priceMinParam;
+if (priceMaxParam) sidebarInitialParams.maxPrice = priceMaxParam;
+if (includeUnpricedParam === 'false') sidebarInitialParams.includeUnpriced = 'false';
+sidebarInitialParams.sortBy = sortKey;
+
+/**
+ * Build URLSearchParams to pass to Pagination/EventDateFilterChips so they
+ * preserve all active filters across page navigations.
+ */
+const paginationParams = new URLSearchParams(url.searchParams);
+paginationParams.delete('page');
+
+// ItemList JSON-LD entries — the visible page of event cards.
+const itemListEntries = cards.map((card) => ({
+	url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
+	name: card.name
+}));
+
+// Breadcrumb JSON-LD — Inicio / Eventos / {category}.
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbJsonLdItems = [
+	{ name: t('events.categoryPage.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+	{
+		name: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'),
+		url: `${siteOrigin}${buildUrl({ locale, path: 'eventos' })}`
+	},
+	{ name: categoryName, url: `${siteOrigin}${baseUrl}` }
+];
+
+const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 ---
+
+<ListingLayout
+	locale={locale}
+	title={categoryPageTitle}
+	description={categoryDescription}
+	canonicalPath={canonicalPath}
+	showFilters={true}
+	filterPosition="left"
+>
+	<CollectionPageJsonLd
+		slot="head-extra"
+		name={categoryPageTitle}
+		description={categoryDescription}
+		url={collectionPageUrl}
+	/>
+
+	<ItemListJsonLd
+		slot="head-extra"
+		name={categoryPageTitle}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
+	/>
+
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'), path: 'eventos' },
+			{ label: categoryName }
+		]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('events.categoryPage.tagline', 'Categoría')}
+		title={categoryName}
+		totalCount={total}
+	/>
+
+	<FilterSidebar
+		slot="filters"
+		client:load
+		locale={locale}
+		filters={filterGroups}
+		sortOptions={sortOptions}
+		defaultSort={DEFAULT_SORT_KEY}
+		initialParams={sidebarInitialParams}
+	/>
+
+	<!-- Temporal quick-filter chips (category is fixed by the URL, so no category chips here). -->
+	<EventDateFilterChips
+		locale={locale}
+		current={when}
+		baseUrl={baseUrl.slice(0, -1)}
+		searchParams={paginationParams}
+	/>
+
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState
+			locale={locale}
+			variant="no-results"
+			actionUrl={buildUrl({ locale, path: 'eventos' })}
+			message={t('events.categoryPage.labels.emptyTitle', 'No hay eventos de categoría {category} disponibles', {
+				category: categoryName
+			})}
+		/>
+	)}
+
+	{!hasError && resolvedCards.length > 0 && (
+		<>
+			<div class="events-grid">
+				{resolvedCards.map((card, i) => (
+					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+						<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+					</div>
+				))}
+			</div>
+			{/*
+			 * Skeleton swaps in while a filter navigation is in flight
+			 * (html[data-filters-loading]). Stays in the DOM so it renders
+			 * instantly when the flag flips — no JS needed at swap time.
+			 */}
+			<div class="events-grid-skeleton" aria-hidden="true">
+				{Array.from({ length: 9 }).map(() => (
+					<EventCardHorizontalSkeleton />
+				))}
+			</div>
+		</>
+	)}
+
+	{totalPages > 1 && (
+		<Pagination
+			slot="pagination"
+			currentPage={page}
+			totalPages={totalPages}
+			baseUrl={baseUrl.slice(0, -1)}
+			locale={locale}
+			searchParams={paginationParams}
+		/>
+	)}
+</ListingLayout>
+
+<style>
+	.events-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+		gap: var(--space-card-gap);
+	}
+
+	/*
+	 * Filter navigation feedback: while filtering, hide the (now stale) real
+	 * grid and surface the skeleton so the user sees instant "loading"
+	 * feedback instead of a dimmed list with the old results showing through.
+	 */
+	.events-grid-skeleton {
+		display: none;
+	}
+
+	:global([data-filters-loading]) .events-grid {
+		display: none;
+	}
+
+	:global([data-filters-loading]) .events-grid-skeleton {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+		gap: var(--space-card-gap);
+	}
+</style>
