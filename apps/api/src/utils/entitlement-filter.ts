@@ -27,7 +27,7 @@ export interface AccommodationData {
     whatsappNumber?: string;
     whatsappDirectLink?: boolean;
     enableWhatsAppDirect?: boolean;
-    verificationBadge?: boolean;
+    isVerified?: boolean;
     media?: unknown; // May be array of {type, url} (test mocks) or object with featuredImage/gallery/videos (DB)
     [key: string]: unknown;
 }
@@ -40,7 +40,7 @@ export interface AccommodationData {
  * - Removes video content if viewer lacks CAN_EMBED_VIDEO
  * - Hides WhatsApp number if viewer lacks CAN_CONTACT_WHATSAPP_DISPLAY
  * - Disables WhatsApp direct link if viewer lacks CAN_CONTACT_WHATSAPP_DIRECT
- * - Removes verification badge if viewer lacks HAS_VERIFICATION_BADGE
+ * - Forces `isVerified` to false when the OWNING HOST lacks HAS_VERIFICATION_BADGE
  *
  * @param c - Hono context (contains viewer entitlements)
  * @param accommodation - Accommodation data to filter
@@ -78,7 +78,6 @@ export function filterAccommodationByEntitlements(
         const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
         const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
         const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
-        const hasVerificationBadge = hasEntitlement(c, EntitlementKey.HAS_VERIFICATION_BADGE);
 
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
@@ -92,6 +91,21 @@ export function filterAccommodationByEntitlements(
             filtered.richDescription = undefined;
             apiLogger.debug(
                 `Omitted richDescription from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
+            );
+        }
+
+        // OWNER-gated isVerified badge: when ownerEntitlements are provided,
+        // the badge is only surfaced when the owning host has HAS_VERIFICATION_BADGE.
+        // This mirrors the richDescription pattern — the viewer's entitlements are
+        // NOT consulted. When ownerEntitlements are omitted (admin/internal call sites),
+        // isVerified is left as-is.
+        if (
+            ownerEntitlements &&
+            !ownerEntitlements.includes(EntitlementKey.HAS_VERIFICATION_BADGE)
+        ) {
+            filtered.isVerified = false;
+            apiLogger.debug(
+                `Forced isVerified=false for accommodation ${filtered.id} - owner lacks ${EntitlementKey.HAS_VERIFICATION_BADGE}`
             );
         }
 
@@ -137,14 +151,6 @@ export function filterAccommodationByEntitlements(
             }
             apiLogger.debug(
                 `Disabled WhatsApp direct link for accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT}`
-            );
-        }
-
-        // Remove verification badge if not entitled
-        if (!hasVerificationBadge && filtered.verificationBadge) {
-            filtered.verificationBadge = false;
-            apiLogger.debug(
-                `Removed verification badge from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.HAS_VERIFICATION_BADGE}`
             );
         }
     } catch (error) {
@@ -295,7 +301,7 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
     hasVideo: boolean;
     hasWhatsApp: boolean;
     hasWhatsAppDirect: boolean;
-    hasVerificationBadge: boolean;
+    isVerified: boolean;
 } {
     // Check for markdown in description
     const hasRichDescription = Boolean(
@@ -317,15 +323,15 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
         accommodation.whatsappDirectLink || accommodation.enableWhatsAppDirect
     );
 
-    // Check for verification badge
-    const hasVerificationBadge = Boolean(accommodation.verificationBadge);
+    // Check for verification badge (owner-gated, derived from isVerified column)
+    const isVerified = Boolean(accommodation.isVerified);
 
     return {
         hasRichDescription,
         hasVideo,
         hasWhatsApp,
         hasWhatsAppDirect,
-        hasVerificationBadge
+        isVerified
     };
 }
 
@@ -342,7 +348,7 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
  * ```typescript
  * const required = getRequiredEntitlements(accommodation);
  * console.log('This accommodation requires:', required);
- * // ['can_use_rich_description', 'can_embed_video', 'has_verification_badge']
+ * // ['can_use_rich_description', 'can_embed_video', 'has_verification_badge']  (HAS_VERIFICATION_BADGE when isVerified=true)
  * ```
  */
 export function getRequiredEntitlements(accommodation: AccommodationData): EntitlementKey[] {
@@ -365,7 +371,7 @@ export function getRequiredEntitlements(accommodation: AccommodationData): Entit
         required.push(EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
     }
 
-    if (premiumFeatures.hasVerificationBadge) {
+    if (premiumFeatures.isVerified) {
         required.push(EntitlementKey.HAS_VERIFICATION_BADGE);
     }
 
