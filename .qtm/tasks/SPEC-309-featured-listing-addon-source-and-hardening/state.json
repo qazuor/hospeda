@@ -491,24 +491,39 @@
             "id": "T-012",
             "title": "G-1/G-5: wire dunning.job.ts to the union resolver",
             "description": "Update apps/api/src/cron/jobs/dunning.job.ts, line ~446-461 ('cancellation hits a FEATURED_LISTING plan'). Same pattern as T-011: this site revokes on dunning-triggered cancellation. Confirm it now calls the renamed `syncFeaturedByEntitlementForOwner` (T-005), and audit whether this site's local plan-entitlement check should be replaced with `resolveOwnerPlanGrantsFeatured` (T-004) for consistency (even if the outcome is unconditional revoke, using the shared resolver keeps a single source of truth instead of two independent implementations of the same lookup).\n\nKey files:\n- apps/api/src/cron/jobs/dunning.job.ts:446-461\n\nAcceptance criteria:\n- Cron calls the renamed `syncFeaturedByEntitlementForOwner(ownerId, false)`.\n- Any local plan lookup replaced with the shared T-004 resolver for consistency.\n- Addon-protected accommodations are not cleared (via T-005's built-in exclusion).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": false },
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true },
                 {
                     "title": "Replace local plan-entitlement check with shared resolver if present",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "cron", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z",
+                    "details": "apps/api/test/cron/dunning.job.test.ts 26/26 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:35:00.000Z",
+                "completed": "2026-07-01T19:40:00.000Z"
             }
         },
         {
