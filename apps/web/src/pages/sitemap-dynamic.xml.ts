@@ -7,12 +7,18 @@
  * Partial results are returned if one or more fetches fail — the whole
  * sitemap is never blocked by a single failing entity type.
  *
+ * Also emits static entries for the two facet-landing families promoted to
+ * indexable pages by SPEC-306 §4/§7.2-3: event category (9 enum values) and
+ * accommodation type (13 enum values). These are fixed enum slugs, not
+ * DB-driven, so they skip the API-fetch step entirely.
+ *
  * Cache: public, 24h (max-age=86400) with stale-while-revalidate=86400.
  *
  * Route: GET /sitemap-dynamic.xml
  * Rendering: SSR (prerender = false — must always reflect current published data)
  */
 
+import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
 
@@ -195,6 +201,84 @@ function buildEntriesForEntity({
     return entries;
 }
 
+/**
+ * Generate sitemap entries for a fixed set of facet-landing slugs (no API
+ * fetch — the values are static enums). Mirrors `buildEntriesForEntity`'s
+ * per-locale + hreflang-alternates output shape so both blocks read the same
+ * way in the emitted XML.
+ *
+ * @param slugs - Static facet-value slugs (e.g. event category, accommodation type)
+ * @param siteUrl - Site base URL without trailing slash
+ * @param pathFn - Function to build the path segment from a slug
+ * @param changefreq - Sitemap changefreq
+ * @param priority - Sitemap priority
+ */
+function buildEntriesForStaticSlugs({
+    slugs,
+    siteUrl,
+    pathFn,
+    changefreq,
+    priority
+}: {
+    readonly slugs: readonly string[];
+    readonly siteUrl: string;
+    readonly pathFn: (slug: string) => string;
+    readonly changefreq: string;
+    readonly priority: number;
+}): string[] {
+    const entries: string[] = [];
+
+    for (const slug of slugs) {
+        const path = pathFn(slug);
+
+        // SPEC-157 REQ-12: the hreflang alternate set is shared by every locale
+        // variant of this facet landing. x-default points to the Spanish (default) URL.
+        const alternateLinks = LOCALES.map(
+            ({ code, prefix }) =>
+                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}${path}"/>`
+        );
+        const esPrefix = LOCALES.find((locale) => locale.code === 'es')?.prefix ?? '';
+        alternateLinks.push(
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}${path}"/>`
+        );
+        const alternates = `${alternateLinks.join('\n')}\n`;
+
+        for (const { prefix } of LOCALES) {
+            const loc = `${siteUrl}${prefix}${path}`;
+            entries.push(buildUrlEntry({ loc, changefreq, priority, alternates }));
+        }
+    }
+
+    return entries;
+}
+
+/**
+ * Event category facet-landing slugs (SPEC-306 §4). Mirrors the
+ * `VALID_CATEGORIES` slug → `EventCategoryEnum` mapping in
+ * `pages/[lang]/eventos/categoria/[category]/index.astro` — keep both in
+ * sync if the category taxonomy changes.
+ */
+const EVENT_CATEGORY_SLUGS = [
+    'music',
+    'culture',
+    'sports',
+    'gastronomy',
+    'festival',
+    'nature',
+    'theater',
+    'workshop',
+    'other'
+] as const;
+
+/**
+ * Accommodation type facet-landing slugs (SPEC-306 §4). Derived from
+ * `AccommodationTypeEnum` the same way `pages/[lang]/alojamientos/tipo/[type]/index.astro`
+ * derives `VALID_TYPES`, so this list can never drift from the enum.
+ */
+const ACCOMMODATION_TYPE_SLUGS = Object.values(AccommodationTypeEnum).map((v) =>
+    String(v).toLowerCase().replace(/_/g, '-')
+);
+
 export const GET: APIRoute = async () => {
     let apiUrl: string;
     let siteUrl: string;
@@ -272,6 +356,28 @@ export const GET: APIRoute = async () => {
             pathFn: (slug) => `/publicaciones/${slug}/`,
             changefreq: 'weekly',
             priority: 0.8
+        })
+    );
+
+    // Event category facet landings: /eventos/categoria/{slug}/ (SPEC-306, 9 URLs).
+    entries.push(
+        ...buildEntriesForStaticSlugs({
+            slugs: EVENT_CATEGORY_SLUGS,
+            siteUrl,
+            pathFn: (slug) => `/eventos/categoria/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.7
+        })
+    );
+
+    // Accommodation type facet landings: /alojamientos/tipo/{slug}/ (SPEC-306, 13 URLs).
+    entries.push(
+        ...buildEntriesForStaticSlugs({
+            slugs: ACCOMMODATION_TYPE_SLUGS,
+            siteUrl,
+            pathFn: (slug) => `/alojamientos/tipo/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.7
         })
     );
 

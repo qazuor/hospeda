@@ -46,6 +46,7 @@ import {
     buildEventListingSummary,
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
+import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
@@ -257,71 +258,11 @@ const filterSummary = buildEventListingSummary({
 /**
  * Build the `filterGroups` config for FilterSidebar.
  * Includes: search, category (checkbox), free toggle, price dual-range.
- * The `isFree` toggle uses the existing `type: 'toggle'` group.
- * The price range uses the existing `type: 'dual-range'` group.
+ * Extracted to `@/lib/filters/events-filter-groups` (SPEC-306) so the
+ * per-category facet landings share the exact same config (minus the
+ * category group, which is fixed by the URL there).
  */
-const filterGroups = [
-    {
-        id: 'q',
-        label: t('events.filters.search', 'Buscar'),
-        type: 'search' as const,
-    },
-    {
-        id: 'isFeatured',
-        label: t('events.filters.featured', 'Solo destacados'),
-        type: 'toggle' as const,
-    },
-    {
-        id: 'category',
-        label: t('events.filters.category', 'Categoría'),
-        type: 'checkbox' as const,
-        options: [
-            { value: 'MUSIC',      label: t('events.categories.music',      'Música') },
-            { value: 'CULTURE',    label: t('events.categories.culture',    'Cultura') },
-            { value: 'SPORTS',     label: t('events.categories.sports',     'Deportes') },
-            { value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
-            { value: 'FESTIVAL',   label: t('events.categories.festival',   'Festival') },
-            { value: 'NATURE',     label: t('events.categories.nature',     'Naturaleza') },
-            { value: 'THEATER',    label: t('events.categories.theater',    'Teatro') },
-            { value: 'WORKSHOP',   label: t('events.categories.workshop',   'Taller') },
-            { value: 'OTHER',      label: t('events.categories.other',      'Otros') },
-        ],
-    },
-    {
-        id: 'date',
-        label: t('events.filters.date', 'Fecha'),
-        type: 'date-range' as const,
-        checkInPlaceholder: t('events.filters.dateFrom', 'Desde'),
-        checkOutPlaceholder: t('events.filters.dateTo', 'Hasta'),
-        fromParam: 'startDateAfter',
-        toParam: 'startDateBefore',
-        mode: 'bounds' as const,
-        allowPastDates: true,
-    },
-    {
-        id: 'destinationId',
-        label: t('events.filters.location', 'Lugar'),
-        type: 'select-search' as const,
-        options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
-        maxVisible: 8,
-        maxSelections: 1,
-    },
-    {
-        id: 'price',
-        label: t('events.filters.price', 'Precio'),
-        type: 'price-composite' as const,
-        min: 0,
-        max: 10000,
-        step: 100,
-        format: 'currency' as const,
-        includeUnpricedLabel: t(
-            'events.filters.includeUnpricedToggle',
-            'Incluir eventos sin información de precio'
-        ),
-        isFreeLabel: t('events.filters.onlyFree', 'Solo eventos gratuitos'),
-        rangeLabel: t('events.filters.priceRange', 'Rango de precio'),
-    },
-] as const;
+const filterGroups = buildEventsFilterGroups({ t, destinations });
 
 /**
  * `mostSaved` is intentionally NOT exposed in the UI options here: the

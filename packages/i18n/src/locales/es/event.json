@@ -79,31 +79,52 @@
         "cancelled": "Cancelado"
     },
     "categoryPage": {
+        "tagline": "Categoría",
         "categories": {
-            "festival": {
-                "name": "Festivales",
-                "description": "Descubre los mejores festivales en Concepción del Uruguay y la región del Litoral argentino. Música, arte y cultura para todos.",
-                "pageTitle": "Eventos - Festivales"
+            "MUSIC": {
+                "name": "Música",
+                "description": "Descubrí los mejores recitales, peñas y shows en vivo en Concepción del Uruguay y el Litoral entrerriano. Música para todos los gustos, del folklore al rock.",
+                "pageTitle": "Eventos de Música"
             },
-            "fair": {
-                "name": "Ferias",
-                "description": "Explora las ferias locales y regionales del Litoral argentino. Artesanías, productos típicos y experiencias únicas.",
-                "pageTitle": "Eventos - Ferias"
+            "CULTURE": {
+                "name": "Cultura",
+                "description": "Exposiciones, charlas y actividades culturales en el Litoral argentino. Descubrí el patrimonio histórico y artístico de la región.",
+                "pageTitle": "Eventos de Cultura"
             },
-            "sport": {
+            "SPORTS": {
                 "name": "Deportes",
-                "description": "Encuentra eventos deportivos en Concepción del Uruguay. Competencias, torneos y actividades para todas las edades.",
-                "pageTitle": "Eventos - Deportes"
+                "description": "Competencias, torneos y actividades deportivas en Concepción del Uruguay. Eventos para todas las edades, del amateur al profesional.",
+                "pageTitle": "Eventos Deportivos"
             },
-            "cultural": {
-                "name": "Culturales",
-                "description": "Eventos culturales, exposiciones y actividades artísticas en el Litoral argentino. Descubre el patrimonio cultural de la región.",
-                "pageTitle": "Eventos - Culturales"
-            },
-            "gastronomy": {
+            "GASTRONOMY": {
                 "name": "Gastronomía",
-                "description": "Festivales y eventos gastronómicos en Concepción del Uruguay. Sabores únicos de la cocina regional del Litoral.",
-                "pageTitle": "Eventos - Gastronomía"
+                "description": "Festivales y eventos gastronómicos en Concepción del Uruguay. Sabores únicos de la cocina regional del Litoral entrerriano.",
+                "pageTitle": "Eventos de Gastronomía"
+            },
+            "FESTIVAL": {
+                "name": "Festivales",
+                "description": "Descubrí los mejores festivales en Concepción del Uruguay y la región del Litoral argentino. Música, arte y cultura para todos.",
+                "pageTitle": "Festivales"
+            },
+            "NATURE": {
+                "name": "Naturaleza",
+                "description": "Actividades al aire libre y eventos en contacto con la naturaleza del Litoral entrerriano: ríos, islas y paisajes únicos.",
+                "pageTitle": "Eventos de Naturaleza"
+            },
+            "THEATER": {
+                "name": "Teatro",
+                "description": "Obras de teatro, puestas en escena y espectáculos en vivo en Concepción del Uruguay y la región.",
+                "pageTitle": "Eventos de Teatro"
+            },
+            "WORKSHOP": {
+                "name": "Talleres",
+                "description": "Talleres y capacitaciones para aprender algo nuevo en el Litoral argentino: arte, oficios, gastronomía y más.",
+                "pageTitle": "Talleres y Capacitaciones"
+            },
+            "OTHER": {
+                "name": "Otros eventos",
+                "description": "Otras propuestas y actividades que no encajan en una categoría tradicional, pero que valen la pena en el Litoral argentino.",
+                "pageTitle": "Otros Eventos"
             }
         },
         "labels": {
