@@ -46,8 +46,8 @@ import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardPr
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { resolvePriceAlertGateState } from '@/lib/price-alert-gate';
 import { pickLocalizedSeo } from '@/lib/seo';
-import { EntitlementKey, LimitKey } from '@repo/billing';
 
 export const prerender = false;
 
@@ -308,7 +308,8 @@ if (isAuthenticated) {
 // protected round-trips. Both calls carry the request's own `Cookie` header
 // explicitly (`credentials: 'include'` only forwards cookies from a browser
 // fetch — a server-to-server SSR fetch has no cookie jar), mirroring the
-// `protectedConversationsApi.list({ cookieHeader })` call above.
+// conversations-list call above (see protectedConversationsApi usage earlier
+// in this file).
 let userHasAlert = false;
 let existingAlertId: string | null = null;
 let canCreateAlerts = false;
@@ -335,14 +336,10 @@ if (isAuthenticated) {
             }
         }
 
-        if (entitlementsResult.status === 'fulfilled' && entitlementsResult.value.ok) {
-            const { entitlements, limits } = entitlementsResult.value.data;
-            canCreateAlerts = entitlements.includes(EntitlementKey.PRICE_ALERTS);
-            const maxActiveAlerts = limits[LimitKey.MAX_ACTIVE_ALERTS];
-            maxReached =
-                maxActiveAlerts !== undefined &&
-                maxActiveAlerts !== -1 &&
-                existingAlertsCount >= maxActiveAlerts;
+        if (entitlementsResult.status === 'fulfilled') {
+            const gateState = resolvePriceAlertGateState(entitlementsResult.value, existingAlertsCount);
+            canCreateAlerts = gateState.canCreateAlerts;
+            maxReached = gateState.maxReached;
         }
     } catch (err) {
         // Graceful degradation: safe defaults hide the button's active
