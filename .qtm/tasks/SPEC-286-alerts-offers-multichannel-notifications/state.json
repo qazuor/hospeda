@@ -258,30 +258,30 @@
             "id": "T-007",
             "title": "Create alerts-digest daily cron job",
             "description": "Create apps/api/src/cron/jobs/alerts-digest.job.ts following the established cron pattern (mirror trial-expiry.ts or conversation-notification.job.ts).\n\nSchedule: '0 8 * * *' (8 AM daily).\n\nJob flow:\n1. Call PriceDropEvaluator.evaluatePriceDrops({ since: yesterday_8AM }), getting Map<userId, PriceDropMatch[]>.\n2. Call PromoOfferEvaluator.evaluatePromoOffers({ since: yesterday_8AM }) (from T-012) — stub a no-op version until T-012 ships, wired via optional injection.\n3. Merge results into a combined Map<userId, AlertDigestPayload> (price drops + promo offers per user).\n4. For each userId with non-empty payload:\n   a. Load user email from DB.\n   b. Call AlertDigestDeliveryService.deliver(payload) from @repo/notifications (T-008).\n   c. Log success/failure; continue on per-user error (no early exit).\n5. Batch users in groups of 50 to avoid memory pressure (consistent with dunning.job.ts pattern).\n6. Return { processed, errors, durationMs } (consistent with CronJobDefinition contract).\n\nRegister in apps/api/src/cron/jobs/index.ts export list.\nRegister schedule in apps/api/src/cron/cron-registry.ts (or equivalent scheduler bootstrap).\n\nContext/DI pattern: inject AlertDigestDeliveryService and evaluators via constructor params or module-level singletons — mirror how trial-expiry.ts uses TrialService and sendNotification.\n\nDry-run support: when ctx.dryRun = true, skip actual delivery calls, log what would have been sent.\n\nAcceptance criteria:\n- CronJobDefinition shape satisfied (name, description, schedule, enabled, handler).\n- Dry-run path tested in unit tests.\n- Error in one user's delivery does not abort the batch.\n- Job is registered in the cron registry.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Scaffold alerts-digest.job.ts with CronJobDefinition shape",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement price-drop batch + user merge logic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire AlertDigestDeliveryService.deliver() call",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Register in cron index + scheduler",
-                    "completed": false
+                    "title": "Register in cron index + scheduler (DECISION: 3 files, not 2 — jobs/index.ts + registry.ts (the actual scheduler bootstrap, task text's 'cron-registry.ts' doesn't exist) + schedules.manifest.ts, which is CI-guarded for sync)",
+                    "completed": true
                 },
                 {
                     "title": "Write unit test for dry-run path + per-user error isolation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cron", "api", "price-alert", "D-3", "daily-digest"],
@@ -293,8 +293,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
@@ -503,9 +503,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 3.8
     }
