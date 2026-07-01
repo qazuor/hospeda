@@ -37,7 +37,7 @@ export enum EntitlementKey {
     PRICE_ALERTS = 'price_alerts',
     EXCLUSIVE_DEALS = 'exclusive_deals',
     VIP_SUPPORT = 'vip_support',
-    VIP_PROMOTIONS_ACCESS = 'vip_promotions_access',
+    VIP_VISIBILITY_ACCESS = 'vip_visibility_access',
     CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
     CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',

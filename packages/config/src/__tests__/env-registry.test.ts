@@ -119,8 +119,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * pre-launch: HOSPEDA_LANDING_SITE_URL (build category, only consumed by the
  * removed Dockerfile) and HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID (email
  * category, only consumed by the removed landing-only newsletter endpoint).
+ *
+ * 245 (merge, SPEC-286): staging's NOSPEC:remove-landing (-2, 244) and this
+ * branch's SPEC-286 (+1 HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT, 247) were
+ * both computed independently off the same 246 base; the merged registry
+ * holds both changes (246 - 2 + 1 = 245).
  */
-const EXPECTED_VAR_COUNT = 244;
+const EXPECTED_VAR_COUNT = 245;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -6,7 +6,7 @@
  *
  * SPEC-167 T-026 regression: getByDestination must exclude ownerSuspended=true and
  * planRestricted=true accommodations for public actors (bug: previously used findAll
- * which has no visibility filters). VIP actors (vip_promotions_access entitlement or
+ * which has no visibility filters). VIP actors (vip_visibility_access entitlement or
  * ACCOMMODATION_VIEW_ALL permission) bypass both filters.
  *
  * All test data, comments, and documentation are in English, following project guidelines.
@@ -150,13 +150,13 @@ describe('AccommodationService.getByDestination', () => {
     });
 
     /**
-     * VIP actors (vip_promotions_access entitlement) bypass both visibility filters.
+     * VIP actors (vip_visibility_access entitlement) bypass both visibility filters.
      */
     it('SPEC-167 T-026: VIP actor bypasses ownerSuspended and planRestricted filters', async () => {
         const vipActor = new ActorFactoryBuilder()
             .host()
             .with({
-                entitlements: new Set(['vip_promotions_access'])
+                entitlements: new Set(['vip_visibility_access'])
             })
             .build();
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();

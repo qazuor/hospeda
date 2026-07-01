@@ -503,6 +503,18 @@
             "validUntil": "Válido até {date}",
             "minNights": "Mínimo {n} noites",
             "discountOff": "de desconto"
+        },
+        "priceAlert": {
+            "create": "Avise-me quando o preço baixar",
+            "creating": "Criando...",
+            "createSuccess": "Alerta criado",
+            "createError": "Não foi possível criar o alerta",
+            "cancel": "Cancelar alerta",
+            "cancelling": "Cancelando...",
+            "cancelSuccess": "Alerta cancelado",
+            "cancelError": "Não foi possível cancelar o alerta",
+            "locked": "Avise-me quando o preço baixar",
+            "maxReached": "Limite de alertas atingido"
         }
     },
     "amenityNames": {

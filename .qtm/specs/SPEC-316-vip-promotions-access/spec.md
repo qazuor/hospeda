@@ -10,6 +10,13 @@ base: staging
 
 # SPEC-316 — VIP Promotions Access
 
+> **⚠️ RECONCILED with SPEC-286 D-5 (2026-06-30).** SPEC-286 verified that the
+> `VIP_PROMOTIONS_ACCESS` entitlement is a *visibility* perk today (8 checks in
+> `accommodation.service.ts`), not a promotions feature, and renames its key to
+> `VIP_VISIBILITY_ACCESS`. Therefore this spec may NOT reuse that key. If real
+> VIP promotions are built here, they MUST define a NEW entitlement. This spec
+> stays backlog / discovery-first with that constraint.
+>
 > **Stub (backlog).** Created from the SPEC-310 plan-packaging audit, which found this feature is advertised in the billing plans but is phantom (no gate function even written; the owner-promotion public list is ungated). This stub captures the objective; it must go through full discovery (/task-master:spec-review or /spec) before implementation.
 
 ## Overview

@@ -796,14 +796,14 @@
         {
             "specId": "SPEC-286",
             "title": "Alerts & Offers — Multichannel Notifications",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-286-alerts-offers-multichannel-notifications",
             "parent": "SPEC-285",
-            "branch": null,
+            "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Merges phantom price alerts + owner-promo offers, multichannel (email/whatsapp/push), per-plan limits. Depends on SPEC-285. Surfaced in SPEC-282 review. Absorbed duplicate SPEC-312 (2026-07-01)."
+            "note": "In-progress (started 2026-06-30). EMAIL-ONLY v1 (full multichannel core built, WhatsApp/push deferred to a follow-up spec). Absorbs SPEC-312 (price alerts) + SPEC-313 (exclusive deals/offers). 12 tasks across 6 phases. VIP entitlement renamed to VIP_VISIBILITY_ACCESS (D-5); SPEC-316 VIP promotions reconciled to a future NEW entitlement. Depends on SPEC-285 (merged, PR #1900)."
         },
         {
             "specId": "SPEC-287",
