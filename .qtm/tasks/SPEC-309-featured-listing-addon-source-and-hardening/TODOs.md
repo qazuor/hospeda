@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 3/30 tasks (10%)
+## Progress: 4/30 tasks (13%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -33,7 +33,7 @@ owner self-service toggle (folded in from SPEC-320).
 
 ### Core Phase
 
-- [ ] **T-004** (complexity: 3) - Build shared featured-entitlement resolver helpers
+- [x] **T-004** (complexity: 3) - Build shared featured-entitlement resolver helpers [DONE]
   - resolveOwnerPlanGrantsFeatured / resolveAccommodationHasActiveFeaturedAddon / getOwnerAccommodationIdsWithActiveFeaturedAddon
   - Blocked by: T-002
   - Blocks: T-005, T-014, T-019, T-021

@@ -129,32 +129,44 @@
             "id": "T-004",
             "title": "Build shared featured-entitlement resolver helpers",
             "description": "Implements the union logic G-1 requires (mirrors `loadEntitlements`'s plan UNION customer-entitlement pattern in apps/api/src/middlewares/entitlement.ts:549-558), extracted into ONE reusable module instead of the duplicated `getPlanBySlug(...).entitlements.includes(EntitlementKey.FEATURED_LISTING)` check currently copy-pasted across 8 call-sites.\n\nCreate packages/service-core/src/services/accommodation/featured-entitlement.resolver.ts exporting:\n- `resolveOwnerPlanGrantsFeatured({ ownerId }): Promise<boolean>` — resolves the owner's active/trialing/comp subscription (SubscriptionStatusEnum set, matching `featured-by-plan-reconcile.job.ts:94`'s `active|trialing|comp`) and checks `plan.entitlements.includes(EntitlementKey.FEATURED_LISTING)`. This is the single source of truth other tasks (T-005, T-014, T-019) call instead of re-deriving plan status locally.\n- `resolveAccommodationHasActiveFeaturedAddon({ accommodationId }): Promise<boolean>` — queries `featured_listing_addon_grants` (T-002) JOIN `billing_addon_purchases` WHERE `accommodationId = ? AND status = 'active' AND (expiresAt IS NULL OR expiresAt > now())`.\n- `getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId }): Promise<string[]>` — same join, scoped to all of an owner's accommodations, returns the protected id list (consumed by T-005's exclusion logic on revoke).\n\nAll three follow RO-RO with full JSDoc; direct Drizzle queries via `getDb()` (no BaseCrudService, consistent with the `accommodation.sync-featured-by-plan.ts` layering precedent).\n\nAcceptance criteria:\n- All three functions exported from the new file and the service-core barrel.\n- `resolveOwnerPlanGrantsFeatured` treats paused as NOT active and comp as active (matches reconcile cron, not the pre-G-5 hook behavior).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-021.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-005", "T-014", "T-019", "T-021"],
             "subtasks": [
                 {
                     "title": "resolveOwnerPlanGrantsFeatured (active|trialing|comp, excludes paused)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "resolveAccommodationHasActiveFeaturedAddon (single accommodation)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getOwnerAccommodationIdsWithActiveFeaturedAddon (owner-wide protected set)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Export from service-core barrel", "completed": false }
+                { "title": "Export from service-core barrel", "completed": true }
             ],
             "tags": ["backend", "service", "billing", "entitlements"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T17:10:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:10:00Z",
+                    "details": "scoped to packages/service-core, filtered for the one pre-existing expected error in accommodation.sync-featured-by-plan.ts:118 (T-005's file, still referencing the pre-T-001-rename featuredByPlan property) -- zero errors from the new resolver file"
+                },
+                "tests": {
+                    "status": "deferred",
+                    "timestamp": "2026-07-01T17:10:00Z",
+                    "details": "per task spec, unit tests covered by T-021"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T16:40:00Z",
+                "completed": "2026-07-01T17:10:00Z"
             }
         },
         {
@@ -932,9 +944,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 27,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }
