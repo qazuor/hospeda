@@ -647,31 +647,38 @@
             "id": "T-016",
             "title": "G-2: wire addon expiry paths to clear accommodation featuring",
             "description": "In apps/api/src/cron/jobs/addon-expiry.job.ts (existing daily cron, reused per OQ-5 — no new cron), wire the FEATURED_LISTING-clearing side-effect into BOTH places the addon's entitlement state changes:\n\n1. Phase 1 expire path (~line 343-348, right after `AddonExpirationService.expireAddon` succeeds and `clearEntitlementCache` is called): if the expired purchase's addon granted FEATURED_LISTING and has a `featured_listing_addon_grants` link row, call `syncFeaturedByEntitlementForAccommodation({ accommodationId, active: false })` (T-005) — which internally no-ops if the owner's plan still grants it (H-1 consequence a, mirrored for the expiry direction).\n2. Grant-reconciliation retry block (~line 1593-1610, the `needsEntitlementSync` retry path): same wiring for the grant/re-grant direction (mirrors T-015's grant call) so a retried grant also re-syncs featuring.\n\nBoth call-sites are inside the existing transaction/critical-section structure of this cron — follow the file's established pattern for post-commit external-effect calls (the file already splits CLAIM-inside-tx / PROCESS-after-commit for a prior fix; the sync call is an internal DB write, not an external API call, so confirm whether it belongs inside or after the transaction and match the existing convention for similar internal writes in this file).\n\nKey files:\n- apps/api/src/cron/jobs/addon-expiry.job.ts (~343-348, ~1593-1610)\n\nAcceptance criteria:\n- An expired FEATURED_LISTING addon purchase clears `featuredByEntitlement` on its linked accommodation, UNLESS the owner's plan still grants it.\n- A retried/re-applied grant re-syncs featuring to true.\n- Both call-sites are soft-fail (a sync error does not abort the cron's other phases).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-026.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-007"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Wire expire path (~line 343-348) to clear featuring with plan-guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire grant-reconciliation retry block (~line 1593-1610) to re-sync featuring",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm tx-boundary placement matches file's existing CLAIM/PROCESS convention",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "addons", "cron", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:17:48.000Z",
+                "details": "biome check on addon-expiry.job.ts: clean; pnpm --filter hospeda-api typecheck: clean; addon-expiry.test.ts (46) + addon-expiry.cutover.test.ts (4) = 50/50 passed after wrapping the whole FEATURED_LISTING check (entitlementKey comparison + DB lookups + sync call) in a single try/catch, same lesson as T-015 (the cutover test's @repo/billing and @repo/db mocks omit EntitlementKey/getDb/accommodations/featuredListingAddonGrants entirely). Expire-path clear uses getDb() (not tx) to match expireAddon()'s own call-site convention — expireAddon itself defaults to getDb() at this call site despite running inside withTransaction, so the sync follows the same established pattern (subtask 3). Grant-reconciliation retry block (subtask 2) needed NO new code: it calls applyAddonEntitlements (T-015's modified method) directly, so the FEATURED_LISTING re-sync on re-grant is inherited for free. Dedicated coverage deferred to T-026 per task spec."
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T20:05:00.000Z",
+                "completed": "2026-07-01T20:17:48.000Z"
             }
         },
         {

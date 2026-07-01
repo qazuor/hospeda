@@ -22,19 +22,22 @@
  * @module cron/jobs/addon-expiry
  */
 
+import { EntitlementKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
+    accommodations,
     and,
     billingAddonPurchases,
     billingNotificationLog,
     billingSubscriptions,
     eq,
+    featuredListingAddonGrants,
     getDb,
     isNull,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
-import { AddonCatalogService } from '@repo/service-core';
+import { AddonCatalogService, syncFeaturedByEntitlementForAccommodation } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
@@ -346,6 +349,79 @@ export const addonExpiryJob: CronJobDefinition = {
                                     // next request for this customer sees the revoked limits
                                     // rather than the pre-expiry stale value (SPEC-145 T-018).
                                     clearEntitlementCache(addon.customerId);
+
+                                    // SPEC-309 T-016 (G-2): if this addon granted
+                                    // FEATURED_LISTING and is linked to a target
+                                    // accommodation (T-007), clear featuredByEntitlement
+                                    // on that accommodation now that the grant expired.
+                                    // syncFeaturedByEntitlementForAccommodation (T-005)
+                                    // internally no-ops if the owner's plan still grants
+                                    // FEATURED_LISTING independently (H-1 mirror). Soft-fail
+                                    // — the whole check (including the entitlement-key
+                                    // comparison) is wrapped so a sync error never aborts
+                                    // the cron; the reconcile cron (T-014) corrects any
+                                    // drift left behind.
+                                    try {
+                                        const grantedFeaturedListing =
+                                            addon.entitlementAdjustments.some(
+                                                (adjustment) =>
+                                                    adjustment.granted &&
+                                                    adjustment.entitlementKey ===
+                                                        EntitlementKey.FEATURED_LISTING
+                                            );
+
+                                        if (grantedFeaturedListing) {
+                                            const db = getDb();
+                                            const [grantLink] = await db
+                                                .select({
+                                                    accommodationId:
+                                                        featuredListingAddonGrants.accommodationId
+                                                })
+                                                .from(featuredListingAddonGrants)
+                                                .where(
+                                                    eq(
+                                                        featuredListingAddonGrants.purchaseId,
+                                                        addon.id
+                                                    )
+                                                );
+
+                                            if (grantLink) {
+                                                const [accommodation] = await db
+                                                    .select({ ownerId: accommodations.ownerId })
+                                                    .from(accommodations)
+                                                    .where(
+                                                        eq(
+                                                            accommodations.id,
+                                                            grantLink.accommodationId
+                                                        )
+                                                    );
+
+                                                if (accommodation) {
+                                                    await syncFeaturedByEntitlementForAccommodation(
+                                                        {
+                                                            accommodationId:
+                                                                grantLink.accommodationId,
+                                                            active: false,
+                                                            ownerId: accommodation.ownerId
+                                                        }
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    } catch (syncError) {
+                                        logger.warn(
+                                            'Failed to sync featuredByEntitlement after addon expiry',
+                                            {
+                                                purchaseId: addon.id,
+                                                customerId: addon.customerId,
+                                                addonSlug: addon.addonSlug,
+                                                error:
+                                                    syncError instanceof Error
+                                                        ? syncError.message
+                                                        : String(syncError)
+                                            }
+                                        );
+                                    }
                                 } else {
                                     failed++;
                                     errors++;

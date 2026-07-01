@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 15/30 tasks (50%)
+## Progress: 16/30 tasks (53%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -70,7 +70,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-004, T-005 · Blocks: T-029
 - [x] **T-015** (complexity: 2) - G-2: wire addon grant path to sync accommodation featuring [DONE]
   - Blocked by: T-005, T-007 · Blocks: T-025
-- [ ] **T-016** (complexity: 3) - G-2: wire addon expiry paths to clear accommodation featuring
+- [x] **T-016** (complexity: 3) - G-2: wire addon expiry paths to clear accommodation featuring [DONE]
   - Blocked by: T-005, T-007 · Blocks: T-026
 - [ ] **T-017** (complexity: 2) - G-3: wire ISR/CDN revalidation into syncFeaturedByEntitlementForOwner
   - Blocked by: T-005 · Blocks: T-027
