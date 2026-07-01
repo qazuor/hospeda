@@ -334,40 +334,40 @@
         {
             "id": "T-010",
             "title": "Write extras migration to propagate collections keys to live plan rows",
-            "description": "Create packages/db/src/migrations/extras/024-billing-plans-collections-limit.plan.sql (resolve the exact next available number at implementation time — check the directory listing again, other specs may land first). Idempotently add `can_use_collections` to `billing_plans.entitlements` and `max_collections` (10 for tourist-plus, 25 for tourist-vip/owner/complex) to `billing_plans.limits`, following the OR-PRESERVE guarded-UPDATE pattern from extras/023-billing-plans-ai-consumer-search-limits.plan.sql (never overwrite a key already present). Test requirements: manually verify via `pnpm db:apply-extras` (idempotent re-run = zero affected rows on second run); if an automated extras-migration guard test suite exists, add a case there.",
-            "status": "pending",
+            "description": "Create packages/db/src/migrations/extras/024-billing-plans-collections-limit.plan.sql (resolve the exact next available number at implementation time — check the directory listing again, other specs may land first). Idempotently add `can_use_collections` to `billing_plans.entitlements` and `max_collections` (10 for tourist-plus, 25 for tourist-vip/owner/complex) to `billing_plans.limits`, following the OR-PRESERVE guarded-UPDATE pattern from extras/023-billing-plans-ai-consumer-search-limits.plan.sql (never overwrite a key already present). Test requirements: manually verify via `pnpm db:apply-extras` (idempotent re-run = zero affected rows on second run); if an automated extras-migration guard test suite exists, add a case there. NOTE (implemented 2026-07-01): local hospeda_dev DB was never migrated (empty schema, no accommodations/billing_plans tables), so pnpm db:apply-extras could not run end-to-end (fails on an unrelated earlier extras file, 001-search-index.matview.sql, which requires the accommodations table). Verified instead via a self-contained BEGIN/ROLLBACK transaction: created a throwaway billing_plans table (public schema, so the guard clause resolves it) seeded with the 11 real plan slugs, ran the migration twice, confirmed 1st apply affects exactly the 8 target rows with correct values (plus=10, vip/owner/complex=25, tourist-free/commerce/partner untouched) and 2nd apply affects 0 rows (idempotent, updated_at unchanged) -- then rolled back, nothing persisted. Next available extras number resolved as 024 (023 was the prior highest).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Resolve next extras migration number",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write OR-PRESERVE guarded UPDATE for entitlements array",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write OR-PRESERVE guarded UPDATE for limits JSONB",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify idempotency with pnpm db:apply-extras run twice",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration", "billing", "collections"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a (SQL, not biome-covered)",
+                "typecheck": "n/a",
+                "tests": "pass (manual sandboxed verification)"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:56:07Z",
+                "completed": "2026-07-01T15:59:26Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 1.9
     }
