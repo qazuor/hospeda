@@ -494,6 +494,10 @@ export class RecommendationService extends BaseService {
         if (rows.length === 0) return [];
 
         const withMedia = await attachComposedMediaList({
+            // TYPE-WORKAROUND: JoinedAccommodationRow carries eager-loaded destination/
+            // amenities relations on top of the base Accommodation row; attachComposedMediaList
+            // only reads the base Accommodation fields (id, media) and ignores the extra
+            // relation keys, so the shapes are structurally compatible at runtime.
             items: rows as unknown as Accommodation[],
             mediaModel: this.accommodationMediaModel,
             tx
