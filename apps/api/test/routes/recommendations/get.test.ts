@@ -71,6 +71,7 @@ function buildScoredAccommodation(overrides: { isFeatured?: boolean } = {}) {
             destinationId: '33333333-3333-4333-8333-333333333333',
             amenityIds: [] as string[],
             isFeatured: overrides.isFeatured ?? false,
+            averageRating: undefined,
             price: null,
             location: null,
             media: null
@@ -152,7 +153,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
 /** Inject a minimal tourist actor. */
 function injectActor(
     app: Hono<AppBindings>,
-    actor: { id: string; role: RoleEnum; permissions: PermissionEnum[] }
+    actor: { id: string; role: RoleEnum; permissions: readonly PermissionEnum[] }
 ): void {
     app.use((c, next) => {
         c.set('actor', actor);

@@ -780,6 +780,6 @@
             "title": "No recommendations right now",
             "body": "Check back later or browse our full accommodation catalog."
         },
-        "entitlementRequired": "This feature is available to Plus and VIP subscribers."
+        "entitlementRequired": "This feature isn't available for your account."
     }
 }

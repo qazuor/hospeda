@@ -20,10 +20,9 @@
  * @route GET /api/v1/protected/recommendations
  * @module routes/recommendations/protected/get
  */
-import { ScoredAccommodationSchema } from '@repo/schemas';
+import { RecommendationFeedResponseSchema } from '@repo/schemas';
 import { RecommendationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { gateRecommendations } from '../../../middlewares/tourist-entitlements';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -43,11 +42,7 @@ export const getRecommendationsRoute = createProtectedRoute({
     description:
         "Returns the authenticated user's personalized recommendations feed, ranked by preference-profile score (favorites, recently-viewed, search history). Falls back to a popular/featured feed (`isColdStart: true`) when the user has no behavioral signal yet.",
     tags: ['Recommendations'],
-    responseSchema: z.object({
-        items: z.array(ScoredAccommodationSchema),
-        isColdStart: z.boolean(),
-        generatedAt: z.coerce.date()
-    }),
+    responseSchema: RecommendationFeedResponseSchema,
     options: {
         middlewares: [gateRecommendations()],
         customRateLimit: { requests: 120, windowMs: 60000 }
