@@ -427,6 +427,18 @@
             "validUntil": "Valid until {date}",
             "minNights": "Minimum {n} nights",
             "discountOff": "off"
+        },
+        "priceAlert": {
+            "create": "Alert me for price drops",
+            "creating": "Creating...",
+            "createSuccess": "Alert created",
+            "createError": "Couldn't create the alert",
+            "cancel": "Cancel alert",
+            "cancelling": "Cancelling...",
+            "cancelSuccess": "Alert cancelled",
+            "cancelError": "Couldn't cancel the alert",
+            "locked": "Alert me for price drops",
+            "maxReached": "Alert limit reached"
         }
     },
     "amenityNames": {
