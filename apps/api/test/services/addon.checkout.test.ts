@@ -115,6 +115,25 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchasesTable
 }));
 
+// SPEC-309 T-006: AccommodationModel is imported statically at the top of
+// addon.checkout.ts and instantiated once at module level for the
+// accommodationId ownership check on target-required addons. Spread the
+// actual module so every other @repo/db export used transitively (schemas,
+// types, helpers) keeps working unmocked.
+const { mockAccommodationFindById } = vi.hoisted(() => ({
+    mockAccommodationFindById: vi.fn()
+}));
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        AccommodationModel: vi.fn().mockImplementation(() => ({
+            findById: mockAccommodationFindById
+        }))
+    };
+});
+
 // @repo/billing import has been fully removed from addon.checkout.ts (SPEC-127 T-003).
 // The mock below is intentionally absent.
 
@@ -1005,7 +1024,9 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                         sortOrder: 2,
                         affectsLimitKey: null,
                         limitIncrease: null,
-                        grantsEntitlement: 'featured_listing'
+                        grantsEntitlement: 'featured_listing',
+                        // SPEC-309 T-006: this addon requires an accommodationId target.
+                        requiresAccommodationTarget: true
                     }
                 };
             }
@@ -1023,6 +1044,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             success: false,
             error: { code: 'NOT_FOUND' }
         });
+
+        // SPEC-309 T-006: default to "not found" so target-required addon tests
+        // must explicitly opt in an accommodation. Tests that need ownership
+        // to succeed override this with a matching ownerId.
+        mockAccommodationFindById.mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -1554,6 +1580,113 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('NOT_FOUND');
             expect(mockPollingJobsCreate).not.toHaveBeenCalled();
+        });
+    });
+
+    // =========================================================================
+    // SPEC-309 T-006: accommodationId capture + validation for target-required
+    // addons (visibility-boost-7d/-30d). requiresAccommodationTarget is set on
+    // the shared 'visibility-boost-7d' catalog mock in the outer beforeEach.
+    // =========================================================================
+
+    describe('accommodationId validation for target-required addons (SPEC-309 T-006)', () => {
+        const customer = {
+            id: 'cust_abc',
+            email: 'owner@example.com',
+            metadata: { name: 'Owner Test' }
+        };
+
+        it('fails VALIDATION_ERROR when accommodationId is missing for a target-required addon', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'visibility-boost-7d',
+                userId: 'user_xyz'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockAccommodationFindById).not.toHaveBeenCalled();
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
+
+        it('fails FORBIDDEN when accommodationId belongs to a different owner', async () => {
+            mockAccommodationFindById.mockResolvedValue({
+                id: 'accom_foreign',
+                ownerId: 'user_someone_else',
+                deletedAt: null
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'visibility-boost-7d',
+                userId: 'user_xyz',
+                accommodationId: 'accom_foreign'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('FORBIDDEN');
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
+
+        it('fails NOT_FOUND when the accommodationId is soft-deleted', async () => {
+            mockAccommodationFindById.mockResolvedValue({
+                id: 'accom_deleted',
+                ownerId: 'user_xyz',
+                deletedAt: new Date('2026-01-01T00:00:00Z')
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'visibility-boost-7d',
+                userId: 'user_xyz',
+                accommodationId: 'accom_deleted'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
+
+        it('succeeds and carries accommodationId in checkout metadata when owned and valid', async () => {
+            mockAccommodationFindById.mockResolvedValue({
+                id: 'accom_own',
+                ownerId: 'user_xyz',
+                deletedAt: null
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'visibility-boost-7d',
+                userId: 'user_xyz',
+                accommodationId: 'accom_own'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockAccommodationFindById).toHaveBeenCalledWith('accom_own');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.metadata).toMatchObject({
+                accommodation_id: 'accom_own',
+                accommodationId: 'accom_own'
+            });
+        });
+
+        it('ignores accommodationId and never looks up ownership for an unrelated addon', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz',
+                accommodationId: 'accom_irrelevant'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockAccommodationFindById).not.toHaveBeenCalled();
         });
     });
 });

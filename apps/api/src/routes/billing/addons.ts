@@ -186,7 +186,8 @@ export const purchaseAddonRoute = createProtectedRoute({
             customerId: billingCustomerId,
             addonSlug: params.slug as string,
             promoCode: body.promoCode as string | undefined,
-            userId: actor.id
+            userId: actor.id,
+            accommodationId: body.accommodationId as string | undefined
         });
 
         if (!result.success) {
@@ -194,6 +195,7 @@ export const purchaseAddonRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                FORBIDDEN: 403,
                 NO_SUBSCRIPTION: 422,
                 NO_ACTIVE_SUBSCRIPTION: 422,
                 ADDON_INACTIVE: 422,

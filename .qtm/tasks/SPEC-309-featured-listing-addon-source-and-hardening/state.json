@@ -228,40 +228,52 @@
             "id": "T-006",
             "title": "Checkout: capture and validate accommodationId for target-required addons",
             "description": "First half of the OQ-3 checkout wiring. In apps/api/src/services/addon.checkout.ts, extend the `PurchaseAddonInput` type (and its schema at apps/api/src/schemas/addon.schema.ts, if the request validates there) with an optional `accommodationId?: string`. In `createAddonCheckout` (line 209 onward), after resolving `addon` (line 214-223): if `addon.requiresAccommodationTarget` (T-003) is true, require `input.accommodationId` to be present (400/VALIDATION_ERROR if missing) and verify it belongs to the requesting customer's owned, non-deleted accommodations (reuse the accommodation service/model ownership lookup — do not hand-roll a query). Reject with 403/`FORBIDDEN` if the accommodation belongs to a different owner. If `requiresAccommodationTarget` is false/undefined, `accommodationId` is ignored (backward compatible for all other addons).\n\nKey files:\n- apps/api/src/services/addon.checkout.ts:209 (createAddonCheckout)\n- apps/api/src/schemas/addon.schema.ts (if the HTTP-facing schema needs the field)\n\nAcceptance criteria:\n- Purchasing `visibility-boost-7d`/`-30d` without `accommodationId` fails validation.\n- Purchasing with an `accommodationId` owned by a different user fails with FORBIDDEN.\n- Purchasing with a valid own accommodationId succeeds and the value flows to whatever mechanism the checkout module already uses to carry request-time context across the async payment confirmation (investigate the existing pattern used for `promoCode` in this same file — it must survive to `confirmAddonPurchase`).\n- Purchasing any OTHER addon (requiresAccommodationTarget unset) is unaffected.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit tests in apps/api/test/services/addon.checkout.test.ts: missing-accommodationId-for-required-addon (fail), foreign-accommodationId (403), valid-accommodationId (success), unrelated-addon-ignores-field (success, unchanged behavior).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Add accommodationId to PurchaseAddonInput + schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Require + validate ownership when requiresAccommodationTarget",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Identify and reuse the existing checkout-time context-carrying mechanism (cf. promoCode)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: missing/foreign/valid/unrelated-addon cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "addons", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z",
+                    "details": "scoped to packages/schemas, packages/service-core, packages/seed, apps/api (only the 8 pre-existing T-008..T-014 errors remain)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z",
+                    "details": "apps/api/test/services/addon.checkout.test.ts 56/56 (5 new: missing-accommodationId VALIDATION_ERROR, foreign-owner FORBIDDEN, soft-deleted NOT_FOUND, valid-own success+metadata, unrelated-addon unaffected); apps/api/test/services/addon.service.test.ts 56/56; packages/schemas addon.schema.test.ts 42/42; packages/seed billingAddons.seed.test.ts 19/19; packages/service-core addon-catalog.* 103/103 — no regressions"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-01T17:50:00Z",
+                "completed": "2026-07-01T18:20:00Z"
+            },
+            "notes": "Scope grew beyond the original description: the addon.requiresAccommodationTarget flag added by T-003 only reached the STATIC config catalog (packages/billing ALL_ADDONS). createAddonCheckout reads the DB-backed AddonCatalogService instead, whose mapper never surfaced the field and whose seed never wrote it — so the T-006 guard would never fire in production. Fixed (user-approved) by extending addon-catalog.mapper.ts + billingAddons.seed.ts to read/write metadata.requiresAccommodationTarget, symmetric with durationDays/targetCategories/sortOrder."
         },
         {
             "id": "T-007",
@@ -956,10 +968,10 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
-        "averageComplexity": 2.3
+        "averageComplexity": 2.27
     }
 }

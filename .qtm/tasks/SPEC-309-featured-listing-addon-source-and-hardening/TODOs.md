@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 5/30 tasks (17%)
+## Progress: 6/30 tasks (20%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -43,7 +43,8 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-001, T-004
   - Blocks: T-008..T-018, T-022, T-026
 
-- [ ] **T-006** (complexity: 2) - Checkout: capture and validate accommodationId for target-required addons
+- [x] **T-006** (complexity: 2) - Checkout: capture and validate accommodationId for target-required addons [DONE]
+  - Also fixed a cross-task gap: T-003's flag only reached the static config catalog; extended addon-catalog.mapper.ts + billingAddons.seed.ts so the DB-backed catalog reads/writes it too
   - Blocked by: T-003
   - Blocks: T-007
 
