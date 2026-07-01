@@ -762,13 +762,13 @@
         {
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-284-recommendations-feed",
-            "branch": null,
+            "branch": "spec/SPEC-284-recommendations-feed",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS). Surfaced in SPEC-282 review."
+            "note": "In-progress: signal design resolved (OQ-1/OQ-2) — heuristic preference-profile recommender (favorites+recently-viewed+search-history). Tasks not yet atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS)."
         },
         {
             "specId": "SPEC-285",
