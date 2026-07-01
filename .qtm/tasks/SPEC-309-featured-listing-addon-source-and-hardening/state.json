@@ -367,28 +367,43 @@
             "id": "T-009",
             "title": "G-1/G-5: wire subscription-logic.ts to the union resolver",
             "description": "Update apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts:1027-1064. Replace the local `planHasFeatured` derivation (line 1036-1038, `getPlanBySlug(planName)?.entitlements.includes(...)`) with `resolveOwnerPlanGrantsFeatured` (T-004). Align `shouldGrant`/`shouldRevoke` (lines 1040-1045) with the reconcile cron's status set: `shouldGrant` includes ACTIVE, TRIALING, and COMP (currently COMP is never checked here — add it); `shouldRevoke` includes CANCELLED, EXPIRED, and now PAUSED (currently PAUSED falls into the silent \"skip\" bucket per the comment at line 1034 — G-5 requires treating it as an explicit revoke, matching `loadEntitlements`/the cron, instead of relying on the 6h cron backstop to eventually clear it). Call the renamed `syncFeaturedByEntitlementForOwner` (T-005) at line 1048.\n\nKey files:\n- apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts:1027-1064\n\nAcceptance criteria:\n- `shouldGrant` true for active/trialing/comp; `shouldRevoke` true for cancelled/expired/paused.\n- `past_due`/other statuses remain a no-op (grace period, unchanged — only paused moves buckets).\n- Uses T-004's resolver instead of the local `getPlanBySlug` check.\n- Non-blocking try/catch wrapper preserved.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Replace planHasFeatured derivation with resolveOwnerPlanGrantsFeatured",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add COMP to shouldGrant, move PAUSED into shouldRevoke",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Call renamed syncFeaturedByEntitlementForOwner", "completed": false }
+                { "title": "Call renamed syncFeaturedByEntitlementForOwner", "completed": true }
             ],
             "tags": ["backend", "billing", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z",
+                    "details": "apps/api/test/webhooks/subscription-logic.test.ts 65/65 — no regressions (dedicated union-resolver coverage deferred to T-023)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:00:00.000Z",
+                "completed": "2026-07-01T19:05:00.000Z"
             }
         },
         {
