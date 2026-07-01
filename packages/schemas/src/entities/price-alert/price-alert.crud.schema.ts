@@ -60,3 +60,34 @@ export const DeletePriceAlertInputSchema = z.object({
  * {@link DeletePriceAlertInputSchema}.
  */
 export type DeletePriceAlertInput = z.infer<typeof DeletePriceAlertInputSchema>;
+
+/**
+ * Update input for a price-alert subscription.
+ *
+ * This schema exists ONLY to satisfy `BaseCrudService`'s hard abstract-member
+ * contract (every concrete service must supply a `TUpdateSchema` /
+ * `updateSchema`) — it is NOT wired to any route. The product design (see the
+ * module doc comment above) is deliberately "no update input": a subscription's
+ * threshold is changed by deleting and re-creating it, not by editing it in
+ * place. `AlertSubscriptionService._canUpdate` always throws `FORBIDDEN`, so
+ * `BaseCrudService.update()` is a hard no-op even if a caller reaches it by
+ * mistake.
+ *
+ * The single field kept here (`targetPercentDrop`) is the only value that
+ * could ever legitimately change on an existing row.
+ */
+export const PriceAlertUpdateInputSchema = z.object({
+    targetPercentDrop: z
+        .number({ message: 'zodError.priceAlert.targetPercentDrop.required' })
+        .int({ message: 'zodError.priceAlert.targetPercentDrop.int' })
+        .min(1, { message: 'zodError.priceAlert.targetPercentDrop.min' })
+        .max(100, { message: 'zodError.priceAlert.targetPercentDrop.max' })
+        .nullable()
+        .optional()
+});
+
+/**
+ * TypeScript type for the update-alert input, inferred from
+ * {@link PriceAlertUpdateInputSchema}.
+ */
+export type PriceAlertUpdateInput = z.infer<typeof PriceAlertUpdateInputSchema>;

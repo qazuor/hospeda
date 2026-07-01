@@ -2,7 +2,8 @@ import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import {
     CreatePriceAlertInputSchema,
-    DeletePriceAlertInputSchema
+    DeletePriceAlertInputSchema,
+    PriceAlertUpdateInputSchema
 } from '../../../src/entities/price-alert/price-alert.crud.schema.js';
 import {
     ListPriceAlertsInputSchema,
@@ -210,6 +211,63 @@ describe('DeletePriceAlertInputSchema', () => {
 
         // Act
         const result = DeletePriceAlertInputSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('PriceAlertUpdateInputSchema', () => {
+    it('should validate input with a targetPercentDrop', () => {
+        // Arrange
+        const data = { targetPercentDrop: 20 };
+
+        // Act
+        const result = PriceAlertUpdateInputSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('should validate an empty object (no changes)', () => {
+        // Arrange
+        const data = {};
+
+        // Act
+        const result = PriceAlertUpdateInputSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('should accept a null targetPercentDrop (reset to any-drop)', () => {
+        // Arrange
+        const data = { targetPercentDrop: null };
+
+        // Act
+        const result = PriceAlertUpdateInputSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('should reject targetPercentDrop = 0', () => {
+        // Arrange
+        const data = { targetPercentDrop: 0 };
+
+        // Act
+        const result = PriceAlertUpdateInputSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject targetPercentDrop = 101', () => {
+        // Arrange
+        const data = { targetPercentDrop: 101 };
+
+        // Act
+        const result = PriceAlertUpdateInputSchema.safeParse(data);
 
         // Assert
         expect(result.success).toBe(false);
