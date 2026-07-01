@@ -44,7 +44,7 @@ import {
 import { accommodations, getDb, users } from '@repo/db';
 import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { type SQL, eq } from 'drizzle-orm';
+import { type SQL, eq, inArray } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
@@ -624,6 +624,163 @@ export async function resolveOwnerLimitsForOwnerId(
     }
 
     return result.limits;
+}
+
+// ---------------------------------------------------------------------------
+// Batch entitlement resolver — SPEC-291 Phase 3b
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-owner entitlement cache for the batch badge resolver.
+ *
+ * Shared across all listing routes that need to gate `isVerified` by owner
+ * entitlement. The cache is keyed by `ownerId` and expires after
+ * {@link OWNER_ENTITLEMENT_TTL_MS} (5 minutes — matching the owner-limits TTL).
+ * A 5-minute-stale badge on a listing card is purely cosmetic; the real
+ * verification gate lives on the detail endpoint which uses the uncached single
+ * resolver.
+ */
+interface OwnerEntitlementCacheEntry {
+    readonly entitlements: readonly EntitlementKey[];
+    readonly timestamp: number;
+}
+const OWNER_ENTITLEMENT_TTL_MS = 5 * 60 * 1000;
+const OWNER_ENTITLEMENT_CACHE_MAX = 2000;
+const ownerEntitlementBadgeCache = new Map<string, OwnerEntitlementCacheEntry>();
+
+/** Read from cache. Returns `null` on miss or expiry (eager eviction). */
+function getOwnerEntitlementBadgeCacheEntry(ownerId: string): readonly EntitlementKey[] | null {
+    const entry = ownerEntitlementBadgeCache.get(ownerId);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > OWNER_ENTITLEMENT_TTL_MS) {
+        ownerEntitlementBadgeCache.delete(ownerId);
+        return null;
+    }
+    return entry.entitlements;
+}
+
+/** Write to cache with FIFO eviction at capacity. */
+function setOwnerEntitlementBadgeCacheEntry(
+    ownerId: string,
+    entitlements: readonly EntitlementKey[]
+): void {
+    if (ownerEntitlementBadgeCache.size >= OWNER_ENTITLEMENT_CACHE_MAX) {
+        const firstKey = ownerEntitlementBadgeCache.keys().next().value;
+        if (firstKey !== undefined) ownerEntitlementBadgeCache.delete(firstKey);
+    }
+    ownerEntitlementBadgeCache.set(ownerId, { entitlements, timestamp: Date.now() });
+}
+
+/**
+ * Batch variant of {@link resolveOwnerEntitlementsForOwnerId}.
+ *
+ * Resolves entitlement arrays for a set of owner IDs with the **minimum
+ * number of database queries**:
+ *
+ * 1. Cache hits are served immediately (zero DB round trips).
+ * 2. A **single** `SELECT id, role FROM users WHERE id IN (...)` fetches
+ *    roles for all cache-cold owners in one round trip.
+ * 3. Billing lookups run in **parallel** (`Promise.all`) across cache-cold
+ *    owners — the same lookups as the single resolver, just fanned out
+ *    concurrently instead of sequentially.
+ *
+ * Fail-open: DB query failures → empty entitlements for all affected owners
+ * (badge hidden). Per-owner billing failures → empty entitlements for that
+ * owner (badge hidden). Errors are logged and captured by Sentry.
+ *
+ * **Use case**: listing endpoints that render a page of accommodation cards.
+ * Collect the unique `ownerId` values for the page, call this once, then pass
+ * the returned map to {@link filterAccommodationListByOwnerEntitlements}
+ * (in `apps/api/src/utils/entitlement-filter.ts`).
+ *
+ * @param ownerIds - Owner IDs to resolve. Duplicates are tolerated (deduped
+ *   internally). The empty-array case returns an empty map immediately.
+ * @returns `Map<ownerId, readonly EntitlementKey[]>` — one entry per
+ *   **unique** input ID. Owners for which resolution failed have an empty
+ *   array (treat as "no entitlements").
+ *
+ * @example
+ * ```ts
+ * const ownerIds = [...new Set(items.map((i) => i.ownerId).filter(Boolean))];
+ * const entMap = await resolveOwnerEntitlementsForOwnerIds(ownerIds);
+ * const gated = filterAccommodationListByOwnerEntitlements(items, entMap);
+ * ```
+ */
+export async function resolveOwnerEntitlementsForOwnerIds(
+    ownerIds: readonly string[]
+): Promise<Map<string, readonly EntitlementKey[]>> {
+    const result = new Map<string, readonly EntitlementKey[]>();
+    if (ownerIds.length === 0) return result;
+
+    // ── 1. Split into cache hits vs cache misses ───────────────────────────
+    const seen = new Set<string>();
+    const missing: string[] = [];
+    for (const ownerId of ownerIds) {
+        if (seen.has(ownerId)) continue;
+        seen.add(ownerId);
+        const cached = getOwnerEntitlementBadgeCacheEntry(ownerId);
+        if (cached !== null) {
+            result.set(ownerId, cached);
+        } else {
+            missing.push(ownerId);
+        }
+    }
+
+    if (missing.length === 0) return result;
+
+    // ── 2. ONE batched SELECT for roles of all cache-cold owners ───────────
+    const ownerRoleMap = new Map<string, RoleEnum | null>();
+    try {
+        const db = getDb();
+        const rows = await db
+            .select({ id: users.id, role: users.role })
+            .from(users)
+            .where(inArray(users.id, missing));
+        for (const row of rows) {
+            ownerRoleMap.set(row.id, (row.role as RoleEnum | null) ?? null);
+        }
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        apiLogger.warn(
+            { count: missing.length, error: message },
+            'resolveOwnerEntitlementsForOwnerIds: batch role query failed; failing open with empty entitlements for all affected owners'
+        );
+        Sentry.captureException(error, {
+            tags: { subsystem: 'owner-entitlements', action: 'batch-role-lookup' },
+            extra: { count: missing.length }
+        });
+        // Fail-open: no entitlements for owners whose roles we could not load.
+        for (const ownerId of missing) {
+            result.set(ownerId, []);
+        }
+        return result;
+    }
+
+    // ── 3. Parallel billing resolution for all cache-cold owners ──────────
+    await Promise.all(
+        missing.map(async (ownerId) => {
+            try {
+                const ownerRole = ownerRoleMap.get(ownerId) ?? null;
+                const entitlementSet = await resolveOwnerEntitlementSet(ownerId, ownerRole);
+                const entitlements: readonly EntitlementKey[] = Array.from(entitlementSet);
+                setOwnerEntitlementBadgeCacheEntry(ownerId, entitlements);
+                result.set(ownerId, entitlements);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                apiLogger.warn(
+                    { ownerId, error: message },
+                    'resolveOwnerEntitlementsForOwnerIds: billing resolution failed for owner; returning empty entitlements'
+                );
+                Sentry.captureException(error, {
+                    tags: { subsystem: 'owner-entitlements', action: 'batch-billing-lookup' },
+                    extra: { ownerId }
+                });
+                result.set(ownerId, []);
+            }
+        })
+    );
+
+    return result;
 }
 
 // Re-export the SQL helper for tests / type augmentation downstream.

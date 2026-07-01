@@ -197,6 +197,62 @@ export function filterAccommodationListByEntitlements(
 }
 
 /**
+ * Filter a list of accommodations based on the OWNER's billing entitlements.
+ *
+ * Pure and synchronous. Applies the owner-gated `isVerified` logic to a whole
+ * page at once, driven by the pre-resolved {@link Map} returned by
+ * `resolveOwnerEntitlementsForOwnerIds` (one DB query per page, parallel
+ * billing calls). Counterpart to {@link filterAccommodationByEntitlements} but
+ * designed for listing endpoints where the Hono context is not needed (listing
+ * cards apply no viewer-gated stripping — video/WhatsApp are detail-only).
+ *
+ * Gate rules (applied per item):
+ * - Owner absent from map → `isVerified` forced to `false` (fail-closed).
+ * - Owner present but lacks `HAS_VERIFICATION_BADGE` → `isVerified` forced
+ *   to `false`.
+ * - Owner present and has `HAS_VERIFICATION_BADGE` → `isVerified` unchanged.
+ * - Item already has `isVerified = false` → returned as-is (no allocation).
+ *
+ * Does NOT apply viewer-gated fields (video, WhatsApp, richDescription).
+ * Those are handled by {@link filterAccommodationByEntitlements} on the detail
+ * view and are stripped at the data level in listing handlers.
+ *
+ * @param items - Raw accommodation items from the service or DB layer.
+ * @param ownerEntitlementsByOwnerId - Map keyed by `ownerId`, returned by
+ *   `resolveOwnerEntitlementsForOwnerIds`.
+ * @returns New array with `isVerified` gated per item. Input is NOT mutated.
+ *
+ * @example
+ * ```typescript
+ * const ownerIds = [...new Set(items.map((i) => i.ownerId).filter(Boolean))];
+ * const entMap = await resolveOwnerEntitlementsForOwnerIds(ownerIds);
+ * const gated = filterAccommodationListByOwnerEntitlements(items, entMap);
+ * return c.json({ data: gated });
+ * ```
+ */
+export function filterAccommodationListByOwnerEntitlements(
+    items: AccommodationData[],
+    ownerEntitlementsByOwnerId: Map<string, readonly EntitlementKey[]>
+): AccommodationData[] {
+    return items.map((item) => {
+        // Already false — nothing to gate; return the same reference (no allocation).
+        if (!item.isVerified) return item;
+
+        const ownerId = typeof item.ownerId === 'string' ? item.ownerId : undefined;
+        const ownerEntitlements = ownerId ? ownerEntitlementsByOwnerId.get(ownerId) : undefined;
+
+        if (!ownerEntitlements?.includes(EntitlementKey.HAS_VERIFICATION_BADGE)) {
+            apiLogger.debug(
+                `filterAccommodationListByOwnerEntitlements: forced isVerified=false for item ${item.id} — owner ${ownerId ?? 'unknown'} lacks ${EntitlementKey.HAS_VERIFICATION_BADGE}`
+            );
+            return { ...item, isVerified: false };
+        }
+
+        return item;
+    });
+}
+
+/**
  * Strip markdown formatting from text
  *
  * Removes common markdown syntax while preserving the text content.
