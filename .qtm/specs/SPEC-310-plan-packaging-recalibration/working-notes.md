@@ -69,7 +69,7 @@ Hereda plus +:
 | MAX_FAVORITES | -1 |
 | MAX_COMPARE_ITEMS | 5 *(de 4 — coord SPEC-288)* |
 | MAX_SEARCH_HISTORY_ENTRIES | 200 |
-| MAX_ACTIVE_ALERTS | -1 |
+| MAX_ACTIVE_ALERTS | 20 *(fijado por SPEC-286 D-2, 2026-06-30 — reemplaza el -1 ilimitado)* |
 | MAX_AI_SEARCH `[283]` | 200 |
 | MAX_AI_CHAT_CONSUMER `[283]` | 200 |
 

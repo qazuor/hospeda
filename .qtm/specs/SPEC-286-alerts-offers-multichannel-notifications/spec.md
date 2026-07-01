@@ -108,8 +108,9 @@ All open questions were resolved with the owner before implementation:
 - **Absorbs SPEC-312 (Tourist Price Alerts):** the price-alert core (table, CRUD,
   monitoring cron, web UI, `MAX_ACTIVE_ALERTS` enforcement) is built here as
   T-002..T-007. SPEC-312 is archived (obsolete) — not implemented as a separate
-  spec. Limit values follow D-2 (free=0/plus=5/vip=20), NOT the stub's "vip
-  unlimited".
+  spec. Limit values follow D-2 (free=0/plus=5/vip=20), reconfirmed by the owner
+  on 2026-06-30 over SPEC-310's initial "vip unlimited" (SPEC-310 working-notes
+  updated to match).
 - **Absorbs SPEC-313 (Tourist Exclusive Deals):** owner-promotion offers surfaced
   to tourists are G-2 + T-012 here. SPEC-313 is archived (obsolete).
 - **Reconciles SPEC-316 (VIP Promotions Access):** D-5 renames the *visibility*
