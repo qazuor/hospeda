@@ -43,31 +43,31 @@
             "id": "T-002",
             "title": "Add CAN_USE_COLLECTIONS entitlement metadata entry",
             "description": "Add an entry to the entitlement metadata array in packages/billing/src/config/entitlements.config.ts for `EntitlementKey.CAN_USE_COLLECTIONS` (key, name: 'Use favorites collections', description mentioning organizing saved favorites into named collections). Follow the exact object shape of the existing `CAN_VIEW_SEARCH_HISTORY` entry. Test requirements: packages/billing/test/entitlements.test.ts should already have (or gain) a completeness/exhaustiveness assertion that every EntitlementKey has metadata — verify it covers the new key.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-004"],
             "subtasks": [
                 {
                     "title": "Add metadata entry to entitlements.config.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify/extend completeness test in entitlements.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "collections"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pending-by-design (blocked on T-003 LIMIT_METADATA exhaustiveness)",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T14:47:55Z",
+                "completed": "2026-07-01T14:49:39Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 1.9
     }

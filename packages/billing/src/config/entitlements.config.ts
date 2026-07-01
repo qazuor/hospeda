@@ -201,6 +201,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Personalized recommendations',
         description: 'Access to personalized accommodation recommendations based on preferences'
     },
+    {
+        key: EntitlementKey.CAN_USE_COLLECTIONS,
+        name: 'Use favorites collections',
+        description: 'Allows organizing saved favorites into named collections'
+    },
     // AI feature entitlements (SPEC-173)
     {
         key: EntitlementKey.AI_TEXT_IMPROVE,
