@@ -10,6 +10,12 @@ base: staging
 
 # SPEC-312 — Tourist Price Alerts
 
+> **⛔ SUPERSEDED — ABSORBED by SPEC-286 (2026-06-30).** The price-alert core
+> (table, CRUD, monitoring cron, web UI, `MAX_ACTIVE_ALERTS` enforcement) is built
+> in SPEC-286 (unified Alerts & Offers) as tasks T-002..T-007, with per-plan limits
+> free=0/plus=5/vip=20 (D-2). This spec is archived (obsolete) and is NOT
+> implemented separately. Kept for history only.
+>
 > **Stub (backlog).** Created from the SPEC-310 plan-packaging audit, which found this feature is advertised in the billing plans but is a phantom gate (`gateAlerts` PHANTOM-GATE; no `/alerts` route, no alert storage, no price-monitoring cron, no UI). This stub captures the objective; it must go through full discovery (/task-master:spec-review or /spec) before implementation.
 
 ## Overview

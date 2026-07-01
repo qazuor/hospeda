@@ -1,0 +1,61 @@
+---
+/**
+ * @file mi-cuenta/alertas/index.astro
+ * @description Price-alert management page — lists the user's active
+ * price-drop alert subscriptions and lets them cancel individual alerts.
+ *
+ * Auth protection: middleware redirects unauthenticated visitors. The in-page
+ * guard is a safety net for SSR edge cases (mirrors `historial-busquedas/index.astro`).
+ *
+ * The list itself, delete action, and plan-gate (upgrade CTA) state are all
+ * owned by the `AlertsList` client island — this page is a thin SSR shell
+ * that only resolves the authenticated user and hands off `apiUrl` + `userId`.
+ *
+ * @route    /[lang]/mi-cuenta/alertas/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { AlertsList } from '@/components/account/AlertsList.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard — middleware should have redirected already, this is the safety net.
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.alerts.title', 'Alertas de precio');
+const description = t(
+    'account.pages.alerts.description',
+    'Gestioná tus alertas de bajada de precio en Hospeda'
+);
+const apiUrl = getApiUrl();
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="alertas">
+    <h2 class="account-section__title">{title}</h2>
+
+    <AlertsList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+    />
+</AccountLayout>
+
+<style>
+    .account-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

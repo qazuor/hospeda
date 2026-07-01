@@ -112,9 +112,8 @@ export function gateFavorites(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for POST /alerts once that route ships.
-// Do NOT delete and do NOT build the route without a spec.
+// SPEC-286: mounted on POST /api/v1/protected/price-alerts
+// (apps/api/src/routes/price-alert/protected/create.ts).
 export function gateAlerts(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED

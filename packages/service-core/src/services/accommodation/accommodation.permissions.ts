@@ -182,7 +182,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
 
     if (entity.visibility === 'RESTRICTED') {
         if (
-            actor.entitlements?.has('vip_promotions_access') ||
+            actor.entitlements?.has('vip_visibility_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
             isOwner(actor, entity)
         ) {

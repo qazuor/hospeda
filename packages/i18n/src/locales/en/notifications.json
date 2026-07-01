@@ -1,0 +1,19 @@
+{
+    "alerts": {
+        "digest": {
+            "subject": "Your price drop and offer alerts",
+            "priceDrop": {
+                "sectionTitle": "Price dropped on your saved accommodations",
+                "currentPrice": "Current price",
+                "previousPrice": "Previous price",
+                "dropPercent": "Dropped {{percent}}%"
+            },
+            "promoOffer": {
+                "sectionTitle": "Active offers for you",
+                "validUntil": "Valid until {{date}}"
+            },
+            "cta": "View accommodation",
+            "manageAlerts": "Manage my alerts"
+        }
+    }
+}

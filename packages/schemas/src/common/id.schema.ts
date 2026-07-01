@@ -234,3 +234,7 @@ export type FeatureFlagAuditIdType = z.infer<typeof FeatureFlagAuditIdSchema>;
 // === Search History IDs (SPEC-289) ===
 export const UserSearchHistoryIdSchema = BaseIdSchema;
 export type UserSearchHistoryIdType = z.infer<typeof UserSearchHistoryIdSchema>;
+
+// === Price Alerts System IDs (SPEC-286) ===
+export const PriceAlertIdSchema = BaseIdSchema;
+export type PriceAlertIdType = z.infer<typeof PriceAlertIdSchema>;

@@ -1137,6 +1137,28 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Features / User limits
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT',
+        description:
+            "Platform-wide default minimum price-drop percentage that triggers a tourist's price-drop alert when the alert's own targetPercentDrop is null ('notify on any drop'). Default 5 (a 5% or larger drop qualifies).",
+        descriptionEs:
+            "Porcentaje mínimo de baja de precio (por defecto de la plataforma) que dispara una alerta de precio de un turista cuando el targetPercentDrop propio de la alerta es null ('avisame ante cualquier baja'). Por defecto 5 (una baja de 5% o más califica).",
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5',
+        exampleValue: '5',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Product/business tuning value for SPEC-286 price-drop alerts (PriceDropEvaluatorService). Raise it to reduce notification noise, lower it to notify on smaller drops. No external provider — set directly.',
+        howToObtainEs:
+            'Valor de negocio/producto para las alertas de baja de precio de SPEC-286 (PriceDropEvaluatorService). Subilo para reducir el ruido de notificaciones, bajalo para avisar ante bajas más chicas. No depende de ningún proveedor externo — se configura directamente.'
+    },
+
+    // -------------------------------------------------------------------------
     // Messaging
     // -------------------------------------------------------------------------
     {

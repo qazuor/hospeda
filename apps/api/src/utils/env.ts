@@ -571,6 +571,16 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_RATE_LIMIT_BACKEND: z.enum(['memory', 'redis']).default('memory'),
 
+    /**
+     * Platform-wide default minimum price-drop percentage (SPEC-286 G-1)
+     * that triggers a tourist's price-drop alert when the alert's own
+     * `targetPercentDrop` is `null` ("notify on any drop"). Read directly by
+     * `PriceDropEvaluatorService` (`@repo/service-core`) via `process.env` —
+     * this schema entry exists for registry cross-validation and doc
+     * generation, not because the service imports this module. Default: 5.
+     */
+    HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT: z.coerce.number().default(5),
+
     // AI / Credential Vault
     // Decision (owner-approved 2026-06-04): base-optional so non-production envs
     // (local dev / test / CI) where the AI feature is not yet active do not fail

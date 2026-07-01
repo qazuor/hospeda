@@ -126,8 +126,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * per-plan billing LimitKey (MAX_COLLECTIONS); the env var no longer exists.
  * Both removals landed independently off the same 246 base; merged total
  * reflects both (246 - 2 - 1 = 243).
+ *
+ * 244 (2026-07-01, SPEC-286 merge): +1 vs the independently-derived 243
+ * above, adding HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT (features category,
+ * SPEC-286 price-drop alerts). Landed on staging independently off the same
+ * 244 (post-landing-removal) base as this branch's collections removal;
+ * merged total reflects both (243 + 1 = 244).
  */
-const EXPECTED_VAR_COUNT = 243;
+const EXPECTED_VAR_COUNT = 244;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -14,7 +14,7 @@
 
 ---
 
-# TOURIST — DECIDIDO
+## TOURIST — DECIDIDO
 
 Se mantienen 3 tiers (free / plus / vip). vip gana features propias reales al implementar sus 3 exclusivas.
 
@@ -69,7 +69,7 @@ Hereda plus +:
 | MAX_FAVORITES | -1 |
 | MAX_COMPARE_ITEMS | 5 *(de 4 — coord SPEC-288)* |
 | MAX_SEARCH_HISTORY_ENTRIES | 200 |
-| MAX_ACTIVE_ALERTS | -1 |
+| MAX_ACTIVE_ALERTS | 20 *(fijado por SPEC-286 D-2, 2026-06-30 — reemplaza el -1 ilimitado)* |
 | MAX_AI_SEARCH `[283]` | 200 |
 | MAX_AI_CHAT_CONSUMER `[283]` | 200 |
 
@@ -84,20 +84,22 @@ Hereda plus +:
 
 ---
 
-# COMPLEX — OCULTAR (no recalibrar)
+## COMPLEX — OCULTAR (no recalibrar)
 
 complex-basico/pro/premium → `isActive:false` + UPDATE SQL en staging/prod. Código/tipos/enum intactos para reactivar cuando se implemente la vertical. Test users complex dev: se quedan.
 
 ---
 
-# OWNER — DECIDIDO (límites a confirmar en los 3 puntos abiertos)
+## OWNER — DECIDIDO (límites a confirmar en los 3 puntos abiertos)
 
 Estado real de features owner:
+
 - ✅ **Funciona**: publish, edit, basic-stats, advanced-stats, rich-description, embed-video, AI chat/translate/import.
 - 🟡 **Parcial**: featured-listing (admin-activado, sin auto) · create-promotions (display turista en PR #1900 sin merge) · ai-text-improve (falta botón en editor web).
 - ❌ **Fantasma**: respond-reviews, custom-branding, verification-badge, calendar, sync-calendar, whatsapp display/direct, priority-support.
 
 Decisiones de features owner:
+
 - **calendar + sync-calendar**: PENDIENTE de definición (modelo de disponibilidad sin booking). Ni eliminar ni construir aún.
 - **priority-support**: promesa operacional (sin código). Se cumple con atención prioritaria real, no es item de roadmap.
 - **owner-premium gana exclusivas reales**: custom-branding + verification-badge → se construyen (specs).
@@ -151,13 +153,14 @@ Escalera IA owner-side ×5 parejo: text/chat 50/250/1250 · translate 200/1000/5
 
 ---
 
-# ROADMAP DE SPECS (features prometidas → construir)
+## ROADMAP DE SPECS (features prometidas → construir)
 
 **Acciones (no specs):** mergear SPEC-288 (comparador), SPEC-289 (search-history), PR #1900 (promotions display).
 **Operacional (sin código):** priority-support (owner), vip-support (tourist) — atención prioritaria real.
 **Pendiente de definición:** calendar + sync-calendar (owner).
 
 **Specs a crear (stubs de backlog):**
+
 | # | Spec | Para |
 |---|---|---|
 | 1 | whatsapp-contact (display+direct) | tourist plus/vip + owner |
@@ -172,5 +175,6 @@ Escalera IA owner-side ×5 parejo: text/chat 50/250/1250 · translate 200/1000/5
 | 10 | featured-listing-automation (auto-activar + self-service) | owner |
 | 11 | ai-text-improve en editor web | owner (chica, podría ser NOSPEC) |
 
-# ELIMINACIONES
+## ELIMINACIONES
+
 - `AD_FREE` (tourist) — entitlement obsoleto.
