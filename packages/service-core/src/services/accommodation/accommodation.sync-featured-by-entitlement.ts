@@ -246,5 +246,24 @@ export async function syncFeaturedByEntitlementForAccommodation(
         'sync-featured-by-entitlement: updated single accommodation'
     );
 
+    // SPEC-309 T-018 (G-3): schedule ISR revalidation so addon-driven featuring
+    // changes (G-2, T-015/T-016) are reflected without waiting for TTL expiry.
+    // Fire-and-forget, same pattern as T-017. A no-op write (updated === 0,
+    // e.g. the plan-still-grants guard above) never schedules revalidation.
+    const [row] = rows;
+    if (updated > 0 && row) {
+        const revalidationService = getRevalidationService();
+        if (revalidationService) {
+            const event: EntityChangeData = {
+                entityType: 'accommodation' as const,
+                slug: row.slug
+            };
+            revalidationService.scheduleRevalidationBatch({
+                events: [event],
+                reason: `featured-by-entitlement-accommodation: active=${active} accommodationId=${accommodationId}`
+            });
+        }
+    }
+
     return { updated, rows };
 }

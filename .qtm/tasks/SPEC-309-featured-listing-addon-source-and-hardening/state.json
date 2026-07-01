@@ -719,23 +719,30 @@
             "id": "T-018",
             "title": "G-3: wire ISR/CDN revalidation into syncFeaturedByEntitlementForAccommodation",
             "description": "Same pattern as T-017, applied to the single-row `syncFeaturedByEntitlementForAccommodation` (T-005) so addon-driven featuring changes (G-2, T-015/T-016) are also reflected without waiting for TTL expiry. After a successful (non-no-op) write, call `getRevalidationService()?.scheduleRevalidationBatch({ events: [{ entityType: 'accommodation', slug }], reason })` fire-and-forget, using the `slug` from the function's `.returning()` result (T-005).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts\n\nAcceptance criteria:\n- A successful single-accommodation sync schedules a 1-event revalidation batch.\n- A no-op (plan-guard skip, `updated: 0`) does NOT schedule revalidation.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-027.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-005"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Wire revalidation into the single-accommodation sync path",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "revalidation", "isr", "billing"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:27:38.000Z",
+                "details": "biome check on accommodation.sync-featured-by-entitlement.ts: clean; pnpm --filter @repo/service-core typecheck: clean; sync-featured-by-entitlement.test.ts 9/9 passed. Same fire-and-forget pattern as T-017, single-event batch; the `updated > 0 && row` guard means a no-op write (plan-guard skip) never schedules revalidation. Dedicated coverage deferred to T-027 per task spec."
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T20:26:14.000Z",
+                "completed": "2026-07-01T20:27:38.000Z"
             }
         },
         {
