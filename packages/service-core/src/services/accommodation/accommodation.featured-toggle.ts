@@ -96,3 +96,59 @@ export async function setAccommodationFeaturedToggle(
 
     return { isFeatured };
 }
+
+/**
+ * Input for {@link getAccommodationFeaturedEntitlement}.
+ */
+export interface GetAccommodationFeaturedEntitlementInput {
+    /** The actor requesting the entitlement status (must own the accommodation, or hold ACCOMMODATION_UPDATE_ANY). */
+    readonly actor: Actor;
+    /** The accommodation to check. */
+    readonly accommodationId: string;
+}
+
+/**
+ * Reads the current `isFeatured` value and whether the owner currently holds
+ * a live FEATURED_LISTING entitlement (plan OR addon) for a single
+ * accommodation — the read-side counterpart to
+ * {@link setAccommodationFeaturedToggle}, used by the web owner editor to
+ * decide whether to render the self-service toggle at all.
+ *
+ * @param input - Actor and accommodation id.
+ * @returns The current `isFeatured` value and `hasEntitlement` gate status.
+ * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or
+ *   is soft-deleted. `FORBIDDEN` when the actor does not own the
+ *   accommodation and lacks `ACCOMMODATION_UPDATE_ANY`.
+ */
+export async function getAccommodationFeaturedEntitlement(
+    input: GetAccommodationFeaturedEntitlementInput
+): Promise<{ isFeatured: boolean; hasEntitlement: boolean }> {
+    const { actor, accommodationId } = input;
+
+    const accommodation = await accommodationModel.findById(accommodationId);
+    if (!accommodation || accommodation.deletedAt !== null) {
+        throw new ServiceError(
+            ServiceErrorCode.NOT_FOUND,
+            `Accommodation not found: ${accommodationId}`
+        );
+    }
+
+    const hasAny = hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+    const hasOwn = hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_OWN);
+    if (!hasAny && !(hasOwn && actor.id === accommodation.ownerId)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: ACCOMMODATION_UPDATE_OWN or ACCOMMODATION_UPDATE_ANY required, and actor must own the accommodation'
+        );
+    }
+
+    const [planGrantsFeatured, addonGrantsFeatured] = await Promise.all([
+        resolveOwnerPlanGrantsFeatured({ ownerId: accommodation.ownerId }),
+        resolveAccommodationHasActiveFeaturedAddon({ accommodationId })
+    ]);
+
+    return {
+        isFeatured: accommodation.isFeatured,
+        hasEntitlement: planGrantsFeatured || addonGrantsFeatured
+    };
+}

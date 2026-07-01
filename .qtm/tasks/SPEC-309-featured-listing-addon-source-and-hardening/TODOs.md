@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 19/30 tasks (63%)
+## Progress: 20/30 tasks (67%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -78,7 +78,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-005 · Blocks: T-027
 - [x] **T-019** (complexity: 3) - G-6: owner self-service featured toggle — API route + entitlement gate [DONE]
   - Blocked by: T-004 · Blocks: T-020
-- [ ] **T-020** (complexity: 3) - G-6: owner self-service featured toggle — web UI
+- [x] **T-020** (complexity: 3) - G-6: owner self-service featured toggle — web UI [DONE]
   - Blocked by: T-019 · Blocks: T-028
 
 ### Testing Phase

@@ -14,7 +14,10 @@ import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
-import { protectedFeaturedToggleRoute } from './featured-toggle';
+import {
+    protectedFeaturedToggleRoute,
+    protectedGetFeaturedEntitlementRoute
+} from './featured-toggle';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
@@ -78,6 +81,11 @@ app.route('/', protectedGetContactRoute);
 // Ownership + entitlement gate enforced inside setAccommodationFeaturedToggle,
 // no declarative ownership middleware — safe to mount directly.
 app.route('/', protectedFeaturedToggleRoute);
+
+// GET /:id/featured-toggle - Read isFeatured + entitlement gate status (SPEC-309 T-020)
+// Read-side counterpart used by the web editor to decide whether to render
+// the toggle at all. Same ownership handling as the PATCH above.
+app.route('/', protectedGetFeaturedEntitlementRoute);
 
 // FAQ management (auth required, no ownership)
 app.route('/', getFaqsRoute);

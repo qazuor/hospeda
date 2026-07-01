@@ -784,31 +784,38 @@
             "id": "T-020",
             "title": "G-6: owner self-service featured toggle — web UI",
             "description": "Add the owner-facing toggle control to the web owner accommodation editor at apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar.astro (or its relevant client section under apps/web/src/components/host/editor/). Follow the `PlanEntitlementGate.client.tsx` precedent already used for gating other editor sections by plan entitlement — adapt or wrap it so the gate also considers an addon-derived entitlement (call the accommodation's current featured-entitlement state, e.g. via a small API read on the new T-019 route's underlying check, or a lightweight companion GET). Render the toggle only when the owner currently holds the entitlement (plan or addon) for THIS accommodation; otherwise render nothing or a subtle upsell (no rotation/queue UI per OQ-4 — keep it simple, a plain on/off switch). On toggle, call `PATCH .../featured-toggle` (T-019).\n\nKey files:\n- apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar.astro\n- apps/web/src/components/host/editor/ (new or extended component, vanilla CSS/CSS Modules per web styling convention — NOT Tailwind)\n\nAcceptance criteria:\n- Toggle is visible only for accommodations with an active FEATURED_LISTING entitlement (plan or addon).\n- Toggling calls the T-019 endpoint and reflects the persisted state on success/failure.\n- No slot/rotation UI — plain switch (OQ-4).\n- Follows web app conventions: native HTML/small hook (no TanStack Form), vanilla CSS/CSS Modules, i18n for all labels.\n\nTesting requirements:\n- Covered by T-028 (component/interaction test) — see apps/web test conventions for the editor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Fetch/derive current entitlement-gated visibility for the toggle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render toggle component (vanilla CSS, i18n) gated on entitlement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire toggle onChange to PATCH featured-toggle endpoint",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["frontend", "web", "owner", "featured"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "details": "Added a new GET /api/v1/protected/accommodations/:id/featured-toggle endpoint (getAccommodationFeaturedEntitlement in service-core) since no existing route exposed per-accommodation FEATURED_LISTING entitlement status (confirmed via exploration + user sign-off on endpoint design). Web: FeaturedToggleSection.client.tsx (self-contained, fetch-on-mount + PATCH-on-toggle, fail-closed while loading/on error/no entitlement), wired into AccommodationEditor.client.tsx. i18n keys added to host.json (es/en/pt). Scoped biome check (no fixes needed) + scoped typecheck green on @repo/service-core, hospeda-api, hospeda-web.",
+                "timestamp": "2026-07-01T21:40:00.000Z"
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T21:05:00.000Z",
+                "completed": "2026-07-01T21:40:00.000Z"
             }
         },
         {

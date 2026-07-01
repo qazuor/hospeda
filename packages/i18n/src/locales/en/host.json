@@ -227,7 +227,8 @@
                 "contact": "Contact",
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
-                "photosDescription": "Upload photos of your property to attract more guests"
+                "photosDescription": "Upload photos of your property to attract more guests",
+                "featuredToggle": "[EN] Destacado"
             },
             "field": {
                 "name": "Name",
@@ -355,6 +356,11 @@
                 "successMessage": "Translations generated. Reloading...",
                 "errorGeneric": "Could not generate translations. Please try again.",
                 "errorNetwork": "Connection error while trying to generate translations."
+            },
+            "featuredToggle": {
+                "label": "[EN] Destacar mi alojamiento",
+                "hint": "[EN] Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
+                "toggleError": "[EN] No se pudo actualizar el destacado. Intentá de nuevo."
             }
         },
         "empty": {

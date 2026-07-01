@@ -16,13 +16,21 @@
  * without joining the ownership-middleware sub-router.
  */
 import { AccommodationFeaturedToggleHttpSchema, AccommodationIdSchema } from '@repo/schemas';
-import { setAccommodationFeaturedToggle } from '@repo/service-core';
+import {
+    getAccommodationFeaturedEntitlement,
+    setAccommodationFeaturedToggle
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const FeaturedToggleResponseSchema = z.object({ isFeatured: z.boolean() });
+
+const FeaturedEntitlementResponseSchema = z.object({
+    isFeatured: z.boolean(),
+    hasEntitlement: z.boolean()
+});
 
 /**
  * PATCH /api/v1/protected/accommodations/:id/featured-toggle
@@ -59,6 +67,38 @@ export const protectedFeaturedToggleRoute = createProtectedRoute({
             actor,
             accommodationId: params.id as string,
             isFeatured
+        });
+    }
+});
+
+/**
+ * GET /api/v1/protected/accommodations/:id/featured-toggle
+ *
+ * Read-side counterpart to {@link protectedFeaturedToggleRoute}: tells the
+ * owner editor whether the self-service toggle should render at all, without
+ * exposing the plan/addon FEATURED_LISTING entitlement check anywhere in the
+ * broader `AccommodationProtectedSchema` used by the general getById route.
+ */
+export const protectedGetFeaturedEntitlementRoute = createProtectedRoute({
+    method: 'get',
+    path: '/{id}/featured-toggle',
+    summary: 'Get accommodation featured status and entitlement (owner self-service)',
+    description:
+        'Returns the current accommodations.isFeatured value and whether the actor ' +
+        'currently holds an active FEATURED_LISTING entitlement (plan or addon) for ' +
+        'this accommodation. Requires the actor to own the accommodation (or hold ' +
+        'ACCOMMODATION_UPDATE_ANY) — 403 otherwise.',
+    tags: ['Accommodations'],
+    requestParams: {
+        id: AccommodationIdSchema
+    },
+    responseSchema: FeaturedEntitlementResponseSchema,
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const actor = getActorFromContext(ctx);
+
+        return await getAccommodationFeaturedEntitlement({
+            actor,
+            accommodationId: params.id as string
         });
     }
 });
