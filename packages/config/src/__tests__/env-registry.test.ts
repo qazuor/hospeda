@@ -114,8 +114,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * - HOSPEDA_GIT_SHA, SOURCE_COMMIT (platform-injected), HOSPEDA_LANDING_SITE_URL,
  *   ALLOW_PLACEHOLDER_ENV_URLS, ANALYZE
  * (all `category: 'build'`, `stage: 'build'`, `apps: ['docker']`, optional, non-secret)
+ *
+ * 247 (SPEC-286): +1 HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT (platform-wide
+ * default price-drop percentage for tourist price alerts; category 'features',
+ * optional, secret=false, apps: ['api']).
  */
-const EXPECTED_VAR_COUNT = 246;
+const EXPECTED_VAR_COUNT = 247;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
