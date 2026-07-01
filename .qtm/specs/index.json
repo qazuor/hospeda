@@ -2644,12 +2644,15 @@
             "title": "Owner Custom Branding (Premium)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-318-owner-custom-branding",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom (no DB column/route/UI). One of two features giving owner-premium a real exclusive (today premium has none). Premium owners customize branding (logo/colors) on listing/profile. OQ: scope of branding.",
-            "tags": ["owner", "branding", "premium", "accommodation"]
+            "tags": ["owner", "branding", "premium", "accommodation"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-293 (Owner Custom Branding, created 2026-06-26) — same CUSTOM_BRANDING phantom-gate feature, generated independently by the SPEC-310 roadmap audit. Consolidated into SPEC-293; the SPEC-319 relation note was moved there."
         },
         {
             "specId": "SPEC-319",
