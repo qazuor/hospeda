@@ -117,31 +117,31 @@
             "id": "T-004",
             "title": "Wire AI-improve button into the summary field",
             "description": "In apps/web/src/components/host/editor/BasicInfoSection.client.tsx, mount the T-002 AiTextImprovePanel for the `summary` field (plain textarea only \u2014 no TipTap concern for this field), gated by the same PlanEntitlementGate (entitlementKey='ai_text_improve'). On Accept, replace the summary textarea's value directly. Button disabled when the field is empty.\n\nTests: extend the same BasicInfoSection test suite. Cover: (1) button hidden when not entitled, (2) button visible+enabled when entitled and field has content, (3) button disabled when field is empty, (4) Accept replaces the summary value, (5) Discard leaves the original summary value untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Wire panel + entitlement gate for summary",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests for summary field",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "accommodation-editor"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {
@@ -217,9 +217,9 @@
     ],
     "summary": {
         "total": 6,
-        "pending": 1,
-        "inProgress": 1,
-        "completed": 3,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 1.8
     }
