@@ -413,7 +413,9 @@
                 "myPropertiesDesc": "Gestioná tus alojamientos publicados",
                 "hostDashboard": "Panel del anfitrión",
                 "hostDashboardDesc": "Resumen de tu actividad como anfitrión",
-                "promotions": "Mis promociones"
+                "promotions": "Mis promociones",
+                "recommendations": "Recomendaciones",
+                "recommendationsDesc": "Alojamientos elegidos para vos"
             },
             "stats": {
                 "favorites": "Mis favoritos",
@@ -576,6 +578,10 @@
         "searchHistory": {
             "title": "Historial de búsquedas",
             "description": "Revisá y repetí tus búsquedas recientes en Hospeda"
+        },
+        "recommendations": {
+            "title": "Para vos",
+            "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
         }
     },
     "newsletter": {
@@ -760,5 +766,20 @@
             "filterCount_other": "{{count}} filtros"
         },
         "entitlementRequired": "Esta función está disponible para suscriptores Plus y VIP."
+    },
+    "recommendations": {
+        "loading": "Cargando recomendaciones...",
+        "errorFetch": "No pudimos cargar tus recomendaciones",
+        "listLabel": "Recomendaciones para vos",
+        "viewDetails": "Ver alojamiento",
+        "coldStart": {
+            "title": "Todavía estamos conociendo tus gustos",
+            "body": "Mientras tanto, te mostramos alojamientos populares. Guardá favoritos, mirá alojamientos o hacé una búsqueda para recibir recomendaciones más precisas."
+        },
+        "empty": {
+            "title": "No encontramos recomendaciones por ahora",
+            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos."
+        },
+        "entitlementRequired": "Esta función no está disponible para tu cuenta."
     }
 }

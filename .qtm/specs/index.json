@@ -2198,7 +2198,7 @@
             "title": "Personalized Recommendations Feed",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-284-recommendations-feed",
             "created": "2026-06-26T00:00:00Z",
             "base": "staging",
@@ -2617,9 +2617,10 @@
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom gate (gateRecommendations; no route/service/algorithm/UI; /similar is public+unpersonalized+unrelated). SPEC-310 moved this entitlement free->plus. Build personalized recommendations from history/favorites/search-history. OQ: personalization signal, heuristic vs ranking.",
             "tags": ["tourist", "recommendations", "discovery"],
+            "supersededBy": "SPEC-284",
             "archived": true,
             "archivedAt": "2026-07-01T00:00:00Z",
-            "archiveNote": "Duplicate of SPEC-284 (Personalized Recommendations Feed, created 2026-06-26, already 14/16 tasks implemented). Consolidated into SPEC-284; folded in the free->plus pricing-tier note and the SPEC-289 search-history signal-source relationship."
+            "archiveNote": "Duplicate of SPEC-284 (Personalized Recommendations Feed, created 2026-06-26). Independently flagged by two separate efforts the same day: this branch's own implementation work (SPEC-284 shipped 17/17 tasks) and a separate spec-dedup audit PR. Consolidated into SPEC-284; folded in the free->plus pricing-tier note and the SPEC-289 search-history signal-source relationship. This stub's premise is also stale: CAN_VIEW_RECOMMENDATIONS remains on the free tourist plan in plans.config.ts (never moved to plus), matching SPEC-284's OQ-3 binary-in-v1 decision."
         },
         {
             "specId": "SPEC-316",

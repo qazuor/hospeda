@@ -184,6 +184,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // SYSTEM: All permissions
         PermissionEnum.AUDIT_LOG_VIEW,
         PermissionEnum.SECURITY_LOG_VIEW,
@@ -571,6 +574,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // SYSTEM: Most permissions (no maintenance mode)
         // NOTE: AUDIT_LOG_VIEW / SECURITY_LOG_VIEW are SUPER_ADMIN-only (SPEC-162)
         // and are intentionally NOT granted to ADMIN.
@@ -751,6 +757,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // USER_BOOKMARK_COLLECTION: Own collections management
         PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
         PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
@@ -857,6 +866,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // ACCESS: Admin panel and APIs
         PermissionEnum.DASHBOARD_BASE_VIEW,
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -960,6 +972,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // SPONSORSHIP: Own sponsorships only (_OWN variants)
         PermissionEnum.SPONSORSHIP_VIEW_OWN,
         PermissionEnum.SPONSORSHIP_UPDATE_OWN,
@@ -1039,6 +1054,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
         // USER_BOOKMARK: Own bookmarks
         PermissionEnum.USER_BOOKMARK_CREATE,
         PermissionEnum.USER_BOOKMARK_UPDATE,
@@ -1104,6 +1122,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
+
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
 
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC,

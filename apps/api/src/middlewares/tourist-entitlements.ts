@@ -367,7 +367,8 @@ export function gateSearchHistory(): AppMiddleware {
  * Gate recommendations feature
  *
  * Checks if user has the entitlement to view personalized recommendations.
- * VIP plan only feature.
+ * Binary in v1 (SPEC-284): every plan carrying the entitlement sees the same
+ * feed — no per-plan differentiation.
  *
  * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
  * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
@@ -391,9 +392,6 @@ export function gateSearchHistory(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for GET /recommendations once that
-// route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateRecommendations(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_VIEW_RECOMMENDATIONS)) {

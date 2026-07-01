@@ -21,6 +21,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewModel,
+    type GetRecentlyViewedByUserInput,
     type GetStatsForEntitiesInput,
     type InsertViewInput,
     type PurgeOlderThanInput
@@ -413,6 +414,111 @@ describe('EntityViewModel', () => {
 
             // Act & Assert
             await expect(model.getStatsForEntities(input)).rejects.toThrow(DbError);
+        });
+    });
+
+    // =========================================================================
+    // getRecentlyViewedByUser
+    // =========================================================================
+
+    describe('getRecentlyViewedByUser', () => {
+        it('returns accommodationIds mapped from db.execute() rows, most recent first', async () => {
+            // Arrange
+            const userId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+            const entityId1 = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+            const entityId2 = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+            const input: GetRecentlyViewedByUserInput = { userId };
+
+            const fakeRows = {
+                rows: [
+                    { entityId: entityId1, lastViewedAt: '2026-06-29T12:00:00Z' },
+                    { entityId: entityId2, lastViewedAt: '2026-06-20T08:00:00Z' }
+                ]
+            };
+            const mockDb = { execute: vi.fn().mockResolvedValue(fakeRows) };
+            vi.spyOn(model as unknown as { getClient: () => unknown }, 'getClient').mockReturnValue(
+                mockDb
+            );
+
+            // Act
+            const result = await model.getRecentlyViewedByUser(input);
+
+            // Assert
+            expect(mockDb.execute).toHaveBeenCalledOnce();
+            expect(result).toEqual({ accommodationIds: [entityId1, entityId2] });
+        });
+
+        it('returns an empty accommodationIds array when the user has no views', async () => {
+            // Arrange
+            const input: GetRecentlyViewedByUserInput = {
+                userId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            };
+            const mockDb = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+            vi.spyOn(model as unknown as { getClient: () => unknown }, 'getClient').mockReturnValue(
+                mockDb
+            );
+
+            // Act
+            const result = await model.getRecentlyViewedByUser(input);
+
+            // Assert
+            expect(result).toEqual({ accommodationIds: [] });
+        });
+
+        it('handles pg driver returning a plain array (not {rows:[...]})', async () => {
+            // Arrange
+            const userId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+            const entityId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+            const input: GetRecentlyViewedByUserInput = { userId };
+            const fakeRows = [{ entityId, lastViewedAt: '2026-06-29T12:00:00Z' }];
+            const mockDb = { execute: vi.fn().mockResolvedValue(fakeRows) };
+            vi.spyOn(model as unknown as { getClient: () => unknown }, 'getClient').mockReturnValue(
+                mockDb
+            );
+
+            // Act
+            const result = await model.getRecentlyViewedByUser(input);
+
+            // Assert
+            expect(result).toEqual({ accommodationIds: [entityId] });
+        });
+
+        it('uses the provided tx when supplied', async () => {
+            // Arrange
+            const input: GetRecentlyViewedByUserInput = {
+                userId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            };
+            const mockTx = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient: (tx?: unknown) => unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            // Act
+            await model.getRecentlyViewedByUser(
+                input,
+                mockTx as unknown as import('../../../src/types.ts').DrizzleClient
+            );
+
+            // Assert
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('wraps DB errors in DbError', async () => {
+            // Arrange
+            const input: GetRecentlyViewedByUserInput = {
+                userId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            };
+            const mockDb = {
+                execute: vi.fn().mockRejectedValue(new Error('query timeout'))
+            };
+            vi.spyOn(model as unknown as { getClient: () => unknown }, 'getClient').mockReturnValue(
+                mockDb
+            );
+
+            // Act & Assert
+            await expect(model.getRecentlyViewedByUser(input)).rejects.toThrow(DbError);
         });
     });
 

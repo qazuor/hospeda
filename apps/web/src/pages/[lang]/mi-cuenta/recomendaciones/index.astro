@@ -1,0 +1,68 @@
+---
+/**
+ * @file mi-cuenta/recomendaciones/index.astro
+ * @description Personalized recommendations page ("Para vos") — shows a feed
+ * of accommodations tailored to the tourist's favorites, recent views, and
+ * search history (SPEC-284). The feed itself (loading/error/entitlement/
+ * cold-start/empty/populated states) is entirely owned by the
+ * `RecommendationsFeed` island; this page only provides auth guarding, page
+ * chrome (title/description), and layout wiring.
+ *
+ * Auth protection: middleware redirects unauthenticated visitors. The in-page
+ * guard is a safety net for SSR edge cases.
+ *
+ * @route    /[lang]/mi-cuenta/recomendaciones/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { RecommendationsFeed } from '@/components/account/RecommendationsFeed.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard — middleware should have redirected already, this is the safety net.
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.recommendations.title', 'Para vos');
+const description = t(
+    'account.pages.recommendations.description',
+    'Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda'
+);
+const apiUrl = getApiUrl();
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="recomendaciones">
+    <h2 class="account-section__title">{title}</h2>
+    <p class="account-section__description">{description}</p>
+
+    <RecommendationsFeed
+        client:visible
+        locale={locale}
+        apiUrl={apiUrl}
+    />
+</AccountLayout>
+
+<style>
+    .account-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .account-section__description {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

@@ -762,13 +762,13 @@
         {
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "17/17",
             "path": "SPEC-284-recommendations-feed",
-            "branch": null,
+            "branch": "spec/SPEC-284-recommendations-feed",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS). Surfaced in SPEC-282 review. Absorbed duplicate SPEC-315 (2026-07-01)."
+            "note": "Implementation complete: all 16 atomized tasks (core 6 / integration 8 / testing 2, avg complexity 1.94) plus ad-hoc T-005b (dedicated PermissionEnum.RECOMMENDATION_VIEW, user-approved mid-implementation) are done on spec/SPEC-284-recommendations-feed. Fresh-context review found 2 minor issues, both fixed. Absorbed duplicate SPEC-315 (2026-07-01, independently flagged by both this branch and a separate spec-dedup audit). PR #1966 open to staging, CI fixes in progress. Status stays in-progress until merge + formal close-out (see SPEC-285 for the same pattern)."
         },
         {
             "specId": "SPEC-285",
@@ -1129,7 +1129,7 @@
             "archived": true,
             "archivedAt": "2026-07-01T00:00:00Z",
             "archiveNote": "Duplicate of SPEC-284 (Personalized Recommendations Feed). Consolidated 2026-07-01.",
-            "note": "Stub from SPEC-310 audit. Phantom (gateRecommendations). SPEC-310 moves entitlement free->plus. Needs full discovery."
+            "note": "Superseded by SPEC-284 (Personalized Recommendations Feed, 17/17 tasks complete) — same feature, spec'd independently the same day. Never started here; no code to reconcile."
         },
         {
             "specId": "SPEC-316",

@@ -93,6 +93,7 @@
 | `DELETE /api/v1/protected/search-history/{id}` | `search-history/protected/delete-one.ts` | none | - | n/a | Hard-delete own entry; ungated per BETA-42 — users at cap must still free slots — SPEC-289 |
 | `DELETE /api/v1/protected/search-history` | `search-history/protected/clear-all.ts` | none | - | n/a | Hard-delete all own entries (privacy op); ungated — SPEC-289 |
 | `PATCH /api/v1/protected/search-history/preferences` | `search-history/protected/preferences.ts` | none | - | n/a | Toggle opt-out; settings write via UserService.patchSearchHistoryPreferences — SPEC-289 |
+| `GET /api/v1/protected/recommendations` | `recommendations/protected/get.ts` | gate | `can_view_recommendations` | wired | gateRecommendations() — binary in v1 (OQ-3): every plan carrying the entitlement sees the same feed. RecommendationService.getFeed() also enforces PermissionEnum.RECOMMENDATION_VIEW (role axis, separate from the plan-axis entitlement gate) — SPEC-284 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
@@ -936,7 +937,7 @@ eventually built, move its entry from this section to the main table.
 | `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
-| `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateRecommendations`~~ | ~~`can_view_recommendations`~~ | `middlewares/tourist-entitlements.ts` | SPEC-284 — **promoted to main table** (route built in SPEC-284 T-008; moved out of phantom gates) |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |

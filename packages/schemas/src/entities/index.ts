@@ -42,3 +42,4 @@ export * from './whats-new/index.js';
 export * from './social/index.js';
 export * from './feature-flag/index.js';
 export * from './userSearchHistory/index.js';
+export * from './recommendation/index.js';

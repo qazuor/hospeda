@@ -1,0 +1,248 @@
+/**
+ * RecommendationsFeed.module.css
+ * Colocated CSS Module for the RecommendationsFeed React island (SPEC-284 T-011).
+ * Uses design tokens only — no Tailwind utility classes.
+ */
+
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+/* ─── Loading / error / entitlement states ───────────────────────────────── */
+
+.loadingWrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.errorWrap {
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    padding: var(--space-5, 20px);
+    color: var(--destructive, oklch(0.6 0.2 25));
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    text-align: center;
+}
+
+.retryBtn {
+    margin-top: var(--space-3, 12px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.2s) ease;
+}
+
+.retryBtn:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+.entitlementWrap {
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-card);
+    padding: var(--space-6, 24px);
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    text-align: center;
+}
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+
+.emptyWrap {
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-card);
+    padding: var(--space-8, 32px) var(--space-6, 24px);
+    text-align: center;
+}
+
+.emptyTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.0625rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 8px);
+}
+
+.emptyBody {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ─── Cold-start banner ───────────────────────────────────────────────────── */
+
+.coldStartBanner {
+    background-color: var(--surface-warm);
+    border: 1px solid var(--brand-accent-a25, var(--core-foreground-a08));
+    border-radius: var(--radius-card);
+    padding: var(--space-5, 20px);
+}
+
+.coldStartTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 8px);
+}
+
+.coldStartBody {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ─── Grid of cards ───────────────────────────────────────────────────────── */
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 30px);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ─── Recommendation card ─────────────────────────────────────────────────── */
+
+.card {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
+        ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
+
+.cardLink {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    color: inherit;
+    text-decoration: none;
+}
+
+.cardLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.cardImage {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--surface-warm);
+}
+
+.cardImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+.card:hover .cardImg {
+    transform: scale(1.05);
+}
+
+.cardImagePlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+}
+
+.cardBody {
+    padding: var(--space-4, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    flex: 1;
+}
+
+.cardTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.cardRating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.cardPrice {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--brand-accent);
+    margin: 0;
+}
+
+.cardCta {
+    display: inline-block;
+    margin-top: auto;
+    align-self: flex-start;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border-radius: var(--radius-button);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.cardLink:hover .cardCta {
+    opacity: 0.9;
+}
