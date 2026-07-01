@@ -52,13 +52,16 @@ limit**.
 - No data migration of existing collections (forward-only; existing collections
   over a new lower cap are read-only — OQ-3).
 
-## 5. Open Questions
+## 5. Open Questions (resolved 2026-07-01)
 
-- **OQ-1** Entitlement + limit key names.
-- **OQ-2** Per-plan limit values (confirm at implementation — values are
-  commercial-layer / DB-editable per Model C).
-- **OQ-3** Behavior for free tourists who already have collections, and for users
-  above a newly-lowered cap (grandfather read-only vs block creation only).
+- **OQ-1 (resolved):** `EntitlementKey.CAN_USE_COLLECTIONS` / `LimitKey.MAX_COLLECTIONS`,
+  following the existing `CAN_USE_*` / `MAX_*` naming convention.
+- **OQ-2 (resolved):** tourist-plus = 10, tourist-vip = 25. Tourist-free has no
+  entitlement (no access at all).
+- **OQ-3 (resolved):** no grandfather handling needed. No real users exist yet
+  (not even in beta), so there is no pre-existing data to reconcile — the limit
+  and entitlement gate are simply enforced going forward at creation time. No
+  read-only mode, no retroactive access removal logic required.
 
 ## 6. Relationship to SPEC-282
 
