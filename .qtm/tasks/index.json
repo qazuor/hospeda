@@ -1063,13 +1063,13 @@
         {
             "specId": "SPEC-309",
             "title": "Featured Listing — Addon Source + Hardening",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/30",
             "path": "SPEC-309-featured-listing-addon-source-and-hardening",
-            "branch": null,
+            "branch": "spec/SPEC-309-featured-listing-addon-source-and-hardening",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes. Absorbed overlapping duplicate SPEC-320 (2026-07-01): folded in owner self-service toggle (G-6) + slots/duration open questions."
+            "note": "Tasks atomized 2026-07-01 (30 tasks, avg complexity 2.3, critical path T-001->T-002->T-004->T-005->T-008->T-023->T-030). Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes. Absorbed overlapping duplicate SPEC-320 (2026-07-01): folded in owner self-service toggle (G-6) + slots/duration open questions. All 5 open questions resolved 2026-07-01: OQ-1 rename featuredByPlan->featuredByEntitlement; OQ-2 ISR revalidation confirmed required; OQ-3 addon scoped to single accommodation (not owner-wide); OQ-4 no featured-slot cap; OQ-5 reuse existing addon-expiry cron."
         },
         {
             "specId": "SPEC-310",
