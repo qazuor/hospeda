@@ -74,3 +74,13 @@ step).
 
 The "Badge de verificación" row stays *Próximamente* until this ships. Flip the
 `PlanComparisonTable` `verificationBadge` row from `upcoming` to `available` on ship.
+
+## 8. Related
+
+- **SPEC-319** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `HAS_VERIFICATION_BADGE`
+  phantom feature). Its open question about revocation-on-downgrade is already
+  answered by D-2/D-3 above: `isVerified` is server-managed and independent of
+  the owner's plan — the entitlement only gates DISPLAY, so a downgrade hides
+  the badge without clearing the underlying verified state. Consolidated into
+  this spec on 2026-07-01; marked `obsolete` in the tracking indices.

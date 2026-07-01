@@ -67,6 +67,9 @@ notifications), with **per-plan limits**.
 - **OQ-4** Delivery cadence + digest vs immediate.
 - **OQ-5** Do we keep `VIP_PROMOTIONS_ACCESS` as a visibility perk, fold it in, or
   rename it?
+- **OQ-6** Does Hospeda currently store/track per-accommodation price history
+  over time? Price-drop detection (G-1) requires a historical baseline — this
+  is a hard prerequisite before the monitoring cron can work.
 
 ## 6. Dependencies & relationship
 
@@ -74,3 +77,11 @@ notifications), with **per-plan limits**.
   event source.
 - **SPEC-282:** the "Alertas y ofertas" row (grouping price alerts + promo offers)
   shows *Próximamente* until this ships.
+
+## 7. Related
+
+- **SPEC-312** (Tourist Price Alerts) — duplicate stub of this spec's price-alert
+  half, generated independently by the SPEC-310 roadmap audit (created
+  2026-06-30, same `PRICE_ALERTS`/`gateAlerts` phantom gate). Consolidated into
+  this spec on 2026-07-01 (folded in OQ-6, the price-history prerequisite);
+  marked `obsolete` in the tracking indices.

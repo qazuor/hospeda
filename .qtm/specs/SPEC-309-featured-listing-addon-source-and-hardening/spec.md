@@ -79,11 +79,16 @@ to backfill — review item M-2.)
   and the soft-fail isolation of the sync call.
 - **G-5** (M-5) Align the T-005 hook status handling with `loadEntitlements` /
   the cron (`paused` → inactive consistently; grant on `comp`).
+- **G-6** (folded from SPEC-320) Optional owner self-service toggle for
+  `isFeatured` in the web owner editor, guarded so it only applies within the
+  owner's active FEATURED_LISTING entitlement (plan or addon) — scope/priority
+  to confirm against OQ-4/OQ-5 below.
 
 ## 4. Non-Goals
 
-- No change to the featuring UX (admin manual + owner automatic stays as SPEC-292
-  shipped).
+- No change to the featuring UX beyond G-6 (admin manual + owner automatic
+  stays as SPEC-292 shipped; G-6 only adds an owner-facing toggle gated by an
+  existing entitlement).
 - No new boost mechanism — this only wires the EXISTING `visibility-boost` addons.
 - No change to the `featuredByPlan` column / migration (already shipped).
 
@@ -99,9 +104,29 @@ to backfill — review item M-2.)
   owner's accommodations (consistent with the plan behavior, no cap), or is the
   addon scoped to a single listing? (The addon is described per-accommodation;
   the plan model is owner-wide. Resolve before implementing G-1/G-2.)
+- **OQ-4** (folded from SPEC-320) How many featured slots exist, and what
+  happens when more owners qualify than slots allow — rotation, a queue, or
+  does everyone who qualifies get featured simultaneously? Today's
+  `isFeatured OR featuredByPlan` sort implies no cap; confirm before adding
+  G-6's self-service toggle, since an uncapped toggle needs no slot logic but
+  a capped one does.
+- **OQ-5** (folded from SPEC-320) Is the `visibility-boost` addon's featuring
+  window already time-bounded by its own `durationDays` config (the addon
+  names — `visibility-boost-7d` / `-30d` — suggest yes), and does G-2's expiry
+  hook rely on that existing config or need new cron logic?
 
 ## 6. Relationship to SPEC-292
 
 SPEC-292 is the base (merged). This spec must NOT regress the plan-only path; it
 extends it to the addon source and hardens the wiring. Implementation will need its
 own worktree (Phase 2).
+
+## 7. Related
+
+- **SPEC-320** (Featured Listing Automation) — duplicate/overlapping stub
+  generated independently by the SPEC-310 roadmap audit (created 2026-06-30).
+  Its premise ("no auto-activation exists") was stale — SPEC-292 (merged PR
+  #1930, same day) already shipped plan-based auto-activation; what remained
+  was exactly this spec's addon-source gap (G-1/G-2). Consolidated into this
+  spec on 2026-07-01 (folded in G-6 self-service toggle, OQ-4 slots/rotation,
+  OQ-5 addon duration); marked `obsolete` in the tracking indices.
