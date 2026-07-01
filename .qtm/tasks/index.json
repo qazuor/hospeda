@@ -762,13 +762,15 @@
         {
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "17/17",
             "path": "SPEC-284-recommendations-feed",
             "branch": "spec/SPEC-284-recommendations-feed",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Implementation complete: all 16 atomized tasks (core 6 / integration 8 / testing 2, avg complexity 1.94) plus ad-hoc T-005b (dedicated PermissionEnum.RECOMMENDATION_VIEW, user-approved mid-implementation) are done on spec/SPEC-284-recommendations-feed. Fresh-context review found 2 minor issues, both fixed. Absorbed duplicate SPEC-315 (2026-07-01, independently flagged by both this branch and a separate spec-dedup audit). PR #1966 open to staging, CI fixes in progress. Status stays in-progress until merge + formal close-out (see SPEC-285 for the same pattern)."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "Implementation complete: all 16 atomized tasks (core 6 / integration 8 / testing 2, avg complexity 1.94) plus ad-hoc T-005b (dedicated PermissionEnum.RECOMMENDATION_VIEW, user-approved mid-implementation). Fresh-context review found 2 minor issues, both fixed. Absorbed duplicate SPEC-315 (2026-07-01, independently flagged by both this branch and a separate spec-dedup audit). Merged to staging via PR #1966 (2026-07-01) after resolving 5 rounds of CI fixes (SPEC-039 guard, shared @repo/db test mock gap, missing Postgres enum migration, another shared mock gap, and a merge conflict with a parallel spec-dedup PR touching the same indices)."
         },
         {
             "specId": "SPEC-285",
