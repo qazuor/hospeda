@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 2/30 tasks (7%)
+## Progress: 3/30 tasks (10%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -26,7 +26,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-001
   - Blocks: T-004, T-007
 
-- [ ] **T-003** (complexity: 1) - Addon config: add requiresAccommodationTarget flag
+- [x] **T-003** (complexity: 1) - Addon config: add requiresAccommodationTarget flag [DONE]
   - AddonDefinition + both visibility-boost addons
   - Blocked by: none
   - Blocks: T-006

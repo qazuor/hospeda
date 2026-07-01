@@ -89,32 +89,40 @@
             "id": "T-003",
             "title": "Addon config: add requiresAccommodationTarget flag",
             "description": "Marks which addons need an accommodation target captured at purchase time (OQ-3). Add an optional `requiresAccommodationTarget?: boolean` field to the `AddonDefinition` type (packages/billing/src/types/addon.types.ts) and set it to `true` on both `VISIBILITY_BOOST_ADDON` and `VISIBILITY_BOOST_30D_ADDON` in packages/billing/src/config/addons.config.ts (lines 7-37). Default is `false`/`undefined` for all other addons (no behavior change for them).\n\nKey files:\n- packages/billing/src/types/addon.types.ts (add field to `AddonDefinition`)\n- packages/billing/src/config/addons.config.ts:7-37 (set `requiresAccommodationTarget: true` on the two visibility-boost addons)\n\nAcceptance criteria:\n- `AddonDefinition` type includes the new optional boolean field.\n- Both visibility-boost addons have `requiresAccommodationTarget: true`; no other addon definition changed.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test (packages/billing/test/) asserting `getAddonBySlug('visibility-boost-7d').requiresAccommodationTarget === true` and that an unrelated addon (e.g. an existing non-featured addon) is `false`/`undefined`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Add requiresAccommodationTarget to AddonDefinition type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set true on both visibility-boost addon definitions",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Unit test asserting the flag on both addons", "completed": false }
+                { "title": "Unit test asserting the flag on both addons", "completed": true }
             ],
             "tags": ["backend", "billing", "config"],
             "phase": "setup",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": { "status": "pass", "timestamp": "2026-07-01T16:35:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:35:00Z",
+                    "details": "scoped to packages/billing"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:35:00Z",
+                    "details": "packages/billing test/addons.test.ts, 25/25 (2 new: requiresAccommodationTarget true on both visibility-boost addons, falsy on unrelated addon); RED confirmed before implementation"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T16:30:00Z",
+                "completed": "2026-07-01T16:35:00Z"
             }
         },
         {
@@ -924,9 +932,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.3
     }
