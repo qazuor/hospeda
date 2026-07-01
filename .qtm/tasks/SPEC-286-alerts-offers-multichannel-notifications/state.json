@@ -1,0 +1,512 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-286",
+    "title": "Alerts & Offers — Multichannel Notifications",
+    "created": "2026-06-30T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Rename VIP_PROMOTIONS_ACCESS to VIP_VISIBILITY_ACCESS across all layers",
+            "description": "Pure refactor (D-5). Rename the entitlement key everywhere — behavior of the 8 visibility checks stays identical.\n\nFiles to change:\n- packages/billing/src/types/entitlement.types.ts: rename enum member VIP_PROMOTIONS_ACCESS → VIP_VISIBILITY_ACCESS; update the string value from 'vip_promotions_access' to 'vip_visibility_access'.\n- packages/billing/src/config/entitlements.config.ts: rename key reference + update name/description metadata.\n- packages/billing/src/config/plans.config.ts: rename in TOURIST_VIP_ENTITLEMENTS array (line ~60).\n- packages/service-core/src/services/accommodation/accommodation.service.ts: 6 string checks at lines 2110, 2155, 2212, 2285, 2565, 2630.\n- packages/service-core/src/services/accommodation/accommodation.permissions.ts: 1 string check at line 185.\n- apps/admin/src/features/billing-plans/components/plan-entitlement-groups.ts: rename EntitlementKey reference (line ~61).\n- packages/i18n/src/types.ts: rename the i18n key literal 'billing.entitlement.vip_promotions_access' → 'billing.entitlement.vip_visibility_access' (line ~5249).\n- packages/billing/test/entitlements.test.ts: update hardcoded string at line ~176.\n- packages/service-core/test/services/accommodation/accommodation.activeOnly.test.ts: update strings at lines ~100, ~218.\n- packages/service-core/test/services/accommodation/getByDestination.test.ts: update strings at lines ~9, ~153, ~159.\n- apps/api/test/middlewares/entitlement-plan.cutover.test.ts: update hardcoded 'vip_promotions_access' at line ~75.\n\nDB extras migration (next available number in packages/db/src/migrations/extras/):\n- UPDATE billing_entitlements SET key = 'vip_visibility_access' WHERE key = 'vip_promotions_access';\n- UPDATE billing_plans SET entitlements = (SELECT jsonb_agg(CASE WHEN elem = '\"vip_promotions_access\"' THEN '\"vip_visibility_access\"' ELSE elem END) FROM jsonb_array_elements(entitlements) elem) WHERE entitlements @> '[\"vip_promotions_access\"]';\n- UPDATE billing_customer_entitlements SET entitlement_key = 'vip_visibility_access' WHERE entitlement_key = 'vip_promotions_access' (if table/column exists).\n\nMandatory regression test: add a test in packages/service-core/test/services/accommodation/ proving that a VIP actor (entitlements: new Set(['vip_visibility_access'])) still bypasses the visibility filters (RESTRICTED / planRestricted / ownerSuspended) in accommodation.service.ts. This test MUST be written BEFORE the rename to confirm it fails, then passes after — verifying no silent breakage in the 8 call sites.\n\nAcceptance criteria:\n- TypeScript compiles clean (no references to old key).\n- All existing accommodation-visibility tests pass unchanged.\n- Regression test proves VIP visibility perk works with the new key string.\n- Extras migration runs idempotently (SQL is safe to re-apply).\n- No behavior change to what VIP actors can see.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write regression test (RED) for VIP visibility under new key string",
+                    "completed": false
+                },
+                {
+                    "title": "Rename enum + config + plans in packages/billing",
+                    "completed": false
+                },
+                {
+                    "title": "Update 6+1 string checks in accommodation.service.ts + accommodation.permissions.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update admin plan-entitlement-groups.ts + i18n types.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update all test files with hardcoded old string",
+                    "completed": false
+                },
+                {
+                    "title": "Write idempotent extras SQL migration for DB rename",
+                    "completed": false
+                },
+                {
+                    "title": "Verify regression test GREEN + full typecheck pass",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements", "rename", "D-5", "regression-test"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pnpm lint (scoped to affected packages)",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped: accommodation.service, accommodation.permissions, billing/entitlements, cutover"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add PriceAlert Zod schemas to @repo/schemas",
+            "description": "Create the canonical type definitions for price-alert subscriptions in packages/schemas. All other packages import from here — no inline type definitions.\n\nCreate packages/schemas/src/entities/price-alert/price-alert.schema.ts:\n- PriceAlertSchema: z.object({ id: PriceAlertIdSchema, userId, accommodationId, basePriceSnapshot (integer centavos, price at subscription time), targetPercentDrop (z.number().int().min(1).max(100).nullable() — null means 'any drop'), isActive: z.boolean(), createdAt, updatedAt })\n- CreatePriceAlertInputSchema: z.object({ accommodationId: AccommodationIdSchema, targetPercentDrop: z.number().int().min(1).max(100).optional() })\n- DeletePriceAlertInputSchema: z.object({ alertId: PriceAlertIdSchema })\n- ListPriceAlertsInputSchema (pagination: page/pageSize)\n- PriceAlertResponseSchema (for API output; includes accommodation name snapshot)\n\nAdd PriceAlertIdSchema to packages/schemas/src/common/id.schema.ts (UUID branded type, mirroring AccommodationIdSchema pattern).\n\nExport new schemas from packages/schemas/src/entities/price-alert/index.ts and from the main packages/schemas/src/index.ts.\n\nUnit tests in packages/schemas/test/entities/price-alert.schema.test.ts:\n- Valid input (with and without targetPercentDrop).\n- targetPercentDrop = 0 rejected (must be >= 1).\n- targetPercentDrop = 101 rejected.\n- null targetPercentDrop accepted.\n\nAcceptance criteria:\n- All schemas exported and type-check clean.\n- Unit tests pass.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Add PriceAlertIdSchema to common/id.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create price-alert.schema.ts with all input/output schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Export from entities index + main schemas index",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "price-alert", "D-2", "D-4"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/schemas)",
+                "typecheck": "pnpm typecheck (packages/schemas)",
+                "tests": "scoped: packages/schemas/test/entities/price-alert.schema.test.ts"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create tourist_price_alerts DB table, structural migration, and BaseModel",
+            "description": "Structural carril (pnpm db:generate → migration 0037_* in packages/db/src/migrations/).\n\nCreate packages/db/src/schemas/alert/tourist_price_alerts.dbschema.ts:\n- Table tourist_price_alerts with columns:\n  - id: uuid PK (default gen_random_uuid())\n  - user_id: uuid NOT NULL FK → users.id ON DELETE CASCADE\n  - accommodation_id: uuid NOT NULL FK → accommodations.id ON DELETE CASCADE\n  - base_price_snapshot: integer NOT NULL (price in centavos at subscription time; used for % drop comparison)\n  - target_percent_drop: integer NULL (null = alert on any drop; 1-100 range enforced at schema level)\n  - is_active: boolean NOT NULL DEFAULT true\n  - created_at, updated_at (with timezone), deleted_at (soft delete)\n- Unique constraint: UNIQUE(user_id, accommodation_id) WHERE deleted_at IS NULL (only one active alert per user+accommodation pair)\n- Indexes:\n  - tourist_price_alerts_userId_idx on user_id\n  - tourist_price_alerts_accommodationId_idx on accommodation_id\n  - tourist_price_alerts_isActive_idx on is_active (for cron batch query)\n\nRun pnpm db:generate to produce the migration SQL, commit the generated file alongside the schema change.\n\nCreate packages/db/src/models/alert/touristPriceAlert.model.ts:\n- Extends BaseModel\n- Export from packages/db/src/models/index.ts\n\nAdd relation: users → many(touristPriceAlerts), accommodations → many(touristPriceAlerts) in the respective dbschema relation definitions.\n\nAcceptance criteria:\n- pnpm db:generate produces a non-empty migration.\n- TypeScript compiles clean.\n- Model extends BaseModel and is exported from the models index.\n- Unique constraint present in the generated SQL.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Create tourist_price_alerts.dbschema.ts with all columns + indexes + unique constraint",
+                    "completed": false
+                },
+                {
+                    "title": "Add many() relations to users + accommodations dbschemas",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm db:generate and commit the generated migration",
+                    "completed": false
+                },
+                {
+                    "title": "Create touristPriceAlert.model.ts + export from models index",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "price-alert", "structural-carril"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/db)",
+                "typecheck": "pnpm typecheck (packages/db)",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement AlertSubscriptionService in @repo/service-core",
+            "description": "Create packages/service-core/src/services/alert/alert-subscription.service.ts extending BaseCrudService for the tourist_price_alerts table.\n\nMethods (all RO-RO, return Result<T>):\n- create({ actor, input: CreatePriceAlertInput }): validates accommodation exists; reads current accommodation.price.price to populate base_price_snapshot; checks for duplicate subscription (UNIQUE constraint — handle CONFLICT_ERROR); returns created PriceAlert.\n- remove({ actor, alertId }): loads alert, validates actor owns it (actor.id === alert.userId), soft-deletes via deletedAt.\n- list({ actor, input: ListPriceAlertsInput }): returns paginated list of active alerts for actor.id; includes accommodation slug/name snapshot for display.\n- countActive({ actor }): returns integer count of non-deleted alerts for actor.id (used by gateAlerts() context pre-population before calling the middleware).\n\nPermission model:\n- create/remove: actor must be authenticated (no special permission beyond that; ownership enforced in service).\n- list/countActive: actor must match userId (no admin list in v1).\n- Staff bypass: SUPER_ADMIN and ADMIN can call on behalf of any user (use PermissionEnum.ACCOMMODATION_VIEW_ALL as the staff bypass check, consistent with other tourist services).\n\nAccomodation price extraction: read accommodation.price JSONB; parse as AccommodationPriceSchema; extract price.price (integer centavos). If price is null/missing, reject creation with SERVICE_ERROR_INVALID_INPUT.\n\nExport from packages/service-core/src/services/index.ts.\n\nUnit tests in packages/service-core/test/services/alert/alert-subscription.service.test.ts:\n- create: success, accommodation not found, duplicate subscription.\n- remove: success, not-found alert, wrong actor.\n- list: returns paginated active alerts, excludes soft-deleted.\n- countActive: returns correct count.\n- Confirm SPEC-216 owner-inherits-tourist pattern: an owner actor can also create alerts.\n\nAcceptance criteria:\n- Service compiles clean.\n- All unit tests pass with >= 90% coverage on new service code.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Implement create() with accommodation price snapshot extraction",
+                    "completed": false
+                },
+                {
+                    "title": "Implement remove() with ownership check",
+                    "completed": false
+                },
+                {
+                    "title": "Implement list() + countActive()",
+                    "completed": false
+                },
+                {
+                    "title": "Export from service-core services index",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests (create/remove/list/countActive/duplicate/owner-bypass)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "price-alert", "BaseCrudService", "D-2"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/service-core)",
+                "typecheck": "pnpm typecheck (packages/service-core)",
+                "tests": "scoped: packages/service-core/test/services/alert/"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Mount /protected/price-alerts API routes with gateAlerts() gate",
+            "description": "Create thin Hono routes following the three-tier API architecture. All routes live at /api/v1/protected/price-alerts.\n\nFiles to create in apps/api/src/routes/price-alert/protected/:\n- create.ts: POST / — pre-populate currentActiveAlertsCount via AlertSubscriptionService.countActive(actor) (set on context as c.set('currentActiveAlertsCount', count)), then gateAlerts() middleware from tourist-entitlements.ts, then call AlertSubscriptionService.create(). Use createSimpleRoute/createOpenApiRoute factory. Return 201 + created alert.\n- remove.ts: DELETE /:alertId — gateAlerts() not needed for deletion; validate alertId as UUID; call AlertSubscriptionService.remove(). Return 204.\n- list.ts: GET / — no gate (listing doesn't consume the limit); call AlertSubscriptionService.list(). Return 200 + paginated list.\n- index.ts: Hono sub-app mounting all three.\n\nRegister in apps/api/src/routes/index.ts:\n- Import { priceAlertProtectedRoutes } from './price-alert/index.js';\n- Mount at /protected/price-alerts inside the PROTECTED ROUTES block.\n\nUpdate docs/billing/endpoint-gate-matrix.md:\n- Add rows for POST /protected/price-alerts (gate: PRICE_ALERTS entitlement + MAX_ACTIVE_ALERTS limit) and GET/DELETE /protected/price-alerts/:id (no gate).\n\nAcceptance criteria:\n- POST /protected/price-alerts returns 403 ENTITLEMENT_REQUIRED for a free-tier tourist.\n- POST /protected/price-alerts returns 403 LIMIT_REACHED when at MAX_ACTIVE_ALERTS.\n- POST /protected/price-alerts returns 201 for an entitled tourist.\n- DELETE and GET return 200/204 for authenticated actors.\n- TypeScript compiles clean.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Create create.ts with currentActiveAlertsCount context pre-population + gateAlerts()",
+                    "completed": false
+                },
+                {
+                    "title": "Create remove.ts and list.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Register routes in apps/api/src/routes/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update endpoint-gate-matrix.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "price-alert", "gateAlerts", "D-2", "D-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint (apps/api)",
+                "typecheck": "pnpm typecheck (apps/api)",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement PriceDropEvaluator service",
+            "description": "Create packages/service-core/src/services/alert/price-drop-evaluator.service.ts.\n\nPurpose: given a time window, find all tourist_price_alerts whose subscribed accommodation has dropped in price past the alert's threshold.\n\nInterface (RO-RO):\n- evaluatePriceDrops({ since: Date }): Promise<Map<string, PriceDropMatch[]>>\n  - Queries active tourist_price_alerts (is_active = true, deleted_at IS NULL).\n  - For each alert, reads the accommodation's current accommodation.price.price (integer centavos).\n  - Drop % = (base_price_snapshot - current_price) / base_price_snapshot * 100.\n  - If drop > 0 AND drop >= (alert.targetPercentDrop ?? globalDefaultThresholdPercent):\n    - Include in results map keyed by userId.\n  - globalDefaultThresholdPercent: read from env var HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT (default 5). Register in packages/config/src/env-registry.*.ts + apps/api/src/utils/env.ts.\n  - Filters to alerts whose accommodation was updated within the `since` window (joins on accommodations.updated_at >= since) to avoid evaluating unchanged prices.\n\nTypes to export:\n- PriceDropMatch: { alertId, userId, accommodationId, accommodationSlug, accommodationName, basePriceSnapshot, currentPrice, dropPercent, currency }\n\nUnit tests in packages/service-core/test/services/alert/price-drop-evaluator.service.test.ts:\n- Price dropped past threshold: included.\n- Price dropped but below threshold: excluded.\n- Price increased: excluded (drop is negative).\n- Price unchanged: excluded.\n- null targetPercentDrop + dropped: uses global default threshold.\n- Accommodation updated_at before window: excluded.\n\nAcceptance criteria:\n- All unit tests pass.\n- No any types.\n- Evaluation logic is a pure computation — no side effects, easily testable with mock data.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Implement evaluatePriceDrops() with threshold logic",
+                    "completed": false
+                },
+                {
+                    "title": "Register HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT env var in @repo/config + apps/api env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Export PriceDropMatch type + service from service-core index",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests covering all threshold edge cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "evaluation", "price-alert", "D-1", "D-3"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/service-core)",
+                "typecheck": "pnpm typecheck (packages/service-core)",
+                "tests": "scoped: packages/service-core/test/services/alert/price-drop-evaluator.service.test.ts"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create alerts-digest daily cron job",
+            "description": "Create apps/api/src/cron/jobs/alerts-digest.job.ts following the established cron pattern (mirror trial-expiry.ts or conversation-notification.job.ts).\n\nSchedule: '0 8 * * *' (8 AM daily).\n\nJob flow:\n1. Call PriceDropEvaluator.evaluatePriceDrops({ since: yesterday_8AM }), getting Map<userId, PriceDropMatch[]>.\n2. Call PromoOfferEvaluator.evaluatePromoOffers({ since: yesterday_8AM }) (from T-012) — stub a no-op version until T-012 ships, wired via optional injection.\n3. Merge results into a combined Map<userId, AlertDigestPayload> (price drops + promo offers per user).\n4. For each userId with non-empty payload:\n   a. Load user email from DB.\n   b. Call AlertDigestDeliveryService.deliver(payload) from @repo/notifications (T-008).\n   c. Log success/failure; continue on per-user error (no early exit).\n5. Batch users in groups of 50 to avoid memory pressure (consistent with dunning.job.ts pattern).\n6. Return { processed, errors, durationMs } (consistent with CronJobDefinition contract).\n\nRegister in apps/api/src/cron/jobs/index.ts export list.\nRegister schedule in apps/api/src/cron/cron-registry.ts (or equivalent scheduler bootstrap).\n\nContext/DI pattern: inject AlertDigestDeliveryService and evaluators via constructor params or module-level singletons — mirror how trial-expiry.ts uses TrialService and sendNotification.\n\nDry-run support: when ctx.dryRun = true, skip actual delivery calls, log what would have been sent.\n\nAcceptance criteria:\n- CronJobDefinition shape satisfied (name, description, schedule, enabled, handler).\n- Dry-run path tested in unit tests.\n- Error in one user's delivery does not abort the batch.\n- Job is registered in the cron registry.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Scaffold alerts-digest.job.ts with CronJobDefinition shape",
+                    "completed": false
+                },
+                {
+                    "title": "Implement price-drop batch + user merge logic",
+                    "completed": false
+                },
+                {
+                    "title": "Wire AlertDigestDeliveryService.deliver() call",
+                    "completed": false
+                },
+                {
+                    "title": "Register in cron index + scheduler",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test for dry-run path + per-user error isolation",
+                    "completed": false
+                }
+            ],
+            "tags": ["cron", "api", "price-alert", "D-3", "daily-digest"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (apps/api)",
+                "typecheck": "pnpm typecheck (apps/api)",
+                "tests": "scoped: apps/api/test/cron/alerts-digest.test.ts"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Channel-agnostic delivery abstraction in @repo/notifications",
+            "description": "Build the extensible delivery layer that accepts future WhatsApp and push transports without touching the subscription or evaluation core.\n\nCreate packages/notifications/src/services/alert-delivery.service.ts:\n- NotificationChannel interface: { readonly name: string; deliver(payload: AlertDigestPayload): Promise<void> }\n- AlertDigestDeliveryService class:\n  - Constructor accepts readonly channels: NotificationChannel[] (injectable; defaults to [emailChannel] in production)\n  - deliver({ userId, userEmail, priceDrop: PriceDropMatch[], promoOffers: PromoOfferMatch[] }): iterates channels, calls channel.deliver(), swallows per-channel errors with structured logging\n  - deliverBatch(payloads: AlertDigestPayload[]): iterates payloads calling deliver()\n\nCreate packages/notifications/src/types/alert.types.ts:\n- AlertDigestPayload: { userId, userEmail, locale, priceDrop: PriceDropMatch[], promoOffers: PromoOfferMatch[] }\n- PromoOfferMatch: { promotionId, accommodationId, accommodationName, accommodationSlug, promotionTitle, discountType, discountValue, validUntil: Date | null }\n  (note: PriceDropMatch is imported from service-core via cross-package import or re-declared here; prefer re-declaration to avoid circular deps)\n- TriggerKind: 'price_drop' | 'promo_offer' as const\n\nCreate packages/notifications/src/services/channels/email-alert.channel.ts:\n- Implements NotificationChannel\n- Renders AlertDigestEmail (from T-009) via React Email + sends via existing EmailTransport\n- If both priceDrop and promoOffers are empty, skips send silently\n\nExport all from packages/notifications/src/services/index.ts and the package root index.\n\nUnit tests in packages/notifications/test/services/alert-delivery.service.test.ts:\n- deliver() calls all injected channels.\n- Per-channel error does not abort other channels.\n- Empty payload does not call any channel.\n\nAcceptance criteria:\n- No @repo/service-core circular dependency (keep type definitions local).\n- Interface exported so future WhatsApp/push channels can implement it without touching AlertDigestDeliveryService.\n- Unit tests pass.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-009", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Create alert.types.ts (AlertDigestPayload, PromoOfferMatch, TriggerKind)",
+                    "completed": false
+                },
+                {
+                    "title": "Create alert-delivery.service.ts (NotificationChannel interface + AlertDigestDeliveryService)",
+                    "completed": false
+                },
+                {
+                    "title": "Create email-alert.channel.ts (EmailAlertChannel implementing NotificationChannel)",
+                    "completed": false
+                },
+                {
+                    "title": "Export all from services/index + package root",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for channel dispatch + error isolation + empty guard",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "delivery", "channel-agnostic", "G-3", "D-4"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/notifications)",
+                "typecheck": "pnpm typecheck (packages/notifications)",
+                "tests": "scoped: packages/notifications/test/services/alert-delivery.service.test.ts"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Alert email templates (AlertDigestEmail React Email component + i18n keys)",
+            "description": "Create the React Email templates for the daily alert digest. Follows the pattern of existing templates in packages/notifications/src/templates/ (e.g., trial/, billing/).\n\nCreate packages/notifications/src/templates/alerts/:\n- AlertDigestEmail.tsx: main digest email layout.\n  - Renders a price-drop section (if priceDrop.length > 0) and a promo-offer section (if promoOffers.length > 0).\n  - Renders a 'no items' fallback if both empty (caller should guard, but template must be safe).\n  - Props: AlertDigestPayload + locale.\n  - Uses React Email primitives (Html, Section, Row, Column, Text, Link, Button, Hr) consistent with other templates.\n- PriceDropItem.tsx: single price-drop row (accommodation name, price before/after, drop %, CTA link to accommodation page).\n- PromoOfferItem.tsx: single promo-offer row (accommodation name, discount description, valid until, CTA link).\n- index.ts: export all components.\n\nAdd i18n keys under notifications.alerts.digest.* in packages/i18n/src/types.ts and packages/i18n/src/config.ts for es/en/pt:\n- notifications.alerts.digest.subject (email subject line)\n- notifications.alerts.digest.priceDrop.sectionTitle\n- notifications.alerts.digest.priceDrop.currentPrice\n- notifications.alerts.digest.priceDrop.previousPrice\n- notifications.alerts.digest.priceDrop.dropPercent\n- notifications.alerts.digest.promoOffer.sectionTitle\n- notifications.alerts.digest.promoOffer.validUntil\n- notifications.alerts.digest.cta\n- notifications.alerts.digest.manageAlerts (link to /cuenta/alertas)\n\nRun pnpm generate-types (i18n type generation) after adding keys.\n\nExport templates from packages/notifications/src/templates/index.ts.\n\nAcceptance criteria:\n- AlertDigestEmail renders without errors (render-to-HTML smoke test in test file).\n- i18n keys present in all three locales; generate-types runs clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create AlertDigestEmail.tsx + PriceDropItem.tsx + PromoOfferItem.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Add notifications.alerts.digest.* i18n keys (es/en/pt)",
+                    "completed": false
+                },
+                {
+                    "title": "Run i18n generate-types and verify clean",
+                    "completed": false
+                },
+                {
+                    "title": "Export templates from templates/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add render smoke test (AlertDigestEmail renders to HTML without throwing)",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "email", "templates", "i18n", "G-3"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/notifications, packages/i18n)",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped: packages/notifications/test/templates/alerts/"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Web alert management page (/cuenta/alertas)",
+            "description": "Build the tourist-facing alert management page in apps/web. This is an Astro page (SSR, no Tailwind).\n\nCreate apps/web/src/pages/[lang]/cuenta/alertas.astro (or /cuenta/alertas/index.astro matching the existing /cuenta/* routing pattern):\n- Server-side fetch from GET /api/v1/protected/price-alerts using the user's session cookie.\n- Render a list of active price-alert subscriptions.\n- Each item shows: accommodation name (linked to detail page), current price, price at subscription time, target-drop percentage (or 'any drop').\n- Delete form per alert (native HTML form → POST to /_actions/delete-alert or DELETE route via fetch island).\n- Empty state: 'No tenés alertas activas. Explorá alojamientos y activá alertas de precio.' with CTA to /alojamientos.\n- Plan-gate: if user is on free plan (PRICE_ALERTS entitlement absent), show upgrade CTA instead of the list.\n\nCreate supporting components:\n- apps/web/src/components/alerts/AlertList.astro: renders the list.\n- apps/web/src/components/alerts/AlertItem.astro: single alert row with delete form.\n- apps/web/src/components/alerts/AlertEmptyState.astro: empty / plan-gate state.\n\nStyling: CSS modules (*.module.css colocated with each component). No Tailwind.\n\nAdd i18n keys under account.alerts.* in packages/i18n (es/en/pt): page title, empty state text, delete CTA, column headers.\n\nAcceptance criteria:\n- Page renders server-side; authenticated user sees their alerts.\n- Unauthenticated: redirect to /login (consistent with other /cuenta/* pages).\n- Free-plan user: sees upgrade CTA, not the list.\n- Delete removes the alert and refreshes.\n- astro check passes on the new page.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Create alertas.astro page with SSR fetch + plan-gate guard",
+                    "completed": false
+                },
+                {
+                    "title": "Create AlertList.astro + AlertItem.astro + AlertEmptyState.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Add delete action (form-based or island fetch)",
+                    "completed": false
+                },
+                {
+                    "title": "Add account.alerts.* i18n keys (es/en/pt) + run generate-types",
+                    "completed": false
+                },
+                {
+                    "title": "CSS modules for layout",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro", "price-alert", "G-4", "D-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint (apps/web)",
+                "typecheck": "astro check (apps/web)",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add 'Alert me for price drops' button on accommodation detail page",
+            "description": "Add a price-alert subscription toggle to apps/web/src/pages/[lang]/alojamientos/[slug].astro.\n\nCreate apps/web/src/components/accommodation/PriceAlertButton.tsx (React island, client:idle):\n- Props: { accommodationId, userHasAlert: boolean, canCreateAlerts: boolean, maxReached: boolean }\n- If canCreateAlerts = false (free plan): render a locked-state button that opens a plan-upgrade modal or links to /billing/plans. No API call.\n- If maxReached = true (MAX_ACTIVE_ALERTS reached): render a disabled button with 'Límite de alertas alcanzado' tooltip.\n- If canCreateAlerts = true and no existing alert: 'Avisame si baja el precio' button → POST /protected/price-alerts → optimistic toggle to active state.\n- If active alert exists: 'Cancelar alerta' button → DELETE /protected/price-alerts/:alertId → toggle off.\n- Show loading spinner during API call.\n- Error state: inline error message (do not crash).\n\nWire into the detail page ([slug].astro):\n- In the server-side Promise.allSettled block: fetch user's existing alert for this accommodation (GET /protected/price-alerts?accommodationId=X) and user entitlement state.\n- Pass computed props (userHasAlert, canCreateAlerts, maxReached) to the island.\n- Graceful degradation: if fetch fails, assume no alert + canCreateAlerts = false (safe default).\n\nCSS modules for button styling (not Tailwind).\n\nAcceptance criteria:\n- Free-plan tourist sees a locked/upgrade CTA.\n- Plus/VIP tourist can toggle the alert subscription.\n- Existing alert correctly pre-populates the toggled state from SSR.\n- No JavaScript error when user is unauthenticated (server should not render the button for guests at all).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create PriceAlertButton.tsx React island with three states (locked/active/inactive)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire SSR props (userHasAlert, canCreateAlerts, maxReached) in [slug].astro",
+                    "completed": false
+                },
+                {
+                    "title": "CSS module for button",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react", "price-alert", "G-1", "D-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint (apps/web)",
+                "typecheck": "astro check (apps/web)",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "PromoOfferEvaluator service + wire into digest cron + close SPEC-285 TODO stub",
+            "description": "Completes G-2. Depends on SPEC-285 being merged to staging (the OwnerPromotionLifecycleEvent + emitOwnerPromotionLifecycleEvent are already shipped by SPEC-285 T-004).\n\nCreate packages/service-core/src/services/alert/promo-offer-evaluator.service.ts:\n- evaluatePromoOffers({ since: Date }): Promise<Map<string, PromoOfferMatch[]>>\n  - Queries owner_promotions where (created_at >= since OR activated_at >= since) AND lifecycle_state = ACTIVE AND (validUntil IS NULL OR validUntil >= now()).\n  - For each qualifying promotion, finds tourist_price_alerts subscribed to that promotion's accommodation_id OR (accommodation_id IS NULL and owner_id matches).\n  - Returns Map<userId, PromoOfferMatch[]> (PromoOfferMatch type from T-008).\n- Unit tests: promo created in window → matched subscribers returned; promo outside window → excluded; expired promo → excluded.\n\nUpdate apps/api/src/cron/jobs/alerts-digest.job.ts (created in T-007):\n- Replace the no-op PromoOfferEvaluator stub with the real evaluatePromoOffers call.\n- Merge promo offer results into the user digest payload alongside price drops.\n\nClose the SPEC-285 TODO stub in packages/service-core/src/services/owner-promotion/ownerPromotion.lifecycle-events.ts:\n- Replace the // TODO(SPEC-286) comment block with a reference: add a comment noting that G-2 is handled by the daily-digest cron (alerts-digest.job.ts) rather than immediate event-driven delivery (matches D-3 daily-digest cadence decision).\n- No code change needed in the emitter itself since the cron queries owner_promotions directly.\n\nExport PromoOfferEvaluator from packages/service-core/src/services/index.ts.\n\nAcceptance criteria:\n- evaluatePromoOffers correctly matches subscribed tourists to qualifying promos.\n- Cron digest includes promo-offer items alongside price-drop items.\n- TODO(SPEC-286) stub comment is resolved (replaced with accurate cross-reference).\n- Unit tests for PromoOfferEvaluator pass.\n- SPEC-285 must be merged to staging before this task can be deployed (code can be written against SPEC-285's public API).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement PromoOfferEvaluator.evaluatePromoOffers() with time-window + subscription fan-out",
+                    "completed": false
+                },
+                {
+                    "title": "Wire into alerts-digest.job.ts (replace stub)",
+                    "completed": false
+                },
+                {
+                    "title": "Close TODO(SPEC-286) stub in ownerPromotion.lifecycle-events.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for evaluatePromoOffers (in-window/out-of-window/expired/subscriber-match)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "promo-offer", "cron", "G-2", "SPEC-285-wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint (packages/service-core, apps/api)",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped: packages/service-core/test/services/alert/promo-offer-evaluator.service.test.ts"
+            },
+            "timestamps": {
+                "created": "2026-06-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 12,
+        "pending": 12,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 3.8
+    }
+}
