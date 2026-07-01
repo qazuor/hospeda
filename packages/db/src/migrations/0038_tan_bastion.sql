@@ -1,0 +1,2 @@
+ALTER TYPE "public"."permission_category_enum" ADD VALUE 'RECOMMENDATION' BEFORE 'REFUND';--> statement-breakpoint
+ALTER TYPE "public"."permission_enum" ADD VALUE 'recommendation.view' BEFORE 'refund.create';
