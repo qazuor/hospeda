@@ -69,3 +69,9 @@ The "Colecciones de favoritos" row currently maps to no plan data. SPEC-282 shou
 show it as the **target** (free ✗, paid ✓ with per-plan limits) but badged
 *Próximamente* until SPEC-287 enforces the gating — advertising an unenforced
 per-plan limit is a correctness/honesty bug (same rule as SPEC-283).
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-07-01 | spec-realign | D: ADR-026 predicted this migration but assumed the wrong precedent (`enforceFavoritesLimit`, limit-only, no entitlement check) — collections excludes tourist-free entirely, which needs an entitlement gate (`gateCollections`, mirrors `gateSearchHistory`) instead. B/correction: `_canCreate` is a fixed-signature `BaseCrudService` hook — the plan limit must flow through `ctx.hookState`, not a new positional param. D: `list.ts` also reads the env-var cap for its `usage.max` response field (missed in the initial task pass) — added task T-014. D: added task T-015 to mark ADR-026 as superseded. | 13 → 15 tasks; T-006/T-008 descriptions corrected; T-007 narrowed from 6 to 5 routes; T-014 and T-015 added |

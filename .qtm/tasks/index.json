@@ -799,12 +799,12 @@
             "specId": "SPEC-287",
             "title": "Favorites Collections — Per-Plan Limits",
             "status": "draft",
-            "progress": "0/13",
+            "progress": "0/15",
             "path": "SPEC-287-favorites-collections-per-plan-limits",
             "branch": "spec/SPEC-287-favorites-collections-per-plan-limits",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Tasks atomized (13 tasks, avg complexity 1.9/3): move built collections feature from env-var cap to per-plan billing LimitKey. CAN_USE_COLLECTIONS/MAX_COLLECTIONS (free=none, plus=10, vip=25 shared w/ owner-complex). No grandfather handling needed (no real users yet)."
+            "note": "Tasks atomized + spec-realigned (15 tasks, avg complexity 1.9/3): move built collections feature from env-var cap to per-plan billing LimitKey. CAN_USE_COLLECTIONS/MAX_COLLECTIONS (free=none, plus=10, vip=25 shared w/ owner-complex). spec-realign found list.ts also reads the env cap (T-014) and ADR-026 needs a superseded addendum (T-015); corrected T-006/T-008 to route the limit via ctx.hookState."
         },
         {
             "specId": "SPEC-288",

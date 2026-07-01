@@ -79,7 +79,7 @@
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002", "T-003"],
-            "blocks": ["T-008", "T-010", "T-011", "T-012"],
+            "blocks": ["T-008", "T-010", "T-011", "T-012", "T-014", "T-015"],
             "subtasks": [
                 { "title": "Add entitlement + limit(10) to TOURIST_PLUS_PLAN", "completed": false },
                 {
@@ -105,7 +105,7 @@
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-001"],
-            "blocks": ["T-007", "T-008"],
+            "blocks": ["T-007", "T-008", "T-014"],
             "subtasks": [
                 {
                     "title": "Implement gateCollections() in tourist-entitlements.ts",
@@ -128,21 +128,27 @@
         },
         {
             "id": "T-006",
-            "title": "Switch collection service cap from env var to planLimit parameter",
-            "description": "In packages/service-core/src/services/userBookmarkCollection/userBookmarkCollection.service.ts, remove `DEFAULT_MAX_COLLECTIONS_PER_USER` and the `process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER` read. Change `createCollection` to accept the effective cap as a `planLimit: number` parameter (mirroring how `SearchHistoryService.list()` accepts `{ planLimit }`), and use it for the existing `ServiceErrorCode.QUOTA_EXCEEDED` check instead of the env-derived constant. Keep all other behavior (name validation, ALREADY_EXISTS, etc.) unchanged. Test requirements: rewrite the env-var-based cases in packages/service-core/test/services/userBookmarkCollection/userBookmarkCollection.limit.test.ts to pass `planLimit` explicitly (quota reached at the boundary, one below limit passes, unlimited via -1 sentinel if applicable).",
+            "title": "Switch _canCreate quota check from env var to ctx.hookState.planLimit",
+            "description": "In packages/service-core/src/services/userBookmarkCollection/userBookmarkCollection.service.ts, the quota is enforced inside the `_canCreate(actor, data, ctx)` BaseCrudService lifecycle hook — a fixed-signature override, so a new positional `planLimit` param cannot be added to it directly (corrected during spec-realign 2026-07-01; ADR-026 also predicted this migration but assumed the simpler `enforceFavoritesLimit`-style middleware, which does not fit because collections excludes free entirely, unlike favorites). Instead: read the resolved limit from `ctx?.hookState?.planLimit` (the per-request hook-state bag already designed for this, see `ServiceContext.hookState`, SPEC-088) inside `_canCreate`, falling back to `DEFAULT_MAX_COLLECTIONS_PER_USER` only if `hookState.planLimit` is undefined (defensive default for any caller that doesn't pass it yet). Remove the `process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER` read from `getMaxCollectionsPerUser()`, but keep that function exported for now — `list.ts` (T-014) still calls it until T-014 migrates it too. Test requirements: rewrite the env-var-based cases in packages/service-core/test/services/userBookmarkCollection/userBookmarkCollection.limit.test.ts to pass `{ hookState: { planLimit } }` as the `ctx` argument (quota reached at the boundary, one below limit passes).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "Remove env-var constant and process.env read", "completed": false },
                 {
-                    "title": "Add planLimit param to createCollection signature",
+                    "title": "Remove process.env read from getMaxCollectionsPerUser()",
                     "completed": false
                 },
-                { "title": "Rewrite QUOTA_EXCEEDED check to use planLimit", "completed": false },
                 {
-                    "title": "Rewrite userBookmarkCollection.limit.test.ts cases",
+                    "title": "Read ctx?.hookState?.planLimit in _canCreate with safe fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Rewrite QUOTA_EXCEEDED check to use hookState.planLimit",
+                    "completed": false
+                },
+                {
+                    "title": "Rewrite userBookmarkCollection.limit.test.ts cases to pass hookState",
                     "completed": false
                 }
             ],
@@ -157,16 +163,16 @@
         },
         {
             "id": "T-007",
-            "title": "Mount gateCollections() on non-create collection routes",
-            "description": "Mount `gateCollections()` in `options.middlewares` for the six user-bookmark-collection protected routes that are not `create`: list, getById, update, delete, addBookmark, removeBookmark (apps/api/src/routes/user-bookmark-collection/protected/{list,getById,update,delete,addBookmark,removeBookmark}.ts). Follow the exact `options: { middlewares: [gateCollections()] }` pattern used in search-history/protected/list.ts. Test requirements: add or extend route tests under apps/api/test/routes/user-bookmark-collection/ asserting a 403 ENTITLEMENT_REQUIRED response for an actor lacking CAN_USE_COLLECTIONS, for each of the six routes.",
+            "title": "Mount gateCollections() on gate-only collection routes",
+            "description": "Mount `gateCollections()` in `options.middlewares` for the five user-bookmark-collection protected routes that need only the entitlement gate (no limit resolution): getById, update, delete, addBookmark, removeBookmark (apps/api/src/routes/user-bookmark-collection/protected/{getById,update,delete,addBookmark,removeBookmark}.ts). `list` is handled separately in T-014 because it also needs plan-limit resolution for its `usage.max` response field, and `create` in T-008 because it needs plan-limit resolution for the quota check. Follow the exact `options: { middlewares: [gateCollections()] }` pattern used in search-history/protected/list.ts. Test requirements: add or extend route tests under apps/api/test/routes/user-bookmark-collection/ asserting a 403 ENTITLEMENT_REQUIRED response for an actor lacking CAN_USE_COLLECTIONS, for each of the five routes.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Mount gate on list/getById/update/delete routes", "completed": false },
+                { "title": "Mount gate on getById/update/delete routes", "completed": false },
                 { "title": "Mount gate on addBookmark/removeBookmark routes", "completed": false },
-                { "title": "Add 403 test coverage for each route", "completed": false }
+                { "title": "Add 403 test coverage for each of the 5 routes", "completed": false }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
@@ -180,7 +186,7 @@
         {
             "id": "T-008",
             "title": "Mount gate and resolve plan limit on create-collection route",
-            "description": "In apps/api/src/routes/user-bookmark-collection/protected/create.ts: mount `gateCollections()` via `options.middlewares`, then resolve the actor's limit with `getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS)` (same pattern as search-history/protected/list.ts, mapping -1/unlimited and 0/disabled to safe values), and pass it into `collectionService.createCollection(actor, { ...input, userId: actor.id }, { planLimit })`. Test requirements: apps/api/test/routes/user-bookmark-collection/create.test.ts (new or extended) — 403 ENTITLEMENT_REQUIRED without the entitlement, QUOTA_EXCEEDED exactly at the plan boundary for both plus (10) and vip (25).",
+            "description": "In apps/api/src/routes/user-bookmark-collection/protected/create.ts: mount `gateCollections()` via `options.middlewares`, then resolve the actor's limit with `getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS)` (same pattern as search-history/protected/list.ts, mapping -1/unlimited and 0/disabled to safe values), and pass it via `collectionService.createCollection(actor, { ...input, userId: actor.id }, { hookState: { planLimit } })` — `_canCreate` (T-006) reads it from `ctx.hookState.planLimit`, NOT a positional param, since `_canCreate`'s signature is a fixed BaseCrudService hook contract. Test requirements: apps/api/test/routes/user-bookmark-collection/create.test.ts (new or extended) — 403 ENTITLEMENT_REQUIRED without the entitlement, QUOTA_EXCEEDED exactly at the plan boundary for both plus (10) and vip (25).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
@@ -189,7 +195,7 @@
                 { "title": "Mount gateCollections() on create route", "completed": false },
                 { "title": "Resolve planLimit via getRemainingLimit()", "completed": false },
                 {
-                    "title": "Pass planLimit into collectionService.createCollection()",
+                    "title": "Pass { hookState: { planLimit } } into createCollection()",
                     "completed": false
                 },
                 { "title": "Add/extend create.test.ts boundary cases", "completed": false }
@@ -206,15 +212,19 @@
         {
             "id": "T-009",
             "title": "Remove HOSPEDA_MAX_COLLECTIONS_PER_USER env var",
-            "description": "Remove the now-unused `HOSPEDA_MAX_COLLECTIONS_PER_USER` variable: delete its Zod schema entry from apps/api/src/utils/env.ts, its registry entry from packages/config/src/env-registry.hospeda.ts, and its line from apps/api/.env.example (and apps/api/.env.local if present, locally only — do not commit .env.local). Test requirements: run `pnpm env:check:registry` to confirm registry/schema stay in sync; update apps/api/test/utils/env.test.ts if it references this variable.",
+            "description": "Remove the now-unused `HOSPEDA_MAX_COLLECTIONS_PER_USER` variable: delete its Zod schema entry from apps/api/src/utils/env.ts, its registry entry from packages/config/src/env-registry.hospeda.ts, and its line from apps/api/.env.example (and apps/api/.env.local if present, locally only — do not commit .env.local). Also remove `getMaxCollectionsPerUser()` / `DEFAULT_MAX_COLLECTIONS_PER_USER` from userBookmarkCollection.service.ts now that both consumers (T-006's `_canCreate`, T-014's `list.ts`) are migrated off it. Test requirements: run `pnpm env:check:registry` to confirm registry/schema stay in sync; update apps/api/test/utils/env.test.ts if it references this variable.",
             "status": "pending",
             "complexity": 1,
-            "blockedBy": ["T-006"],
+            "blockedBy": ["T-006", "T-014"],
             "blocks": [],
             "subtasks": [
                 { "title": "Remove from env-registry.hospeda.ts", "completed": false },
                 { "title": "Remove from apps/api/src/utils/env.ts", "completed": false },
-                { "title": "Remove from .env.example", "completed": false }
+                { "title": "Remove from .env.example", "completed": false },
+                {
+                    "title": "Remove getMaxCollectionsPerUser() from the service",
+                    "completed": false
+                }
             ],
             "tags": ["env", "config", "cleanup"],
             "phase": "setup",
@@ -308,7 +318,7 @@
             "description": "Add apps/api/test/routes/user-bookmark-collection/entitlement-gate.integration.test.ts covering the full flow across tourist plans: tourist-free actor gets 403 ENTITLEMENT_REQUIRED on every collection route; tourist-plus actor can create up to 10 collections then gets QUOTA_EXCEEDED on the 11th; tourist-vip actor can create up to 25 then gets QUOTA_EXCEEDED on the 26th. Test requirements: use the project's standard route-testing harness/fixtures (mirror the structure of an existing multi-plan integration test, e.g. apps/api/test/routes/search-history or apps/api/test/routes/user-bookmark/toggleAtCap.test.ts for the at-cap pattern).",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-007", "T-008"],
+            "blockedBy": ["T-007", "T-008", "T-014"],
             "blocks": [],
             "subtasks": [
                 { "title": "Test tourist-free 403 across all routes", "completed": false },
@@ -323,11 +333,60 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-014",
+            "title": "Mount gate and migrate usage.max on list-collections route",
+            "description": "Found during spec-realign (2026-07-01): apps/api/src/routes/user-bookmark-collection/protected/list.ts ALSO calls `getMaxCollectionsPerUser()` (env var) to populate its `usage: { current, max }` response field — the original T-007 scope missed this second consumer. In list.ts: mount `gateCollections()` via `options.middlewares`, and replace the `getMaxCollectionsPerUser()` call with `getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS)` (same resolution pattern as T-008's create.ts), mapping -1/unlimited and 0/disabled to safe values for the `usage.max` field. Test requirements: extend the list route test to assert `usage.max` reflects the actor's plan limit (10 for plus, 25 for vip) instead of the old env default, plus the standard 403 ENTITLEMENT_REQUIRED case without the entitlement.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-009", "T-013"],
+            "subtasks": [
+                { "title": "Mount gateCollections() on list route", "completed": false },
+                {
+                    "title": "Replace getMaxCollectionsPerUser() with getRemainingLimit()",
+                    "completed": false
+                },
+                { "title": "Extend list route test for usage.max and 403 case", "completed": false }
+            ],
+            "tags": ["api", "routes", "collections"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-01T14:27:20.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Mark ADR-026 as superseded by SPEC-287",
+            "description": "Found during spec-realign (2026-07-01): docs/decisions/ADR-026-collections-limit-strategy.md documented the exact 'if collections become a monetization lever' migration this spec performs, and predicted mirroring `enforceFavoritesLimit`. That prediction undershoots: collections excludes tourist-free entirely (OQ-2/OQ-3), which `enforceFavoritesLimit` (a limit-only middleware, no entitlement check, since favorites is available on every tourist plan) cannot express — the entitlement gate (`gateCollections`, T-005) is required. Add a 'Status: Superseded by SPEC-287 (2026-07-01)' line and a short addendum section to ADR-026 explaining the actual mechanism shipped (LimitKey + EntitlementKey + gateCollections + ctx.hookState) and why it diverged from the ADR's predicted migration path. Do not delete or rewrite the original decision/rationale — ADRs are append-only history. Test requirements: none (documentation).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add Superseded status line to ADR-026", "completed": false },
+                {
+                    "title": "Add addendum explaining the entitlement-gate divergence",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "billing", "adr"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-01T14:27:20.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 13,
-        "pending": 13,
+        "total": 15,
+        "pending": 15,
         "inProgress": 0,
         "completed": 0,
         "blocked": 0,
