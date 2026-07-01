@@ -435,36 +435,36 @@
         {
             "id": "T-013",
             "title": "Write cross-cutting entitlement + limit integration test",
-            "description": "Add apps/api/test/routes/user-bookmark-collection/entitlement-gate.integration.test.ts covering the full flow across tourist plans: tourist-free actor gets 403 ENTITLEMENT_REQUIRED on every collection route; tourist-plus actor can create up to 10 collections then gets QUOTA_EXCEEDED on the 11th; tourist-vip actor can create up to 25 then gets QUOTA_EXCEEDED on the 26th. Test requirements: use the project's standard route-testing harness/fixtures (mirror the structure of an existing multi-plan integration test, e.g. apps/api/test/routes/search-history or apps/api/test/routes/user-bookmark/toggleAtCap.test.ts for the at-cap pattern).",
-            "status": "pending",
+            "description": "Add apps/api/test/routes/user-bookmark-collection/entitlement-gate.integration.test.ts covering the full flow across tourist plans: tourist-free actor gets 403 ENTITLEMENT_REQUIRED on every collection route; tourist-plus actor can create up to 10 collections then gets QUOTA_EXCEEDED on the 11th; tourist-vip actor can create up to 25 then gets QUOTA_EXCEEDED on the 26th. Test requirements: use the project's standard route-testing harness/fixtures (mirror the structure of an existing multi-plan integration test, e.g. apps/api/test/routes/search-history or apps/api/test/routes/user-bookmark/toggleAtCap.test.ts for the at-cap pattern). NOTE (implemented 2026-07-01): unlike every other collection route test, this file does NOT mock gateCollections or entitlementMiddleware away -- it mocks entitlementMiddleware to inject deterministic per-plan entitlements/limits (bypassing the live billing DB, same boundary every other route test already mocks) while leaving gateCollections, hasEntitlement, and getRemainingLimit fully real. Runs through initApp() so the actual registered routes are exercised end-to-end.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008", "T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test tourist-free 403 across all routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test tourist-plus quota boundary at 10",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test tourist-vip quota boundary at 25",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "collections"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:50:02Z",
+                "completed": "2026-07-01T15:55:42Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.9
     }
