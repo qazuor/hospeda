@@ -40,10 +40,13 @@ describe('T-029 — Accommodation sub-routes and detail pages', () => {
         expect(src).toContain('accommodation.name');
     });
 
-    it('alojamientos/tipo/[type] has Breadcrumbs with type label', () => {
+    it('alojamientos/tipo/[type] has Breadcrumbs with type name', () => {
         const src = readPage('alojamientos/tipo/[type]/index.astro');
         assertHasBreadcrumbs(src, 'alojamientos/tipo/[type]');
-        expect(src).toContain('typeLabel');
+        // SPEC-306: renamed from `typeLabel` to `typeName`, now sourced from
+        // `accommodations.byType.types.{ENUM}.name` instead of the generic
+        // `common.enums.accommodationType.*` key.
+        expect(src).toContain('typeName');
     });
 
     it('alojamientos/comodidades/[slug] has Breadcrumbs with amenities level and amenity name', () => {
@@ -101,9 +104,13 @@ describe('T-031 — Events, posts, and author pages', () => {
         expect(src).toContain('{ label: name }');
     });
 
-    // eventos/categoria/[category] was retired to a 301 redirect (U7) — it no
-    // longer renders breadcrumbs (or any UI). Category filtering lives on the
-    // unified /eventos/ listing.
+    it('eventos/categoria/[category] has Breadcrumbs with category name', () => {
+        const src = readPage('eventos/categoria/[category]/index.astro');
+        assertHasBreadcrumbs(src, 'eventos/categoria/[category]');
+        // SPEC-306: promoted to a first-class landing; the category name comes
+        // from `events.categoryPage.categories.{ENUM}.name`.
+        expect(src).toContain('categoryName');
+    });
 
     it('publicaciones/[slug] has Breadcrumbs with post title', () => {
         const src = readPage('publicaciones/[slug].astro');

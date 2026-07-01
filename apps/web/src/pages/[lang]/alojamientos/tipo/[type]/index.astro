@@ -1,7 +1,21 @@
 ---
 /**
  * @file alojamientos/tipo/[type]/index.astro
- * @description Accommodations filtered by type (hotel, cabin, etc.).
+ * @description First-class, indexable accommodation-type landing page. Gets
+ * the full listing UI (sidebar + every combinable query-param filter used on
+ * the main `/alojamientos/` listing) minus the type control itself, since the
+ * type is fixed by the URL path here (SPEC-306 OQ-1/OQ-4).
+ *
+ * Structured data: `CollectionPage` (this landing) + `ItemList` (the visible
+ * page of results) + `BreadcrumbList` (Inicio / Alojamientos / {type}), all
+ * mounted via `slot="head-extra"` — same three-node pattern already proven
+ * on `/destinos/`.
+ *
+ * Canonical (OQ-2/OQ-3): the clean path itself, without query string,
+ * regardless of which OTHER filters are active via query params — this is
+ * `ListingLayout`'s default `canonicalPath = Astro.url.pathname` behavior,
+ * left untouched here.
+ *
  * @route /{lang}/alojamientos/tipo/{type}/
  * @rendering SSR + ISR 24h
  */
@@ -13,14 +27,18 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
-import { accommodationsApi } from '@/lib/api/endpoints';
+import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
-import { getAccommodationTypeLabel } from '@/lib/colors';
 import { AccommodationTypeEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -42,11 +60,121 @@ if (!typeEnum) {
 	return new Response(null, { status: 404 });
 }
 
+// Keys authored under `accommodations.byType.types.{ENUM}` (SPEC-306): `name`
+// (concise display name), `description` (SEO meta description), `pageTitle`
+// (full SEO title). Replaces the old `accommodations.byType.description`
+// fallback string, whose key shape no longer matches what was authored.
+const typeName = t(`accommodations.byType.types.${typeEnum}.name`, typeEnum);
+const typePageTitle = t(`accommodations.byType.types.${typeEnum}.pageTitle`, typeName);
+const typeDescription = t(`accommodations.byType.types.${typeEnum}.description`, typeName);
+
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 
-const result = await accommodationsApi.list({ page, pageSize, type: typeEnum });
+/**
+ * Maps the URL's user-friendly sort key to the backend `(sortBy, sortOrder)`
+ * pair. Mirrors `alojamientos/index.astro` — see that file for the full
+ * rationale and the `ALLOWED_SORT_FIELDS` whitelist note.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+	featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+	mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' },
+	ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
+	mostReviewed: { sortBy: 'reviewsCount', sortOrder: 'desc' },
+	newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+	nameAsc: { sortBy: 'name', sortOrder: 'asc' },
+	nameDesc: { sortBy: 'name', sortOrder: 'desc' },
+	priceAsc: { sortBy: 'price', sortOrder: 'asc' },
+	priceDesc: { sortBy: 'price', sortOrder: 'desc' },
+	distance: { sortBy: 'distance', sortOrder: 'asc' }
+};
+const DEFAULT_SORT_KEY = 'featured';
+const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+
+// --- Combinable filters (mirrors `/alojamientos/`, minus `types` — fixed by
+// the URL path here). See that page for the full rationale per filter. ---
+const q = url.searchParams.get('q') ?? undefined;
+const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
+const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
+const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
+const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
+const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
+const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
+const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
+const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
+const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
+const featuresParam = url.searchParams.get('features') ?? undefined;
+const includeNoPrice = url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
+const includeNoReviews = url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
+
+// Geo radius (composite filter) — the backend haversine clause needs the
+// full triplet; missing or non-numeric values are silently ignored.
+const latitudeRaw = url.searchParams.get('latitude');
+const longitudeRaw = url.searchParams.get('longitude');
+const radiusRaw = url.searchParams.get('radius');
+const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
+const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
+const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
+const hasGeoRadius = Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+
+// `distance` is only meaningful when the geo filter is active; degrade to the
+// default otherwise (the backend would silently drop it too).
+const sortKey = rawSortKey === 'distance' && !hasGeoRadius ? DEFAULT_SORT_KEY : rawSortKey;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+
+// Trip-context fields (dates + party size) — informational only today (no
+// availability system yet); forwarded so the sidebar reflects last-known values.
+const checkIn = url.searchParams.get('checkIn') ?? undefined;
+const checkOut = url.searchParams.get('checkOut') ?? undefined;
+const adultsParam = url.searchParams.get('adults');
+const childrenParam = url.searchParams.get('children');
+const adults = adultsParam ? Number(adultsParam) : undefined;
+const childrenCount = childrenParam ? Number(childrenParam) : undefined;
+const guestCount = (adults ?? 2) + (childrenCount ?? 0);
+const minGuests = guestCount > 0 ? guestCount : undefined;
+
+// Fetch destinations (CITY only) for the location + geo-radius groups.
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+
+// Fetch amenities/features for the "Tipo y características" section.
+const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
+const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
+const features = featuresResult.ok ? featuresResult.data.items : [];
+
+const result = await accommodationsApi.list({
+	page,
+	pageSize,
+	type: typeEnum,
+	q,
+	destinationIds,
+	minPrice,
+	maxPrice,
+	sortBy: sortResolved.sortBy,
+	sortOrder: sortResolved.sortOrder,
+	isFeatured,
+	minGuests,
+	minBedrooms,
+	minBathrooms,
+	minRating,
+	amenities: amenitiesParam,
+	features: featuresParam,
+	includeAmenities: true,
+	includeNoPrice,
+	includeNoReviews,
+	hasWifi,
+	hasPool,
+	hasParking,
+	allowsPets,
+	latitude: hasGeoRadius ? latitude : undefined,
+	longitude: hasGeoRadius ? longitude : undefined,
+	radius: hasGeoRadius ? radius : undefined
+});
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -54,26 +182,121 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-// Use the enum value (underscore form), not the URL slug — the i18n label keys
-// are keyed by the enum value, so passing the hyphenated slug misses the key and
-// falls back to the raw string (Bug B10: "apart-hotel" shown in title/breadcrumb).
-const typeLabel = getAccommodationTypeLabel({ type: typeEnum, t });
+/**
+ * `filterGroups` for FilterSidebar — the same config as `/alojamientos/`,
+ * minus the `types` checkbox (fixed by the URL path here). The rest of the
+ * "Tipo y características" section (`isFeatured`, `amenities`, `features`)
+ * stays, since those are unrelated to the type facet.
+ */
+const filterGroups = buildAccommodationsFilterGroups({ t, destinations, amenities, features, excludeType: true });
+
+const sortOptions = [
+	{ value: 'featured', label: t('accommodations.sort.featured', 'Destacados primero') },
+	{ value: 'mostSaved', label: t('accommodations.sort.mostSaved', 'Más guardados') },
+	{ value: 'ratingDesc', label: t('accommodations.sort.ratingDesc', 'Mejor valorados') },
+	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
+	{ value: 'newest', label: t('accommodations.sort.newest', 'Recién agregados') },
+	{ value: 'nameAsc', label: t('accommodations.sort.nameAsc', 'Nombre (A-Z)') },
+	{ value: 'nameDesc', label: t('accommodations.sort.nameDesc', 'Nombre (Z-A)') },
+	{ value: 'priceAsc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
+	{ value: 'priceDesc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
+	...(hasGeoRadius ? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }] : [])
+];
+
 const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
+
+// Self-canonical for paginated pages (mirrors alojamientos/index.astro). Pages
+// 2+ are served at `/{locale}/alojamientos/tipo/{type}/page/{n}/` via an
+// Astro.rewrite to this page with `?page=n`; since the rewrite makes
+// `Astro.url.pathname` the base path (dropping `/page/n/`), ListingLayout's
+// default `canonicalPath = Astro.url.pathname` would canonicalize every
+// paginated page back to page 1. Rebuild the real crawlable URL instead.
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
+/** Build the sidebar's `initialParams` so server-rendered state matches the URL on first paint. */
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (destinationIds) initialParams.destinationIds = destinationIds;
+if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
+if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
+initialParams.sortBy = sortKey;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
+if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (amenitiesParam) initialParams.amenities = amenitiesParam;
+if (featuresParam) initialParams.features = featuresParam;
+if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
+if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
+if (checkIn) initialParams.checkIn = checkIn;
+if (checkOut) initialParams.checkOut = checkOut;
+initialParams.adults = String(adults ?? 2);
+initialParams.children = String(childrenCount ?? 0);
+if (hasWifi) initialParams.hasWifi = 'true';
+if (hasPool) initialParams.hasPool = 'true';
+if (hasParking) initialParams.hasParking = 'true';
+if (allowsPets) initialParams.allowsPets = 'true';
+if (hasGeoRadius) {
+	initialParams.latitude = String(latitude);
+	initialParams.longitude = String(longitude);
+	initialParams.radius = String(radius);
+}
+
+/** Forwarded to Pagination so page links preserve every active filter. */
+const paginationParams = new URLSearchParams(url.searchParams);
+paginationParams.delete('page');
+
+// ItemList JSON-LD — the visible page of accommodation cards.
+const itemListEntries = cards.map((card) => ({
+	url: new URL(buildUrl({ locale, path: `alojamientos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
+	name: card.name
+}));
+
+// Breadcrumb JSON-LD — Inicio / Alojamientos / {type}.
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbJsonLdItems = [
+	{ name: t('accommodations.byType.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+	{
+		name: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'),
+		url: `${siteOrigin}${buildUrl({ locale, path: 'alojamientos' })}`
+	},
+	{ name: typeName, url: `${siteOrigin}${baseUrl}` }
+];
+
+const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 ---
 
 <ListingLayout
 	locale={locale}
-	title={`${typeLabel} - ${t('accommodations.title', 'Alojamientos')}`}
-	description={t('accommodations.byType.description', `Alojamientos de tipo ${typeLabel} en el Litoral Entrerriano.`)}
-	showFilters={false}
-	noindex={true}
+	title={typePageTitle}
+	description={typeDescription}
+	canonicalPath={canonicalPath}
+	showFilters={true}
+	filterPosition="left"
 >
+	<CollectionPageJsonLd
+		slot="head-extra"
+		name={typePageTitle}
+		description={typeDescription}
+		url={collectionPageUrl}
+	/>
+
+	<ItemListJsonLd
+		slot="head-extra"
+		name={typePageTitle}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
+	/>
+
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' },
-			{ label: typeLabel },
+			{ label: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'), path: 'alojamientos' },
+			{ label: typeName }
 		]}
 	/>
 
@@ -81,8 +304,17 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 		slot="page-header"
 		locale={locale}
 		tagline={t('accommodations.byType.tagline', 'Tipo de alojamiento')}
-		title={typeLabel}
+		title={typeName}
 		totalCount={total}
+	/>
+
+	<FilterSidebar
+		slot="filters"
+		client:load
+		locale={locale}
+		filters={filterGroups}
+		sortOptions={sortOptions}
+		initialParams={initialParams}
 	/>
 
 	{/* AI search entry — context-aware onboarding for this type (SPEC-265 B1b). */}
@@ -116,7 +348,14 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 	)}
 
 	{totalPages > 1 && (
-		<Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+		<Pagination
+			slot="pagination"
+			currentPage={page}
+			totalPages={totalPages}
+			baseUrl={baseUrl.slice(0, -1)}
+			locale={locale}
+			searchParams={paginationParams}
+		/>
 	)}
 </ListingLayout>
 
