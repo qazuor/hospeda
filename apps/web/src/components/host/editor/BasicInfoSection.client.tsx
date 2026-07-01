@@ -7,6 +7,7 @@
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { AiTextImprovePanel } from './AiTextImprovePanel.client';
 import styles from './BasicInfoSection.module.css';
 import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 import { RichTextEditor } from './RichTextEditor.client';
@@ -172,6 +173,28 @@ export function BasicInfoSection({
                         {errors.description}
                     </span>
                 )}
+                {/*
+                 * Independent entitlement from `can_use_rich_description` above:
+                 * an owner can have AI-improve without rich text, rich text
+                 * without AI-improve, both, or neither. Sits alongside the
+                 * field regardless of which branch (RichTextEditor or plain
+                 * textarea) the rich-description gate rendered, since both
+                 * paths flow through the same `data.description` +
+                 * `onFieldChange('description', ...)` controlled-value contract.
+                 */}
+                <PlanEntitlementGate
+                    entitlementKey="ai_text_improve"
+                    locale={locale}
+                    fallback={null}
+                >
+                    <AiTextImprovePanel
+                        fieldType="description"
+                        fieldValue={data.description}
+                        locale={locale}
+                        onAccept={(suggestion) => onFieldChange('description', suggestion)}
+                        triggerDisabled={!data.description}
+                    />
+                </PlanEntitlementGate>
             </div>
 
             <div className={styles.field}>

@@ -78,39 +78,39 @@
             "id": "T-003",
             "title": "Wire AI-improve button into the description field",
             "description": "In apps/web/src/components/host/editor/BasicInfoSection.client.tsx, mount the T-002 AiTextImprovePanel for the `description` field, gated by PlanEntitlementGate (entitlementKey='ai_text_improve', using useMyEntitlements()). On Accept: (a) if the field is currently a plain textarea (not entitled to can_use_rich_description), replace the textarea value directly; (b) if rendered via RichTextEditor.client.tsx (TipTap, entitled to can_use_rich_description), write the suggestion into the TipTap instance using its markdown-set path (route it through the same markdown-parsing the editor uses on initial load \u2014 do not raw-insert unparsed markdown as literal text). Button is disabled when the field is empty (nothing to improve).\n\nTests: extend/add to the existing BasicInfoSection test suite. Cover: (1) button hidden when useMyEntitlements().has('ai_text_improve') is false, (2) button visible+enabled when entitled and field has content, (3) button disabled when field is empty, (4) Accept updates the plain-textarea description value when can_use_rich_description is false, (5) Accept updates the TipTap-rendered description (mock RichTextEditor's setter) when can_use_rich_description is true, (6) Discard leaves the original description value untouched in both rendering modes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Wire panel + entitlement gate for description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle Accept write-back for plain textarea path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle Accept write-back for TipTap path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests for all entitlement/rendering combinations",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "accommodation-editor"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {
@@ -217,9 +217,9 @@
     ],
     "summary": {
         "total": 6,
-        "pending": 3,
-        "inProgress": 0,
-        "completed": 2,
+        "pending": 1,
+        "inProgress": 1,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 1.8
     }
