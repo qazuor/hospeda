@@ -576,6 +576,10 @@
         "searchHistory": {
             "title": "Histórico de buscas",
             "description": "Revise e repita suas buscas recentes no Hospeda"
+        },
+        "alerts": {
+            "title": "Alertas de preço",
+            "description": "Gerencie seus alertas de queda de preço no Hospeda"
         }
     },
     "newsletter": {
@@ -760,5 +764,32 @@
             "filterCount_other": "{{count}} filtros"
         },
         "entitlementRequired": "Esta função está disponível para assinantes Plus e VIP."
+    },
+    "alerts": {
+        "loading": "Carregando alertas...",
+        "errorFetch": "Não foi possível carregar seus alertas de preço",
+        "empty": {
+            "title": "Sem alertas ativos",
+            "body": "Explore acomodações e ative alertas para saber quando os preços caírem.",
+            "cta": "Explorar acomodações"
+        },
+        "item": {
+            "priceLabel": "Preço ao se inscrever",
+            "targetLabel": "Alertar quando cair",
+            "targetAny": "Qualquer queda",
+            "targetPercent": "{{percent}}% ou mais"
+        },
+        "deleteOne": "Excluir",
+        "deleteOneConfirm": "Sim, excluir",
+        "deleteCancel": "Cancelar",
+        "deleteConfirmAria": "Confirmar exclusão do alerta",
+        "deleteSuccess": "Alerta excluído",
+        "deleteError": "Não foi possível excluir o alerta",
+        "upgrade": {
+            "title": "Alertas de preço",
+            "message": "Alertas de preço estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "cta": "Ver planos"
+        },
+        "listLabel": "Seus alertas de preço ativos"
     }
 }

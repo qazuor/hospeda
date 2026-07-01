@@ -576,6 +576,10 @@
         "searchHistory": {
             "title": "Search History",
             "description": "Review and re-run your recent searches on Hospeda"
+        },
+        "alerts": {
+            "title": "Price alerts",
+            "description": "Manage your price-drop alerts on Hospeda"
         }
     },
     "newsletter": {
@@ -760,5 +764,32 @@
             "filterCount_other": "{{count}} filters"
         },
         "entitlementRequired": "This feature is available to Plus and VIP subscribers."
+    },
+    "alerts": {
+        "loading": "Loading alerts...",
+        "errorFetch": "Could not load your price alerts",
+        "empty": {
+            "title": "No active alerts",
+            "body": "Explore accommodations and turn on alerts to know when prices drop.",
+            "cta": "Explore accommodations"
+        },
+        "item": {
+            "priceLabel": "Price when subscribed",
+            "targetLabel": "Alert when it drops",
+            "targetAny": "Any drop",
+            "targetPercent": "{{percent}}% or more"
+        },
+        "deleteOne": "Delete",
+        "deleteOneConfirm": "Yes, delete",
+        "deleteCancel": "Cancel",
+        "deleteConfirmAria": "Confirm alert deletion",
+        "deleteSuccess": "Alert deleted",
+        "deleteError": "Could not delete the alert",
+        "upgrade": {
+            "title": "Price alerts",
+            "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "cta": "View plans"
+        },
+        "listLabel": "Your active price alerts"
     }
 }
