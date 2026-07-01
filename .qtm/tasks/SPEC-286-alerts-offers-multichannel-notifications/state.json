@@ -137,30 +137,30 @@
             "id": "T-004",
             "title": "Implement AlertSubscriptionService in @repo/service-core",
             "description": "Create packages/service-core/src/services/alert/alert-subscription.service.ts extending BaseCrudService for the tourist_price_alerts table.\n\nMethods (all RO-RO, return Result<T>):\n- create({ actor, input: CreatePriceAlertInput }): validates accommodation exists; reads current accommodation.price.price to populate base_price_snapshot; checks for duplicate subscription (UNIQUE constraint — handle CONFLICT_ERROR); returns created PriceAlert.\n- remove({ actor, alertId }): loads alert, validates actor owns it (actor.id === alert.userId), soft-deletes via deletedAt.\n- list({ actor, input: ListPriceAlertsInput }): returns paginated list of active alerts for actor.id; includes accommodation slug/name snapshot for display.\n- countActive({ actor }): returns integer count of non-deleted alerts for actor.id (used by gateAlerts() context pre-population before calling the middleware).\n\nPermission model:\n- create/remove: actor must be authenticated (no special permission beyond that; ownership enforced in service).\n- list/countActive: actor must match userId (no admin list in v1).\n- Staff bypass: SUPER_ADMIN and ADMIN can call on behalf of any user (use PermissionEnum.ACCOMMODATION_VIEW_ALL as the staff bypass check, consistent with other tourist services).\n\nAccomodation price extraction: read accommodation.price JSONB; parse as AccommodationPriceSchema; extract price.price (integer centavos). If price is null/missing, reject creation with SERVICE_ERROR_INVALID_INPUT.\n\nExport from packages/service-core/src/services/index.ts.\n\nUnit tests in packages/service-core/test/services/alert/alert-subscription.service.test.ts:\n- create: success, accommodation not found, duplicate subscription.\n- remove: success, not-found alert, wrong actor.\n- list: returns paginated active alerts, excludes soft-deleted.\n- countActive: returns correct count.\n- Confirm SPEC-216 owner-inherits-tourist pattern: an owner actor can also create alerts.\n\nAcceptance criteria:\n- Service compiles clean.\n- All unit tests pass with >= 90% coverage on new service code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-006", "T-012"],
             "subtasks": [
                 {
                     "title": "Implement create() with accommodation price snapshot extraction",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Implement remove() with ownership check",
-                    "completed": false
+                    "title": "Implement remove() with ownership check (DECISION: exposed as native BaseCrudService.softDelete(actor,id) + _canSoftDelete ownership/staff-bypass hook, not a custom remove() method — matches every other BaseCrudService consumer)",
+                    "completed": true
                 },
                 {
-                    "title": "Implement list() + countActive()",
-                    "completed": false
+                    "title": "Implement list() + countActive() (list() is native BaseCrudService.list(actor,options) with forced self-scoping via _beforeList; countActive() is an additive thin wrapper around native count())",
+                    "completed": true
                 },
                 {
                     "title": "Export from service-core services index",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests (create/remove/list/countActive/duplicate/owner-bypass)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "price-alert", "BaseCrudService", "D-2"],
@@ -172,8 +172,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
