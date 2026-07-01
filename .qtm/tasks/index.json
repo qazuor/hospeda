@@ -803,7 +803,9 @@
             "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In-progress (started 2026-06-30). EMAIL-ONLY v1 (full multichannel core built, WhatsApp/push deferred to a follow-up spec). Absorbs SPEC-312 (price alerts) + SPEC-313 (exclusive deals/offers). 12 tasks across 6 phases. VIP entitlement renamed to VIP_VISIBILITY_ACCESS (D-5); SPEC-316 VIP promotions reconciled to a future NEW entitlement. Depends on SPEC-285 (merged, PR #1900)."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "SHIPPED — PR #1973 merged to staging 2026-07-01. EMAIL-ONLY v1 (full multichannel core built, WhatsApp/push deferred to a follow-up spec). Absorbs SPEC-312 (price alerts, obsolete). Overlaps SPEC-313 (exclusive deals/offers) — D-5 renamed VIP_PROMOTIONS_ACCESS to VIP_VISIBILITY_ACCESS, resolving the naming collision SPEC-313's own consolidation with SPEC-316 was blocked on, but whether SPEC-313 proceeds standalone or is absorbed here is still a pending owner decision (see SPEC-313 spec.md). Depends on SPEC-285 (merged, PR #1900)."
         },
         {
             "specId": "SPEC-287",
