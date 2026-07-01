@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 0/30 tasks (0%)
+## Progress: 1/30 tasks (3%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -16,7 +16,7 @@ owner self-service toggle (folded in from SPEC-320).
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) - Migration: rename featuredByPlan column to featuredByEntitlement
+- [x] **T-001** (complexity: 2) - Migration: rename featuredByPlan column to featuredByEntitlement [DONE]
   - accommodation.dbschema.ts column+indexes, accommodation.model.ts sort expression (OQ-1)
   - Blocked by: none
   - Blocks: T-002, T-005
