@@ -80,7 +80,7 @@ updates:
     #     ChecklistWidget, StatusWidget, resolver-widget-integration, KpiWidget,
     #     ChartWidget, DashboardRenderer) stuck in their skeleton state. Possibly
     #     a real dashboard regression, not just test brittleness. Needs a
-    #     deliberate migration with dashboard verification. Owner: SPEC-311.
+    #     deliberate migration with dashboard verification. Owner: SPEC-322.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
