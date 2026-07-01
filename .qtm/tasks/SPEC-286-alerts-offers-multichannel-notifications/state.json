@@ -219,26 +219,26 @@
             "id": "T-006",
             "title": "Implement PriceDropEvaluator service",
             "description": "Create packages/service-core/src/services/alert/price-drop-evaluator.service.ts.\n\nPurpose: given a time window, find all tourist_price_alerts whose subscribed accommodation has dropped in price past the alert's threshold.\n\nInterface (RO-RO):\n- evaluatePriceDrops({ since: Date }): Promise<Map<string, PriceDropMatch[]>>\n  - Queries active tourist_price_alerts (is_active = true, deleted_at IS NULL).\n  - For each alert, reads the accommodation's current accommodation.price.price (integer centavos).\n  - Drop % = (base_price_snapshot - current_price) / base_price_snapshot * 100.\n  - If drop > 0 AND drop >= (alert.targetPercentDrop ?? globalDefaultThresholdPercent):\n    - Include in results map keyed by userId.\n  - globalDefaultThresholdPercent: read from env var HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT (default 5). Register in packages/config/src/env-registry.*.ts + apps/api/src/utils/env.ts.\n  - Filters to alerts whose accommodation was updated within the `since` window (joins on accommodations.updated_at >= since) to avoid evaluating unchanged prices.\n\nTypes to export:\n- PriceDropMatch: { alertId, userId, accommodationId, accommodationSlug, accommodationName, basePriceSnapshot, currentPrice, dropPercent, currency }\n\nUnit tests in packages/service-core/test/services/alert/price-drop-evaluator.service.test.ts:\n- Price dropped past threshold: included.\n- Price dropped but below threshold: excluded.\n- Price increased: excluded (drop is negative).\n- Price unchanged: excluded.\n- null targetPercentDrop + dropped: uses global default threshold.\n- Accommodation updated_at before window: excluded.\n\nAcceptance criteria:\n- All unit tests pass.\n- No any types.\n- Evaluation logic is a pure computation — no side effects, easily testable with mock data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Implement evaluatePriceDrops() with threshold logic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT env var in @repo/config + apps/api env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export PriceDropMatch type + service from service-core index",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests covering all threshold edge cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "evaluation", "price-alert", "D-1", "D-3"],
@@ -250,8 +250,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
@@ -301,30 +301,30 @@
             "id": "T-008",
             "title": "Channel-agnostic delivery abstraction in @repo/notifications",
             "description": "Build the extensible delivery layer that accepts future WhatsApp and push transports without touching the subscription or evaluation core.\n\nCreate packages/notifications/src/services/alert-delivery.service.ts:\n- NotificationChannel interface: { readonly name: string; deliver(payload: AlertDigestPayload): Promise<void> }\n- AlertDigestDeliveryService class:\n  - Constructor accepts readonly channels: NotificationChannel[] (injectable; defaults to [emailChannel] in production)\n  - deliver({ userId, userEmail, priceDrop: PriceDropMatch[], promoOffers: PromoOfferMatch[] }): iterates channels, calls channel.deliver(), swallows per-channel errors with structured logging\n  - deliverBatch(payloads: AlertDigestPayload[]): iterates payloads calling deliver()\n\nCreate packages/notifications/src/types/alert.types.ts:\n- AlertDigestPayload: { userId, userEmail, locale, priceDrop: PriceDropMatch[], promoOffers: PromoOfferMatch[] }\n- PromoOfferMatch: { promotionId, accommodationId, accommodationName, accommodationSlug, promotionTitle, discountType, discountValue, validUntil: Date | null }\n  (note: PriceDropMatch is imported from service-core via cross-package import or re-declared here; prefer re-declaration to avoid circular deps)\n- TriggerKind: 'price_drop' | 'promo_offer' as const\n\nCreate packages/notifications/src/services/channels/email-alert.channel.ts:\n- Implements NotificationChannel\n- Renders AlertDigestEmail (from T-009) via React Email + sends via existing EmailTransport\n- If both priceDrop and promoOffers are empty, skips send silently\n\nExport all from packages/notifications/src/services/index.ts and the package root index.\n\nUnit tests in packages/notifications/test/services/alert-delivery.service.test.ts:\n- deliver() calls all injected channels.\n- Per-channel error does not abort other channels.\n- Empty payload does not call any channel.\n\nAcceptance criteria:\n- No @repo/service-core circular dependency (keep type definitions local).\n- Interface exported so future WhatsApp/push channels can implement it without touching AlertDigestDeliveryService.\n- Unit tests pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": [],
             "blocks": ["T-007", "T-009", "T-012"],
             "subtasks": [
                 {
                     "title": "Create alert.types.ts (AlertDigestPayload, PromoOfferMatch, TriggerKind)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create alert-delivery.service.ts (NotificationChannel interface + AlertDigestDeliveryService)",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Create email-alert.channel.ts (EmailAlertChannel implementing NotificationChannel)",
-                    "completed": false
+                    "title": "Create email-alert.channel.ts (EmailAlertChannel implementing NotificationChannel) — DECISION: renders a placeholder inline React Email template (not the real AlertDigestEmail, which is T-009 and did not exist yet); T-009 swaps only the internal render call",
+                    "completed": true
                 },
                 {
                     "title": "Export all from services/index + package root",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for channel dispatch + error isolation + empty guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "delivery", "channel-agnostic", "G-3", "D-4"],
@@ -336,8 +336,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
@@ -503,9 +503,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 7,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 3.8
     }
