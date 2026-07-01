@@ -116,6 +116,11 @@ vi.mock('../../../src/middlewares/tourist-entitlements', () => ({
     // loaded here imports it, so the mock must expose a pass-through too.
     gateRecommendations: () => async (_c: unknown, next: () => Promise<void>) => {
         await next();
+    },
+    // gateCollections (SPEC-287) ships from the same module; the route graph
+    // loaded here imports it, so the mock must expose a pass-through too.
+    gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
     }
 }));
 

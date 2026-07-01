@@ -242,11 +242,13 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
     });
 
     // =========================================================================
-    // TC5 — Env override: HOSPEDA_MAX_COLLECTIONS_PER_USER=5
+    // TC5 — Env var no longer has effect (SPEC-287): the cap is plan-driven now,
+    // not env-configurable. This documents the T-006 migration; T-014 will
+    // replace usage.max's resolution with getRemainingLimit(ctx, MAX_COLLECTIONS).
     // =========================================================================
 
-    describe('TC5: Env override — HOSPEDA_MAX_COLLECTIONS_PER_USER=5', () => {
-        it('usage.max equals 5 when env var is set to 5', async () => {
+    describe('TC5: HOSPEDA_MAX_COLLECTIONS_PER_USER no longer has effect (SPEC-287)', () => {
+        it('usage.max stays at the default (10) even when the env var is set', async () => {
             // Arrange
             vi.stubEnv('HOSPEDA_MAX_COLLECTIONS_PER_USER', '5');
             const actor = buildUserActor();
@@ -264,7 +266,7 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
             // Assert
             expect(res.status).toBe(200);
             const body = await res.json();
-            expect(body.data.usage.max).toBe(5);
+            expect(body.data.usage.max).toBe(DEFAULT_MAX);
             expect(body.data.usage.current).toBe(4);
         });
     });
