@@ -180,9 +180,17 @@ vi.mock('@repo/billing', () => ({
 
 // Allow checkSubscriptionStatusTransition through from the real module, but
 // expose it as a spy so individual tests can override it to return invalid.
+// SPEC-309 T-023: resolveOwnerPlanGrantsFeatured + syncFeaturedByEntitlementForOwner
+// are overridden here so the annual-activation and plan-upgrade sync branches
+// don't hit the real DB-backed resolver. Defaulted to a no-featured resolution;
+// individual tests override via mockResolvedValue(Once).
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
-    return { ...actual };
+    return {
+        ...actual,
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
+    };
 });
 
 // SPEC-167 T-012: mock subscription-pause.service (exports more than
@@ -207,6 +215,10 @@ vi.mock('../../../src/services/plan-upgrade-restoration.service', () => ({
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import * as serviceCore from '@repo/service-core';
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import { clearEntitlementCache } from '../../../src/middlewares/entitlement';
 import {
     sendPaymentFailureNotifications,
@@ -687,6 +699,91 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(true);
             // Addon path NOT exercised.
             expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        });
+
+        // ---------------------------------------------------------------------
+        // SPEC-309 T-023: featuredByEntitlement sync on annual activation
+        // ---------------------------------------------------------------------
+
+        describe('SPEC-309 T-023: featuredByEntitlement sync', () => {
+            it('grants featuredByEntitlement when the annual plan grants featured', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1'
+                });
+                expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1',
+                    active: true
+                });
+            });
+
+            it('does NOT call sync when the annual plan does not grant featured', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1'
+                });
+                expect(syncFeaturedByEntitlementForOwner).not.toHaveBeenCalled();
+            });
+
+            it('soft-fails: sync throws but the activation still succeeds (non-blocking)', async () => {
+                const { apiLogger } = await import('../../../src/utils/logger');
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+                vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+                    new Error('featured sync DB error')
+                );
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(apiLogger.warn).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        annualSubscriptionId: ANNUAL_SUB_ID,
+                        customerId: 'cust-1',
+                        error: 'featured sync DB error'
+                    }),
+                    expect.stringContaining(
+                        'syncFeaturedByEntitlementForOwner failed (non-blocking)'
+                    )
+                );
+            });
         });
     });
 
@@ -1178,6 +1275,79 @@ describe('processPaymentUpdated', () => {
                 }),
                 expect.stringContaining('could not resolve owner userId')
             );
+        });
+
+        // ---------------------------------------------------------------------
+        // SPEC-309 T-023: featuredByEntitlement sync on plan-upgrade confirmation
+        // ---------------------------------------------------------------------
+
+        describe('SPEC-309 T-023: featuredByEntitlement sync', () => {
+            it('syncs featuredByEntitlement to true when the upgraded plan grants featured', async () => {
+                approvedUpgradePayment();
+                vi.mocked(resolveOwnerUserId).mockResolvedValueOnce('usr-resolved-1');
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+                const billing = makeUpgradeBilling();
+
+                const result = await processPaymentUpdated({
+                    data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                    billing
+                });
+
+                expect(result.planUpgradeConfirmed).toBe(true);
+                expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1'
+                });
+                expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1',
+                    active: true
+                });
+            });
+
+            it('syncs featuredByEntitlement to false when the upgraded plan does not grant featured', async () => {
+                approvedUpgradePayment();
+                vi.mocked(resolveOwnerUserId).mockResolvedValueOnce('usr-resolved-1');
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+                const billing = makeUpgradeBilling();
+
+                const result = await processPaymentUpdated({
+                    data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                    billing
+                });
+
+                expect(result.planUpgradeConfirmed).toBe(true);
+                expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                    ownerId: 'usr-resolved-1',
+                    active: false
+                });
+            });
+
+            it('soft-fails: sync throws but the upgrade still confirms (non-blocking)', async () => {
+                const { apiLogger } = await import('../../../src/utils/logger');
+                approvedUpgradePayment();
+                vi.mocked(resolveOwnerUserId).mockResolvedValueOnce('usr-resolved-1');
+                vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+                vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+                    new Error('featured sync DB error')
+                );
+                const billing = makeUpgradeBilling();
+
+                const result = await processPaymentUpdated({
+                    data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                    billing
+                });
+
+                expect(result.planUpgradeConfirmed).toBe(true);
+                expect(apiLogger.warn).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        planChangeUpgradeId: UPGRADE_SUB_ID,
+                        newPlanId: NEW_PLAN_ID,
+                        error: 'featured sync DB error'
+                    }),
+                    expect.stringContaining(
+                        'syncFeaturedByEntitlementForOwner failed (non-blocking)'
+                    )
+                );
+            });
         });
     });
 

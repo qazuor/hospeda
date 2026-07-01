@@ -1064,7 +1064,7 @@
             "specId": "SPEC-309",
             "title": "Featured Listing — Addon Source + Hardening",
             "status": "in-progress",
-            "progress": "22/30",
+            "progress": "23/30",
             "path": "SPEC-309-featured-listing-addon-source-and-hardening",
             "branch": "spec/SPEC-309-featured-listing-addon-source-and-hardening",
             "base": "staging",

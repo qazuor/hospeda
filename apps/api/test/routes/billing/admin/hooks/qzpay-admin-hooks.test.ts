@@ -94,7 +94,13 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         })),
         BILLING_EVENT_TYPES: {
             ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
-        }
+        },
+        // SPEC-309 T-023: shared resolver + sync for the featuredByEntitlement
+        // flag, called from the downgrade/upgrade branches of
+        // onAfterSubscriptionChangePlan. Defaulted to a no-featured/no-op
+        // resolution; individual tests override via mockResolvedValue(Once).
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
     };
 });
 
@@ -169,6 +175,10 @@ vi.mock('../../../../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import { getDb } from '@repo/db';
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../../../src/middlewares/entitlement';
@@ -178,6 +188,7 @@ import { applyDowngradeRestrictionsOrWarn } from '../../../../../src/services/pl
 import { applyUpgradeRestorationsOrWarn } from '../../../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../../../src/services/refund-lifecycle.service';
 import { resolveOwnerUserId } from '../../../../../src/services/subscription-pause.service';
+import { apiLogger } from '../../../../../src/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Test fixtures + helpers
@@ -1021,6 +1032,142 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
         expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
         expect(spies.insert).toHaveBeenCalledTimes(1);
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-309 T-023: featuredByEntitlement sync on downgrade/upgrade
+    // ---------------------------------------------------------------------------
+
+    describe('SPEC-309 T-023: syncFeaturedByEntitlementForOwner on downgrade/upgrade', () => {
+        it('syncs featuredByEntitlement to false on downgrade when the new plan no longer grants featured', async () => {
+            const { db } = buildDbMock();
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                buildBillingMockWithPlans({
+                    [PLAN_GOLD_ID]: PLAN_GOLD,
+                    [PLAN_BRONZE_ID]: PLAN_BRONZE
+                }) as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValue(false);
+
+            await adminBillingHooks.onAfterSubscriptionChangePlan!({
+                subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+                previousPlanId: PLAN_GOLD_ID,
+                newPlanId: PLAN_BRONZE_ID,
+                ctx: buildContext()
+            });
+
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                ownerId: 'owner-user-001'
+            });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'owner-user-001',
+                active: false
+            });
+        });
+
+        it('syncs featuredByEntitlement to true on upgrade when the new plan grants featured', async () => {
+            const { db } = buildDbMock();
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                buildBillingMockWithPlans({
+                    [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                    [PLAN_GOLD_ID]: PLAN_GOLD
+                }) as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValue(true);
+
+            await adminBillingHooks.onAfterSubscriptionChangePlan!({
+                subscription: buildSubscription({ planId: PLAN_GOLD_ID }),
+                previousPlanId: PLAN_BRONZE_ID,
+                newPlanId: PLAN_GOLD_ID,
+                ctx: buildContext()
+            });
+
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                ownerId: 'owner-user-001'
+            });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'owner-user-001',
+                active: true
+            });
+        });
+
+        it('soft-fails on downgrade: sync throws but the hook still completes audit+cache', async () => {
+            const { db, spies } = buildDbMock();
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                buildBillingMockWithPlans({
+                    [PLAN_GOLD_ID]: PLAN_GOLD,
+                    [PLAN_BRONZE_ID]: PLAN_BRONZE
+                }) as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValue(false);
+            vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+                new Error('featured sync DB error')
+            );
+
+            await expect(
+                adminBillingHooks.onAfterSubscriptionChangePlan!({
+                    subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+                    previousPlanId: PLAN_GOLD_ID,
+                    newPlanId: PLAN_BRONZE_ID,
+                    ctx: buildContext()
+                })
+            ).resolves.toBeUndefined();
+
+            expect(spies.insert).toHaveBeenCalledTimes(1);
+            expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    newPlanId: PLAN_BRONZE_ID,
+                    error: 'featured sync DB error'
+                }),
+                expect.stringContaining('syncFeaturedByEntitlementForOwner failed (non-blocking)')
+            );
+        });
+
+        it('soft-fails on upgrade: resolver throws but the hook still completes audit+cache', async () => {
+            const { db, spies } = buildDbMock();
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                buildBillingMockWithPlans({
+                    [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                    [PLAN_GOLD_ID]: PLAN_GOLD
+                }) as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockRejectedValueOnce(
+                new Error('resolver DB error')
+            );
+
+            await expect(
+                adminBillingHooks.onAfterSubscriptionChangePlan!({
+                    subscription: buildSubscription({ planId: PLAN_GOLD_ID }),
+                    previousPlanId: PLAN_BRONZE_ID,
+                    newPlanId: PLAN_GOLD_ID,
+                    ctx: buildContext()
+                })
+            ).resolves.toBeUndefined();
+
+            expect(syncFeaturedByEntitlementForOwner).not.toHaveBeenCalled();
+            expect(spies.insert).toHaveBeenCalledTimes(1);
+            expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    newPlanId: PLAN_GOLD_ID,
+                    error: 'resolver DB error'
+                }),
+                expect.stringContaining('syncFeaturedByEntitlementForOwner failed (non-blocking)')
+            );
+        });
     });
 });
 

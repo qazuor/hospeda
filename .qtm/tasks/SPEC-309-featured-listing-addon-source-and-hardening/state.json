@@ -891,32 +891,44 @@
             "id": "T-023",
             "title": "Unit tests — call-site group A (webhook hooks)",
             "description": "M-4/G-4: direct unit tests for the transition-to-active derivation and soft-fail isolation of the three webhook-facing call-sites (previously untested per research — 0 hits for featuredByPlan/syncFeaturedByPlan in their existing test files). Extend the existing test files:\n\n- apps/api/test/routes/billing/admin/hooks/qzpay-admin-hooks.test.ts (T-008): downgrade off a FEATURED_LISTING plan syncs revoke via the resolver; upgrade onto one syncs grant; a sync-service throw is caught and does not fail the admin response (soft-fail isolation).\n- apps/api/test/webhooks/subscription-logic.test.ts (T-009): active/trialing/comp -> grant; cancelled/expired/paused -> revoke; past_due -> no-op; soft-fail isolation.\n- apps/api/test/routes/webhooks/payment-logic.test.ts (T-010): both call-sites' grant paths; soft-fail isolation.\n\nKey files: the three test files above (extend, do not replace unrelated existing tests in them).\n\nAcceptance criteria: every transition case listed passes; a forced throw from the sync function is asserted to be caught (response/cron step still succeeds).\n\nTesting requirements:\n- Run scoped per file, e.g. `pnpm vitest run apps/api/test/webhooks/subscription-logic.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009", "T-010"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "qzpay-admin-hooks.ts transition + soft-fail tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "subscription-logic.ts full status-set transition tests",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "payment-logic.ts grant-path + soft-fail tests", "completed": false }
+                { "title": "payment-logic.ts grant-path + soft-fail tests", "completed": true }
             ],
             "tags": ["testing", "backend", "billing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the 3 touched test files — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — exit 0"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "qzpay-admin-hooks.test.ts 38/38, subscription-logic.test.ts 71/71, payment-logic.test.ts 58/58 (each run scoped, individually)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {

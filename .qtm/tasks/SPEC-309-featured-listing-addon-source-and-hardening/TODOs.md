@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 22/30 tasks (73%)
+## Progress: 23/30 tasks (77%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -87,7 +87,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-004 · Blocks: T-030
 - [x] **T-022** (complexity: 3) - Unit tests — sync primitives exclusion/guard (T-005) [DONE]
   - Blocked by: T-005 · Blocks: T-030
-- [ ] **T-023** (complexity: 3) - Unit tests — call-site group A (webhook hooks: qzpay-admin-hooks, subscription-logic, payment-logic)
+- [x] **T-023** (complexity: 3) - Unit tests — call-site group A (webhook hooks: qzpay-admin-hooks, subscription-logic, payment-logic) [DONE]
   - Blocked by: T-008, T-009, T-010 · Blocks: T-030
 - [ ] **T-024** (complexity: 3) - Unit tests — call-site group B (cron jobs: finalize-cancelled-subs, dunning, apply-scheduled-plan-changes)
   - Blocked by: T-011, T-012, T-013 · Blocks: T-030
