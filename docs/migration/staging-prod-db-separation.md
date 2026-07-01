@@ -51,7 +51,7 @@ hospeda-redis                         hospeda-staging-redis
 - `staging-admin.hospeda.com.ar` (admin) → same `HOSPEDA_API_URL` → same path.
 - `api.hospeda.com.ar` (prod) → reads `hospeda-postgres` (the original, after reset).
 - `admin.hospeda.com.ar` (prod) → same.
-- Web on `hospeda.com.ar` (currently coming-soon landing): not affected by the split. When the real web app replaces the landing, it points to `api.hospeda.com.ar` → `hospeda-postgres`.
+- Web on `hospeda.com.ar` (the coming-soon landing app has been removed pre-launch): not affected by the split. The real web app points to `api.hospeda.com.ar` → `hospeda-postgres`.
 
 **Why Redis also splits**: rate-limit counters, queue jobs (QStash replacement), session caching, anything Better Auth or Hono middleware stores in Redis is per-DB. If staging shared Redis with prod, abuse testing or accidental high-volume signups in staging would leak rate limits into prod. Cheap to isolate.
 
@@ -298,7 +298,6 @@ Boots fresh, picks up the now-required-only DB.
 - [ ] `https://staging-admin.hospeda.com.ar/auth/signup` creates user in staging DB only.
 - [ ] `https://admin.hospeda.com.ar/auth/signup` creates user in prod DB only.
 - [ ] `psql staging` and `psql prod` show different row counts for `users`, `accommodations`, etc.
-- [ ] Newsletter form on `https://hospeda.com.ar` (landing) still submits to prod API (`api.hospeda.com.ar`) and lands in Brevo.
 - [ ] OAuth signup with same Google account on staging and prod creates two **separate** user rows (one per DB) — auth secrets are different, so cookies don't cross over.
 
 ---
