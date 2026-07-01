@@ -472,15 +472,6 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_EMAIL_FROM_NAME: z.string().optional(),
     /** Comma-separated list of admin emails for system notifications */
     HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
-    /**
-     * Numeric Brevo Contacts list ID for PRE-LAUNCH newsletter signups
-     * (the coming-soon landing form at hospeda.com.ar, POST
-     * /api/v1/public/newsletter). Distinct from any post-launch newsletter
-     * list so the pre-launch cohort stays separated. Reuses
-     * HOSPEDA_EMAIL_API_KEY for authentication. When unset the endpoint
-     * short-circuits to a logged fake-success so the form never blocks the user.
-     */
-    HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID: z.coerce.number().int().positive().optional(),
 
     // Newsletter (SPEC-101)
     /** HMAC-SHA256 secret for verification + unsubscribe tokens. Min 32 bytes. */

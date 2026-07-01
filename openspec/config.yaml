@@ -52,7 +52,7 @@ Per `CLAUDE.md` project standard: tests are mandatory (Test-Informed Development
 
 | Layer | Available | Tool |
 | ----- | --------- | ---- |
-| Unit | yes | Vitest (apps/api, apps/admin, apps/web, apps/landing, apps/e2e, scripts/cli) |
+| Unit | yes | Vitest (apps/api, apps/admin, apps/web, apps/e2e, scripts/cli) |
 | Integration | yes | Vitest with `vi.spyOn` (apps/api); Vitest helpers (apps/e2e) |
 | E2E | yes | Playwright 1.58.2 in `apps/e2e` (SPEC-092) |
 
