@@ -1220,13 +1220,15 @@
         {
             "specId": "SPEC-321",
             "title": "AI Text-Improve in Web Owner Editor",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "6/6",
             "path": "SPEC-321-ai-text-improve-web-editor",
             "branch": "spec/SPEC-321-ai-text-improve-web-editor",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "All 6 tasks done. Manual smoke (T-006) against real local Ollama confirmed the full chain end-to-end and caught a real bug: global Accept-header validation middleware rejected text/event-stream (fixed, apps/api/src/middlewares/validation.ts + regression test). PR #1975 open to staging, awaiting CI + merge. Run /closeSpec 321 once merged."
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "note": "All 6 tasks done. Manual smoke (T-006) against real local Ollama confirmed the full chain end-to-end and caught a real bug: global Accept-header validation middleware rejected text/event-stream (fixed, apps/api/src/middlewares/validation.ts + regression test). Merged via PR #1975."
         },
         {
             "specId": "SPEC-322",
