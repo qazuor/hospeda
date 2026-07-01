@@ -472,6 +472,15 @@ see "Legacy system" below for why.
   Master dashboard/index as authoritative for roadmap, priority, or macro status.
   `task-master:spec-allocation` (SPEC-NNN numbering) is retired for new specs: Linear's
   issue counter is the collision-free ID source now.
+  - Hospeda's `.claude/project.config.json` already declares `taskMaster.backend: "linear"`
+    (team `Hospeda`, key `HOS`), so `/spec`, `/tasks`, `/next-task`, etc. resolve
+    against Linear once the plugin ships that support. As of 2026-07-01 this requires
+    `qazuor/claude-code-plugins` task-master ≥ 2.4.0, shipped in
+    [PR #2](https://github.com/qazuor/claude-code-plugins/pull/2) — **not yet merged**.
+    Until it merges, `/task-master:*` commands still run the local-index code path
+    and will NOT talk to Linear correctly; create/update Linear issues and
+    `.specs/HOS-xxx-slug/` folders by hand following this section's conventions in
+    the meantime.
 
 ### Workflow
 
