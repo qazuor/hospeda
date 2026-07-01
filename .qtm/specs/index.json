@@ -2724,11 +2724,11 @@
             "title": "AI Text-Improve in Web Owner Editor",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-321-ai-text-improve-web-editor",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "origin": "SPEC-310 roadmap. PARTIAL: API POST /ai/text-improve + quota work and admin uses it, but the WEB owner editor (RichTextEditor) has no improve-with-AI button. Mostly wiring existing API into web editor UI. Could be NOSPEC given small size. OQ: which fields get the button.",
+            "origin": "SPEC-310 roadmap. Discovery complete (/task-master:spec-review, 2026-07-01): scope confirmed to description+summary fields only (API fieldType enum has no title support), UX pattern = replicate admin's SPEC-198 button/panel/Accept-Discard exactly, kept as formal spec (user confirmed) rather than NOSPEC. Tasks generated (6, T-001 done).",
             "tags": ["ai", "owner", "web", "editor"]
         },
         {

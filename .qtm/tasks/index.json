@@ -1216,13 +1216,13 @@
         {
             "specId": "SPEC-321",
             "title": "AI Text-Improve in Web Owner Editor",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "1/6",
             "path": "SPEC-321-ai-text-improve-web-editor",
-            "branch": null,
+            "branch": "spec/SPEC-321-ai-text-improve-web-editor",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Stub from SPEC-310 audit. PARTIAL (API works; missing web editor button). Small — possibly NOSPEC. Needs minimal discovery."
+            "note": "Discovery complete via /task-master:spec-review (2026-07-01); kept as formal spec. Tasks generated via /task-master:task-from-spec. T-001 (useAiTextImprove hook) done."
         },
         {
             "specId": "SPEC-322",

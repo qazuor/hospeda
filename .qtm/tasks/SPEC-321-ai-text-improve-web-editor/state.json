@@ -1,0 +1,226 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-321",
+    "title": "AI Text-Improve in Web Owner Editor",
+    "created": "2026-07-01T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Port useAiTextImprove SSE hook to web",
+            "description": "Create apps/web/src/hooks/useAiTextImprove.ts, a web-native port of apps/admin/src/features/accommodations/hooks/useAiTextImprove.ts. Consumes POST /api/v1/protected/ai/text-improve (SSE, text/event-stream) with native fetch + a manual SSE parser (no TanStack Query, no EventSource per admin's own approach \u2014 credentials:'include'). State machine: idle -> loading -> streaming -> done -> error. Accumulate 'token' events' delta into a running suggestion string; 'done' finalizes it; 'error' surfaces {code, message}. Must use AbortController and abort the in-flight request on unmount to avoid state updates after unmount. Request payload: { fieldValue: string, fieldType: 'description' | 'summary', locale?: 'es'|'en'|'pt' } per AiTextImproveRequestSchema.\n\nTests: apps/web/test/hooks/use-ai-text-improve.test.ts \u2014 AAA pattern. Cover: (1) state transitions idle->loading->streaming->done for a mocked SSE stream with multiple token events, (2) token deltas accumulate in order, (3) error event transitions to error state with code/message, (4) network/fetch rejection transitions to error state, (5) calling the returned abort/cleanup function (or unmounting) aborts the underlying fetch and no further state updates occur, (6) request body matches the schema shape for both fieldType values.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Implement state machine + SSE parser",
+                    "completed": true
+                },
+                {
+                    "title": "Implement AbortController cleanup on unmount",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all state transitions + abort",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "hooks"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Build AiTextImprovePanel presentational component",
+            "description": "Create apps/web/src/components/host/editor/AiTextImprovePanel.client.tsx + colocated AiTextImprovePanel.module.css, a web-native port of apps/admin/src/features/accommodations/components/AiTextImprovePanel.tsx. Props: current field value, fieldType ('description'|'summary'), onAccept(suggestion: string), onDiscard(). Internally uses the T-001 useAiTextImprove hook. Renders: trigger button (disabled while loading/streaming or when triggerDisabled prop is true) -> on click opens panel -> loading skeleton -> live-streaming text (append as tokens arrive) -> done state with Accept/Discard buttons (plain replace, no diff) -> error state with a Dismiss button. Use @repo/i18n for all copy (no hardcoded strings) and vanilla CSS Modules per apps/web styling convention (no Tailwind).\n\nTests: apps/web/test/components/host/editor/AiTextImprovePanel.rtl.test.tsx \u2014 AAA pattern with testing-library. Cover: (1) trigger button renders and is disabled when triggerDisabled or already streaming, (2) clicking trigger shows loading skeleton then streamed text as mocked hook state updates, (3) done state renders Accept + Discard, clicking Accept calls onAccept with the full suggestion text, (4) clicking Discard calls onDiscard and does not call onAccept, (5) error state renders the error message and a Dismiss action that resets the panel to closed without calling onAccept.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Build panel UI states (loading/streaming/done/error)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire Accept/Discard/Dismiss callbacks",
+                    "completed": false
+                },
+                {
+                    "title": "Write component tests for all 4 states",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ai", "components"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Wire AI-improve button into the description field",
+            "description": "In apps/web/src/components/host/editor/BasicInfoSection.client.tsx, mount the T-002 AiTextImprovePanel for the `description` field, gated by PlanEntitlementGate (entitlementKey='ai_text_improve', using useMyEntitlements()). On Accept: (a) if the field is currently a plain textarea (not entitled to can_use_rich_description), replace the textarea value directly; (b) if rendered via RichTextEditor.client.tsx (TipTap, entitled to can_use_rich_description), write the suggestion into the TipTap instance using its markdown-set path (route it through the same markdown-parsing the editor uses on initial load \u2014 do not raw-insert unparsed markdown as literal text). Button is disabled when the field is empty (nothing to improve).\n\nTests: extend/add to the existing BasicInfoSection test suite. Cover: (1) button hidden when useMyEntitlements().has('ai_text_improve') is false, (2) button visible+enabled when entitled and field has content, (3) button disabled when field is empty, (4) Accept updates the plain-textarea description value when can_use_rich_description is false, (5) Accept updates the TipTap-rendered description (mock RichTextEditor's setter) when can_use_rich_description is true, (6) Discard leaves the original description value untouched in both rendering modes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Wire panel + entitlement gate for description",
+                    "completed": false
+                },
+                {
+                    "title": "Handle Accept write-back for plain textarea path",
+                    "completed": false
+                },
+                {
+                    "title": "Handle Accept write-back for TipTap path",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for all entitlement/rendering combinations",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ai", "accommodation-editor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Wire AI-improve button into the summary field",
+            "description": "In apps/web/src/components/host/editor/BasicInfoSection.client.tsx, mount the T-002 AiTextImprovePanel for the `summary` field (plain textarea only \u2014 no TipTap concern for this field), gated by the same PlanEntitlementGate (entitlementKey='ai_text_improve'). On Accept, replace the summary textarea's value directly. Button disabled when the field is empty.\n\nTests: extend the same BasicInfoSection test suite. Cover: (1) button hidden when not entitled, (2) button visible+enabled when entitled and field has content, (3) button disabled when field is empty, (4) Accept replaces the summary value, (5) Discard leaves the original summary value untouched.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Wire panel + entitlement gate for summary",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests for summary field",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ai", "accommodation-editor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Verify quota/error surfacing and unmount-safety across both fields",
+            "description": "Integration test pass across apps/web/test/components/host/editor/BasicInfoSection covering the cross-cutting acceptance criteria that span both description and summary once T-003 and T-004 are wired: (1) a mocked 403 ENTITLEMENT_REQUIRED response surfaces as a dismissible error in the panel instead of throwing, for both fields, (2) a mocked 403 LIMIT_REACHED response surfaces the same way, (3) a mocked network failure mid-stream surfaces the error state, (4) unmounting BasicInfoSection (e.g. simulating navigation away) while a stream is in-flight does not throw and does not call setState after unmount (assert no React act() warnings / no unhandled promise rejections). No new production code expected here unless a gap is found while writing these tests \u2014 if a gap is found (e.g. missing try/catch around the abort), fix it in the T-001/T-002 files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Test entitlement/limit error surfacing for both fields",
+                    "completed": false
+                },
+                {
+                    "title": "Test unmount-mid-stream safety for both fields",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ai", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Manual smoke pass across all 4 field-rendering combinations",
+            "description": "In a local dev environment (wt:up in this worktree), manually verify the full matrix from the spec's Edge Cases section for a real owner-basico+ (or complex-basico+) test user: (1) description as plain textarea + AI button, (2) description as TipTap + AI button, (3) summary + AI button, (4) button hidden for a non-entitled user (e.g. a tourist-tier or owner without ai_text_improve). For each: trigger the button, confirm streaming renders, Accept replaces the value correctly (including TipTap markdown rendering after accept), Discard leaves the field untouched. No automated test \u2014 this is a manual QA checklist to note in the PR description per the project's billing/feature manual-smoke convention where applicable (not billing-gated here, but still a real API call).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Smoke description (plain textarea)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke description (TipTap)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke summary",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke non-entitled user (button hidden)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ai", "qa"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 6,
+        "pending": 5,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}
