@@ -69,8 +69,20 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             }
 
             // 2. Validate Accept header (only if present and not accepting any content type)
+            //
+            // `text/event-stream` is allowed alongside `application/json`/`*/*`:
+            // the AI streaming routes (chat, text-improve, search-chat — see
+            // streaming-route-factory.ts) always send `Accept: text/event-stream`
+            // per the SSE spec, and this generic check has no per-route opt-out
+            // wired for them (they build their own Hono sub-app and never set
+            // `c.routeOptions`, unlike the CRUD/simple route factories).
             const accept = c.req.header('accept');
-            if (accept && !accept.includes('*/*') && !accept.includes('application/json')) {
+            if (
+                accept &&
+                !accept.includes('*/*') &&
+                !accept.includes('application/json') &&
+                !accept.includes('text/event-stream')
+            ) {
                 throw new ValidationError(
                     ValidationErrorCode.INVALID_ACCEPT_HEADER,
                     validationMessages[ValidationErrorCode.INVALID_ACCEPT_HEADER]

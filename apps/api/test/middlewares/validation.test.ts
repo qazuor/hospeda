@@ -152,6 +152,22 @@ describe('Validation Middleware', () => {
             expect(data.error.code).toBe(ValidationErrorCode.INVALID_ACCEPT_HEADER);
         });
 
+        it('should allow requests with Accept: text/event-stream (SSE streaming routes)', async () => {
+            // Regression test (SPEC-321): the AI streaming routes (chat,
+            // text-improve, search-chat) send Accept: text/event-stream per
+            // the SSE spec and have no per-route skipValidation opt-out wired
+            // in — this generic check must allow that value or every real
+            // (non-mocked) call to those routes 400s with INVALID_ACCEPT_HEADER.
+            const res = await app.request('/test', {
+                headers: {
+                    'User-Agent': 'test-agent',
+                    Accept: 'text/event-stream'
+                }
+            });
+
+            expect(res.status).toBe(200);
+        });
+
         it('should allow requests without Accept header', async () => {
             const res = await app.request('/test', {
                 headers: {
