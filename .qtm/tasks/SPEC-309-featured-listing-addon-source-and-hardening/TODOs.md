@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 7/30 tasks (23%)
+## Progress: 8/30 tasks (27%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -54,7 +54,7 @@ owner self-service toggle (folded in from SPEC-320).
 
 ### Integration Phase
 
-- [ ] **T-008** (complexity: 2) - G-1/G-5: wire qzpay-admin-hooks.ts to the union resolver
+- [x] **T-008** (complexity: 2) - G-1/G-5: wire qzpay-admin-hooks.ts to the union resolver [DONE]
   - Blocked by: T-005 · Blocks: T-023
 - [ ] **T-009** (complexity: 2) - G-1/G-5: wire subscription-logic.ts to the union resolver
   - Blocked by: T-005 · Blocks: T-023

@@ -326,27 +326,41 @@
             "id": "T-008",
             "title": "G-1/G-5: wire qzpay-admin-hooks.ts to the union resolver",
             "description": "Update both call-sites in apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts (line 530 admin downgrade hook, line 593 admin upgrade hook) to: (1) call the renamed `syncFeaturedByEntitlementForOwner` (T-005) instead of `syncFeaturedByPlan`; (2) replace the local `getPlanBySlug(...).entitlements.includes(EntitlementKey.FEATURED_LISTING)` derivation with `resolveOwnerPlanGrantsFeatured` (T-004) so the active-status set matches the reconcile cron exactly (`active|trialing|comp`, paused excluded) — this is G-5's alignment for this file. Preserve the existing try/catch soft-fail-and-warn wrapping around both call-sites (do not change error-handling shape, only the resolution + sync call).\n\nKey files:\n- apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts:517-633\n\nAcceptance criteria:\n- Both hooks now resolve via T-004's shared resolver, not a locally re-derived plan check.\n- Both hooks call `syncFeaturedByEntitlementForOwner` (renamed).\n- Soft-fail try/catch semantics unchanged (a sync failure never blocks the admin plan-change response).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Downgrade hook (line ~530): use resolver + renamed sync call",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Upgrade hook (line ~593): use resolver + renamed sync call",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:45:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:45:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "deferred",
+                    "details": "Covered by T-023 (dedicated union-resolver test suite)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T18:30:00.000Z",
+                "completed": "2026-07-01T18:45:00.000Z"
             }
         },
         {
