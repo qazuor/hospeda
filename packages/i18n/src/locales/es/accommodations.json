@@ -485,6 +485,81 @@
             "emptyTitle": "No hay alojamientos de tipo {type} disponibles"
         }
     },
+    "byType": {
+        "tagline": "Tipo de alojamiento",
+        "types": {
+            "APARTMENT": {
+                "name": "Apartamentos",
+                "description": "Apartamentos equipados en Concepción del Uruguay y el Litoral entrerriano, ideales para estadías cortas y largas con la comodidad de sentirte como en casa.",
+                "pageTitle": "Apartamentos en Alquiler"
+            },
+            "HOUSE": {
+                "name": "Casas",
+                "description": "Casas completas para alquilar en el Litoral argentino, con todo el espacio y la privacidad para disfrutar en familia o con amigos.",
+                "pageTitle": "Casas en Alquiler"
+            },
+            "COUNTRY_HOUSE": {
+                "name": "Casas Quinta",
+                "description": "Casas quinta con parque y pileta en las afueras de Concepción del Uruguay, perfectas para desconectar en contacto con la naturaleza.",
+                "pageTitle": "Casas Quinta"
+            },
+            "CABIN": {
+                "name": "Cabañas",
+                "description": "Cabañas acogedoras en entornos naturales del Litoral entrerriano. Perfectas para escapadas románticas o vacaciones familiares.",
+                "pageTitle": "Cabañas en Alquiler"
+            },
+            "HOTEL": {
+                "name": "Hoteles",
+                "description": "Los mejores hoteles en Concepción del Uruguay y la región del Litoral argentino, con comodidad y servicios de calidad para tu estadía.",
+                "pageTitle": "Hoteles"
+            },
+            "HOSTEL": {
+                "name": "Hostels",
+                "description": "Hostels económicos y con ambiente joven en el Litoral argentino, ideales para viajeros que buscan conectar con otros aventureros.",
+                "pageTitle": "Hostels"
+            },
+            "CAMPING": {
+                "name": "Campings",
+                "description": "Campings con infraestructura completa para disfrutar al aire libre y conectar con la naturaleza en la región del Litoral.",
+                "pageTitle": "Campings"
+            },
+            "ROOM": {
+                "name": "Habitaciones",
+                "description": "Habitaciones privadas en alquiler en Concepción del Uruguay, una opción práctica y económica para tu estadía.",
+                "pageTitle": "Habitaciones en Alquiler"
+            },
+            "MOTEL": {
+                "name": "Moteles",
+                "description": "Moteles en el Litoral entrerriano para paradas de descanso rápidas y estadías de corta duración.",
+                "pageTitle": "Moteles"
+            },
+            "RESORT": {
+                "name": "Complejos Turísticos",
+                "description": "Complejos turísticos con múltiples servicios y actividades en el Litoral argentino, ideales para unas vacaciones completas.",
+                "pageTitle": "Complejos Turísticos"
+            },
+            "APART_HOTEL": {
+                "name": "Apart Hoteles",
+                "description": "Apart hoteles que combinan la comodidad de un departamento con los servicios de un hotel, en Concepción del Uruguay y la región.",
+                "pageTitle": "Apart Hoteles"
+            },
+            "ESTANCIA": {
+                "name": "Estancias",
+                "description": "Estancias tradicionales argentinas que ofrecen experiencias auténticas de campo y cultura gaucha en el Litoral entrerriano.",
+                "pageTitle": "Estancias"
+            },
+            "BED_AND_BREAKFAST": {
+                "name": "Bed & Breakfast",
+                "description": "Alojamientos Bed & Breakfast con calidez y hospitalidad local en Concepción del Uruguay y el Litoral argentino.",
+                "pageTitle": "Bed & Breakfast"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Inicio",
+            "breadcrumbAccommodations": "Alojamientos",
+            "emptyTitle": "No hay alojamientos de tipo {{type}} disponibles"
+        }
+    },
     "listPage": {
         "title": "Alojamientos",
         "description": "Descubrí los mejores alojamientos en el Litoral argentino",

@@ -127,3 +127,16 @@ exist. This spec must add a `getRecentlyViewedByUser()`-style query.
 
 SPEC-282 shows this row as **Próximamente**. When SPEC-284 ships, the badge is
 removed and the row reflects the real availability/limits.
+
+## 7. Related
+
+- **SPEC-315** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `CAN_VIEW_RECOMMENDATIONS`
+  phantom gate). Consolidated into this spec on 2026-07-01; marked `obsolete`
+  in the tracking indices. Folded in from SPEC-315:
+  - **Pricing note:** SPEC-310 moved this entitlement from the free tier to
+    the plus tier — it was never actually reachable when it was "free"
+    either.
+  - **Signal source:** SPEC-289 (search history, in-progress) is a candidate
+    input for OQ-1's recommendation signal alongside favorites/recently
+    viewed — confirm its data is available before relying on it.

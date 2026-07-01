@@ -2572,24 +2572,27 @@
             "title": "Tourist Price Alerts",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-312-tourist-price-alerts",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom gate (gateAlerts; no /alerts route, no storage, no monitoring cron, no UI). Build price-drop alerts: table, CRUD, monitoring cron, notification, web UI, enforce MAX_ACTIVE_ALERTS (plus=5, vip=unlimited). OQ: does the platform track per-accommodation price over time (prerequisite)?",
-            "tags": ["billing", "tourist", "alerts", "notifications"]
+            "tags": ["billing", "tourist", "alerts", "notifications"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-286 (Alerts & Offers — Multichannel Notifications), which already covers price alerts (G-1) plus owner-promo offers. Consolidated into SPEC-286; folded in the price-history-prerequisite open question."
         },
         {
             "specId": "SPEC-313",
-            "title": "Tourist Exclusive Deals",
+            "title": "Tourist Exclusive Deals & VIP Promotions",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
             "path": "SPEC-313-tourist-exclusive-deals",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
-            "origin": "SPEC-310 roadmap. Phantom gate (gateExclusiveDeals; no deals entity/route/UI). OQ: are exclusive-deals gated visibility of existing owner-promotions, or a separate concept? Relates to SPEC-316 (vip-promotions).",
-            "tags": ["billing", "tourist", "deals", "promotions"]
+            "origin": "SPEC-310 roadmap. Phantom gate (gateExclusiveDeals; no deals entity/route/UI). OQ: are exclusive-deals gated visibility of existing owner-promotions, or a separate concept? Consolidated 2026-07-01 with SPEC-316 (vip-promotions) into one tiered spec (plus=exclusive deals, vip=extension); blocked on SPEC-286 OQ-5 (VIP_PROMOTIONS_ACCESS naming collision).",
+            "tags": ["billing", "tourist", "deals", "promotions", "vip"]
         },
         {
             "specId": "SPEC-314",
@@ -2615,67 +2618,84 @@
             "origin": "SPEC-310 roadmap. Phantom gate (gateRecommendations; no route/service/algorithm/UI; /similar is public+unpersonalized+unrelated). SPEC-310 moved this entitlement free->plus. Build personalized recommendations from history/favorites/search-history. OQ: personalization signal, heuristic vs ranking.",
             "tags": ["tourist", "recommendations", "discovery"],
             "supersededBy": "SPEC-284",
-            "obsoleteNote": "Superseded by SPEC-284 (Personalized Recommendations Feed), which was independently spec'd and fully implemented (17/17 tasks) on 2026-06-30/07-01, discovered on this same day via a different path. This stub's premises are also stale: CAN_VIEW_RECOMMENDATIONS remains on the free tourist plan in plans.config.ts (never moved to plus), matching SPEC-284's OQ-3 binary-in-v1 decision."
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-284 (Personalized Recommendations Feed, created 2026-06-26). Independently flagged by two separate efforts the same day: this branch's own implementation work (SPEC-284 shipped 17/17 tasks) and a separate spec-dedup audit PR. Consolidated into SPEC-284; folded in the free->plus pricing-tier note and the SPEC-289 search-history signal-source relationship. This stub's premise is also stale: CAN_VIEW_RECOMMENDATIONS remains on the free tourist plan in plans.config.ts (never moved to plus), matching SPEC-284's OQ-3 binary-in-v1 decision."
         },
         {
             "specId": "SPEC-316",
             "title": "VIP Promotions Access (Tourist)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-316-vip-promotions-access",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom (no gate even written). Gives tourist-vip a real exclusive (today vip has none). VIP-only promo tier above regular exclusive-deals. OQ: relationship to SPEC-313 (higher tier of same?).",
-            "tags": ["billing", "tourist", "vip", "promotions"]
+            "tags": ["billing", "tourist", "vip", "promotions"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate/sibling of SPEC-313 (Tourist Exclusive Deals) covering the vip-tier half of the same deals surface. Consolidated into SPEC-313, which now covers both tiers plus the SPEC-286 OQ-5 naming-collision caveat on VIP_PROMOTIONS_ACCESS."
         },
         {
             "specId": "SPEC-317",
             "title": "Owner Review Responses",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-317-owner-review-responses",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom gate (gateReviewResponse; no respond endpoint, no host UI; only review CREATE exists). Build host public reply to reviews: endpoint, storage, host UI, render under review. OQ: one response vs threaded, reviewer notification.",
-            "tags": ["reviews", "owner", "accommodation"]
+            "tags": ["reviews", "owner", "accommodation"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-290 (Owner Review Responses, created 2026-06-26). Consolidated into SPEC-290; folded in the reviewer-notification open question."
         },
         {
             "specId": "SPEC-318",
             "title": "Owner Custom Branding (Premium)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-318-owner-custom-branding",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom (no DB column/route/UI). One of two features giving owner-premium a real exclusive (today premium has none). Premium owners customize branding (logo/colors) on listing/profile. OQ: scope of branding.",
-            "tags": ["owner", "branding", "premium", "accommodation"]
+            "tags": ["owner", "branding", "premium", "accommodation"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-293 (Owner Custom Branding, created 2026-06-26) — same CUSTOM_BRANDING phantom-gate feature, generated independently by the SPEC-310 roadmap audit. Consolidated into SPEC-293; the SPEC-319 relation note was moved there."
         },
         {
             "specId": "SPEC-319",
             "title": "Accommodation Verification Badge (Premium)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-319-accommodation-verification-badge",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. Phantom (no DB column; only dead filter code). Second owner-premium exclusive. Verified trust badge on premium accommodations. OQ: auto-granted with premium vs earned via verification process.",
-            "tags": ["owner", "verification", "trust", "premium"]
+            "tags": ["owner", "verification", "trust", "premium"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-291 (Accommodation Verification Badge, created 2026-06-26, in-progress/shipped via PR #1963). Its open question (revocation on downgrade) is already answered by SPEC-291 D-2/D-3. Consolidated into SPEC-291."
         },
         {
             "specId": "SPEC-320",
             "title": "Featured Listing Automation (Auto-activation + Self-service)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "obsolete",
             "path": "SPEC-320-featured-listing-automation",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
             "origin": "SPEC-310 roadmap. PARTIAL: isFeatured column + home section + admin manual toggle exist, but NO auto-activation on subscription/addon purchase (admin flips by hand) and no owner self-service. Build lifecycle hook to auto-set/unset isFeatured + optional owner toggle. OQ: slots/rotation if oversubscribed, addon(timed) vs plan(continuous) semantics.",
-            "tags": ["billing", "featured", "owner", "automation", "addons"]
+            "tags": ["billing", "featured", "owner", "automation", "addons"],
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Overlapping duplicate of SPEC-309 (Featured Listing — Addon Source + Hardening); its premise (no auto-activation) was stale since SPEC-292 already shipped plan-based auto-activation. Consolidated into SPEC-309 (folded in the self-service toggle goal and the slots/duration open questions)."
         },
         {
             "specId": "SPEC-321",
