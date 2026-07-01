@@ -257,39 +257,39 @@
             "id": "T-008",
             "title": "Mount gate and resolve plan limit on create-collection route",
             "description": "In apps/api/src/routes/user-bookmark-collection/protected/create.ts: mount `gateCollections()` via `options.middlewares`, then resolve the actor's limit with `getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS)` (same pattern as search-history/protected/list.ts, mapping -1/unlimited and 0/disabled to safe values), and pass it via `collectionService.createCollection(actor, { ...input, userId: actor.id }, { hookState: { planLimit } })` — `_canCreate` (T-006) reads it from `ctx.hookState.planLimit`, NOT a positional param, since `_canCreate`'s signature is a fixed BaseCrudService hook contract. Test requirements: apps/api/test/routes/user-bookmark-collection/create.test.ts (new or extended) — 403 ENTITLEMENT_REQUIRED without the entitlement, QUOTA_EXCEEDED exactly at the plan boundary for both plus (10) and vip (25).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Mount gateCollections() on create route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Resolve planLimit via getRemainingLimit()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass { hookState: { planLimit } } into createCollection()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add/extend create.test.ts boundary cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "collections"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:31:00Z",
+                "completed": "2026-07-01T15:35:55Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 1.9
     }
