@@ -1217,12 +1217,12 @@
             "specId": "SPEC-321",
             "title": "AI Text-Improve in Web Owner Editor",
             "status": "in-progress",
-            "progress": "2/6",
+            "progress": "4/6",
             "path": "SPEC-321-ai-text-improve-web-editor",
             "branch": "spec/SPEC-321-ai-text-improve-web-editor",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Discovery complete via /task-master:spec-review (2026-07-01); kept as formal spec. Tasks generated via /task-master:task-from-spec. T-001 (useAiTextImprove hook) done."
+            "note": "Discovery complete via /task-master:spec-review (2026-07-01); kept as formal spec. Tasks generated via /task-master:task-from-spec. T-001..T-004 done (hook, panel, description+summary wiring)."
         },
         {
             "specId": "SPEC-322",
