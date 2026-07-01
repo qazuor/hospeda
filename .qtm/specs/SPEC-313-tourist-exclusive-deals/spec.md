@@ -10,7 +10,26 @@ base: staging
 
 # SPEC-313 — Tourist Exclusive Deals & VIP Promotions
 
-> **Stub (backlog).** Created from the SPEC-310 plan-packaging audit, which found this feature is advertised in the billing plans but is a phantom gate (`gateExclusiveDeals` PHANTOM-GATE; no deals entity, no route, no UI). This stub captures the objective; it must go through full discovery (/task-master:spec-review or /spec) before implementation. Consolidated 2026-07-01 with SPEC-316 (VIP Promotions Access) — see "Related" below — so this spec now covers both the tourist-plus and tourist-vip tiers of the same deals surface as one feature.
+> **⚠️ Cross-spec conflict pending owner reconciliation (2026-07-01):** two
+> independent efforts touched this stub the same day, in opposite directions.
+> `staging` consolidated it with SPEC-316 (VIP Promotions Access) into one
+> tiered spec (plus = exclusive deals, vip = extension), explicitly **blocked on
+> SPEC-286 OQ-5** (the `VIP_PROMOTIONS_ACCESS` naming collision). Separately,
+> SPEC-286 (this branch) absorbed the "owner-promotion offers surfaced to
+> tourists" half of this stub as its own G-2 + T-012, and resolved that exact
+> OQ-5 blocker via D-5: `VIP_PROMOTIONS_ACCESS` → `VIP_VISIBILITY_ACCESS`
+> (it was found to be a visibility perk, not a promotions feature — SPEC-316
+> must define a NEW entitlement for any real VIP promotions).
+>
+> D-5 landing means the blocker `staging`'s consolidation was waiting on is now
+> resolved, but whether this spec should (a) proceed standalone as the
+> plus/vip "curated exclusive deals" feature (a *different* concept from
+> SPEC-286's promo-offer alerts) or (b) be marked obsolete as fully absorbed by
+> SPEC-286 is a product decision, not something this merge should decide
+> unilaterally. Left as `draft`/not-archived (matching `staging`) pending that
+> call.
+>
+> **Stub (backlog).** Created from the SPEC-310 plan-packaging audit, which found this feature is advertised in the billing plans but is a phantom gate (`gateExclusiveDeals` PHANTOM-GATE; no deals entity, no route, no UI). This stub captures the objective; it must go through full discovery (/task-master:spec-review or /spec) before implementation.
 
 ## Overview
 

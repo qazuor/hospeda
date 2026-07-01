@@ -1140,26 +1140,22 @@ export const HOSPEDA_ENV_VARS = [
     // Features / User limits
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_MAX_COLLECTIONS_PER_USER',
-        /**
-         * Maximum number of active collections (wishlists) a user may have.
-         * Soft-deleted collections are excluded from this count. Default 10.
-         */
+        name: 'HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT',
         description:
-            'Maximum number of active collections (wishlists) a user may have. Soft-deleted collections are excluded from this count. Default 10.',
+            "Platform-wide default minimum price-drop percentage that triggers a tourist's price-drop alert when the alert's own targetPercentDrop is null ('notify on any drop'). Default 5 (a 5% or larger drop qualifies).",
         descriptionEs:
-            'Cantidad máxima de colecciones activas (wishlists) que un usuario puede tener. Las soft-deleted no cuentan. Por defecto 10.',
+            "Porcentaje mínimo de baja de precio (por defecto de la plataforma) que dispara una alerta de precio de un turista cuando el targetPercentDrop propio de la alerta es null ('avisame ante cualquier baja'). Por defecto 5 (una baja de 5% o más califica).",
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '10',
-        exampleValue: '10',
+        defaultValue: '5',
+        exampleValue: '5',
         apps: ['api'],
         category: 'features',
         howToObtain:
-            'Per-user wishlist quota. Default 10. Bump up if you want power users to organize favorites in many lists.',
+            'Product/business tuning value for SPEC-286 price-drop alerts (PriceDropEvaluatorService). Raise it to reduce notification noise, lower it to notify on smaller drops. No external provider — set directly.',
         howToObtainEs:
-            'Cuota de wishlists por usuario. Por defecto 10. Subilo si querés que los power users puedan organizar favoritos en muchas listas.'
+            'Valor de negocio/producto para las alertas de baja de precio de SPEC-286 (PriceDropEvaluatorService). Subilo para reducir el ruido de notificaciones, bajalo para avisar ante bajas más chicas. No depende de ningún proveedor externo — se configura directamente.'
     },
 
     // -------------------------------------------------------------------------

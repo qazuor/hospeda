@@ -32,6 +32,7 @@ import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
+import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
@@ -40,10 +41,12 @@ import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.a
 import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { billingApi, priceAlertsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
+import { resolvePriceAlertGateState } from '@/lib/price-alert-gate';
 import { pickLocalizedSeo } from '@/lib/seo';
 
 export const prerender = false;
@@ -296,6 +299,52 @@ if (isAuthenticated) {
         }
     } catch {
         // Graceful degradation: FavoriteButton hydrates itself on mount
+    }
+}
+
+// --- Price alert (entitlement gate + existing-alert lookup, SPEC-286 T-011) ---
+// Skipped entirely for guests — PriceAlertButton is never mounted below when
+// `isAuthenticated` is false, so there is no point paying for these two
+// protected round-trips. Both calls carry the request's own `Cookie` header
+// explicitly (`credentials: 'include'` only forwards cookies from a browser
+// fetch — a server-to-server SSR fetch has no cookie jar), mirroring the
+// conversations-list call above (see protectedConversationsApi usage earlier
+// in this file).
+let userHasAlert = false;
+let existingAlertId: string | null = null;
+let canCreateAlerts = false;
+let maxReached = false;
+
+if (isAuthenticated) {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+        const [alertsListResult, entitlementsResult] = await Promise.allSettled([
+            priceAlertsApi.list({ cookieHeader }),
+            billingApi.getEntitlements({ cookieHeader })
+        ]);
+
+        // Ungated list endpoint (T-005) always returns the actor's full set —
+        // there is no `accommodationId` query filter, so filter client-side.
+        let existingAlertsCount = 0;
+        if (alertsListResult.status === 'fulfilled' && alertsListResult.value.ok) {
+            const items = alertsListResult.value.data.items ?? [];
+            existingAlertsCount = items.length;
+            const match = items.find((item) => item.accommodationId === accommodation.id);
+            if (match) {
+                userHasAlert = true;
+                existingAlertId = match.id;
+            }
+        }
+
+        if (entitlementsResult.status === 'fulfilled') {
+            const gateState = resolvePriceAlertGateState(entitlementsResult.value, existingAlertsCount);
+            canCreateAlerts = gateState.canCreateAlerts;
+            maxReached = gateState.maxReached;
+        }
+    } catch (err) {
+        // Graceful degradation: safe defaults hide the button's active
+        // affordances (PriceAlertButton renders the locked state).
+        webLogger.error('[slug] failed to fetch price-alert state', err);
     }
 }
 
@@ -581,6 +630,18 @@ const faqSections = accommodation.faqs.map((faq) => ({
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
             <PricingSidebar price={accommodation.price} extraInfo={accommodation.extraInfo} lang={locale} />
+            {isAuthenticated && (
+                <PriceAlertButton
+                    client:idle
+                    accommodationId={accommodation.id}
+                    userHasAlert={userHasAlert}
+                    existingAlertId={existingAlertId}
+                    canCreateAlerts={canCreateAlerts}
+                    maxReached={maxReached}
+                    apiUrl={getApiUrl()}
+                    locale={locale}
+                />
+            )}
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} userId={userId} lang={locale}>
                 <ContactHost
                     client:idle

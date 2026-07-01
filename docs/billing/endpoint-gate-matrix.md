@@ -81,18 +81,23 @@
 | `GET /api/v1/protected/user-bookmarks/count` | `user-bookmark/protected/count.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
 | `PATCH /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/update.ts` | none | - | n/a | Metadata-only update (name/notes) on own bookmark; cap-freeing op; ungated per BETA-42 — T-145-05 |
 | **BOOKMARK COLLECTIONS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/create.ts` | none | - | n/a | Collection management ungated per ADR-026; quota enforced inside service (QUOTA_EXCEEDED, not LimitKey) — T-145-05 |
-| `DELETE /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/delete.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
-| `GET /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/list.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
-| `GET /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/getById.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
-| `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | none | - | n/a | Metadata update on own collection; cap-freeing op; ungated — T-145-05 |
-| `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 — T-145-05 |
-| `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
+| `POST /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/create.ts` | gate+limit | `can_use_collections`, `max_collections` | wired | gateCollections() + getRemainingLimit(MAX_COLLECTIONS) resolved to `ctx.hookState.planLimit`, quota enforced inside `createCollection()`'s execute callback (QUOTA_EXCEEDED) — SPEC-287, supersedes ADR-026 |
+| `DELETE /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/delete.ts` | gate | `can_use_collections` | wired | gateCollections() — entitlement-only, no limit check (removal frees a slot, not capped) — SPEC-287 |
+| `GET /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/list.ts` | gate+limit | `can_use_collections`, `max_collections` | wired | gateCollections() + getRemainingLimit(MAX_COLLECTIONS) resolves the `usage.max` response field to the actor's plan limit — SPEC-287 |
+| `GET /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/getById.ts` | gate | `can_use_collections` | wired | gateCollections() — entitlement-only — SPEC-287 |
+| `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | gate | `can_use_collections` | wired | gateCollections() — entitlement-only, no limit check (metadata update, not cap-affecting) — SPEC-287 |
+| `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | gate | `can_use_collections` | wired | gateCollections() — entitlement-only — SPEC-287 |
+| `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | gate | `can_use_collections` | wired | gateCollections() — entitlement-only, no limit check (removal, not cap-affecting) — SPEC-287 |
 | **SEARCH HISTORY — PROTECTED** | | | | | |
 | `GET /api/v1/protected/search-history` | `search-history/protected/list.ts` | gate+limit | `can_view_search_history`, `max_search_history_entries` | wired | gateSearchHistory() — two-step: CAN_VIEW_SEARCH_HISTORY entitlement + MAX_SEARCH_HISTORY_ENTRIES limit (injected count=0, service caps page size to planLimit) — SPEC-289 |
 | `DELETE /api/v1/protected/search-history/{id}` | `search-history/protected/delete-one.ts` | none | - | n/a | Hard-delete own entry; ungated per BETA-42 — users at cap must still free slots — SPEC-289 |
 | `DELETE /api/v1/protected/search-history` | `search-history/protected/clear-all.ts` | none | - | n/a | Hard-delete all own entries (privacy op); ungated — SPEC-289 |
 | `PATCH /api/v1/protected/search-history/preferences` | `search-history/protected/preferences.ts` | none | - | n/a | Toggle opt-out; settings write via UserService.patchSearchHistoryPreferences — SPEC-289 |
+| **PRICE ALERTS — PROTECTED** | | | | | |
+| `POST /api/v1/protected/price-alerts` | `price-alert/protected/create.ts` | gate+limit | `price_alerts`, `max_active_alerts` | wired | gateAlerts() — two-step: PRICE_ALERTS entitlement + MAX_ACTIVE_ALERTS limit, pre-populated via `AlertSubscriptionService.countActive()` in a route middleware before the gate runs — SPEC-286 T-005 |
+| `DELETE /api/v1/protected/price-alerts/{alertId}` | `price-alert/protected/remove.ts` | none | - | n/a | Cancellation (soft-delete) ungated; ownership enforced in the service layer — users at cap must still free slots — SPEC-286 T-005 |
+| `GET /api/v1/protected/price-alerts` | `price-alert/protected/list.ts` | none | - | n/a | Read own data only; self-scoped via service `_beforeList` — SPEC-286 T-005 |
+| **RECOMMENDATIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/recommendations` | `recommendations/protected/get.ts` | gate | `can_view_recommendations` | wired | gateRecommendations() — binary in v1 (OQ-3): every plan carrying the entitlement sees the same feed. RecommendationService.getFeed() also enforces PermissionEnum.RECOMMENDATION_VIEW (role axis, separate from the plan-axis entitlement gate) — SPEC-284 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
@@ -934,7 +939,7 @@ eventually built, move its entry from this section to the main table.
 
 | Gate function | Intended EntitlementKey | Source file | Spec |
 |---|---|---|---|
-| `gateAlerts` | `price_alerts` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateAlerts`~~ | ~~`price_alerts`~~ | `middlewares/tourist-entitlements.ts` | SPEC-286 — **promoted to main table** (route built in SPEC-286 T-005; moved out of phantom gates) |
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | ~~`gateRecommendations`~~ | ~~`can_view_recommendations`~~ | `middlewares/tourist-entitlements.ts` | SPEC-284 — **promoted to main table** (route built in SPEC-284 T-008; moved out of phantom gates) |
@@ -969,9 +974,9 @@ update the counter logic and set `Status = wired` in the main table.
 |---|---|---|
 | `gate` | 11 | All `to-wire` (T-145-03); `PATCH /accommodations/{id}` partially wired (rich-desc + video) |
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
-| `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
-| `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
-| `reserved` | 13 | 11 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288) |
+| `gate+limit` | 4 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired), price-alert create (wired, SPEC-286) |
+| `none` | ~330 | Admin PermissionEnum-gated or pure auth-sufficient reads |
+| `reserved` | 9 | 7 phantom gates + 2 limit stubs (gateComparator wired by SPEC-288, gateAlerts wired by SPEC-286, gateSearchHistory wired by SPEC-289, gateRecommendations wired by SPEC-284) |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
 

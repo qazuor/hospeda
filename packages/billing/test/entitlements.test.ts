@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { ENTITLEMENT_DEFINITIONS } from '../src/config/entitlements.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 
+describe('EntitlementKey enum', () => {
+    it('should include CAN_USE_COLLECTIONS with the expected string value (SPEC-287 T-001)', () => {
+        expect(EntitlementKey.CAN_USE_COLLECTIONS).toBe('can_use_collections');
+    });
+});
+
 describe('Entitlement Configuration', () => {
     describe('ENTITLEMENT_DEFINITIONS', () => {
         it('should export all entitlements', () => {
@@ -75,6 +81,15 @@ describe('Entitlement Configuration', () => {
                 (e) => e.key === EntitlementKey.VIP_SUPPORT
             );
             expect(entitlement).toBeDefined();
+        });
+
+        it('should include CAN_USE_COLLECTIONS (SPEC-287 T-002)', () => {
+            const entitlement = ENTITLEMENT_DEFINITIONS.find(
+                (e) => e.key === EntitlementKey.CAN_USE_COLLECTIONS
+            );
+            expect(entitlement).toBeDefined();
+            expect(entitlement?.name).toBeTruthy();
+            expect(entitlement?.description).toBeTruthy();
         });
     });
 
@@ -163,7 +178,7 @@ describe('Entitlement Configuration', () => {
             }
         });
 
-        it('should have 12 tourist entitlements', () => {
+        it('should have 13 tourist entitlements', () => {
             // Arrange (EARLY_ACCESS_EVENTS, CONCIERGE_SERVICE, AIRPORT_TRANSFERS removed in SPEC-216)
             const touristKeys: readonly EntitlementKey[] = [
                 EntitlementKey.SAVE_FAVORITES,
@@ -173,26 +188,27 @@ describe('Entitlement Configuration', () => {
                 EntitlementKey.PRICE_ALERTS,
                 EntitlementKey.EXCLUSIVE_DEALS,
                 EntitlementKey.VIP_SUPPORT,
-                EntitlementKey.VIP_PROMOTIONS_ACCESS,
+                EntitlementKey.VIP_VISIBILITY_ACCESS,
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
                 EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
                 EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-                EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+                EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+                EntitlementKey.CAN_USE_COLLECTIONS
             ] as const;
 
             // Act & Assert
-            expect(touristKeys).toHaveLength(12);
+            expect(touristKeys).toHaveLength(13);
             for (const key of touristKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
         });
 
         it('should have all 6 categories totaling to the full definitions count', () => {
-            // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12)
+            // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
-            const touristCount = 12;
+            const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
 
             // Act & Assert

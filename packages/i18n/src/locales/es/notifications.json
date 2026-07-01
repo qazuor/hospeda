@@ -1,0 +1,19 @@
+{
+    "alerts": {
+        "digest": {
+            "subject": "Tus alertas de precios y ofertas",
+            "priceDrop": {
+                "sectionTitle": "Bajó el precio de tus alojamientos guardados",
+                "currentPrice": "Precio actual",
+                "previousPrice": "Precio anterior",
+                "dropPercent": "Bajó un {{percent}}%"
+            },
+            "promoOffer": {
+                "sectionTitle": "Ofertas activas para vos",
+                "validUntil": "Válida hasta {{date}}"
+            },
+            "cta": "Ver alojamiento",
+            "manageAlerts": "Administrar mis alertas"
+        }
+    }
+}

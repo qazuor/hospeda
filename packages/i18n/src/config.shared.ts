@@ -67,7 +67,8 @@ export const webNamespaces = [
     'commerce',
     'external-reputation',
     'experience',
-    'social'
+    'social',
+    'notifications'
 ] as const;
 
 export type WebNamespace = (typeof webNamespaces)[number];
@@ -134,6 +135,7 @@ import mapsEs from './locales/es/maps.json';
 import mobileEs from './locales/es/mobile.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
+import notificationsEs from './locales/es/notifications.json';
 import ownersEs from './locales/es/owners.json';
 import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
@@ -183,6 +185,7 @@ import mapsEn from './locales/en/maps.json';
 import mobileEn from './locales/en/mobile.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
+import notificationsEn from './locales/en/notifications.json';
 import ownersEn from './locales/en/owners.json';
 import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
@@ -232,6 +235,7 @@ import mapsPt from './locales/pt/maps.json';
 import mobilePt from './locales/pt/mobile.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
+import notificationsPt from './locales/pt/notifications.json';
 import ownersPt from './locales/pt/owners.json';
 import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
@@ -299,7 +303,8 @@ export const rawWebTranslations = {
         gastronomy: gastronomyEs,
         commerce: commerceEs,
         experience: experienceEs,
-        social: socialEs
+        social: socialEs,
+        notifications: notificationsEs
     },
     en: {
         about: aboutEn,
@@ -346,7 +351,8 @@ export const rawWebTranslations = {
         gastronomy: gastronomyEn,
         commerce: commerceEn,
         experience: experienceEn,
-        social: socialEn
+        social: socialEn,
+        notifications: notificationsEn
     },
     pt: {
         about: aboutPt,
@@ -393,7 +399,8 @@ export const rawWebTranslations = {
         gastronomy: gastronomyPt,
         commerce: commercePt,
         experience: experiencePt,
-        social: socialPt
+        social: socialPt,
+        notifications: notificationsPt
     }
 } as const;
 

@@ -3,6 +3,7 @@ export * from './accommodation/accommodation.sync-featured-by-entitlement';
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
+export * from './alert';
 export * from './appLog/index.js';
 export * from './auditLog/index.js';
 export * from './conversation/index.js';

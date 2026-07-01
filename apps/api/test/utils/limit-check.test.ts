@@ -212,6 +212,17 @@ describe('checkLimit', () => {
 
             expect(result.upgradeMessage).toContain('favoritos');
         });
+
+        it('should handle max_collections (SPEC-287 T-003)', () => {
+            const context = createMockContext(10);
+            const result = checkLimit({
+                context,
+                limitKey: LimitKey.MAX_COLLECTIONS,
+                currentCount: 10
+            });
+
+            expect(result.upgradeMessage).toContain('colecciones');
+        });
     });
 
     describe('edge cases', () => {

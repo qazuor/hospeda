@@ -12,7 +12,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
 /**
  * Total number of environment variable definitions across all categories.
  * Breakdown:
- *  - HOSPEDA_*    : 45 vars (server-side platform) [+1 HOSPEDA_MAX_COLLECTIONS_PER_USER]
+ *  - HOSPEDA_*    : 45 vars (server-side platform)
  *  - API_*        : 78 vars (Hono middleware configuration)
  *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
  *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
@@ -119,6 +119,19 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * pre-launch: HOSPEDA_LANDING_SITE_URL (build category, only consumed by the
  * removed Dockerfile) and HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID (email
  * category, only consumed by the removed landing-only newsletter endpoint).
+ *
+ * 243 (2026-07-01, SPEC-287 T-009 merge): -1 vs the independently-derived 244
+ * on staging (NOSPEC:remove-landing), removed HOSPEDA_MAX_COLLECTIONS_PER_USER
+ * (features category). Favorites collections moved from an env-var cap to a
+ * per-plan billing LimitKey (MAX_COLLECTIONS); the env var no longer exists.
+ * Both removals landed independently off the same 246 base; merged total
+ * reflects both (246 - 2 - 1 = 243).
+ *
+ * 244 (2026-07-01, SPEC-286 merge): +1 vs the independently-derived 243
+ * above, adding HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT (features category,
+ * SPEC-286 price-drop alerts). Landed on staging independently off the same
+ * 244 (post-landing-removal) base as this branch's collections removal;
+ * merged total reflects both (243 + 1 = 244).
  */
 const EXPECTED_VAR_COUNT = 244;
 

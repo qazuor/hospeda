@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    alertsDigestJob,
     appLogPurgeJob,
     applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
@@ -48,6 +49,7 @@ export const cronJobs: CronJobDefinition[] = [
     webhookRetryJob,
     notificationScheduleJob,
     addonExpiryJob,
+    alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,
     dunningJob,

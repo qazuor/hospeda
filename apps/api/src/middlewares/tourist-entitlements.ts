@@ -112,9 +112,8 @@ export function gateFavorites(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for POST /alerts once that route ships.
-// Do NOT delete and do NOT build the route without a spec.
+// SPEC-286: mounted on POST /api/v1/protected/price-alerts
+// (apps/api/src/routes/price-alert/protected/create.ts).
 export function gateAlerts(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED
@@ -353,6 +352,59 @@ export function gateSearchHistory(): AppMiddleware {
                 'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
                 {
                     requiredEntitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+                    upgradeUrl: '/billing/plans'
+                }
+            );
+        }
+
+        // Entitlement OK — proceed.
+        await next();
+    };
+}
+
+/**
+ * Gate favorites-collections feature (SPEC-287)
+ *
+ * Entitlement-only gate: checks whether the actor holds the
+ * `CAN_USE_COLLECTIONS` entitlement. No limit check is performed here — the
+ * per-plan cap (MAX_COLLECTIONS) is resolved and enforced separately at the
+ * create/list routes (T-006/T-008/T-014), mirroring {@link gateSearchHistory}.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_USE_COLLECTIONS)` always returns `true` for staff
+ * and `await next()` is called without throwing a 403.
+ *
+ * @returns Middleware handler
+ *
+ * @example
+ * ```typescript
+ * import { gateCollections } from '../middlewares/tourist-entitlements';
+ *
+ * app.get(
+ *   '/user-bookmark-collections',
+ *   entitlementMiddleware(),
+ *   gateCollections(),
+ *   async (c) => {
+ *     // User can use collections - proceed
+ *   }
+ * );
+ * ```
+ */
+export function gateCollections(): AppMiddleware {
+    return async (c, next) => {
+        // Entitlement check: users without the feature get ENTITLEMENT_REQUIRED.
+        if (!hasEntitlement(c, EntitlementKey.CAN_USE_COLLECTIONS)) {
+            apiLogger.warn(
+                `gateCollections: blocked — user lacks ${EntitlementKey.CAN_USE_COLLECTIONS}`
+            );
+
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'Las colecciones de favoritos solo están disponibles en los planes Plus y VIP. Actualiza tu plan para acceder.',
+                {
+                    requiredEntitlement: EntitlementKey.CAN_USE_COLLECTIONS,
                     upgradeUrl: '/billing/plans'
                 }
             );

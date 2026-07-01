@@ -1,0 +1,214 @@
+/* AiTextImprovePanel.module.css — SPEC-321 T-002 */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* ── Trigger button ── */
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    align-self: flex-start;
+    min-height: 36px;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 150ms ease-out, opacity 150ms ease-out;
+}
+
+.trigger:hover:not(:disabled) {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.triggerIcon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+/* ── Panel ── */
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    padding: 1rem;
+    box-shadow: 0 1px 2px var(--core-foreground-a05, rgb(0 0 0 / 5%));
+}
+
+.panel:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Loading state ── */
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skeletonLine {
+    height: 0.875rem;
+    border-radius: var(--radius-md, 10px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a08) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: aiTextImproveShimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonLine:nth-child(1) {
+    width: 75%;
+}
+
+.skeletonLine:nth-child(2) {
+    width: 50%;
+}
+
+.skeletonLine:nth-child(3) {
+    width: 66%;
+}
+
+.loadingText {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+@keyframes aiTextImproveShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── Streaming state ── */
+
+.streaming {
+    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.streamingCursor {
+    display: inline-block;
+    margin-left: 0.125rem;
+    color: var(--brand-primary);
+    animation: aiTextImproveBlink 1s step-start infinite;
+}
+
+@keyframes aiTextImproveBlink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* ── Done state ── */
+
+.doneText {
+    white-space: pre-wrap;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.doneActions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.acceptButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0.5rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, #ffffff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+}
+
+.acceptButton:hover {
+    opacity: 0.9;
+}
+
+.acceptButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.discardButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 150ms ease-out;
+}
+
+.discardButton:hover {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+}
+
+.discardButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Error state ── */
+
+.errorMessage {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: oklch(0.55 0.22 25);
+}
+
+.errorActions {
+    margin-top: 0.75rem;
+}

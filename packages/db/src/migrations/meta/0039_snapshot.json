@@ -1,5 +1,5 @@
 {
-    "id": "ef9aaf4e-d400-4c4e-bd16-c1f05df96bb8",
+    "id": "0fe28ef0-56c8-4a84-8a23-ac9031897b7d",
     "prevId": "85a9f022-3000-4847-a80d-2ab7ef3f749d",
     "version": "7",
     "dialect": "postgresql",
@@ -120,8 +120,8 @@
                     "notNull": true,
                     "default": false
                 },
-                "featured_by_entitlement": {
-                    "name": "featured_by_entitlement",
+                "featured_by_plan": {
+                    "name": "featured_by_plan",
                     "type": "boolean",
                     "primaryKey": false,
                     "notNull": true,
@@ -323,11 +323,11 @@
                     "method": "btree",
                     "with": {}
                 },
-                "accommodations_featuredByEntitlement_idx": {
-                    "name": "accommodations_featuredByEntitlement_idx",
+                "accommodations_featuredByPlan_idx": {
+                    "name": "accommodations_featuredByPlan_idx",
                     "columns": [
                         {
-                            "expression": "featured_by_entitlement",
+                            "expression": "featured_by_plan",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -338,8 +338,8 @@
                     "method": "btree",
                     "with": {}
                 },
-                "accommodations_visibility_featuredByEntitlement_idx": {
-                    "name": "accommodations_visibility_featuredByEntitlement_idx",
+                "accommodations_visibility_featuredByPlan_idx": {
+                    "name": "accommodations_visibility_featuredByPlan_idx",
                     "columns": [
                         {
                             "expression": "visibility",
@@ -348,7 +348,7 @@
                             "nulls": "last"
                         },
                         {
-                            "expression": "featured_by_entitlement",
+                            "expression": "featured_by_plan",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -359,8 +359,8 @@
                     "method": "btree",
                     "with": {}
                 },
-                "accommodations_destinationId_featuredByEntitlement_visibility_idx": {
-                    "name": "accommodations_destinationId_featuredByEntitlement_visibility_idx",
+                "accommodations_destinationId_featuredByPlan_visibility_idx": {
+                    "name": "accommodations_destinationId_featuredByPlan_visibility_idx",
                     "columns": [
                         {
                             "expression": "destination_id",
@@ -369,7 +369,7 @@
                             "nulls": "last"
                         },
                         {
-                            "expression": "featured_by_entitlement",
+                            "expression": "featured_by_plan",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -3434,6 +3434,164 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.tourist_price_alerts": {
+            "name": "tourist_price_alerts",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "base_price_snapshot": {
+                    "name": "base_price_snapshot",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "target_percent_drop": {
+                    "name": "target_percent_drop",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_active": {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "touristPriceAlerts_userId_idx": {
+                    "name": "touristPriceAlerts_userId_idx",
+                    "columns": [
+                        {
+                            "expression": "user_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "touristPriceAlerts_accommodationId_idx": {
+                    "name": "touristPriceAlerts_accommodationId_idx",
+                    "columns": [
+                        {
+                            "expression": "accommodation_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "touristPriceAlerts_isActive_idx": {
+                    "name": "touristPriceAlerts_isActive_idx",
+                    "columns": [
+                        {
+                            "expression": "is_active",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "idx_tourist_price_alerts_user_accommodation_active_unique": {
+                    "name": "idx_tourist_price_alerts_user_accommodation_active_unique",
+                    "columns": [
+                        {
+                            "expression": "user_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "accommodation_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "where": "deleted_at IS NULL",
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "tourist_price_alerts_user_id_users_id_fk": {
+                    "name": "tourist_price_alerts_user_id_users_id_fk",
+                    "tableFrom": "tourist_price_alerts",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "tourist_price_alerts_accommodation_id_accommodations_id_fk": {
+                    "name": "tourist_price_alerts_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "tourist_price_alerts",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.audit_log_entries": {
             "name": "audit_log_entries",
             "schema": "",
@@ -6121,102 +6279,6 @@
                     "tableFrom": "billing_subscription_events",
                     "tableTo": "billing_subscriptions",
                     "columnsFrom": ["subscription_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.featured_listing_addon_grants": {
-            "name": "featured_listing_addon_grants",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "purchase_id": {
-                    "name": "purchase_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "accommodation_id": {
-                    "name": "accommodation_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                }
-            },
-            "indexes": {
-                "featuredListingAddonGrants_purchaseId_uniq": {
-                    "name": "featuredListingAddonGrants_purchaseId_uniq",
-                    "columns": [
-                        {
-                            "expression": "purchase_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": true,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "featuredListingAddonGrants_accommodationId_idx": {
-                    "name": "featuredListingAddonGrants_accommodationId_idx",
-                    "columns": [
-                        {
-                            "expression": "accommodation_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "featured_listing_addon_grants_purchase_id_billing_addon_purchases_id_fk": {
-                    "name": "featured_listing_addon_grants_purchase_id_billing_addon_purchases_id_fk",
-                    "tableFrom": "featured_listing_addon_grants",
-                    "tableTo": "billing_addon_purchases",
-                    "columnsFrom": ["purchase_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "featured_listing_addon_grants_accommodation_id_accommodations_id_fk": {
-                    "name": "featured_listing_addon_grants_accommodation_id_accommodations_id_fk",
-                    "tableFrom": "featured_listing_addon_grants",
-                    "tableTo": "accommodations",
-                    "columnsFrom": ["accommodation_id"],
                     "columnsTo": ["id"],
                     "onDelete": "cascade",
                     "onUpdate": "no action"

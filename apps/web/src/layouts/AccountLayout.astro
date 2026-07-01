@@ -31,6 +31,7 @@ import {
 	WrenchIcon,
 	SparkleIcon,
 	SearchIcon,
+	AlertsIcon,
 	CompassIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
@@ -110,6 +111,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
 				: []),
 			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
 			{ section: 'historial-busquedas', label: t('account.nav.searchHistory', 'Historial de búsquedas'), path: 'mi-cuenta/historial-busquedas', Icon: SearchIcon },
+			{ section: 'alertas', label: t('account.nav.alerts', 'Alertas de precio'), path: 'mi-cuenta/alertas', Icon: AlertsIcon },
 			{ section: 'recomendaciones', label: t('account.pages.dashboard.nav.recommendations', 'Recomendaciones'), path: 'mi-cuenta/recomendaciones', Icon: CompassIcon },
 			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
 			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/consultas', Icon: ChatIcon },

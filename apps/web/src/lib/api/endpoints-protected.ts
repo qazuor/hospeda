@@ -13,6 +13,7 @@ import type {
     DowngradePreview,
     KeepSelections,
     PlanChangeResponse,
+    PriceAlertResponse,
     UserBookmark,
     UserCancelSubscriptionResponse,
     UserProtected,
@@ -821,6 +822,7 @@ export const billingApi = {
      * - `plan`: active plan summary or `null` if the user has no active paid plan.
      * - `asOf`: ISO timestamp of when the values were resolved.
      *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns Entitlement data for the current user.
      *
      * @example
@@ -831,7 +833,13 @@ export const billingApi = {
      * }
      * ```
      */
-    getEntitlements(): Promise<
+    getEntitlements(params?: {
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
+    }): Promise<
         ApiResult<{
             readonly entitlements: ReadonlyArray<string>;
             readonly limits: Readonly<Record<string, number>>;
@@ -844,7 +852,8 @@ export const billingApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/users/me/entitlements`
+            path: `${PROTECTED}/users/me/entitlements`,
+            cookieHeader: params?.cookieHeader
         });
     }
 };
@@ -2687,6 +2696,47 @@ export const accommodationMediaApi = {
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    }
+};
+
+// --- Price Alerts (Protected — SPEC-286 T-010/T-011) ---
+
+/** Price-alert subscription endpoints */
+export const priceAlertsApi = {
+    /**
+     * List the authenticated actor's own price-alert subscriptions.
+     *
+     * `GET /api/v1/protected/price-alerts` always returns the full set (no
+     * server-side filtering support) — callers that need a per-accommodation
+     * lookup must filter the returned `items` client-side by
+     * `item.accommodationId` (see `PriceAlertButton` SSR wiring in
+     * `alojamientos/[slug].astro`).
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
+     * @returns The actor's price-alert subscriptions and the total count.
+     *
+     * @example
+     * ```ts
+     * const result = await priceAlertsApi.list();
+     * if (result.ok) console.log(result.data.items.length);
+     * ```
+     */
+    list(params?: {
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly items: readonly PriceAlertResponse[];
+            readonly total: number;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/price-alerts`,
+            cookieHeader: params?.cookieHeader
         });
     }
 };
