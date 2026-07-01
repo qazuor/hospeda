@@ -173,7 +173,7 @@
             "id": "T-005",
             "title": "Rename and harden sync primitives with addon-aware exclusion/guard",
             "description": "Closes H-1's two consequences. Rename packages/service-core/src/services/accommodation/accommodation.sync-featured-by-plan.ts -> accommodation.sync-featured-by-entitlement.ts and change its exports:\n\n- `syncFeaturedByEntitlementForOwner({ ownerId, active, db? }): Promise<{ updated: number }>` (renamed from `syncFeaturedByPlan`, same owner-wide bulk shape). When `active === false` (plan-driven revoke), FIRST call `getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId })` (T-004) and add `notInArray(accommodations.id, protectedIds)` to the WHERE clause so accommodations with a live addon grant are NOT cleared just because the plan lapsed — this is H-1 consequence (b). When `active === true`, unconditional bulk update (unchanged, addon-protected rows are already true so no harm).\n- NEW `syncFeaturedByEntitlementForAccommodation({ accommodationId, active, db? }): Promise<{ updated: number }>` — single-row target for G-2's addon-purchase/expiry hooks. When `active === false` (addon expiring), FIRST call `resolveOwnerPlanGrantsFeatured` (T-004) for that accommodation's owner; if the plan still grants it, return `{ updated: 0 }` (no-op) instead of clearing — this is H-1 consequence (a)'s mirror image for the addon-expiry direction.\n- `.returning({ id, slug })` instead of just `{ id }` on both (slug needed by T-017/T-018's revalidation).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts (renamed file)\n- service-core barrel (update export names)\n\nAcceptance criteria:\n- `syncFeaturedByEntitlementForOwner(ownerId, false)` does NOT clear accommodations present in the addon-protected set.\n- `syncFeaturedByEntitlementForAccommodation(accommodationId, false)` is a no-op when the owner's plan still grants FEATURED_LISTING.\n- Both functions still exclude soft-deleted rows and remain idempotent.\n- `.returning()` includes `slug`.\n- pnpm typecheck green (expect and fix cascading errors at every old `syncFeaturedByPlan` import — those are the 8 call-sites owned by T-008..T-013).\n\nTesting requirements:\n- Covered by T-022.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004"],
             "blocks": [
@@ -194,22 +194,34 @@
             "subtasks": [
                 {
                     "title": "Rename file + syncFeaturedByEntitlementForOwner with addon-protected exclusion on revoke",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "New syncFeaturedByEntitlementForAccommodation with plan-still-grants guard on revoke",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add slug to .returning() on both", "completed": false },
-                { "title": "Update service-core barrel exports", "completed": false }
+                { "title": "Add slug to .returning() on both", "completed": true },
+                { "title": "Update service-core barrel exports", "completed": true }
             ],
             "tags": ["backend", "service", "billing", "entitlements"],
             "phase": "core",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T17:45:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:45:00Z",
+                    "details": "packages/service-core scoped typecheck fully clean (zero errors). apps/api scoped typecheck confirms exactly the 8 expected cascading errors at the documented call-sites (apply-scheduled-plan-changes, dunning, finalize-cancelled-subs, featured-by-plan-reconcile x2, qzpay-admin-hooks, payment-logic, subscription-logic) -- deferred to T-008..T-014 per acceptance criteria"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:45:00Z",
+                    "details": "renamed+updated the pre-existing SPEC-292 test file (sync-featured-by-plan.test.ts -> sync-featured-by-entitlement.test.ts) that broke on the rename -- 9/9 passing, covers unchanged bulk-write behavior with the T-004 resolver mocked to an empty protected set. New addon-guard behavior + syncFeaturedByEntitlementForAccommodation deferred to T-022 per task spec"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T17:20:00Z",
+                "completed": "2026-07-01T17:45:00Z"
             }
         },
         {
@@ -946,7 +958,7 @@
         "total": 30,
         "pending": 25,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }
