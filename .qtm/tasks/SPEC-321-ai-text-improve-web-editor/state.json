@@ -148,31 +148,31 @@
             "id": "T-005",
             "title": "Verify quota/error surfacing and unmount-safety across both fields",
             "description": "Integration test pass across apps/web/test/components/host/editor/BasicInfoSection covering the cross-cutting acceptance criteria that span both description and summary once T-003 and T-004 are wired: (1) a mocked 403 ENTITLEMENT_REQUIRED response surfaces as a dismissible error in the panel instead of throwing, for both fields, (2) a mocked 403 LIMIT_REACHED response surfaces the same way, (3) a mocked network failure mid-stream surfaces the error state, (4) unmounting BasicInfoSection (e.g. simulating navigation away) while a stream is in-flight does not throw and does not call setState after unmount (assert no React act() warnings / no unhandled promise rejections). No new production code expected here unless a gap is found while writing these tests \u2014 if a gap is found (e.g. missing try/catch around the abort), fix it in the T-001/T-002 files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Test entitlement/limit error surfacing for both fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test unmount-mid-stream safety for both fields",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "testing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {
@@ -217,9 +217,9 @@
     ],
     "summary": {
         "total": 6,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.8
     }
