@@ -784,14 +784,14 @@
         {
             "specId": "SPEC-286",
             "title": "Alerts & Offers — Multichannel Notifications",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-286-alerts-offers-multichannel-notifications",
             "parent": "SPEC-285",
-            "branch": null,
+            "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Merges phantom price alerts + owner-promo offers, multichannel (email/whatsapp/push), per-plan limits. Depends on SPEC-285. Surfaced in SPEC-282 review."
+            "note": "In-progress (started 2026-06-30). Phasing decision: build the full multichannel codebase foundation but ship EMAIL-ONLY in v1; WhatsApp/push deferred to a follow-up spec (external infra). Merges phantom price alerts + owner-promo offers, per-plan limits. Depends on SPEC-285. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-287",

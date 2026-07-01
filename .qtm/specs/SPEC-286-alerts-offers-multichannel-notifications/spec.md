@@ -3,7 +3,7 @@ specId: SPEC-286
 title: Alerts & Offers — Multichannel Notifications
 type: feat
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-26
 parentSpec: SPEC-285
 tags: [tourist, alerts, notifications, promotions, entitlements, multichannel]
@@ -29,8 +29,20 @@ single **alerts & offers** feature:
 
 The owner decided to repurpose this into a real feature: a tourist receives
 **alerts and offers** — price drops **and** owner promotions (SPEC-285), which may
-not be price-based — delivered over **multiple channels** (email, WhatsApp, push
-notifications), with **per-plan limits**.
+not be price-based — with **per-plan limits**.
+
+### Phasing decision (2026-06-30)
+
+This spec builds the **complete codebase foundation** for multichannel delivery
+(channel-agnostic delivery abstraction, subscription model, evaluation engine,
+per-plan limits, gates, UI), but in **v1 only the email channel is shipped**.
+WhatsApp and push are deliberately deferred to a **separate follow-up spec**
+because they require external infrastructure (WhatsApp Business API provider,
+verified number, template approval, per-message cost; web-push/FCM token
+management and service worker) out of scope here.
+
+The delivery layer is designed channel-agnostic from day one, so the follow-up
+spec only adds new transports with no rework of the subscription/evaluation core.
 
 ## 2. Context
 
@@ -46,8 +58,10 @@ notifications), with **per-plan limits**.
   evaluation (cron or event) + delivery.
 - **G-2** Subscribe tourists to **owner-promotion offers** (consumes the SPEC-285
   promo-created event).
-- **G-3** Multichannel delivery: email, WhatsApp, push — reusing
-  `@repo/notifications` where possible.
+- **G-3** Channel-agnostic delivery abstraction reusing `@repo/notifications`,
+  with the **email transport shipped in v1**. The abstraction must accept new
+  transports (WhatsApp, push) without touching the subscription/evaluation core
+  — those transports are a follow-up spec, not this one.
 - **G-4** Per-plan limits (how many active alerts, which channels) graduated by
   plan; mount the `PRICE_ALERTS` / `MAX_ACTIVE_ALERTS` gates.
 
@@ -55,11 +69,15 @@ notifications), with **per-plan limits**.
 
 - No change to the `VIP_PROMOTIONS_ACCESS` visibility behavior in v1 (OQ-5).
 - No new payment/checkout for offers — alerts are informational.
+- **No WhatsApp or push delivery in v1.** Only email ships here; the other
+  channels (and their external infra) are a dedicated follow-up spec. The
+  per-plan channel matrix is built to scale to them but only email is wired.
 
 ## 5. Open Questions
 
-- **OQ-1** Channel availability by plan (e.g. email all paid tiers, WhatsApp/push
-  higher tiers only?).
+- **OQ-1** Per-plan channel matrix shape. v1 is email-only across the entitled
+  tiers; the question of WhatsApp/push availability by tier moves to the
+  follow-up channels spec, but the data model for the matrix is defined here.
 - **OQ-2** Alert triggers: price drop threshold, availability, new promo on a saved
   listing/destination.
 - **OQ-3** Per-plan limit values (active alerts, channels) — confirm at
@@ -73,4 +91,7 @@ notifications), with **per-plan limits**.
 - **Depends on SPEC-285** (owner-promotion tourist display) for the promo-offer
   event source.
 - **SPEC-282:** the "Alertas y ofertas" row (grouping price alerts + promo offers)
-  shows *Próximamente* until this ships.
+  shows *Próximamente* until this ships (email v1 lifts the badge).
+- **Follow-up (future spec):** WhatsApp + push transports on top of the
+  channel-agnostic delivery layer built here. Adds external infra + the per-plan
+  channel availability decision (OQ-1); no change to the core built in SPEC-286.
