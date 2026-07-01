@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Rename VIP_PROMOTIONS_ACCESS to VIP_VISIBILITY_ACCESS across all layers",
             "description": "Pure refactor (D-5). Rename the entitlement key everywhere — behavior of the 8 visibility checks stays identical.\n\nFiles to change:\n- packages/billing/src/types/entitlement.types.ts: rename enum member VIP_PROMOTIONS_ACCESS → VIP_VISIBILITY_ACCESS; update the string value from 'vip_promotions_access' to 'vip_visibility_access'.\n- packages/billing/src/config/entitlements.config.ts: rename key reference + update name/description metadata.\n- packages/billing/src/config/plans.config.ts: rename in TOURIST_VIP_ENTITLEMENTS array (line ~60).\n- packages/service-core/src/services/accommodation/accommodation.service.ts: 6 string checks at lines 2110, 2155, 2212, 2285, 2565, 2630.\n- packages/service-core/src/services/accommodation/accommodation.permissions.ts: 1 string check at line 185.\n- apps/admin/src/features/billing-plans/components/plan-entitlement-groups.ts: rename EntitlementKey reference (line ~61).\n- packages/i18n/src/types.ts: rename the i18n key literal 'billing.entitlement.vip_promotions_access' → 'billing.entitlement.vip_visibility_access' (line ~5249).\n- packages/billing/test/entitlements.test.ts: update hardcoded string at line ~176.\n- packages/service-core/test/services/accommodation/accommodation.activeOnly.test.ts: update strings at lines ~100, ~218.\n- packages/service-core/test/services/accommodation/getByDestination.test.ts: update strings at lines ~9, ~153, ~159.\n- apps/api/test/middlewares/entitlement-plan.cutover.test.ts: update hardcoded 'vip_promotions_access' at line ~75.\n\nDB extras migration (next available number in packages/db/src/migrations/extras/):\n- UPDATE billing_entitlements SET key = 'vip_visibility_access' WHERE key = 'vip_promotions_access';\n- UPDATE billing_plans SET entitlements = (SELECT jsonb_agg(CASE WHEN elem = '\"vip_promotions_access\"' THEN '\"vip_visibility_access\"' ELSE elem END) FROM jsonb_array_elements(entitlements) elem) WHERE entitlements @> '[\"vip_promotions_access\"]';\n- UPDATE billing_customer_entitlements SET entitlement_key = 'vip_visibility_access' WHERE entitlement_key = 'vip_promotions_access' (if table/column exists).\n\nMandatory regression test: add a test in packages/service-core/test/services/accommodation/ proving that a VIP actor (entitlements: new Set(['vip_visibility_access'])) still bypasses the visibility filters (RESTRICTED / planRestricted / ownerSuspended) in accommodation.service.ts. This test MUST be written BEFORE the rename to confirm it fails, then passes after — verifying no silent breakage in the 8 call sites.\n\nAcceptance criteria:\n- TypeScript compiles clean (no references to old key).\n- All existing accommodation-visibility tests pass unchanged.\n- Regression test proves VIP visibility perk works with the new key string.\n- Extras migration runs idempotently (SQL is safe to re-apply).\n- No behavior change to what VIP actors can see.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": [],
             "blocks": [],
@@ -52,7 +52,7 @@
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-30"
             }
         },
         {
@@ -503,9 +503,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 3.8
     }
