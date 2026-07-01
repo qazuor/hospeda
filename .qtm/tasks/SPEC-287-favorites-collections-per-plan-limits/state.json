@@ -409,27 +409,27 @@
             "id": "T-012",
             "title": "Update endpoint gate matrix docs for collections routes",
             "description": "Update docs/billing/endpoint-gate-matrix.md to document the new `CAN_USE_COLLECTIONS` gate on all seven /api/v1/protected/user-bookmark-collections routes (create, list, getById, update, delete, addBookmark, removeBookmark), following the existing table format used for search-history and price-alerts entries. Test requirements: none (documentation) — verify the entries against the actual mounted middlewares from T-007/T-008.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add gate-matrix rows for all 7 collection routes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a (docs)",
+                "typecheck": "n/a (docs)",
+                "tests": "n/a (docs)"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T16:02:49Z",
+                "completed": "2026-07-01T16:03:38Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 1.9
     }
