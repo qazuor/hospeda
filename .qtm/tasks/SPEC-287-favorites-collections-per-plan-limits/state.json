@@ -181,41 +181,41 @@
         },
         {
             "id": "T-006",
-            "title": "Switch _canCreate quota check from env var to ctx.hookState.planLimit",
-            "description": "In packages/service-core/src/services/userBookmarkCollection/userBookmarkCollection.service.ts, the quota is enforced inside the `_canCreate(actor, data, ctx)` BaseCrudService lifecycle hook — a fixed-signature override, so a new positional `planLimit` param cannot be added to it directly (corrected during spec-realign 2026-07-01; ADR-026 also predicted this migration but assumed the simpler `enforceFavoritesLimit`-style middleware, which does not fit because collections excludes free entirely, unlike favorites). Instead: read the resolved limit from `ctx?.hookState?.planLimit` (the per-request hook-state bag already designed for this, see `ServiceContext.hookState`, SPEC-088) inside `_canCreate`, falling back to `DEFAULT_MAX_COLLECTIONS_PER_USER` only if `hookState.planLimit` is undefined (defensive default for any caller that doesn't pass it yet). Remove the `process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER` read from `getMaxCollectionsPerUser()`, but keep that function exported for now — `list.ts` (T-014) still calls it until T-014 migrates it too. Test requirements: rewrite the env-var-based cases in packages/service-core/test/services/userBookmarkCollection/userBookmarkCollection.limit.test.ts to pass `{ hookState: { planLimit } }` as the `ctx` argument (quota reached at the boundary, one below limit passes).",
-            "status": "pending",
+            "title": "Move quota check to createCollection(), reading ctx.hookState.planLimit",
+            "description": "DONE (implemented 2026-07-01, further corrected mid-task): discovered that `BaseCrudService.create()` never forwards `ctx` to `_canCreate` (filed as BETA-106, sibling hook `_beforeCreate` DOES receive it two lines below — a base-class bug). So `_canCreate` structurally cannot read `ctx.hookState.planLimit`. Fix landed scoped to this service: moved the quota check OUT of `_canCreate` (which now only does the ownership/permission check) and INTO `createCollection()`'s own `runWithLoggingAndValidation` execute callback, which DOES receive a valid `execCtx`. Reads `execCtx?.hookState?.planLimit`, falling back to `DEFAULT_MAX_COLLECTIONS_PER_USER` when absent. Also had to explicitly call `canCreateCollection()` before the quota check inside `createCollection()` to preserve permission-before-quota ordering (a pre-existing test asserted `countActiveByUserId` is never called when the actor lacks permission). `getMaxCollectionsPerUser()` kept exported but stripped of its `process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER` read (now just returns the default) — `list.ts` (T-014) still calls it until migrated to plan-based resolution. All 8 tests in userBookmarkCollection.limit.test.ts rewritten to call `createCollection()` (the real production path) instead of `service.create()` directly; full userBookmarkCollection suite (62 tests) green, lint/typecheck clean.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Remove process.env read from getMaxCollectionsPerUser()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Read ctx?.hookState?.planLimit in _canCreate with safe fallback",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rewrite QUOTA_EXCEEDED check to use hookState.planLimit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rewrite userBookmarkCollection.limit.test.ts cases to pass hookState",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "collections", "billing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T15:01:47Z",
+                "completed": "2026-07-01T15:18:51Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 1.9
     }
