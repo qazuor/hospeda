@@ -99,6 +99,9 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     ];
     const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
     const accommodations = filterAccommodationListByOwnerEntitlements(
+        // TYPE-WORKAROUND: rawAccommodations comes from the service's untyped
+        // result shape; filterAccommodationListByOwnerEntitlements only reads
+        // ownerId/isVerified, both present at runtime on every accommodation item.
         rawAccommodations as unknown as AccommodationData[],
         ownerEntitlementsMap
     );
