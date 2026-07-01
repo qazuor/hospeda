@@ -102,6 +102,19 @@ export function BasicInfoSection({
                         {errors.summary}
                     </span>
                 )}
+                <PlanEntitlementGate
+                    entitlementKey="ai_text_improve"
+                    locale={locale}
+                    fallback={null}
+                >
+                    <AiTextImprovePanel
+                        fieldType="summary"
+                        fieldValue={data.summary}
+                        locale={locale}
+                        onAccept={(suggestion) => onFieldChange('summary', suggestion)}
+                        triggerDisabled={!data.summary}
+                    />
+                </PlanEntitlementGate>
             </div>
 
             <div className={styles.field}>

@@ -15,6 +15,11 @@
  *   `onAccept` is identical regardless of rendering branch.
  * - All 4 combinations of {can_use_rich_description, ai_text_improve}
  *   render without crashing.
+ *
+ * Covers (SPEC-321 T-004):
+ * - AI-improve trigger for `summary` (plain textarea only, no rich-text
+ *   branching) follows the same entitlement/enable/accept/discard contract
+ *   as `description`.
  */
 
 import type { AiTextImprovePanelProps } from '@/components/host/editor/AiTextImprovePanel.client';
@@ -200,6 +205,55 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         fireEvent.click(screen.getByTestId('ai-mock-trigger-description'));
 
         expect(onFieldChange).toHaveBeenCalledWith('description', 'AI suggested text');
+    });
+
+    it('does not call onFieldChange when the AI panel is not accepted', () => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: true };
+        const onFieldChange = vi.fn();
+        render(<BasicInfoSection {...buildProps({ onFieldChange })} />);
+
+        // No interaction with the AI trigger — onFieldChange should not fire
+        // from the AI-improve wiring path.
+        expect(onFieldChange).not.toHaveBeenCalled();
+    });
+});
+
+describe('BasicInfoSection — AI text-improve (summary field, SPEC-321 T-004)', () => {
+    beforeEach(() => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: false };
+    });
+
+    it('does not render the AI-improve trigger when the user lacks ai_text_improve', () => {
+        entitlements.ai_text_improve = false;
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.queryByTestId('ai-mock-trigger-summary')).not.toBeInTheDocument();
+    });
+
+    it('renders the AI-improve trigger enabled when entitled and summary has content', () => {
+        entitlements.ai_text_improve = true;
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const trigger = screen.getByTestId('ai-mock-trigger-summary');
+        expect(trigger).toBeInTheDocument();
+        expect(trigger).not.toBeDisabled();
+    });
+
+    it('disables the AI-improve trigger when summary is empty', () => {
+        entitlements.ai_text_improve = true;
+        render(<BasicInfoSection {...buildProps({ data: { ...MOCK_DATA, summary: '' } })} />);
+
+        expect(screen.getByTestId('ai-mock-trigger-summary')).toBeDisabled();
+    });
+
+    it('calls onFieldChange("summary", suggestion) on Accept', () => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: true };
+        const onFieldChange = vi.fn();
+        render(<BasicInfoSection {...buildProps({ onFieldChange })} />);
+
+        fireEvent.click(screen.getByTestId('ai-mock-trigger-summary'));
+
+        expect(onFieldChange).toHaveBeenCalledWith('summary', 'AI suggested text');
     });
 
     it('does not call onFieldChange when the AI panel is not accepted', () => {
