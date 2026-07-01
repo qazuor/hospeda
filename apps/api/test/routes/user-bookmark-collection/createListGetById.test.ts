@@ -10,6 +10,7 @@
  * Pattern mirrors test/routes/user-bookmark-collection/list.test.ts (T-CL5).
  */
 
+import { LimitKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,6 +43,43 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
+
+/**
+ * Mock gateCollections (CAN_USE_COLLECTIONS entitlement gate, SPEC-287) to
+ * always pass through. Entitlement gating is already tested by
+ * entitlement.test.ts; these tests only care about the route business logic.
+ * Uses importOriginal so every OTHER gate exported by this module (imported
+ * by unrelated routes in the app graph loaded via initApp()) stays real.
+ */
+vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
+    return {
+        ...actual,
+        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
+            await next();
+        }
+    };
+});
+
+/**
+ * Mock getRemainingLimit so create.ts's plan-limit resolution can be tested
+ * deterministically (SPEC-287 T-008), mirroring the pattern used in
+ * test/routes/user-bookmark/toggleAtCap.test.ts for MAX_FAVORITES. Defaults
+ * to -1 (unlimited) for every key unless a test overrides it via
+ * mockGetRemainingLimit.mockReturnValueOnce(...).
+ */
+const { mockGetRemainingLimit } = vi.hoisted(() => ({
+    mockGetRemainingLimit: vi.fn(() => -1)
+}));
+
+vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
+    return {
+        ...actual,
+        getRemainingLimit: mockGetRemainingLimit
+    };
+});
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const BASE_URL = '/api/v1/protected/user-bookmark-collections';
@@ -246,6 +284,85 @@ describe('POST /api/v1/protected/user-bookmark-collections — create', () => {
 
             // Assert
             expect(res.status).toBe(409);
+        });
+    });
+
+    // =========================================================================
+    // Plan limit resolution (SPEC-287 T-008)
+    // =========================================================================
+
+    describe('TC7: plan limit resolution', () => {
+        it('resolves planLimit=10 (plus tier) and passes it via ctx.hookState', async () => {
+            // Arrange
+            const actor = buildUserActor();
+            mockGetRemainingLimit.mockReturnValueOnce(10);
+            mockCollectionService.createCollection.mockResolvedValue({
+                data: makeCollection({ name: 'Plus tier collection' })
+            });
+
+            // Act
+            const res = await app.request(BASE_URL, {
+                method: 'POST',
+                headers: actorHeaders(actor),
+                body: JSON.stringify({ name: 'Plus tier collection' })
+            });
+
+            // Assert
+            expect(res.status).toBe(201);
+            expect(mockGetRemainingLimit).toHaveBeenCalledWith(
+                expect.anything(),
+                LimitKey.MAX_COLLECTIONS
+            );
+            expect(mockCollectionService.createCollection).toHaveBeenCalledWith(
+                expect.objectContaining({ id: ACTOR_ID }),
+                expect.objectContaining({ name: 'Plus tier collection' }),
+                { hookState: { planLimit: 10 } }
+            );
+        });
+
+        it('resolves planLimit=25 (vip tier) and passes it via ctx.hookState', async () => {
+            // Arrange
+            const actor = buildUserActor();
+            mockGetRemainingLimit.mockReturnValueOnce(25);
+            mockCollectionService.createCollection.mockResolvedValue({
+                data: makeCollection({ name: 'VIP tier collection' })
+            });
+
+            // Act
+            await app.request(BASE_URL, {
+                method: 'POST',
+                headers: actorHeaders(actor),
+                body: JSON.stringify({ name: 'VIP tier collection' })
+            });
+
+            // Assert
+            expect(mockCollectionService.createCollection).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                { hookState: { planLimit: 25 } }
+            );
+        });
+
+        it('maps -1 (unlimited, e.g. staff) to the VIP hard cap (25) as a safe default', async () => {
+            // Arrange — mockGetRemainingLimit defaults to -1 (unlimited)
+            const actor = buildUserActor();
+            mockCollectionService.createCollection.mockResolvedValue({
+                data: makeCollection({ name: 'Unlimited actor collection' })
+            });
+
+            // Act
+            await app.request(BASE_URL, {
+                method: 'POST',
+                headers: actorHeaders(actor),
+                body: JSON.stringify({ name: 'Unlimited actor collection' })
+            });
+
+            // Assert
+            expect(mockCollectionService.createCollection).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                { hookState: { planLimit: 25 } }
+            );
         });
     });
 });

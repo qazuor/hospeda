@@ -42,6 +42,8 @@ export enum EntitlementKey {
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
     CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',
     CAN_VIEW_RECOMMENDATIONS = 'can_view_recommendations',
+    /** Access to favorites collections (SPEC-287). Not available on tourist-free. */
+    CAN_USE_COLLECTIONS = 'can_use_collections',
 
     /** AI feature entitlements (SPEC-173) */
     /**

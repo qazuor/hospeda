@@ -37,24 +37,16 @@ import {
 } from './userBookmarkCollection.permissions';
 
 /**
- * Default maximum number of active bookmark collections per user.
- * Can be overridden via the `HOSPEDA_MAX_COLLECTIONS_PER_USER` environment variable.
+ * Default maximum number of active bookmark collections per user, used when
+ * no plan-resolved limit is available (e.g. `ctx.hookState.planLimit` absent).
+ *
+ * SPEC-287 (2026-07-01): this used to be configurable via the
+ * `HOSPEDA_MAX_COLLECTIONS_PER_USER` env var (ADR-026, now removed). The cap
+ * is plan-driven (`LimitKey.MAX_COLLECTIONS`, resolved at the route layer and
+ * threaded in via `ctx.hookState.planLimit`) — this constant is only a
+ * safety-net default, not the primary source of truth.
  */
 const DEFAULT_MAX_COLLECTIONS_PER_USER = 10;
-
-/**
- * Reads the per-user collection limit from the environment.
- * Falls back to {@link DEFAULT_MAX_COLLECTIONS_PER_USER} when the variable is
- * absent or not a valid integer.
- *
- * @returns The maximum number of active bookmark collections allowed per user.
- */
-export function getMaxCollectionsPerUser(): number {
-    const raw = process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER;
-    if (raw === undefined || raw === '') return DEFAULT_MAX_COLLECTIONS_PER_USER;
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isNaN(parsed) || parsed < 1 ? DEFAULT_MAX_COLLECTIONS_PER_USER : parsed;
-}
 
 /**
  * Service for managing user bookmark collections (wishlists).
@@ -64,8 +56,9 @@ export function getMaxCollectionsPerUser(): number {
  * the owning user may create, update, or delete their own collections unless
  * the actor carries the `USER_BOOKMARK_COLLECTION_VIEW_ANY` permission.
  *
- * A per-user quota (`HOSPEDA_MAX_COLLECTIONS_PER_USER`, default 10) is
- * enforced inside {@link _canCreate}.
+ * A per-user quota is enforced inside {@link createCollection}, resolved from
+ * the actor's billing plan (`LimitKey.MAX_COLLECTIONS`, SPEC-287) with a
+ * {@link DEFAULT_MAX_COLLECTIONS_PER_USER} fallback.
  *
  * @extends BaseCrudService
  */
@@ -106,21 +99,19 @@ export class UserBookmarkCollectionService extends BaseCrudService<
      * Only the owner with `USER_BOOKMARK_COLLECTION_CREATE` permission may
      * create a collection for themselves.
      *
-     * Additionally enforces the per-user quota: if the actor already owns
-     * {@link getMaxCollectionsPerUser} or more active collections, the
-     * operation is rejected with {@link ServiceErrorCode.QUOTA_EXCEEDED} and
-     * a payload containing `currentCount` and `maxAllowed`.
+     * SPEC-287 (2026-07-01): the per-user quota check used to live here, but
+     * moved to {@link createCollection}'s own execute callback — this hook is
+     * called by `BaseCrudService.create()` WITHOUT forwarding `ctx` (see
+     * BETA-106), so it has no access to `ctx.hookState.planLimit`. Only the
+     * ownership/permission check remains here.
      *
      * @param actor - The actor attempting the create
      * @param data - The validated create input
-     * @param ctx - Optional service context (transaction propagation)
      * @throws {ServiceError} FORBIDDEN – actor is not the owner or lacks permission
-     * @throws {ServiceError} QUOTA_EXCEEDED – actor has reached the collection limit
      */
     protected async _canCreate(
         actor: Actor,
-        data: UserBookmarkCollectionCreateInput,
-        ctx?: ServiceContext
+        data: UserBookmarkCollectionCreateInput
     ): Promise<void> {
         if (!actor || typeof actor.id !== 'string') {
             throw new ServiceError(
@@ -130,18 +121,6 @@ export class UserBookmarkCollectionService extends BaseCrudService<
         }
 
         canCreateCollection(actor, data.userId);
-
-        // Enforce per-user quota
-        const maxAllowed = getMaxCollectionsPerUser();
-        const currentCount = await this.model.countActiveByUserId(data.userId, ctx?.tx);
-
-        if (currentCount >= maxAllowed) {
-            throw new ServiceError(
-                ServiceErrorCode.QUOTA_EXCEEDED,
-                `Collection limit reached: users may not have more than ${maxAllowed} active collections`,
-                { currentCount, maxAllowed }
-            );
-        }
     }
 
     /**
@@ -456,12 +435,16 @@ export class UserBookmarkCollectionService extends BaseCrudService<
      * Enforces:
      * 1. Owner-only creation (`input.userId === actor.id`).
      * 2. Name uniqueness within the actor's active collections (pre-check before DB constraint).
-     * 3. Per-user quota enforcement (delegated to `_canCreate` in BaseCrudService).
+     * 3. Per-user quota enforcement, resolved from `ctx.hookState.planLimit` (SPEC-287) —
+     *    falls back to {@link DEFAULT_MAX_COLLECTIONS_PER_USER} when absent. Lives here
+     *    rather than in `_canCreate` because `BaseCrudService.create()` does not forward
+     *    `ctx` to that hook (BETA-106); `execCtx` is only reliably available in this
+     *    execute callback.
      * 4. Input normalization (trim, colour uppercase) via `normalizeCreateInput`.
      *
      * @param actor - The authenticated actor performing the action
      * @param input - Validated create payload including `userId` and `name`
-     * @param ctx - Optional service context carrying transaction and hookState
+     * @param ctx - Optional service context carrying transaction and hookState.planLimit
      * @returns `Result<UserBookmarkCollection>` — the newly created collection
      *
      * @throws {ServiceError} FORBIDDEN – actor is not the owner or lacks permission
@@ -475,7 +458,7 @@ export class UserBookmarkCollectionService extends BaseCrudService<
      *   userId: actor.id,
      *   name: 'Viaje al Litoral',
      *   color: '#E57373',
-     * });
+     * }, { hookState: { planLimit: 10 } });
      * ```
      */
     public async createCollection(
@@ -513,10 +496,34 @@ export class UserBookmarkCollectionService extends BaseCrudService<
                     );
                 }
 
-                // 3. Normalize input
+                // 3. Permission check, run explicitly here (not just inside `this.create()`
+                //    below) so it happens BEFORE the quota check — preserving the original
+                //    ordering (permission before quota) now that quota moved out of
+                //    `_canCreate`. `_canCreate` re-checks this redundantly but harmlessly.
+                canCreateCollection(validActor, validated.userId);
+
+                // 4. Per-user quota enforcement (SPEC-287: plan-resolved, see JSDoc above)
+                const rawPlanLimit = execCtx?.hookState?.planLimit;
+                const maxAllowed =
+                    typeof rawPlanLimit === 'number'
+                        ? rawPlanLimit
+                        : DEFAULT_MAX_COLLECTIONS_PER_USER;
+                const currentCount = await this.model.countActiveByUserId(
+                    validActor.id,
+                    execCtx?.tx
+                );
+                if (currentCount >= maxAllowed) {
+                    throw new ServiceError(
+                        ServiceErrorCode.QUOTA_EXCEEDED,
+                        `Collection limit reached: users may not have more than ${maxAllowed} active collections`,
+                        { currentCount, maxAllowed }
+                    );
+                }
+
+                // 5. Normalize input
                 const normalizedInput = normalizeCreateInput(validated, validActor);
 
-                // 4. Delegate to BaseCrudService.create (which runs _canCreate quota check)
+                // 6. Delegate to BaseCrudService.create (runs _canCreate permission check only)
                 const result = await this.create(validActor, normalizedInput, execCtx);
                 if (result.error) {
                     throw new ServiceError(

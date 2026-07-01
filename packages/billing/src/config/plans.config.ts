@@ -63,7 +63,8 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
     EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
     EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+    EntitlementKey.CAN_USE_COLLECTIONS
 ];
 
 /**
@@ -88,7 +89,9 @@ const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
     // Search history cap — VIP tier (SPEC-289). tourist-plus overrides with 50.
-    limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 200)
+    limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 200),
+    // Favorites collections cap — VIP tier (SPEC-287). tourist-plus overrides with 10.
+    limit(LimitKey.MAX_COLLECTIONS, 25)
 ];
 
 // ─── OWNER PLANS ───────────────────────────────────────────────
@@ -454,7 +457,8 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
         EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_USE_COLLECTIONS
         // ai_chat removed from tourist plans (SPEC-211 T-003)
         // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
@@ -467,7 +471,9 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
         limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),
         // Search history cap — Plus tier (SPEC-289). VIP/owner/complex inherit 200.
-        limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 50)
+        limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 50),
+        // Favorites collections cap — Plus tier (SPEC-287). VIP/owner/complex inherit 25.
+        limit(LimitKey.MAX_COLLECTIONS, 10)
     ]
 };
 

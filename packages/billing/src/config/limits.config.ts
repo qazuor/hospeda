@@ -110,5 +110,11 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         name: 'Search history entries',
         description:
             'Maximum number of past search entries retained for the user. Oldest entries beyond this cap are pruned after each new record. Free plan users have no entitlement and this limit is never evaluated for them.'
+    },
+    // Favorites collections limit (SPEC-287)
+    [LimitKey.MAX_COLLECTIONS]: {
+        name: 'Favorites collections',
+        description:
+            'Maximum number of active bookmark collections the user may create. Free plan users have no entitlement and this limit is never evaluated for them.'
     }
 };
