@@ -530,24 +530,39 @@
             "id": "T-013",
             "title": "G-1/G-5: wire apply-scheduled-plan-changes.ts to the union resolver",
             "description": "Update apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts, line ~510-526 ('the new plan might still grant FEATURED_LISTING'). Unlike T-011/T-012, this site can BOTH grant and revoke (a scheduled plan change can move an owner onto or off a FEATURED_LISTING plan). Replace the local plan-entitlement derivation with `resolveOwnerPlanGrantsFeatured` (T-004) evaluated against the NEW plan, and call the renamed `syncFeaturedByEntitlementForOwner` (T-005) with the resolved boolean. Apply G-5 status alignment if this site branches on subscription status at all (verify; scheduled plan changes may apply unconditionally to active subscriptions only, in which case there is nothing to align).\n\nKey files:\n- apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts:494-526\n\nAcceptance criteria:\n- Uses T-004's resolver against the target/new plan.\n- Calls the renamed sync function for both the grant and revoke direction.\n- Addon-protected accommodations survive a downgrade that would otherwise revoke (via T-005).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-024"],
             "subtasks": [
                 {
                     "title": "Replace local plan-entitlement derivation with resolveOwnerPlanGrantsFeatured",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": false }
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true }
             ],
             "tags": ["backend", "billing", "cron", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z",
+                    "details": "apps/api/test/cron/apply-scheduled-plan-changes.test.ts 41/41 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:45:00.000Z",
+                "completed": "2026-07-01T19:50:00.000Z"
             }
         },
         {

@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 12/30 tasks (40%)
+## Progress: 13/30 tasks (43%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -64,7 +64,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-005 · Blocks: T-024
 - [x] **T-012** (complexity: 2) - G-1/G-5: wire dunning.job.ts to the union resolver [DONE]
   - Blocked by: T-005 · Blocks: T-024
-- [ ] **T-013** (complexity: 2) - G-1/G-5: wire apply-scheduled-plan-changes.ts to the union resolver
+- [x] **T-013** (complexity: 2) - G-1/G-5: wire apply-scheduled-plan-changes.ts to the union resolver [DONE]
   - Blocked by: T-005 · Blocks: T-024
 - [ ] **T-014** (complexity: 3) - Rename and extend reconcile cron for addon-sourced, per-accommodation drift
   - Blocked by: T-004, T-005 · Blocks: T-029
