@@ -32,8 +32,6 @@ import {
     resolveOwnerPlanGrantsFeatured
 } from './featured-entitlement.resolver.js';
 
-const accommodationModel = new AccommodationModel();
-
 /**
  * Input for {@link setAccommodationFeaturedToggle}.
  */
@@ -62,6 +60,7 @@ export async function setAccommodationFeaturedToggle(
     input: SetAccommodationFeaturedToggleInput
 ): Promise<{ isFeatured: boolean }> {
     const { actor, accommodationId, isFeatured } = input;
+    const accommodationModel = new AccommodationModel();
 
     const accommodation = await accommodationModel.findById(accommodationId);
     if (!accommodation || accommodation.deletedAt !== null) {
@@ -124,6 +123,7 @@ export async function getAccommodationFeaturedEntitlement(
     input: GetAccommodationFeaturedEntitlementInput
 ): Promise<{ isFeatured: boolean; hasEntitlement: boolean }> {
     const { actor, accommodationId } = input;
+    const accommodationModel = new AccommodationModel();
 
     const accommodation = await accommodationModel.findById(accommodationId);
     if (!accommodation || accommodation.deletedAt !== null) {
