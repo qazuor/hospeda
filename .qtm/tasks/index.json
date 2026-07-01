@@ -848,7 +848,7 @@
             "branch": "spec/SPEC-291-accommodation-verification-badge",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In progress 2026-06-30. Building real verification badge: manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug."
+            "note": "PR #1963 open to staging (all layers done: DB/schema/service/API/entitlement-filter/web/admin). Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized."
         },
         {
             "specId": "SPEC-292",
@@ -1018,7 +1018,7 @@
         {
             "specId": "SPEC-306",
             "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-306-seo-aeo-category-pages",
             "branch": null,
@@ -1190,6 +1190,17 @@
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Stub from SPEC-310 audit. PARTIAL (API works; missing web editor button). Small — possibly NOSPEC. Needs minimal discovery."
+        },
+        {
+            "specId": "SPEC-322",
+            "title": "Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-322-react-query-5101-migration",
+            "base": "staging",
+            "createdAt": "2026-07-01T00:00:00.000Z",
+            "taskCount": 8,
+            "averageComplexity": 2.0
         }
     ],
     "standalone": {

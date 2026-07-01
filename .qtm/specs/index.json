@@ -2484,7 +2484,7 @@
             "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
             "type": "research",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-306-seo-aeo-category-pages",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",
@@ -2686,6 +2686,25 @@
             "base": "staging",
             "origin": "SPEC-310 roadmap. PARTIAL: API POST /ai/text-improve + quota work and admin uses it, but the WEB owner editor (RichTextEditor) has no improve-with-AI button. Mostly wiring existing API into web editor UI. Could be NOSPEC given small size. OQ: which fields get the button.",
             "tags": ["ai", "owner", "web", "editor"]
+        },
+        {
+            "specId": "SPEC-322",
+            "title": "Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-322-react-query-5101-migration",
+            "created": "2026-07-01T00:00:00Z",
+            "base": "staging",
+            "tags": [
+                "admin",
+                "dependencies",
+                "tanstack",
+                "react-query",
+                "dashboard",
+                "widgets",
+                "migration"
+            ]
         }
     ]
 }
