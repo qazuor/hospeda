@@ -103,6 +103,17 @@ describe('Limits Configuration', () => {
             expect(entry.description.trim().length).toBeGreaterThan(0);
         });
 
+        // SPEC-287 — collections limit key
+        it('should have an entry for MAX_COLLECTIONS', () => {
+            expect(LIMIT_METADATA[LimitKey.MAX_COLLECTIONS]).toBeDefined();
+        });
+
+        it('should have non-empty name and description for MAX_COLLECTIONS', () => {
+            const entry = LIMIT_METADATA[LimitKey.MAX_COLLECTIONS];
+            expect(entry.name.trim().length).toBeGreaterThan(0);
+            expect(entry.description.trim().length).toBeGreaterThan(0);
+        });
+
         it('should have non-empty name string for every entry', () => {
             for (const limitKey of allLimitKeys) {
                 // Arrange

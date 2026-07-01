@@ -74,35 +74,35 @@
             "id": "T-003",
             "title": "Add MAX_COLLECTIONS limit metadata and display name entries",
             "description": "Add `[LimitKey.MAX_COLLECTIONS]: { name, description }` to `LIMIT_METADATA` in packages/billing/src/config/limits.config.ts, and add `max_collections: 'colecciones'` to `RESOURCE_NAMES` in apps/api/src/utils/limit-check.ts. Both are exhaustive `Record<LimitKey, ...>` maps enforced at compile time. Test requirements: extend packages/billing/test/limits.test.ts (metadata presence) and apps/api/test/utils/limit-check.test.ts (resource name used in upgrade messages).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-008"],
             "subtasks": [
                 {
                     "title": "Add LIMIT_METADATA entry in limits.config.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add RESOURCE_NAMES entry in limit-check.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Extend limits.test.ts and limit-check.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "collections"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T14:50:09Z",
+                "completed": "2026-07-01T14:54:09Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 1.9
     }
