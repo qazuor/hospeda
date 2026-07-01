@@ -43,35 +43,35 @@
             "id": "T-002",
             "title": "Build AiTextImprovePanel presentational component",
             "description": "Create apps/web/src/components/host/editor/AiTextImprovePanel.client.tsx + colocated AiTextImprovePanel.module.css, a web-native port of apps/admin/src/features/accommodations/components/AiTextImprovePanel.tsx. Props: current field value, fieldType ('description'|'summary'), onAccept(suggestion: string), onDiscard(). Internally uses the T-001 useAiTextImprove hook. Renders: trigger button (disabled while loading/streaming or when triggerDisabled prop is true) -> on click opens panel -> loading skeleton -> live-streaming text (append as tokens arrive) -> done state with Accept/Discard buttons (plain replace, no diff) -> error state with a Dismiss button. Use @repo/i18n for all copy (no hardcoded strings) and vanilla CSS Modules per apps/web styling convention (no Tailwind).\n\nTests: apps/web/test/components/host/editor/AiTextImprovePanel.rtl.test.tsx \u2014 AAA pattern with testing-library. Cover: (1) trigger button renders and is disabled when triggerDisabled or already streaming, (2) clicking trigger shows loading skeleton then streamed text as mocked hook state updates, (3) done state renders Accept + Discard, clicking Accept calls onAccept with the full suggestion text, (4) clicking Discard calls onDiscard and does not call onAccept, (5) error state renders the error message and a Dismiss action that resets the panel to closed without calling onAccept.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
                 {
                     "title": "Build panel UI states (loading/streaming/done/error)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire Accept/Discard/Dismiss callbacks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for all 4 states",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "components"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {
@@ -217,9 +217,9 @@
     ],
     "summary": {
         "total": 6,
-        "pending": 5,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 1.8
     }
