@@ -685,27 +685,34 @@
             "id": "T-017",
             "title": "G-3: wire ISR/CDN revalidation into syncFeaturedByEntitlementForOwner",
             "description": "Confirmed required per OQ-2 (search listing page is SSR+ISR with 24h Cloudflare edge cache; home page is SSG needing a redeploy). Replicate the exact pattern from apps/api/src/services/subscription-pause.service.ts:92-108 inside `syncFeaturedByEntitlementForOwner` (T-005, packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts): after the DB write succeeds and `updated.length > 0`, call `getRevalidationService()` (imported from `@repo/service-core`) and, if present, `revalidationService.scheduleRevalidationBatch({ events, reason })` fire-and-forget, where `events: EntityChangeData[]` is built from the `{ id, slug }` rows returned by `.returning()` (T-005 already added `slug`), each as `{ entityType: 'accommodation', slug }`. `reason` should be a descriptive string including the ownerId and active direction (e.g. \\`featured-by-entitlement-owner: active=${active} ownerId=${ownerId}\\`).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts\n\nAcceptance criteria:\n- Every successful bulk sync with `updated > 0` schedules an ISR revalidation batch for the affected accommodation slugs.\n- Revalidation is fire-and-forget — never awaited in a way that blocks or fails the sync's return value.\n- A missing/unavailable revalidation service (e.g. in tests without the binding) does not throw.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-027.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Import getRevalidationService + EntityChangeData from @repo/service-core",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build events[] from returning() rows and call scheduleRevalidationBatch fire-and-forget",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "revalidation", "isr", "billing"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:25:18.000Z",
+                "details": "biome check on accommodation.sync-featured-by-entitlement.ts: clean; pnpm --filter @repo/service-core typecheck: clean; sync-featured-by-entitlement.test.ts 9/9 passed (getRevalidationService returns null when uninitialized in tests, so the guarded fire-and-forget call is a safe no-op — no mock needed). Imports use relative paths (../../revalidation/*) since this file lives inside @repo/service-core itself, not a consumer of it — matches accommodation.service.ts's own import style. Dedicated coverage deferred to T-027 per task spec."
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T20:23:06.000Z",
+                "completed": "2026-07-01T20:25:18.000Z"
             }
         },
         {

@@ -45,6 +45,8 @@
 import { accommodations, and, eq, getDb, isNull } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { notInArray } from 'drizzle-orm';
+import type { EntityChangeData } from '../../revalidation/entity-path-mapper.js';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import { serviceLogger } from '../../utils/service-logger';
 import {
     getOwnerAccommodationIdsWithActiveFeaturedAddon,
@@ -153,6 +155,24 @@ export async function syncFeaturedByEntitlementForOwner(
         { ownerId, active, updated },
         'sync-featured-by-entitlement: updated accommodations for owner'
     );
+
+    // SPEC-309 T-017 (G-3): schedule ISR revalidation for the affected public
+    // pages so the featured flag change is visible without waiting for the
+    // 24h Cloudflare edge cache TTL to expire. Fire-and-forget — never
+    // awaited, never blocks or fails the sync's return value.
+    if (updated > 0) {
+        const revalidationService = getRevalidationService();
+        if (revalidationService) {
+            const events: EntityChangeData[] = rows.map((row) => ({
+                entityType: 'accommodation' as const,
+                slug: row.slug
+            }));
+            revalidationService.scheduleRevalidationBatch({
+                events,
+                reason: `featured-by-entitlement-owner: active=${active} ownerId=${ownerId}`
+            });
+        }
+    }
 
     return { updated, rows };
 }
