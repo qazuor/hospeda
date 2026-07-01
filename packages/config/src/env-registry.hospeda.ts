@@ -542,24 +542,6 @@ export const HOSPEDA_ENV_VARS = [
             'Brevo dashboard → SMTP & API → API Keys → Generate a new API key → copiá el valor que empieza con "xkeysib-". Antes autenticá tu dominio de envío en Senders, Domains & Dedicated IPs.'
     },
     {
-        name: 'HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID',
-        description:
-            'Numeric Brevo Contacts list ID for PRE-LAUNCH newsletter signups (the coming-soon landing form at hospeda.com.ar, POST /api/v1/public/newsletter). Distinct from any post-launch newsletter list so cohorts stay separated. Reuses HOSPEDA_EMAIL_API_KEY for auth.',
-        descriptionEs:
-            'ID numérico de la lista de Contactos Brevo para los signups del newsletter PRE-LAUNCH (form de coming-soon en hospeda.com.ar, POST /api/v1/public/newsletter). Distinta de cualquier lista post-launch para mantener cohortes separadas. Reusa HOSPEDA_EMAIL_API_KEY para autenticarse.',
-        type: 'number',
-        required: false,
-        secret: false,
-        exampleValue: '7',
-        apps: ['api'],
-        category: 'email',
-        helpUrl: 'https://app.brevo.com/contact/list-listing',
-        howToObtain:
-            'Brevo dashboard → Contacts → Lists → create or open the target list → the numeric ID is shown in the URL (.../list/<ID>) and in the list header. Copy that integer. The same HOSPEDA_EMAIL_API_KEY is used to authenticate the request.',
-        howToObtainEs:
-            'Dashboard de Brevo → Contacts → Lists → crear o abrir la lista destino → el ID numérico aparece en la URL (.../list/<ID>) y en el header de la lista. Copiá ese entero. Se usa la misma HOSPEDA_EMAIL_API_KEY para autenticar el request.'
-    },
-    {
         name: 'HOSPEDA_EMAIL_FROM_EMAIL',
         description: 'Sender email address',
         descriptionEs: 'Dirección de email del remitente',
@@ -1591,24 +1573,6 @@ export const HOSPEDA_ENV_VARS = [
             'Injected automatically by Coolify — do not set manually. Enable the "Include Source Commit in Build" toggle on the app in Coolify.',
         howToObtainEs:
             'Lo inyecta Coolify automáticamente — no la setees a mano. Activá el toggle "Include Source Commit in Build" en la app en Coolify.'
-    },
-    {
-        name: 'HOSPEDA_LANDING_SITE_URL',
-        description:
-            'Public site URL of the landing app, baked into canonical/OG tags at build time.',
-        descriptionEs:
-            'URL pública del sitio de la landing, baked en los tags canonical/OG en build time.',
-        type: 'url',
-        required: false,
-        secret: false,
-        exampleValue: 'https://hospeda.com.ar',
-        apps: ['docker'],
-        category: 'build',
-        stage: 'build',
-        howToObtain:
-            'Pass as a Coolify build argument for the landing app. The Dockerfile defaults it to https://hospeda.com.ar.',
-        howToObtainEs:
-            'Pasala como build argument en Coolify para la app landing. El Dockerfile la deja con default https://hospeda.com.ar.'
     },
     {
         name: 'ALLOW_PLACEHOLDER_ENV_URLS',

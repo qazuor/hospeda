@@ -41,7 +41,7 @@ const DOCKERFILES = readdirSync(resolve(repoRoot, 'apps'), { withFileTypes: true
     .filter((relativePath) => existsSync(resolve(repoRoot, relativePath)));
 
 /** Apps that ship a Dockerfile today — guards against discovery silently finding none. */
-const KNOWN_DOCKERFILE_APPS = ['admin', 'api', 'landing', 'web'] as const;
+const KNOWN_DOCKERFILE_APPS = ['admin', 'api', 'web'] as const;
 
 /**
  * Build ARGs intentionally NOT registered — framework/constant args that are
