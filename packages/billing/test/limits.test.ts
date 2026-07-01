@@ -186,4 +186,50 @@ describe('Limits Configuration', () => {
             expect(limitEntry?.value).toBe(200);
         });
     });
+
+    describe('MAX_COLLECTIONS plan values (SPEC-287)', () => {
+        it('tourist-free plan should NOT have MAX_COLLECTIONS (no entitlement)', () => {
+            // Arrange & Act
+            const limitEntry = TOURIST_FREE_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_COLLECTIONS
+            );
+
+            // Assert — free plan is entitlement-gated; the limit key must be absent
+            expect(limitEntry).toBeUndefined();
+        });
+
+        it('tourist-plus plan should have MAX_COLLECTIONS = 10', () => {
+            // Arrange & Act
+            const limitEntry = TOURIST_PLUS_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_COLLECTIONS
+            );
+
+            // Assert
+            expect(limitEntry).toBeDefined();
+            expect(limitEntry?.value).toBe(10);
+        });
+
+        it('tourist-vip plan should have MAX_COLLECTIONS = 25', () => {
+            // Arrange & Act
+            const limitEntry = TOURIST_VIP_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_COLLECTIONS
+            );
+
+            // Assert
+            expect(limitEntry).toBeDefined();
+            expect(limitEntry?.value).toBe(25);
+        });
+
+        it('owner plan should inherit MAX_COLLECTIONS = 25 via TOURIST_VIP_LIMITS', () => {
+            // Arrange & Act — owner/complex plans spread TOURIST_VIP_LIMITS, so the
+            // VIP collections limit must flow through the inheritance mechanism.
+            const limitEntry = OWNER_BASICO_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_COLLECTIONS
+            );
+
+            // Assert
+            expect(limitEntry).toBeDefined();
+            expect(limitEntry?.value).toBe(25);
+        });
+    });
 });

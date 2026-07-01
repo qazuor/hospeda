@@ -109,39 +109,39 @@
             "id": "T-004",
             "title": "Wire collections entitlement and limit into tourist plan definitions",
             "description": "In packages/billing/src/config/plans.config.ts: add `EntitlementKey.CAN_USE_COLLECTIONS` + `limit(LimitKey.MAX_COLLECTIONS, 10)` to `TOURIST_PLUS_PLAN`. Add `EntitlementKey.CAN_USE_COLLECTIONS` + `limit(LimitKey.MAX_COLLECTIONS, 25)` to the shared `TOURIST_VIP_ENTITLEMENTS` / `TOURIST_VIP_LIMITS` constants (so tourist-vip AND owner/complex inherit it, same pattern already used for MAX_SEARCH_HISTORY_ENTRIES per SPEC-289). Do NOT touch `TOURIST_FREE_PLAN` — it must have neither the entitlement nor the limit. Test requirements: extend packages/billing/test/plans.test.ts asserting tourist-free lacks CAN_USE_COLLECTIONS, tourist-plus limit is 10, tourist-vip limit is 25, and owner/complex plans inherit the 25 limit + entitlement via the shared VIP tier.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002", "T-003"],
             "blocks": ["T-008", "T-010", "T-011", "T-012", "T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "Add entitlement + limit(10) to TOURIST_PLUS_PLAN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add entitlement + limit(25) to shared TOURIST_VIP_ENTITLEMENTS/LIMITS",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify TOURIST_FREE_PLAN is untouched",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Extend plans.test.ts with per-plan assertions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "collections", "plans"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T14:54:47Z",
+                "completed": "2026-07-01T14:58:23Z"
             }
         },
         {
@@ -536,9 +536,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 1.9
     }
