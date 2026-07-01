@@ -785,7 +785,7 @@
             "specId": "SPEC-286",
             "title": "Alerts & Offers — Multichannel Notifications",
             "status": "in-progress",
-            "progress": "4/12",
+            "progress": "5/12",
             "path": "SPEC-286-alerts-offers-multichannel-notifications",
             "parent": "SPEC-285",
             "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",

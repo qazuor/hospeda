@@ -180,26 +180,26 @@
             "id": "T-005",
             "title": "Mount /protected/price-alerts API routes with gateAlerts() gate",
             "description": "Create thin Hono routes following the three-tier API architecture. All routes live at /api/v1/protected/price-alerts.\n\nFiles to create in apps/api/src/routes/price-alert/protected/:\n- create.ts: POST / — pre-populate currentActiveAlertsCount via AlertSubscriptionService.countActive(actor) (set on context as c.set('currentActiveAlertsCount', count)), then gateAlerts() middleware from tourist-entitlements.ts, then call AlertSubscriptionService.create(). Use createSimpleRoute/createOpenApiRoute factory. Return 201 + created alert.\n- remove.ts: DELETE /:alertId — gateAlerts() not needed for deletion; validate alertId as UUID; call AlertSubscriptionService.remove(). Return 204.\n- list.ts: GET / — no gate (listing doesn't consume the limit); call AlertSubscriptionService.list(). Return 200 + paginated list.\n- index.ts: Hono sub-app mounting all three.\n\nRegister in apps/api/src/routes/index.ts:\n- Import { priceAlertProtectedRoutes } from './price-alert/index.js';\n- Mount at /protected/price-alerts inside the PROTECTED ROUTES block.\n\nUpdate docs/billing/endpoint-gate-matrix.md:\n- Add rows for POST /protected/price-alerts (gate: PRICE_ALERTS entitlement + MAX_ACTIVE_ALERTS limit) and GET/DELETE /protected/price-alerts/:id (no gate).\n\nAcceptance criteria:\n- POST /protected/price-alerts returns 403 ENTITLEMENT_REQUIRED for a free-tier tourist.\n- POST /protected/price-alerts returns 403 LIMIT_REACHED when at MAX_ACTIVE_ALERTS.\n- POST /protected/price-alerts returns 201 for an entitled tourist.\n- DELETE and GET return 200/204 for authenticated actors.\n- TypeScript compiles clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": ["T-010", "T-011"],
             "subtasks": [
                 {
                     "title": "Create create.ts with currentActiveAlertsCount context pre-population + gateAlerts()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create remove.ts and list.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register routes in apps/api/src/routes/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update endpoint-gate-matrix.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "price-alert", "gateAlerts", "D-2", "D-4"],
@@ -211,8 +211,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
@@ -503,9 +503,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 11,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 3.8
     }
