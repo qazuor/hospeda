@@ -14,10 +14,19 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
+import { EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
-import { billingAddonPurchases } from '@repo/db/schemas';
-import { AddonCatalogService, PlanService, isAccommodationSubscription } from '@repo/service-core';
+import {
+    accommodations,
+    billingAddonPurchases,
+    featuredListingAddonGrants
+} from '@repo/db/schemas';
+import {
+    AddonCatalogService,
+    PlanService,
+    isAccommodationSubscription,
+    syncFeaturedByEntitlementForAccommodation
+} from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -171,6 +180,47 @@ export class AddonEntitlementService {
                     },
                     'Granted add-on entitlement via QZPay'
                 );
+
+                // SPEC-309 T-015 (G-2): if this addon grants FEATURED_LISTING and is
+                // linked to a target accommodation (written by T-007 at confirm time),
+                // flip `featuredByEntitlement` on that accommodation. Soft-fail — a
+                // sync error must never block the entitlement grant itself; the
+                // reconcile cron (T-014) corrects any drift left behind.
+                try {
+                    if (addon.grantsEntitlement === EntitlementKey.FEATURED_LISTING) {
+                        const db = getDb();
+                        const [grantLink] = await db
+                            .select({ accommodationId: featuredListingAddonGrants.accommodationId })
+                            .from(featuredListingAddonGrants)
+                            .where(eq(featuredListingAddonGrants.purchaseId, input.purchaseId));
+
+                        if (grantLink) {
+                            const [accommodation] = await db
+                                .select({ ownerId: accommodations.ownerId })
+                                .from(accommodations)
+                                .where(eq(accommodations.id, grantLink.accommodationId));
+
+                            if (accommodation) {
+                                await syncFeaturedByEntitlementForAccommodation({
+                                    accommodationId: grantLink.accommodationId,
+                                    active: true,
+                                    ownerId: accommodation.ownerId
+                                });
+                            }
+                        }
+                    }
+                } catch (syncError) {
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId: input.purchaseId,
+                            error:
+                                syncError instanceof Error ? syncError.message : String(syncError)
+                        },
+                        'Failed to sync featuredByEntitlement after addon grant; will be corrected by reconcile cron'
+                    );
+                }
             } else if (addon.affectsLimitKey !== null && addon.limitIncrease !== null) {
                 // ── Resolve base plan limit via PlanService (DB-backed, SPEC-192 T-025) ──
                 //

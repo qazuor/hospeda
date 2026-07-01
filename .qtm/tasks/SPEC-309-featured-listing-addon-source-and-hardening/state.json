@@ -613,27 +613,34 @@
             "id": "T-015",
             "title": "G-2: wire addon grant path to sync accommodation featuring",
             "description": "In apps/api/src/services/addon-entitlement.service.ts, `applyAddonEntitlements` (lines ~148-173, after the QZPay `billing.entitlements.grant(...)` call succeeds): when the addon's `grantsEntitlement === EntitlementKey.FEATURED_LISTING` AND a `featured_listing_addon_grants` link row exists for this purchase (written by T-007 at confirm time), call `syncFeaturedByEntitlementForAccommodation({ accommodationId, active: true })` (T-005) for the linked accommodation. Wrap in try/catch, soft-fail with a warn log (never block the entitlement grant itself) — mirrors the existing soft-fail pattern used by the T-005 (SPEC-292) billing call-sites.\n\nKey files:\n- apps/api/src/services/addon-entitlement.service.ts:148-173\n\nAcceptance criteria:\n- Purchasing a target-required, FEATURED_LISTING-granting addon flips `featuredByEntitlement=true` on the linked accommodation.\n- Purchasing any other addon (no FEATURED_LISTING grant, or no link row) does not call the sync.\n- A sync failure logs a warning and does not throw / does not block the entitlement grant.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-025.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-007"],
             "blocks": ["T-025"],
             "subtasks": [
                 {
                     "title": "Detect FEATURED_LISTING grant + linked accommodation after applyAddonEntitlements success",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call syncFeaturedByEntitlementForAccommodation(active: true), soft-fail wrapped",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "addons", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:03:55.000Z",
+                "details": "biome check --write on addon-entitlement.service.ts: clean; pnpm --filter hospeda-api typecheck: clean; pre-existing addon-entitlement test suites (addon-entitlement.service.test.ts, addon-entitlement.cutover.test.ts, addon-entitlement-plan-bug.test.ts): 53/53 passed after moving the EntitlementKey.FEATURED_LISTING check inside the soft-fail try/catch (the cutover test's @repo/billing mock omits EntitlementKey, so the comparison itself must be caught, not just the DB calls). Dedicated coverage deferred to T-025 per task spec."
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:57:13.000Z",
+                "completed": "2026-07-01T20:03:55.000Z"
             }
         },
         {

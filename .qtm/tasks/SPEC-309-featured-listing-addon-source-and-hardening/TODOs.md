@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 14/30 tasks (47%)
+## Progress: 15/30 tasks (50%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -68,7 +68,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-005 · Blocks: T-024
 - [x] **T-014** (complexity: 3) - Rename and extend reconcile cron for addon-sourced, per-accommodation drift [DONE]
   - Blocked by: T-004, T-005 · Blocks: T-029
-- [ ] **T-015** (complexity: 2) - G-2: wire addon grant path to sync accommodation featuring
+- [x] **T-015** (complexity: 2) - G-2: wire addon grant path to sync accommodation featuring [DONE]
   - Blocked by: T-005, T-007 · Blocks: T-025
 - [ ] **T-016** (complexity: 3) - G-2: wire addon expiry paths to clear accommodation featuring
   - Blocked by: T-005, T-007 · Blocks: T-026
