@@ -16,11 +16,12 @@
  *
  * **Layering:** direct Drizzle queries via `getDb()`, no BaseCrudService —
  * mirrors `accommodation.sync-featured-by-plan.ts`. `resolveOwnerPlanGrantsFeatured`
- * cannot use the QZPay SDK (`getQZPayBilling()`) the way the reconcile cron
- * (`featured-by-plan-reconcile.job.ts`) does, because that helper lives in
+ * cannot use the QZPay SDK (`getQZPayBilling()`), because that helper lives in
  * `apps/api` and `service-core` cannot depend on an app package — so it
  * queries `billing_customers` / `billing_subscriptions` / `billing_plans`
- * directly instead.
+ * directly instead. This also makes it callable from the reconcile cron
+ * (`featured-by-entitlement-reconcile.job.ts`, T-014), which used to duplicate
+ * this same lookup via the QZPay SDK.
  *
  * @module services/accommodation/featured-entitlement-resolver
  */
@@ -44,7 +45,7 @@ import { isAccommodationSubscription } from '../billing/subscription/subscriptio
 
 /**
  * Subscription statuses that keep a plan's entitlements reachable.
- * Mirrors `featured-by-plan-reconcile.job.ts`'s `active | trialing | comp`
+ * Mirrors `featured-by-entitlement-reconcile.job.ts`'s `active | trialing | comp`
  * set (SPEC-309 OQ resolution / G-5: `comp` counts, `paused` does not).
  */
 const ACTIVE_PLAN_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'comp'] as const;

@@ -273,11 +273,11 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
     },
     {
-        name: 'featured-by-plan-reconcile',
-        displayName: 'Reconciliación de destacados por plan',
+        name: 'featured-by-entitlement-reconcile',
+        displayName: 'Reconciliación de destacados por plan y addon',
         category: 'billing',
         schedule: '0 */6 * * *',
         description:
-            'Correct drift between accommodations.featuredByPlan and the FEATURED_LISTING billing entitlement (SPEC-292 T-006 backstop).'
+            'Correct drift between accommodations.featuredByEntitlement and its plan/addon billing sources of truth (SPEC-309 T-014 backstop).'
     }
 ];

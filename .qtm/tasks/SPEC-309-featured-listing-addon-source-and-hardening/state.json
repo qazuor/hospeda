@@ -569,29 +569,44 @@
             "id": "T-014",
             "title": "Rename and extend reconcile cron for addon-sourced, per-accommodation drift",
             "description": "The T-006/SPEC-292 reconcile cron (apps/api/src/cron/jobs/featured-by-plan-reconcile.job.ts) only checks plan entitlements per OWNER (`resolveOwnerHasFeaturedListing`, lines 67-120, mirroring the plan-only path) — it does not see addon-sourced grants, so it cannot correct drift for the new per-accommodation source. Rename the file to featured-by-entitlement-reconcile.job.ts and extend its logic:\n\n1. Keep the owner-wide plan pass using `resolveOwnerPlanGrantsFeatured` (T-004) instead of the local re-implementation (lines 102-111) — call `syncFeaturedByEntitlementForOwner` (T-005) as before, which already excludes addon-protected accommodations on revoke.\n2. ADD a per-accommodation pass: for accommodations NOT already covered by an owner-wide grant, check `resolveAccommodationHasActiveFeaturedAddon` (T-004) and call `syncFeaturedByEntitlementForAccommodation` (T-005) when there is drift (addon says active but the column says false, or vice versa where the addon expired without the expiry hook firing — see T-016).\n3. Update the cron registration name/description in apps/api/src/cron/schedules.manifest.ts:273 to reflect the new file/behavior; keep the existing 6h interval (cron-lag grace, per CLAUDE.md).\n\nKey files:\n- apps/api/src/cron/jobs/featured-by-plan-reconcile.job.ts -> featured-by-entitlement-reconcile.job.ts\n- apps/api/src/cron/schedules.manifest.ts:273\n\nAcceptance criteria:\n- Cron corrects owner-wide plan drift as before (regression-safe).\n- Cron ALSO corrects accommodation-scoped addon drift (both directions: grant missed, expiry-clear missed).\n- Zero-drift fast path still makes no writes.\n- Logs corrected-count per source (plan vs addon) for observability.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-029.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Rename file + cron registration", "completed": false },
+                { "title": "Rename file + cron registration", "completed": true },
                 {
                     "title": "Replace local plan check with resolveOwnerPlanGrantsFeatured",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add per-accommodation addon-drift pass", "completed": false },
+                { "title": "Add per-accommodation addon-drift pass", "completed": true },
                 {
                     "title": "Update logging to distinguish plan vs addon corrections",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "cron", "billing", "reconciliation"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z",
+                    "details": "scoped to apps/api and service-core, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z",
+                    "details": "apps/api/test/cron/featured-by-entitlement-reconcile.test.ts fully rewritten for the new resolveOwnerPlanGrantsFeatured-based architecture (10/10, covers plan drift-clear/set, addon drift-set, addon-already-correct, addon-pass-skipped-when-plan-covers-all, dry-run, multiple owners); schedules-manifest.test.ts 6/6 unaffected. Exhaustive addon-expiry-drift coverage deferred to T-029."
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:55:00.000Z",
+                "completed": "2026-07-01T20:10:00.000Z"
             }
         },
         {
