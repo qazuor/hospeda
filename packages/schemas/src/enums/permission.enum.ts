@@ -27,6 +27,8 @@ export enum PermissionCategoryEnum {
     POST_SPONSOR = 'POST_SPONSOR',
     POST_SPONSORSHIP = 'POST_SPONSORSHIP',
     PURCHASE = 'PURCHASE',
+    /** Personalized recommendations feed (SPEC-284). */
+    RECOMMENDATION = 'RECOMMENDATION',
     REFUND = 'REFUND',
     REVALIDATION = 'REVALIDATION',
     USER = 'USER',
@@ -643,6 +645,13 @@ export enum PermissionEnum {
     PURCHASE_PROCESS = 'purchase.process', // Allows processing purchases.
     PURCHASE_CANCEL = 'purchase.cancel', // Allows canceling purchases.
     MANAGE_PURCHASES = 'purchase.manage', // Allows full management of purchases.
+
+    // RECOMMENDATION: Permissions related to the personalized recommendations feed (SPEC-284)
+    // Single always-own-scoped permission, no _ANY variant: a tourist can only ever view
+    // THEIR OWN recommendation feed (there is no legitimate "view anyone's feed" admin use
+    // case, unlike SPONSORSHIP_VIEW_OWN/_ANY). Mirrors the USER_VIEW_PROFILE precedent
+    // (also always-own, single permission, no split) rather than the OWN/ANY pair pattern.
+    RECOMMENDATION_VIEW = 'recommendation.view', // Allows viewing own personalized recommendations feed.
 
     // REFUND: Permissions related to refund management
     REFUND_CREATE = 'refund.create', // Allows creating a new refund.

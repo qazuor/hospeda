@@ -1,5 +1,5 @@
 /**
- * RecommendationService — SPEC-284 T-005
+ * RecommendationService — SPEC-284 T-005 / T-005b
  *
  * Orchestrates the tourist-facing personalized recommendations feed
  * (`.qtm/specs/SPEC-284-recommendations-feed/spec.md` §5): fetches the
@@ -8,6 +8,12 @@
  * `buildRecommendationProfile` (T-003), scores a candidate pool against
  * that profile via `scoreAndRankCandidates` (T-004), and returns the
  * top-ranked accommodations.
+ *
+ * Authorization is two-layered (see {@link RecommendationService.getFeed} for
+ * the full breakdown): the route-level `gateRecommendations()` entitlement
+ * gate (plan axis) plus a service-level `PermissionEnum.RECOMMENDATION_VIEW`
+ * check (role axis, T-005b) — never role checks directly, per this package's
+ * `PermissionEnum`-only convention.
  *
  * Design notes:
  *  - Extends `BaseService` rather than `BaseCrudService` — this is a
@@ -71,10 +77,17 @@ import type {
     RecommendationProfile,
     SearchHistoryFilters
 } from '@repo/schemas';
-import { EntityTypeEnum, RecommendationFeedResponseSchema } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    PermissionEnum,
+    RecommendationFeedResponseSchema,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
+import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils';
 import { attachComposedMediaList } from '../accommodation/accommodation.media-read';
 import { applyAccommodationLocationPrivacyList } from '../accommodation/accommodation.projections';
 import { SearchHistoryService } from '../userSearchHistory/userSearchHistory.service';
@@ -196,7 +209,22 @@ export class RecommendationService extends BaseService {
     /**
      * Computes the actor's personalized recommendations feed.
      *
-     * Pipeline:
+     * Authorization is enforced on TWO independent layers (SPEC-284 T-005b):
+     *  1. **Route-level entitlement gate** (`gateRecommendations()`, SPEC-145
+     *     pattern) — checks the actor's billing plan includes
+     *     `CAN_VIEW_RECOMMENDATIONS` before the request ever reaches this
+     *     service. This is the PLAN axis (free vs plus/VIP).
+     *  2. **Service-level permission check** (this method, first thing
+     *     `execute` does) — requires `PermissionEnum.RECOMMENDATION_VIEW`.
+     *     This is the ROLE axis: it protects the service from being called
+     *     directly (bypassing the route) by an actor whose role was never
+     *     meant to have this feature (e.g. `SPONSOR`, `GUEST`), independent
+     *     of whatever plan/entitlements they happen to carry. Always
+     *     own-scoped — there is no `_ANY` variant, since a tourist can only
+     *     ever view THEIR OWN feed (see the permission's doc comment in
+     *     `PermissionEnum`).
+     *
+     * Pipeline (after authorization):
      * 1. Fetch the three behavioral signals (favorites, recently-viewed,
      *    search history — the last one is degradable, see
      *    {@link resolveSearchHistoryFilters}).
@@ -211,12 +239,17 @@ export class RecommendationService extends BaseService {
      * 6. Score + rank (T-004) and return the top {@link FEED_LIMIT}.
      *
      * Never throws for a degraded search-history signal — only favorites and
-     * recently-viewed are required for a non-empty profile.
+     * recently-viewed are required for a non-empty profile. A missing
+     * `RECOMMENDATION_VIEW` permission also never throws out of this method —
+     * it's a `ServiceError(FORBIDDEN)` caught by `runWithLoggingAndValidation`
+     * and surfaced as `{ error }` on the returned `ServiceOutput`, same as
+     * every other permission check in this package.
      *
      * @param actor - The authenticated actor requesting their own feed.
      * @param ctx - Optional service context for transaction propagation.
      * @returns `{ items, isColdStart, generatedAt }` (see
-     *   `RecommendationFeedResponseSchema`).
+     *   `RecommendationFeedResponseSchema`), or a `FORBIDDEN` error when the
+     *   actor lacks `RECOMMENDATION_VIEW`.
      */
     public async getFeed(
         actor: Actor,
@@ -228,6 +261,16 @@ export class RecommendationService extends BaseService {
             schema: z.object({}),
             ctx,
             execute: async (_validated, validatedActor, execCtx) => {
+                // 0. Service-level permission gate (SPEC-284 T-005b) --------------------
+                // Complements the route-level entitlement gate (`gateRecommendations()`)
+                // rather than replacing it — see the authorization note above.
+                if (!hasPermission(validatedActor, PermissionEnum.RECOMMENDATION_VIEW)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: RECOMMENDATION_VIEW required to view the recommendations feed'
+                    );
+                }
+
                 const tx = execCtx?.tx;
                 const destinationPaths: Record<string, string> = {};
 

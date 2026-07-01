@@ -1,10 +1,12 @@
 /**
- * Tests for RecommendationService.getFeed (SPEC-284 T-005).
+ * Tests for RecommendationService.getFeed (SPEC-284 T-005 / T-005b).
  *
  * Covers: cold-start (no signals -> popular fallback via the same scorer),
  * personalized path with already-known-id exclusion, degraded search-history
- * (favorites/viewed still present -> feed still built), and destination-path
- * batch resolution (no N+1 — `DestinationModel.findByIds` called at most once).
+ * (favorites/viewed still present -> feed still built), destination-path
+ * batch resolution (no N+1 — `DestinationModel.findByIds` called at most once),
+ * and the service-level `RECOMMENDATION_VIEW` permission gate (T-005b) added
+ * alongside the (already-covered-at-the-route-level) entitlement gate.
  *
  * Mocking style mirrors `userSearchHistory` service tests: `createTypedModelMock`
  * for every injected `@repo/db` model, plus a hand-rolled `{ list: vi.fn() }`
@@ -18,7 +20,13 @@ import {
     EntityViewModel,
     UserBookmarkModel
 } from '@repo/db';
-import { AccommodationTypeEnum, EntityTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
+import {
+    AccommodationTypeEnum,
+    EntityTypeEnum,
+    PermissionEnum,
+    PriceCurrencyEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecommendationService } from '../../../src/services/recommendation/recommendation.service';
 import type { SearchHistoryService } from '../../../src/services/userSearchHistory/userSearchHistory.service';
@@ -28,7 +36,7 @@ import {
 } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import { expectSuccess } from '../../helpers/assertions';
+import { expectForbiddenError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
@@ -70,7 +78,13 @@ describe('RecommendationService.getFeed', () => {
     let accommodationMediaModelMock: AccommodationMediaModel;
     let searchHistoryServiceMock: SearchHistoryService;
 
-    const actor = createActor({ id: getMockId('user') });
+    // T-005b: the service now requires RECOMMENDATION_VIEW in addition to the
+    // route-level entitlement gate — every actor fixture that expects a
+    // successful getFeed() call must carry it.
+    const actor = createActor({
+        id: getMockId('user'),
+        permissions: [PermissionEnum.RECOMMENDATION_VIEW]
+    });
 
     beforeEach(() => {
         accommodationModelMock = createTypedModelMock(AccommodationModel);
@@ -359,10 +373,53 @@ describe('RecommendationService.getFeed', () => {
         expect(viewedCallArgs.userId).toBe(actor.id);
     });
 
-    it('never throws — returns a ServiceOutput even for an actor with no permissions/entitlements set', async () => {
+    it('never throws — returns a FORBIDDEN ServiceOutput (not a rejected promise) for an actor with no permissions', async () => {
         const bareActor = createActor({ id: getMockId('user', 'bare'), permissions: [] });
         const result = await service.getFeed(bareActor);
-        expectSuccess(result);
+        expectForbiddenError(result);
+    });
+
+    // -------------------------------------------------------------------------
+    // Authorization (SPEC-284 T-005b — service-level RECOMMENDATION_VIEW gate,
+    // in addition to the route-level entitlement gate)
+    // -------------------------------------------------------------------------
+
+    describe('authorization: RECOMMENDATION_VIEW permission gate (T-005b)', () => {
+        it('returns FORBIDDEN and never touches the signal models when the actor lacks RECOMMENDATION_VIEW', async () => {
+            const unauthorizedActor = createActor({
+                id: getMockId('user', 'no-recommendation-permission'),
+                permissions: []
+            });
+
+            const result = await service.getFeed(unauthorizedActor);
+
+            expectForbiddenError(result);
+            expect(userBookmarkModelMock.findAll).not.toHaveBeenCalled();
+            expect(entityViewModelMock.getRecentlyViewedByUser).not.toHaveBeenCalled();
+            expect(accommodationModelMock.findTopRated).not.toHaveBeenCalled();
+        });
+
+        it('succeeds for an actor holding ONLY RECOMMENDATION_VIEW (no other permission needed for a self-scoped feed)', async () => {
+            const minimalActor = createActor({
+                id: getMockId('user', 'minimal-recommendation-permission'),
+                permissions: [PermissionEnum.RECOMMENDATION_VIEW]
+            });
+
+            const result = await service.getFeed(minimalActor);
+
+            expectSuccess(result);
+        });
+
+        it('the FORBIDDEN error carries ServiceErrorCode.FORBIDDEN as its code', async () => {
+            const unauthorizedActor = createActor({
+                id: getMockId('user', 'no-recommendation-permission-2'),
+                permissions: []
+            });
+
+            const result = await service.getFeed(unauthorizedActor);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
     });
 
     it('produces items whose type reference AccommodationTypeEnum values from the raw rows', async () => {
