@@ -52,7 +52,7 @@ vi.mock('@repo/db', () => ({
     accommodations: {
         ownerId: 'owner_id',
         deletedAt: 'deleted_at',
-        featuredByPlan: 'featured_by_plan'
+        featuredByEntitlement: 'featured_by_entitlement'
     },
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
@@ -64,7 +64,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    syncFeaturedByPlan: mockSyncFeaturedByPlan,
+    syncFeaturedByEntitlementForOwner: mockSyncFeaturedByPlan,
     isAccommodationSubscription: mockIsAccommodationSubscription
 }));
 
@@ -162,7 +162,7 @@ function setupDbMocks(ownerIds: string[], currentFeaturedByPlan: boolean): void 
     const currentChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([{ featuredByPlan: currentFeaturedByPlan }])
+        limit: vi.fn().mockResolvedValue([{ featuredByEntitlement: currentFeaturedByPlan }])
     };
     mockSelectCurrent.mockReturnValue(currentChain);
 }
@@ -347,7 +347,7 @@ describe('featured-by-plan-reconcile cron job', () => {
             const makeCurrentChain = (featured: boolean) => ({
                 from: vi.fn().mockReturnThis(),
                 where: vi.fn().mockReturnThis(),
-                limit: vi.fn().mockResolvedValue([{ featuredByPlan: featured }])
+                limit: vi.fn().mockResolvedValue([{ featuredByEntitlement: featured }])
             });
             mockSelectCurrent
                 .mockReturnValueOnce(makeCurrentChain(true)) // owner-ok

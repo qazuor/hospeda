@@ -117,6 +117,8 @@ export async function resolveOwnerPlanGrantsFeatured(
             WHERE customer_id = ${customer.id} AND deleted_at IS NULL
             AND status IN (${statusList})`
     );
+    // TYPE-WORKAROUND: db.execute() returns untyped rows for raw SQL; the
+    // shape is guaranteed by the SELECT column list above.
     const subscriptionRows = (subscriptionsResult.rows ??
         []) as unknown as RawBillingSubscriptionRow[];
 

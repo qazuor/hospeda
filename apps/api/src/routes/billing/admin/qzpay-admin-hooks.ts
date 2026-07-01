@@ -33,7 +33,7 @@ import {
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
-import { syncFeaturedByPlan } from '@repo/service-core';
+import { syncFeaturedByEntitlementForOwner } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getActorFromContext } from '../../../middlewares/actor';
@@ -527,7 +527,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                     resolvedNewPlanDowngrade.entitlements.includes(
                                         EntitlementKey.FEATURED_LISTING
                                     );
-                                await syncFeaturedByPlan({
+                                await syncFeaturedByEntitlementForOwner({
                                     ownerId: userId,
                                     active: newPlanHasFeatured
                                 });
@@ -539,7 +539,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                         newPlanId,
                                         planSlug: newPlan.name
                                     },
-                                    'Admin change-plan hook (downgrade): plan not in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                                    'Admin change-plan hook (downgrade): plan not in ALL_PLANS — syncFeaturedByEntitlementForOwner skipped (commerce/partner plan?)'
                                 );
                             }
                         } catch (featuredSyncErr) {
@@ -553,7 +553,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                             ? featuredSyncErr.message
                                             : String(featuredSyncErr)
                                 },
-                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                                'Admin change-plan hook: syncFeaturedByEntitlementForOwner failed (non-blocking)'
                             );
                         }
                     } else {
@@ -590,7 +590,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                     resolvedNewPlanUpgrade.entitlements.includes(
                                         EntitlementKey.FEATURED_LISTING
                                     );
-                                await syncFeaturedByPlan({
+                                await syncFeaturedByEntitlementForOwner({
                                     ownerId: userId,
                                     active: newPlanHasFeatured
                                 });
@@ -602,7 +602,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                         newPlanId,
                                         planSlug: newPlan.name
                                     },
-                                    'Admin change-plan hook (upgrade): plan not in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                                    'Admin change-plan hook (upgrade): plan not in ALL_PLANS — syncFeaturedByEntitlementForOwner skipped (commerce/partner plan?)'
                                 );
                             }
                         } catch (featuredSyncErr) {
@@ -616,7 +616,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
                                             ? featuredSyncErr.message
                                             : String(featuredSyncErr)
                                 },
-                                'Admin change-plan hook: syncFeaturedByPlan failed (non-blocking)'
+                                'Admin change-plan hook: syncFeaturedByEntitlementForOwner failed (non-blocking)'
                             );
                         }
                     } else {

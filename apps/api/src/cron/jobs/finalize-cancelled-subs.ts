@@ -98,7 +98,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import type { SubscriptionStatusFull } from '@repo/service-core';
 import {
     BILLING_EVENT_TYPES,
-    syncFeaturedByPlan,
+    syncFeaturedByEntitlementForOwner,
     validateSubscriptionStatusTransition
 } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -552,17 +552,20 @@ async function finalizeOne(
             if (hadFeatured) {
                 const ownerId = await resolveOwnerUserId({ customerId });
                 if (ownerId) {
-                    await syncFeaturedByPlan({ ownerId, active: false });
-                    logger.info('finalize-cancelled-subs: syncFeaturedByPlan revoked', {
-                        subscriptionId,
-                        customerId,
-                        planSlug: cancelledPlanSlug
-                    });
+                    await syncFeaturedByEntitlementForOwner({ ownerId, active: false });
+                    logger.info(
+                        'finalize-cancelled-subs: syncFeaturedByEntitlementForOwner revoked',
+                        {
+                            subscriptionId,
+                            customerId,
+                            planSlug: cancelledPlanSlug
+                        }
+                    );
                 }
             }
         } catch (featuredSyncErr) {
             logger.warn(
-                'finalize-cancelled-subs: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)',
+                'finalize-cancelled-subs: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)',
                 {
                     subscriptionId,
                     customerId,

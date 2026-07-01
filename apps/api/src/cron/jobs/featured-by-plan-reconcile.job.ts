@@ -40,7 +40,7 @@
 
 import { EntitlementKey, isEntitlementKey } from '@repo/billing';
 import { accommodations, and, eq, getDb, isNull } from '@repo/db';
-import { isAccommodationSubscription, syncFeaturedByPlan } from '@repo/service-core';
+import { isAccommodationSubscription, syncFeaturedByEntitlementForOwner } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import type { CronJobContext, CronJobDefinition } from '../types.js';
 
@@ -178,7 +178,7 @@ export const featuredByPlanReconcileJob: CronJobDefinition = {
 
                     // 2b: Read current state from one non-deleted accommodation row.
                     const currentRows = await db
-                        .select({ featuredByPlan: accommodations.featuredByPlan })
+                        .select({ featuredByEntitlement: accommodations.featuredByEntitlement })
                         .from(accommodations)
                         .where(
                             and(
@@ -193,7 +193,7 @@ export const featuredByPlanReconcileJob: CronJobDefinition = {
                         continue;
                     }
 
-                    const currentFeaturedByPlan = currentRows[0]?.featuredByPlan ?? false;
+                    const currentFeaturedByPlan = currentRows[0]?.featuredByEntitlement ?? false;
 
                     // 2c: Drift guard — skip no-op writes.
                     if (currentFeaturedByPlan === shouldBeFeatured) {
@@ -211,7 +211,7 @@ export const featuredByPlanReconcileJob: CronJobDefinition = {
                         // Dry run: count drift without writing.
                         correctedOwners++;
                     } else {
-                        const { updated } = await syncFeaturedByPlan({
+                        const { updated } = await syncFeaturedByEntitlementForOwner({
                             ownerId,
                             active: shouldBeFeatured
                         });

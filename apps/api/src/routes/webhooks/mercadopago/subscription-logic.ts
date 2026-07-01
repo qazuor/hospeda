@@ -17,7 +17,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
-    syncFeaturedByPlan,
+    syncFeaturedByEntitlementForOwner,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -1045,7 +1045,7 @@ export async function processSubscriptionUpdated({
             mappedStatus === SubscriptionStatusEnum.EXPIRED;
 
         if (planHasFeatured && (shouldGrant || shouldRevoke) && userId) {
-            await syncFeaturedByPlan({ ownerId: userId, active: shouldGrant });
+            await syncFeaturedByEntitlementForOwner({ ownerId: userId, active: shouldGrant });
             apiLogger.info(
                 {
                     subscriptionId: localSubscription.id,
@@ -1054,7 +1054,7 @@ export async function processSubscriptionUpdated({
                     mappedStatus,
                     active: shouldGrant
                 },
-                'Subscription status update: syncFeaturedByPlan applied'
+                'Subscription status update: syncFeaturedByEntitlementForOwner applied'
             );
         }
     } catch (featuredSyncErr) {
@@ -1069,7 +1069,7 @@ export async function processSubscriptionUpdated({
                         ? featuredSyncErr.message
                         : String(featuredSyncErr)
             },
-            'Subscription status update: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)'
+            'Subscription status update: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)'
         );
     }
 

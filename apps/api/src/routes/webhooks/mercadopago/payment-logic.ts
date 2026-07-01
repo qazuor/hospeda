@@ -29,7 +29,7 @@ import {
     checkSubscriptionStatusTransition,
     getPromoCodeById,
     resolveFullPlanPriceCentavos,
-    syncFeaturedByPlan
+    syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
@@ -261,7 +261,7 @@ export async function confirmAnnualSubscription(input: {
         if (annualPlanHasFeatured) {
             const ownerId = await resolveOwnerUserId({ customerId: sub.customerId });
             if (ownerId) {
-                await syncFeaturedByPlan({ ownerId, active: true });
+                await syncFeaturedByEntitlementForOwner({ ownerId, active: true });
                 apiLogger.info(
                     { annualSubscriptionId, customerId: sub.customerId, planSlug: annualPlanSlug },
                     'Annual subscription activation: featuredByPlan granted'
@@ -279,7 +279,7 @@ export async function confirmAnnualSubscription(input: {
                         ? featuredSyncErr.message
                         : String(featuredSyncErr)
             },
-            'Annual subscription activation: syncFeaturedByPlan failed (non-blocking)'
+            'Annual subscription activation: syncFeaturedByEntitlementForOwner failed (non-blocking)'
         );
     }
 
@@ -496,7 +496,7 @@ async function confirmPlanUpgrade(input: {
             try {
                 const upgradedPlan = await billing.plans.get(newPlanId);
                 const upgradedPlanSlug = upgradedPlan?.name ?? '';
-                // Guard: skip syncFeaturedByPlan when the plan slug is not in ALL_PLANS
+                // Guard: skip syncFeaturedByEntitlementForOwner when the plan slug is not in ALL_PLANS
                 // (commerce/partner plans are excluded by SPEC-239 and would resolve to
                 // undefined, causing a false active:false that clears featuredByPlan for
                 // dual-subscription owners).
@@ -505,7 +505,10 @@ async function confirmPlanUpgrade(input: {
                     const upgradedPlanHasFeatured = resolvedUpgradedPlan.entitlements.includes(
                         EntitlementKey.FEATURED_LISTING
                     );
-                    await syncFeaturedByPlan({ ownerId: userId, active: upgradedPlanHasFeatured });
+                    await syncFeaturedByEntitlementForOwner({
+                        ownerId: userId,
+                        active: upgradedPlanHasFeatured
+                    });
                     apiLogger.info(
                         {
                             planChangeUpgradeId,
@@ -524,7 +527,7 @@ async function confirmPlanUpgrade(input: {
                             planSlug: upgradedPlanSlug,
                             customerId: changeResult.subscription.customerId
                         },
-                        'Plan upgrade: plan slug not found in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)'
+                        'Plan upgrade: plan slug not found in ALL_PLANS — syncFeaturedByEntitlementForOwner skipped (commerce/partner plan?)'
                     );
                 }
             } catch (featuredSyncErr) {
@@ -538,7 +541,7 @@ async function confirmPlanUpgrade(input: {
                                 ? featuredSyncErr.message
                                 : String(featuredSyncErr)
                     },
-                    'Plan upgrade: syncFeaturedByPlan failed (non-blocking)'
+                    'Plan upgrade: syncFeaturedByEntitlementForOwner failed (non-blocking)'
                 );
             }
         } else {
