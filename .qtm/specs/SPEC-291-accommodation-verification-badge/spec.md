@@ -3,7 +3,7 @@ specId: SPEC-291
 title: Accommodation Verification Badge
 type: feat
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-26
 tags: [owner, verification, trust, entitlements, web]
 ---
@@ -43,13 +43,34 @@ step).
 
 - No automated identity/KYC verification in v1 (manual admin verification — OQ-1).
 
-## 5. Open Questions
+## 5. Open Questions — RESOLVED (owner, 2026-06-30)
 
-- **OQ-1** Verification process: manual admin toggle vs a document/identity flow.
-- **OQ-2** Does the badge require BOTH the entitlement AND a verified state, or just
-  one? (Recommended: both — a free owner who is verified should not show it if the
-  badge is a paid perk; confirm.)
+- **OQ-1 → RESOLVED: manual admin toggle.** Verification is a manual admin action.
+  New columns on `accommodations`: `is_verified` (bool), `verified_at` (tz),
+  `verified_by_id` (uuid FK→users). NO KYC / document flow in v1.
+- **OQ-2 → RESOLVED: BOTH.** The badge renders only when the owner has the
+  `HAS_VERIFICATION_BADGE` entitlement AND the accommodation is in a verified state.
+  A verified owner without the entitlement (e.g. free/low plan) shows NO badge — the
+  badge is a paid perk plus a trust signal. Admin verification is independent of the
+  owner's plan; the entitlement only gates DISPLAY.
 
-## 6. Relationship to SPEC-282
+## 6. Decisions
 
-The "Badge de verificación" row stays *Próximamente* until this ships.
+- **D-1 Gate on ALL surfaces (owner, 2026-06-30).** The entitlement gate currently
+  runs only on the detail route (`getById`/`getBySlug`). To honour OQ-2 consistently
+  on listing cards, the owner-entitlement resolution is extended to the list
+  endpoints (`list`, `getByDestination`, `similar`, `getTopRatedByDestination`,
+  `getSummary`) via a BATCH resolver (one entitlements query per page over the unique
+  owner IDs, not N per-card queries).
+- **D-2 Dedicated verify action.** `isVerified` is server-managed and NOT settable via
+  the generic accommodation update (PATCH); a dedicated `POST /admin/accommodations/
+  :id/verify` endpoint + `verifyAccommodation()` service method also stamp
+  `verified_at` / `verified_by_id`. New permission `ACCOMMODATION_VERIFY` (admin-only).
+- **D-3 Fix pre-existing actor bug.** The dead `entitlement-filter.ts` checked the
+  VIEWER's entitlement; the real implementation checks the OWNER's (same pattern as
+  `CAN_USE_RICH_DESCRIPTION` / `richDescription`).
+
+## 7. Relationship to SPEC-282
+
+The "Badge de verificación" row stays *Próximamente* until this ships. Flip the
+`PlanComparisonTable` `verificationBadge` row from `upcoming` to `available` on ship.
