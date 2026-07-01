@@ -822,19 +822,19 @@
             "id": "T-021",
             "title": "Unit tests — resolver helpers (T-004)",
             "description": "Test packages/service-core/src/services/accommodation/featured-entitlement.resolver.ts using the hoisted-mock pattern already established in packages/service-core/test/services/accommodation/sync-featured-by-plan.test.ts (vi.hoisted + vi.mock('@repo/db', ...)).\n\nCases:\n- `resolveOwnerPlanGrantsFeatured`: true for active/trialing/comp subscription on a FEATURED_LISTING plan; false for paused/past_due/cancelled; false when no subscription.\n- `resolveAccommodationHasActiveFeaturedAddon`: true when a `featured_listing_addon_grants` row joins to a purchase with status='active' and expiresAt in the future or null; false when the purchase is expired/cancelled or no link row exists.\n- `getOwnerAccommodationIdsWithActiveFeaturedAddon`: returns exactly the protected id set for an owner with a mix of protected/unprotected accommodations; empty array when none.\n\nKey files:\n- packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts (new)\n\nAcceptance criteria:\n- All cases above pass.\n- No live DB — pure mocked Drizzle per the established pattern.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "resolveOwnerPlanGrantsFeatured status-set tests", "completed": false },
+                { "title": "resolveOwnerPlanGrantsFeatured status-set tests", "completed": true },
                 {
                     "title": "resolveAccommodationHasActiveFeaturedAddon active/expired/absent tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getOwnerAccommodationIdsWithActiveFeaturedAddon set tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend"],
@@ -842,12 +842,15 @@
             "qualityGate": {
                 "lint": "pnpm lint",
                 "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "tests": "scoped",
+                "status": "passed",
+                "details": "New packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts (17 cases): resolveOwnerPlanGrantsFeatured (no customer, paused/past_due/cancelled excluded by SQL status filter, active/trialing/comp true, plan missing entitlement, plan lookup miss, commerce-domain excluded, status-list query construction), resolveAccommodationHasActiveFeaturedAddon (grant found/absent, WHERE construction), getOwnerAccommodationIdsWithActiveFeaturedAddon (mixed portfolio, empty, WHERE construction). Pure mocked Drizzle (thenable+chainable makeChain stub), no live DB. Scoped run: 17/17 pass. Sibling sync-featured-by-entitlement.test.ts (9/9) still green. Scoped biome + typecheck on @repo/service-core green.",
+                "timestamp": "2026-07-01T22:35:00.000Z"
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T22:10:00.000Z",
+                "completed": "2026-07-01T22:35:00.000Z"
             }
         },
         {

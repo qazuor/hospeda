@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 20/30 tasks (67%)
+## Progress: 21/30 tasks (70%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -83,7 +83,7 @@ owner self-service toggle (folded in from SPEC-320).
 
 ### Testing Phase
 
-- [ ] **T-021** (complexity: 2) - Unit tests — resolver helpers (T-004)
+- [x] **T-021** (complexity: 2) - Unit tests — resolver helpers (T-004) [DONE]
   - Blocked by: T-004 · Blocks: T-030
 - [ ] **T-022** (complexity: 3) - Unit tests — sync primitives exclusion/guard (T-005)
   - Blocked by: T-005 · Blocks: T-030
