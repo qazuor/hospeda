@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { ENTITLEMENT_DEFINITIONS } from '../src/config/entitlements.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 
+describe('EntitlementKey enum', () => {
+    it('should include CAN_USE_COLLECTIONS with the expected string value (SPEC-287 T-001)', () => {
+        expect(EntitlementKey.CAN_USE_COLLECTIONS).toBe('can_use_collections');
+    });
+});
+
 describe('Entitlement Configuration', () => {
     describe('ENTITLEMENT_DEFINITIONS', () => {
         it('should export all entitlements', () => {

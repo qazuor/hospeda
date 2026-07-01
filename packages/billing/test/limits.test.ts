@@ -8,6 +8,12 @@ import {
 } from '../src/config/plans.config.js';
 import { LimitKey } from '../src/types/plan.types.js';
 
+describe('LimitKey enum', () => {
+    it('should include MAX_COLLECTIONS with the expected string value (SPEC-287 T-001)', () => {
+        expect(LimitKey.MAX_COLLECTIONS).toBe('max_collections');
+    });
+});
+
 describe('Limits Configuration', () => {
     describe('LIMIT_METADATA', () => {
         const allLimitKeys = Object.values(LimitKey);

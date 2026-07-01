@@ -8,35 +8,35 @@
             "id": "T-001",
             "title": "Add CAN_USE_COLLECTIONS and MAX_COLLECTIONS enum keys",
             "description": "Add `CAN_USE_COLLECTIONS = 'can_use_collections'` to `EntitlementKey` in packages/billing/src/types/entitlement.types.ts, and `MAX_COLLECTIONS = 'max_collections'` to `LimitKey` in packages/billing/src/types/plan.types.ts. This is the foundational step: LIMIT_METADATA and RESOURCE_NAMES are `Record<LimitKey, ...>` and will fail to compile until their entries are added in later tasks. Test requirements: extend packages/billing/test/entitlements.test.ts and packages/billing/test/limits.test.ts to assert the new enum members exist with the expected string values.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Add CAN_USE_COLLECTIONS to EntitlementKey enum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add MAX_COLLECTIONS to LimitKey enum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add unit test assertions for both new enum values",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "types", "collections"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pending-by-design (blocked on T-002/T-003 LIMIT_METADATA exhaustiveness, documented in task description)",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-01T14:27:20.000Z",
                 "started": "2026-07-01T14:42:15Z",
-                "completed": null
+                "completed": "2026-07-01T14:47:06Z"
             }
         },
         {
@@ -537,8 +537,8 @@
     "summary": {
         "total": 15,
         "pending": 14,
-        "inProgress": 1,
-        "completed": 0,
+        "inProgress": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 1.9
     }
