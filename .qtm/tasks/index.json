@@ -783,15 +783,30 @@
             "note": "Implementation complete: all 16 atomized tasks (core 6 / integration 8 / testing 2, avg complexity 1.94) plus ad-hoc T-005b (dedicated PermissionEnum.RECOMMENDATION_VIEW, user-approved mid-implementation). Fresh-context review found 2 minor issues, both fixed. Absorbed duplicate SPEC-315 (2026-07-01, independently flagged by both this branch and a separate spec-dedup audit). Merged to staging via PR #1966 (2026-07-01) after resolving 5 rounds of CI fixes (SPEC-039 guard, shared @repo/db test mock gap, missing Postgres enum migration, another shared mock gap, and a merge conflict with a parallel spec-dedup PR touching the same indices)."
         },
         {
+            "specId": "SPEC-239",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+            "status": "completed",
+            "progress": "63/64",
+            "path": "SPEC-239-commerce-listings-core-gastronomy",
+            "branch": null,
+            "base": "main",
+            "createdAt": "2026-06-15T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and promoted to main via PR #1692 (\"promote staging to main\", includes SPEC-239 commerce core). Discovered during the Linear tracking migration audit — index had no entry at all for this epic despite full implementation across schemas/service-core/api/web/db/seed/e2e/docs (ADR-035). Only open item: T-061 (staging MP sandbox smoke sign-off, operational, not code) — tracked as a follow-up, not blocking closure."
+        },
+        {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
             "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and merged to staging via PR #1900 (2026-06-30). Full delivery confirmed: API route registration, visibility/permission logic, lifecycle event emission (satisfies SPEC-286's dependency), DB model changes, PromotionBanner.astro on accommodation detail, i18n, full test suite. Index was stale at in-progress despite 9/9 tasks complete — discovered during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-286",
@@ -836,13 +851,15 @@
         {
             "specId": "SPEC-289",
             "title": "Search History",
-            "status": "in-progress",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "4/4",
             "path": "SPEC-289-search-history",
             "branch": "spec/SPEC-289-search-history",
-            "base": "staging",
+            "base": "main",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "OQs resolved 2026-06-29. Entry-count limit (Plus=50/VIP=200, new LimitKey.MAX_SEARCH_HISTORY_ENTRIES), full self-service privacy (delete-one/clear-all/opt-out), dedicated mi-cuenta page. Phasing P1 data+billing / P2 API / P3 web / P4 SPEC-282 table. Impl in progress."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and merged to staging via PR #1899 (2026-06-30), then promoted to main. All 4 phases confirmed (P1 data+billing, P2 API, P3 web, P4 comparison table). Index had a 0/0 stub despite full completion — discovered during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-290",
@@ -858,13 +875,15 @@
         {
             "specId": "SPEC-291",
             "title": "Accommodation Verification Badge",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-291-accommodation-verification-badge",
             "branch": "spec/SPEC-291-accommodation-verification-badge",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "PR #1963 open to staging (all layers done: DB/schema/service/API/entitlement-filter/web/admin). Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized. Absorbed duplicate SPEC-319 (2026-07-01)."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "PR #1963 confirmed MERGED to staging (2026-07-01, verified via gh pr view + git merge-base --is-ancestor). All layers done: DB/schema/service/API/entitlement-filter/web/admin. Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized. Absorbed duplicate SPEC-319 (2026-07-01). Index still said \"PR open\" and in-progress — discovered stale during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-292",

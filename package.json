@@ -75,8 +75,7 @@
         "env:check:examples": "pnpm --filter @repo/config test src/__tests__/env-examples.guard.test.ts",
         "gen:env-examples": "tsx scripts/generate-env-examples.ts",
         "cli": "tsx scripts/cli.ts",
-        "test:cli": "vitest run --config scripts/cli/vitest.config.ts",
-        "specs:board": "python3 scripts/render-specs-prioritization.py --serve"
+        "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",

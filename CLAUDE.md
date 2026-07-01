@@ -226,8 +226,9 @@ This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decisio
 - Exclude documentation/CLAUDE.md files from code commits (commit them separately if needed)
 - Pre-commit hooks (husky + lint-staged + biome) run on ALL staged files.. if the hook fails, fix the issue and create a NEW commit (never amend)
 - **Merge commit messages**: commitlint rejects `merge:` as a type. Use `chore: merge <source> into <target> (...)` instead.
-- **PR titles MUST carry a work tag** (enforced by the `Validate PR Title` CI check — see [`.github/workflows/validate-pr-title.yml`](.github/workflows/validate-pr-title.yml)). Every PR title MUST start with one of two tags, before the conventional-commit type:
-  - `[SPEC-NNN]` — work that belongs to a formal spec. Format: `[SPEC-NNN] type(scope): description` (e.g. `[SPEC-228] feat(web): unify loading states`).
+- **PR titles MUST carry a work tag** (enforced by the `Validate PR Title` CI check — see [`.github/workflows/validate-pr-title.yml`](.github/workflows/validate-pr-title.yml)). Every PR title MUST start with one of three tags, before the conventional-commit type:
+  - `[HOS-NNN]` — work that belongs to a spec tracked in Linear (team `Hospeda`, key `HOS`). This is the current convention (since the 2026-07-01 Linear tracking migration — see [Spec & Task Management](#spec--task-management)). Format: `[HOS-NNN] type(scope): description` (e.g. `[HOS-12] feat(web): unify loading states`).
+  - `[SPEC-NNN]` — legacy tag for specs still in flight from before the Linear migration (`.qtm/specs/SPEC-NNN-slug/`, not yet migrated to a `HOS-xxx` issue). Do not use for new specs.
   - `[NOSPEC:<slug>]` — small changes that do NOT go through the formal spec process (typos, infra one-offs, dependency patches). The `<slug>` is a short kebab-case identifier so multiple no-spec PRs are distinguishable at a glance. Format: `[NOSPEC:<slug>] type(scope): description` (e.g. `[NOSPEC:footer-copy] fix(web): typo in footer`).
   - The tag is non-negotiable: a reviewer must know which spec (or that none) a PR belongs to from the PR list alone. Bot-authored PRs (`dependabot[bot]`, `github-actions[bot]`) are exempt — the CI check skips them.
 
@@ -286,10 +287,10 @@ When a PR is merged, GitHub closes it. Pushing additional commits to the same br
 
    ```bash
    git fetch origin staging
-   git checkout -b fix/SPEC-NNN-<followup-slug> origin/staging
+   git checkout -b fix/HOS-<n>-<followup-slug> origin/staging
    # cherry-pick or re-author the fix here
-   git push -u origin fix/SPEC-NNN-<followup-slug>
-   GITHUB_TOKEN= gh pr create --base staging --head fix/SPEC-NNN-<followup-slug> ...
+   git push -u origin fix/HOS-<n>-<followup-slug>
+   GITHUB_TOKEN= gh pr create --base staging --head fix/HOS-<n>-<followup-slug> ...
    ```
 
 3. Claude operating rule: BEFORE running `git push` on a branch you previously opened a PR from, run `gh pr list --head <branch>` and verify state. If `MERGED`/`CLOSED`, STOP and tell the user "the PR is closed — I need to cut a new branch for this follow-up". Never silently push to a closed-PR branch and assume the user will notice.
@@ -446,96 +447,102 @@ When introducing a new pattern, utility, or constant.. first check if it already
 
 ## Spec & Task Management
 
-All non-trivial work MUST go through the formal spec and task system. This ensures continuity across sessions, prevents duplicate work, and keeps progress trackable.
+**Since 2026-07-01, Linear is the single source of truth for spec/roadmap tracking.**
+All non-trivial work MUST go through Linear + `.specs/`. This replaced the old
+`.qtm/`-based system (index.json + CSV) to eliminate desync across worktrees/agents —
+see "Legacy system" below for why.
+
+### Model
+
+- **Linear** (workspace `hospeda-beta`, team **`Hospeda`**, key **`HOS`**) owns: which
+  specs exist, their macro status (Backlog/In Progress/Done/Canceled), priority,
+  dependencies/relations between specs, bugs, small tasks, "needs spec" ideas, owner
+  decisions, env vars added/changed, migrations added, and global architecture/product
+  decisions. Team **`Beta Feedback`** (key `BETA`) is the separate, pre-existing team
+  for user/QA-reported bugs and small items (via the `/linear-backlog` skill) — it is
+  NOT used for formal specs.
+- **`.specs/HOS-<n>-<slug>/`** (repo root) owns: the technical spec (`spec.md`),
+  Task Master's internal implementation tracking (`tasks/`), auxiliary docs (`docs/`),
+  and an optional `closeout.md`. Read [`.specs/README.md`](.specs/README.md) before
+  creating or resolving a spec — it has the full layout, frontmatter, and resolution
+  rules ("spec 123" → `HOS-123` → `.specs/HOS-123-*/spec.md`).
+- **Task Master** (the `task-master` plugin) is used ONLY for internal implementation
+  tracking inside one spec's `tasks/` folder (task-from-spec, next-task, quality-gate,
+  task-atomizer). It does NOT track specs globally anymore — do not treat any Task
+  Master dashboard/index as authoritative for roadmap, priority, or macro status.
+  `task-master:spec-allocation` (SPEC-NNN numbering) is retired for new specs: Linear's
+  issue counter is the collision-free ID source now.
+  - Hospeda's `.claude/project.config.json` already declares `taskMaster.backend: "linear"`
+    (team `Hospeda`, key `HOS`), so `/spec`, `/tasks`, `/next-task`, etc. resolve
+    against Linear once the plugin ships that support. As of 2026-07-01 this requires
+    `qazuor/claude-code-plugins` task-master ≥ 2.4.0, shipped in
+    [PR #2](https://github.com/qazuor/claude-code-plugins/pull/2) — **not yet merged**.
+    Until it merges, `/task-master:*` commands still run the local-index code path
+    and will NOT talk to Linear correctly; create/update Linear issues and
+    `.specs/HOS-xxx-slug/` folders by hand following this section's conventions in
+    the meantime.
 
 ### Workflow
 
-1. **New feature/change** → Use `/spec` to generate a formal specification in `.qtm/specs/`
-2. **Spec approved** → Use `/task-master:task-from-spec` to generate tasks
-3. **Working on tasks** → Use `/task-master:next-task` to pick the next available task
-4. **Task completed** → Quality gate (`/task-master:quality-gate`) before marking done
-5. **Check progress** → Use `/task-master:task-status` or `/task-master:tasks`
+1. **Before creating anything new** — search Linear first (`mcp__linear__list_issues`
+   or the Hospeda team views) for an existing issue: a `kind:needs-spec`, an existing
+   `kind:spec`, a related bug, or a pending owner decision. Don't create a duplicate.
+2. **New feature/change** → create (or use an existing) Linear issue in team `Hospeda`
+   using the "Spec Implementation" template (`kind-spec` label), then create
+   `.specs/HOS-<n>-<slug>/spec.md` (the "Spec Implementation" template) with
+   `linear: HOS-<n>` + `statusSource: linear` in its frontmatter.
+3. **Implementing** → use `/task-master:task-from-spec` and `/task-master:next-task` as
+   before, but tracking lives inside `.specs/HOS-<n>-<slug>/tasks/`, not a global index.
+4. **Task completed** → quality gate (`/task-master:quality-gate`) before marking done.
+5. **Macro status changes** (started / blocked / done / needs owner decision) → update
+   the Linear issue's state + labels directly. Do not write status anywhere in the repo.
+6. **Env vars / migrations / global decisions** discovered mid-implementation → record
+   them on the Linear issue's "Env vars added/changed" / "Migrations added" / "Global
+   decision log" sections, not in `.specs/`.
+7. **Promoting an internal task to a Linear issue**: do this when a task blocks another
+   spec, needs a second agent in parallel, survives as an out-of-scope follow-up,
+   represents an owner decision, or must be visible on the roadmap independent of this
+   spec's closure. Don't create a Linear issue per microtask — see [`.specs/README.md`](.specs/README.md).
+8. **Closing a spec** → fill `.specs/HOS-<n>-<slug>/closeout.md` if warranted, update
+   the Linear issue with what shipped/PRs/tests/smoke/follow-ups, and mark it Done.
+
+### Resolving "spec N"
+
+If the user says "work on spec 123", resolve it as Linear issue `HOS-123`, then open
+`.specs/HOS-123-*/spec.md`. Never invent a new `SPEC-NNN` identifier for new work —
+that numbering belongs to the retired `.qtm/` system (see below). If ambiguous
+(could be a legacy `SPEC-123` still in flight), say so and ask.
 
 ### State Management Rules
 
-- **ALWAYS** update task status when starting work (`pending` → `in_progress`)
+- **ALWAYS** update task status when starting work (`pending` → `in_progress`) inside the spec's own `tasks/` folder
 - **ALWAYS** run quality gate before marking a task `completed`
-- **ALWAYS** update spec status when all its tasks are done (`in-progress` → `completed`)
+- **ALWAYS** update the Linear issue's state when starting/finishing a spec — this is now the ONLY place macro status lives
 - **NEVER** leave a task as `in_progress` at the end of a session without documenting progress via `mem_session_summary`
-- **NEVER** start working on code without first checking if there's a relevant spec/task
-- When a spec is first worked on, update its status from `draft` → `in-progress`
-- If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications
+- **NEVER** start working on code without first checking Linear + `.specs/` for a relevant spec/task
+- If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications, then reflect the change on the Linear issue
 
-### Index Sync Rules (CRITICAL — read every session that touches specs/tasks)
+### Legacy system (`.qtm/`) — do not use for new work
 
-There are THREE artifacts that must stay in sync:
+`.qtm/specs/index.json`, `.qtm/tasks/index.json`, and `specs-prioritization.csv` are
+**retired as sources of truth** (2026-07-01 Linear migration). They are NOT deleted —
+existing `.qtm/specs/SPEC-NNN-slug/` folders for specs still in flight from before the
+migration stay there as historical/working record until closed or migrated to a
+`.specs/HOS-xxx-slug/` folder — but:
 
-- `.qtm/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
-- `.qtm/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
-- `specs-prioritization.csv` (repo root) — owner-facing prioritization board; its `estado` column mirrors spec status. Full rules in [Specs Prioritization Tracker](#specs-prioritization-tracker-specs-prioritizationcsv) below.
-
-The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
-
-**Rules:**
-
-1. **When you archive a spec** (flip `status` to `completed` + `archived: true` in `specs/index.json`), you MUST in the same change flip the matching entry in `tasks/index.json`:
-   - `status` → `completed`
-   - `progress` → full (e.g. `99/99` not `94/99`)
-   - `archived: true`
-   - `archivedAt: <ISO date>`
-   - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
-   - And flip that spec's `estado` to `done` in `specs-prioritization.csv` (same change). Any spec status change (create/start/complete/archive/block) must update the CSV row too.
-2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
-3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
-4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.qtm/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
-5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .qtm/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
-
-### Spec Files Location
-
-- Specifications: `.qtm/specs/SPEC-NNN-slug/spec.md`
-- Task state: `.qtm/tasks/SPEC-NNN-slug/state.json`
-- Progress: `.qtm/tasks/SPEC-NNN-slug/progress.md`
-
-### Specs Prioritization Tracker (`specs-prioritization.csv`)
-
-The repo root holds `specs-prioritization.csv` — a pipe-delimited (`|`) owner-facing
-prioritization board for every spec. Render / edit it with
-`python3 scripts/render-specs-prioritization.py`:
-
-- no flag → writes a read-only `specs-prioritization.html` and opens it (filter, sort, badges).
-- `--serve` → runs a localhost editor; owner-owned columns become editable and every
-  change is persisted back to the CSV (keyed by `rank`). `file://` cannot persist.
-
-**Two status columns by design** (do not conflate them):
-
-- **`estado`** — DERIVED from `.qtm/specs/index.json` (source of truth). Maintained by
-  the sync rule below. Read-only in the web editor.
-- **`estado_manual`** — owner-managed override / personal status. Editable in the UI.
-  Claude must NOT touch it unless the owner asks.
-- **`notes`** — free-text owner column. Editable in the UI. Claude must NOT overwrite it.
-
-**Keep `estado` in sync — this is a standing rule, not on-demand:**
-
-1. **Whenever a spec changes status** (created, started, completed, archived, blocked),
-   update its row's `estado` in `specs-prioritization.csv` in the SAME change, mirroring
-   `.qtm/specs/index.json` (the source of truth). Leave `estado_manual` and `notes` alone.
-2. **Whenever a new spec is allocated**, add a row for it (at minimum `rank`, `spec`,
-   `name`, `prioridad`, `estado`). The owner fills the judgment columns
-   (`descripcion`, `por_que_ahora`, `peligros`, `estimado`, `estado_manual`, `notes`,
-   etc.) — do NOT invent them.
-3. **`estado` column vocabulary** (only these four values; same set for `estado_manual`):
-   - `done` — spec `completed` or `archived` in the index
-   - `in progress` — spec `in-progress`
-   - `blocked` — depends on ANOTHER spec that is not yet merged/done (an unsatisfied
-     hard dependency). Waiting on the owner's decisions is NOT blocked — those
-     decisions are taken when the spec starts, so it stays `backlog`.
-   - `backlog` — everything else (`draft`, `approved`, not started, deps satisfied)
-4. **Status mapping**: `completed`/`archived`/`merged` → `done`; `in-progress` →
-   `in progress`; `approved`/`draft` → `backlog`. Then promote to `blocked` any
-   non-done spec whose `dependsOn` (plus dependencies stated in its note/estado_real)
-   point at a spec not in the done set.
-5. **On disagreement, trust `.qtm/specs/index.json`** over the CSV, same as the
-   `tasks/index.json` rule above.
+- **NEVER** create a new `SPEC-NNN` entry, folder, or CSV row for new work.
+- **NEVER** treat `.qtm/specs/index.json` / `.qtm/tasks/index.json` status as accurate
+  without verifying against `gh pr list` / actual code — the migration audit found
+  several specs silently shipped-but-never-closed in these files (real precedent, not
+  hypothetical: SPEC-239/285/289/291 were fully merged while the index still said
+  `in-progress`). Don't repeat that pattern by trusting these files going forward.
+- `scripts/render-specs-prioritization.py` (the CSV viewer/editor) was removed
+  entirely along with the `pnpm specs:board` script — it has no replacement, since
+  live tracking now lives in Linear directly.
+- If you finish a legacy `SPEC-NNN` spec that never got a Linear issue, migrate it on
+  close: create the `HOS-xxx` issue (kind-spec, state Done) summarizing what shipped,
+  optionally move `spec.md` into `.specs/HOS-xxx-slug/`, and leave a note in the old
+  `.qtm/specs/SPEC-NNN-slug/` folder pointing at the new `HOS-xxx` issue.
 
 ## Important Notes
 
@@ -582,22 +589,28 @@ worktree clona node_modules (cientos de MB) + una DB por worktree; hacerlo solo
 para escribir los docs de una spec desperdicia disco al pedo. Por eso el worktree
 se difiere hasta que realmente se arranca la implementación.
 
+> **Desde 2026-07-01**: el número de spec sale de Linear (`HOS-<n>`), no de una skill
+> de allocation local. Ver [Spec & Task Management](#spec--task-management) para el
+> modelo completo. Lo que sigue solo cambió en la numeración/paths; la lógica de
+> "worktree recién en Fase 2" sigue igual.
+
 #### Fase 1 — Crear la spec (NUNCA se crea worktree)
 
 Cuando el usuario pide una **spec nueva** (vía `/task-master:spec`, `/spec`, o creando
-un dir nuevo en `.qtm/specs/SPEC-NNN-slug/`):
+un dir nuevo en `.specs/HOS-<n>-slug/`):
 
 1. **NO crear worktree ni el branch de implementación.** Trabajar en una **branch
    ligera de docs**, sin worktree. Una branch de git es gratis (unos KB); lo caro
    es el worktree (node_modules + DB), y eso NO se crea en esta fase.
-2. **Allocar el número** con la skill `spec-allocation` ANTES de crear el dir.
-3. **Generar los docs** en `.qtm/specs/SPEC-NNN-slug/` y actualizar
-   `.qtm/specs/index.json`, `.qtm/tasks/index.json` y `specs-prioritization.csv`
-   (reglas de sync de índices más arriba).
+2. **Crear (o reusar) el issue en Linear primero** (team `Hospeda`, template "Spec
+   Implementation" o "Needs Spec") — el número `HOS-<n>` sale de ahí, nunca se inventa.
+3. **Generar los docs** en `.specs/HOS-<n>-slug/spec.md` (frontmatter con
+   `linear: HOS-<n>` + `statusSource: linear`). Sin índices que actualizar — el
+   macro-estado vive en el issue de Linear, no en el repo.
 4. **Versionar y mergear sin worktree**: desde el working tree actual,
-   `git fetch origin staging` + `git checkout -b spec/SPEC-NNN-docs origin/staging`,
+   `git fetch origin staging` + `git checkout -b spec/HOS-<n>-docs origin/staging`,
    commitear SOLO los archivos de la spec, y abrir PR a `staging` con título
-   `[SPEC-NNN] docs(spec): ...`. La spec queda en staging sin haber materializado
+   `[HOS-<n>] docs(spec): ...`. La spec queda en staging sin haber materializado
    un worktree.
 5. La spec existe y está versionada, pero **sin entorno de desarrollo todavía**.
    Eso es deliberado: el entorno se arma recién al implementar.
@@ -610,12 +623,17 @@ explícitamente, o se empieza a tocar código):
 1. **Crear worktree + branch de implementación por default, sin preguntar** (la
    política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para
    implementación de specs formales — el usuario eligió default-on para este caso).
-2. **Nombre**: `spec-<NNN>-<slug>` (ej: `spec-098-vps-migration`).
-3. **Path**: `../hospeda-spec-<NNN>-<slug>` (al lado del repo, no dentro).
-4. **Branch**: `spec/SPEC-<NNN>-<slug>` (sigue convención de specs del proyecto).
+2. **Nombre**: `spec-hos-<n>-<slug>` (ej: `spec-hos-12-booking-calendar-ui`).
+3. **Path**: `../hospeda-spec-hos-<n>-<slug>` (al lado del repo, no dentro).
+4. **Branch**: `spec/HOS-<n>-<slug>` (Linear matchea el ID en cualquier parte del
+   nombre de branch, así que este prefijo sigue auto-linkeando en GitHub).
+
+Specs legacy todavía en curso desde antes de la migración (`.qtm/specs/SPEC-NNN-slug/`,
+sin issue `HOS-xxx` propio) siguen usando la convención vieja (`spec-<NNN>-<slug>`,
+branch `spec/SPEC-<NNN>-<slug>`) hasta que cierren o se migren.
 5. **Antes de crear**: correr `git worktree list` y revisar. Si ya existe una worktree para esa spec (matching nombre o branch), USAR esa en lugar de crear nueva. Avisar al usuario "ya existe la worktree X en path Y, sigo ahí".
 6. **Después de crear (OBLIGATORIO copiar env)**: ejecutar SIEMPRE, desde la raíz del repo, `./scripts/copy-env-to-worktree.sh <ruta-ABSOLUTA-del-worktree>`. El script lee `.worktreeinclude` y copia los `.env.local` / `docker/.env` gitignored que `git worktree add` NO copia solo. Sin esto la worktree no arranca. **Usar ruta ABSOLUTA siempre** (tanto en `git worktree add` como acá): `git worktree add ../foo` resuelve el `..` contra el cwd del shell, NO contra la raíz del repo, y si el cwd es un subdir crea el worktree anidado en el lugar equivocado. Después avisar al usuario el path absoluto y sugerir abrir nueva terminal o `cd` ahí. **Atajo**: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` hace `git worktree add` + esta copia de env + `pnpm install` + build de packages en un solo paso (respeta los patrones de `.claude/project.config.json`).
-7. **Guardar nota** en engram con `topic_key: spec/SPEC-<NNN>-<slug>/worktree` con path + branch + estado, para que futuras sesiones la encuentren.
+7. **Guardar nota** en engram con `topic_key: spec/HOS-<n>-<slug>/worktree` con path + branch + estado, para que futuras sesiones la encuentren.
 
 ### Operar el worktree (levantar / bajar la app)
 

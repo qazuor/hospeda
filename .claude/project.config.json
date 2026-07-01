@@ -1,7 +1,13 @@
 {
     "$comment": "Worktree skill config for the hospeda monorepo, consumed by the worktree skill (~/.claude/skills/worktree). Placeholders {api}/{admin}/{web}/{slug}/{dbname} are filled per-worktree at creation time. DB credentials here are the shared dev-local ones (already in docker-compose.yml/.env.test), not production secrets.",
     "taskMaster": {
-        "dir": ".qtm"
+        "dir": ".specs",
+        "backend": "linear",
+        "linear": {
+            "team": "Hospeda",
+            "teamKey": "HOS"
+        },
+        "$comment": "Linear backend requires qazuor/claude-code-plugins task-master >= 2.4.0 (PR #2, not yet merged as of 2026-07-01). Legacy specs still in flight under .qtm/specs/SPEC-NNN-slug/ are unaffected — this only changes where NEW specs are tracked."
     },
     "baseBranch": "staging",
     "protectedBranches": ["main", "staging"],

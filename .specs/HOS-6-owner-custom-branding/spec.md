@@ -1,0 +1,61 @@
+---
+title: Owner Custom Branding
+linear: HOS-6
+statusSource: linear
+created: 2026-06-26
+type: feature
+areas:
+  - admin
+  - web
+  - billing
+---
+
+# Owner Custom Branding
+
+> Migrated from `.qtm/specs/SPEC-293-owner-custom-branding/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-6.
+
+## 1. Summary
+
+The entitlement `CUSTOM_BRANDING` is granted to premium owner/complex plans, but the
+feature **does not exist**: there is no DB field, no route, no UI — only the billing
+config grant and an admin display label.
+
+This spec defines and builds custom branding for premium owners.
+
+## 2. Context
+
+- **Verified 2026-06-26:** billing config + a display label only; zero
+  implementation.
+
+## 3. Goals
+
+- **G-1** Define the branding surface (logo, colors, cover, a branded listing/owner
+  page — scope in OQ-1).
+- **G-2** Persist branding settings (DB + schema) gated by `CUSTOM_BRANDING`.
+- **G-3** Render the branding where decided (owner's listings / a branded mini-page).
+
+## 4. Non-Goals
+
+- No full white-label/custom-domain in v1 (OQ-2).
+
+## 5. Open Questions
+
+- **OQ-1** Branding scope v1: logo + accent color on the owner's listings, or a
+  fuller branded owner page?
+- **OQ-2** Custom domain / full white-label — in or out of scope?
+
+## 6. Relationship to SPEC-282
+
+The "Branding personalizado" row stays *Próximamente* until this ships.
+
+## 7. Related
+
+- **SPEC-319** (Accommodation Verification Badge, Premium) — the other real
+  owner-premium exclusive identified by the SPEC-310 plan-packaging audit.
+  Today owner-premium has no tangible differentiators; these two features
+  should be planned together to define the full premium-tier value
+  proposition.
+- **SPEC-318** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `CUSTOM_BRANDING` phantom
+  gate). Consolidated into this spec on 2026-07-01; marked `obsolete` in the
+  tracking indices.
