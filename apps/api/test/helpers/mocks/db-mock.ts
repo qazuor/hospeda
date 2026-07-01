@@ -826,6 +826,12 @@ export function createDbMock() {
         SocialPublishLogModel: GenericMockModel,
         SocialSettingModel: GenericMockModel,
 
+        // SPEC-286 T-005: AlertSubscriptionService instantiates
+        // `new TouristPriceAlertModel()` at construction time when the
+        // price-alert route module is loaded, same collection-breaking risk
+        // as the other eagerly-instantiated models above.
+        TouristPriceAlertModel: GenericMockModel,
+
         // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
         // instantiate at module scope when the service-core barrel is loaded by any job
         // that imports @repo/service-core. The instance is returned directly (not a class)
