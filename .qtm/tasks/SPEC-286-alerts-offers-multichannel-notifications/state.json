@@ -430,22 +430,22 @@
             "id": "T-011",
             "title": "Add 'Alert me for price drops' button on accommodation detail page",
             "description": "Add a price-alert subscription toggle to apps/web/src/pages/[lang]/alojamientos/[slug].astro.\n\nCreate apps/web/src/components/accommodation/PriceAlertButton.tsx (React island, client:idle):\n- Props: { accommodationId, userHasAlert: boolean, canCreateAlerts: boolean, maxReached: boolean }\n- If canCreateAlerts = false (free plan): render a locked-state button that opens a plan-upgrade modal or links to /billing/plans. No API call.\n- If maxReached = true (MAX_ACTIVE_ALERTS reached): render a disabled button with 'Límite de alertas alcanzado' tooltip.\n- If canCreateAlerts = true and no existing alert: 'Avisame si baja el precio' button → POST /protected/price-alerts → optimistic toggle to active state.\n- If active alert exists: 'Cancelar alerta' button → DELETE /protected/price-alerts/:alertId → toggle off.\n- Show loading spinner during API call.\n- Error state: inline error message (do not crash).\n\nWire into the detail page ([slug].astro):\n- In the server-side Promise.allSettled block: fetch user's existing alert for this accommodation (GET /protected/price-alerts?accommodationId=X) and user entitlement state.\n- Pass computed props (userHasAlert, canCreateAlerts, maxReached) to the island.\n- Graceful degradation: if fetch fails, assume no alert + canCreateAlerts = false (safe default).\n\nCSS modules for button styling (not Tailwind).\n\nAcceptance criteria:\n- Free-plan tourist sees a locked/upgrade CTA.\n- Plus/VIP tourist can toggle the alert subscription.\n- Existing alert correctly pre-populates the toggled state from SSR.\n- No JavaScript error when user is unauthenticated (server should not render the button for guests at all).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create PriceAlertButton.tsx React island with three states (locked/active/inactive)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire SSR props (userHasAlert, canCreateAlerts, maxReached) in [slug].astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CSS module for button",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "price-alert", "G-1", "D-4"],
@@ -457,8 +457,8 @@
             },
             "timestamps": {
                 "created": "2026-06-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01",
+                "completed": "2026-07-01"
             }
         },
         {
@@ -503,9 +503,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 3.8
     }
