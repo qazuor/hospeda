@@ -452,24 +452,39 @@
             "id": "T-011",
             "title": "G-1/G-5: wire finalize-cancelled-subs.ts to the union resolver",
             "description": "Update apps/api/src/cron/jobs/finalize-cancelled-subs.ts, Step 3c (line ~542-555, 'Revoke featuredByPlan on FEATURED_LISTING plans'). This cron by construction only handles subscriptions that have reached final cancellation, so `shouldRevoke` is always true here — no G-5 grant-side change needed, but confirm the revoke path now goes through `syncFeaturedByEntitlementForOwner` (T-005), which internally excludes addon-protected accommodations (H-1 consequence b) automatically. Remove the now-redundant local plan-entitlement lookup if this site duplicated it; use `resolveOwnerPlanGrantsFeatured` (T-004) only if this site needs to double-check anything beyond a blanket revoke (it likely doesn't — verify).\n\nKey files:\n- apps/api/src/cron/jobs/finalize-cancelled-subs.ts:542-555\n\nAcceptance criteria:\n- Cron calls the renamed `syncFeaturedByEntitlementForOwner(ownerId, false)`.\n- Owners with a live FEATURED_LISTING addon on a specific accommodation are NOT cleared by this cron (verified via T-005's exclusion logic, no code change needed here beyond the rename).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": false },
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true },
                 {
                     "title": "Verify no redundant local plan-entitlement check remains",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "billing", "cron", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": "pnpm lint", "typecheck": "pnpm typecheck", "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z",
+                    "details": "apps/api/test/cron/finalize-cancelled-subs.test.ts 32/32 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T19:25:00.000Z",
+                "completed": "2026-07-01T19:30:00.000Z"
             }
         },
         {

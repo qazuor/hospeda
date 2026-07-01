@@ -80,7 +80,6 @@
  * @module cron/jobs/finalize-cancelled-subs
  */
 
-import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import {
     and,
     billingSubscriptionEvents,
@@ -539,29 +538,24 @@ async function finalizeOne(
             source: 'finalize-cancelled-cron'
         });
 
-        // ── Step 3c: Revoke featuredByPlan on FEATURED_LISTING plans (SPEC-292 T-005) ──
+        // ── Step 3c: Revoke featuredByEntitlement (SPEC-309 T-011) ──────────
+        // This cron only ever handles subscriptions that reached final
+        // cancellation, so the revoke is unconditional — no plan-entitlement
+        // check needed (unlike the grant-side call-sites, which use T-004's
+        // resolveOwnerPlanGrantsFeatured). syncFeaturedByEntitlementForOwner
+        // (T-005) is idempotent and already excludes addon-protected
+        // accommodations, so a blanket `active: false` call is safe even for
+        // owners whose plan never granted FEATURED_LISTING.
         // Non-blocking — a failure here must not re-queue the sub for finalization.
-        // T-006 reconciliation cron is the backstop for any missed syncs.
+        // The reconcile cron is the backstop for any missed syncs.
         try {
-            const cancelledPlan = billing ? await billing.plans.get(row.planId) : null;
-            const cancelledPlanSlug = cancelledPlan?.name ?? '';
-            const hadFeatured =
-                getPlanBySlug(cancelledPlanSlug)?.entitlements.includes(
-                    EntitlementKey.FEATURED_LISTING
-                ) ?? false;
-            if (hadFeatured) {
-                const ownerId = await resolveOwnerUserId({ customerId });
-                if (ownerId) {
-                    await syncFeaturedByEntitlementForOwner({ ownerId, active: false });
-                    logger.info(
-                        'finalize-cancelled-subs: syncFeaturedByEntitlementForOwner revoked',
-                        {
-                            subscriptionId,
-                            customerId,
-                            planSlug: cancelledPlanSlug
-                        }
-                    );
-                }
+            const ownerId = await resolveOwnerUserId({ customerId });
+            if (ownerId) {
+                await syncFeaturedByEntitlementForOwner({ ownerId, active: false });
+                logger.info('finalize-cancelled-subs: syncFeaturedByEntitlementForOwner revoked', {
+                    subscriptionId,
+                    customerId
+                });
             }
         } catch (featuredSyncErr) {
             logger.warn(
