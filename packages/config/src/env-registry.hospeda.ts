@@ -1557,24 +1557,6 @@ export const HOSPEDA_ENV_VARS = [
             'Lo inyecta Coolify automáticamente — no la setees a mano. Activá el toggle "Include Source Commit in Build" en la app en Coolify.'
     },
     {
-        name: 'HOSPEDA_LANDING_SITE_URL',
-        description:
-            'Public site URL of the landing app, baked into canonical/OG tags at build time.',
-        descriptionEs:
-            'URL pública del sitio de la landing, baked en los tags canonical/OG en build time.',
-        type: 'url',
-        required: false,
-        secret: false,
-        exampleValue: 'https://hospeda.com.ar',
-        apps: ['docker'],
-        category: 'build',
-        stage: 'build',
-        howToObtain:
-            'Pass as a Coolify build argument for the landing app. The Dockerfile defaults it to https://hospeda.com.ar.',
-        howToObtainEs:
-            'Pasala como build argument en Coolify para la app landing. El Dockerfile la deja con default https://hospeda.com.ar.'
-    },
-    {
         name: 'ALLOW_PLACEHOLDER_ENV_URLS',
         description:
             'CI-only build flag that lets placeholder (.invalid) URLs pass the admin env validation during the Docker build. Never set in production.',
