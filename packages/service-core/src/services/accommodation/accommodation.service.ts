@@ -2107,7 +2107,7 @@ export class AccommodationService extends BaseCrudService<
         ctx: ServiceContext
     ) {
         const hasVipAccess =
-            actor.entitlements?.has('vip_promotions_access') ||
+            actor.entitlements?.has('vip_visibility_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
@@ -2152,7 +2152,7 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ) {
         const hasVipAccess =
-            actor.entitlements?.has('vip_promotions_access') ||
+            actor.entitlements?.has('vip_visibility_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         // Mirror _executeSearch so count and search agree on what is visible.
@@ -2209,7 +2209,7 @@ export class AccommodationService extends BaseCrudService<
                 const pageSize = processedParams.pageSize ?? 10;
 
                 const hasVipAccess =
-                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    validatedActor.entitlements?.has('vip_visibility_access') ||
                     hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 // Forward every validated field to the model via spread so the
@@ -2282,7 +2282,7 @@ export class AccommodationService extends BaseCrudService<
                 await this._canList(actor);
 
                 const hasVipAccess =
-                    actor.entitlements?.has('vip_promotions_access') ||
+                    actor.entitlements?.has('vip_visibility_access') ||
                     hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 const items = await this.model.findTopRated({
@@ -2541,7 +2541,7 @@ export class AccommodationService extends BaseCrudService<
      *
      * SPEC-167 T-026: this is a public-only path — there is no `ownerId` in the
      * params, so there is no own-scope exemption. The only bypass is VIP access
-     * (`vip_promotions_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
+     * (`vip_visibility_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
      * which mirrors the predicate applied by `getTopRatedByDestination`.
      *
      * @param actor - The actor performing the action
@@ -2562,7 +2562,7 @@ export class AccommodationService extends BaseCrudService<
                 await this._canList(validatedActor);
 
                 const hasVipAccess =
-                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    validatedActor.entitlements?.has('vip_visibility_access') ||
                     hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 const result = await this.model.searchWithRelations(
@@ -2627,7 +2627,7 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const hasVipAccess =
-                    actor.entitlements?.has('vip_promotions_access') ||
+                    actor.entitlements?.has('vip_visibility_access') ||
                     hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 const items = await this.model.findTopRated({
