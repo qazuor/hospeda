@@ -10,6 +10,7 @@ import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.clie
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import {
 	AskToAiIcon,
+	CheckCircleIcon,
 	GalleryIcon,
 	LocationIcon,
 	StarIcon,
@@ -121,6 +122,18 @@ const isNew = data.createdAt
 				<div class="acc-card__featured-badge featured-badge">
 					<StarIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
+				</div>
+			)}
+
+			<!-- Verified badge — shown when the accommodation has been manually
+			     verified by an admin AND the owner's plan grants the
+			     HAS_VERIFICATION_BADGE entitlement. The entitlement gate happens
+			     server-side (owner-entitlement.ts); the frontend only renders
+			     based on `isVerified`, mirroring the isFeatured/hasAiChat badges. -->
+			{data.isVerified && (
+				<div class="acc-card__verified-badge">
+					<CheckCircleIcon size={12} weight="fill" aria-hidden="true" />
+					<span>{t('home.accommodations.badge.verified', 'Verificado')}</span>
 				</div>
 			)}
 
@@ -341,6 +354,33 @@ const isNew = data.createdAt
 		position: absolute;
 		bottom: 48px;
 		right: 12px;
+	}
+
+	/* Verified badge — stacked above the AI-chat badge on the bottom-LEFT,
+	 * not the bottom-right: the actions column (favorite + gallery-pause +
+	 * photo-count, ~126px tall) occupies the top-right down through most of
+	 * the image height, so a third badge stacked above `.acc-card__featured-badge`
+	 * on the right collides with it. The bottom-left corner (already safely
+	 * shared by the AI-chat badge, clear of the actions column) has room.
+	 * Uses the semantic "info" (trust) token instead of the accent/brand
+	 * colors already used by featured/AI badges, so a verified listing reads
+	 * apart from promotional badges at a glance. */
+	.acc-card__verified-badge {
+		position: absolute;
+		bottom: 88px;
+		left: 12px;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		background-color: var(--info);
+		color: var(--info-foreground);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 14px;
+		line-height: 22.4px;
+		padding: 4px 10px;
+		border-radius: var(--radius-pill);
+		white-space: nowrap;
 	}
 
 	/* AI chat badge — same height as the featured badge but on the OPPOSITE
@@ -732,6 +772,18 @@ const isNew = data.createdAt
 			bottom: 48px;
 			right: 12px;
 			left: auto;
+			top: auto;
+		}
+
+		/* Verified badge follows FEATURED to bottom-left on mobile (not
+		 * AI-chat, which swapped to bottom-right here): the actions column
+		 * stays top-right in every viewport (see comment above), so
+		 * bottom-left is the only quadrant clear of it regardless of layout.
+		 * Stacks above featured, same 40px offset as the desktop pairing. */
+		.acc-card__verified-badge {
+			bottom: 88px;
+			left: 12px;
+			right: auto;
 			top: auto;
 		}
 	}
