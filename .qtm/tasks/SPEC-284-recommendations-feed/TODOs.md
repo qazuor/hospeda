@@ -1,5 +1,16 @@
 # SPEC-284 — Personalized Recommendations Feed
 
+## Status: 17/17 complete (implementation done, not yet merged to staging)
+
+All 16 originally atomized tasks (T-001..T-016) are complete, plus one
+ad-hoc task **T-005b** (dedicated `PermissionEnum.RECOMMENDATION_VIEW`,
+user-approved mid-implementation, not part of this original atomization —
+see `state.json` for detail). All 17 tasks landed on
+`spec/SPEC-284-recommendations-feed` with lint/typecheck/tests green per
+task. A fresh-context code review found 2 minor issues, both fixed in a
+follow-up commit. No PR has been opened yet — see `state.json` summary
+and `.qtm/tasks/index.json` for current sync status.
+
 ## Task Overview
 
 16 tasks across 4 phases. Total estimated effort: ~35 hours.
