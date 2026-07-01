@@ -28,6 +28,7 @@ import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
@@ -373,6 +374,46 @@ const itemListEntries = cards.map((card) => ({
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 
+// SPEC-306 OQ-3: when exactly one `types` value is selected and it is the
+// ONLY active facet/filter, canonicalize to that type's first-class landing
+// instead of the base listing — the single URL search engines should credit
+// for this exact result set. Any additional filter active alongside the type
+// falls through to the base-listing canonical (OQ-3's "combinations
+// canonicalize to base" rule).
+const hasOtherAccommodationFilters = Boolean(
+	q ||
+		destinationIds ||
+		minPrice !== undefined ||
+		maxPrice !== undefined ||
+		isFeatured ||
+		minBedrooms !== undefined ||
+		minBathrooms !== undefined ||
+		minRating !== undefined ||
+		amenitiesParam ||
+		featuresParam ||
+		includeNoPrice === false ||
+		includeNoReviews === false ||
+		hasWifi ||
+		hasPool ||
+		hasParking ||
+		allowsPets ||
+		hasGeoRadius ||
+		// `adults`/`children` DO filter (they feed `minGuests`, unlike the purely
+		// informational `checkIn`/`checkOut`) — a party size away from the 2/0
+		// default narrows the result set, so it must block the single-facet
+		// canonical just like any other active filter.
+		(adults !== undefined && adults !== 2) ||
+		(childrenCount !== undefined && childrenCount !== 0)
+);
+const singlePromotedType = resolvePromotedFacetCanonical({
+	facetValues: typesArray,
+	hasOtherFilters: hasOtherAccommodationFilters,
+	validEnumValues: Object.values(AccommodationTypeEnum)
+});
+const canonicalBaseUrl = singlePromotedType
+	? buildUrl({ locale, path: `alojamientos/tipo/${singlePromotedType.toLowerCase().replace(/_/g, '-')}` })
+	: baseUrl;
+
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/alojamientos/page/{n}/` via an Astro.rewrite to this listing
 // with `?page=n`. Because the rewrite makes `Astro.url.pathname` the base path
@@ -380,7 +421,7 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 // `canonicalPath = Astro.url.pathname` would canonicalize every paginated page
 // back to page 1. We rebuild the real crawlable URL from the page number so
 // each paginated page self-canonicalizes and stays indexable.
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 /**
  * Quick-filter type badges shown above the listing grid. Uses the canonical

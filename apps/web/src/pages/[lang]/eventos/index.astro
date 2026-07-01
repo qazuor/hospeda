@@ -54,6 +54,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
+import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
+import { EventCategoryEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -284,12 +286,39 @@ const sortOptions = [
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
 
+// SPEC-306 OQ-3: when `category` is the ONLY active facet/filter (no other
+// query params refining the result set), canonicalize to the category's
+// first-class landing instead of the base listing — that's the single URL
+// search engines should credit for this exact result set. Any additional
+// filter active alongside `category` falls through to the base-listing
+// canonical (OQ-3's "combinations canonicalize to base" rule).
+const hasOtherEventFilters = Boolean(
+    q ||
+        when !== 'all' ||
+        isFree !== undefined ||
+        priceMin !== undefined ||
+        priceMax !== undefined ||
+        includeUnpriced === false ||
+        isFeatured ||
+        destinationId ||
+        startDateAfterFilter ||
+        startDateBeforeFilter
+);
+const singlePromotedCategory = resolvePromotedFacetCanonical({
+    facetValues: category ? [category] : [],
+    hasOtherFilters: hasOtherEventFilters,
+    validEnumValues: Object.values(EventCategoryEnum)
+});
+const canonicalBaseUrl = singlePromotedCategory
+    ? buildUrl({ locale, path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}` })
+    : baseUrl;
+
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
 // at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
 // `?page=n`; the rewrite drops the `/page/n/` segment from Astro.url.pathname,
 // so we rebuild the crawlable URL from the page number to keep each paginated
 // page self-canonical and indexable (instead of canonicalizing to page 1).
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).
