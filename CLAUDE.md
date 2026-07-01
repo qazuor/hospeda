@@ -527,9 +527,9 @@ migration stay there as historical/working record until closed or migrated to a
   several specs silently shipped-but-never-closed in these files (real precedent, not
   hypothetical: SPEC-239/285/289/291 were fully merged while the index still said
   `in-progress`). Don't repeat that pattern by trusting these files going forward.
-- `python3 scripts/render-specs-prioritization.py` (the CSV viewer) still runs but its
-  data is a frozen snapshot from the migration cutover, not a live view — do not expect
-  new specs to appear there.
+- `scripts/render-specs-prioritization.py` (the CSV viewer/editor) was removed
+  entirely along with the `pnpm specs:board` script — it has no replacement, since
+  live tracking now lives in Linear directly.
 - If you finish a legacy `SPEC-NNN` spec that never got a Linear issue, migrate it on
   close: create the `HOS-xxx` issue (kind-spec, state Done) summarizing what shipped,
   optionally move `spec.md` into `.specs/HOS-xxx-slug/`, and leave a note in the old
