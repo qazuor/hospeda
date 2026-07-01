@@ -2,7 +2,8 @@ name: Validate PR Title
 
 # Enforces the work-tag convention on PR titles. Every PR must declare which
 # unit of work it belongs to, before the conventional-commit type:
-#   [SPEC-NNN] type(scope): description    -> formal spec work
+#   [HOS-NNN] type(scope): description      -> Linear-tracked spec work (current)
+#   [SPEC-NNN] type(scope): description     -> legacy pre-Linear spec work (in-flight only)
 #   [NOSPEC:<slug>] type(scope): description -> small change outside the spec process
 # The <slug> is a short kebab-case identifier so multiple no-spec PRs are
 # distinguishable at a glance. See CLAUDE.md -> Git Conventions -> PR titles.
@@ -45,8 +46,9 @@ jobs:
           # Conventional-commit types accepted by this repo (commitlint set).
           TYPES='build|chore|ci|del|docs|feat|fix|misc|perf|refactor|revert|style|test|types|workflow'
 
-          # [SPEC-NNN] or [NOSPEC:<kebab-slug>], then a conventional commit.
-          PATTERN="^\[(SPEC-[0-9]+|NOSPEC:[a-z0-9]([a-z0-9-]*[a-z0-9])?)\] (${TYPES})(\([a-z0-9._-]+\))?!?: .+"
+          # [HOS-NNN] (Linear spec, current), [SPEC-NNN] (legacy in-flight spec),
+          # or [NOSPEC:<kebab-slug>], then a conventional commit.
+          PATTERN="^\[(HOS-[0-9]+|SPEC-[0-9]+|NOSPEC:[a-z0-9]([a-z0-9-]*[a-z0-9])?)\] (${TYPES})(\([a-z0-9._-]+\))?!?: .+"
 
           if [[ "$PR_TITLE" =~ $PATTERN ]]; then
             echo "✅ PR title is valid."
@@ -56,15 +58,17 @@ jobs:
           echo "❌ Invalid PR title."
           echo ""
           echo "The title must start with a work tag, then a conventional commit:"
+          echo "  [HOS-NNN] type(scope): description"
           echo "  [SPEC-NNN] type(scope): description"
           echo "  [NOSPEC:<slug>] type(scope): description"
           echo ""
           echo "Examples:"
-          echo "  [SPEC-228] feat(web): unify loading states"
+          echo "  [HOS-12] feat(web): unify loading states"
           echo "  [NOSPEC:footer-copy] fix(web): typo in footer"
           echo ""
           echo "Rules:"
-          echo "  - [SPEC-NNN]: NNN is the spec number (digits only)."
+          echo "  - [HOS-NNN]: NNN is the Linear issue number for a spec tracked in team Hospeda (current convention)."
+          echo "  - [SPEC-NNN]: NNN is the legacy spec number (digits only) — only for specs still in flight from before the Linear migration."
           echo "  - [NOSPEC:<slug>]: <slug> is lowercase kebab-case (a-z, 0-9, hyphen)."
           echo "  - type is one of: ${TYPES//|/, }"
           echo ""
