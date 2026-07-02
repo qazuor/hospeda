@@ -134,6 +134,9 @@ export const OwnerPromotionListItemSchema = OwnerPromotionSchema.pick({
     validUntil: true,
     currentRedemptions: true,
     maxRedemptions: true,
+    // HOS-21 D1: exposed so the tourist-facing exclusive-deals listing can
+    // visually distinguish vip-only deals from plus-tier ones.
+    touristAudience: true,
     createdAt: true,
     updatedAt: true
 });

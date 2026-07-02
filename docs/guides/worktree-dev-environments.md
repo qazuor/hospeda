@@ -109,18 +109,24 @@ provision a worktree DB by hand:
 - **Empty** (no schema): full provisioning runs — migrations, drizzle extras, base
   seed, and test users.
 - **Schema-stale** — the DB has a schema (it looks provisioned) but was cloned from an
-  **outdated template** that predates newer tables. This is detected via a configurable
-  **sentinel**: `.db.schemaSentinelTables` in `.claude/project.config.json` lists tables
-  that must exist in a current schema (e.g. `gastronomies`, `experiences`). If any is
-  absent, the schema is healed to the current TS schema with `db:push` + drizzle extras.
-  The heal is **additive and non-destructive** — it does **not** reseed, so existing
-  rows are preserved and newly created tables come up **empty** (populating them is the
-  template's job, see [Refreshing the dev DB & template](#refreshing-the-dev-db--template)).
-  A clone whose sentinels are all present is left untouched (a no-op).
+  **outdated template** that predates newer tables, columns, or extras objects
+  (trigger/matview/CHECK constraint). This is detected via a content **fingerprint**
+  (HOS-68): `.db.schemaFingerprintPaths` in `.claude/project.config.json` lists the
+  repo-relative paths that define the schema (Drizzle schema source + the extras
+  directory). A hash of those files is compared against the value recorded the last
+  time this DB was healed — any change (new table, new column, new extras file)
+  triggers a heal; an unchanged fingerprint is a no-op, no Postgres round-trip needed.
+  A configurable **sentinel-table** check (`.db.schemaSentinelTables`, e.g.
+  `gastronomies`, `experiences`) runs as an additional safety net whenever the
+  fingerprint reports current, in case the fingerprint has a bug or a misconfigured
+  path. Either signal healing the schema runs `db:push` + drizzle extras — **additive
+  and non-destructive**, it does **not** reseed, so existing rows are preserved and
+  newly created tables come up **empty** (populating them is the template's job, see
+  [Refreshing the dev DB & template](#refreshing-the-dev-db--template)).
 
-> Keep `schemaSentinelTables` pointed at the **most recently added** tables. When a spec
-> ships a new table that older templates won't have, add it to the sentinel list so
-> stale clones are detected and healed.
+> Keep `schemaSentinelTables` pointed at a couple of the **most recently added** tables
+> as a backstop — the fingerprint is the primary signal and needs no manual upkeep when
+> a spec ships a new table/column/extras file.
 
 ### One-time template bootstrap
 
@@ -157,11 +163,16 @@ After this, new worktrees clone a current, fully-seeded template and need no hea
 Existing worktrees lost their DB in step 1, but the next `wt:up` re-creates each one
 from the refreshed template.
 
-**Cadence.** Re-run the two-command refresh whenever a merged spec adds tables or extras
-and you are about to cut new worktrees. If you skip it you are still covered for
-**correctness**: the [schema-stale auto-heal](#auto-heal) brings each new worktree's
-*schema* up to date on `wt:up`. The refresh is what gives those new tables their
-**example data** — without it they stay empty.
+**Cadence.** `wt-create.sh` now does this automatically (HOS-68): before cutting a new
+worktree it fingerprints the DB schema source at `origin/<baseBranch>` and, if it differs
+from what `hospeda_template` currently reflects, runs the dev-DB heal + template rebuild
+itself — no manual reminder needed. The manual two-command refresh above remains useful
+as an escape hatch (e.g. to refresh immediately without creating a worktree, or if the
+automatic check ever fails — it is best-effort and never blocks worktree creation). Either
+way you are still covered for **correctness** even if a refresh is skipped or fails: the
+[schema-stale auto-heal](#auto-heal) brings each new worktree's *schema* up to date on
+`wt:up`. The refresh (manual or automatic) is what gives those new tables their **example
+data** — without it they stay empty.
 
 **What a fresh worktree contains.** After a refresh + `wt:up`, the worktree DB clones the
 current template (sentinel OK, no heal) with the commerce example data seeded: at last

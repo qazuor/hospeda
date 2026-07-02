@@ -14,8 +14,7 @@ There are two audiences:
   [Owner-facing identifiers](#owner-facing-identifiers) below.
 
 > Related: [ADR-036](../decisions/ADR-036-external-reputation-separate-entity.md)
-> (why a separate entity), and the SPEC-237 spec under
-> `.qtm/specs/SPEC-237-accommodation-external-reviews/`.
+> (why a separate entity).
 
 ## Environment variables
 

@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
@@ -40,7 +41,13 @@ export const PurchaseAddonSchema = z.object({
         .string({ message: 'validation.billing.addon.purchase.promoCode.invalidType' })
         .min(1, { message: 'validation.billing.addon.purchase.promoCode.min' })
         .max(50, { message: 'validation.billing.addon.purchase.promoCode.max' })
-        .optional()
+        .optional(),
+    /**
+     * The accommodation this purchase targets (SPEC-309 OQ-3). Required when
+     * the addon's `requiresAccommodationTarget` flag is true (e.g.
+     * `visibility-boost-7d`/`-30d`); ignored for all other addons.
+     */
+    accommodationId: AccommodationIdSchema.optional()
 });
 
 /**

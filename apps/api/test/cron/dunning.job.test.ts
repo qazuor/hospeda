@@ -46,6 +46,7 @@ const {
     mockLoadBillingSettings,
     mockWithTransaction,
     mockClearEntitlementCache,
+    mockResolveOwnerUserId,
     _mockTx
 } = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
@@ -72,6 +73,11 @@ const {
         }),
         mockWithTransaction: withTx,
         mockClearEntitlementCache: vi.fn(),
+        // SPEC-309 T-024: default to "no owner resolved" so the
+        // canceled_nonpayment featured-sync block (T-012) is a no-op for
+        // every pre-existing test; individual T-024 tests override via
+        // mockResolvedValueOnce.
+        mockResolveOwnerUserId: vi.fn().mockResolvedValue(null),
         _mockTx: tx
     };
 });
@@ -134,10 +140,36 @@ vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: mockClearEntitlementCache
 }));
 
+// SPEC-309 T-024: resolveOwnerUserId (owner lookup) is a local app service,
+// not part of @repo/service-core. It is NOT part of the "minimal @repo/db
+// mock" above (which only supports insert/execute) — without this mock,
+// resolveOwnerUserId would throw (db.select is not a function), a throw
+// that the canceled_nonpayment try/catch (T-012) silently swallows.
+vi.mock('../../src/services/subscription-pause.service.js', () => ({
+    resolveOwnerUserId: mockResolveOwnerUserId
+}));
+
+// SPEC-309 T-024: the shared featured-entitlement resolver + sync primitive
+// (T-004/T-005), called from the canceled_nonpayment case (T-012). Defaulted
+// to a no-featured resolution; individual tests override via
+// mockResolvedValue(Once).
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue({ updated: 0, rows: [] })
+    };
+});
+
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
 
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import { dunningJob } from '../../src/cron/jobs/dunning.job';
 import type { CronJobContext } from '../../src/cron/types';
 
@@ -200,6 +232,11 @@ describe('dunningJob', () => {
         // Restore the default advisory-lock acquire shape after clearAllMocks
         // (which wipes the per-test SPEC-262 guard overrides).
         mockDbExecute.mockResolvedValue({ rows: [{ acquired: true }] });
+        // SPEC-309 T-024: restore defaults for the featured-entitlement
+        // resolver/sync trio after clearAllMocks.
+        mockResolveOwnerUserId.mockResolvedValue(null);
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner).mockResolvedValue({ updated: 0, rows: [] });
     });
 
     // -----------------------------------------------------------------------
@@ -877,6 +914,100 @@ describe('dunningJob', () => {
                 data: { attemptNumber: 1, error: 'timeout' }
             };
             await expect(capturedOnEvent!(event)).resolves.toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-309 T-024: syncFeaturedByEntitlementForOwner on canceled_nonpayment
+    // (T-012 call-site)
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-309 T-012: syncFeaturedByEntitlementForOwner on canceled_nonpayment', () => {
+        /** Wires a captured onEvent handler and runs the job once to populate it. */
+        async function setupCapturedOnEvent(): Promise<(event: unknown) => Promise<void>> {
+            const billing = makeBillingMock();
+            mockGetQZPayBilling.mockReturnValue(billing);
+
+            let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
+            mockCreateSubscriptionLifecycle.mockImplementation(
+                (
+                    _b: unknown,
+                    _s: unknown,
+                    config: { onEvent?: (event: unknown) => Promise<void> }
+                ) => {
+                    capturedOnEvent = config.onEvent;
+                    return makeLifecycleMock();
+                }
+            );
+
+            const ctx = makeCronContext();
+            await dunningJob.handler(ctx);
+
+            if (!capturedOnEvent) {
+                throw new Error('onEvent handler was not captured');
+            }
+            return capturedOnEvent;
+        }
+
+        it('revokes featuredByEntitlement when the owner resolves and the plan no longer grants it', async () => {
+            mockResolveOwnerUserId.mockResolvedValueOnce('user-789');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+
+            const capturedOnEvent = await setupCapturedOnEvent();
+
+            await capturedOnEvent({
+                type: 'subscription.canceled_nonpayment',
+                subscriptionId: 'sub_123',
+                customerId: 'cust_456',
+                timestamp: new Date(),
+                data: { planName: 'owner-basico', reason: 'grace period expired' }
+            });
+
+            expect(mockResolveOwnerUserId).toHaveBeenCalledWith({ customerId: 'cust_456' });
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: 'user-789' });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'user-789',
+                active: false
+            });
+        });
+
+        it('does not call the resolver or sync when the owner cannot be resolved', async () => {
+            mockResolveOwnerUserId.mockResolvedValueOnce(null);
+
+            const capturedOnEvent = await setupCapturedOnEvent();
+
+            await capturedOnEvent({
+                type: 'subscription.canceled_nonpayment',
+                subscriptionId: 'sub_123',
+                customerId: 'cust_456',
+                timestamp: new Date(),
+                data: { planName: 'owner-basico', reason: 'grace period expired' }
+            });
+
+            expect(resolveOwnerPlanGrantsFeatured).not.toHaveBeenCalled();
+            expect(syncFeaturedByEntitlementForOwner).not.toHaveBeenCalled();
+        });
+
+        it('is soft-fail: a sync error does not block the onEvent handler or throw', async () => {
+            mockResolveOwnerUserId.mockResolvedValueOnce('user-789');
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+            vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+                new Error('featured sync unavailable')
+            );
+
+            const capturedOnEvent = await setupCapturedOnEvent();
+
+            const event = {
+                type: 'subscription.canceled_nonpayment',
+                subscriptionId: 'sub_123',
+                customerId: 'cust_456',
+                timestamp: new Date(),
+                data: { planName: 'owner-basico', reason: 'grace period expired' }
+            };
+
+            await expect(capturedOnEvent(event)).resolves.toBeUndefined();
+            // The entitlement cache clear (an earlier, unrelated step) still ran.
+            expect(mockClearEntitlementCache).toHaveBeenCalledWith('cust_456');
         });
     });
 });

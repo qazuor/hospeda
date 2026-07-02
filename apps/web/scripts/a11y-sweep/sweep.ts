@@ -251,6 +251,16 @@ async function sweepEntry(
 
         const axeResults = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'])
+            // The homepage testimonials carousel (TestimonialsCarousel.client.tsx)
+            // keeps its non-active Embla peek slides mounted and opacity-dimmed
+            // rather than unmounted, marking them `aria-hidden="true"`. axe's
+            // color-contrast rule evaluates visual rendering regardless of ARIA
+            // state, so the dimmed (but AT-inert) peek text reports ~54 phantom
+            // violations across routes/themes even though real users never read
+            // it. This selector is scoped to that exact pattern (only the
+            // carousel's inactive slides carry both attributes — see SPEC-308 /
+            // HOS-3) so it does not mask genuine contrast issues elsewhere.
+            .exclude('[aria-roledescription="slide"][aria-hidden="true"]')
             .analyze();
 
         const violations = axeResults.violations;

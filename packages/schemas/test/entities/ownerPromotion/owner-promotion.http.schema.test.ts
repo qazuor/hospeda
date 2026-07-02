@@ -16,6 +16,7 @@ import {
 } from '../../../src/entities/ownerPromotion/owner-promotion.http.schema.js';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../../src/enums/owner-promotion-discount-type.enum.js';
+import { TouristAudienceEnum } from '../../../src/enums/tourist-audience.enum.js';
 
 // ---------------------------------------------------------------------------
 // Valid UUIDs for testing
@@ -262,7 +263,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
             discountValue: 20,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -283,7 +285,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.FIXED,
             discountValue: 500,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -302,7 +305,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.FIXED,
             discountValue: 1000,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -320,7 +324,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.FREE_NIGHT,
             discountValue: 1,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -338,7 +343,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
             discountValue: 10,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -356,7 +362,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
             discountValue: 15,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.DRAFT,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act
@@ -374,7 +381,8 @@ describe('httpToDomainOwnerPromotionCreate', () => {
             discountType: OwnerPromotionDiscountTypeEnum.FIXED,
             discountValue: 200,
             validFrom: baseValidFrom,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            touristAudience: TouristAudienceEnum.PLUS
         };
 
         // Act

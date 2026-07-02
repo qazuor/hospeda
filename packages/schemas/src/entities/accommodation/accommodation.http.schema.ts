@@ -225,10 +225,15 @@ export const AccommodationCreateHttpSchema = z.object({
     currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.USD),
 
     // Boolean properties
-    // isFeatured is intentionally omitted: owners cannot set featured status.
-    // Featuring is derived automatically from the FEATURED_LISTING entitlement
-    // (featuredByPlan column) — the admin-only path keeps manual isFeatured control
-    // via AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292).
+    // isFeatured is intentionally omitted from this general update schema: it is
+    // not a free-form field an owner edits alongside the rest of the listing.
+    // Featuring is derived from the FEATURED_LISTING entitlement
+    // (accommodations.featuredByEntitlement, renamed from featuredByPlan —
+    // SPEC-309 OQ-1), grantable via plan OR an accommodation-scoped addon
+    // (SPEC-309 OQ-3). The admin path keeps manual isFeatured control via
+    // AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292);
+    // an entitled owner sets isFeatured via the dedicated self-service toggle
+    // (PATCH .../featured-toggle, SPEC-309 T-019), not this schema.
     isAvailable: z.coerce.boolean().default(true),
     allowsPets: z.coerce.boolean().default(false),
 
@@ -583,8 +588,11 @@ export const httpToDomainAccommodationCreate = (
     destinationId: httpData.destinationId,
     ownerId: httpData.ownerId,
     // isFeatured is always false on owner-created accommodations (SPEC-292).
-    // Owners cannot set featured status — it is derived from the FEATURED_LISTING
-    // entitlement (featuredByPlan). Admin keeps manual control via the admin path.
+    // Not settable at creation — it is derived from the FEATURED_LISTING
+    // entitlement (accommodations.featuredByEntitlement, renamed from
+    // featuredByPlan — SPEC-309 OQ-1). Admin keeps manual control via the admin
+    // path; an entitled owner can flip it post-creation via the dedicated
+    // self-service toggle (PATCH .../featured-toggle, SPEC-309 T-019).
     isFeatured: false,
 
     // Required fields with sensible defaults using proper enums

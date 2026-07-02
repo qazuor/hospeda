@@ -391,6 +391,4 @@ The audit's recommendation: **leave the 43 lines uncovered, document why here, a
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks (functional-audit input)
 - [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/smoke-plans.test.ts) — e2e test inventory
 - [`.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/spec.md) — spec + tasks state
-- [`.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/spec.md`](../../.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/spec.md) — forward spec (cron-lag grace + plan lifecycle, deferred from T-143-63)
-- [`.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/spec.md`](../../.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/spec.md) — forward spec (MP error propagation + Sentry + retry policy, deferred from T-143-59)
-- [`.qtm/specs/SPEC-150-billing-multi-currency-support/spec.md`](../../.qtm/specs/SPEC-150-billing-multi-currency-support/spec.md) — forward spec (multi-currency support, deferred from T-143-62)
+- SPEC-148 (cron-lag grace + plan lifecycle), SPEC-149 (MP error propagation + Sentry + retry policy), and SPEC-150 (multi-currency support) all shipped — their `.qtm/specs/` folders were retired 2026-07-02, see git history for the original spec docs.

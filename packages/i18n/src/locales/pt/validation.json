@@ -159,6 +159,11 @@
                     "min": "A lista ordenada deve conter ao menos {{min}} item"
                 }
             }
+        },
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "[PT] El destacado es obligatorio"
+            }
         }
     },
     "featureFlag": {
@@ -2087,6 +2092,9 @@
         },
         "tagType": {
             "invalid": "[PT] El tag type no es válido"
+        },
+        "touristAudience": {
+            "invalid": "[PT] El tourist audience no es válido"
         },
         "visibility": {
             "invalid": "[PT] El visibility no es válido"

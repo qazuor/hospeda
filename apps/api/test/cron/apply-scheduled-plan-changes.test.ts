@@ -96,6 +96,20 @@ vi.mock('../../src/services/subscription-downgrade.service', () => ({
     getKeepSelectionsForChange: vi.fn().mockReturnValue(undefined)
 }));
 
+// SPEC-309 T-024: the shared featured-entitlement resolver + sync primitive
+// (T-004/T-005), called from the downgrade branch (T-013 call-site, right
+// after applyDowngradeRestrictions). Preserves the real implementations of
+// the other @repo/service-core exports this file relies on for real
+// (calculatePromoCodeEffect, getPromoCodeById, resolveFullPlanPriceCentavos).
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue({ updated: 0, rows: [] })
+    };
+});
+
 // Drizzle mock — returns rows the test feeds into `dueRows`.
 const dueRowsState: { rows: Array<Record<string, unknown>> } = { rows: [] };
 
@@ -132,6 +146,10 @@ vi.mock('@repo/db', () => {
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import {
     _internals,
     applyScheduledPlanChangesJob
@@ -316,6 +334,12 @@ describe('applyOne', () => {
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
     });
@@ -557,6 +581,12 @@ describe('applyScheduledPlanChangesJob.handler', () => {
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
         dueRowsState.rows = [];
@@ -729,6 +759,12 @@ describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
         dueRowsState.rows = [];
@@ -867,6 +903,12 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
     });
@@ -1140,6 +1182,98 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// SPEC-309 T-024: featuredByEntitlement sync on downgrade (T-013 call-site)
+//
+// Only ONE call-site (right after applyDowngradeRestrictions, inside the
+// same `if (targetPlanSlug)` branch): resolveOwnerPlanGrantsFeatured resolves
+// whether the NEW (post-downgrade) plan still grants FEATURED_LISTING, and
+// syncFeaturedByEntitlementForOwner is called with that boolean. Both the
+// grant (true) and revoke (false) outcomes come from this single call-site.
+// ---------------------------------------------------------------------------
+
+describe('SPEC-309 T-024: syncFeaturedByEntitlementForOwner on downgrade (applyOne)', () => {
+    beforeEach(() => {
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
+    });
+
+    it('grants featuredByEntitlement when the new (post-downgrade) plan still grants it', async () => {
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: USER_ID });
+        expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+            ownerId: USER_ID,
+            active: true
+        });
+    });
+
+    it('revokes featuredByEntitlement when the new (post-downgrade) plan no longer grants it', async () => {
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: USER_ID });
+        expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+            ownerId: USER_ID,
+            active: false
+        });
+    });
+
+    it('is soft-fail: a sync error does not block the plan change (outcome stays applied)', async () => {
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+            new Error('featured sync unavailable')
+        );
+        const { billing, update } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+        const { logger } = makeCtx();
+
+        const outcome = await _internals.applyOne(row, billing, logger);
+
+        // The plan change itself is unaffected by the sync failure.
+        expect(outcome.kind).toBe('applied');
+        expect(update).toHaveBeenCalledTimes(2);
+        expect(logger.warn).toHaveBeenCalledWith(
+            'Scheduled plan change: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)',
+            expect.objectContaining({
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID,
+                error: 'featured sync unavailable'
+            })
+        );
+    });
+});
+
 describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => {
     beforeEach(() => {
         sentryCaptureMessage.mockReset();
@@ -1153,6 +1287,12 @@ describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => 
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
         dueRowsState.rows = [];
@@ -1312,6 +1452,12 @@ describe('SPEC-167 T-017: PLAN_CHANGE_CONFIRMATION notification at apply time (a
             });
         vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
         vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        // SPEC-309 T-024: reset + default the featured-entitlement resolver/sync
+        // trio (T-004/T-005) called from the downgrade branch (T-013 call-site).
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
         vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
         vi.mocked(clearEntitlementCache).mockReset();
     });

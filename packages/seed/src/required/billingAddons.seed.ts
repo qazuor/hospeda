@@ -45,6 +45,8 @@ interface EnsureAddonResult {
  * - `metadata.durationDays`→ `addon.durationDays`
  * - `metadata.targetCategories` → `addon.targetCategories`
  * - `metadata.sortOrder`   → `addon.sortOrder`
+ * - `metadata.requiresAccommodationTarget` → `addon.requiresAccommodationTarget` (SPEC-309 OQ-3;
+ *   omitted from the JSONB entirely when falsy/undefined, matching the mapper's `undefined` default)
  *
  * `db` is injectable for tests; production callers omit it and the default
  * `getDb()` resolves the runtime client.
@@ -94,7 +96,8 @@ async function ensureAddon(
             slug: addon.slug,
             durationDays: addon.durationDays,
             targetCategories: addon.targetCategories,
-            sortOrder: addon.sortOrder
+            sortOrder: addon.sortOrder,
+            ...(addon.requiresAccommodationTarget ? { requiresAccommodationTarget: true } : {})
         }
     });
 

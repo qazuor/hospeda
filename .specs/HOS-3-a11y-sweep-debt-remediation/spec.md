@@ -15,12 +15,33 @@ areas:
 > 2026-07-01** as part of the Linear tracking migration. Canonical tracking is
 > now HOS-3.
 
-## Status — verified 2026-07-01 (do not trust the old status field below)
+## Status — updated 2026-07-02
 
 Done, merged to staging via PR #1956: T-308-01, T-308-03, T-308-04, and most of
-T-308-02. NOT done: T-308-05 (baseline was never shrunk — still byte-identical
-to the pre-fix baseline) and T-308-06 (pending owner decision on promoting the
-sweep to a required check).
+T-308-02.
+
+T-308-05 and T-308-06 completed via PR #1999:
+
+- **T-308-05** — baseline regenerated via a real `a11y-sweep.yml`
+  `workflow_dispatch` run (`update_baseline=true`, run 28576640568) against the
+  CI-seeded environment. Rule-instance count dropped **84 → 27** (strict
+  subset — no page/theme key gained a rule it didn't already have). Fully
+  clear: `aria-allowed-attr`, `aria-prohibited-attr`, `aria-allowed-role`,
+  `nested-interactive`, `empty-heading`. Remaining baselined debt:
+  `color-contrast` (19, light-mode only, serious) and `heading-order` (8,
+  moderate). Also added a scoped axe `.exclude()` in `sweep.ts` for the
+  testimonials carousel's inactive/`aria-hidden` Embla peek slides, which were
+  reporting ~54 phantom `color-contrast` hits despite being AT-inert and
+  visually de-emphasized.
+- **T-308-06** — owner decided (2026-07-02) to formalize the *current* de
+  facto behavior rather than wait for an empty baseline: the A11y Sweep job is
+  NOT marked `(report-only)` like Lighthouse, so it already gates merges via
+  the project's agent-side "CI must be fully green" convention (same as
+  Lint/Build). Documented explicitly in
+  [`docs/deployment/ci-cd.md`](../../docs/deployment/ci-cd.md). Native GitHub
+  branch-protection required-status-checks remain blocked on SPEC-103 (Free
+  plan); when that unblocks, this workflow should be added to the required
+  list with no policy change needed.
 
 The rest of this document is the original spec content, preserved as written.
 

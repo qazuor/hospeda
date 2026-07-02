@@ -372,6 +372,10 @@ export async function createTestAddon(
 export interface CreateTestSubscriptionAddonInput {
     readonly subscriptionId: string;
     readonly addonId: string;
+    /** Stored in centavos, mirrors `billing_prices.unit_amount`. Defaults to 0. */
+    readonly unitAmount?: number;
+    /** Defaults to ARS — Hospeda's only billing currency. */
+    readonly currency?: string;
     /** Defaults to now. */
     readonly startsAt?: Date;
     /** Optional expiry (one-time addons). */
@@ -408,8 +412,10 @@ export async function createTestSubscriptionAddon(
         .insert(billingSubscriptionAddons)
         .values({
             subscriptionId: input.subscriptionId,
-            addonId: input.addonId,
-            startsAt,
+            addOnId: input.addonId,
+            unitAmount: input.unitAmount ?? 0,
+            currency: input.currency ?? 'ARS',
+            addedAt: startsAt,
             expiresAt,
             metadata: input.metadata ?? {}
         } as typeof billingSubscriptionAddons.$inferInsert)

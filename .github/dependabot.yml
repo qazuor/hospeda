@@ -57,30 +57,42 @@ updates:
     #     value under TS < 6, so the mobile typecheck fails with TS5103. Lift this
     #     ignore when the monorepo TS-major alignment chore lands (ADR-034
     #     follow-up: unify the repo on a single TS major so mobile stops diverging).
+    #     Owner: HOS-59.
     #   - better-auth: 1.4 -> 1.6 changes the auth type signatures, breaking
     #     apps/api typecheck at src/lib/auth.ts (TS2322). Core auth surface —
     #     merits a dedicated migration spec. Lift when that migration lands.
     #     The whole @better-auth/* scope must be gated together: a lone
     #     @better-auth/expo minor bump desyncs against @better-auth/core and
     #     breaks apps/mobile build (Unable to resolve @better-auth/core/utils/json).
+    #     Owner: HOS-60.
     #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
     #     packages/email/test/templates/verify-email.test.tsx. Lift when the
     #     react-email render bump is taken on with its template snapshots.
+    #     Owner: HOS-61.
     #   - jsdom: 26 -> 29 changes the accessible-name computation (whitespace
     #     concatenation), so role+name queries like DestinationReviewSidebarCard
     #     stop matching. Dev-only (test env; real browsers unaffected). Lift
-    #     with a dedicated jsdom upgrade + test sweep.
+    #     with a dedicated jsdom upgrade + test sweep. Owner: HOS-62.
     #   - @tiptap/*: the editor extensions move from v2 to v3 as a coordinated
     #     breaking migration (core + every extension must bump in lockstep, or
     #     a lone extension at v3 peer-mismatches the v2 core at runtime). Gating
     #     the whole scope prevents a single-extension PR (e.g. extension-underline
     #     2 -> 3) from landing a split-version state. Owner: SPEC-307 (tiptap v3).
-    #   - @tanstack/react-query: 5.59 -> 5.101 changes useQuery loading-state
-    #     resolution and leaves the admin dashboard widgets (ListWidget,
-    #     ChecklistWidget, StatusWidget, resolver-widget-integration, KpiWidget,
-    #     ChartWidget, DashboardRenderer) stuck in their skeleton state. Possibly
-    #     a real dashboard regression, not just test brittleness. Needs a
-    #     deliberate migration with dashboard verification. Owner: SPEC-322.
+    #   - @tanstack/react-form: 0.42.1 -> 1.33.0 is a 0.x -> 1.x major with a
+    #     genuine breaking API surface, and Dependabot bumping only the direct
+    #     dependency leaves the transitive @tanstack/form-core resolved at the
+    #     old 0.x version, so the build fails with [MISSING_EXPORT] on
+    #     mergeAndUpdate/FormGroupApi/uuid. apps/admin forms use
+    #     @tanstack/react-form as the mandated pattern (CLAUDE.md) — real prod
+    #     surface, not cosmetic. Owner: HOS-57.
+    #   - @tanstack/react-devtools / @tanstack/react-router-devtools: both are
+    #     pre-1.0 or track @tanstack/react-router's version, so a "minor" bump
+    #     landed inside the production-minor-patch group and broke the build
+    #     ([MISSING_EXPORT] "TanstackDevtools" not exported, used in
+    #     apps/admin/src/routes/__root.tsx). react-router-devtools tracking
+    #     ahead of @tanstack/react-router (pinned above, its own ignore entry)
+    #     would also desync them. Dev-only tooling, zero prod risk, but blocks
+    #     the whole weekly grouped PR otherwise. Owner: HOS-58.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
@@ -92,7 +104,9 @@ updates:
       - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
       - dependency-name: '@tiptap/*'
-      - dependency-name: '@tanstack/react-query'
+      - dependency-name: '@tanstack/react-form'
+      - dependency-name: '@tanstack/react-devtools'
+      - dependency-name: '@tanstack/react-router-devtools'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).

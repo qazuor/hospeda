@@ -42,14 +42,14 @@
  */
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
-import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import {
     calculatePromoCodeEffect,
     getPromoCodeById,
     resolveFullPlanPriceCentavos,
-    syncFeaturedByPlan
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -506,42 +506,38 @@ async function applyOne(
                         targetPlanSlug,
                         keepSelections
                     });
-                    // SPEC-292 T-005: sync featuredByPlan for the new (post-downgrade) plan.
-                    // The new plan might still grant FEATURED_LISTING (e.g. complex-premium →
-                    // complex-pro) or it might not (e.g. owner-pro → owner-basico).
+                    // SPEC-309 T-013: sync featuredByEntitlement for the new
+                    // (post-downgrade) plan via the shared resolver (T-004), which
+                    // already excludes non-accommodation (commerce/partner)
+                    // subscriptions via SPEC-239 domain isolation — no separate
+                    // ALL_PLANS guard needed here. The plan change already committed
+                    // (step 0's pre-stamp), so the resolver observes the new plan_id
+                    // directly. The new plan might still grant FEATURED_LISTING (e.g.
+                    // complex-premium → complex-pro) or it might not (e.g.
+                    // owner-pro → owner-basico).
                     // Soft-fail: a featured-sync error must NOT break the cron or affect the
                     // already-committed plan change (mirrors the treatment of restriction failure,
-                    // but uses warn-only since T-006 reconciliation cron is the backstop).
+                    // but uses warn-only since the reconcile cron is the backstop).
                     try {
-                        // Guard: skip syncFeaturedByPlan when the plan slug is not in
-                        // ALL_PLANS (commerce/partner plans excluded by SPEC-239 would
-                        // resolve to undefined, causing a false active:false that clears
-                        // featuredByPlan for dual-subscription owners).
-                        const resolvedDowngradedPlan = getPlanBySlug(targetPlanSlug);
-                        if (resolvedDowngradedPlan) {
-                            const downgradedPlanHasFeatured =
-                                resolvedDowngradedPlan.entitlements.includes(
-                                    EntitlementKey.FEATURED_LISTING
-                                );
-                            await syncFeaturedByPlan({
-                                ownerId: userId,
-                                active: downgradedPlanHasFeatured
-                            });
-                            logger.info('Scheduled plan change: syncFeaturedByPlan applied', {
+                        const downgradedPlanHasFeatured = await resolveOwnerPlanGrantsFeatured({
+                            ownerId: userId
+                        });
+                        await syncFeaturedByEntitlementForOwner({
+                            ownerId: userId,
+                            active: downgradedPlanHasFeatured
+                        });
+                        logger.info(
+                            'Scheduled plan change: syncFeaturedByEntitlementForOwner applied',
+                            {
                                 subscriptionId,
                                 customerId,
                                 targetPlanSlug,
                                 active: downgradedPlanHasFeatured
-                            });
-                        } else {
-                            logger.warn(
-                                'Scheduled plan change: plan slug not found in ALL_PLANS — syncFeaturedByPlan skipped (commerce/partner plan?)',
-                                { subscriptionId, customerId, targetPlanSlug }
-                            );
-                        }
+                            }
+                        );
                     } catch (featuredSyncErr) {
                         logger.warn(
-                            'Scheduled plan change: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)',
+                            'Scheduled plan change: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)',
                             {
                                 subscriptionId,
                                 customerId,

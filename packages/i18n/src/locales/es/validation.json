@@ -159,6 +159,11 @@
                     "min": "La lista ordenada debe contener al menos {{min}} elemento"
                 }
             }
+        },
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "El destacado es obligatorio"
+            }
         }
     },
     "accommodationAmenity": {
@@ -2073,6 +2078,9 @@
         },
         "tagType": {
             "invalid": "El tag type no es válido"
+        },
+        "touristAudience": {
+            "invalid": "El tourist audience no es válido"
         },
         "visibility": {
             "invalid": "El visibility no es válido"

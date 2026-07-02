@@ -3,6 +3,7 @@ import {
     AI_SUPPORT_ADDON,
     ALL_ADDONS,
     EXTRA_PHOTOS_ADDON,
+    VISIBILITY_BOOST_30D_ADDON,
     VISIBILITY_BOOST_ADDON,
     getAddonBySlug
 } from '../src/config/addons.config.js';
@@ -55,6 +56,14 @@ describe('Add-on Configuration', () => {
         it('should target owner and complex categories', () => {
             expect(VISIBILITY_BOOST_ADDON.targetCategories).toEqual(['owner', 'complex']);
         });
+
+        it('should require an accommodation target on purchase (SPEC-309 OQ-3)', () => {
+            // The addon is purchased and applied per-accommodation, not owner-wide
+            // like the plan-derived featuring — see the featured_listing_addon_grants
+            // link table (T-002).
+            expect(VISIBILITY_BOOST_ADDON.requiresAccommodationTarget).toBe(true);
+            expect(VISIBILITY_BOOST_30D_ADDON.requiresAccommodationTarget).toBe(true);
+        });
     });
 
     describe('Extra Photos Add-on', () => {
@@ -72,6 +81,10 @@ describe('Add-on Configuration', () => {
 
         it('should increase limit by 20', () => {
             expect(EXTRA_PHOTOS_ADDON.limitIncrease).toBe(20);
+        });
+
+        it('should not require an accommodation target (unrelated to featuring)', () => {
+            expect(EXTRA_PHOTOS_ADDON.requiresAccommodationTarget).toBeFalsy();
         });
     });
 

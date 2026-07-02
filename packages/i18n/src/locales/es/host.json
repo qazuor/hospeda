@@ -227,7 +227,8 @@
                 "contact": "Contacto",
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
-                "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes"
+                "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
+                "featuredToggle": "Destacado"
             },
             "field": {
                 "name": "Nombre",
@@ -355,6 +356,11 @@
                 "successMessage": "Traducciones generadas. Recargando...",
                 "errorGeneric": "No se pudieron generar las traducciones. Intentá de nuevo.",
                 "errorNetwork": "Error de conexión al intentar generar las traducciones."
+            },
+            "featuredToggle": {
+                "label": "Destacar mi alojamiento",
+                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
+                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             }
         },
         "empty": {
@@ -445,7 +451,9 @@
             "accommodationId": "Propiedad",
             "accommodationIdAll": "Todas mis propiedades",
             "accommodationIdLoading": "Cargando propiedades...",
-            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
+            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas.",
+            "vipOnly": "Exclusiva para plan VIP",
+            "vipOnlyHint": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven turistas Plus y VIP."
         },
         "discountTypes": {
             "percentage": "Porcentaje",

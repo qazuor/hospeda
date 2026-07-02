@@ -43,7 +43,7 @@
             "id": "T-105-06",
             "title": "Phase 3: re-enable cron + observe 3 successful runs",
             "status": "in_progress",
-            "notes": "Uncommenting cron schedule: '0 5 * * *' (02:00 ART = 05:00 UTC). Pending 3 consecutive successful nightly runs to mark completed."
+            "notes": "Cron re-enabled '0 5 * * *' (02:00 ART = 05:00 UTC). All 5 runs since reactivation (06-28..07-02) failed on a NEW infra bug (RC-3): 'Apply Postgres extras' ran before 'Push Drizzle schema', so extras SQL hit relation \"accommodations\" does not exist. Fixed by commit 3c0fa4a1c (PR #1972, staging 07-01), but the nightly cron always runs off `main`, and the fix wasn't promoted to main until PR #1986 (06:49 UTC 2026-07-02) — 33min after that morning's failed run. Fix is on main now; 0/3 consecutive green runs observed. Next run 2026-07-03 ~05:00 UTC is the first real test post-fix. See docs/test/e2e-failure-audit-2026-05-13.md RC-3."
         }
     ]
 }

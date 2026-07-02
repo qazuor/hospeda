@@ -1,9 +1,9 @@
 /**
- * Tests for SPEC-292 — buildAccommodationOrderBy: featuredByPlan OR disjunction.
+ * Tests for SPEC-292 — buildAccommodationOrderBy: featuredByEntitlement OR disjunction.
  *
  * SPEC-292 changed the `featuredFirst` pin from ordering by `is_featured DESC`
- * alone to ordering by `(is_featured OR featured_by_plan) DESC`. This ensures
- * that plan-derived featured listings (featuredByPlan=true, isFeatured=false)
+ * alone to ordering by `(is_featured OR featured_by_entitlement) DESC`. This ensures
+ * that plan-derived featured listings (featuredByEntitlement=true, isFeatured=false)
  * also sort to the top when featuredFirst is enabled.
  *
  * These tests extend the existing accommodation.order-by.test.ts by asserting
@@ -11,9 +11,9 @@
  * behavior already covered in the existing file.
  *
  * Coverage:
- * 1. featuredFirst pin references BOTH is_featured AND featured_by_plan
+ * 1. featuredFirst pin references BOTH is_featured AND featured_by_entitlement
  *    (the OR disjunction is present in the rendered SQL).
- * 2. A listing with only featuredByPlan=true would sort above one with both
+ * 2. A listing with only featuredByEntitlement=true would sort above one with both
  *    false — asserted at the SQL expression level (the disjunction covers it).
  * 3. The pin retains DESC ordering (featured-first, not featured-last).
  * 4. The pin still comes before other sorts when combined with sorts[].
@@ -33,14 +33,14 @@ function renderOrderBy(entries: readonly SQL[]): string[] {
 }
 
 describe('SPEC-292 — buildAccommodationOrderBy with featuredFirst (OR disjunction)', () => {
-    it('pin references featured_by_plan column in the SQL expression', () => {
+    it('pin references featured_by_entitlement column in the SQL expression', () => {
         // Arrange & Act
         const orderBy = buildAccommodationOrderBy({ featuredFirst: true });
         const rendered = renderOrderBy(orderBy);
 
-        // Assert — the first expression contains featured_by_plan
+        // Assert — the first expression contains featured_by_entitlement
         // (SPEC-292: plan-derived featuring must be included in the sort pin)
-        expect(rendered[0]).toMatch(/featured_by_plan/i);
+        expect(rendered[0]).toMatch(/featured_by_entitlement/i);
     });
 
     it('pin references is_featured column in the SQL expression', () => {
@@ -52,7 +52,7 @@ describe('SPEC-292 — buildAccommodationOrderBy with featuredFirst (OR disjunct
         expect(rendered[0]).toMatch(/is_featured/i);
     });
 
-    it('pin uses OR to combine is_featured and featured_by_plan', () => {
+    it('pin uses OR to combine is_featured and featured_by_entitlement', () => {
         // Arrange & Act
         const orderBy = buildAccommodationOrderBy({ featuredFirst: true });
         const rendered = renderOrderBy(orderBy);
@@ -82,15 +82,15 @@ describe('SPEC-292 — buildAccommodationOrderBy with featuredFirst (OR disjunct
         // Assert — three entries: [pin, name asc, id desc]
         expect(rendered).toHaveLength(3);
         // First entry has the OR disjunction (the featured pin)
-        expect(rendered[0]).toMatch(/featured_by_plan/i);
+        expect(rendered[0]).toMatch(/featured_by_entitlement/i);
         expect(rendered[0]).toMatch(/is_featured/i);
         // Second entry is the name sort
         expect(rendered[1]).toMatch(/"name" asc/i);
     });
 
-    it('featuredByPlan-only listing would sort above neither-featured listing: disjunction covers it', () => {
-        // This is a SQL-level assertion: the pin expression `(is_featured OR featured_by_plan) DESC`
-        // means a row with featured_by_plan=true (isFeatured=false) evaluates to true and
+    it('featuredByEntitlement-only listing would sort above neither-featured listing: disjunction covers it', () => {
+        // This is a SQL-level assertion: the pin expression `(is_featured OR featured_by_entitlement) DESC`
+        // means a row with featured_by_entitlement=true (isFeatured=false) evaluates to true and
         // sorts BEFORE a row where both are false. We assert the expression contains both
         // column references so the DB engine can apply the OR correctly.
         //
@@ -102,21 +102,21 @@ describe('SPEC-292 — buildAccommodationOrderBy with featuredFirst (OR disjunct
         const rendered = renderOrderBy(orderBy);
         const pinExpression = rendered[0] ?? '';
 
-        // Assert — BOTH columns are in the disjunction so a featuredByPlan=true row
+        // Assert — BOTH columns are in the disjunction so a featuredByEntitlement=true row
         // is correctly treated as "featured" at sort time
         expect(pinExpression).toMatch(/is_featured/i);
-        expect(pinExpression).toMatch(/featured_by_plan/i);
+        expect(pinExpression).toMatch(/featured_by_entitlement/i);
         expect(pinExpression).toMatch(/\bOR\b/i);
         expect(pinExpression).toMatch(/desc/i);
     });
 
-    it('when featuredFirst is false, featured_by_plan does NOT appear in the ORDER BY', () => {
+    it('when featuredFirst is false, featured_by_entitlement does NOT appear in the ORDER BY', () => {
         // Arrange & Act — no featuredFirst flag; standard sort by name
         const orderBy = buildAccommodationOrderBy({ sorts: [{ field: 'name', order: 'asc' }] });
         const rendered = renderOrderBy(orderBy);
 
-        // Assert — featured_by_plan only enters the ORDER BY via the pin; without it, absent
+        // Assert — featured_by_entitlement only enters the ORDER BY via the pin; without it, absent
         const allRendered = rendered.join(' ');
-        expect(allRendered).not.toMatch(/featured_by_plan/i);
+        expect(allRendered).not.toMatch(/featured_by_entitlement/i);
     });
 });

@@ -11,13 +11,13 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
-import { EntitlementKey, getPlanBySlug } from '@repo/billing';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     checkSubscriptionStatusTransition,
-    syncFeaturedByPlan,
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -1024,37 +1024,48 @@ export async function processSubscriptionUpdated({
         });
     }
 
-    // SPEC-292 T-005: sync featuredByPlan on status transitions that change
-    // FEATURED_LISTING entitlement reachability. Non-blocking — never blocks
-    // the webhook response. T-006 reconciliation cron is the backstop.
+    // SPEC-309 T-009: sync featuredByEntitlement on status transitions that
+    // change FEATURED_LISTING entitlement reachability, using the shared
+    // resolver (T-004) instead of a locally re-derived plan check — this also
+    // aligns the active-status set with the reconcile cron (G-5) and excludes
+    // non-accommodation (commerce/partner) subscriptions via SPEC-239 domain
+    // isolation. Non-blocking — never blocks the webhook response. The
+    // reconcile cron is the backstop.
     //
-    // Timing semantics:
-    //   active / trialing  → grant  (entitlement active)
-    //   cancelled / expired → revoke (entitlement lapsed)
-    //   past_due / paused / other → skip (grace period or intentional pause)
+    // Timing semantics (status set matches loadEntitlements / the reconcile
+    // cron exactly):
+    //   active / trialing / comp        → grant  (entitlement reachable)
+    //   cancelled / expired / paused    → revoke (entitlement lapsed)
+    //   past_due / other → skip (grace period, unchanged)
+    //
+    // The DB write (Step 7) already committed `mappedStatus` before this
+    // block runs, so `resolveOwnerPlanGrantsFeatured` observes the
+    // post-transition state directly — its boolean result IS the correct
+    // `active` value for both the grant and revoke branches (on revoke, the
+    // subscription no longer qualifies as active/trialing/comp, so the
+    // resolver naturally returns `false`).
     try {
-        const planHasFeatured =
-            getPlanBySlug(planName)?.entitlements.includes(EntitlementKey.FEATURED_LISTING) ??
-            false;
-
         const shouldGrant =
             mappedStatus === SubscriptionStatusEnum.ACTIVE ||
-            mappedStatus === SubscriptionStatusEnum.TRIALING;
+            mappedStatus === SubscriptionStatusEnum.TRIALING ||
+            mappedStatus === SubscriptionStatusEnum.COMP;
         const shouldRevoke =
             mappedStatus === SubscriptionStatusEnum.CANCELLED ||
-            mappedStatus === SubscriptionStatusEnum.EXPIRED;
+            mappedStatus === SubscriptionStatusEnum.EXPIRED ||
+            mappedStatus === SubscriptionStatusEnum.PAUSED;
 
-        if (planHasFeatured && (shouldGrant || shouldRevoke) && userId) {
-            await syncFeaturedByPlan({ ownerId: userId, active: shouldGrant });
+        if ((shouldGrant || shouldRevoke) && userId) {
+            const planHasFeatured = await resolveOwnerPlanGrantsFeatured({ ownerId: userId });
+            await syncFeaturedByEntitlementForOwner({ ownerId: userId, active: planHasFeatured });
             apiLogger.info(
                 {
                     subscriptionId: localSubscription.id,
                     customerId: localSubscription.customerId,
                     planSlug: planName,
                     mappedStatus,
-                    active: shouldGrant
+                    active: planHasFeatured
                 },
-                'Subscription status update: syncFeaturedByPlan applied'
+                'Subscription status update: syncFeaturedByEntitlementForOwner applied'
             );
         }
     } catch (featuredSyncErr) {
@@ -1069,7 +1080,7 @@ export async function processSubscriptionUpdated({
                         ? featuredSyncErr.message
                         : String(featuredSyncErr)
             },
-            'Subscription status update: syncFeaturedByPlan failed (non-blocking — T-006 will reconcile)'
+            'Subscription status update: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)'
         );
     }
 

@@ -192,6 +192,29 @@ accommodation entitlement engine:
 - `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
 - These extras columns are applied by `pnpm db:apply-extras` (files 018/019/020 under `packages/db/src/migrations/extras/`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
 
+#### Featured-listing entitlement (SPEC-292 → SPEC-309)
+
+`accommodations.featuredByEntitlement` (renamed from `featuredByPlan` — SPEC-309 OQ-1) is a denormalized
+flag driven by **two independent sources** (SPEC-309 OQ-3):
+
+- **Plan** — an owner's accommodation subscription plan grants `FEATURED_LISTING` owner-wide (all of
+  the owner's accommodations). Resolved by `resolveOwnerPlanGrantsFeatured()`.
+- **Addon** — a `visibility-boost-7d`/`-30d` one-time purchase grants featuring scoped to a SINGLE
+  accommodation, via the `featured_listing_addon_grants` link table (`purchaseId` → `accommodationId`,
+  written at checkout confirmation). An owner-wide plan grant flips every accommodation; an addon grant
+  flips exactly one.
+- Sync primitives live in `packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts`:
+  `syncFeaturedByEntitlementForOwner` (bulk, plan-driven, excludes addon-protected accommodations on
+  revoke) and `syncFeaturedByEntitlementForAccommodation` (single accommodation, addon-driven, no-ops on
+  revoke if the owner's plan independently still grants it). Both schedule ISR revalidation
+  (`getRevalidationService().scheduleRevalidationBatch`) on every actual write (SPEC-309 G-3).
+- The 6-hourly backstop cron (renamed `featured-by-plan-reconcile` → `featured-by-entitlement-reconcile`,
+  `apps/api/src/cron/jobs/featured-by-entitlement-reconcile.job.ts`) corrects drift from both sources.
+- `accommodations.isFeatured` (admin-curated, separate column) is now ALSO settable by an entitled owner
+  via a dedicated self-service toggle — `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
+  (SPEC-309 T-019/T-020) — gated by a live `FEATURED_LISTING` entitlement check (plan OR addon), not by
+  the general accommodation update schema.
+
 ### Local testing for billing entitlements (SPEC-143)
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
@@ -216,17 +239,46 @@ Failed smokes block merge. Notes-only passes (smoke surfaces a known documented 
 
 This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
 
-**Linear labels for smoke-gated specs**: when a spec's Linear issue requires the
-staging smoke above, apply the `status-needs-smoke-staging` label to it — remove
-it once the sign-off is filed and the PR merges. If the spec also requires the
-prod smoke (billing CORE, step 5 above), apply `status-needs-smoke-prod` after
-merge to staging — remove it once that sign-off is filed. **Never mark an issue
-`Done` (via `/closeSpec` or otherwise) while either label is still present** —
-their whole purpose is to make "waiting on smoke" visible on the board instead of
-an issue silently sitting in `In Progress`/`In Review` with no signal of what it's
-actually blocked on. These are deliberately labels, not workflow states: most
-specs never touch billing and never need them, so they stay opt-in rather than
-forcing every issue through an extra pipeline stage.
+### Smoke-gate labels for any spec (generalized 2026-07-02)
+
+The label mechanism below isn't billing-specific — any spec can require post-merge
+manual verification before it's actually done, and the labels + automation exist
+for the general case. Billing just happens to be the domain that always needs it.
+
+Three labels, each independently opt-in per issue:
+
+- `status-needs-smoke-local` — needs manual verification in local dev.
+- `status-needs-smoke-staging` — needs manual verification against the real VPS
+  (staging). For billing specifically this is the checklist workflow above.
+- `status-needs-smoke-prod` — needs manual verification against production, after
+  merge to staging, before promoting to `main` (billing CORE only, per step 5 above;
+  other domains rarely need this tier).
+
+**Who decides which labels apply**: declared in the spec's `spec.md` frontmatter
+when the spec is written, if the author already knows (e.g. anything touching a
+third-party integration, real timing/cron behavior, or payment flow). If
+unspecified, the implementing agent applies the relevant label(s) itself before
+opening the PR, based on judgment. An issue that needs none of these gets no
+label and follows the normal fast path straight to `Done`.
+
+**Automation**: a GitHub Action (`.github/workflows/smoke-gate-sync.yml`) triggers
+on any merged PR whose body contains a Linear magic word (`Closes`/`Fixes`/
+`Resolves`/`Implements HOS-N`) — i.e. only the PR that actually completes the
+spec, never an intermediate PR in a multi-PR spec (intermediate PRs must never
+carry a magic word, per the existing closeSpec convention). If the referenced
+issue still carries any `status-needs-smoke-*` label at that point, the Action
+moves it to **In Review** (an existing Linear state, repurposed for this — not a
+new workflow state). This also corrects the native GitHub↔Linear integration,
+which reacts to the same magic word and may set the issue `Done` first; the
+Action runs after and forces it back to `In Review` whenever a smoke label is
+still present, so `Done` can never coexist with an outstanding smoke gate.
+
+**Never mark an issue `Done` (via `/closeSpec` or otherwise) while any of these
+three labels is still present** — their whole purpose is to make "waiting on
+smoke" visible on the board instead of an issue silently sitting in
+`In Progress`/`In Review` with no signal of what it's actually blocked on.
+Removing a label (once the smoke sign-off is filed) stays a manual, human step —
+never automated, since that would defeat the guarantee the label exists to give.
 
 ### Git Conventions
 
@@ -464,6 +516,28 @@ All non-trivial work MUST go through Linear + `.specs/`. This replaced the old
 `.qtm/`-based system (index.json + CSV) to eliminate desync across worktrees/agents —
 see "Legacy system" below for why.
 
+### Terminology: "spec" vs "issue"
+
+These two words are used precisely in this repo and are NOT interchangeable:
+
+- **"spec"** = a formal spec tracked in Linear team **`Hospeda`** (key `HOS`, e.g.
+  `HOS-123`), with a `.specs/HOS-123-slug/` folder in this repo. Created via
+  `/spec`, `/task-master:spec`, or resumed via `/startIssue`. This is what
+  `/closeIssue` closes and what the rest of this section governs.
+- **"issue"** (bare, with no other qualifier) = an item in Linear team **`Beta
+  Feedback`** (key `BETA`, e.g. `BETA-96`) — a user/QA-reported bug or small item
+  filed via the `/linear-backlog` skill. It has no `.specs/` folder and is not
+  implemented through the workflow below. `/startIssue` and `/closeIssue` operate
+  on Hospeda specs (`HOS-NNN`) despite the word "issue" in their names — Linear
+  itself calls every tracked item an "issue" regardless of team, which is the
+  source of the ambiguity; in this file, a bare "issue" always means `BETA-NNN`.
+- If the team isn't clear from context, ask before creating or searching — never
+  guess `HOS` vs `BETA` from the word "issue" alone.
+- `Beta Feedback`'s name/key is under active reconsideration
+  ([HOS-70](https://linear.app/hospeda-beta/issue/HOS-70)). If it's renamed,
+  update every `BETA`/"Beta Feedback" reference in this file to match — this
+  section is provisional on that key until HOS-70 resolves.
+
 ### Model
 
 - **Linear** (workspace `hospeda-beta`, team **`Hospeda`**, key **`HOS`**) owns: which
@@ -486,23 +560,46 @@ see "Legacy system" below for why.
   issue counter is the collision-free ID source now.
   - Hospeda's `.claude/project.config.json` already declares `taskMaster.backend: "linear"`
     (team `Hospeda`, key `HOS`), so `/spec`, `/tasks`, `/next-task`, etc. resolve
-    against Linear once the plugin ships that support. As of 2026-07-01 this requires
-    `qazuor/claude-code-plugins` task-master ≥ 2.4.0, shipped in
-    [PR #2](https://github.com/qazuor/claude-code-plugins/pull/2) — **not yet merged**.
-    Until it merges, `/task-master:*` commands still run the local-index code path
-    and will NOT talk to Linear correctly; create/update Linear issues and
-    `.specs/HOS-xxx-slug/` folders by hand following this section's conventions in
-    the meantime.
+    against Linear. `qazuor/claude-code-plugins` task-master's Linear backend
+    ([PR #2](https://github.com/qazuor/claude-code-plugins/pull/2)) merged
+    2026-07-01; the plugin is live (verify locally installed version ≥ 2.4.0).
+    The sync mechanism is the `index-sync` skill: on the Linear backend it calls
+    `mcp__linear__save_issue` to move the issue's state, but **only when a real
+    task-master command runs** (`/task-master:next-task`, `task-from-spec`,
+    `quality-gate`, `replan`, `auto-loop`, ...). Hand-rolling the flow — reading
+    `tasks/state.json` directly and skipping the actual slash command — silently
+    skips the Linear write. When delegating "start/continue implementing spec
+    HOS-N" to an agent, always instruct it to invoke the real task-master command
+    as the first step, not to read the task state file directly.
 
 ### Workflow
 
 1. **Before creating anything new** — search Linear first (`mcp__linear__list_issues`
-   or the Hospeda team views) for an existing issue: a `kind:needs-spec`, an existing
-   `kind:spec`, a related bug, or a pending owner decision. Don't create a duplicate.
-2. **New feature/change** → create (or use an existing) Linear issue in team `Hospeda`
-   using the "Spec Implementation" template (`kind-spec` label), then create
-   `.specs/HOS-<n>-<slug>/spec.md` (the "Spec Implementation" template) with
-   `linear: HOS-<n>` + `statusSource: linear` in its frontmatter.
+   or the Hospeda team views) for an existing spec: a `kind-needs-spec` idea, an
+   existing `kind-spec`, a related bug, or a pending owner decision. Don't create a
+   duplicate.
+2. **New feature/change, no `spec.md` written yet** → create (or use an existing)
+   Linear issue in team `Hospeda` labeled **`kind-needs-spec`** (the default — see
+   the labeling table below). Only once the spec is actually drafted and
+   `.specs/HOS-<n>-<slug>/spec.md` exists (frontmatter `linear: HOS-<n>` +
+   `statusSource: linear`) does the label change to **`kind-spec`**. Do NOT apply
+   `kind-spec` at creation time — that's the exact bug that mislabeled
+   HOS-68/69/70 (fixed in the `task-master` plugin's `spec-allocation` skill and
+   `/task-master:spec` command, which now create with `kind-needs-spec` and
+   relabel to `kind-spec` only after `spec.md` is published).
+
+#### Labels when creating a Hospeda (`HOS`) issue
+
+| Label | When |
+|---|---|
+| `kind-needs-spec` | **Default.** A new idea/request with NO `spec.md` written yet (Phase 1 not started). |
+| `kind-spec` | Only once `.specs/HOS-<n>-slug/spec.md` already exists — the issue tracks an already-written formal spec. |
+| `kind-owner-decision` | What's needed is an owner decision, not implementation work. |
+| `area-*` (`area-web`, `area-admin`, `area-api`, `area-db`, `area-auth`, `area-billing`, `area-content`, `area-devops`) | Per which apps/packages the request touches — infer from context, apply as many as fit. |
+| `source-*` (`source-owner`, `source-agent`, `source-promoted-from-beta`) | Reflects the issue's origin (owner request, an agent noticed it, or promoted from a `BETA-NN` item). |
+
+Never guess a label that doesn't exist in Linear — validate against
+`mcp__linear__list_issue_labels({team: "Hospeda"})` first if unsure.
 3. **Implementing** → use `/task-master:task-from-spec` and `/task-master:next-task` as
    before, but tracking lives inside `.specs/HOS-<n>-<slug>/tasks/`, not a global index.
 4. **Task completed** → quality gate (`/task-master:quality-gate`) before marking done.
@@ -653,8 +750,10 @@ un dir nuevo en `.specs/HOS-<n>-slug/`):
 1. **NO crear worktree ni el branch de implementación.** Trabajar en una **branch
    ligera de docs**, sin worktree. Una branch de git es gratis (unos KB); lo caro
    es el worktree (node_modules + DB), y eso NO se crea en esta fase.
-2. **Crear (o reusar) el issue en Linear primero** (team `Hospeda`, template "Spec
-   Implementation" o "Needs Spec") — el número `HOS-<n>` sale de ahí, nunca se inventa.
+2. **Crear (o reusar) el issue en Linear primero** (team `Hospeda`, label
+   `kind-needs-spec` por default — recién pasa a `kind-spec` cuando ya existe
+   `spec.md`, ver [Spec & Task Management](#spec--task-management) → "Labels when
+   creating a Hospeda issue") — el número `HOS-<n>` sale de ahí, nunca se inventa.
 3. **Generar los docs** en `.specs/HOS-<n>-slug/spec.md` (frontmatter con
    `linear: HOS-<n>` + `statusSource: linear`). Sin índices que actualizar — el
    macro-estado vive en el issue de Linear, no en el repo.

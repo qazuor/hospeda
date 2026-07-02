@@ -3,7 +3,9 @@ import {
     ALL_PLANS,
     COMPLEX_BASICO_PLAN,
     COMPLEX_PREMIUM_PLAN,
+    COMPLEX_PRO_PLAN,
     OWNER_BASICO_PLAN,
+    OWNER_PREMIUM_PLAN,
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
@@ -129,6 +131,18 @@ describe('Plan Configuration', () => {
             expect(propertiesLimit).toBeDefined();
             expect(propertiesLimit?.value).toBeGreaterThan(0);
         });
+
+        it('all 3 complex plans are hidden (isActive: false) — HOS-16, complex vertical not built', () => {
+            expect(COMPLEX_BASICO_PLAN.isActive).toBe(false);
+            expect(COMPLEX_PRO_PLAN.isActive).toBe(false);
+            expect(COMPLEX_PREMIUM_PLAN.isActive).toBe(false);
+        });
+
+        it('complex plans keep their entitlements/limits/isDefault intact while hidden (reversible)', () => {
+            expect(COMPLEX_BASICO_PLAN.isDefault).toBe(true);
+            expect(COMPLEX_BASICO_PLAN.entitlements.length).toBeGreaterThan(0);
+            expect(COMPLEX_BASICO_PLAN.limits.length).toBeGreaterThan(0);
+        });
     });
 
     describe('AI entitlements and limits matrix (SPEC-173)', () => {
@@ -174,12 +188,12 @@ describe('Plan Configuration', () => {
             expect(searchLimit?.value).toBe(200);
         });
 
-        it('owner-pro max_ai_text_improve_per_month should be 100', () => {
+        it('owner-pro max_ai_text_improve_per_month should be 250 (HOS-16: was 100)', () => {
             const found = OWNER_PRO_PLAN.limits.find(
                 (l) => l.key === LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH
             );
             expect(found).toBeDefined();
-            expect(found?.value).toBe(100);
+            expect(found?.value).toBe(250);
         });
 
         it('complex-premium AI limits should be finite — text 2000, chat 5000, search 200, consumer-chat 200 (SPEC-283)', () => {
@@ -302,24 +316,24 @@ describe('Plan Configuration', () => {
             expect(compareItems(TOURIST_FREE_PLAN)).toBeUndefined();
         });
 
-        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 2', () => {
+        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 3 (HOS-16: was 2)', () => {
             expect(TOURIST_PLUS_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
             );
-            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(2);
+            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(3);
         });
 
-        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 4 (was unlimited)', () => {
+        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 5 (HOS-16: was 4)', () => {
             expect(TOURIST_VIP_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
             );
-            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(4);
+            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(5);
         });
 
-        it('owner/complex plans inherit the VIP-tier compare cap of 4 (not unlimited)', () => {
+        it('owner/complex plans inherit the VIP-tier compare cap of 5 (HOS-16: was 4, not unlimited)', () => {
             // The VIP limit lives in TOURIST_VIP_LIMITS, inherited via mergeLimits.
             // None of the owner/complex plans override MAX_COMPARE_ITEMS, so they
-            // all land on 4 — never -1 (SPEC-288 D-1).
+            // all land on 5 — never -1 (SPEC-288 D-1).
             const inheriting = ALL_PLANS.filter(
                 (p) => p.category === 'owner' || p.category === 'complex'
             );
@@ -327,7 +341,7 @@ describe('Plan Configuration', () => {
             for (const plan of inheriting) {
                 const found = compareItems(plan);
                 expect(found, `plan "${plan.slug}" must carry MAX_COMPARE_ITEMS`).toBeDefined();
-                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(4);
+                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(5);
             }
         });
 
@@ -339,6 +353,137 @@ describe('Plan Configuration', () => {
                     expect(found.value, `plan "${plan.slug}"`).toBeGreaterThan(0);
                 }
             }
+        });
+    });
+
+    describe('Tourist favorites limits (HOS-16)', () => {
+        const favoritesLimit = (plan: { limits: ReadonlyArray<{ key: string; value: number }> }) =>
+            plan.limits.find((l) => l.key === LimitKey.MAX_FAVORITES);
+
+        it('tourist-free MAX_FAVORITES = 5 (was 3)', () => {
+            expect(favoritesLimit(TOURIST_FREE_PLAN)?.value).toBe(5);
+        });
+
+        it('tourist-plus MAX_FAVORITES = 25 (was 20)', () => {
+            expect(favoritesLimit(TOURIST_PLUS_PLAN)?.value).toBe(25);
+        });
+    });
+
+    describe('Owner-basico promotions grant (HOS-16)', () => {
+        it('owner-basico grants CREATE_PROMOTIONS (previously pro/premium only)', () => {
+            expect(OWNER_BASICO_PLAN.entitlements).toContain(EntitlementKey.CREATE_PROMOTIONS);
+        });
+    });
+
+    describe('Owner-basico limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 15 (was 5)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(15);
+        });
+
+        it('MAX_ACTIVE_PROMOTIONS = 2 (was 0)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(2);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 10 (was 200, OQ-2)', () => {
+            expect(
+                limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)
+            ).toBe(10);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH stays 200 (unchanged)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(200);
+        });
+
+        it('MAX_ACCOMMODATIONS stays 1 (OQ-3, unchanged)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(1);
+        });
+    });
+
+    describe('Owner-pro limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 30 (was 15)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(30);
+        });
+
+        it('MAX_ACTIVE_PROMOTIONS = 5 (was 3)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(5);
+        });
+
+        it('MAX_AI_CHAT_PER_MONTH = 250 (was 100)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(250);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH = 1000 (was 500)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(1000);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 50 (was 500)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)).toBe(
+                50
+            );
+        });
+
+        it('MAX_ACCOMMODATIONS stays 3 (unchanged)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(3);
+        });
+    });
+
+    describe('Owner-premium limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 50 (was 30)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(50);
+        });
+
+        it('MAX_AI_TEXT_IMPROVE_PER_MONTH = 1250 (was 1000)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(
+                1250
+            );
+        });
+
+        it('MAX_AI_CHAT_PER_MONTH = 1250 — intentional DECREASE from 2000 (x5 ladder normalization)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(1250);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH = 5000 (was 2000)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(5000);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 250 (was 2000)', () => {
+            expect(
+                limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)
+            ).toBe(250);
+        });
+
+        it('MAX_ACCOMMODATIONS stays 10 and MAX_ACTIVE_PROMOTIONS stays unlimited (-1)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(10);
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(-1);
+        });
+    });
+
+    describe('Recommendations entitlement (HOS-16)', () => {
+        it('tourist-free has NO CAN_VIEW_RECOMMENDATIONS entitlement (moved free->plus)', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(
+                EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+            );
+        });
+
+        it('tourist-plus grants CAN_VIEW_RECOMMENDATIONS (moved free->plus)', () => {
+            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+            );
         });
     });
 
