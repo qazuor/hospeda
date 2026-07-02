@@ -20,7 +20,7 @@
  * SPEC-254 T-027.
  */
 
-import type { SocialAssetModel, SocialPostMediaModel } from '@repo/db';
+import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
@@ -111,6 +111,7 @@ describe('SocialImagePipelineService', () => {
     let mediaProvider: InMemoryImageProvider;
     let assetModelMock: ReturnType<typeof createModelMock>;
     let postMediaModelMock: ReturnType<typeof createModelMock>;
+    let settingModelMock: ReturnType<typeof createModelMock>;
     let service: SocialImagePipelineService;
 
     beforeEach(() => {
@@ -123,18 +124,22 @@ describe('SocialImagePipelineService', () => {
         });
         assetModelMock = createModelMock();
         postMediaModelMock = createModelMock();
+        settingModelMock = createModelMock();
 
         service = new SocialImagePipelineService(
             {},
             mediaProvider as unknown as ImageProvider,
             assetModelMock as unknown as SocialAssetModel,
-            postMediaModelMock as unknown as SocialPostMediaModel
+            postMediaModelMock as unknown as SocialPostMediaModel,
+            settingModelMock as unknown as SocialSettingModel
         );
 
         // Default: asset create succeeds
         assetModelMock.create.mockResolvedValue(buildMockAssetRow());
         // Default: post media create succeeds
         postMediaModelMock.create.mockResolvedValue(buildMockPostMediaRow());
+        // Default: no social_settings rows configured — every getter falls back
+        settingModelMock.findOne.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -537,6 +542,69 @@ describe('SocialImagePipelineService', () => {
             // Assert
             expect(assetModelMock.create).toHaveBeenCalledWith(
                 expect.objectContaining({ createdById: undefined })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Settings-driven config (HOS-64 G-2)
+    // -------------------------------------------------------------------------
+
+    describe('settings-driven config', () => {
+        it('uses a custom social_assets_folder from settings when uploading', async () => {
+            // Arrange
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+            settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
+                if (query.key === 'social_assets_folder') {
+                    return { key: 'social_assets_folder', value: 'custom/folder/path' };
+                }
+                return undefined;
+            });
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ folder: 'custom/folder/path' })
+            );
+        });
+
+        it('falls back to hospeda/social/assets when social_assets_folder is missing', async () => {
+            // Arrange — beforeEach already leaves settingModelMock.findOne resolving undefined
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ folder: 'hospeda/social/assets' })
+            );
+        });
+
+        it('falls back to hospeda/social/assets when social_assets_folder is an empty string', async () => {
+            // Arrange
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+            settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
+                if (query.key === 'social_assets_folder') {
+                    return { key: 'social_assets_folder', value: '' };
+                }
+                return undefined;
+            });
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ folder: 'hospeda/social/assets' })
             );
         });
     });

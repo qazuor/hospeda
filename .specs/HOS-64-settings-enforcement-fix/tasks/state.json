@@ -370,35 +370,35 @@
             "id": "T-011",
             "title": "Read download timeout and assets folder from settings",
             "description": "In `packages/service-core/src/services/social/social-image-pipeline.service.ts`, replace the hard-coded `DOWNLOAD_TIMEOUT_MS` (15_000, line ~128) and `SOCIAL_ASSETS_FOLDER` ('hospeda/social/assets', line ~131) constants with reads from `social_settings` (`download_timeout_ms`, `social_assets_folder`, seeded in T-003) via the existing raw-model read pattern. Do not confuse with the unrelated `DOWNLOAD_TIMEOUT_MS` in `packages/service-core/src/services/media/image-import.service.ts` — that one is out of scope. Unit test with valid and missing settings (fallback to current defaults).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-037"],
             "subtasks": [
                 {
                     "title": "Replace DOWNLOAD_TIMEOUT_MS constant with settings read",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace SOCIAL_ASSETS_FOLDER constant with settings read",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test valid and missing-setting fallback",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["social", "image-pipeline", "settings"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T18:00:00Z",
+                "completed": "2026-07-02T18:35:00Z"
             }
         },
         {
