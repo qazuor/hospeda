@@ -113,31 +113,31 @@
             "id": "T-004",
             "title": "Add i18n strings for exclusive deals page (es/en/pt)",
             "description": "Add locale keys under packages/i18n for the exclusive-deals page: page title, empty state ('no hay ofertas activas por ahora' equivalent), upgrade CTA copy (mirroring the existing alerts upgrade-prompt copy), and a VIP-only badge label. Add for all three locales (es default, en, pt) per project i18n convention. Follow packages/i18n/CLAUDE.md structure.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Add es/en/pt keys for title, empty state, upgrade CTA, VIP-only badge",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/i18n generate-types and confirm types compile",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:27:33Z",
+                "completed": "2026-07-02T09:33:38Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.3
     }
