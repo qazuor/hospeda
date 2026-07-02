@@ -31,7 +31,6 @@ import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/s
 import { getMediaProvider } from '../../../services/media';
 import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -113,7 +112,8 @@ export const socialDraftsRoute = createApiKeyRoute({
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
-        getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+        getExpectedKey: async () =>
+            (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
         actor: { id: 'gpt-action', name: 'Custom GPT Social Action' }
     },
     requestBody: CreateSocialDraftSchema,

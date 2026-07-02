@@ -794,35 +794,35 @@
             "id": "T-023",
             "title": "Migrate x-hospeda-ai-key inbound check to vault",
             "description": "Locate the inbound `x-hospeda-ai-key` validation site (grep for `HOSPEDA_AI_SOCIAL_KEY` usage — likely a shared API-key auth check used by GPT-facing routes such as `catalog.ts` and `drafts.ts`). Change it to call `getDecryptedSocialCredential({ key: 'ai_social_key' })` (T-020) instead of reading `env.HOSPEDA_AI_SOCIAL_KEY`. Since this touches shared auth code, add regression tests for every route that uses it, not just one.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": ["T-038"],
             "subtasks": [
                 {
                     "title": "Locate the shared inbound API-key validation site",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace env.HOSPEDA_AI_SOCIAL_KEY read with vault decrypt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Regression tests for every route using this check",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "auth", "migration", "shared-code"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 539 tests across test/routes/ai/, test/routes/social/, test/middlewares/api-key.test.ts, test/cron/social-publish-dispatch.job.test.ts. apiKeyMiddleware's ApiKeyMiddlewareConfig.getExpectedKey type widened to allow async (string | undefined | Promise<string | undefined>) since it's a shared middleware also used by the Make.com inbound key (HOSPEDA_MAKE_INBOUND_KEY, untouched, stays sync/env-sourced). Both drafts.ts and catalog.ts (the 2 GPT-facing routes using x-hospeda-ai-key) migrated to getDecryptedSocialCredential({ key: 'ai_social_key' }); env import removed from both since it was their only remaining env usage."
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T02:30:00Z",
+                "completed": "2026-07-03T03:05:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.2
     }
