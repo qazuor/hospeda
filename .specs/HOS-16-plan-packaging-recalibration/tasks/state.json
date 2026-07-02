@@ -406,27 +406,37 @@
             "id": "T-010",
             "title": "Hide the 3 complex plans (isActive: false)",
             "description": "Set `isActive: false` on `COMPLEX_BASICO_PLAN`, `COMPLEX_PRO_PLAN`, `COMPLEX_PREMIUM_PLAN` in `packages/billing/src/config/plans.config.ts` (the field already exists on PlanDefinition, this is a value change only). Do NOT touch entitlements, limits, slug, or isDefault. Note: `validatePlans()` in `packages/billing/src/validation/config-validator.ts` and `getDefaultPlan()` do NOT check `isActive` today (confirmed by exploration) — this is exactly the mitigation the spec's Risks table relies on ('validator still finds a default per category'), so no new validator code is needed here. Tests covered in T-017 (regression).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-017"],
             "subtasks": [
                 {
                     "title": "Set isActive:false on all 3 complex plans",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "plans"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:53:33Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:53:33Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:53:33Z",
+                    "details": "@repo/billing 546/546 incl config-validator (confirms isActive-blind mitigation holds)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:51:51Z",
+                "completed": "2026-07-02T08:53:33Z"
             }
         },
         {
@@ -762,9 +772,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.6
     }

@@ -3,6 +3,7 @@ import {
     ALL_PLANS,
     COMPLEX_BASICO_PLAN,
     COMPLEX_PREMIUM_PLAN,
+    COMPLEX_PRO_PLAN,
     OWNER_BASICO_PLAN,
     OWNER_PREMIUM_PLAN,
     OWNER_PRO_PLAN,
@@ -129,6 +130,18 @@ describe('Plan Configuration', () => {
             );
             expect(propertiesLimit).toBeDefined();
             expect(propertiesLimit?.value).toBeGreaterThan(0);
+        });
+
+        it('all 3 complex plans are hidden (isActive: false) — HOS-16, complex vertical not built', () => {
+            expect(COMPLEX_BASICO_PLAN.isActive).toBe(false);
+            expect(COMPLEX_PRO_PLAN.isActive).toBe(false);
+            expect(COMPLEX_PREMIUM_PLAN.isActive).toBe(false);
+        });
+
+        it('complex plans keep their entitlements/limits/isDefault intact while hidden (reversible)', () => {
+            expect(COMPLEX_BASICO_PLAN.isDefault).toBe(true);
+            expect(COMPLEX_BASICO_PLAN.entitlements.length).toBeGreaterThan(0);
+            expect(COMPLEX_BASICO_PLAN.limits.length).toBeGreaterThan(0);
         });
     });
 

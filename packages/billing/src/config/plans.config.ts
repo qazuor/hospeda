@@ -258,7 +258,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: true,
     sortOrder: 1,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific
@@ -302,7 +302,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 2,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific
@@ -357,7 +357,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 3,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific

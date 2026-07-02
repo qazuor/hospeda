@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 9/20 tasks (45%)
+## Progress: 10/20 tasks (50%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -57,7 +57,8 @@
   - Blocked by: none
   - Blocks: T-013, T-014, T-018
 
-- [ ] **T-010** (complexity: 1) - Hide the 3 complex plans (isActive: false)
+- [x] **T-010** (complexity: 1) - Hide the 3 complex plans (isActive: false) [DONE]
+  - Confirmed config-validator + getDefaultPlan ignore isActive, so the spec's stated mitigation holds with zero new guard code
   - Blocked by: none
   - Blocks: T-011, T-017
 
