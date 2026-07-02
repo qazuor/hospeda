@@ -192,6 +192,29 @@ accommodation entitlement engine:
 - `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
 - These extras columns are applied by `pnpm db:apply-extras` (files 018/019/020 under `packages/db/src/migrations/extras/`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
 
+#### Featured-listing entitlement (SPEC-292 → SPEC-309)
+
+`accommodations.featuredByEntitlement` (renamed from `featuredByPlan` — SPEC-309 OQ-1) is a denormalized
+flag driven by **two independent sources** (SPEC-309 OQ-3):
+
+- **Plan** — an owner's accommodation subscription plan grants `FEATURED_LISTING` owner-wide (all of
+  the owner's accommodations). Resolved by `resolveOwnerPlanGrantsFeatured()`.
+- **Addon** — a `visibility-boost-7d`/`-30d` one-time purchase grants featuring scoped to a SINGLE
+  accommodation, via the `featured_listing_addon_grants` link table (`purchaseId` → `accommodationId`,
+  written at checkout confirmation). An owner-wide plan grant flips every accommodation; an addon grant
+  flips exactly one.
+- Sync primitives live in `packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts`:
+  `syncFeaturedByEntitlementForOwner` (bulk, plan-driven, excludes addon-protected accommodations on
+  revoke) and `syncFeaturedByEntitlementForAccommodation` (single accommodation, addon-driven, no-ops on
+  revoke if the owner's plan independently still grants it). Both schedule ISR revalidation
+  (`getRevalidationService().scheduleRevalidationBatch`) on every actual write (SPEC-309 G-3).
+- The 6-hourly backstop cron (renamed `featured-by-plan-reconcile` → `featured-by-entitlement-reconcile`,
+  `apps/api/src/cron/jobs/featured-by-entitlement-reconcile.job.ts`) corrects drift from both sources.
+- `accommodations.isFeatured` (admin-curated, separate column) is now ALSO settable by an entitled owner
+  via a dedicated self-service toggle — `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
+  (SPEC-309 T-019/T-020) — gated by a live `FEATURED_LISTING` entitlement check (plan OR addon), not by
+  the general accommodation update schema.
+
 ### Local testing for billing entitlements (SPEC-143)
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.

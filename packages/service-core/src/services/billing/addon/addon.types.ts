@@ -61,6 +61,11 @@ export interface PurchaseAddonInput {
     promoCode?: string;
     /** User ID for tracking */
     userId: string;
+    /**
+     * The accommodation this purchase targets (SPEC-309 OQ-3). Required when
+     * the addon's `requiresAccommodationTarget` flag is true; ignored otherwise.
+     */
+    accommodationId?: string;
 }
 
 /**

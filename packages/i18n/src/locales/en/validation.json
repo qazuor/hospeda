@@ -159,6 +159,11 @@
                     "min": "The ordered list must contain at least {{min}} item"
                 }
             }
+        },
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "[EN] El destacado es obligatorio"
+            }
         }
     },
     "featureFlag": {

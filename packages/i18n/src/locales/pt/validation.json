@@ -159,6 +159,11 @@
                     "min": "A lista ordenada deve conter ao menos {{min}} item"
                 }
             }
+        },
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "[PT] El destacado es obligatorio"
+            }
         }
     },
     "featureFlag": {

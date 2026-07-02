@@ -10,6 +10,10 @@ import { getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as notificationsModule from '../../src/routes/webhooks/mercadopago/notifications.js';
@@ -42,7 +46,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
             };
             return db.transaction(async (tx: unknown) => cb({ tx, hookState: {} }));
-        })
+        }),
+        // SPEC-309 T-023: shared resolver + sync for the featuredByEntitlement
+        // flag, called from the Step 9 status-transition block. Defaulted to a
+        // no-featured resolution; individual tests override via mockResolvedValue(Once).
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
     };
 });
 
@@ -1882,6 +1891,198 @@ describe('processSubscriptionUpdated', () => {
             expect(result.statusChanged).toBe(true);
             expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
             expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-309 T-023: featuredByEntitlement sync on status transitions
+    // ---------------------------------------------------------------------------
+    //
+    // NOTE (verified against the source, not assumed): QZPAY_TO_HOSPEDA_STATUS
+    // (subscription-logic.ts) only maps the raw MP statuses 'active', 'paused',
+    // 'canceled', 'finished', 'past_due', 'pending' — there is NO raw status
+    // that maps to SubscriptionStatusEnum.TRIALING or .COMP. Any other qzpayStatus
+    // string hits the "Unknown QZPay subscription status" branch and returns
+    // early at Step 4, never reaching the Step 9 sync block below. So the
+    // `mappedStatus === TRIALING` / `=== COMP` arms of `shouldGrant` in the
+    // source are currently unreachable through this webhook entry point — they
+    // cannot be exercised without mocking the module's own exported constant,
+    // which isn't meaningful here. Coverage below is limited to the reachable
+    // active/cancelled/expired/paused/past_due statuses plus the soft-fail path.
+    describe('SPEC-309 T-023: syncFeaturedByEntitlementForOwner on status transitions', () => {
+        it('grants featuredByEntitlement on transition to ACTIVE', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.PAUSED });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(true);
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-active'
+            });
+
+            expect(result.success).toBe(true);
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: 'user-001' });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'user-001',
+                active: true
+            });
+        });
+
+        it('revokes featuredByEntitlement on transition to CANCELLED', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-cancelled'
+            });
+
+            expect(result.success).toBe(true);
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: 'user-001' });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'user-001',
+                active: false
+            });
+        });
+
+        it('revokes featuredByEntitlement on transition to EXPIRED (MP finished)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('finished'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-expired'
+            });
+
+            expect(result.success).toBe(true);
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: 'user-001' });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'user-001',
+                active: false
+            });
+        });
+
+        it('revokes featuredByEntitlement on transition to PAUSED', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-paused'
+            });
+
+            expect(result.success).toBe(true);
+            expect(resolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({ ownerId: 'user-001' });
+            expect(syncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId: 'user-001',
+                active: false
+            });
+        });
+
+        it('does NOT call the resolver or sync on transition to PAST_DUE (grace period, no-op)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('past_due'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: {}
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-past-due'
+            });
+
+            expect(result.success).toBe(true);
+            expect(resolveOwnerPlanGrantsFeatured).not.toHaveBeenCalled();
+            expect(syncFeaturedByEntitlementForOwner).not.toHaveBeenCalled();
+        });
+
+        it('soft-fails: sync throws but the webhook still succeeds (non-blocking)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            vi.mocked(resolveOwnerPlanGrantsFeatured).mockResolvedValueOnce(false);
+            vi.mocked(syncFeaturedByEntitlementForOwner).mockRejectedValueOnce(
+                new Error('featured sync DB error')
+            );
+
+            const event = makeWebhookEvent();
+
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t023-soft-fail'
+            });
+
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.CANCELLED
+            });
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: localSub.id,
+                    error: 'featured sync DB error'
+                }),
+                expect.stringContaining('syncFeaturedByEntitlementForOwner failed (non-blocking')
+            );
         });
     });
 });

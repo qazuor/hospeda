@@ -34,7 +34,8 @@ const {
     mockDbSelectChain,
     mockValidateTransition,
     mockSendNotification,
-    mockWithTransaction
+    mockWithTransaction,
+    mockSyncFeaturedByEntitlementForOwner
 } = vi.hoisted(() => ({
     mockHandleSubscriptionCancellationAddons: vi.fn(),
     mockClearEntitlementCache: vi.fn(),
@@ -46,7 +47,9 @@ const {
     mockSendNotification: vi.fn().mockResolvedValue(undefined),
     // withTransaction executes the callback with a tx object that mirrors the
     // mocked db (same insert/update/select handles).
-    mockWithTransaction: vi.fn()
+    mockWithTransaction: vi.fn(),
+    // SPEC-309 T-024: Step 3c's unconditional revoke call.
+    mockSyncFeaturedByEntitlementForOwner: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -69,7 +72,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        validateSubscriptionStatusTransition: mockValidateTransition
+        validateSubscriptionStatusTransition: mockValidateTransition,
+        // SPEC-309 T-024: Step 3c calls this unconditionally with `active: false`.
+        // resolveOwnerPlanGrantsFeatured is NOT used at this call-site (see
+        // source comment above Step 3c) so it is not mocked here.
+        syncFeaturedByEntitlementForOwner: mockSyncFeaturedByEntitlementForOwner
     };
 });
 
@@ -87,6 +94,16 @@ interface DueRow {
     id: string;
     customerId: string;
     status: string;
+    /**
+     * Optional owner external id (`users.id`). Present only in SPEC-309 T-024
+     * tests — `resolveOwnerUserId` shares the same generic `getDb()` select
+     * chain as the due-subs query (this file does not mock
+     * `subscription-pause.service.js`, matching its existing pattern for
+     * `reconcileCommerceListingForSubscription`/`reconcilePartnerForSubscription`),
+     * so setting this field on the row is how these tests control
+     * `resolveOwnerUserId`'s resolved ownerId.
+     */
+    externalId?: string;
 }
 
 /**
@@ -210,6 +227,7 @@ const SUB_ID_1 = 'sub-aaa-111';
 const SUB_ID_2 = 'sub-bbb-222';
 const CUSTOMER_ID_1 = 'cust-aaa-111';
 const CUSTOMER_ID_2 = 'cust-bbb-222';
+const OWNER_ID_1 = 'owner-ccc-333';
 
 /** Returns a minimal CronJobContext for the handler. */
 function makeCronCtx(dryRun = false) {
@@ -263,10 +281,12 @@ beforeEach(() => {
     mockDbSelectChain.mockReset();
     mockSendNotification.mockReset();
     mockWithTransaction.mockReset();
+    mockSyncFeaturedByEntitlementForOwner.mockReset();
 
     // Re-set defaults after reset
     mockGetQZPayBilling.mockReturnValue(makeBilling());
     mockValidateTransition.mockImplementation(() => undefined); // no throw = valid
+    mockSyncFeaturedByEntitlementForOwner.mockResolvedValue({ updated: 0, rows: [] });
     mockHandleSubscriptionCancellationAddons.mockResolvedValue({
         subscriptionId: SUB_ID_1,
         customerId: CUSTOMER_ID_1,
@@ -832,6 +852,54 @@ describe('handler: addon revocation failure', () => {
         // non-terminal status is preserved by the rollback). The cache not being
         // cleared is the in-process guard.
         expect(ctx.logger.error).toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Step 3c: featuredByEntitlement revoke (SPEC-309 T-024)
+// ---------------------------------------------------------------------------
+
+describe('handler: featuredByEntitlement revoke (SPEC-309 T-024, Step 3c)', () => {
+    it('calls syncFeaturedByEntitlementForOwner with { ownerId, active: false } after finalizing a sub whose owner resolves', async () => {
+        dueRowsState.rows = [
+            makeDueRow({ id: SUB_ID_1, customerId: CUSTOMER_ID_1, externalId: OWNER_ID_1 })
+        ];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(mockSyncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+            ownerId: OWNER_ID_1,
+            active: false
+        });
+    });
+
+    it('is soft-fail: a sync error does not block finalization or the overall result', async () => {
+        dueRowsState.rows = [
+            makeDueRow({ id: SUB_ID_1, customerId: CUSTOMER_ID_1, externalId: OWNER_ID_1 })
+        ];
+        mockSyncFeaturedByEntitlementForOwner.mockRejectedValueOnce(
+            new Error('featured sync unavailable')
+        );
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // The finalization itself is unaffected by the sync failure.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(result.errors).toBe(0);
+
+        expect(ctx.logger.warn).toHaveBeenCalledWith(
+            'finalize-cancelled-subs: syncFeaturedByEntitlementForOwner failed (non-blocking — T-006 will reconcile)',
+            expect.objectContaining({
+                subscriptionId: SUB_ID_1,
+                customerId: CUSTOMER_ID_1,
+                error: 'featured sync unavailable'
+            })
+        );
     });
 });
 

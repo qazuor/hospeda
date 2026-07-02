@@ -227,7 +227,8 @@
                 "contact": "Contato",
                 "socialNetworks": "Redes sociais",
                 "photos": "Fotos",
-                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes"
+                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
+                "featuredToggle": "[PT] Destacado"
             },
             "field": {
                 "name": "Nome",
@@ -355,6 +356,11 @@
                 "successMessage": "Traduções geradas. Recarregando...",
                 "errorGeneric": "Não foi possível gerar as traduções. Tente novamente.",
                 "errorNetwork": "Erro de conexão ao tentar gerar as traduções."
+            },
+            "featuredToggle": {
+                "label": "[PT] Destacar mi alojamiento",
+                "hint": "[PT] Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
+                "toggleError": "[PT] No se pudo actualizar el destacado. Intentá de nuevo."
             }
         },
         "empty": {

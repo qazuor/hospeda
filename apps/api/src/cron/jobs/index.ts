@@ -45,4 +45,4 @@ export { refreshExternalReputationJob } from './refresh-external-reputation.job.
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { partnerExpiryJob } from './partner-expiry.job.js';
-export { featuredByPlanReconcileJob } from './featured-by-plan-reconcile.job.js';
+export { featuredByEntitlementReconcileJob } from './featured-by-entitlement-reconcile.job.js';

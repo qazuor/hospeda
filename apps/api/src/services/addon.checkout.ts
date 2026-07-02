@@ -9,6 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { AccommodationModel } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { BillingPlanResponse } from '@repo/schemas';
@@ -147,6 +148,10 @@ const planService = new PlanService();
 // Instantiated once at module level; stateless, no DB connection held.
 const addonCatalogService = new AddonCatalogService();
 
+// ─── Accommodation model (ownership lookup for target-required addons — SPEC-309 T-006) ───
+// Instantiated once at module level; stateless, no DB connection held.
+const accommodationModel = new AccommodationModel();
+
 /**
  * Resolves a billing plan from the DB using dual-resolve:
  * 1. Try `getById(planId)` — succeeds for UUID planIds.
@@ -221,6 +226,46 @@ export async function createAddonCheckout(
         }
 
         const addon = addonResult.data;
+
+        // SPEC-309 OQ-3: target-required addons (visibility-boost-7d/-30d) apply
+        // their effect to a single accommodation, not owner-wide. Capture and
+        // validate the target before creating the checkout session so an invalid
+        // target never reaches MercadoPago.
+        if (addon.requiresAccommodationTarget) {
+            if (!input.accommodationId) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: `accommodationId is required to purchase '${addon.slug}'`
+                    }
+                };
+            }
+
+            const targetAccommodation = await accommodationModel.findById(input.accommodationId);
+
+            // findById does not filter soft-deleted rows (see base.model.ts), so a
+            // deleted accommodation must be treated the same as a missing one.
+            if (!targetAccommodation || targetAccommodation.deletedAt) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `Accommodation '${input.accommodationId}' not found`
+                    }
+                };
+            }
+
+            if (targetAccommodation.ownerId !== input.userId) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: 'You do not own this accommodation'
+                    }
+                };
+            }
+        }
 
         if (!addon.isActive) {
             return {
@@ -416,7 +461,11 @@ export async function createAddonCheckout(
                 promo_code: input.promoCode || null,
                 promo_code_id: promoCodeId || null,
                 discount_amount: discountAmount,
-                original_price: addon.priceArs
+                original_price: addon.priceArs,
+                // SPEC-309 T-006/T-007: carries the validated target accommodation
+                // across the async payment confirmation, same pattern as promo_code.
+                accommodation_id: input.accommodationId || null,
+                accommodationId: input.accommodationId || null
             }
         });
 
@@ -769,6 +818,72 @@ export async function confirmAddonPurchase(
             },
             'Inserted add-on purchase into billing_addon_purchases table'
         );
+
+        // SPEC-309 T-007: link the purchase to its target accommodation. T-006
+        // validated and carried the accommodationId through checkout.create's
+        // metadata; read it back here from the confirmation payload. Soft-fail —
+        // a missing/failed grant link must never block purchase confirmation,
+        // since the purchase row is already committed and is the source of
+        // truth for the customer's limit/entitlement adjustments.
+        if (addon.requiresAccommodationTarget) {
+            const confirmedAccommodationId =
+                typeof input.metadata?.accommodationId === 'string'
+                    ? input.metadata.accommodationId
+                    : undefined;
+
+            if (confirmedAccommodationId) {
+                try {
+                    const { getDb } = await import('@repo/db');
+                    const { featuredListingAddonGrants } = await import('@repo/db/schemas/billing');
+                    await getDb()
+                        .insert(featuredListingAddonGrants)
+                        .values({ purchaseId, accommodationId: confirmedAccommodationId });
+                } catch (grantLinkError) {
+                    apiLogger.error(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId,
+                            accommodationId: confirmedAccommodationId,
+                            error:
+                                grantLinkError instanceof Error
+                                    ? grantLinkError.message
+                                    : String(grantLinkError)
+                        },
+                        'Failed to write featured_listing_addon_grants row'
+                    );
+                    captureBillingError(
+                        grantLinkError instanceof Error
+                            ? grantLinkError
+                            : new Error(String(grantLinkError)),
+                        {
+                            addonIds: [addon.slug],
+                            transactionId: purchaseId,
+                            operation: 'featured_listing_addon_grant_write'
+                        },
+                        'error'
+                    );
+                }
+            } else {
+                // Should not happen if T-006 validated correctly at checkout time,
+                // but MercadoPago webhooks are async and can race. Manual
+                // reconciliation is out of scope here (SPEC-309 T-007) — this is
+                // logged for follow-up investigation only.
+                apiLogger.error(
+                    { customerId: input.customerId, addonSlug: input.addonSlug, purchaseId },
+                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written'
+                );
+                captureBillingError(
+                    new Error('Missing accommodationId at addon purchase confirmation'),
+                    {
+                        addonIds: [addon.slug],
+                        transactionId: purchaseId,
+                        operation: 'featured_listing_addon_grant_write'
+                    },
+                    'error'
+                );
+            }
+        }
 
         // Clear entitlement cache so the new add-on is reflected immediately
         clearEntitlementCache(input.customerId);

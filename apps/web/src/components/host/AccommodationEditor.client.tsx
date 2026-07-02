@@ -26,6 +26,7 @@ import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
 import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
+import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
@@ -449,6 +450,11 @@ export function AccommodationEditor({
             )}
 
             <ExternalReputationSection
+                locale={locale}
+                accommodationId={accommodationId}
+            />
+
+            <FeaturedToggleSection
                 locale={locale}
                 accommodationId={accommodationId}
             />

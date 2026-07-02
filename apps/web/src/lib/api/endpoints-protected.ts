@@ -2006,6 +2006,46 @@ export const accommodationEditApi = {
     },
 
     /**
+     * Read the current `isFeatured` value and whether the owner currently
+     * holds an active FEATURED_LISTING entitlement (plan or addon) for this
+     * accommodation (SPEC-309 T-020). Used to decide whether the owner
+     * self-service featured toggle should render in the editor at all.
+     *
+     * @param params - Accommodation ID
+     * @returns The current featured status and entitlement gate
+     */
+    getFeaturedEntitlement({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<{ readonly isFeatured: boolean; readonly hasEntitlement: boolean }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/featured-toggle`
+        });
+    },
+
+    /**
+     * Set `isFeatured` for an accommodation the actor owns (SPEC-309 T-019).
+     * Rejected server-side (403) if the owner does not currently hold an
+     * active FEATURED_LISTING entitlement (plan or addon) for it.
+     *
+     * @param params - Accommodation ID and the target `isFeatured` value
+     * @returns The new `isFeatured` value
+     */
+    setFeaturedToggle({
+        id,
+        isFeatured
+    }: {
+        readonly id: string;
+        readonly isFeatured: boolean;
+    }): Promise<ApiResult<{ readonly isFeatured: boolean }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/featured-toggle`,
+            body: { isFeatured }
+        });
+    },
+
+    /**
      * Fetch all active amenities for the editor's checkbox group.
      * Uses the public amenities endpoint (no auth required).
      *

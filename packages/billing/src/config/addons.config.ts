@@ -17,7 +17,8 @@ export const VISIBILITY_BOOST_ADDON: AddonDefinition = {
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner', 'complex'],
     isActive: true,
-    sortOrder: 1
+    sortOrder: 1,
+    requiresAccommodationTarget: true
 };
 
 export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
@@ -33,7 +34,8 @@ export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner', 'complex'],
     isActive: true,
-    sortOrder: 2
+    sortOrder: 2,
+    requiresAccommodationTarget: true
 };
 
 // ─── RECURRING ADD-ONS ─────────────────────────────────────────

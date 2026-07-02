@@ -1124,7 +1124,7 @@
             "title": "Featured Listing — Addon Source + Hardening",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-309-featured-listing-addon-source-and-hardening",
             "created": "2026-06-30T00:00:00Z",
             "base": "staging",

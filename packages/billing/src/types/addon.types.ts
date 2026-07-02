@@ -36,4 +36,11 @@ export interface AddonDefinition {
     isActive: boolean;
     /** Sort order for display */
     sortOrder: number;
+    /**
+     * Whether purchasing this add-on requires capturing a target accommodation
+     * (SPEC-309 OQ-3). When true, the add-on's effect applies to that single
+     * accommodation, not owner-wide. Defaults to false/undefined for add-ons
+     * whose effect is not accommodation-scoped.
+     */
+    requiresAccommodationTarget?: boolean;
 }

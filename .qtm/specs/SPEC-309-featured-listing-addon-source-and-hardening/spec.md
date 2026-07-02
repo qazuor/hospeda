@@ -3,7 +3,7 @@ specId: SPEC-309
 title: Featured Listing — Addon Source + Hardening
 type: feat
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-30
 dependsOn: [SPEC-292]
 tags: [owner, featured, addons, entitlements, billing, hardening]
@@ -68,21 +68,35 @@ to backfill — review item M-2.)
 - **G-1** Both the T-005 hooks and the T-006 cron resolve FEATURED_LISTING from the
   **union** of plan + customer-level addon entitlements (mirror `loadEntitlements`),
   so addon-granted featuring works and a plan downgrade never clears featuring while
-  a live addon still grants it.
-- **G-2** Add an addon purchase / expiry hook (or extend the existing addon
-  lifecycle events from SPEC-043) that calls `syncFeaturedByPlan` when a
-  FEATURED_LISTING-granting addon is bought or lapses.
-- **G-3** (M-3) Trigger ISR revalidation for affected accommodations after
-  `syncFeaturedByPlan`, mirroring `subscription-pause.service.ts` — if/once it is
-  confirmed the public featured ordering is cached.
+  a live addon still grants it. Plan-derived featuring stays **owner-wide** (all of
+  the owner's accommodations); addon-derived featuring is **scoped to the single
+  accommodation the addon was purchased for** (see OQ-3 resolution) — the union
+  happens at the per-accommodation `featuredByEntitlement` flag, not by broadening
+  the addon to the whole owner.
+- **G-2** Add an addon purchase / expiry hook that calls `syncFeaturedByPlan` (or
+  its per-accommodation equivalent) when a FEATURED_LISTING-granting addon is
+  bought or expires. Reuses the EXISTING expiry infrastructure — `durationDays` →
+  `expiresAt` (`addon-entitlement.service.ts`, `addon.checkout.ts`) and the
+  existing `addon-expiry.job.ts` cron — no new cron needed (see OQ-5 resolution).
+- **G-3** (M-3) Trigger ISR/CDN revalidation for affected accommodations after
+  `syncFeaturedByPlan`. **Confirmed required** (see OQ-2 resolution): the search
+  listing page is SSR+ISR with a Cloudflare edge cache up to 24h, and the home page
+  is SSG (needs a redeploy to update). The actual gap is that all 7 call-sites that
+  write `featuredByPlan`/`featuredByEntitlement` (`apply-scheduled-plan-changes.ts`,
+  `dunning.job.ts`, `finalize-cancelled-subs.ts`, `qzpay-admin-hooks.ts` ×2,
+  `payment-logic.ts` ×2, `subscription-logic.ts`, `featured-by-plan-reconcile.job.ts`)
+  currently skip revalidation — wire a selective purge (not zone-wide, given the
+  volume of these jobs) into `syncFeaturedByPlan` itself so every call-site gets it
+  for free.
 - **G-4** (M-4) Add direct unit tests for the T-005 transition→`active` derivation
   and the soft-fail isolation of the sync call.
 - **G-5** (M-5) Align the T-005 hook status handling with `loadEntitlements` /
   the cron (`paused` → inactive consistently; grant on `comp`).
 - **G-6** (folded from SPEC-320) Optional owner self-service toggle for
   `isFeatured` in the web owner editor, guarded so it only applies within the
-  owner's active FEATURED_LISTING entitlement (plan or addon) — scope/priority
-  to confirm against OQ-4/OQ-5 below.
+  owner's active FEATURED_LISTING entitlement (plan or addon). No slot cap (see
+  OQ-4 resolution) — the toggle is a pure visibility switch within an entitlement
+  the owner already holds, no rotation/queue logic needed.
 
 ## 4. Non-Goals
 
@@ -90,30 +104,41 @@ to backfill — review item M-2.)
   stays as SPEC-292 shipped; G-6 only adds an owner-facing toggle gated by an
   existing entitlement).
 - No new boost mechanism — this only wires the EXISTING `visibility-boost` addons.
-- No change to the `featuredByPlan` column / migration (already shipped).
+- No featured-slot cap / rotation / queue system (OQ-4 resolved: uncapped).
+- No new expiry cron (OQ-5 resolved: reuse `addon-expiry.job.ts`).
 
-## 5. Open Questions
+## 5. Open Questions (resolved 2026-07-01)
 
-- **OQ-1** Naming: `featuredByPlan` becomes a misnomer once addons also drive it
-  (it is really "featured by active entitlement"). Rename the column to
-  `featuredByEntitlement` (migration + churn) or keep the name and document that it
-  covers plan + addon? Lean: keep the name + document, to avoid a rename migration.
-- **OQ-2** Is the public featured ordering actually served from a cached page
-  (determines whether G-3/M-3 is required or a no-op)?
-- **OQ-3** Should a FEATURED_LISTING addon on a non-featured plan feature ALL the
-  owner's accommodations (consistent with the plan behavior, no cap), or is the
-  addon scoped to a single listing? (The addon is described per-accommodation;
-  the plan model is owner-wide. Resolve before implementing G-1/G-2.)
-- **OQ-4** (folded from SPEC-320) How many featured slots exist, and what
-  happens when more owners qualify than slots allow — rotation, a queue, or
-  does everyone who qualifies get featured simultaneously? Today's
-  `isFeatured OR featuredByPlan` sort implies no cap; confirm before adding
-  G-6's self-service toggle, since an uncapped toggle needs no slot logic but
-  a capped one does.
-- **OQ-5** (folded from SPEC-320) Is the `visibility-boost` addon's featuring
-  window already time-bounded by its own `durationDays` config (the addon
-  names — `visibility-boost-7d` / `-30d` — suggest yes), and does G-2's expiry
-  hook rely on that existing config or need new cron logic?
+- **OQ-1 — RESOLVED: rename.** `featuredByPlan` → `featuredByEntitlement`
+  (new migration + update all call-sites: search sort, T-005 hooks, T-006 cron,
+  G-2's addon hook). Chosen over keep-name-and-document for long-term clarity now
+  that the column reflects plan+addon, not plan only.
+- **OQ-2 — RESOLVED: yes, revalidation is required.** Verified: the search listing
+  page (`apps/web/src/pages/[lang]/alojamientos/index.astro`) is documented
+  `SSR + ISR 24h` with Cloudflare edge caching; the home page
+  (`apps/web/src/pages/[lang]/index.astro`) is `prerender = true` (SSG, needs a
+  redeploy to refresh). Without revalidation a featuring change can take up to 24h
+  (search) or require a redeploy (home) to appear. G-3 is in scope, not conditional.
+- **OQ-3 — RESOLVED: scoped to a single accommodation.** An addon-derived
+  FEATURED_LISTING grant features only the accommodation the addon was purchased
+  for, not the owner's whole portfolio — matches how the addon is sold
+  (per-accommodation pricing/copy) even though it costs more implementation work
+  than mirroring the owner-wide plan behavior (need to track which accommodation
+  an addon purchase applies to, likely via a link table analogous to
+  `commerce_listing_subscriptions`, and split the resolution logic: plan =
+  owner-wide, addon = scoped).
+- **OQ-4 — RESOLVED: no cap.** Featured listing stays uncapped — every owner who
+  qualifies (by plan or addon) is shown as featured, no rotation or queue. Keeps
+  G-6's self-service toggle simple (pure gate on an existing entitlement, no slot
+  allocation). Revisit as a separate spec if an uncapped model dilutes the
+  "featured" signal in practice.
+- **OQ-5 — RESOLVED: reuse existing expiry infra, no new cron.** The addon's
+  featuring window is already time-bounded by `durationDays` (7 / 30 days,
+  `packages/billing/src/config/addons.config.ts`), which the existing
+  `addon-entitlement.service.ts` / `addon.checkout.ts` already turn into an
+  `expiresAt`, and `apps/api/src/cron/jobs/addon-expiry.job.ts` already runs on
+  that schedule. G-2 hooks into that existing flow instead of building new cron
+  logic.
 
 ## 6. Relationship to SPEC-292
 

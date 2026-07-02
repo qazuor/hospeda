@@ -18,6 +18,7 @@ export * from './accommodation.options.schema.js'; // Lightweight {id,label,slug
 
 // HTTP operations
 export * from './accommodation.http.schema.js'; // HTTP-compatible schemas with query coercion
+export * from './accommodation.featured-toggle.schema.js'; // Owner self-service featured toggle body (SPEC-309 T-019)
 
 // Relations
 export * from './accommodation.relations.schema.js'; // Schemas with related entities

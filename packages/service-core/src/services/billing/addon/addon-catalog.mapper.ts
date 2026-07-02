@@ -16,7 +16,8 @@
  * - `entitlements`         text[] — first element maps to `grantsEntitlement`
  * - `limits`               JSONB — `{ [limitKey]: limitIncrease }` (first entry maps to affectsLimitKey/limitIncrease)
  * - `livemode`             boolean
- * - `metadata`             JSONB — contains: slug, durationDays, targetCategories, sortOrder
+ * - `metadata`             JSONB — contains: slug, durationDays, targetCategories, sortOrder,
+ *                           requiresAccommodationTarget
  *
  * JSONB metadata shape (written by the seeder):
  * ```json
@@ -24,7 +25,8 @@
  *   "slug": "visibility-boost-7d",
  *   "durationDays": 7,
  *   "targetCategories": ["owner", "complex"],
- *   "sortOrder": 1
+ *   "sortOrder": 1,
+ *   "requiresAccommodationTarget": true
  * }
  * ```
  *
@@ -118,6 +120,19 @@ function resolveTargetCategories(metadata: Record<string, unknown>): Array<'owne
     return raw.filter((v): v is 'owner' | 'complex' => v === 'owner' || v === 'complex');
 }
 
+/**
+ * Extracts `requiresAccommodationTarget` from the `metadata` JSONB (SPEC-309 OQ-3).
+ *
+ * Returns `undefined` (not `false`) when absent, matching `AddonDefinition`'s
+ * optional-field contract — addons that never set the flag behave exactly as
+ * they did before this field existed.
+ */
+function resolveRequiresAccommodationTarget(
+    metadata: Record<string, unknown>
+): boolean | undefined {
+    return metadata.requiresAccommodationTarget === true ? true : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Public mapper
 // ---------------------------------------------------------------------------
@@ -133,6 +148,7 @@ function resolveTargetCategories(metadata: Record<string, unknown>): Array<'owne
  * - Missing `targetCategories` in metadata → `['owner', 'complex']`
  * - Missing `durationDays` → `null`
  * - Missing `sortOrder` → `0`
+ * - Missing `requiresAccommodationTarget` → `undefined`
  *
  * @param row - Raw DB row from `billing_addons`
  * @returns Fully populated `AddonDefinition`
@@ -167,6 +183,7 @@ export function mapRowToAddonDefinition(row: QZPayBillingAddon): AddonDefinition
         grantsEntitlement: resolveGrantsEntitlement(row.entitlements),
         targetCategories: resolveTargetCategories(metadata),
         isActive: row.active ?? false,
-        sortOrder
+        sortOrder,
+        requiresAccommodationTarget: resolveRequiresAccommodationTarget(metadata)
     };
 }

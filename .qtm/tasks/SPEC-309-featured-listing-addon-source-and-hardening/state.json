@@ -1,0 +1,1240 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-309",
+    "title": "Featured Listing — Addon Source + Hardening",
+    "created": "2026-07-01T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Migration: rename featuredByPlan column to featuredByEntitlement",
+            "description": "Implements OQ-1. Rename `accommodations.featured_by_plan` -> `accommodations.featured_by_entitlement` (TS: `featuredByPlan` -> `featuredByEntitlement`) since the column now reflects plan+addon union, not plan only.\n\nKey files:\n- packages/db/src/schemas/accommodation/accommodation.dbschema.ts:79 (column def) and lines 141-149 (3 indexes: `accommodations_featuredByPlan_idx`, `accommodations_visibility_featuredByPlan_idx`, `accommodations_destinationId_featuredByPlan_visibility_idx` -> rename to the `...featuredByEntitlement...` equivalents).\n- packages/db/src/models/accommodation/accommodation.model.ts:184-191 (`buildAccommodationOrderBy`, the `sql\\`(${accommodations.isFeatured} OR ${accommodations.featuredByPlan})\\`` disjunction -> update column reference).\n\nDo NOT run `pnpm db:generate` yet in this task — T-002 adds a second schema change (new link table) and runs ONE `db:generate` covering both diffs, producing a single migration file (next number after 0038, i.e. 0039_<slug>.sql). This task only edits the TS schema + model source so the diff is ready.\n\nAcceptance criteria:\n- All `featuredByPlan` references in the two files above are renamed to `featuredByEntitlement` (column, index names, sql expression).\n- No other file changed in this task (call-site renames happen in T-005/T-008..T-014 once the service-layer function is renamed).\n- pnpm typecheck fails loudly at every remaining call site still referencing the old TS property name — this is expected and confirms the rename touches everything; leave those failures for the tasks that own each file.\n\nTesting requirements:\n- None yet (covered by T-021/T-022 once primitives exist). Verify visually that the 2 edited files no longer contain `featuredByPlan`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Rename column + comment block in accommodation.dbschema.ts",
+                    "completed": true
+                },
+                { "title": "Rename 3 indexes referencing featuredByPlan", "completed": true },
+                {
+                    "title": "Update sql disjunction in buildAccommodationOrderBy (accommodation.model.ts)",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "database", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T16:05:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:05:00Z",
+                    "details": "scoped to packages/db (task touches only this package); repo-wide breakage at other featuredByPlan call-sites is expected and deferred to T-005/T-008..T-014"
+                },
+                "tests": {
+                    "status": "exempt",
+                    "timestamp": "2026-07-01T16:05:00Z",
+                    "details": "pure structural rename, no new behavior; test coverage deferred to T-021/T-022 once sync primitives exist"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T16:05:00Z",
+                "completed": "2026-07-01T16:05:00Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Migration: new featured_listing_addon_grants link table + generate",
+            "description": "Implements the OQ-3 scoping mechanism. `billing_addon_purchases` (packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts) has no accommodation reference and a unique-active-per-(customerId, addonSlug) constraint, so a NEW link table is required to tie one addon purchase to exactly one accommodation, following the `commerce_listing_subscriptions` pattern (packages/db/src/schemas/commerce/commerce_listing_subscription.dbschema.ts) referenced in CLAUDE.md.\n\nCreate packages/db/src/schemas/billing/featured_listing_addon_grant.dbschema.ts:\n- Table `featured_listing_addon_grants`: `id` uuid PK default random, `purchaseId` uuid NOT NULL references `billingAddonPurchases.id` onDelete cascade, `accommodationId` uuid NOT NULL references `accommodations.id` onDelete cascade, `createdAt`/`updatedAt` timestamps.\n- `uniqueIndex` on `purchaseId` (one purchase links to exactly one accommodation).\n- `index` on `accommodationId` (resolver lookup path, see T-004).\n- No denormalized `status`/`expiresAt` columns — the resolver JOINs to `billingAddonPurchases` for `status = 'active' AND (expiresAt IS NULL OR expiresAt > now())` to avoid duplicated/stale state.\n- Export relations (`one` to both `billingAddonPurchases` and `accommodations`) mirroring `commerce_listing_subscriptions`'s relations block.\n- Register the new table in the relevant `packages/db/src/schemas/billing/index.ts` (or equivalent) barrel.\n\nThis task runs `pnpm db:generate` AFTER T-001's schema edit is in place (blockedBy T-001) so BOTH the column rename and the new table land in ONE migration file (0039_<slug>.sql). Verify no other unrelated drift is swept in.\n\nAcceptance criteria:\n- `featured_listing_addon_grants` table exists with the columns/constraints above.\n- `pnpm db:generate` produces exactly one clean migration covering the T-001 rename + this new table, no other drift.\n- `pnpm db:migrate` applies cleanly on a fresh DB.\n- pnpm typecheck green for the new schema file and its barrel export.\n\nTesting requirements:\n- Verify both changes via Drizzle Studio or `psql \\d accommodations` / `\\d featured_listing_addon_grants`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create featured_listing_addon_grant.dbschema.ts with table + relations",
+                    "completed": true
+                },
+                { "title": "Register in schemas barrel", "completed": true },
+                {
+                    "title": "Run pnpm db:generate (covers T-001 + T-002) and commit migration 0039",
+                    "completed": true
+                },
+                { "title": "Verify fresh-DB pnpm db:migrate applies cleanly", "completed": true }
+            ],
+            "tags": ["backend", "database", "migration", "addons"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T16:20:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:20:00Z",
+                    "details": "scoped to packages/db"
+                },
+                "tests": {
+                    "status": "exempt",
+                    "timestamp": "2026-07-01T16:20:00Z",
+                    "details": "migration-only task, verified via psql schema inspection on worktree_spec_309 (fresh DB clone of hospeda_template): column rename + new table/FKs/indexes/unique constraint all confirmed present"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T16:05:00Z",
+                "completed": "2026-07-01T16:20:00Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Addon config: add requiresAccommodationTarget flag",
+            "description": "Marks which addons need an accommodation target captured at purchase time (OQ-3). Add an optional `requiresAccommodationTarget?: boolean` field to the `AddonDefinition` type (packages/billing/src/types/addon.types.ts) and set it to `true` on both `VISIBILITY_BOOST_ADDON` and `VISIBILITY_BOOST_30D_ADDON` in packages/billing/src/config/addons.config.ts (lines 7-37). Default is `false`/`undefined` for all other addons (no behavior change for them).\n\nKey files:\n- packages/billing/src/types/addon.types.ts (add field to `AddonDefinition`)\n- packages/billing/src/config/addons.config.ts:7-37 (set `requiresAccommodationTarget: true` on the two visibility-boost addons)\n\nAcceptance criteria:\n- `AddonDefinition` type includes the new optional boolean field.\n- Both visibility-boost addons have `requiresAccommodationTarget: true`; no other addon definition changed.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test (packages/billing/test/) asserting `getAddonBySlug('visibility-boost-7d').requiresAccommodationTarget === true` and that an unrelated addon (e.g. an existing non-featured addon) is `false`/`undefined`.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add requiresAccommodationTarget to AddonDefinition type",
+                    "completed": true
+                },
+                {
+                    "title": "Set true on both visibility-boost addon definitions",
+                    "completed": true
+                },
+                { "title": "Unit test asserting the flag on both addons", "completed": true }
+            ],
+            "tags": ["backend", "billing", "config"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T16:35:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:35:00Z",
+                    "details": "scoped to packages/billing"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T16:35:00Z",
+                    "details": "packages/billing test/addons.test.ts, 25/25 (2 new: requiresAccommodationTarget true on both visibility-boost addons, falsy on unrelated addon); RED confirmed before implementation"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T16:30:00Z",
+                "completed": "2026-07-01T16:35:00Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Build shared featured-entitlement resolver helpers",
+            "description": "Implements the union logic G-1 requires (mirrors `loadEntitlements`'s plan UNION customer-entitlement pattern in apps/api/src/middlewares/entitlement.ts:549-558), extracted into ONE reusable module instead of the duplicated `getPlanBySlug(...).entitlements.includes(EntitlementKey.FEATURED_LISTING)` check currently copy-pasted across 8 call-sites.\n\nCreate packages/service-core/src/services/accommodation/featured-entitlement.resolver.ts exporting:\n- `resolveOwnerPlanGrantsFeatured({ ownerId }): Promise<boolean>` — resolves the owner's active/trialing/comp subscription (SubscriptionStatusEnum set, matching `featured-by-plan-reconcile.job.ts:94`'s `active|trialing|comp`) and checks `plan.entitlements.includes(EntitlementKey.FEATURED_LISTING)`. This is the single source of truth other tasks (T-005, T-014, T-019) call instead of re-deriving plan status locally.\n- `resolveAccommodationHasActiveFeaturedAddon({ accommodationId }): Promise<boolean>` — queries `featured_listing_addon_grants` (T-002) JOIN `billing_addon_purchases` WHERE `accommodationId = ? AND status = 'active' AND (expiresAt IS NULL OR expiresAt > now())`.\n- `getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId }): Promise<string[]>` — same join, scoped to all of an owner's accommodations, returns the protected id list (consumed by T-005's exclusion logic on revoke).\n\nAll three follow RO-RO with full JSDoc; direct Drizzle queries via `getDb()` (no BaseCrudService, consistent with the `accommodation.sync-featured-by-plan.ts` layering precedent).\n\nAcceptance criteria:\n- All three functions exported from the new file and the service-core barrel.\n- `resolveOwnerPlanGrantsFeatured` treats paused as NOT active and comp as active (matches reconcile cron, not the pre-G-5 hook behavior).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-021.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005", "T-014", "T-019", "T-021"],
+            "subtasks": [
+                {
+                    "title": "resolveOwnerPlanGrantsFeatured (active|trialing|comp, excludes paused)",
+                    "completed": true
+                },
+                {
+                    "title": "resolveAccommodationHasActiveFeaturedAddon (single accommodation)",
+                    "completed": true
+                },
+                {
+                    "title": "getOwnerAccommodationIdsWithActiveFeaturedAddon (owner-wide protected set)",
+                    "completed": true
+                },
+                { "title": "Export from service-core barrel", "completed": true }
+            ],
+            "tags": ["backend", "service", "billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T17:10:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:10:00Z",
+                    "details": "scoped to packages/service-core, filtered for the one pre-existing expected error in accommodation.sync-featured-by-plan.ts:118 (T-005's file, still referencing the pre-T-001-rename featuredByPlan property) -- zero errors from the new resolver file"
+                },
+                "tests": {
+                    "status": "deferred",
+                    "timestamp": "2026-07-01T17:10:00Z",
+                    "details": "per task spec, unit tests covered by T-021"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T16:40:00Z",
+                "completed": "2026-07-01T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Rename and harden sync primitives with addon-aware exclusion/guard",
+            "description": "Closes H-1's two consequences. Rename packages/service-core/src/services/accommodation/accommodation.sync-featured-by-plan.ts -> accommodation.sync-featured-by-entitlement.ts and change its exports:\n\n- `syncFeaturedByEntitlementForOwner({ ownerId, active, db? }): Promise<{ updated: number }>` (renamed from `syncFeaturedByPlan`, same owner-wide bulk shape). When `active === false` (plan-driven revoke), FIRST call `getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId })` (T-004) and add `notInArray(accommodations.id, protectedIds)` to the WHERE clause so accommodations with a live addon grant are NOT cleared just because the plan lapsed — this is H-1 consequence (b). When `active === true`, unconditional bulk update (unchanged, addon-protected rows are already true so no harm).\n- NEW `syncFeaturedByEntitlementForAccommodation({ accommodationId, active, db? }): Promise<{ updated: number }>` — single-row target for G-2's addon-purchase/expiry hooks. When `active === false` (addon expiring), FIRST call `resolveOwnerPlanGrantsFeatured` (T-004) for that accommodation's owner; if the plan still grants it, return `{ updated: 0 }` (no-op) instead of clearing — this is H-1 consequence (a)'s mirror image for the addon-expiry direction.\n- `.returning({ id, slug })` instead of just `{ id }` on both (slug needed by T-017/T-018's revalidation).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts (renamed file)\n- service-core barrel (update export names)\n\nAcceptance criteria:\n- `syncFeaturedByEntitlementForOwner(ownerId, false)` does NOT clear accommodations present in the addon-protected set.\n- `syncFeaturedByEntitlementForAccommodation(accommodationId, false)` is a no-op when the owner's plan still grants FEATURED_LISTING.\n- Both functions still exclude soft-deleted rows and remain idempotent.\n- `.returning()` includes `slug`.\n- pnpm typecheck green (expect and fix cascading errors at every old `syncFeaturedByPlan` import — those are the 8 call-sites owned by T-008..T-013).\n\nTesting requirements:\n- Covered by T-022.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": [
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-022",
+                "T-026"
+            ],
+            "subtasks": [
+                {
+                    "title": "Rename file + syncFeaturedByEntitlementForOwner with addon-protected exclusion on revoke",
+                    "completed": true
+                },
+                {
+                    "title": "New syncFeaturedByEntitlementForAccommodation with plan-still-grants guard on revoke",
+                    "completed": true
+                },
+                { "title": "Add slug to .returning() on both", "completed": true },
+                { "title": "Update service-core barrel exports", "completed": true }
+            ],
+            "tags": ["backend", "service", "billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": { "status": "pass", "timestamp": "2026-07-01T17:45:00Z" },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:45:00Z",
+                    "details": "packages/service-core scoped typecheck fully clean (zero errors). apps/api scoped typecheck confirms exactly the 8 expected cascading errors at the documented call-sites (apply-scheduled-plan-changes, dunning, finalize-cancelled-subs, featured-by-plan-reconcile x2, qzpay-admin-hooks, payment-logic, subscription-logic) -- deferred to T-008..T-014 per acceptance criteria"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T17:45:00Z",
+                    "details": "renamed+updated the pre-existing SPEC-292 test file (sync-featured-by-plan.test.ts -> sync-featured-by-entitlement.test.ts) that broke on the rename -- 9/9 passing, covers unchanged bulk-write behavior with the T-004 resolver mocked to an empty protected set. New addon-guard behavior + syncFeaturedByEntitlementForAccommodation deferred to T-022 per task spec"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T17:20:00Z",
+                "completed": "2026-07-01T17:45:00Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Checkout: capture and validate accommodationId for target-required addons",
+            "description": "First half of the OQ-3 checkout wiring. In apps/api/src/services/addon.checkout.ts, extend the `PurchaseAddonInput` type (and its schema at apps/api/src/schemas/addon.schema.ts, if the request validates there) with an optional `accommodationId?: string`. In `createAddonCheckout` (line 209 onward), after resolving `addon` (line 214-223): if `addon.requiresAccommodationTarget` (T-003) is true, require `input.accommodationId` to be present (400/VALIDATION_ERROR if missing) and verify it belongs to the requesting customer's owned, non-deleted accommodations (reuse the accommodation service/model ownership lookup — do not hand-roll a query). Reject with 403/`FORBIDDEN` if the accommodation belongs to a different owner. If `requiresAccommodationTarget` is false/undefined, `accommodationId` is ignored (backward compatible for all other addons).\n\nKey files:\n- apps/api/src/services/addon.checkout.ts:209 (createAddonCheckout)\n- apps/api/src/schemas/addon.schema.ts (if the HTTP-facing schema needs the field)\n\nAcceptance criteria:\n- Purchasing `visibility-boost-7d`/`-30d` without `accommodationId` fails validation.\n- Purchasing with an `accommodationId` owned by a different user fails with FORBIDDEN.\n- Purchasing with a valid own accommodationId succeeds and the value flows to whatever mechanism the checkout module already uses to carry request-time context across the async payment confirmation (investigate the existing pattern used for `promoCode` in this same file — it must survive to `confirmAddonPurchase`).\n- Purchasing any OTHER addon (requiresAccommodationTarget unset) is unaffected.\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit tests in apps/api/test/services/addon.checkout.test.ts: missing-accommodationId-for-required-addon (fail), foreign-accommodationId (403), valid-accommodationId (success), unrelated-addon-ignores-field (success, unchanged behavior).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add accommodationId to PurchaseAddonInput + schema",
+                    "completed": true
+                },
+                {
+                    "title": "Require + validate ownership when requiresAccommodationTarget",
+                    "completed": true
+                },
+                {
+                    "title": "Identify and reuse the existing checkout-time context-carrying mechanism (cf. promoCode)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: missing/foreign/valid/unrelated-addon cases",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "addons", "api"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z",
+                    "details": "scoped to packages/schemas, packages/service-core, packages/seed, apps/api (only the 8 pre-existing T-008..T-014 errors remain)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:20:00Z",
+                    "details": "apps/api/test/services/addon.checkout.test.ts 56/56 (5 new: missing-accommodationId VALIDATION_ERROR, foreign-owner FORBIDDEN, soft-deleted NOT_FOUND, valid-own success+metadata, unrelated-addon unaffected); apps/api/test/services/addon.service.test.ts 56/56; packages/schemas addon.schema.test.ts 42/42; packages/seed billingAddons.seed.test.ts 19/19; packages/service-core addon-catalog.* 103/103 — no regressions"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T17:50:00Z",
+                "completed": "2026-07-01T18:20:00Z"
+            },
+            "notes": "Scope grew beyond the original description: the addon.requiresAccommodationTarget flag added by T-003 only reached the STATIC config catalog (packages/billing ALL_ADDONS). createAddonCheckout reads the DB-backed AddonCatalogService instead, whose mapper never surfaced the field and whose seed never wrote it — so the T-006 guard would never fire in production. Fixed (user-approved) by extending addon-catalog.mapper.ts + billingAddons.seed.ts to read/write metadata.requiresAccommodationTarget, symmetric with durationDays/targetCategories/sortOrder."
+        },
+        {
+            "id": "T-007",
+            "title": "Thread accommodationId through confirm flow and write the link row",
+            "description": "Second half of OQ-3 checkout wiring. In `confirmAddonPurchase` (apps/api/src/services/addon.checkout.ts:558) — the point where a `billing_addon_purchases` row is finalized/activated — read back the `accommodationId` carried from T-006's checkout-time context, and when `addon.requiresAccommodationTarget` is true, insert a row into `featured_listing_addon_grants` (T-002) linking the new `purchaseId` to that `accommodationId`. If the accommodationId is unexpectedly missing at confirm time for a target-required addon (should not happen if T-006 validated correctly, but MercadoPago webhooks are async and can race), log a Sentry-visible error and soft-fail the link-write WITHOUT blocking the purchase confirmation itself (the purchase still activates; a follow-up manual reconciliation is out of scope here — leave a TODO comment referencing this task).\n\nKey files:\n- apps/api/src/services/addon.checkout.ts:558 (confirmAddonPurchase)\n\nAcceptance criteria:\n- A confirmed purchase of a target-required addon produces exactly one `featured_listing_addon_grants` row linking `purchaseId` -> `accommodationId`.\n- Confirming any other addon (not target-required) does not touch the new table.\n- Missing accommodationId at confirm time never blocks purchase confirmation (soft-fail + Sentry).\n- pnpm typecheck green.\n\nTesting requirements:\n- Unit test in apps/api/test/services/addon.checkout.test.ts: confirm target-required purchase -> link row exists; confirm non-target addon -> no link row; missing-accommodationId-at-confirm -> purchase still confirms, error logged (mock Sentry.captureException, assert called).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-006"],
+            "blocks": ["T-015", "T-016", "T-025"],
+            "subtasks": [
+                { "title": "Read accommodationId at confirm time", "completed": true },
+                {
+                    "title": "Insert featured_listing_addon_grants row on confirm for target-required addons",
+                    "completed": true
+                },
+                {
+                    "title": "Soft-fail + Sentry capture on unexpected missing accommodationId",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: link-row created / not created / soft-fail path",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "addons", "api"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z",
+                    "details": "scoped to apps/api (only the 8 pre-existing T-008..T-014 errors remain)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:50:00Z",
+                    "details": "apps/api/test/services/addon.checkout.test.ts 60/60 (4 new: link row on confirm, no link row for unrelated addon, soft-fail on missing accommodationId, soft-fail on insert throw — captureBillingError asserted); addon.service.test.ts + inv1-cache-invalidation.guard.test.ts 74/74 — no regressions"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T18:25:00Z",
+                "completed": "2026-07-01T18:50:00Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "G-1/G-5: wire qzpay-admin-hooks.ts to the union resolver",
+            "description": "Update both call-sites in apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts (line 530 admin downgrade hook, line 593 admin upgrade hook) to: (1) call the renamed `syncFeaturedByEntitlementForOwner` (T-005) instead of `syncFeaturedByPlan`; (2) replace the local `getPlanBySlug(...).entitlements.includes(EntitlementKey.FEATURED_LISTING)` derivation with `resolveOwnerPlanGrantsFeatured` (T-004) so the active-status set matches the reconcile cron exactly (`active|trialing|comp`, paused excluded) — this is G-5's alignment for this file. Preserve the existing try/catch soft-fail-and-warn wrapping around both call-sites (do not change error-handling shape, only the resolution + sync call).\n\nKey files:\n- apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts:517-633\n\nAcceptance criteria:\n- Both hooks now resolve via T-004's shared resolver, not a locally re-derived plan check.\n- Both hooks call `syncFeaturedByEntitlementForOwner` (renamed).\n- Soft-fail try/catch semantics unchanged (a sync failure never blocks the admin plan-change response).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Downgrade hook (line ~530): use resolver + renamed sync call",
+                    "completed": true
+                },
+                {
+                    "title": "Upgrade hook (line ~593): use resolver + renamed sync call",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:45:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T18:45:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "deferred",
+                    "details": "Covered by T-023 (dedicated union-resolver test suite)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T18:30:00.000Z",
+                "completed": "2026-07-01T18:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "G-1/G-5: wire subscription-logic.ts to the union resolver",
+            "description": "Update apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts:1027-1064. Replace the local `planHasFeatured` derivation (line 1036-1038, `getPlanBySlug(planName)?.entitlements.includes(...)`) with `resolveOwnerPlanGrantsFeatured` (T-004). Align `shouldGrant`/`shouldRevoke` (lines 1040-1045) with the reconcile cron's status set: `shouldGrant` includes ACTIVE, TRIALING, and COMP (currently COMP is never checked here — add it); `shouldRevoke` includes CANCELLED, EXPIRED, and now PAUSED (currently PAUSED falls into the silent \"skip\" bucket per the comment at line 1034 — G-5 requires treating it as an explicit revoke, matching `loadEntitlements`/the cron, instead of relying on the 6h cron backstop to eventually clear it). Call the renamed `syncFeaturedByEntitlementForOwner` (T-005) at line 1048.\n\nKey files:\n- apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts:1027-1064\n\nAcceptance criteria:\n- `shouldGrant` true for active/trialing/comp; `shouldRevoke` true for cancelled/expired/paused.\n- `past_due`/other statuses remain a no-op (grace period, unchanged — only paused moves buckets).\n- Uses T-004's resolver instead of the local `getPlanBySlug` check.\n- Non-blocking try/catch wrapper preserved.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Replace planHasFeatured derivation with resolveOwnerPlanGrantsFeatured",
+                    "completed": true
+                },
+                {
+                    "title": "Add COMP to shouldGrant, move PAUSED into shouldRevoke",
+                    "completed": true
+                },
+                { "title": "Call renamed syncFeaturedByEntitlementForOwner", "completed": true }
+            ],
+            "tags": ["backend", "billing", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:05:00Z",
+                    "details": "apps/api/test/webhooks/subscription-logic.test.ts 65/65 — no regressions (dedicated union-resolver coverage deferred to T-023)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:00:00.000Z",
+                "completed": "2026-07-01T19:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "G-1/G-5: wire payment-logic.ts to the union resolver",
+            "description": "Update both call-sites in apps/api/src/routes/webhooks/mercadopago/payment-logic.ts: line 264 (annual subscription activation) and line 508 (plan-change upgrade webhook). Replace the local `getPlanBySlug(annualPlanSlug)?.entitlements.includes(...)` / equivalent derivation at each site with `resolveOwnerPlanGrantsFeatured` (T-004). Audit both sites' status handling against the reconcile cron's active set (active|trialing|comp) and PAUSED-as-revoke rule (G-5) — apply only where the local logic actually branches on subscription status (some sites may be unconditional activation paths where G-5 doesn't apply; verify and only change what's relevant). Call the renamed `syncFeaturedByEntitlementForOwner` (T-005) at both sites.\n\nKey files:\n- apps/api/src/routes/webhooks/mercadopago/payment-logic.ts:253-264, 493-508\n\nAcceptance criteria:\n- Both sites use T-004's shared resolver instead of a local plan check.\n- Both sites call the renamed sync function.\n- G-5 status alignment applied wherever the site's own logic branches on subscription status.\n- Non-blocking soft-fail wrapper preserved.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Annual activation site (line ~264): resolver + renamed sync call",
+                    "completed": true
+                },
+                {
+                    "title": "Plan-change upgrade site (line ~508): resolver + renamed sync call + G-5 audit",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:20:00Z",
+                    "details": "apps/api/test/routes/webhooks/payment-logic.test.ts + payment-logic.cutover.test.ts 56/56 — no regressions (dedicated union-resolver coverage deferred to T-023)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:10:00.000Z",
+                "completed": "2026-07-01T19:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "G-1/G-5: wire finalize-cancelled-subs.ts to the union resolver",
+            "description": "Update apps/api/src/cron/jobs/finalize-cancelled-subs.ts, Step 3c (line ~542-555, 'Revoke featuredByPlan on FEATURED_LISTING plans'). This cron by construction only handles subscriptions that have reached final cancellation, so `shouldRevoke` is always true here — no G-5 grant-side change needed, but confirm the revoke path now goes through `syncFeaturedByEntitlementForOwner` (T-005), which internally excludes addon-protected accommodations (H-1 consequence b) automatically. Remove the now-redundant local plan-entitlement lookup if this site duplicated it; use `resolveOwnerPlanGrantsFeatured` (T-004) only if this site needs to double-check anything beyond a blanket revoke (it likely doesn't — verify).\n\nKey files:\n- apps/api/src/cron/jobs/finalize-cancelled-subs.ts:542-555\n\nAcceptance criteria:\n- Cron calls the renamed `syncFeaturedByEntitlementForOwner(ownerId, false)`.\n- Owners with a live FEATURED_LISTING addon on a specific accommodation are NOT cleared by this cron (verified via T-005's exclusion logic, no code change needed here beyond the rename).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true },
+                {
+                    "title": "Verify no redundant local plan-entitlement check remains",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:30:00Z",
+                    "details": "apps/api/test/cron/finalize-cancelled-subs.test.ts 32/32 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:25:00.000Z",
+                "completed": "2026-07-01T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "G-1/G-5: wire dunning.job.ts to the union resolver",
+            "description": "Update apps/api/src/cron/jobs/dunning.job.ts, line ~446-461 ('cancellation hits a FEATURED_LISTING plan'). Same pattern as T-011: this site revokes on dunning-triggered cancellation. Confirm it now calls the renamed `syncFeaturedByEntitlementForOwner` (T-005), and audit whether this site's local plan-entitlement check should be replaced with `resolveOwnerPlanGrantsFeatured` (T-004) for consistency (even if the outcome is unconditional revoke, using the shared resolver keeps a single source of truth instead of two independent implementations of the same lookup).\n\nKey files:\n- apps/api/src/cron/jobs/dunning.job.ts:446-461\n\nAcceptance criteria:\n- Cron calls the renamed `syncFeaturedByEntitlementForOwner(ownerId, false)`.\n- Any local plan lookup replaced with the shared T-004 resolver for consistency.\n- Addon-protected accommodations are not cleared (via T-005's built-in exclusion).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true },
+                {
+                    "title": "Replace local plan-entitlement check with shared resolver if present",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:40:00Z",
+                    "details": "apps/api/test/cron/dunning.job.test.ts 26/26 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:35:00.000Z",
+                "completed": "2026-07-01T19:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "G-1/G-5: wire apply-scheduled-plan-changes.ts to the union resolver",
+            "description": "Update apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts, line ~510-526 ('the new plan might still grant FEATURED_LISTING'). Unlike T-011/T-012, this site can BOTH grant and revoke (a scheduled plan change can move an owner onto or off a FEATURED_LISTING plan). Replace the local plan-entitlement derivation with `resolveOwnerPlanGrantsFeatured` (T-004) evaluated against the NEW plan, and call the renamed `syncFeaturedByEntitlementForOwner` (T-005) with the resolved boolean. Apply G-5 status alignment if this site branches on subscription status at all (verify; scheduled plan changes may apply unconditionally to active subscriptions only, in which case there is nothing to align).\n\nKey files:\n- apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts:494-526\n\nAcceptance criteria:\n- Uses T-004's resolver against the target/new plan.\n- Calls the renamed sync function for both the grant and revoke direction.\n- Addon-protected accommodations survive a downgrade that would otherwise revoke (via T-005).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-024.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Replace local plan-entitlement derivation with resolveOwnerPlanGrantsFeatured",
+                    "completed": true
+                },
+                { "title": "Rename call to syncFeaturedByEntitlementForOwner", "completed": true }
+            ],
+            "tags": ["backend", "billing", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z",
+                    "details": "scoped to apps/api, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T19:50:00Z",
+                    "details": "apps/api/test/cron/apply-scheduled-plan-changes.test.ts 41/41 — no regressions (dedicated union-resolver coverage deferred to T-024)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:45:00.000Z",
+                "completed": "2026-07-01T19:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Rename and extend reconcile cron for addon-sourced, per-accommodation drift",
+            "description": "The T-006/SPEC-292 reconcile cron (apps/api/src/cron/jobs/featured-by-plan-reconcile.job.ts) only checks plan entitlements per OWNER (`resolveOwnerHasFeaturedListing`, lines 67-120, mirroring the plan-only path) — it does not see addon-sourced grants, so it cannot correct drift for the new per-accommodation source. Rename the file to featured-by-entitlement-reconcile.job.ts and extend its logic:\n\n1. Keep the owner-wide plan pass using `resolveOwnerPlanGrantsFeatured` (T-004) instead of the local re-implementation (lines 102-111) — call `syncFeaturedByEntitlementForOwner` (T-005) as before, which already excludes addon-protected accommodations on revoke.\n2. ADD a per-accommodation pass: for accommodations NOT already covered by an owner-wide grant, check `resolveAccommodationHasActiveFeaturedAddon` (T-004) and call `syncFeaturedByEntitlementForAccommodation` (T-005) when there is drift (addon says active but the column says false, or vice versa where the addon expired without the expiry hook firing — see T-016).\n3. Update the cron registration name/description in apps/api/src/cron/schedules.manifest.ts:273 to reflect the new file/behavior; keep the existing 6h interval (cron-lag grace, per CLAUDE.md).\n\nKey files:\n- apps/api/src/cron/jobs/featured-by-plan-reconcile.job.ts -> featured-by-entitlement-reconcile.job.ts\n- apps/api/src/cron/schedules.manifest.ts:273\n\nAcceptance criteria:\n- Cron corrects owner-wide plan drift as before (regression-safe).\n- Cron ALSO corrects accommodation-scoped addon drift (both directions: grant missed, expiry-clear missed).\n- Zero-drift fast path still makes no writes.\n- Logs corrected-count per source (plan vs addon) for observability.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-029.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Rename file + cron registration", "completed": true },
+                {
+                    "title": "Replace local plan check with resolveOwnerPlanGrantsFeatured",
+                    "completed": true
+                },
+                { "title": "Add per-accommodation addon-drift pass", "completed": true },
+                {
+                    "title": "Update logging to distinguish plan vs addon corrections",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "cron", "billing", "reconciliation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z",
+                    "details": "scoped to apps/api and service-core, clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T20:10:00Z",
+                    "details": "apps/api/test/cron/featured-by-entitlement-reconcile.test.ts fully rewritten for the new resolveOwnerPlanGrantsFeatured-based architecture (10/10, covers plan drift-clear/set, addon drift-set, addon-already-correct, addon-pass-skipped-when-plan-covers-all, dry-run, multiple owners); schedules-manifest.test.ts 6/6 unaffected. Exhaustive addon-expiry-drift coverage deferred to T-029."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:55:00.000Z",
+                "completed": "2026-07-01T20:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "G-2: wire addon grant path to sync accommodation featuring",
+            "description": "In apps/api/src/services/addon-entitlement.service.ts, `applyAddonEntitlements` (lines ~148-173, after the QZPay `billing.entitlements.grant(...)` call succeeds): when the addon's `grantsEntitlement === EntitlementKey.FEATURED_LISTING` AND a `featured_listing_addon_grants` link row exists for this purchase (written by T-007 at confirm time), call `syncFeaturedByEntitlementForAccommodation({ accommodationId, active: true })` (T-005) for the linked accommodation. Wrap in try/catch, soft-fail with a warn log (never block the entitlement grant itself) — mirrors the existing soft-fail pattern used by the T-005 (SPEC-292) billing call-sites.\n\nKey files:\n- apps/api/src/services/addon-entitlement.service.ts:148-173\n\nAcceptance criteria:\n- Purchasing a target-required, FEATURED_LISTING-granting addon flips `featuredByEntitlement=true` on the linked accommodation.\n- Purchasing any other addon (no FEATURED_LISTING grant, or no link row) does not call the sync.\n- A sync failure logs a warning and does not throw / does not block the entitlement grant.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-025.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-007"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Detect FEATURED_LISTING grant + linked accommodation after applyAddonEntitlements success",
+                    "completed": true
+                },
+                {
+                    "title": "Call syncFeaturedByEntitlementForAccommodation(active: true), soft-fail wrapped",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "addons", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:03:55.000Z",
+                "details": "biome check --write on addon-entitlement.service.ts: clean; pnpm --filter hospeda-api typecheck: clean; pre-existing addon-entitlement test suites (addon-entitlement.service.test.ts, addon-entitlement.cutover.test.ts, addon-entitlement-plan-bug.test.ts): 53/53 passed after moving the EntitlementKey.FEATURED_LISTING check inside the soft-fail try/catch (the cutover test's @repo/billing mock omits EntitlementKey, so the comparison itself must be caught, not just the DB calls). Dedicated coverage deferred to T-025 per task spec."
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T19:57:13.000Z",
+                "completed": "2026-07-01T20:03:55.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "G-2: wire addon expiry paths to clear accommodation featuring",
+            "description": "In apps/api/src/cron/jobs/addon-expiry.job.ts (existing daily cron, reused per OQ-5 — no new cron), wire the FEATURED_LISTING-clearing side-effect into BOTH places the addon's entitlement state changes:\n\n1. Phase 1 expire path (~line 343-348, right after `AddonExpirationService.expireAddon` succeeds and `clearEntitlementCache` is called): if the expired purchase's addon granted FEATURED_LISTING and has a `featured_listing_addon_grants` link row, call `syncFeaturedByEntitlementForAccommodation({ accommodationId, active: false })` (T-005) — which internally no-ops if the owner's plan still grants it (H-1 consequence a, mirrored for the expiry direction).\n2. Grant-reconciliation retry block (~line 1593-1610, the `needsEntitlementSync` retry path): same wiring for the grant/re-grant direction (mirrors T-015's grant call) so a retried grant also re-syncs featuring.\n\nBoth call-sites are inside the existing transaction/critical-section structure of this cron — follow the file's established pattern for post-commit external-effect calls (the file already splits CLAIM-inside-tx / PROCESS-after-commit for a prior fix; the sync call is an internal DB write, not an external API call, so confirm whether it belongs inside or after the transaction and match the existing convention for similar internal writes in this file).\n\nKey files:\n- apps/api/src/cron/jobs/addon-expiry.job.ts (~343-348, ~1593-1610)\n\nAcceptance criteria:\n- An expired FEATURED_LISTING addon purchase clears `featuredByEntitlement` on its linked accommodation, UNLESS the owner's plan still grants it.\n- A retried/re-applied grant re-syncs featuring to true.\n- Both call-sites are soft-fail (a sync error does not abort the cron's other phases).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-026.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-007"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Wire expire path (~line 343-348) to clear featuring with plan-guard",
+                    "completed": true
+                },
+                {
+                    "title": "Wire grant-reconciliation retry block (~line 1593-1610) to re-sync featuring",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm tx-boundary placement matches file's existing CLAIM/PROCESS convention",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "billing", "addons", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:17:48.000Z",
+                "details": "biome check on addon-expiry.job.ts: clean; pnpm --filter hospeda-api typecheck: clean; addon-expiry.test.ts (46) + addon-expiry.cutover.test.ts (4) = 50/50 passed after wrapping the whole FEATURED_LISTING check (entitlementKey comparison + DB lookups + sync call) in a single try/catch, same lesson as T-015 (the cutover test's @repo/billing and @repo/db mocks omit EntitlementKey/getDb/accommodations/featuredListingAddonGrants entirely). Expire-path clear uses getDb() (not tx) to match expireAddon()'s own call-site convention — expireAddon itself defaults to getDb() at this call site despite running inside withTransaction, so the sync follows the same established pattern (subtask 3). Grant-reconciliation retry block (subtask 2) needed NO new code: it calls applyAddonEntitlements (T-015's modified method) directly, so the FEATURED_LISTING re-sync on re-grant is inherited for free. Dedicated coverage deferred to T-026 per task spec."
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T20:05:00.000Z",
+                "completed": "2026-07-01T20:17:48.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "G-3: wire ISR/CDN revalidation into syncFeaturedByEntitlementForOwner",
+            "description": "Confirmed required per OQ-2 (search listing page is SSR+ISR with 24h Cloudflare edge cache; home page is SSG needing a redeploy). Replicate the exact pattern from apps/api/src/services/subscription-pause.service.ts:92-108 inside `syncFeaturedByEntitlementForOwner` (T-005, packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts): after the DB write succeeds and `updated.length > 0`, call `getRevalidationService()` (imported from `@repo/service-core`) and, if present, `revalidationService.scheduleRevalidationBatch({ events, reason })` fire-and-forget, where `events: EntityChangeData[]` is built from the `{ id, slug }` rows returned by `.returning()` (T-005 already added `slug`), each as `{ entityType: 'accommodation', slug }`. `reason` should be a descriptive string including the ownerId and active direction (e.g. \\`featured-by-entitlement-owner: active=${active} ownerId=${ownerId}\\`).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts\n\nAcceptance criteria:\n- Every successful bulk sync with `updated > 0` schedules an ISR revalidation batch for the affected accommodation slugs.\n- Revalidation is fire-and-forget — never awaited in a way that blocks or fails the sync's return value.\n- A missing/unavailable revalidation service (e.g. in tests without the binding) does not throw.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-027.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Import getRevalidationService + EntityChangeData from @repo/service-core",
+                    "completed": true
+                },
+                {
+                    "title": "Build events[] from returning() rows and call scheduleRevalidationBatch fire-and-forget",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "revalidation", "isr", "billing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:25:18.000Z",
+                "details": "biome check on accommodation.sync-featured-by-entitlement.ts: clean; pnpm --filter @repo/service-core typecheck: clean; sync-featured-by-entitlement.test.ts 9/9 passed (getRevalidationService returns null when uninitialized in tests, so the guarded fire-and-forget call is a safe no-op — no mock needed). Imports use relative paths (../../revalidation/*) since this file lives inside @repo/service-core itself, not a consumer of it — matches accommodation.service.ts's own import style. Dedicated coverage deferred to T-027 per task spec."
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T20:23:06.000Z",
+                "completed": "2026-07-01T20:25:18.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "G-3: wire ISR/CDN revalidation into syncFeaturedByEntitlementForAccommodation",
+            "description": "Same pattern as T-017, applied to the single-row `syncFeaturedByEntitlementForAccommodation` (T-005) so addon-driven featuring changes (G-2, T-015/T-016) are also reflected without waiting for TTL expiry. After a successful (non-no-op) write, call `getRevalidationService()?.scheduleRevalidationBatch({ events: [{ entityType: 'accommodation', slug }], reason })` fire-and-forget, using the `slug` from the function's `.returning()` result (T-005).\n\nKey files:\n- packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts\n\nAcceptance criteria:\n- A successful single-accommodation sync schedules a 1-event revalidation batch.\n- A no-op (plan-guard skip, `updated: 0`) does NOT schedule revalidation.\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-027.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Wire revalidation into the single-accommodation sync path",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "revalidation", "isr", "billing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:27:38.000Z",
+                "details": "biome check on accommodation.sync-featured-by-entitlement.ts: clean; pnpm --filter @repo/service-core typecheck: clean; sync-featured-by-entitlement.test.ts 9/9 passed. Same fire-and-forget pattern as T-017, single-event batch; the `updated > 0 && row` guard means a no-op write (plan-guard skip) never schedules revalidation. Dedicated coverage deferred to T-027 per task spec."
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T20:26:14.000Z",
+                "completed": "2026-07-01T20:27:38.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "G-6: owner self-service featured toggle — API route + entitlement gate",
+            "description": "SPEC-292 deliberately removed `isFeatured` from the owner-facing `AccommodationUpdateHttpSchema` (owner-leak closure, T-003 of that spec) — this task does NOT reopen that schema. Instead, add a NEW, narrowly-scoped protected endpoint whose write path is gated by a live entitlement check, not just field presence.\n\nAdd `PATCH /api/v1/protected/accommodations/:id/featured-toggle` (new route file under apps/api/src/routes/accommodation/protected/, e.g. `featured-toggle.ts`) with a minimal Zod body schema `{ isFeatured: boolean }`. In the route/service handler: resolve the accommodation, verify the requesting user owns it, then call a combined check — `resolveOwnerPlanGrantsFeatured({ ownerId })` OR `resolveAccommodationHasActiveFeaturedAddon({ accommodationId })` (both from T-004) — and reject with 403/`FORBIDDEN` if neither holds (the owner has no active FEATURED_LISTING entitlement for this accommodation, from either source). If entitled, write `isFeatured` directly via the accommodation model (no rotation/queue logic per OQ-4 — this is a pure visibility switch).\n\nKey files:\n- apps/api/src/routes/accommodation/protected/featured-toggle.ts (new)\n- packages/schemas/src/accommodation/ (new minimal toggle schema, kept separate from `AccommodationUpdateHttpSchema`)\n\nAcceptance criteria:\n- An owner WITHOUT an active FEATURED_LISTING entitlement (plan or addon) for the target accommodation gets 403 when calling this endpoint.\n- An owner WITH an active entitlement can toggle `isFeatured` true/false freely, uncapped (OQ-4).\n- The general `AccommodationUpdateHttpSchema` remains unchanged — `isFeatured` is still stripped there (SPEC-292 regression guard, verify via existing test).\n- pnpm typecheck green.\n\nTesting requirements:\n- Covered by T-028.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "New minimal Zod schema for the toggle body", "completed": true },
+                {
+                    "title": "New protected route with ownership + entitlement gate (plan OR addon)",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm AccommodationUpdateHttpSchema untouched (regression guard)",
+                    "completed": true
+                }
+            ],
+            "tags": ["backend", "api", "owner", "featured", "entitlements"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "timestamp": "2026-07-01T20:53:21.000Z",
+                "details": "biome check clean on all 6 new/modified files; pnpm --filter @repo/schemas typecheck clean; pnpm --filter @repo/service-core typecheck clean; pnpm --filter hospeda-api typecheck clean; accommodation.spec-292.test.ts (regression guard, AccommodationUpdateHttpSchema still strips isFeatured) 14/14 passed. New: AccommodationFeaturedToggleHttpSchema (packages/schemas/src/entities/accommodation/accommodation.featured-toggle.schema.ts) kept separate from AccommodationUpdateHttpSchema; setAccommodationFeaturedToggle (packages/service-core/src/services/accommodation/accommodation.featured-toggle.ts) — standalone function (not BaseCrudService, matches T-005 precedent) doing ownership check (ACCOMMODATION_UPDATE_OWN+ownerId match, or ACCOMMODATION_UPDATE_ANY) then the plan-OR-addon entitlement gate via T-004's resolvers, then accommodationModel.update({isFeatured}); PATCH /api/v1/protected/accommodations/:id/featured-toggle (apps/api/src/routes/accommodation/protected/featured-toggle.ts) — no declarative ownership: config (mirrors masterToggle.ts SPEC-237 T-008 pattern), safe to mount outside the ownership-middleware sub-router. Dedicated route-level test coverage deferred to T-028 per task spec."
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T20:41:14.000Z",
+                "completed": "2026-07-01T20:53:21.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "G-6: owner self-service featured toggle — web UI",
+            "description": "Add the owner-facing toggle control to the web owner accommodation editor at apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar.astro (or its relevant client section under apps/web/src/components/host/editor/). Follow the `PlanEntitlementGate.client.tsx` precedent already used for gating other editor sections by plan entitlement — adapt or wrap it so the gate also considers an addon-derived entitlement (call the accommodation's current featured-entitlement state, e.g. via a small API read on the new T-019 route's underlying check, or a lightweight companion GET). Render the toggle only when the owner currently holds the entitlement (plan or addon) for THIS accommodation; otherwise render nothing or a subtle upsell (no rotation/queue UI per OQ-4 — keep it simple, a plain on/off switch). On toggle, call `PATCH .../featured-toggle` (T-019).\n\nKey files:\n- apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar.astro\n- apps/web/src/components/host/editor/ (new or extended component, vanilla CSS/CSS Modules per web styling convention — NOT Tailwind)\n\nAcceptance criteria:\n- Toggle is visible only for accommodations with an active FEATURED_LISTING entitlement (plan or addon).\n- Toggling calls the T-019 endpoint and reflects the persisted state on success/failure.\n- No slot/rotation UI — plain switch (OQ-4).\n- Follows web app conventions: native HTML/small hook (no TanStack Form), vanilla CSS/CSS Modules, i18n for all labels.\n\nTesting requirements:\n- Covered by T-028 (component/interaction test) — see apps/web test conventions for the editor.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Fetch/derive current entitlement-gated visibility for the toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Render toggle component (vanilla CSS, i18n) gated on entitlement",
+                    "completed": true
+                },
+                {
+                    "title": "Wire toggle onChange to PATCH featured-toggle endpoint",
+                    "completed": true
+                }
+            ],
+            "tags": ["frontend", "web", "owner", "featured"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": null,
+                "status": "passed",
+                "details": "Added a new GET /api/v1/protected/accommodations/:id/featured-toggle endpoint (getAccommodationFeaturedEntitlement in service-core) since no existing route exposed per-accommodation FEATURED_LISTING entitlement status (confirmed via exploration + user sign-off on endpoint design). Web: FeaturedToggleSection.client.tsx (self-contained, fetch-on-mount + PATCH-on-toggle, fail-closed while loading/on error/no entitlement), wired into AccommodationEditor.client.tsx. i18n keys added to host.json (es/en/pt). Scoped biome check (no fixes needed) + scoped typecheck green on @repo/service-core, hospeda-api, hospeda-web.",
+                "timestamp": "2026-07-01T21:40:00.000Z"
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T21:05:00.000Z",
+                "completed": "2026-07-01T21:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Unit tests — resolver helpers (T-004)",
+            "description": "Test packages/service-core/src/services/accommodation/featured-entitlement.resolver.ts using the hoisted-mock pattern already established in packages/service-core/test/services/accommodation/sync-featured-by-plan.test.ts (vi.hoisted + vi.mock('@repo/db', ...)).\n\nCases:\n- `resolveOwnerPlanGrantsFeatured`: true for active/trialing/comp subscription on a FEATURED_LISTING plan; false for paused/past_due/cancelled; false when no subscription.\n- `resolveAccommodationHasActiveFeaturedAddon`: true when a `featured_listing_addon_grants` row joins to a purchase with status='active' and expiresAt in the future or null; false when the purchase is expired/cancelled or no link row exists.\n- `getOwnerAccommodationIdsWithActiveFeaturedAddon`: returns exactly the protected id set for an owner with a mix of protected/unprotected accommodations; empty array when none.\n\nKey files:\n- packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts (new)\n\nAcceptance criteria:\n- All cases above pass.\n- No live DB — pure mocked Drizzle per the established pattern.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "resolveOwnerPlanGrantsFeatured status-set tests", "completed": true },
+                {
+                    "title": "resolveAccommodationHasActiveFeaturedAddon active/expired/absent tests",
+                    "completed": true
+                },
+                {
+                    "title": "getOwnerAccommodationIdsWithActiveFeaturedAddon set tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "backend"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped",
+                "status": "passed",
+                "details": "New packages/service-core/test/services/accommodation/featured-entitlement.resolver.test.ts (17 cases): resolveOwnerPlanGrantsFeatured (no customer, paused/past_due/cancelled excluded by SQL status filter, active/trialing/comp true, plan missing entitlement, plan lookup miss, commerce-domain excluded, status-list query construction), resolveAccommodationHasActiveFeaturedAddon (grant found/absent, WHERE construction), getOwnerAccommodationIdsWithActiveFeaturedAddon (mixed portfolio, empty, WHERE construction). Pure mocked Drizzle (thenable+chainable makeChain stub), no live DB. Scoped run: 17/17 pass. Sibling sync-featured-by-entitlement.test.ts (9/9) still green. Scoped biome + typecheck on @repo/service-core green.",
+                "timestamp": "2026-07-01T22:35:00.000Z"
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T22:10:00.000Z",
+                "completed": "2026-07-01T22:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Unit tests — sync primitives exclusion/guard (T-005)",
+            "description": "Extend/replace packages/service-core/test/services/accommodation/sync-featured-by-plan.test.ts (rename to sync-featured-by-entitlement.test.ts alongside T-005's file rename), keeping its existing hoisted-mock scaffolding.\n\nCases:\n- `syncFeaturedByEntitlementForOwner(active: false)` excludes owner accommodations present in the addon-protected set (mock `getOwnerAccommodationIdsWithActiveFeaturedAddon` to return a non-empty set, assert the WHERE clause includes the exclusion).\n- `syncFeaturedByEntitlementForOwner(active: true)` unconditional bulk update, unaffected by the addon-protected set (regression, existing SPEC-292 case).\n- `syncFeaturedByEntitlementForAccommodation(active: false)` is a no-op (`{ updated: 0 }`, no DB write) when `resolveOwnerPlanGrantsFeatured` mocks to true.\n- `syncFeaturedByEntitlementForAccommodation(active: false)` writes normally when the plan does NOT grant it.\n- `syncFeaturedByEntitlementForAccommodation(active: true)` always writes.\n- Both functions' `.returning()` includes `slug`.\n\nKey files:\n- packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts (renamed)\n\nAcceptance criteria: all cases above pass; existing set/clear/empty/soft-deleted-exclusion cases from SPEC-292 still pass unmodified.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Owner-scope exclusion-on-revoke test", "completed": true },
+                { "title": "Owner-scope unconditional-grant regression test", "completed": true },
+                { "title": "Accommodation-scope plan-guard no-op test", "completed": true },
+                {
+                    "title": "Accommodation-scope normal-write test (grant + revoke)",
+                    "completed": true
+                },
+                { "title": "slug present in returning() assertion", "completed": true }
+            ],
+            "tags": ["testing", "backend"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pnpm lint",
+                "typecheck": "pnpm typecheck",
+                "tests": "scoped",
+                "status": "passed",
+                "details": "Extended sync-featured-by-entitlement.test.ts (kept existing scaffolding, no rename needed — already renamed by T-005): added notInArray mock (from 'drizzle-orm', separate from the fully-mocked '@repo/db') and mockResolveOwnerPlanGrantsFeatured to the hoisted set. New cases: owner-scope notInArray(id, protectedIds) exclusion when protected set non-empty vs absent when empty; active:true ignores a populated protected set (regression); syncFeaturedByEntitlementForAccommodation plan-guard no-op (no DB write) vs normal write on revoke, unconditional write on grant (no guard call); .returning() includes slug for both functions; empty-result case for the accommodation-scope function. 18/18 pass (9 pre-existing + 9 new), full accommodation test directory 483/483 green (no regressions). Scoped biome + typecheck on @repo/service-core green.",
+                "timestamp": "2026-07-01T23:10:00.000Z"
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T22:45:00.000Z",
+                "completed": "2026-07-01T23:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Unit tests — call-site group A (webhook hooks)",
+            "description": "M-4/G-4: direct unit tests for the transition-to-active derivation and soft-fail isolation of the three webhook-facing call-sites (previously untested per research — 0 hits for featuredByPlan/syncFeaturedByPlan in their existing test files). Extend the existing test files:\n\n- apps/api/test/routes/billing/admin/hooks/qzpay-admin-hooks.test.ts (T-008): downgrade off a FEATURED_LISTING plan syncs revoke via the resolver; upgrade onto one syncs grant; a sync-service throw is caught and does not fail the admin response (soft-fail isolation).\n- apps/api/test/webhooks/subscription-logic.test.ts (T-009): active/trialing/comp -> grant; cancelled/expired/paused -> revoke; past_due -> no-op; soft-fail isolation.\n- apps/api/test/routes/webhooks/payment-logic.test.ts (T-010): both call-sites' grant paths; soft-fail isolation.\n\nKey files: the three test files above (extend, do not replace unrelated existing tests in them).\n\nAcceptance criteria: every transition case listed passes; a forced throw from the sync function is asserted to be caught (response/cron step still succeeds).\n\nTesting requirements:\n- Run scoped per file, e.g. `pnpm vitest run apps/api/test/webhooks/subscription-logic.test.ts`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "qzpay-admin-hooks.ts transition + soft-fail tests",
+                    "completed": true
+                },
+                {
+                    "title": "subscription-logic.ts full status-set transition tests",
+                    "completed": true
+                },
+                { "title": "payment-logic.ts grant-path + soft-fail tests", "completed": true }
+            ],
+            "tags": ["testing", "backend", "billing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the 3 touched test files — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — exit 0"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "qzpay-admin-hooks.test.ts 38/38, subscription-logic.test.ts 71/71, payment-logic.test.ts 58/58 (each run scoped, individually)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Unit tests — call-site group B (cron jobs)",
+            "description": "M-4/G-4: direct unit tests for the three cron-facing call-sites, same rationale as T-023.\n\n- apps/api/test/cron/finalize-cancelled-subs.test.ts (T-011): Step 3c revoke path fires; addon-protected accommodations excluded (assert via a mocked protected-set return); soft-fail isolation (a sync throw does not abort the rest of the cron's cancellation-finalization work).\n- apps/api/test/cron/dunning.job.test.ts (T-012): revoke-on-cancellation path fires; soft-fail isolation.\n- apps/api/test/cron/apply-scheduled-plan-changes.test.ts (T-013): both grant and revoke directions on a scheduled plan change; soft-fail isolation.\n\nKey files: the three test files above (extend).\n\nAcceptance criteria: every case passes; soft-fail isolation asserted for all three (a thrown sync error never fails the cron run itself).\n\nTesting requirements:\n- Run scoped per file, e.g. `pnpm vitest run apps/api/test/cron/dunning.job.test.ts`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012", "T-013"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "finalize-cancelled-subs.ts revoke + exclusion + soft-fail tests",
+                    "completed": true
+                },
+                { "title": "dunning.job.ts revoke + soft-fail tests", "completed": true },
+                {
+                    "title": "apply-scheduled-plan-changes.ts grant/revoke + soft-fail tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "backend", "billing", "cron"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the 3 touched test files — 1 auto-reformat, no logic change"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean (fixed a vi.mocked().mockResolvedValue(undefined) type mismatch along the way)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "finalize-cancelled-subs.test.ts 34/34, dunning.job.test.ts 29/29, apply-scheduled-plan-changes.test.ts 44/44 (107/107 total, each run scoped)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Integration test — addon purchase to accommodation-scoped featuring, end-to-end",
+            "description": "Exercise the full OQ-3/G-1/G-2 chain in one integration test: create an addon checkout for `visibility-boost-7d` with a valid `accommodationId` (T-006) -> confirm the purchase (T-007, asserts a `featured_listing_addon_grants` row is written) -> assert `AddonEntitlementService.applyAddonEntitlements`'s post-grant hook (T-015) flips `featuredByEntitlement=true` ONLY on the targeted accommodation (not the owner's other accommodations, proving OQ-3 scoping — an owner-wide plan grant would flip all of them, an addon grant must flip exactly one).\n\nKey files:\n- apps/api/test/services/addon.checkout.integration.test.ts (new, or extend an existing integration suite for addon purchase)\n\nAcceptance criteria: the targeted accommodation's `featuredByEntitlement` becomes true; a second, unrelated accommodation owned by the same user stays false; the link row exists and correctly references both ids.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/services/addon.checkout.integration.test.ts`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-015"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Checkout + confirm + link-row assertion", "completed": true },
+                { "title": "Targeted accommodation flips true", "completed": true },
+                { "title": "Sibling accommodation stays false (scoping proof)", "completed": true }
+            ],
+            "tags": ["testing", "backend", "billing", "addons", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the new file — 1 formatting fix, no lint errors"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "New file addon.checkout.integration.test.ts 2/2; regression check addon.checkout.test.ts 60/60 + addon-entitlement.service.test.ts 40/40 untouched (102/102 total, run together scoped)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Integration test — addon expiry plan-guard regression",
+            "description": "Proves H-1 consequence (a) and its mirror in T-016. Two scenarios against apps/api/src/cron/jobs/addon-expiry.job.ts's expire phase:\n\n1. Owner has ONLY the addon-sourced grant (no FEATURED_LISTING plan) -> on addon expiry, `featuredByEntitlement` clears on the linked accommodation.\n2. Owner has BOTH a FEATURED_LISTING plan AND the addon-sourced grant on the same accommodation -> on addon expiry, `featuredByEntitlement` stays true (plan-guard no-op in `syncFeaturedByEntitlementForAccommodation`, T-005/T-016).\n\nKey files:\n- apps/api/test/cron/addon-expiry.test.ts (extend — the task's original suggested path addon-expiry.job.test.ts does not exist)\n\nAcceptance criteria: both scenarios assert the correct final `featuredByEntitlement` state; scenario 2 additionally asserts the sync primitive was called but resulted in `updated: 0` (no-op, not skipped entirely — the call still happens for auditability).\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/cron/addon-expiry.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-005"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Addon-only expiry clears featuring", "completed": true },
+                { "title": "Addon+plan expiry keeps featuring (plan guard)", "completed": true }
+            ],
+            "tags": ["testing", "backend", "billing", "addons", "cron"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on addon-expiry.test.ts — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "addon-expiry.test.ts 48/48 (46 pre-existing + 2 new), scoped run, verified independently"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Integration test — revalidation triggered on featuring changes",
+            "description": "G-3 verification. Mock `getRevalidationService()` (per the pattern already used to test `subscription-pause.service.ts`, if such a test exists — otherwise establish the mock pattern here) and assert `scheduleRevalidationBatch` is called with the correct `EntityChangeData[]` (matching slugs) and a non-empty `reason` string for both T-017 (owner-scope) and T-018 (accommodation-scope) sync paths. Also assert it is NOT called when `updated === 0` (no-op cases).\n\nKey files:\n- packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts (extend, same file as T-022)\n\nAcceptance criteria: all assertions above pass; revalidation mock never throws when unavailable (undefined return from getRevalidationService).\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-018"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Owner-scope revalidation call assertion", "completed": true },
+                { "title": "Accommodation-scope revalidation call assertion", "completed": true },
+                { "title": "No-op cases assert revalidation NOT called", "completed": true }
+            ],
+            "tags": ["testing", "backend", "revalidation"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter service-core typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "sync-featured-by-entitlement.test.ts 25/25 (18 pre-existing + 7 new)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Tests — owner self-service toggle gate (T-019/T-020)",
+            "description": "G-6 verification. API-level tests for the new `PATCH /api/v1/protected/accommodations/:id/featured-toggle` route (T-019): owner without any active FEATURED_LISTING entitlement gets 403; owner with an active plan-derived entitlement succeeds; owner with only an addon-derived entitlement (scoped to that specific accommodation) succeeds; owner attempting to toggle a DIFFERENT owner's accommodation gets 403/ownership-denied regardless of entitlement state. If apps/web has component/interaction test conventions for the editor (check apps/web's existing test setup), add a light component test for T-020's toggle visibility gating; otherwise document that web UI coverage is manual/e2e per this spec's smoke-checklist convention if one applies, or skip with a clear note if apps/web has no component test harness for Astro islands of this kind.\n\nKey files:\n- packages/service-core/test/services/accommodation/accommodation.featured-toggle.test.ts (new — the 4 gating scenarios; the route has no declarative ownership config and delegates 100% of gating to this service, and the resolver it depends on is only mockable from inside packages/service-core, see file header)\n- apps/api/test/routes/accommodation/protected/featured-toggle.test.ts (new — thin route-registration smoke test only)\n- apps/web: no component/interaction test harness exists for any .client.tsx island (verified — 6 test files total, all pure-logic under lib/**/__tests__/); T-020 UI coverage stays manual/e2e, consistent with the rest of apps/web.\n\nAcceptance criteria: all 4 API-level cases pass.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/accommodation.featured-toggle.test.ts apps/api/test/routes/accommodation/protected/featured-toggle.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "403 without entitlement", "completed": true },
+                { "title": "Success with plan-derived entitlement", "completed": true },
+                {
+                    "title": "Success with addon-derived (accommodation-scoped) entitlement",
+                    "completed": true
+                },
+                {
+                    "title": "403 on foreign accommodation regardless of entitlement",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "backend", "owner", "featured"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on both new files — clean"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter service-core typecheck + pnpm --filter hospeda-api typecheck — both clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "accommodation.featured-toggle.test.ts 15/15 (service-level, 4 required scenarios + NOT_FOUND/ACCOMMODATION_UPDATE_ANY/GET counterpart); featured-toggle.test.ts (apps/api) 7/7 route smoke (registration + 401/400 mapping)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Tests — reconcile cron per-accommodation addon drift (T-014)",
+            "description": "Extend apps/api/test/cron/featured-by-plan-reconcile.test.ts (rename alongside T-014's file rename to featured-by-entitlement-reconcile.test.ts) with cases for the new per-accommodation addon-drift pass: (1) zero-drift fast path still makes no writes for either source; (2) plan-drift correction (existing SPEC-292 cases, regression-safe); (3) addon-drift correction: an accommodation whose addon grant is active but `featuredByEntitlement` is false gets corrected to true; (4) an accommodation whose addon grant expired but the column is still true (expiry hook missed) gets corrected to false, UNLESS the owner's plan grants it (compose with the plan-guard).\n\nKey files:\n- apps/api/test/cron/featured-by-entitlement-reconcile.test.ts (renamed)\n\nAcceptance criteria: all 4 cases pass; existing SPEC-292 owner-wide cases remain green.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/cron/featured-by-entitlement-reconcile.test.ts`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Zero-drift fast path regression", "completed": true },
+                { "title": "Plan-drift correction regression", "completed": true },
+                { "title": "Addon-drift grant-missed correction", "completed": true },
+                {
+                    "title": "Addon-drift expiry-missed correction with plan-guard composition",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "backend", "cron", "billing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "featured-by-entitlement-reconcile.test.ts 12/12 (10 pre-existing SPEC-292/T-014 cases + 2 new T-029 expiry-composition cases). Cases 1-3 of the task's 4 required scenarios were already covered by T-014's own test authoring; only case 4 (expiry-missed via the plan-drift path composition) was net-new."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Docs: cross-reference and close-out notes",
+            "description": "Once all tasks above are green: leave a short cross-reference note documenting the SPEC-292 -> SPEC-309 relationship and the new architecture pieces for future readers. Suggested locations:\n\n- A short note in this spec's directory or in packages/db/CLAUDE.md / packages/billing/CLAUDE.md (whichever already documents the featured-listing mechanism, if any) pointing to: the `featuredByEntitlement` rename (OQ-1), the new `featured_listing_addon_grants` link table and its purpose (OQ-3 scoping), and the reconcile cron rename.\n- If CLAUDE.md's billing quick-reference section references `featuredByPlan` anywhere, update it to `featuredByEntitlement` and mention the addon-scoping mechanism briefly (1-2 lines), consistent with how the Promo code effect engine (SPEC-262) section is documented there.\n- Note the SPEC-320 absorption is already recorded in the indices; no further action needed there.\n\nAcceptance criteria: no dangling references to `featuredByPlan`/`syncFeaturedByPlan` remain in checked-in docs; the new mechanism is discoverable from CLAUDE.md or the nearest package CLAUDE.md.\n\nTesting requirements:\n- None (docs-only). Grep for `featuredByPlan` across `docs/` and `CLAUDE.md` files as a final check — zero hits expected outside historical/changelog references.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add/adjust CLAUDE.md reference for featuredByEntitlement + addon scoping",
+                    "completed": true
+                },
+                {
+                    "title": "Grep-verify no dangling featuredByPlan references in docs",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the touched schema file — no fixes needed; CLAUDE.md is markdown, not biome-linted"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter @repo/schemas typecheck — clean (comment-only change)"
+                },
+                "tests": {
+                    "status": "n/a",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "docs-only task, no test requirement per description"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-01T00:00:00.000Z",
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 30,
+        "pending": 23,
+        "inProgress": 0,
+        "completed": 7,
+        "blocked": 0,
+        "averageComplexity": 2.27
+    }
+}

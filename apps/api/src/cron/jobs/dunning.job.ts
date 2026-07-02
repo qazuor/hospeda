@@ -22,9 +22,12 @@
 
 import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
-import { DUNNING_RETRY_INTERVALS, EntitlementKey, getPlanBySlug } from '@repo/billing';
+import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
-import { syncFeaturedByPlan } from '@repo/service-core';
+import {
+    resolveOwnerPlanGrantsFeatured,
+    syncFeaturedByEntitlementForOwner
+} from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
@@ -442,32 +445,33 @@ export const dunningJob: CronJobDefinition = {
                                     source: 'dunning-cron'
                                 });
 
-                                // SPEC-292 T-005: revoke featuredByPlan when non-payment
-                                // cancellation hits a FEATURED_LISTING plan. Non-blocking.
-                                // T-006 reconciliation cron is the backstop.
+                                // SPEC-309 T-012: revoke featuredByEntitlement when
+                                // non-payment cancellation hits a FEATURED_LISTING plan.
+                                // Same pattern as T-011 (finalize-cancelled-subs): the
+                                // subscription is already committed cancelled by this
+                                // point, so resolveOwnerPlanGrantsFeatured (T-004)
+                                // naturally resolves to `false` here — sourced from the
+                                // shared resolver instead of a local getPlanBySlug lookup,
+                                // for a single source of truth across all call-sites.
+                                // Non-blocking. The reconcile cron is the backstop.
                                 try {
-                                    const cancelledPlanName =
-                                        ((event.data as Record<string, unknown>)
-                                            .planName as string) ?? '';
-                                    const hadFeatured =
-                                        getPlanBySlug(cancelledPlanName)?.entitlements.includes(
-                                            EntitlementKey.FEATURED_LISTING
-                                        ) ?? false;
-                                    if (hadFeatured) {
-                                        const ownerId = await resolveOwnerUserId({
-                                            customerId: event.customerId
+                                    const ownerId = await resolveOwnerUserId({
+                                        customerId: event.customerId
+                                    });
+                                    if (ownerId) {
+                                        const planStillGrantsFeatured =
+                                            await resolveOwnerPlanGrantsFeatured({ ownerId });
+                                        await syncFeaturedByEntitlementForOwner({
+                                            ownerId,
+                                            active: planStillGrantsFeatured
                                         });
-                                        if (ownerId) {
-                                            await syncFeaturedByPlan({ ownerId, active: false });
-                                            apiLogger.info(
-                                                {
-                                                    subscriptionId: event.subscriptionId,
-                                                    customerId: event.customerId,
-                                                    planSlug: cancelledPlanName
-                                                },
-                                                'Dunning: syncFeaturedByPlan revoked on canceled_nonpayment'
-                                            );
-                                        }
+                                        apiLogger.info(
+                                            {
+                                                subscriptionId: event.subscriptionId,
+                                                customerId: event.customerId
+                                            },
+                                            'Dunning: syncFeaturedByEntitlementForOwner revoked on canceled_nonpayment'
+                                        );
                                     }
                                 } catch (featuredSyncErr) {
                                     apiLogger.warn(
@@ -479,7 +483,7 @@ export const dunningJob: CronJobDefinition = {
                                                     ? featuredSyncErr.message
                                                     : String(featuredSyncErr)
                                         },
-                                        'Dunning: syncFeaturedByPlan failed on canceled_nonpayment (non-blocking — T-006 will reconcile)'
+                                        'Dunning: syncFeaturedByEntitlementForOwner failed on canceled_nonpayment (non-blocking — T-006 will reconcile)'
                                     );
                                 }
                                 break;
