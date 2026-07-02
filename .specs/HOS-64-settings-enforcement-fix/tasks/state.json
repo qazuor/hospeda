@@ -1284,31 +1284,31 @@
             "id": "T-037",
             "title": "Write settings-driven dispatch behavior integration test",
             "description": "Add an integration test covering G-2 end-to-end: retry count, webhook timeout, download timeout, assets folder, and cron cadence are all read from `social_settings` (T-010/T-011/T-013) rather than hard-coded, including the bounds-validation edge cases from R-1 (out-of-range values fall back to defaults). Colocate with the existing `social-publish-dispatch.service.test.ts`/`dispatch-edge-cases.test.ts` suite.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test each of the 5 settings is read at runtime, not hard-coded",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test R-1 bounds-validation fallback for out-of-range values",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "social", "settings"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T20:15:00Z",
+                "completed": "2026-07-02T20:45:00Z"
             }
         },
         {

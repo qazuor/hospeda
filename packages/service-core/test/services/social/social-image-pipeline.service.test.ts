@@ -607,5 +607,56 @@ describe('SocialImagePipelineService', () => {
                 expect.objectContaining({ folder: 'hospeda/social/assets' })
             );
         });
+
+        it('uses a custom download_timeout_ms from settings for the download abort timer', async () => {
+            // Arrange
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
+                if (query.key === 'download_timeout_ms') {
+                    return { key: 'download_timeout_ms', value: '5000' };
+                }
+                return undefined;
+            });
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert — the configured value (5000ms), not the hard-coded 15000ms default
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
+        });
+
+        it('falls back to the default 15000ms timeout when download_timeout_ms is missing', async () => {
+            // Arrange — beforeEach already leaves settingModelMock.findOne resolving undefined
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
+
+        it('falls back to the default 15000ms timeout when download_timeout_ms is non-numeric', async () => {
+            // Arrange
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            settingModelMock.findOne.mockImplementation(async (query: Record<string, unknown>) => {
+                if (query.key === 'download_timeout_ms') {
+                    return { key: 'download_timeout_ms', value: 'not-a-number' };
+                }
+                return undefined;
+            });
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
     });
 });

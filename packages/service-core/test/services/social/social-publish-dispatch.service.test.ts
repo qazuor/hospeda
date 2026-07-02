@@ -1677,6 +1677,80 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(result.outcome).toBe('exhausted');
         });
     });
+
+    // -------------------------------------------------------------------------
+    // Settings-driven make_webhook_timeout_ms (HOS-64 G-2, risk item R-1)
+    // -------------------------------------------------------------------------
+
+    describe('settings-driven make_webhook_timeout_ms', () => {
+        it('uses a custom make_webhook_timeout_ms from settings for the fetch abort timer', async () => {
+            // Arrange
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'make_webhook_timeout_ms') {
+                        return { key: 'make_webhook_timeout_ms', value: '15000' };
+                    }
+                    return undefined;
+                }
+            );
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.dispatchTarget({
+                target: buildTarget(),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — the configured value (15000ms), not the hard-coded 40000ms default
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
+
+        it('falls back to the default 40000ms timeout when make_webhook_timeout_ms is out of bounds', async () => {
+            // Arrange — an operator-entered out-of-range value (999999) falls back to the default
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'make_webhook_timeout_ms') {
+                        return { key: 'make_webhook_timeout_ms', value: '999999' };
+                    }
+                    return undefined;
+                }
+            );
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.dispatchTarget({
+                target: buildTarget(),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 40_000);
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
