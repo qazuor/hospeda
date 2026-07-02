@@ -4,17 +4,20 @@ import type {
     OwnerPromotion,
     OwnerPromotionCreateInput,
     OwnerPromotionSearchInput,
-    OwnerPromotionUpdateInput
+    OwnerPromotionUpdateInput,
+    TouristAudienceEnum
 } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     OwnerPromotionAdminSearchSchema,
     OwnerPromotionCreateInputSchema,
     OwnerPromotionSearchSchema,
-    OwnerPromotionUpdateInputSchema
+    OwnerPromotionUpdateInputSchema,
+    TouristAudienceEnumSchema
 } from '@repo/schemas';
-import { and, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
@@ -124,6 +127,15 @@ export class OwnerPromotionService extends BaseCrudService<
                 or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
             ) ?? sql`1=1`
         );
+    }
+
+    /**
+     * Builds the SQL condition that scopes results to the given tourist
+     * audience tiers (HOS-21 D1). `scope` is additive — pass `['plus', 'vip']`
+     * for a vip caller so they see both tiers, or `['plus']` alone for plus.
+     */
+    private buildTouristAudienceCondition(scope: TouristAudienceEnum[]): SQL {
+        return inArray(ownerPromotions.touristAudience, scope);
     }
 
     protected _canCreate(actor: Actor, data: OwnerPromotionCreateInput): void {
@@ -374,5 +386,77 @@ export class OwnerPromotionService extends BaseCrudService<
             });
         }
         return entity;
+    }
+
+    // ── HOS-21 T-005: gated exclusive-deals listing ───────────────────────────
+
+    /**
+     * Returns the gated exclusive-deals listing for a tourist (HOS-21).
+     *
+     * This is a NEW, separate read path — it does NOT modify `_executeSearch`
+     * / `_executeCount`, which remain exactly as-is for the existing ungated
+     * public `list.ts` route (the per-accommodation `PromotionBanner` use
+     * case, explicitly out of scope for this feature).
+     *
+     * `audienceScope` is a plain function parameter, never part of the
+     * Zod-validated search `params`, because it MUST be computed by the
+     * caller (the `gateExclusiveDeals`-protected route handler) from the
+     * actor's ACTUAL entitlements. A free tourist must never be able to
+     * request VIP-tier deals by supplying a query parameter — passing an
+     * untrusted scope here would be a broken-access-control bug.
+     *
+     * Reuses the same active-window / planRestricted / deletedAt / ACTIVE
+     * filtering as the generic public search path, plus the audience scope.
+     *
+     * @param actor - The actor performing the read (public-view permission).
+     * @param params - Pagination and optional `accommodationId` filter.
+     * @param audienceScope - Server-computed tiers to include: `['plus']` for
+     *   a plus tourist, `['plus', 'vip']` for a vip tourist (additive).
+     * @param ctx - Optional service context.
+     */
+    public async findExclusiveDeals(
+        actor: Actor,
+        params: Pick<OwnerPromotionSearchInput, 'page' | 'pageSize' | 'accommodationId'>,
+        audienceScope: TouristAudienceEnum[],
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: OwnerPromotion[]; total: number }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findExclusiveDeals',
+            input: { actor, ...params, audienceScope },
+            schema: z.object({
+                page: z.coerce.number().int().min(1).default(1),
+                pageSize: z.coerce.number().int().min(1).max(100).default(20),
+                accommodationId: z.string().uuid().optional(),
+                audienceScope: z.array(TouristAudienceEnumSchema).min(1)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validated, validatedActor, execCtx) => {
+                checkCanSearch(validatedActor);
+
+                const page = execCtx?.pagination?.page ?? validated.page;
+                const pageSize = execCtx?.pagination?.pageSize ?? validated.pageSize;
+
+                const publicFilter: Record<string, unknown> = {
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    planRestricted: false,
+                    deletedAt: null
+                };
+                if (validated.accommodationId) {
+                    publicFilter.accommodationId = validated.accommodationId;
+                }
+
+                const now = new Date();
+                const windowCondition = this.buildActiveWindowCondition(now);
+                const audienceCondition = this.buildTouristAudienceCondition(
+                    validated.audienceScope
+                );
+
+                return this.model.findAll(publicFilter, { page, pageSize }, [
+                    windowCondition,
+                    audienceCondition
+                ]);
+            }
+        });
     }
 }
