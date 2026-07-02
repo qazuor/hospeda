@@ -361,6 +361,35 @@ describe('Plan Configuration', () => {
         });
     });
 
+    describe('Owner-basico limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 15 (was 5)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(15);
+        });
+
+        it('MAX_ACTIVE_PROMOTIONS = 2 (was 0)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(2);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 10 (was 200, OQ-2)', () => {
+            expect(
+                limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)
+            ).toBe(10);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH stays 200 (unchanged)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(200);
+        });
+
+        it('MAX_ACCOMMODATIONS stays 1 (OQ-3, unchanged)', () => {
+            expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(1);
+        });
+    });
+
     describe('Recommendations entitlement (HOS-16)', () => {
         it('tourist-free has NO CAN_VIEW_RECOMMENDATIONS entitlement (moved free->plus)', () => {
             expect(TOURIST_FREE_PLAN.entitlements).not.toContain(

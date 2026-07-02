@@ -279,35 +279,45 @@
             "id": "T-007",
             "title": "Recalibrate owner-basico limits",
             "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_BASICO_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 5->15, MAX_ACTIVE_PROMOTIONS 0->2, MAX_AI_TEXT_IMPROVE_PER_MONTH 20->50, MAX_AI_CHAT_PER_MONTH 20->50, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 200->10 (OQ-2 resolved). Leave MAX_AI_TRANSLATE_PER_MONTH at 200 (no change) and MAX_ACCOMMODATIONS at 1 (OQ-3 resolved, no change). This edits the same plan object T-005 touches (entitlements) — run after T-005 to avoid duplicate-edit conflicts. Tests: `packages/billing/test/grant-matrix.snapshot.test.ts` EXPECTED_AI_MATRIX for owner-basico (text-improve/chat/import); note translate is NOT in this snapshot's AI_LIMIT_KEYS list, so also check plans.test.ts if it independently asserts translate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-012", "T-013", "T-014", "T-018"],
             "subtasks": [
                 {
                     "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=15",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set MAX_ACTIVE_PROMOTIONS=2",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set AI text-improve/chat=50, import=10 (OQ-2)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "limits"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:43:57Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:43:57Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:43:57Z",
+                    "details": "@repo/billing 532/532"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:42:26Z",
+                "completed": "2026-07-02T08:43:57Z"
             }
         },
         {
@@ -732,9 +742,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 1.6
     }

@@ -99,7 +99,8 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
             LimitKey.MAX_AI_SEARCH_PER_MONTH,
             LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
         ],
-        limitValues: [20, 20, 200, 200]
+        // HOS-16: text-improve/chat 20->50 (owner AI ladder x5 normalization)
+        limitValues: [50, 50, 200, 200]
     },
     'owner-pro': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],

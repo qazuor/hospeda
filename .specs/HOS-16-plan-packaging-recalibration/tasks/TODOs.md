@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 6/20 tasks (30%)
+## Progress: 7/20 tasks (35%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -42,7 +42,7 @@
   - Blocked by: none
   - Blocks: T-015
 
-- [ ] **T-007** (complexity: 2) - Recalibrate owner-basico limits
+- [x] **T-007** (complexity: 2) - Recalibrate owner-basico limits [DONE]
   - photos 5->15, promotions 0->2, AI text/chat 20->50, AI import 200->10 (OQ-2)
   - Blocked by: T-005
   - Blocks: T-012, T-013, T-014, T-018

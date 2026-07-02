@@ -126,13 +126,13 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
-        limit(LimitKey.MAX_ACCOMMODATIONS, 1),
-        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200),
-        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 200)
+        limit(LimitKey.MAX_ACCOMMODATIONS, 1), // OQ-3: individual host
+        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15), // HOS-16: was 5
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 2), // HOS-16: was 0
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50), // HOS-16: was 20 (x5 ladder)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 50), // HOS-16: was 20 (x5 ladder)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200), // unchanged
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 10) // HOS-16: was 200, OQ-2 (one-off op)
         // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
         // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
