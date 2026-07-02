@@ -522,36 +522,37 @@
             "id": "T-014",
             "title": "Build admin import-status query hook",
             "description": "Add a TanStack Query hook in a new file apps/admin/src/features/accommodations/hooks/useAccommodationImportStatusQuery.ts, modeled on useCronJobsQuery's refetchInterval pattern: useQuery keyed by {runId, datasetId, source}, enabled only when a run handle is present, refetchInterval: (query) => query.state.data?.settled ? false : 5000.\n\nTest requirements: hook tests — query is disabled without a run handle, refetchInterval keeps polling while unsettled, refetchInterval returns false once settled (mirrors useCronJobsQuery test patterns).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Implement useAccommodationImportStatusQuery with conditional refetchInterval",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate the query on presence of a run handle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write hook tests for enabled/disabled and interval-stop-on-settle",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "hook", "tanstack-query", "polling", "import"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T16:30:00Z",
+                "completed": "2026-07-02T16:55:00Z"
+            },
+            "summary": "Added apps/admin/src/features/accommodations/hooks/useAccommodationImportStatusQuery.ts: useQuery keyed by {runId, datasetId, source} against the same /api/v1/protected/accommodations/import-from-url/status endpoint the web hook (T-012) polls, enabled only when a run handle is present. Extracted the interval logic into a standalone exported pure function computeImportStatusRefetchInterval(data) (5000 while unsettled, false once settled) instead of inlining it in the refetchInterval option, so it's directly unit-testable without mocking TanStack Query's internal Query object shape. 4 new tests: disabled-without-run-handle (fetchApi not called), fetches-and-resolves with a query-string assertion, and 2 direct tests of computeImportStatusRefetchInterval's two branches. Full apps/admin/src/features/accommodations/hooks test suite (33 tests) still passes; lint (biome, 1 formatting auto-fix) and typecheck clean."
         },
         {
             "id": "T-015",
@@ -735,9 +736,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.2
     }
