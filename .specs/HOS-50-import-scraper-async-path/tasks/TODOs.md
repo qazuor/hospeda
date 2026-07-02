@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 17/19 tasks (89%)
+## Progress: 18/19 tasks (95%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -85,7 +85,7 @@
   - Blocked by: T-010
   - Blocks: none
 
-- [ ] **T-018** (complexity: 2) - Run cross-cutting client polling UX regression pass
+- [x] **T-018** (complexity: 2) - Run cross-cutting client polling UX regression pass — DONE (no gap found)
   - Blocked by: T-013, T-015, T-016
   - Blocks: none
 
