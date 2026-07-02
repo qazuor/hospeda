@@ -1,0 +1,576 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-21",
+    "title": "Tourist Exclusive Deals & VIP Promotions",
+    "created": "2026-07-02T08:20:07.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add touristAudience column to owner_promotions",
+            "description": "Add `touristAudience` enum column (`'plus' | 'vip'`, default `'plus'`, NOT NULL) to the owner_promotions Drizzle schema (packages/db/src/schemas/owner-promotion/owner_promotion.dbschema.ts). Structural change → generate via `pnpm db:generate`, review the generated migration file under packages/db/src/migrations/, apply with `pnpm db:migrate`. Do NOT use the extras carril (this is a plain column, not a trigger/view/CHECK).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Add touristAudience enum + column to owner_promotion.dbschema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm db:generate and review the generated migration file",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm db:migrate locally and confirm the column exists with default 'plus'",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T08:23:47Z",
+                "completed": "2026-07-02T08:32:45Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add touristAudience to owner-promotion Zod schemas",
+            "description": "Update packages/schemas owner-promotion entity schemas (create/update/public schemas) to include `touristAudience` (enum 'plus'|'vip', default 'plus'). Ensure the public schema exposes it (needed by the tourist-facing listing to visually distinguish vip-only deals) and the create/update input schemas accept it as optional (defaulting server-side).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Add touristAudience to OwnerPromotionCreateSchema / UpdateSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Add touristAudience to OwnerPromotionPublicSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: schema accepts valid values, rejects invalid enum values, defaults to 'plus' when omitted",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod", "validation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T08:39:08Z",
+                "completed": "2026-07-02T08:46:12Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Wire VIP_PROMOTIONS_ACCESS entitlement metadata + plan assignment",
+            "description": "In packages/billing/src/config/entitlements.config.ts, add the metadata entry for EntitlementKey.VIP_PROMOTIONS_ACCESS (label, description referencing VIP-only exclusive deals — do not reuse VIP_VISIBILITY_ACCESS's copy, this is a distinct perk). In packages/billing/src/config/plans.config.ts, assign it to the tourist-vip plan's entitlement list. Currently the enum member exists but has zero metadata and zero plan assignment (orphaned since the SPEC-286 rename) — this task fully activates it for this feature.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Add entitlements.config.ts entry for VIP_PROMOTIONS_ACCESS",
+                    "completed": true
+                },
+                {
+                    "title": "Assign VIP_PROMOTIONS_ACCESS to the tourist-vip plan in plans.config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: tourist-vip plan grants VIP_PROMOTIONS_ACCESS, tourist-plus plan does not",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "entitlements", "config"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T09:18:26Z",
+                "completed": "2026-07-02T09:26:16Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add i18n strings for exclusive deals page (es/en/pt)",
+            "description": "Add locale keys under packages/i18n for the exclusive-deals page: page title, empty state ('no hay ofertas activas por ahora' equivalent), upgrade CTA copy (mirroring the existing alerts upgrade-prompt copy), and a VIP-only badge label. Add for all three locales (es default, en, pt) per project i18n convention. Follow packages/i18n/CLAUDE.md structure.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add es/en/pt keys for title, empty state, upgrade CTA, VIP-only badge",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/i18n generate-types and confirm types compile",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T09:27:33Z",
+                "completed": "2026-07-02T09:33:38Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add tourist-audience-aware search to OwnerPromotionService",
+            "description": "In packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts, extend the search path (new method or an optional `touristAudience` param on the existing search) so callers can request deals scoped to a tier: plus → touristAudience='plus' only, vip → touristAudience in ('plus','vip'). Must compose with the existing _executeSearch filters (lifecycleState=ACTIVE, planRestricted=false, deletedAt=null, validFrom<=now<=validUntil) — do not duplicate that filtering logic.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add touristAudience-scoped search method/param to OwnerPromotionService",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: plus tier excludes 'vip' rows",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: vip tier includes both 'plus' and 'vip' rows",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: planRestricted/expired/soft-deleted rows excluded regardless of tier",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "owner-promotion"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T08:48:09Z",
+                "completed": "2026-07-02T08:54:47Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Cross-check accommodation-visibility rules in the exclusive-deals search",
+            "description": "Locate the existing accommodation-visibility check used by VIP_VISIBILITY_ACCESS (per SPEC-286, in accommodation.service.ts — described as having 8 checks for RESTRICTED/owner-suspended/plan-restricted accommodations). Reuse it (do not re-derive the rule) as a join/exists-filter in the T-005 search path: a deal referencing an accommodationId the caller cannot see is excluded from results, for both plus and vip tiers.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Locate the existing accommodation-visibility check in accommodation.service.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add exists/join filter to the T-005 search path reusing that check",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: a deal referencing a restricted/suspended accommodation is excluded from results for both tiers",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "owner-promotion", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T09:04:52Z",
+                "completed": "2026-07-02T09:15:36Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Accept touristAudience in owner-promotion create/update routes",
+            "description": "Update apps/api/src/routes/owner-promotion/protected/create.ts and the corresponding update route to accept and persist the `touristAudience` field from T-002's schema. Self-service: any owner who can already create promotions can set touristAudience='vip' on their own, no new role/permission gating (existing _OWN permission model covers it).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Accept touristAudience in the create route handler",
+                    "completed": true
+                },
+                {
+                    "title": "Accept touristAudience in the update route handler",
+                    "completed": true
+                },
+                {
+                    "title": "Integration test: owner can create/update a promotion with touristAudience='vip'",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "owner-promotion"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T09:34:15Z",
+                "completed": "2026-07-02T09:57:20Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create protected exclusive-deals list route",
+            "description": "Create apps/api/src/routes/owner-promotion/protected/exclusive-deals.ts using the project's list route factory (createListRoute or equivalent), reusing the T-006 search path. Request params: page, pageSize, optional accommodationId. Response: { items: OwnerPromotionPublicSchema[], pagination }. Do NOT modify the existing public list.ts endpoint — it stays ungated for the unrelated PromotionBanner use case.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Create exclusive-deals.ts route file using the list route factory",
+                    "completed": true
+                },
+                {
+                    "title": "Wire request/response schemas (page, pageSize, accommodationId; items + pagination)",
+                    "completed": true
+                },
+                {
+                    "title": "Register the route in the owner-promotion protected router",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "owner-promotion", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T09:58:36Z",
+                "completed": "2026-07-02T10:06:39Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Wire gateExclusiveDeals + vip entitlement check into the new route",
+            "description": "Wire apps/api/src/middlewares/tourist-entitlements.ts's gateExclusiveDeals() into the T-008 route's middlewares array, following the gateAlerts precedent (apps/api/src/routes/price-alert/protected/create.ts:97 → tourist-entitlements.ts:117-168): entitlement check first, 403 ENTITLEMENT_REQUIRED + upgradeUrl:'/suscriptores/planes' if EXCLUSIVE_DEALS is missing. Additionally check VIP_PROMOTIONS_ACCESS (from T-003) to decide whether to pass touristAudience scope 'vip' vs 'plus' into the T-006 search call. This is the task that un-phantoms gateExclusiveDeals — remove the PHANTOM-GATE comment once wired.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-003"],
+            "blocks": ["T-010", "T-011", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Wire gateExclusiveDeals() into the route's middlewares array",
+                    "completed": true
+                },
+                {
+                    "title": "Remove the PHANTOM-GATE comment from gateExclusiveDeals now that it's wired",
+                    "completed": true
+                },
+                {
+                    "title": "Check VIP_PROMOTIONS_ACCESS to scope the search call to 'plus' vs 'plus'+'vip'",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "entitlements", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T10:08:44Z",
+                "completed": "2026-07-02T10:16:07Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update endpoint-gate-matrix.md for the now-active gate",
+            "description": "In docs/billing/endpoint-gate-matrix.md, move gateExclusiveDeals from the 'Reserved — Phantom Gates' section (~line 948) to an active gated-endpoint row, referencing the real route from T-008/T-009.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Move gateExclusiveDeals entry to the active gates table with the real route path",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "billing"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T15:04:43Z",
+                "completed": "2026-07-02T15:06:13Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Build the exclusive-deals Astro SSR-shell page",
+            "description": "Create apps/web/src/pages/[lang]/mi-cuenta/ofertas-exclusivas/index.astro as a thin SSR shell resolving the authenticated user, following the apps/web/src/pages/[lang]/mi-cuenta/alertas/index.astro precedent. Delegates rendering to the T-012 client island.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Create the Astro page resolving the authenticated user",
+                    "completed": true
+                },
+                {
+                    "title": "Mount the client island with client:load, matching the alertas precedent",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T15:25:09Z",
+                "completed": "2026-07-02T15:34:36Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Build ExclusiveDealsList.client.tsx",
+            "description": "Create apps/web/src/components/account/ExclusiveDealsList.client.tsx following the AlertsList.client.tsx precedent: fetch from the T-009 route with credentials:'include', detect 403 + error.code==='ENTITLEMENT_REQUIRED' and render the upgrade CTA (using T-004's i18n copy) to /suscriptores/planes, render loading/empty/populated list states, and visually distinguish VIP-only deals (badge) from plus-tier deals.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-004"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Implement fetch + loading/empty/populated states",
+                    "completed": true
+                },
+                {
+                    "title": "Implement 403 ENTITLEMENT_REQUIRED detection → upgrade CTA state",
+                    "completed": true
+                },
+                {
+                    "title": "Implement VIP-only visual badge/distinction for vip-tier deals",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "react", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T15:37:29Z",
+                "completed": "2026-07-02T15:44:18Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add VIP-only toggle to the owner promotion form",
+            "description": "In the owner-facing promotion create/edit form (apps/web mi-cuenta/promociones), add a toggle/checkbox for touristAudience='vip', wired to the T-007 route payload. Self-service, no eligibility gating beyond the existing ability to create promotions.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add the VIP-only toggle to the promotion create/edit form",
+                    "completed": true
+                },
+                {
+                    "title": "Wire the toggle to the touristAudience field in the form payload",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "owner-promotion", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T15:46:21Z",
+                "completed": "2026-07-02T15:55:06Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "API integration tests for the gated exclusive-deals route",
+            "description": "Integration tests in apps/api for the T-009 route: 403 ENTITLEMENT_REQUIRED for free tourist and unauthenticated caller; 200 with tier-correct item set for plus and vip; accommodation-visibility-restricted deals excluded for both tiers. Follow the existing gateAlerts integration test as a template.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Test: 403 ENTITLEMENT_REQUIRED for free tourist / unauthenticated",
+                    "completed": true
+                },
+                {
+                    "title": "Test: 200 with plus-tier-only items for a plus tourist",
+                    "completed": true
+                },
+                {
+                    "title": "Test: 200 with plus+vip items for a vip tourist",
+                    "completed": true
+                },
+                {
+                    "title": "Test: accommodation-visibility-restricted deal excluded for both tiers",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "tests", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T15:56:35Z",
+                "completed": "2026-07-02T16:23:08Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Component tests for ExclusiveDealsList.client.tsx",
+            "description": "Component tests (testing-library) covering loading, empty, upgrade-prompt (403), and populated-list states of T-012, mirroring AlertsList.client.tsx's existing test coverage shape. [Satisfied by the ExclusiveDealsList.test.tsx written during T-012 — no new code needed; verified all 4 subtasks already covered.]",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test loading state",
+                    "completed": true
+                },
+                {
+                    "title": "Test empty state",
+                    "completed": true
+                },
+                {
+                    "title": "Test 403 upgrade-prompt state",
+                    "completed": true
+                },
+                {
+                    "title": "Test populated list state incl. VIP-only badge",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "tests", "component"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T16:26:47Z",
+                "completed": "2026-07-02T16:26:47Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "E2E test for the full exclusive-deals flow",
+            "description": "E2E test covering: tourist-plus browses and sees plus-tier deals only; free tourist sees the upgrade CTA and cannot reach the listing; tourist-vip sees plus-tier deals plus vip-only ones, visually distinguished; a deal on an accommodation-visibility-restricted accommodation never appears in any tier's listing; an owner can mark a promotion VIP-only via the form (T-013) and it appears correctly scoped.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-013", "T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "E2E: tourist-plus sees plus-tier deals only",
+                    "completed": true
+                },
+                {
+                    "title": "E2E: free tourist sees upgrade CTA, cannot reach listing",
+                    "completed": true
+                },
+                {
+                    "title": "E2E: tourist-vip sees plus + vip-only deals, visually distinguished",
+                    "completed": true
+                },
+                {
+                    "title": "E2E: accommodation-visibility-restricted deal never appears",
+                    "completed": true
+                },
+                {
+                    "title": "E2E: owner marks a promotion VIP-only via the form and it appears correctly scoped",
+                    "completed": true
+                }
+            ],
+            "tags": ["e2e", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "not-executed: written + typechecked/linted against the real e2e patterns (guest-05 precedent); requires the full e2e stack (dev servers + seeded e2e DB + Playwright) to actually run, which was deliberately out of scope this session per user choice"
+            },
+            "timestamps": {
+                "created": "2026-07-02T08:20:07.000Z",
+                "started": "2026-07-02T16:36:32Z",
+                "completed": "2026-07-02T16:36:40Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 16,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

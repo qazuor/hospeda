@@ -61,6 +61,7 @@ import {
     SubscriptionStatusEnum,
     TagColorEnum,
     TagTypeEnum,
+    TouristAudienceEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -207,6 +208,11 @@ export const SponsorshipTierPgEnum = pgEnum(
 export const OwnerPromotionDiscountTypePgEnum = pgEnum(
     'owner_promotion_discount_type_enum',
     enumToTuple(OwnerPromotionDiscountTypeEnum)
+);
+
+export const TouristAudiencePgEnum = pgEnum(
+    'tourist_audience_enum',
+    enumToTuple(TouristAudienceEnum)
 );
 
 export const BillingIntervalPgEnum = pgEnum(

@@ -469,8 +469,11 @@ export function gateRecommendations(): AppMiddleware {
 /**
  * Gate exclusive deals feature
  *
- * Checks if user has the entitlement to view exclusive deals.
- * VIP plan only feature.
+ * Checks if user has the EXCLUSIVE_DEALS entitlement, granted to both
+ * tourist-plus and tourist-vip (additive tier — see HOS-21 D1). Callers who
+ * additionally carry VIP_PROMOTIONS_ACCESS (tourist-vip only) see vip-tier
+ * deals too; this gate only enforces the baseline entitlement, the tier
+ * scoping itself is resolved in the route handler.
  *
  * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
  * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
@@ -485,8 +488,7 @@ export function gateRecommendations(): AppMiddleware {
  * import { gateExclusiveDeals } from '../middlewares/tourist-entitlements';
  *
  * app.get(
- *   '/deals/exclusive',
- *   entitlementMiddleware(),
+ *   '/exclusive-deals',
  *   gateExclusiveDeals(),
  *   async (c) => {
  *     // User can view exclusive deals - proceed
@@ -494,9 +496,9 @@ export function gateRecommendations(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for GET /deals/exclusive once that
-// route ships. Do NOT delete and do NOT build the route without a spec.
+// SPEC-145 T-145-06 / HOS-21 T-009: mounted on
+// GET /api/v1/protected/owner-promotions/exclusive-deals
+// (apps/api/src/routes/owner-promotion/protected/exclusive-deals.ts).
 export function gateExclusiveDeals(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.EXCLUSIVE_DEALS)) {
@@ -510,7 +512,7 @@ export function gateExclusiveDeals(): AppMiddleware {
 
         throw new ServiceError(
             ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            'Las ofertas exclusivas son solo para miembros VIP. Actualiza tu plan para acceder.',
+            'Las ofertas exclusivas están disponibles en los planes Plus y VIP. Actualiza tu plan para acceder.',
             {
                 requiredEntitlement: EntitlementKey.EXCLUSIVE_DEALS,
                 upgradeUrl: '/billing/plans'

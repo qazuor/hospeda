@@ -14,6 +14,10 @@ decisions, env vars, migrations, and global architecture/product decisions.
 This repo never re-derives or duplicates that state. If `.specs/` and Linear
 disagree on macro status, **Linear wins**.
 
+"Spec" here always means a Hospeda-team item (`HOS-NN`) — see the project
+[`CLAUDE.md`](../CLAUDE.md) → "Terminology: 'spec' vs 'issue'" for how this
+differs from a bare Linear "issue" (team `Beta Feedback`, `BETA-NN`).
+
 ## Layout
 
 ```text
@@ -74,6 +78,10 @@ task when it:
 
 Don't create a Linear issue per microtask — that defeats the purpose and
 burns through the Free plan's issue cap fast.
+
+When creating that Hospeda issue, pick its `kind-*`/`area-*`/`source-*` labels
+per the project [`CLAUDE.md`](../CLAUDE.md)'s labeling table (`kind-needs-spec`
+by default until `spec.md` exists for it).
 
 ## Env vars / migrations / global decisions
 

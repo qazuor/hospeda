@@ -531,4 +531,36 @@ describe('ExternalReputationSection', () => {
             });
         });
     });
+
+    // ── Regression: unmemoized `t` used to recreate `loadListings` on every
+    // render, re-triggering its mount effect in an infinite fetch loop ──────
+
+    describe('Regression: stable loadListings effect (infinite fetch loop bug)', () => {
+        it('calls GET /external-listings exactly once on mount, even after settling', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const countGetListings = () =>
+                vi.mocked(global.fetch).mock.calls.filter(([url, opts]) => {
+                    const urlStr = typeof url === 'string' ? url : url.toString();
+                    return (
+                        urlStr.includes('/external-listings') &&
+                        !(opts as RequestInit | undefined)?.method
+                    );
+                }).length;
+
+            const initialCount = countGetListings();
+            expect(initialCount).toBe(1);
+
+            // Give a runaway render->fetch->setState loop a chance to fire more requests.
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(countGetListings()).toBe(initialCount);
+        });
+    });
 });

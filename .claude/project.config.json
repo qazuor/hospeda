@@ -18,7 +18,8 @@
     "setup": {
         "envCopyScript": "./scripts/copy-env-to-worktree.sh",
         "install": "pnpm install",
-        "build": "pnpm build"
+        "build": "pnpm exec turbo run build --filter='./packages/*'",
+        "$comment": "build is packages-only on purpose (HOS-68): dev servers run in watch mode and only need packages/* built, never apps/web|admin — those require prod-only env vars (PUBLIC_SENTRY_DSN, PUBLIC_POSTHOG_KEY) that don't exist yet in a fresh worktree and previously crashed wt-create.sh."
     },
     "servers": [
         {
@@ -101,6 +102,11 @@
         "connStringTemplate": "postgresql://hospeda_user:hospeda_pass@localhost:5436/{dbname}",
         "freshCmd": "pnpm db:fresh-dev",
         "applyExtrasCmd": "pnpm db:apply-extras",
+        "schemaFingerprintPaths": [
+            "packages/db/src/schemas",
+            "packages/db/src/billing/schemas.ts",
+            "packages/db/src/migrations/extras"
+        ],
         "schemaSentinelTables": ["gastronomies", "experiences"]
     }
 }

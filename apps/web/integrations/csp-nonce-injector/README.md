@@ -1,6 +1,6 @@
 # csp-nonce-injector
 
-Logical module that stamps the per-request CSP nonce onto inline `<style>` and `<script>` tags emitted by Astro without one. The middleware (`apps/web/src/middleware.ts`) generates a per-request nonce, stores it in `context.locals.cspNonce`, sets the `Content-Security-Policy-Report-Only` header citing that nonce, and then calls `injectNonce({ html, nonce })` against the rendered response body so every unguarded inline tag matches the policy.
+Logical module that stamps the per-request CSP nonce onto inline `<style>` and `<script>` tags emitted by Astro without one. The middleware (`apps/web/src/middleware.ts`) generates a per-request nonce, stores it in `context.locals.cspNonce`, sets the `Content-Security-Policy` header (enforce mode, HOS-30 Phase 2) citing that nonce, and then calls `injectNonce({ html, nonce })` against the rendered response body so every unguarded inline tag matches the policy.
 
 ## Why this is NOT an Astro integration
 

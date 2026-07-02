@@ -157,11 +157,6 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description: 'Access to read reviews from other guests'
     },
     {
-        key: EntitlementKey.AD_FREE,
-        name: 'Ad-free',
-        description: 'Ad-free browsing experience'
-    },
-    {
         key: EntitlementKey.PRICE_ALERTS,
         name: 'Price alerts',
         description: 'Notifications when favorite accommodation prices drop'
@@ -181,6 +176,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'VIP visibility access',
         description:
             'VIP tourist visibility bypass: see RESTRICTED, owner-suspended, and plan-restricted accommodations'
+    },
+    {
+        key: EntitlementKey.VIP_PROMOTIONS_ACCESS,
+        name: 'VIP promotions access',
+        description: 'Access to VIP-only tier exclusive deals, in addition to the plus tier'
     },
     {
         key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,

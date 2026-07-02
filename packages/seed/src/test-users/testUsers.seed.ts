@@ -19,6 +19,7 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { ensureHostAccommodation } from './hostAccommodation.js';
 import { markUserReady } from './markUserReady.js';
 
 /**
@@ -475,13 +476,20 @@ async function ensureAddonPurchase(
  *   limit-type addons, a `billing_customer_limits` row with the aggregated
  *   post-addon limit applied. Mirrors what production
  *   `applyAddonEntitlements()` does without going through QZPay.
+ * - (For HOST-role users, HOS-30) Exactly one fully-featured accommodation
+ *   they own — every catalog amenity/feature applicable to the
+ *   `accommodation` vertical, a full curated image gallery, a rich Tier-3
+ *   price block, and FAQs. See {@link ensureHostAccommodation}. Idempotent:
+ *   skipped entirely if the user already owns an accommodation.
  *
  * Idempotent: users that already exist (matched by email) are skipped entirely.
  * If a user exists but is missing their account row or billing rows, those gaps
  * are filled in.
  *
  * Tables touched: users, account, billing_customers, billing_subscriptions,
- * billing_addon_purchases, billing_customer_limits.
+ * billing_addon_purchases, billing_customer_limits, accommodations,
+ * accommodation_media, r_accommodation_amenity, r_accommodation_feature,
+ * accommodation_faqs (HOST users only).
  *
  * @param _context - Seed context (unused; kept for the runExampleSeeds contract)
  *
@@ -634,6 +642,13 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 logger.info(
                     `${STATUS_ICONS.Info}    Billing customer ensured for ${spec.email} (free tier, no subscription)`
                 );
+            }
+
+            // ── Ensure a fully-featured accommodation for HOST users (HOS-30) ──
+            // Idempotent: skips if the user already owns one. Every host plan
+            // allows at least 1 accommodation, so this never exceeds the plan limit.
+            if (spec.role === RoleEnum.HOST) {
+                await ensureHostAccommodation({ userId, spec, db });
             }
 
             summaryTracker.trackSuccess(ENTITY_NAME);
