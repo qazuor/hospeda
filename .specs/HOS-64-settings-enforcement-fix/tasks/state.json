@@ -1,0 +1,1529 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-64",
+    "title": "Social Posts — Settings Enforcement Fix",
+    "created": "2026-07-02T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Decide social credentials vault permission gate",
+            "description": "Decide whether the new Social Credentials Vault (G-4) reuses the existing `SOCIAL_SETTINGS_MANAGE` permission (mirroring how the AI Vault reuses `AI_SETTINGS_MANAGE` instead of a dedicated permission, per packages/schemas/src/enums/permission.enum.ts) or needs a new `SOCIAL_CREDENTIALS_MANAGE` member. Default recommendation: reuse `SOCIAL_SETTINGS_MANAGE` for consistency. If a new permission is required, add it to `PermissionEnum` with JSDoc matching the existing entries' style. Document the decision inline as a code comment on whichever route file ends up gating the vault (T-026/T-027).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Compare AI vault's permission reuse precedent vs a dedicated permission",
+                    "completed": false
+                },
+                {
+                    "title": "Add PermissionEnum member if a new permission is chosen",
+                    "completed": false
+                },
+                {
+                    "title": "Document the decision inline near the gating route",
+                    "completed": false
+                }
+            ],
+            "tags": ["auth", "decision", "vault"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Register HOSPEDA_SOCIAL_VAULT_MASTER_KEY env var",
+            "description": "Register the new master key env var `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (separate blast radius from `HOSPEDA_AI_VAULT_MASTER_KEY`) in `packages/config/src/env-registry.hospeda.ts` (description, type, required:false initially, secret:true, category) and add Zod validation in `apps/api/src/utils/env.ts` alongside the existing social env vars. Add a placeholder to `apps/api/.env.example`. Run `pnpm env:check:registry` to confirm sync. Do NOT set the real value anywhere yet — that is a separate operational step (T-033) requiring Coolify access.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017", "T-033", "T-041"],
+            "subtasks": [
+                {
+                    "title": "Add registry entry in env-registry.hospeda.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add Zod field in apps/api/src/utils/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add placeholder in .env.example",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm env:check:registry",
+                    "completed": false
+                }
+            ],
+            "tags": ["config", "env", "vault"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Seed 5 new operational social_settings rows",
+            "description": "Add 5 new rows to the `SETTINGS` array in `packages/seed/src/required/socialAutomation.seed.ts` (around lines 300-351, following the exact existing row shape): `max_retry_count` (value '3', type 'number'), `make_webhook_timeout_ms` (value '40000', type 'number'), `download_timeout_ms` (value '15000', type 'number'), `social_assets_folder` (value 'hospeda/social/assets', type 'string'), `dispatch_cron_cadence` (value '*/5 * * * *', type 'string'). `seedSocialSettings()` already handles idempotent insert — no other wiring needed. Write a unit test asserting all 5 keys are present with correct types/defaults after seeding.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add 5 rows to SETTINGS array",
+                    "completed": false
+                },
+                {
+                    "title": "Verify seedSocialSettings() picks them up idempotently",
+                    "completed": false
+                },
+                {
+                    "title": "Write/extend seed unit test for the 5 new keys",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "database", "social"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create social_credentials Drizzle schema",
+            "description": "Create `packages/db/src/schemas/social/social_credentials.dbschema.ts`, mirroring `ai_provider_credentials.dbschema.ts` file-for-file: columns `id` (uuid pk), `key` (varchar, unique per active row — 'make_webhook_url'|'make_api_key'|'ai_social_key'|'operator_pin'), `ciphertext` (text), `iv` (varchar 32), `authTag` (varchar 32), `label` (varchar, optional), `createdAt`/`updatedAt`, `deletedAt`/`deletedById` (soft-delete, FK to users with onDelete:set null). Add a partial unique index on `key` `WHERE deleted_at IS NULL`. Export `InsertSocialCredential`/`SelectSocialCredential` types. Write a schema unit test verifying column types and the partial unique index exist.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Define table columns mirroring ai_provider_credentials",
+                    "completed": false
+                },
+                {
+                    "title": "Add partial unique index on key where deleted_at IS NULL",
+                    "completed": false
+                },
+                {
+                    "title": "Export from db package barrel file",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema", "vault"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create social_credential_audit Drizzle schema",
+            "description": "Create `packages/db/src/schemas/social/social_credential_audit.dbschema.ts`, mirroring `ai_credential_audit.dbschema.ts` file-for-file: columns `id` (uuid pk), `actorId` (FK to users, onDelete:set null), `action` (varchar 20 — 'created'|'rotated'|'updated'|'deleted'), `key` (varchar, instead of providerId), `ipAddress` (varchar 45), `createdAt` only — append-only, no updatedAt/deletedAt. Add index on `(key, createdAt desc)` and on `actorId`. Export `InsertSocialCredentialAudit`/`SelectSocialCredentialAudit` types. Write a schema unit test verifying columns and indexes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Define table columns mirroring ai_credential_audit",
+                    "completed": false
+                },
+                {
+                    "title": "Add (key, createdAt desc) and actorId indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Export from db package barrel file",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema", "vault", "audit"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Generate and apply social vault migration",
+            "description": "Run `pnpm db:generate` to produce the Drizzle migration file(s) for `social_credentials` and `social_credential_audit` (from T-004/T-005), commit the generated SQL under `packages/db/src/migrations/`. Run `pnpm db:migrate` locally to apply and verify both tables + the partial unique index exist. Confirm the drift guard is clean (schema matches committed migration). No hand-written extras needed — both tables are structural (drizzle-generated carril).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm db:generate",
+                    "completed": false
+                },
+                {
+                    "title": "Review and commit generated migration SQL",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm db:migrate locally and verify tables/index",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration", "vault"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create pure hashtag-limit validation function",
+            "description": "Create a new file (e.g. `packages/service-core/src/services/social/social-hashtag-limit.util.ts`) exporting a pure function that takes a map of platform→hashtag-count and a map of platform→max-allowed, and returns either `ok: true` or a structured validation error listing which platform(s) exceeded their limit and by how much. No DB/IO — pure logic, easy to unit test exhaustively (at-limit, one-over, zero, multi-platform-violation edge cases).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Define input/output types",
+                    "completed": true
+                },
+                {
+                    "title": "Implement pure comparison logic per platform",
+                    "completed": true
+                },
+                {
+                    "title": "Write exhaustive unit tests (at-limit, over, zero, multi-platform)",
+                    "completed": true
+                }
+            ],
+            "tags": ["validation", "social", "hashtag"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": "2026-07-02T16:01:50Z",
+                "completed": "2026-07-02T16:03:46Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Enforce hashtag limits in draft ingestion",
+            "description": "In `packages/service-core/src/services/social/social-draft-ingestion.service.ts`, read `max_hashtags_instagram/facebook/x` via the existing raw no-actor-context model-read pattern used by `apps/api/src/routes/ai/social/catalog.ts` (socialSettingModel.findAll, build a key→value map). Call the T-007 validator against the incoming draft's per-platform hashtag counts. On violation, return a `Result` error (VALIDATION_ERROR) instead of ingesting — do NOT truncate silently (spec default: reject). Write a regression test first that reproduces the current bug (over-limit draft currently accepted), per AC-2, then the fix.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009", "T-036", "T-040"],
+            "subtasks": [
+                {
+                    "title": "Write regression test reproducing the current acceptance bug (AC-2)",
+                    "completed": true
+                },
+                {
+                    "title": "Read max_hashtags_<platform> settings via raw model pattern",
+                    "completed": true
+                },
+                {
+                    "title": "Call validator and return VALIDATION_ERROR on violation",
+                    "completed": true
+                },
+                {
+                    "title": "Verify regression test now fails-then-passes appropriately",
+                    "completed": true
+                }
+            ],
+            "tags": ["social", "validation", "ingestion", "bugfix"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": "2026-07-02T16:05:40Z",
+                "completed": "2026-07-02T16:11:04Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Surface hashtag-limit errors at the route layer",
+            "description": "In `apps/api/src/routes/ai/social/drafts.ts`, map the new VALIDATION_ERROR result from T-008 to a clear HTTP 400 response body the Custom GPT caller can act on (which platform(s), max allowed, actual count). Follow the existing error-response shape/`ResponseFactory` convention used elsewhere in this route file. Write an integration test hitting the actual POST route with an over-limit draft and asserting the 400 shape.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Map VALIDATION_ERROR to HTTP 400 with clear message",
+                    "completed": true
+                },
+                {
+                    "title": "Write integration test for the route-level rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "social", "validation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": "2026-07-02T16:14:46Z",
+                "completed": "2026-07-02T16:19:46Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Read retry count and webhook timeout from settings",
+            "description": "In `packages/service-core/src/services/social/social-publish-dispatch.service.ts`, replace the hard-coded `MAX_RETRY_COUNT` (3) and `MAKE_WEBHOOK_TIMEOUT_MS` (40_000) constants (lines ~421-436) with reads from `social_settings` (`max_retry_count`, `make_webhook_timeout_ms`, seeded in T-003) via the existing raw-model read pattern. Add bounds validation (R-1): clamp retry count to a sane min/max (e.g. 1-10) and timeout to a sane range (e.g. 5000-120000ms), falling back to the current hard-coded defaults if the stored value is missing or out of bounds. Unit test the clamping/fallback logic.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037", "T-040"],
+            "subtasks": [
+                {
+                    "title": "Replace MAX_RETRY_COUNT constant with settings read + bounds clamp",
+                    "completed": false
+                },
+                {
+                    "title": "Replace MAKE_WEBHOOK_TIMEOUT_MS constant with settings read + bounds clamp",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test valid, missing, and out-of-bounds values",
+                    "completed": false
+                }
+            ],
+            "tags": ["social", "dispatch", "settings", "risk"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Read download timeout and assets folder from settings",
+            "description": "In `packages/service-core/src/services/social/social-image-pipeline.service.ts`, replace the hard-coded `DOWNLOAD_TIMEOUT_MS` (15_000, line ~128) and `SOCIAL_ASSETS_FOLDER` ('hospeda/social/assets', line ~131) constants with reads from `social_settings` (`download_timeout_ms`, `social_assets_folder`, seeded in T-003) via the existing raw-model read pattern. Do not confuse with the unrelated `DOWNLOAD_TIMEOUT_MS` in `packages/service-core/src/services/media/image-import.service.ts` — that one is out of scope. Unit test with valid and missing settings (fallback to current defaults).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "Replace DOWNLOAD_TIMEOUT_MS constant with settings read",
+                    "completed": false
+                },
+                {
+                    "title": "Replace SOCIAL_ASSETS_FOLDER constant with settings read",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test valid and missing-setting fallback",
+                    "completed": false
+                }
+            ],
+            "tags": ["social", "image-pipeline", "settings"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Read and validate dispatch cron cadence setting",
+            "description": "Add a helper that reads `dispatch_cron_cadence` from `social_settings` (seeded in T-003) via the raw-model read pattern and validates it is a syntactically valid 5-field cron expression, falling back to the current literal `*/5 * * * *` if missing or invalid. This is new ground (no existing precedent for settings-driven cron cadence in this codebase) — keep the helper isolated and pure/testable apart from cron registration wiring (T-013). Unit test valid, invalid, and missing-setting cases.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Implement settings read + cron-expression validation helper",
+                    "completed": false
+                },
+                {
+                    "title": "Implement fallback-to-default-on-invalid logic",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test valid/invalid/missing cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["cron", "settings", "social", "new-pattern"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Wire settings-driven cadence into dispatch cron job",
+            "description": "In `apps/api/src/cron/jobs/social-publish-dispatch.job.ts`, replace the hard-coded `schedule: '*/5 * * * *'` literal (line ~66) with the value from the T-012 helper, read at job registration/startup. First read `apps/api/src/cron/schedules.manifest.ts` to confirm it doesn't independently duplicate/override this schedule — reconcile if it does. Write an integration test asserting the job registers with the settings-driven cadence and falls back correctly when the setting is absent.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-037", "T-040"],
+            "subtasks": [
+                {
+                    "title": "Read schedules.manifest.ts to check for duplication",
+                    "completed": false
+                },
+                {
+                    "title": "Replace hard-coded schedule literal with T-012 helper output",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test: settings-driven + fallback registration",
+                    "completed": false
+                }
+            ],
+            "tags": ["cron", "settings", "social", "new-pattern"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Extract shared secret-vault crypto util",
+            "description": "Create `apps/api/src/utils/secret-vault-crypto.ts` by extracting `encryptSecret`/`decryptSecret` out of `apps/api/src/utils/ai-vault.ts` verbatim, parameterizing `deriveKey()` by a master-key env var VALUE passed in as an argument (not hardcoded to `HOSPEDA_AI_VAULT_MASTER_KEY`) so both the AI vault and the new social vault can call it with their own master key. Keep AES-256-GCM, sha256 key derivation, 12-byte IV, 16-byte auth tag, base64 encoding — no behavior change. Do not modify `ai-vault.ts` in this task (that's T-015).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Create secret-vault-crypto.ts with parameterized deriveKey",
+                    "completed": false
+                },
+                {
+                    "title": "Move encryptSecret/decryptSecret logic verbatim",
+                    "completed": false
+                },
+                {
+                    "title": "Export EncryptedSecret type",
+                    "completed": false
+                }
+            ],
+            "tags": ["crypto", "vault", "refactor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Reduce ai-vault.ts to a thin wrapper",
+            "description": "Update `apps/api/src/utils/ai-vault.ts` so `encryptSecret`/`decryptSecret` call the new `secret-vault-crypto.ts` util (T-014) with `env.HOSPEDA_AI_VAULT_MASTER_KEY`, removing the now-duplicated crypto logic. This must be a pure extraction with NO behavior change — run the existing AI vault tests (`apps/api/test/integration/ai/vault-roundtrip.test.ts`) unchanged and confirm they still pass, since they are the only current coverage of this code path.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delegate ai-vault.ts functions to secret-vault-crypto.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Run existing vault-roundtrip.test.ts and confirm no regressions",
+                    "completed": false
+                }
+            ],
+            "tags": ["crypto", "vault", "refactor", "regression"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add focused unit tests for shared crypto util",
+            "description": "Create `apps/api/test/utils/secret-vault-crypto.test.ts` — the first dedicated unit test for this crypto logic (previously only covered transitively via an integration round-trip test). Cover: encrypt→decrypt round-trip returns original plaintext; tampered auth tag/ciphertext raises on decrypt; missing/empty master key throws a clear error from `deriveKey()`; two different master keys produce non-interchangeable ciphertext. AAA pattern, no real DB needed.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Round-trip encrypt/decrypt test",
+                    "completed": false
+                },
+                {
+                    "title": "Tampered auth tag/ciphertext rejection test",
+                    "completed": false
+                },
+                {
+                    "title": "Missing master key throw test",
+                    "completed": false
+                },
+                {
+                    "title": "Cross-master-key non-interchangeability test",
+                    "completed": false
+                }
+            ],
+            "tags": ["crypto", "vault", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement createSocialCredential vault function",
+            "description": "Create `apps/api/src/services/social-credential-vault.service.ts`, mirroring `ai-credential-vault.service.ts`'s shape (plain exported functions, not a class). Implement `createSocialCredential({ key, plaintext, label, actorId, ipAddress })`: Zod-validate input, encrypt via T-014's shared util with `env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY`, insert into `social_credentials` and an audit row (`action: 'created'`) in one `withTransaction`. Catch Postgres `23505` (partial unique index violation) and map to the same VALIDATION_ERROR a pre-check SELECT would return. Unit test: success, duplicate-key rejection, transaction rollback on audit-insert failure.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-014", "T-001", "T-002"],
+            "blocks": ["T-018", "T-019", "T-020", "T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Define Zod input schema for create",
+                    "completed": false
+                },
+                {
+                    "title": "Implement encrypt + transactional insert + audit row",
+                    "completed": false
+                },
+                {
+                    "title": "Handle 23505 unique-violation race",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: success, duplicate, rollback",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "crypto", "database"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement rotateSocialCredential vault function",
+            "description": "Add `rotateSocialCredential({ key, newPlaintext, actorId, ipAddress })` to `social-credential-vault.service.ts`, mirroring `rotateAiProviderCredential`: re-encrypts with a fresh IV, updates `ciphertext`/`iv`/`authTag` in place, writes an audit row (`action: 'rotated'`) in the same transaction. Unit test: success path, not-found key, audit row content assertion.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Implement rotate logic (re-encrypt in place)",
+                    "completed": false
+                },
+                {
+                    "title": "Pair with transactional audit row (action: rotated)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: success, not-found, audit content",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "crypto", "database"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement updateMetadata and delete vault functions",
+            "description": "Add `updateSocialCredentialMetadata({ key, label, actorId, ipAddress })` and `deleteSocialCredential({ key, actorId, ipAddress })` (soft-delete via `deletedAt`/`deletedById`) to `social-credential-vault.service.ts`, mirroring the AI vault's equivalents. Both pair with an audit row (`action: 'updated'`/`'deleted'`) in the same transaction. Unit tests: metadata update success, soft-delete marks row + audit, operations on an already-deleted key return NOT_FOUND.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Implement updateSocialCredentialMetadata + audit",
+                    "completed": false
+                },
+                {
+                    "title": "Implement deleteSocialCredential (soft-delete) + audit",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: update, soft-delete, already-deleted NOT_FOUND",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "database"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Implement getDecrypted and list vault functions",
+            "description": "Add `getDecryptedSocialCredential({ key })` (decrypts via T-014's shared util, returns plaintext — for internal server-side callers only, never exposed over HTTP) and `listSocialCredentials()` (masked: `id/key/label/createdAt/updatedAt/deletedAt`, never ciphertext/iv/authTag) to `social-credential-vault.service.ts`. Unit tests: decrypt returns correct plaintext, list never includes ciphertext/iv/authTag fields, not-found key returns NOT_FOUND.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-021", "T-022", "T-023", "T-024", "T-026", "T-040"],
+            "subtasks": [
+                {
+                    "title": "Implement getDecryptedSocialCredential",
+                    "completed": false
+                },
+                {
+                    "title": "Implement listSocialCredentials (masked)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: decrypt correctness, masking, not-found",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "crypto", "database"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Migrate operator PIN check to read from vault",
+            "description": "In `apps/api/src/routes/ai/social/drafts.ts`, change `validateOperatorPin()` (lines ~56-74) to call `getDecryptedSocialCredential({ key: 'operator_pin' })` (T-020) instead of reading `env.HOSPEDA_OPERATOR_PIN`, keeping the existing `timingSafeEqual` comparison unchanged (that part was already correct per the spec). Update the stale JSDoc/comments that still reference the old hash-based scheme. Update existing tests for this route to mock the vault decrypt call instead of the env var.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Replace env.HOSPEDA_OPERATOR_PIN read with vault decrypt",
+                    "completed": false
+                },
+                {
+                    "title": "Keep timingSafeEqual comparison unchanged",
+                    "completed": false
+                },
+                {
+                    "title": "Update stale JSDoc comments",
+                    "completed": false
+                },
+                {
+                    "title": "Update tests to mock vault decrypt",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "auth", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Migrate x-make-apikey header send-site to vault",
+            "description": "In `packages/service-core/src/services/social/social-publish-dispatch.service.ts`, change the `x-make-apikey` header send site to call `getDecryptedSocialCredential({ key: 'make_api_key' })` (T-020) instead of reading `env.HOSPEDA_MAKE_API_KEY`. Unit test: header is set from the decrypted vault value; dispatch fails gracefully (clear error, no crash) if the vault entry is missing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Replace env.HOSPEDA_MAKE_API_KEY read with vault decrypt",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: header set from vault value, missing-entry error path",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "dispatch", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Migrate x-hospeda-ai-key inbound check to vault",
+            "description": "Locate the inbound `x-hospeda-ai-key` validation site (grep for `HOSPEDA_AI_SOCIAL_KEY` usage — likely a shared API-key auth check used by GPT-facing routes such as `catalog.ts` and `drafts.ts`). Change it to call `getDecryptedSocialCredential({ key: 'ai_social_key' })` (T-020) instead of reading `env.HOSPEDA_AI_SOCIAL_KEY`. Since this touches shared auth code, add regression tests for every route that uses it, not just one.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Locate the shared inbound API-key validation site",
+                    "completed": false
+                },
+                {
+                    "title": "Replace env.HOSPEDA_AI_SOCIAL_KEY read with vault decrypt",
+                    "completed": false
+                },
+                {
+                    "title": "Regression tests for every route using this check",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "auth", "migration", "shared-code"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Migrate make_webhook_url read-site and retire the settings row",
+            "description": "In `social-publish-dispatch.service.ts`'s `dispatchTarget()` (the `this.settingModel.findOne({ key: MAKE_WEBHOOK_URL_KEY })` call, ~line 821), switch to `getDecryptedSocialCredential({ key: 'make_webhook_url' })` (T-020). Remove the `make_webhook_url` row from `packages/seed/src/required/socialAutomation.seed.ts`'s `SETTINGS` array so new environments never seed it as a plaintext setting again. Unit test: webhook URL comes from vault; dispatch fails clearly if vault entry missing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-025", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Replace social_settings read with vault decrypt in dispatchTarget()",
+                    "completed": false
+                },
+                {
+                    "title": "Remove make_webhook_url row from socialAutomation.seed.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: vault-sourced URL, missing-entry error path",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "social", "dispatch", "migration", "cleanup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write one-time vault data migration script",
+            "description": "Write a one-time script (e.g. `packages/db/src/migrations/extras/social-vault-seed.script.ts` or a standalone CLI under `scripts/`) that reads the CURRENT env var values (`HOSPEDA_MAKE_API_KEY`, `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`) and the current `make_webhook_url` `social_settings` row, and calls `createSocialCredential()` (T-017) for each of the 4 keys. Idempotent: skip any key that already exists in `social_credentials`. Integration test with mocked env vars + a real test DB, asserting all 4 credentials are created encrypted and re-running is a no-op.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-024"],
+            "blocks": ["T-033"],
+            "subtasks": [
+                {
+                    "title": "Read current env vars and make_webhook_url setting row",
+                    "completed": false
+                },
+                {
+                    "title": "Call createSocialCredential for each of the 4 secrets, idempotently",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test: creates once, no-op on re-run",
+                    "completed": false
+                }
+            ],
+            "tags": ["vault", "migration", "social", "data-migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Create admin routes: list and create social credentials",
+            "description": "Create admin routes for the vault (e.g. `apps/api/src/routes/admin/social/credentials.ts`), gated by the permission decided in T-001, mirroring the AI vault's admin route conventions (locate via grep for `ai-credential-vault.service` imports under `apps/api/src/routes/admin/**` to match the exact route-factory pattern). Implement `GET` (list, masked via T-020's `listSocialCredentials`) and `POST` (create, via T-017). Zod-validate request bodies. Integration tests: authorized list/create succeed, unauthorized (missing permission) returns 403, list response never contains ciphertext/iv/authTag.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-017", "T-020"],
+            "blocks": ["T-027", "T-028", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Locate and mirror the AI vault's admin route pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Implement GET list route (masked)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement POST create route",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests: auth, 403, masked response",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "admin", "vault"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create admin routes: rotate, update, delete social credentials",
+            "description": "Add `POST /:key/rotate`, `PATCH /:key` (metadata), and `DELETE /:key` routes to the same admin route file/group from T-026, wired to T-018 (rotate) and T-019 (update/delete). Same permission gate as T-026. Integration tests: authorized rotate/update/delete succeed and each writes exactly one audit row (AC-5), unauthorized returns 403, rotating/deleting a non-existent key returns 404.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-019", "T-026"],
+            "blocks": ["T-028", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Implement POST /:key/rotate route",
+                    "completed": false
+                },
+                {
+                    "title": "Implement PATCH /:key (metadata) route",
+                    "completed": false
+                },
+                {
+                    "title": "Implement DELETE /:key route",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests: auth, audit-row-per-mutation, 404",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "admin", "vault"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Build admin TanStack Query hooks for social credentials",
+            "description": "Create `apps/admin/src/features/social-credentials/{types.ts,hooks.ts,index.ts}`, mirroring `apps/admin/src/features/ai-settings/` file-for-file: `useSocialCredentialsQuery`, `useCreateSocialCredentialMutation`, `useRotateSocialCredentialMutation`, `useUpdateSocialCredentialMutation`, `useDeleteSocialCredentialMutation`, hitting the T-026/T-027 admin routes. Type the masked credential shape (never ciphertext/iv/authTag). Component/hook tests mirroring the ai-settings hook tests if any exist, else a light render-hook test per mutation confirming cache invalidation.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-027"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Define masked credential types",
+                    "completed": false
+                },
+                {
+                    "title": "Implement query + 4 mutation hooks",
+                    "completed": false
+                },
+                {
+                    "title": "Test cache invalidation on each mutation",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack-query", "vault"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Build social credentials admin list page",
+            "description": "Create `apps/admin/src/routes/_authed/social/credentials.tsx`, mirroring `apps/admin/src/routes/_authed/ai/credentials.tsx`'s card-based layout (shadcn `Card`/`Dialog`/`Button`), gated by `RoutePermissionGuard` on the T-001 permission, using the T-028 query hook to render masked cards (key/label/createdAt/updatedAt, never plaintext). Component test rendering the masked list and asserting no ciphertext/iv/authTag ever appears in the DOM.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-030", "T-031", "T-032"],
+            "subtasks": [
+                {
+                    "title": "Scaffold route file with RoutePermissionGuard",
+                    "completed": false
+                },
+                {
+                    "title": "Render masked card list from useSocialCredentialsQuery",
+                    "completed": false
+                },
+                {
+                    "title": "Component test: no secret data ever in DOM",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ui", "vault"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Add create and rotate dialogs to credentials page",
+            "description": "Add `CreateCredentialDialog` and `RotateCredentialDialog` sub-components to the T-029 page, mirroring `ai/credentials.tsx`'s equivalents: shadcn `Dialog` + password-type `Input` for the plaintext secret (never round-tripped back from the server), `Select` for the fixed 4 keys on create. Component tests: form validation (empty plaintext rejected), successful submit calls the T-028 create/rotate mutation and closes the dialog.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Build CreateCredentialDialog (password input, key select)",
+                    "completed": false
+                },
+                {
+                    "title": "Build RotateCredentialDialog (password input)",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests: validation + submit-and-close",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ui", "vault", "forms"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Add edit-metadata and delete dialogs to credentials page",
+            "description": "Add `EditCredentialDialog` (label-only metadata edit) and `DeleteCredentialDialog` (confirmation) sub-components to the T-029 page, mirroring `ai/credentials.tsx`'s equivalents. Component tests: edit submits label change via T-028's update mutation, delete requires confirmation and calls the delete mutation.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Build EditCredentialDialog (metadata only)",
+                    "completed": false
+                },
+                {
+                    "title": "Build DeleteCredentialDialog (confirmation)",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests: edit submit, delete confirm-then-call",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ui", "vault", "forms"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Register social credentials page in admin navigation",
+            "description": "Add a sidebar/navigation entry for the new `/social/credentials` admin route (T-029), following the existing admin nav conventions (check how the AI Credentials nav entry is registered and mirror it), gated the same way the route itself is gated so the link doesn't appear for users without the permission.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add nav entry mirroring the AI Credentials entry",
+                    "completed": false
+                },
+                {
+                    "title": "Gate visibility by the same permission as the route",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ui", "navigation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Run vault data migration in staging",
+            "description": "Operational task (per R-2 sequencing, step 2). With `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` set in Coolify for `hospeda-api-staging` (flag to the user beforehand per this repo's env-var workflow), run the T-025 migration script against staging. Verify via the T-026 admin list route (or a direct DB check) that all 4 `social_credentials` rows exist, masked, with the legacy env vars still in place (not yet removed). Do NOT remove any env var in this task.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-025", "T-002"],
+            "blocks": ["T-034", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Confirm HOSPEDA_SOCIAL_VAULT_MASTER_KEY is set in staging Coolify",
+                    "completed": false
+                },
+                {
+                    "title": "Run migration script against staging",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all 4 credentials present via admin list/DB check",
+                    "completed": false
+                }
+            ],
+            "tags": ["ops", "vault", "migration", "staging"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Run vault data migration in production",
+            "description": "Operational task (per R-2 sequencing, step 2). Only after T-033 (staging) succeeds. With `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` set in Coolify for `hospeda-api-prod` (flag to the user beforehand), run the T-025 migration script against production. Verify all 4 credentials exist encrypted, legacy env vars still in place. Do NOT remove any env var in this task. This is a billing-adjacent-severity secrets change — treat with the same care as the prod smoke checklist even though it isn't a billing surface.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Confirm HOSPEDA_SOCIAL_VAULT_MASTER_KEY is set in prod Coolify",
+                    "completed": false
+                },
+                {
+                    "title": "Run migration script against production",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all 4 credentials present via admin list/DB check",
+                    "completed": false
+                }
+            ],
+            "tags": ["ops", "vault", "migration", "production"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Write social credentials vault roundtrip integration test",
+            "description": "Create `apps/api/test/integration/social/social-credential-vault-roundtrip.test.ts`, mirroring `apps/api/test/integration/ai/vault-roundtrip.test.ts`: real Postgres via `testDb.setup/clean/teardown`, real HTTP routes (T-026/T-027), mock-actor header auth. Cover create/rotate/update/delete/list for all 4 secret keys, asserting exactly one `social_credential_audit` row per mutation (AC-5) and that no response ever contains ciphertext/iv/authTag (AC-6).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-026", "T-027"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Set up testDb + real routes + mock-actor auth",
+                    "completed": false
+                },
+                {
+                    "title": "Cover create/rotate/update/delete/list for all 4 keys",
+                    "completed": false
+                },
+                {
+                    "title": "Assert one audit row per mutation and no plaintext leakage",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "vault", "social"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Write cross-platform hashtag enforcement integration test",
+            "description": "Create `apps/api/test/routes/ai/social/drafts-hashtag-limit.test.ts` covering all 3 platforms (Instagram/Facebook/X) against T-008/T-009: exactly-at-max (accepted), one-over-max (rejected, AC-1), zero hashtags (accepted), and a multi-platform draft where only one target platform violates its limit (only that platform's violation is reported).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test at-limit and one-over-limit per platform",
+                    "completed": true
+                },
+                {
+                    "title": "Test zero-hashtag and multi-platform partial-violation cases",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "integration", "social", "hashtag"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-07-02T16:24:02Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Write settings-driven dispatch behavior integration test",
+            "description": "Add an integration test covering G-2 end-to-end: retry count, webhook timeout, download timeout, assets folder, and cron cadence are all read from `social_settings` (T-010/T-011/T-013) rather than hard-coded, including the bounds-validation edge cases from R-1 (out-of-range values fall back to defaults). Colocate with the existing `social-publish-dispatch.service.test.ts`/`dispatch-edge-cases.test.ts` suite.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test each of the 5 settings is read at runtime, not hard-coded",
+                    "completed": false
+                },
+                {
+                    "title": "Test R-1 bounds-validation fallback for out-of-range values",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "social", "settings"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Verify vault reads work end-to-end in staging",
+            "description": "Manual staging smoke (R-2 step 3, `status-needs-smoke-staging`). After T-033 (data migrated) and with all read-site migrations (T-021-T-024) and the automated vault roundtrip test (T-035) green, manually exercise on staging: operator PIN check via the Custom GPT flow, a real Make.com dispatch call (confirms `x-make-apikey` from vault), and a GPT inbound call (confirms `x-hospeda-ai-key` from vault). Legacy env vars must still be present during this verification — do not remove them yet.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-022", "T-023", "T-024", "T-033", "T-035"],
+            "blocks": ["T-039", "T-042"],
+            "subtasks": [
+                {
+                    "title": "Manually verify operator PIN check against staging",
+                    "completed": false
+                },
+                {
+                    "title": "Manually verify Make.com dispatch call against staging",
+                    "completed": false
+                },
+                {
+                    "title": "Manually verify GPT inbound auth against staging",
+                    "completed": false
+                }
+            ],
+            "tags": ["ops", "smoke", "vault", "staging"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Verify vault reads work end-to-end in production",
+            "description": "Manual production smoke (R-2 step 3, `status-needs-smoke-prod`) — required before AC-7's env-var removal. After T-034 (prod data migrated) and T-038 (staging verified), manually exercise the same 3 checks (operator PIN, Make.com dispatch, GPT inbound auth) against production. Legacy env vars must still be present during this verification.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-034", "T-038"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Manually verify operator PIN check against production",
+                    "completed": false
+                },
+                {
+                    "title": "Manually verify Make.com dispatch call against production",
+                    "completed": false
+                },
+                {
+                    "title": "Manually verify GPT inbound auth against production",
+                    "completed": false
+                }
+            ],
+            "tags": ["ops", "smoke", "vault", "production"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Document G-1/G-2/G-4 in relevant CLAUDE.md files",
+            "description": "Update `packages/service-core/CLAUDE.md` (and `packages/db/CLAUDE.md` if the vault tables warrant a mention) documenting: the hashtag-limit enforcement point (G-1), the 5 new operational `social_settings` keys and settings-driven cron cadence (G-2), and the Social Credentials Vault pattern — table shapes, the shared crypto util, and which 4 secrets it now owns (G-4). Cross-reference the AI Vault docs where the pattern is shared.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008", "T-010", "T-013", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document G-1 hashtag enforcement",
+                    "completed": false
+                },
+                {
+                    "title": "Document G-2 settings keys and cron cadence",
+                    "completed": false
+                },
+                {
+                    "title": "Document G-4 vault pattern and shared crypto util",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Document HOSPEDA_SOCIAL_VAULT_MASTER_KEY in env docs",
+            "description": "Update `docs/guides/environment-variables.md` to document the new `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (T-002): purpose, separate blast radius from the AI vault's master key, and that it must be set in Coolify for every environment before the vault code can decrypt anything (R-3).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add HOSPEDA_SOCIAL_VAULT_MASTER_KEY entry to environment-variables.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "env"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Remove legacy plaintext env vars (AC-7)",
+            "description": "Only after BOTH T-038 (staging verified) and T-039 (prod verified) — this is the R-2 gate. Remove `HOSPEDA_MAKE_API_KEY`, `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`, and the already-dead `HOSPEDA_OPERATOR_PIN_HASH` from `packages/config/src/env-registry.hospeda.ts`, `apps/api/src/utils/env.ts`'s Zod schema, and `.env.example`. Update `docs/guides/environment-variables.md` to note the removal and point at the vault as the new source of truth. Run `pnpm env:check:registry` to confirm sync.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038", "T-039"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                {
+                    "title": "Remove the 4 vars from env-registry.hospeda.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Remove the 4 vars from apps/api/src/utils/env.ts and .env.example",
+                    "completed": false
+                },
+                {
+                    "title": "Note the removal in environment-variables.md",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm env:check:registry to confirm sync",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "env", "vault"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Unset legacy env vars in Coolify",
+            "description": "Operational task, human-executed (per this repo's env-var workflow — never done autonomously by an agent). After T-042 merges, unset `HOSPEDA_MAKE_API_KEY`, `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`, `HOSPEDA_OPERATOR_PIN_HASH` from Coolify for both `hospeda-api-staging` and `hospeda-api-prod` (via `hops env-set`/UI) and redeploy both. Confirm the app boots clean with the vars gone.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-042"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Unset the 4 vars in staging Coolify and redeploy",
+                    "completed": false
+                },
+                {
+                    "title": "Unset the 4 vars in prod Coolify and redeploy",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm clean boot in both environments",
+                    "completed": false
+                }
+            ],
+            "tags": ["ops", "env", "vault"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 43,
+        "pending": 39,
+        "inProgress": 0,
+        "completed": 4,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}
