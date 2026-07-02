@@ -638,32 +638,33 @@
             "id": "T-017",
             "title": "Write regression tests for the unchanged synchronous contract",
             "description": "Add or verify test cases confirming Google Places / MercadoLibre / Generic sources, and Booking's JSON-LD-sufficient branch, still return 200 with the exact response shape they had before this feature — no 202, no polling, no behavior change. Run against the modified route (T-010) to catch any accidental regression in the dispatch branching.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add/verify 200-response regression tests for Google Places, MercadoLibre, Generic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add/verify 200-response regression test for Booking JSON-LD-sufficient",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing", "regression", "import"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T22:15:00Z",
+                "completed": "2026-07-02T22:50:00Z"
+            },
+            "summary": "Audited existing coverage first (Explore agent): Generic already had real full-route 200 coverage (accommodation-import.integration.test.ts, T-021, pre-dates T-010); Google Places, MercadoLibre, and Booking's JSON-LD-sufficient branch had ZERO full-route coverage — import-from-url.dispatch.test.ts only unit-tests the pure buildImportFromUrlDispatchResponse function against a hand-built ImportDispatchResult, never exercising the real adapters/supportsAsyncExtraction routing. New apps/api/test/routes/accommodation-import-sync-sources.integration.test.ts (3 tests) closes the gap via real app.request(): Google Places and MercadoLibre with credentials forced off (deterministic credentials_missing degrade, proving they never reach the 202 branch since neither implements extractAsync), and Booking with rich-enough JSON-LD (2 useful fields, clearing USEFUL_FIELD_THRESHOLD) proving the JSON-LD-sufficient tier still resolves synchronously (200, no Apify run started). Found+fixed 2 real bugs while writing this: (1) the local dev environment has a REAL HOSPEDA_GOOGLE_PLACES_API_KEY set, which fired an actual non-deterministic network call in the first test run — fixed by force-setting both credential env vars to '' via vi.hoisted (NOT `delete`/`=undefined`, since Node coerces `undefined` to the literal string \"undefined\" on process.env, which is truthy and would defeat the credential check — also a biome noDelete lint catch); (2) my own wrong assumption that `source` stays as the detected platform on a credentials-missing failure — finalizeImportDraft actually overrides `source` to 'none' whenever the draft ends up empty with no hints (pre-existing, documented, shared behavior, not a bug) — fixed the test assertions to expect 'none'. Full combined regression (110 tests across 13 files in test/routes/accommodation/protected/ + the 3 import integration files) green; lint + typecheck clean."
         },
         {
             "id": "T-018",
@@ -738,9 +739,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.2
     }
