@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 16/20 tasks (80%)
+## Progress: 18/20 tasks (90%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -103,11 +103,12 @@
 
 ### Docs Phase
 
-- [ ] **T-019** (complexity: 1) - Update docs/billing/endpoint-gate-matrix.md
+- [x] **T-019** (complexity: 1) - Update docs/billing/endpoint-gate-matrix.md [DONE — verified no change needed]
   - Blocked by: T-004, T-005
   - Blocks: none
 
-- [ ] **T-020** (complexity: 1) - Fix stale EntitlementKey count in packages/billing/CLAUDE.md
+- [x] **T-020** (complexity: 1) - Fix stale EntitlementKey count in packages/billing/CLAUDE.md [DONE]
+  - Also fixed LimitKey count (8->18, pre-existing staleness found while in the area)
   - Blocked by: T-002
   - Blocks: none
 

@@ -782,62 +782,86 @@
             "id": "T-019",
             "title": "Update docs/billing/endpoint-gate-matrix.md",
             "description": "Reflect the packaging changes in `docs/billing/endpoint-gate-matrix.md`: remove any AD_FREE gate row, move CAN_VIEW_RECOMMENDATIONS's documented minimum tier from free to plus, note CREATE_PROMOTIONS now gates from owner-basico (not owner-pro).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-004", "T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update gate matrix rows",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T09:11:35Z",
+                    "details": "docs, no code"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T09:11:35Z",
+                    "details": "docs, no code"
+                },
+                "tests": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T09:11:35Z",
+                    "details": "verified no change needed — the doc maps route to entitlement key, not entitlement to plan tier; which plan grants an entitlement is owned solely by plans.config.ts"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:11:14Z",
+                "completed": "2026-07-02T09:11:35Z"
             }
         },
         {
             "id": "T-020",
             "title": "Fix stale EntitlementKey count in packages/billing/CLAUDE.md",
             "description": "`packages/billing/CLAUDE.md` states the `EntitlementKey` enum has 48 members; the actual count was 39 before this spec and will be 38 after AD_FREE removal (T-002). Update the doc to the correct post-spec count.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Correct the EntitlementKey count in CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:12:33Z",
+                    "details": "markdownlint 0 errors"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T09:12:33Z",
+                    "details": "docs, no code"
+                },
+                "tests": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T09:12:33Z",
+                    "details": "docs, no code"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:11:43Z",
+                "completed": "2026-07-02T09:12:33Z"
             }
         }
     ],
     "summary": {
         "total": 20,
-        "pending": 4,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 1.6
     }
