@@ -1,6 +1,6 @@
 # HOS-35: Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)
 
-## Progress: 8/10 tasks (80%)
+## Progress: 9/10 tasks (90%)
 
 **Average Complexity:** 1.7/3 (max)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-005 -> T-006 -> T-008 -> T-009 -> T-010 (8 steps)
@@ -56,8 +56,8 @@
 
 ### Cleanup Phase
 
-- [ ] **T-009** (complexity: 1) - Remove react-query Dependabot ignore entry
-  - Remove the ignore entry + comment block from .github/dependabot.yml
+- [x] **T-009** (complexity: 1) - Remove react-query Dependabot ignore entry
+  - Removed the ignore entry + comment block from .github/dependabot.yml
   - Blocked by: T-008
   - Blocks: T-010
 

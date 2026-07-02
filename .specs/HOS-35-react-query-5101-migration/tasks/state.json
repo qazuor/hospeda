@@ -204,13 +204,13 @@
             "id": "T-009",
             "title": "Remove react-query Dependabot ignore entry",
             "description": "Remove the `- dependency-name: '@tanstack/react-query'` ignore entry and its explanatory comment block from .github/dependabot.yml now that the bump has landed and is verified. Do not touch other ignore entries (e.g. @tanstack/react-router, which stays gated for its own migration).\n\nTest requirements: none (config-only change). Verify by re-reading the file: no react-query entry remains, other entries untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Remove the ignore entry + comment block", "completed": false },
-                { "title": "Confirm other ignore entries untouched", "completed": false }
+                { "title": "Remove the ignore entry + comment block", "completed": true },
+                { "title": "Confirm other ignore entries untouched", "completed": true }
             ],
             "tags": ["config", "devops", "dependabot"],
             "phase": "cleanup",
@@ -249,9 +249,9 @@
     ],
     "summary": {
         "total": 10,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.7
     }
