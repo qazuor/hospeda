@@ -1054,26 +1054,38 @@
             "id": "T-027",
             "title": "Integration test — revalidation triggered on featuring changes",
             "description": "G-3 verification. Mock `getRevalidationService()` (per the pattern already used to test `subscription-pause.service.ts`, if such a test exists — otherwise establish the mock pattern here) and assert `scheduleRevalidationBatch` is called with the correct `EntityChangeData[]` (matching slugs) and a non-empty `reason` string for both T-017 (owner-scope) and T-018 (accommodation-scope) sync paths. Also assert it is NOT called when `updated === 0` (no-op cases).\n\nKey files:\n- packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts (extend, same file as T-022)\n\nAcceptance criteria: all assertions above pass; revalidation mock never throws when unavailable (undefined return from getRevalidationService).\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/sync-featured-by-entitlement.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017", "T-018"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Owner-scope revalidation call assertion", "completed": false },
-                { "title": "Accommodation-scope revalidation call assertion", "completed": false },
-                { "title": "No-op cases assert revalidation NOT called", "completed": false }
+                { "title": "Owner-scope revalidation call assertion", "completed": true },
+                { "title": "Accommodation-scope revalidation call assertion", "completed": true },
+                { "title": "No-op cases assert revalidation NOT called", "completed": true }
             ],
             "tags": ["testing", "backend", "revalidation"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter service-core typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "sync-featured-by-entitlement.test.ts 25/25 (18 pre-existing + 7 new)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {

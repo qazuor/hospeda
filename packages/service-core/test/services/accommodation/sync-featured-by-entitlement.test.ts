@@ -42,7 +42,9 @@ const {
     mockGetDb,
     mockGetProtectedIds,
     mockResolveOwnerPlanGrantsFeatured,
-    mockNotInArray
+    mockNotInArray,
+    mockGetRevalidationService,
+    mockScheduleRevalidationBatch
 } = vi.hoisted(() => ({
     mockReturning: vi.fn(),
     mockWhere: vi.fn(),
@@ -51,7 +53,9 @@ const {
     mockGetDb: vi.fn(),
     mockGetProtectedIds: vi.fn(),
     mockResolveOwnerPlanGrantsFeatured: vi.fn(),
-    mockNotInArray: vi.fn((col: unknown, ids: unknown) => ({ op: 'notInArray', col, ids }))
+    mockNotInArray: vi.fn((col: unknown, ids: unknown) => ({ op: 'notInArray', col, ids })),
+    mockGetRevalidationService: vi.fn(),
+    mockScheduleRevalidationBatch: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -97,6 +101,16 @@ vi.mock('../../../src/services/accommodation/featured-entitlement.resolver.js', 
     resolveOwnerPlanGrantsFeatured: mockResolveOwnerPlanGrantsFeatured
 }));
 
+// Mock the revalidation singleton (T-017/T-018/T-027, SPEC-309 G-3).
+// `mockGetRevalidationService` defaults to `undefined` (see beforeEach in both
+// describe blocks below) so every pre-existing test — none of which cares
+// about revalidation — exercises the exact same `if (revalidationService)`
+// false branch the real singleton returns when nothing has initialized it.
+// T-027 tests override this per-case to return a service stub.
+vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
+    getRevalidationService: mockGetRevalidationService
+}));
+
 // ---------------------------------------------------------------------------
 // Import AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -132,6 +146,7 @@ describe('syncFeaturedByEntitlementForOwner', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetProtectedIds.mockResolvedValue([]);
+        mockGetRevalidationService.mockReturnValue(undefined);
     });
 
     describe('active: true', () => {
@@ -353,6 +368,60 @@ describe('syncFeaturedByEntitlementForOwner', () => {
             expect(mockReturning).toHaveBeenCalledWith({ id: 'id', slug: 'slug' });
         });
     });
+
+    describe('revalidation on update (T-017 / T-027, SPEC-309 G-3)', () => {
+        it('schedules a revalidation batch with one event per updated accommodation when updated > 0', async () => {
+            // Arrange
+            mockGetRevalidationService.mockReturnValue({
+                scheduleRevalidationBatch: mockScheduleRevalidationBatch
+            });
+            const rows = [
+                { id: 'acc-1', slug: 'acc-1-slug' },
+                { id: 'acc-2', slug: 'acc-2-slug' }
+            ];
+            const db = buildMockDb(rows);
+
+            // Act
+            await syncFeaturedByEntitlementForOwner({ ownerId: 'owner-001', active: true, db });
+
+            // Assert
+            expect(mockScheduleRevalidationBatch).toHaveBeenCalledTimes(1);
+            const call = mockScheduleRevalidationBatch.mock.calls[0]?.[0] as {
+                events: { entityType: string; slug: string }[];
+                reason: string;
+            };
+            expect(call.events).toEqual([
+                { entityType: 'accommodation', slug: 'acc-1-slug' },
+                { entityType: 'accommodation', slug: 'acc-2-slug' }
+            ]);
+            expect(call.reason.length).toBeGreaterThan(0);
+        });
+
+        it('does NOT schedule a revalidation batch when updated === 0 (no-op)', async () => {
+            // Arrange
+            mockGetRevalidationService.mockReturnValue({
+                scheduleRevalidationBatch: mockScheduleRevalidationBatch
+            });
+            const db = buildMockDb([]);
+
+            // Act
+            await syncFeaturedByEntitlementForOwner({ ownerId: 'ghost-owner', active: true, db });
+
+            // Assert
+            expect(mockScheduleRevalidationBatch).not.toHaveBeenCalled();
+        });
+
+        it('never throws when the revalidation service is unavailable (undefined)', async () => {
+            // Arrange — mockGetRevalidationService already defaults to undefined (beforeEach)
+            const db = buildMockDb([{ id: 'acc-1', slug: 'acc-1-slug' }]);
+
+            // Act / Assert
+            await expect(
+                syncFeaturedByEntitlementForOwner({ ownerId: 'owner-001', active: true, db })
+            ).resolves.toEqual({ updated: 1, rows: [{ id: 'acc-1', slug: 'acc-1-slug' }] });
+            expect(mockScheduleRevalidationBatch).not.toHaveBeenCalled();
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -363,6 +432,7 @@ describe('syncFeaturedByEntitlementForAccommodation', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockResolveOwnerPlanGrantsFeatured.mockResolvedValue(false);
+        mockGetRevalidationService.mockReturnValue(undefined);
     });
 
     describe('active: false (addon grant expiring)', () => {
@@ -461,6 +531,88 @@ describe('syncFeaturedByEntitlementForAccommodation', () => {
 
             // Assert
             expect(result).toEqual({ updated: 0, rows: [] });
+        });
+    });
+
+    describe('revalidation on update (T-018 / T-027, SPEC-309 G-3)', () => {
+        it('schedules a revalidation batch with a single event when updated > 0', async () => {
+            // Arrange
+            mockGetRevalidationService.mockReturnValue({
+                scheduleRevalidationBatch: mockScheduleRevalidationBatch
+            });
+            const db = buildMockDb([{ id: 'acc-1', slug: 'acc-1-slug' }]);
+
+            // Act
+            await syncFeaturedByEntitlementForAccommodation({
+                accommodationId: 'acc-1',
+                ownerId: 'owner-1',
+                active: true,
+                db
+            });
+
+            // Assert
+            expect(mockScheduleRevalidationBatch).toHaveBeenCalledTimes(1);
+            const call = mockScheduleRevalidationBatch.mock.calls[0]?.[0] as {
+                events: { entityType: string; slug: string }[];
+                reason: string;
+            };
+            expect(call.events).toEqual([{ entityType: 'accommodation', slug: 'acc-1-slug' }]);
+            expect(call.reason.length).toBeGreaterThan(0);
+        });
+
+        it('does NOT schedule a revalidation batch when the plan-still-grants guard no-ops the write', async () => {
+            // Arrange
+            mockGetRevalidationService.mockReturnValue({
+                scheduleRevalidationBatch: mockScheduleRevalidationBatch
+            });
+            mockResolveOwnerPlanGrantsFeatured.mockResolvedValue(true);
+            const db = buildMockDb([{ id: 'acc-1', slug: 'acc-1-slug' }]);
+
+            // Act
+            await syncFeaturedByEntitlementForAccommodation({
+                accommodationId: 'acc-1',
+                ownerId: 'owner-1',
+                active: false,
+                db
+            });
+
+            // Assert
+            expect(mockScheduleRevalidationBatch).not.toHaveBeenCalled();
+        });
+
+        it('does NOT schedule a revalidation batch when the row is not found (updated === 0)', async () => {
+            // Arrange
+            mockGetRevalidationService.mockReturnValue({
+                scheduleRevalidationBatch: mockScheduleRevalidationBatch
+            });
+            const db = buildMockDb([]);
+
+            // Act
+            await syncFeaturedByEntitlementForAccommodation({
+                accommodationId: 'ghost-acc',
+                ownerId: 'owner-1',
+                active: true,
+                db
+            });
+
+            // Assert
+            expect(mockScheduleRevalidationBatch).not.toHaveBeenCalled();
+        });
+
+        it('never throws when the revalidation service is unavailable (undefined)', async () => {
+            // Arrange — mockGetRevalidationService already defaults to undefined (beforeEach)
+            const db = buildMockDb([{ id: 'acc-1', slug: 'acc-1-slug' }]);
+
+            // Act / Assert
+            await expect(
+                syncFeaturedByEntitlementForAccommodation({
+                    accommodationId: 'acc-1',
+                    ownerId: 'owner-1',
+                    active: true,
+                    db
+                })
+            ).resolves.toEqual({ updated: 1, rows: [{ id: 'acc-1', slug: 'acc-1-slug' }] });
+            expect(mockScheduleRevalidationBatch).not.toHaveBeenCalled();
         });
     });
 });
