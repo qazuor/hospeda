@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 15/19 tasks (79%)
+## Progress: 16/19 tasks (84%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -77,7 +77,7 @@
 
 ### Testing Phase
 
-- [ ] **T-016** (complexity: 3) - Write integration tests for the full async 202+poll route contract
+- [x] **T-016** (complexity: 3) - Write integration tests for the full async 202+poll route contract — DONE
   - Blocked by: T-009, T-010, T-011
   - Blocks: T-018
 

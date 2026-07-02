@@ -598,40 +598,41 @@
             "id": "T-016",
             "title": "Write integration tests for the full async 202+poll route contract",
             "description": "New test file (matching the existing test-dir convention) with end-to-end route-level tests mocking the Apify HTTP layer (not resolveImportRunStatus internals): Airbnb start->poll-running->poll-succeeded happy path returning a draft; Booking JSON-LD-sparse->async->succeeded; poll-ceiling-exceeded returns failureCode 'timeout' without a further Apify call; FAILED->provider_error->R2-fallback-success returns a draft; FAILED->provider_error->R2-fallback-insufficient surfaces the failureCode. Assert response shapes match the T-001 schemas exactly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010", "T-011"],
             "blocks": ["T-018"],
             "subtasks": [
                 {
                     "title": "Test Airbnb start->running->succeeded happy path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test Booking JSON-LD-sparse->async->succeeded",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test poll-ceiling-exceeded->timeout with no further Apify call",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test FAILED->fallback-success and FAILED->fallback-insufficient",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing", "integration", "import", "async"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T18:05:00Z",
+                "completed": "2026-07-02T19:10:00Z"
+            },
+            "summary": "New apps/api/test/routes/accommodation-import-async.integration.test.ts: 5 true HTTP-boundary tests via initApp()+app.request(), mocking ONLY startApifyRun/getApifyRunStatus/getApifyDatasetItems (apify-client.ts, deep relative vi.mock path) and safeExternalFetch — resolveImportRunStatus, finalizeImportDraft, and the adapters run for real. Covers: Airbnb start->running->succeeded happy path; Booking JSON-LD-sparse (0 useful fields)->async start->succeeded; poll-ceiling-exceeded->timeout with getApifyRunStatus/getApifyDatasetItems asserted NOT called; FAILED->provider_error->R2 Generic-adapter fallback SUCCEEDS (rich JSON-LD, original source preserved, not 'generic'); FAILED->provider_error->R2 fallback INSUFFICIENT (blocked fetch)->original failureCode surfaces. Also fixed a genuine pre-existing typecheck bug (unrelated to T-016, blocking a clean `pnpm typecheck`) in import-from-url.dispatch.test.ts: 3 fixture literals were missing the required `confidence` field on RawCandidateField-shaped objects — added `confidence: 90` to each. Full protected-route regression (97 tests) + import-from-url-specific suite (45 tests) green; lint (1 auto-fix) and typecheck clean. GOTCHA hit mid-task: a `git stash push -u` used to probe a baseline typecheck question did not include the new untracked test file in the stash snapshot (only the tracked state.json edit), and a later `git status` read was misleading about the file still being present — the file was momentarily lost from disk. No commits or other tracked work were affected; recovered by recreating the file verbatim from conversation context. Lesson: for a single untracked new file, `mv` it aside instead of `git stash -u` to check a baseline — stash-based untracked-file recovery is not reliable enough to trust blindly."
         },
         {
             "id": "T-017",
@@ -737,9 +738,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.2
     }
