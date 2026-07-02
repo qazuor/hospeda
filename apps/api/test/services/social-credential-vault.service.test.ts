@@ -21,6 +21,14 @@
  *  13. Returns success with { id, key }.
  *  14. Returns NOT_FOUND when no active credential exists.
  *
+ * updateSocialCredentialMetadata:
+ *  15. Updates the label field and inserts an audit row with action 'updated'.
+ *  16. Returns NOT_FOUND when no active credential exists.
+ *
+ * deleteSocialCredential:
+ *  17. Sets deletedAt/deletedById and inserts an audit row with action 'deleted'.
+ *  18. Returns NOT_FOUND when no active credential exists (including already-deleted).
+ *
  * @module test/services/social-credential-vault.service
  */
 
@@ -158,7 +166,9 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 import {
     createSocialCredential,
-    rotateSocialCredential
+    deleteSocialCredential,
+    rotateSocialCredential,
+    updateSocialCredentialMetadata
 } from '../../src/services/social-credential-vault.service';
 
 // ---------------------------------------------------------------------------
@@ -557,6 +567,164 @@ describe('rotateSocialCredential', () => {
             expect(result.error?.code).toBe('NOT_FOUND');
             expect(result.data).toBeUndefined();
             expect(mockEncryptSecret).not.toHaveBeenCalled();
+            expect(mockWithTransaction).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe('updateSocialCredentialMetadata', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    describe('when an active credential exists', () => {
+        beforeEach(() => {
+            mockDbSelectLimit.mockResolvedValue([ACTIVE_CREDENTIAL_ROW]);
+        });
+
+        it('should update the label field', async () => {
+            const capturedSetValues: unknown[] = [];
+            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+                capturedSetValues.push(vals);
+                return { where: mockDbUpdateSetWhere };
+            });
+
+            await updateSocialCredentialMetadata({
+                key: KEY,
+                label: 'Updated label',
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const updatePayload = capturedSetValues[0] as Record<string, unknown>;
+            expect(updatePayload.label).toBe('Updated label');
+        });
+
+        it('should insert an audit row with action "updated"', async () => {
+            const allInsertedValues: unknown[] = [];
+            mockDbInsertValues.mockImplementation((vals: unknown) => {
+                allInsertedValues.push(vals);
+                return { returning: vi.fn().mockResolvedValue([]) };
+            });
+
+            await updateSocialCredentialMetadata({
+                key: KEY,
+                label: 'Updated label',
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const auditValues = allInsertedValues[0] as Record<string, unknown>;
+            expect(auditValues.action).toBe('updated');
+            expect(auditValues.actorId).toBe(ACTOR_ID);
+            expect(auditValues.key).toBe(KEY);
+        });
+
+        it('should return success with { id, key }', async () => {
+            const result = await updateSocialCredentialMetadata({
+                key: KEY,
+                label: 'Updated label',
+                actorId: ACTOR_ID,
+                ipAddress: null
+            });
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.id).toBe(ACTIVE_CREDENTIAL_ROW.id);
+            expect(result.data?.key).toBe(KEY);
+            expect(result.error).toBeUndefined();
+        });
+    });
+
+    describe('when no active credential exists', () => {
+        it('should return NOT_FOUND', async () => {
+            mockDbSelectLimit.mockResolvedValue([]);
+
+            const result = await updateSocialCredentialMetadata({
+                key: KEY,
+                label: 'Updated label',
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(result.data).toBeUndefined();
+            expect(mockWithTransaction).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe('deleteSocialCredential', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    describe('when an active credential exists', () => {
+        beforeEach(() => {
+            mockDbSelectLimit.mockResolvedValue([ACTIVE_CREDENTIAL_ROW]);
+        });
+
+        it('should set deletedAt and deletedById on the credential row', async () => {
+            const capturedSetValues: unknown[] = [];
+            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+                capturedSetValues.push(vals);
+                return { where: mockDbUpdateSetWhere };
+            });
+
+            await deleteSocialCredential({
+                key: KEY,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const updatePayload = capturedSetValues[0] as Record<string, unknown>;
+            expect(updatePayload.deletedAt).toBeInstanceOf(Date);
+            expect(updatePayload.deletedById).toBe(ACTOR_ID);
+        });
+
+        it('should insert an audit row with action "deleted"', async () => {
+            const allInsertedValues: unknown[] = [];
+            mockDbInsertValues.mockImplementation((vals: unknown) => {
+                allInsertedValues.push(vals);
+                return { returning: vi.fn().mockResolvedValue([]) };
+            });
+
+            await deleteSocialCredential({
+                key: KEY,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const auditValues = allInsertedValues[0] as Record<string, unknown>;
+            expect(auditValues.action).toBe('deleted');
+            expect(auditValues.actorId).toBe(ACTOR_ID);
+            expect(auditValues.key).toBe(KEY);
+        });
+
+        it('should return success with { key }', async () => {
+            const result = await deleteSocialCredential({
+                key: KEY,
+                actorId: ACTOR_ID,
+                ipAddress: null
+            });
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.key).toBe(KEY);
+            expect(result.error).toBeUndefined();
+        });
+    });
+
+    describe('when no active credential exists (never created, or already deleted)', () => {
+        it('should return NOT_FOUND', async () => {
+            mockDbSelectLimit.mockResolvedValue([]);
+
+            const result = await deleteSocialCredential({
+                key: KEY,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(result.data).toBeUndefined();
             expect(mockWithTransaction).not.toHaveBeenCalled();
         });
     });

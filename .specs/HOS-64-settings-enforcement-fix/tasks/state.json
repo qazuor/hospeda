@@ -654,35 +654,35 @@
             "id": "T-019",
             "title": "Implement updateMetadata and delete vault functions",
             "description": "Add `updateSocialCredentialMetadata({ key, label, actorId, ipAddress })` and `deleteSocialCredential({ key, actorId, ipAddress })` (soft-delete via `deletedAt`/`deletedById`) to `social-credential-vault.service.ts`, mirroring the AI vault's equivalents. Both pair with an audit row (`action: 'updated'`/`'deleted'`) in the same transaction. Unit tests: metadata update success, soft-delete marks row + audit, operations on an already-deleted key return NOT_FOUND.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Implement updateSocialCredentialMetadata + audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement deleteSocialCredential (soft-delete) + audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: update, soft-delete, already-deleted NOT_FOUND",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 8 new tests added (25 total in social-credential-vault.service.test.ts)"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T00:40:00Z",
+                "completed": "2026-07-03T00:55:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.2
     }

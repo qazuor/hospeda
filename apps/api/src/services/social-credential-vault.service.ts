@@ -96,13 +96,48 @@ const RotateSocialCredentialInputSchema = z.object({
 /** Input for rotating an existing social credential. */
 export type RotateSocialCredentialInput = z.infer<typeof RotateSocialCredentialInputSchema>;
 
+/**
+ * Zod schema for {@link updateSocialCredentialMetadata} input. `key` is
+ * restricted to the 4 known values; `label` is the only mutable metadata
+ * field on `social_credentials`.
+ */
+const UpdateSocialCredentialMetadataInputSchema = z.object({
+    key: z.enum(SOCIAL_CREDENTIAL_KEYS),
+    label: z.string().max(255).optional(),
+    actorId: z.string().uuid(),
+    ipAddress: z.string().nullable()
+});
+
+/** Input for updating an existing social credential's metadata. */
+export type UpdateSocialCredentialMetadataInput = z.infer<
+    typeof UpdateSocialCredentialMetadataInputSchema
+>;
+
+/**
+ * Zod schema for {@link deleteSocialCredential} input. `key` is restricted
+ * to the 4 known values.
+ */
+const DeleteSocialCredentialInputSchema = z.object({
+    key: z.enum(SOCIAL_CREDENTIAL_KEYS),
+    actorId: z.string().uuid(),
+    ipAddress: z.string().nullable()
+});
+
+/** Input for soft-deleting a social credential. */
+export type DeleteSocialCredentialInput = z.infer<typeof DeleteSocialCredentialInputSchema>;
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
 
-/** Returned by `createSocialCredential`. */
+/** Returned by `createSocialCredential`, `rotateSocialCredential`, and `updateSocialCredentialMetadata`. */
 export interface SocialCredentialMutationResult {
     readonly id: string;
+    readonly key: SocialCredentialKey;
+}
+
+/** Returned by `deleteSocialCredential`. */
+export interface SocialCredentialDeleteResult {
     readonly key: SocialCredentialKey;
 }
 
@@ -360,6 +395,194 @@ export async function rotateSocialCredential(
         return errorOutput<SocialCredentialMutationResult>(
             ServiceErrorCode.INTERNAL_ERROR,
             'Unexpected error while rotating credential'
+        );
+    }
+}
+
+/**
+ * Updates the `label` metadata for an active social credential.
+ *
+ * Does NOT touch ciphertext, IV, or authTag — only `label`. An audit row
+ * (`action: 'updated'`) is inserted atomically in the same transaction.
+ *
+ * Fails with `VALIDATION_ERROR` when input fails Zod validation, or with
+ * `NOT_FOUND` when no active credential exists for `key`.
+ *
+ * @param input - Update input including key, optional label, actorId, and ipAddress.
+ * @returns `ServiceOutput` with `{ id, key }` on success.
+ */
+export async function updateSocialCredentialMetadata(
+    input: UpdateSocialCredentialMetadataInput
+): Promise<ServiceOutput<SocialCredentialMutationResult>> {
+    const parsed = UpdateSocialCredentialMetadataInputSchema.safeParse(input);
+    if (!parsed.success) {
+        return errorOutput<SocialCredentialMutationResult>(
+            ServiceErrorCode.VALIDATION_ERROR,
+            parsed.error.issues.map((issue) => issue.message).join('; ')
+        );
+    }
+
+    const { key, label, actorId, ipAddress } = parsed.data;
+
+    try {
+        const db = getDb();
+
+        // 1. Find the active credential.
+        const active = await db
+            .select({ id: socialCredentials.id })
+            .from(socialCredentials)
+            .where(and(eq(socialCredentials.key, key), isNull(socialCredentials.deletedAt)))
+            .limit(1);
+
+        if (active.length === 0) {
+            return errorOutput<SocialCredentialMutationResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for key '${key}'`
+            );
+        }
+
+        const credentialId = active[0]?.id;
+        if (credentialId === undefined) {
+            return errorOutput<SocialCredentialMutationResult>(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Active credential row did not return an ID'
+            );
+        }
+
+        // 2. Build the partial update set — only provided fields.
+        const updateSet: Record<string, unknown> = { updatedAt: new Date() };
+        if (label !== undefined) {
+            updateSet.label = label;
+        }
+
+        // 3. Transactional update: metadata + audit.
+        await withTransaction(async (tx) => {
+            await tx
+                .update(socialCredentials)
+                .set(updateSet)
+                .where(eq(socialCredentials.id, credentialId));
+
+            await tx.insert(socialCredentialAudit).values({
+                actorId,
+                action: 'updated',
+                key,
+                ipAddress: ipAddress ?? null
+            });
+        });
+
+        apiLogger.info(
+            { key, credentialId, actorId },
+            'social-credential-vault: credential metadata updated'
+        );
+
+        return { data: { id: credentialId, key } };
+    } catch (error) {
+        apiLogger.error(
+            {
+                key,
+                actorId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'social-credential-vault: unexpected error in updateSocialCredentialMetadata'
+        );
+        return errorOutput<SocialCredentialMutationResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while updating credential metadata'
+        );
+    }
+}
+
+/**
+ * Soft-deletes the active social credential for `key`.
+ *
+ * Sets `deletedAt` and `deletedById` on the credential row and inserts an
+ * audit row (`action: 'deleted'`) in one transaction. The row remains in the
+ * database but is no longer active.
+ *
+ * Fails with `VALIDATION_ERROR` when input fails Zod validation, or with
+ * `NOT_FOUND` when no active credential exists for `key` (including when the
+ * key was already soft-deleted).
+ *
+ * @param input - Delete input including key, actorId, and ipAddress.
+ * @returns `ServiceOutput` with `{ key }` on success.
+ */
+export async function deleteSocialCredential(
+    input: DeleteSocialCredentialInput
+): Promise<ServiceOutput<SocialCredentialDeleteResult>> {
+    const parsed = DeleteSocialCredentialInputSchema.safeParse(input);
+    if (!parsed.success) {
+        return errorOutput<SocialCredentialDeleteResult>(
+            ServiceErrorCode.VALIDATION_ERROR,
+            parsed.error.issues.map((issue) => issue.message).join('; ')
+        );
+    }
+
+    const { key, actorId, ipAddress } = parsed.data;
+
+    try {
+        const db = getDb();
+
+        // 1. Find the active credential.
+        const active = await db
+            .select({ id: socialCredentials.id })
+            .from(socialCredentials)
+            .where(and(eq(socialCredentials.key, key), isNull(socialCredentials.deletedAt)))
+            .limit(1);
+
+        if (active.length === 0) {
+            return errorOutput<SocialCredentialDeleteResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for key '${key}'`
+            );
+        }
+
+        const credentialId = active[0]?.id;
+        if (credentialId === undefined) {
+            return errorOutput<SocialCredentialDeleteResult>(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Active credential row did not return an ID'
+            );
+        }
+
+        const now = new Date();
+
+        // 2. Transactional soft-delete + audit.
+        await withTransaction(async (tx) => {
+            await tx
+                .update(socialCredentials)
+                .set({
+                    deletedAt: now,
+                    deletedById: actorId,
+                    updatedAt: now
+                })
+                .where(eq(socialCredentials.id, credentialId));
+
+            await tx.insert(socialCredentialAudit).values({
+                actorId,
+                action: 'deleted',
+                key,
+                ipAddress: ipAddress ?? null
+            });
+        });
+
+        apiLogger.info(
+            { key, credentialId, actorId },
+            'social-credential-vault: credential deleted'
+        );
+
+        return { data: { key } };
+    } catch (error) {
+        apiLogger.error(
+            {
+                key,
+                actorId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'social-credential-vault: unexpected error in deleteSocialCredential'
+        );
+        return errorOutput<SocialCredentialDeleteResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while deleting credential'
         );
     }
 }
