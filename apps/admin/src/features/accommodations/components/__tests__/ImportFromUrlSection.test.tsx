@@ -13,8 +13,15 @@
  *   5.  timeout failureCode → renders error alert, no prefill
  *   6.  nothing_found failureCode → renders error alert, no prefill
  *   7.  success (no failureCode) → shows review notice, no alert
+ *
+ * Also covers the HOS-50 / SPEC-277 R3 T-015 async 202+poll flow:
+ *   8.  202 response → switches to polling, no prefill yet
+ *   9.  poll settles with a draft → prefills the form
+ *   10. poll settles with a failureCode → shows the error banner
+ *   11. mutation-pending vs polling-in-progress are visually distinguished
  */
 
+import type { AccommodationImportStatusResponse } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,11 +48,33 @@ let currentMutationState: MockMutationState = {
 // mutateAsync is replaced per-test via mockMutateAsync.
 const mockMutateAsync = vi.fn();
 
-vi.mock('../../hooks/useAccommodationImportMutation', () => ({
-    useAccommodationImportMutation: () => ({
-        ...currentMutationState,
-        mutateAsync: (...args: unknown[]) => mockMutateAsync(...args)
-    })
+// `isAsyncImportStart` is re-exported via `vi.importActual` (NOT reimplemented
+// here) — a narrow mock factory that omits it would silently return
+// `undefined` when the component calls it, breaking the 202 branch with a
+// misleading "network error" (HOS-50 T-013 gotcha, see project memory).
+vi.mock('../../hooks/useAccommodationImportMutation', async () => {
+    const actual = await vi.importActual<
+        typeof import('../../hooks/useAccommodationImportMutation')
+    >('../../hooks/useAccommodationImportMutation');
+    return {
+        ...actual,
+        useAccommodationImportMutation: () => ({
+            ...currentMutationState,
+            mutateAsync: (...args: unknown[]) => mockMutateAsync(...args)
+        })
+    };
+});
+
+// Mutable mock status-query state driven by tests (HOS-50 T-014/T-015).
+interface MockStatusQueryState {
+    data: AccommodationImportStatusResponse | undefined;
+}
+
+let currentStatusQueryState: MockStatusQueryState = { data: undefined };
+const mockUseAccommodationImportStatusQuery = vi.fn(() => currentStatusQueryState);
+
+vi.mock('../../hooks/useAccommodationImportStatusQuery', () => ({
+    useAccommodationImportStatusQuery: () => mockUseAccommodationImportStatusQuery()
 }));
 
 // Mock entity-form context — setFieldValue records calls.
@@ -67,13 +96,24 @@ import { ImportFromUrlSection } from '../ImportFromUrlSection';
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Run handle echoed back from a `202` async-start response. */
+const RUN_HANDLE = {
+    runId: 'run-abc123',
+    datasetId: 'dataset-xyz789',
+    source: 'airbnb' as const,
+    startedAt: '2026-07-02T09:20:00.000Z',
+    url: 'https://www.airbnb.com.ar/rooms/123'
+};
+
 /**
  * Resets all mocks and state before each test.
  */
 const resetAll = () => {
     currentMutationState = { isPending: false, error: null };
+    currentStatusQueryState = { data: undefined };
     mockMutateAsync.mockReset();
     mockSetFieldValue.mockReset();
+    mockUseAccommodationImportStatusQuery.mockClear();
 };
 
 /**
@@ -269,5 +309,147 @@ describe('R5 manual path invariant (SPEC-277)', () => {
 
         // Assert: no form prefill happened
         expect(mockSetFieldValue).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-50 / SPEC-277 R3 T-015 — async 202+poll flow
+// ---------------------------------------------------------------------------
+
+describe('ImportFromUrlSection — async 202+poll flow (HOS-50 T-015)', () => {
+    beforeEach(() => {
+        resetAll();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('switches to polling mode on a 202 response and does NOT prefill the form yet', async () => {
+        // Arrange: the mutation resolves with a run handle (async dispatch), and
+        // the status query (still unsettled) is already wired for the next render.
+        mockMutateAsync.mockResolvedValueOnce(RUN_HANDLE);
+        currentStatusQueryState = { data: { settled: false } };
+
+        // Act
+        const { rerender } = render(<ImportFromUrlSection />);
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByTestId('import-submit-btn'));
+        await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+        rerender(<ImportFromUrlSection />);
+
+        // Assert: button is in the polling state, disabled, no prefill yet
+        const button = screen.getByTestId('import-submit-btn');
+        expect(button.getAttribute('data-state')).toBe('polling');
+        expect(button).toBeDisabled();
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+        expect(screen.queryByTestId('import-review-notice')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('import-failure-error')).not.toBeInTheDocument();
+    });
+
+    it('prefills the form once the polled run settles with a draft', async () => {
+        // Arrange
+        mockMutateAsync.mockResolvedValueOnce(RUN_HANDLE);
+        currentStatusQueryState = { data: { settled: false } };
+
+        const { rerender } = render(<ImportFromUrlSection />);
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByTestId('import-submit-btn'));
+        await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+        rerender(<ImportFromUrlSection />);
+        expect(screen.getByTestId('import-submit-btn').getAttribute('data-state')).toBe('polling');
+
+        // Act: the run settles successfully
+        currentStatusQueryState = {
+            data: {
+                settled: true,
+                draft: {
+                    draft: {
+                        name: { value: 'Casa desde Airbnb', confidence: 88, source: 'text' }
+                    },
+                    source: 'airbnb',
+                    methodsUsed: ['text'],
+                    partial: false
+                }
+            }
+        };
+        rerender(<ImportFromUrlSection />);
+
+        // Assert: form was prefilled and the review notice is shown
+        await waitFor(() =>
+            expect(mockSetFieldValue).toHaveBeenCalledWith('name', 'Casa desde Airbnb')
+        );
+        const notice = await screen.findByTestId('import-review-notice');
+        expect(notice).toBeInTheDocument();
+        expect(screen.queryByTestId('import-failure-error')).not.toBeInTheDocument();
+
+        // Assert: polling has stopped, button back to idle
+        expect(screen.getByTestId('import-submit-btn').getAttribute('data-state')).toBe('idle');
+    });
+
+    it('shows the failure-error banner once the polled run settles with a failureCode', async () => {
+        // Arrange
+        mockMutateAsync.mockResolvedValueOnce(RUN_HANDLE);
+        currentStatusQueryState = { data: { settled: false } };
+
+        const { rerender } = render(<ImportFromUrlSection />);
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByTestId('import-submit-btn'));
+        await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+        rerender(<ImportFromUrlSection />);
+
+        // Act: the run settles with a classified failure (poll ceiling exceeded)
+        currentStatusQueryState = { data: { settled: true, failureCode: 'timeout' } };
+        rerender(<ImportFromUrlSection />);
+
+        // Assert: failure-error banner is shown with the matching i18n key, no prefill
+        const alert = await screen.findByTestId('import-failure-error');
+        expect(alert).toBeInTheDocument();
+        expect(alert.textContent).toContain('host.importFromUrl.errors.failure.timeout');
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+        expect(screen.queryByTestId('import-review-notice')).not.toBeInTheDocument();
+
+        // Assert: polling has stopped, button back to idle and enabled
+        const button = screen.getByTestId('import-submit-btn');
+        expect(button.getAttribute('data-state')).toBe('idle');
+        expect(button).not.toBeDisabled();
+    });
+
+    it('visually distinguishes the mutation-pending state from polling-in-progress', async () => {
+        // Part 1: mutation.isPending — "submitting" state, independent of any run handle.
+        currentMutationState = { isPending: true, error: null };
+        const { unmount } = render(<ImportFromUrlSection />);
+        const pendingButton = screen.getByTestId('import-submit-btn');
+        expect(pendingButton.getAttribute('data-state')).toBe('submitting');
+        expect(pendingButton.textContent).toContain('host.importFromUrl.actions.submitting');
+        unmount();
+
+        // Part 2: mutation resolved with a 202 — "polling" state, distinct label/text.
+        currentMutationState = { isPending: false, error: null };
+        mockMutateAsync.mockResolvedValueOnce(RUN_HANDLE);
+        currentStatusQueryState = { data: { settled: false } };
+
+        const { rerender } = render(<ImportFromUrlSection />);
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByTestId('import-submit-btn'));
+        await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+        rerender(<ImportFromUrlSection />);
+
+        const pollingButton = screen.getByTestId('import-submit-btn');
+        expect(pollingButton.getAttribute('data-state')).toBe('polling');
+        expect(pollingButton.textContent).toContain('host.importFromUrl.actions.polling');
+        expect(pollingButton.textContent).not.toContain('host.importFromUrl.actions.submitting');
     });
 });

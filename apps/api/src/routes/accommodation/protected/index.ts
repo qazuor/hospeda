@@ -24,6 +24,7 @@ import { protectedGetMediaRoute } from './getMedia';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
 import { protectedImportFromUrlRoute } from './import-from-url';
+import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
@@ -73,6 +74,10 @@ app.route('/', protectedCreateAccommodationDraftRoute);
 
 // POST /import-from-url - Import accommodation data from an external listing URL
 app.route('/', protectedImportFromUrlRoute);
+
+// GET /import-from-url/status - Poll an async Apify import run (HOS-50 T-011)
+// Two path segments — never collides with GET /:id (single segment) above.
+app.route('/', protectedImportFromUrlStatusRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);

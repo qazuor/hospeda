@@ -387,6 +387,92 @@ export interface ImportSourceAdapter {
      * @returns A loose bag of candidate field values ready for mapping.
      */
     extract(url: URL, ctx: ImportContext): Promise<RawExtraction>;
+
+    /**
+     * Optional async-mode extraction (HOS-50 / SPEC-277 R3).
+     *
+     * Only implemented by adapters whose extraction can take long enough to
+     * warrant a `202 + poll` API contract instead of one blocking request
+     * (currently Airbnb, and Booking on its Apify-fallback branch). Starts
+     * the underlying Apify run and returns a run handle immediately — it
+     * MUST NOT wait for the run to finish.
+     *
+     * Returns `{ failureCode }` (never throws) for the same degradation
+     * cases `extract` handles synchronously: missing credentials, or the
+     * start call itself failing after retries.
+     *
+     * Use {@link supportsAsyncExtraction} to check whether a given adapter
+     * implements this method before calling it.
+     *
+     * @param url - The parsed URL of the listing to import.
+     * @param ctx - Per-request context: locale, limits, credentials.
+     * @returns A run handle to poll, or a failure code.
+     */
+    extractAsync?(url: URL, ctx: ImportContext): Promise<AsyncExtractionResult>;
+}
+
+// ---------------------------------------------------------------------------
+// Async extraction (HOS-50 / SPEC-277 R3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle to an in-flight async Apify run, returned by `extractAsync` on
+ * successful start. Carries everything the stateless status route needs to
+ * poll — the client echoes this back verbatim on every poll request.
+ */
+export interface AsyncExtractionRunHandle {
+    /** Apify run id, as returned by `startApifyRun` (SPEC-250). */
+    readonly runId: string;
+    /** Apify default dataset id for this run. */
+    readonly datasetId: string;
+}
+
+/**
+ * Result of an adapter's `extractAsync` call: a run handle to poll, a
+ * machine-readable failure when the run could not even be started, or an
+ * already-resolved {@link RawExtraction} when no async run was needed at all.
+ *
+ * The third (`raw`) variant exists for adapters whose async mode is
+ * conditional on a free primary check (HOS-50 T-008 — Booking's JSON-LD-first
+ * tier): when that free check already yields enough data, the adapter
+ * resolves synchronously instead of starting (and immediately having to
+ * report back on) an unnecessary Apify run. Callers must check for `raw`
+ * before treating the result as a run handle to poll.
+ *
+ * @example
+ * ```ts
+ * const started: AsyncExtractionResult = { runId: 'run-1', datasetId: 'ds-1' };
+ * const failed: AsyncExtractionResult = { failureCode: 'credentials_missing' };
+ * const resolved: AsyncExtractionResult = { raw: { sourcePlatform: 'booking' } };
+ * ```
+ */
+export type AsyncExtractionResult =
+    | AsyncExtractionRunHandle
+    | { readonly failureCode: ImportFailureCode }
+    | { readonly raw: RawExtraction };
+
+/**
+ * Type guard narrowing an {@link ImportSourceAdapter} to one that implements
+ * `extractAsync`, so callers (the orchestrator, the route layer) can invoke
+ * it without an optional-chaining call that TypeScript can't narrow on its
+ * own.
+ *
+ * @param adapter - The adapter instance to check.
+ * @returns `true` when `adapter.extractAsync` is implemented.
+ *
+ * @example
+ * ```ts
+ * if (supportsAsyncExtraction(adapter)) {
+ *   const result = await adapter.extractAsync(url, ctx); // no `!` needed
+ * }
+ * ```
+ */
+export function supportsAsyncExtraction(
+    adapter: ImportSourceAdapter
+): adapter is ImportSourceAdapter & {
+    extractAsync: (url: URL, ctx: ImportContext) => Promise<AsyncExtractionResult>;
+} {
+    return typeof adapter.extractAsync === 'function';
 }
 
 // Re-export AccommodationImportDraft so consumers of this module can import

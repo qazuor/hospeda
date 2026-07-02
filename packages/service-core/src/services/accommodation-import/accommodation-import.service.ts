@@ -15,12 +15,11 @@
  * 2. Detect the source platform (for labelling); pick the adapter by
  *    `supports()` (the authority for routing).
  * 3. Call `adapter.extract()`; on throw treat as empty extraction.
- * 4. Map raw candidates to a typed draft with `mapRawToDraft`.
- * 5. Resolve amenity names to catalog UUIDs; on throw omit them.
- * 6. Build a destination hint from scraped locality; on throw omit it.
- * 7. Collect `mediaHints` from raw image URLs.
- * 8. Compute `partial` and assemble the final response, validated against
- *    `AccommodationImportResponseSchema`.
+ * 4+. Map raw candidates to a draft, resolve amenities/destination hint/media
+ *    hints, and assemble the final response, validated against
+ *    `AccommodationImportResponseSchema` — delegated to
+ *    {@link finalizeImportDraft} (HOS-50 T-009) so the async status route
+ *    (T-011) can reuse identical draft-building logic.
  *
  * **Reviews/ratings are NEVER present** — `RawExtraction` excludes them by
  * design and this service adds no rating handling (SPEC-222 hard rule).
@@ -29,26 +28,21 @@
  * @module services/accommodation-import/accommodation-import.service
  */
 
-import {
-    type AccommodationImportResponse,
-    AccommodationImportResponseSchema,
-    type ImportFailureCode
-} from '@repo/schemas';
+import type { AccommodationImportResponse, ImportFailureCode, ImportSource } from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 import type { Actor, ServiceConfig } from '../../types/index.js';
 import { AmenityService } from '../amenity/amenity.service.js';
 import { DestinationService } from '../destination/destination.service.js';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from './adapter.types.js';
+import { supportsAsyncExtraction } from './adapter.types.js';
 import { AirbnbAdapter } from './adapters/airbnb.adapter.js';
 import { BookingAdapter } from './adapters/booking.adapter.js';
 import { GenericAdapter } from './adapters/generic.adapter.js';
 import { GooglePlacesAdapter } from './adapters/google-places.adapter.js';
 import { MercadoLibreAdapter } from './adapters/mercadolibre.adapter.js';
 import { detectSource } from './detect-source.js';
-import { mapRawToDraft } from './mapping.js';
-import { resolveAmenities } from './resolvers/amenities.js';
-import { buildDestinationHint } from './resolvers/destination.js';
+import { finalizeImportDraft } from './finalize-import-draft.js';
 
 // ---------------------------------------------------------------------------
 // Internal constants
@@ -194,6 +188,48 @@ export interface ImportFromUrlInput {
 }
 
 // ---------------------------------------------------------------------------
+// dispatchImportFromUrl result (HOS-50 / SPEC-277 R3 T-010)
+// ---------------------------------------------------------------------------
+
+/**
+ * Result of {@link AccommodationImportService.dispatchImportFromUrl} when the
+ * import resolved synchronously — either because the matched adapter has no
+ * async mode, or because its async mode resolved immediately (a run handle
+ * was never needed, or the run could not even be started).
+ */
+export interface ImportSyncDispatchResult {
+    readonly kind: 'sync';
+    /** The final response, identical in shape to `importFromUrl`'s return value. */
+    readonly response: AccommodationImportResponse;
+}
+
+/**
+ * Result of {@link AccommodationImportService.dispatchImportFromUrl} when an
+ * Apify run was started and the caller must poll for it (via
+ * `resolveImportRunStatus` / the status route, T-006/T-011).
+ */
+export interface ImportAsyncDispatchResult {
+    readonly kind: 'async';
+    /** Apify run id returned by `startApifyRun` (SPEC-250). */
+    readonly runId: string;
+    /** Apify default dataset id for this run. */
+    readonly datasetId: string;
+    /** The import source that triggered the async path (`airbnb` or `booking`). */
+    readonly source: ImportSource;
+    /** ISO 8601 timestamp when the run was started. */
+    readonly startedAt: string;
+    /** The resolved (post-short-link) listing URL, echoed back on every poll. */
+    readonly url: string;
+}
+
+/**
+ * Discriminated result of {@link AccommodationImportService.dispatchImportFromUrl}.
+ * The route layer (T-010) branches on `kind` to decide between a `200` and a
+ * `202` HTTP response.
+ */
+export type ImportDispatchResult = ImportSyncDispatchResult | ImportAsyncDispatchResult;
+
+// ---------------------------------------------------------------------------
 // AccommodationImportService
 // ---------------------------------------------------------------------------
 
@@ -317,41 +353,168 @@ export class AccommodationImportService {
         input: ImportFromUrlInput,
         actor: Actor
     ): Promise<AccommodationImportResponse> {
-        // -----------------------------------------------------------------------
-        // Step 1: Parse URL — degrade immediately on failure.
-        // -----------------------------------------------------------------------
-        let parsedUrl: URL;
-        try {
-            parsedUrl = new URL(input.url);
-        } catch {
-            return this._buildDegradedResponse('invalid_url');
+        const resolved = await this._resolveEffectiveUrlAndAdapter(
+            input.url,
+            input.context.timeoutMs
+        );
+        if (!resolved.ok) {
+            return this._buildDegradedResponse(resolved.failureCode);
         }
 
-        // -----------------------------------------------------------------------
-        // Step 1b: Short-link resolution.
-        //
-        // When the input URL is a known share / redirect stub (e.g. Google Maps
-        // mobile share link `maps.app.goo.gl/...`, Booking.com share stub
-        // `/Share-...`, Airbnb mobile share link `abnb.me/...`), follow the
-        // HTTP redirect chain to obtain the canonical URL before adapter
-        // selection. This is the root cause of the import returning source:'none'
-        // for mobile share links.
-        //
-        // SSRF safety is fully delegated to safeExternalFetch — private-IP
-        // checks, per-hop DNS pinning, scheme allow-list, and a redirect cap
-        // (maxRedirects=5) all apply on every hop. The body is discarded after
-        // 512 bytes so we pay only the cost of the redirect round-trips.
-        //
-        // Graceful degradation: on any failure (network error, SSRF block,
-        // timeout) we fall back to the original URL and continue. This step
-        // NEVER prevents the rest of the pipeline from running.
-        // -----------------------------------------------------------------------
-        let effectiveUrlStr = input.url;
+        const { adapter, source, effectiveParsedUrl } = resolved;
+        const raw = await this._extractWithFallback({
+            adapter,
+            source,
+            effectiveParsedUrl,
+            context: input.context
+        });
+
+        return finalizeImportDraft(raw, {
+            source,
+            actor,
+            amenityService: this.amenityService,
+            destinationService: this.destinationService
+        });
+    }
+
+    /**
+     * Async-aware dispatch entry point (HOS-50 / SPEC-277 R3 T-010).
+     *
+     * Shares the exact URL-resolution and adapter-selection logic with
+     * {@link importFromUrl} (via {@link _resolveEffectiveUrlAndAdapter}) so a
+     * short-link is only ever fetched once per request. Branches on whether the
+     * matched adapter implements `extractAsync` ({@link supportsAsyncExtraction}):
+     *
+     * - No async mode (Google Places / MercadoLibre / Generic, and Booking's
+     *   own JSON-LD-first tier is handled INSIDE Booking's `extractAsync`) →
+     *   behaves exactly like `importFromUrl` and returns `{ kind: 'sync' }`.
+     * - Async mode returns a run handle (`runId`/`datasetId`) → the caller
+     *   (the route) should respond `202` so the client polls the status route
+     *   (T-011). Returns `{ kind: 'async', ... }`.
+     * - Async mode resolves immediately (`{ raw }` — e.g. Booking's JSON-LD tier
+     *   was already sufficient) or fails to even start (`{ failureCode }`) →
+     *   finalized through the exact same `finalizeImportDraft` pipeline as the
+     *   synchronous path and returned as `{ kind: 'sync' }`.
+     *
+     * **Never throws** — every branch degrades the same way `importFromUrl` does.
+     *
+     * @param input - URL, optional locale, and per-request ImportContext.
+     * @param actor - The authenticated actor performing the import.
+     * @returns An {@link ImportDispatchResult} the route branches on for the
+     *   HTTP status code.
+     */
+    async dispatchImportFromUrl(
+        input: ImportFromUrlInput,
+        actor: Actor
+    ): Promise<ImportDispatchResult> {
+        const resolved = await this._resolveEffectiveUrlAndAdapter(
+            input.url,
+            input.context.timeoutMs
+        );
+        if (!resolved.ok) {
+            return { kind: 'sync', response: this._buildDegradedResponse(resolved.failureCode) };
+        }
+
+        const { adapter, source, effectiveParsedUrl, effectiveUrlStr } = resolved;
+
+        if (!supportsAsyncExtraction(adapter)) {
+            const raw = await this._extractWithFallback({
+                adapter,
+                source,
+                effectiveParsedUrl,
+                context: input.context
+            });
+            const response = await finalizeImportDraft(raw, {
+                source,
+                actor,
+                amenityService: this.amenityService,
+                destinationService: this.destinationService
+            });
+            return { kind: 'sync', response };
+        }
+
+        const asyncResult = await adapter.extractAsync(effectiveParsedUrl, input.context);
+
+        if ('raw' in asyncResult) {
+            const response = await finalizeImportDraft(asyncResult.raw, {
+                source,
+                actor,
+                amenityService: this.amenityService,
+                destinationService: this.destinationService
+            });
+            return { kind: 'sync', response };
+        }
+
+        if ('failureCode' in asyncResult) {
+            const response = await finalizeImportDraft(
+                { sourcePlatform: source, failureCode: asyncResult.failureCode },
+                {
+                    source,
+                    actor,
+                    amenityService: this.amenityService,
+                    destinationService: this.destinationService
+                }
+            );
+            return { kind: 'sync', response };
+        }
+
+        return {
+            kind: 'async',
+            runId: asyncResult.runId,
+            datasetId: asyncResult.datasetId,
+            source,
+            startedAt: new Date().toISOString(),
+            url: effectiveUrlStr
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolves the effective (post-short-link) URL and picks the matching
+     * adapter — steps 1, 1b, and 2 shared by {@link importFromUrl} and
+     * {@link dispatchImportFromUrl}. Extracted (HOS-50 T-010) so a short-link
+     * is fetched at most once per request regardless of which entry point the
+     * route calls.
+     *
+     * @param inputUrl - The raw listing URL string from the request.
+     * @param timeoutMs - Fetch timeout forwarded to short-link resolution.
+     * @returns The resolved URL/source/adapter, or `{ ok: false }` with the
+     *   `invalid_url` failure code when the URL cannot be parsed or routed.
+     */
+    private async _resolveEffectiveUrlAndAdapter(
+        inputUrl: string,
+        timeoutMs: number
+    ): Promise<
+        | {
+              readonly ok: true;
+              readonly effectiveUrlStr: string;
+              readonly effectiveParsedUrl: URL;
+              readonly source: ImportSource;
+              readonly adapter: ImportSourceAdapter;
+          }
+        | { readonly ok: false; readonly failureCode: ImportFailureCode }
+    > {
+        // Step 1: Parse URL — degrade immediately on failure.
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(inputUrl);
+        } catch {
+            return { ok: false, failureCode: 'invalid_url' };
+        }
+
+        // Step 1b: Short-link resolution (see importFromUrl's original JSDoc for
+        // the full rationale — Google Maps share links, Airbnb `abnb.me`,
+        // Booking `/Share-...` stubs). Graceful degradation: any failure keeps
+        // the original URL.
+        let effectiveUrlStr = inputUrl;
         let effectiveParsedUrl = parsedUrl;
 
         if (needsShortLinkResolution(parsedUrl)) {
-            const canonical = await resolveCanonicalUrl(input.url, input.context.timeoutMs);
-            if (canonical !== input.url) {
+            const canonical = await resolveCanonicalUrl(inputUrl, timeoutMs);
+            if (canonical !== inputUrl) {
                 try {
                     effectiveParsedUrl = new URL(canonical);
                     effectiveUrlStr = canonical;
@@ -362,17 +525,7 @@ export class AccommodationImportService {
             }
         }
 
-        // -----------------------------------------------------------------------
         // Step 2: Detect source (label) and pick adapter (routing authority).
-        //
-        // detectSource → human-readable label for the response.
-        // adapter.supports() → actual routing decision.
-        // The GenericAdapter is always the last resort fallback.
-        //
-        // Both calls use the EFFECTIVE (post-resolution) URL so that e.g. a
-        // Google Maps short link resolved to maps.google.com/maps/place/...
-        // is labelled 'google' and routed to GooglePlacesAdapter correctly.
-        // -----------------------------------------------------------------------
         const source = detectSource({ url: effectiveUrlStr });
         const adapter = this._pickAdapter(effectiveParsedUrl);
 
@@ -381,42 +534,52 @@ export class AccommodationImportService {
         // as invalid_url. In practice GenericAdapter accepts any http(s) URL,
         // so this branch fires only for truly unsupported schemes.
         if (source === 'none' && !this.adapters.some((a) => a.supports(effectiveParsedUrl))) {
-            return this._buildDegradedResponse('invalid_url');
+            return { ok: false, failureCode: 'invalid_url' };
         }
 
-        // -----------------------------------------------------------------------
-        // Step 3: Extract raw candidates from the URL.
-        //
+        return { ok: true, effectiveUrlStr, effectiveParsedUrl, source, adapter };
+    }
+
+    /**
+     * Extracts raw candidates from the URL and applies the SPEC-277 R2
+     * per-source fallback chain — steps 3 and 3b shared by {@link importFromUrl}
+     * and {@link dispatchImportFromUrl}'s synchronous (non-async-capable adapter)
+     * branch.
+     *
+     * @param params - The picked adapter, source label, effective URL, and context.
+     * @returns The raw extraction, R2-fallback-resolved when applicable.
+     */
+    private async _extractWithFallback(params: {
+        readonly adapter: ImportSourceAdapter;
+        readonly source: ImportSource;
+        readonly effectiveParsedUrl: URL;
+        readonly context: ImportContext;
+    }): Promise<RawExtraction> {
+        const { adapter, source, effectiveParsedUrl, context } = params;
+
         // Pass `effectiveParsedUrl` (the canonical URL after short-link
         // resolution) so the adapter operates on the real listing page URL
         // rather than the opaque share stub.
-        // -----------------------------------------------------------------------
         let raw: RawExtraction;
         try {
-            raw = await adapter.extract(effectiveParsedUrl, input.context);
+            raw = await adapter.extract(effectiveParsedUrl, context);
         } catch {
             // Adapter threw unexpectedly — treat as provider_error.
             raw = { sourcePlatform: source, failureCode: 'provider_error' };
         }
 
-        // -----------------------------------------------------------------------
-        // Step 3b (SPEC-277 R2): per-source fallback chain.
-        //
-        // When the primary actor for a slow/blocked source (Airbnb / Booking)
-        // comes back `source_blocked`, attempt ONE cheap GenericAdapter pass
-        // (JSON-LD / OpenGraph) against the same URL for a best-effort partial
-        // draft instead of returning nothing. Cost guard: a single
-        // `safeExternalFetch`, never a second actor run. Only Airbnb/Booking
-        // opt in — Google/MercadoLibre/Generic do not. The `sourcePlatform` is
-        // kept as the original source (NOT relabelled to `generic`) so the host
-        // sees where the data came from; `partial: true` then flows naturally
-        // from the missing mandatory fields (OG rarely yields name+summary+type).
-        // -----------------------------------------------------------------------
+        // SPEC-277 R2: when the primary actor for a slow/blocked source
+        // (Airbnb / Booking) comes back `source_blocked`, attempt ONE cheap
+        // GenericAdapter pass (JSON-LD / OpenGraph) against the same URL for a
+        // best-effort partial draft instead of returning nothing. Cost guard: a
+        // single `safeExternalFetch`, never a second actor run. Only
+        // Airbnb/Booking opt in — Google/MercadoLibre/Generic do not. The
+        // `sourcePlatform` is kept as the original source (NOT relabelled to
+        // `generic`) so the host sees where the data came from; `partial: true`
+        // then flows naturally from the missing mandatory fields (OG rarely
+        // yields name+summary+type).
         if (raw.failureCode === 'source_blocked' && (source === 'airbnb' || source === 'booking')) {
-            const fallback = await this._runFallbackGenericExtract(
-                effectiveParsedUrl,
-                input.context
-            );
+            const fallback = await this._runFallbackGenericExtract(effectiveParsedUrl, context);
             // Useful = at least one of name / summary / images. Optional chaining
             // tolerates a null/undefined fallback; the `fallback &&` in the `if`
             // both guards that case and narrows the type for the spread below.
@@ -432,129 +595,8 @@ export class AccommodationImportService {
             }
         }
 
-        // -----------------------------------------------------------------------
-        // Step 4: Map raw candidates to a typed draft.
-        // -----------------------------------------------------------------------
-        const { draft, methodsUsed } = mapRawToDraft({ raw });
-
-        // -----------------------------------------------------------------------
-        // Step 5: Resolve amenity names to catalog UUIDs.
-        // -----------------------------------------------------------------------
-        let resolvedAmenityIds: string[] | undefined;
-        let unresolvedAmenities: string[] | undefined;
-        try {
-            const amenityNames = [...(raw.amenityNames ?? [])];
-            if (amenityNames.length > 0) {
-                const amenities = await resolveAmenities({
-                    names: amenityNames,
-                    amenityService: this.amenityService,
-                    actor
-                });
-                if (amenities.amenityIds.length > 0) {
-                    resolvedAmenityIds = amenities.amenityIds;
-                }
-                if (amenities.unresolved.length > 0) {
-                    unresolvedAmenities = amenities.unresolved;
-                }
-            }
-        } catch {
-            // resolveAmenities threw — omit amenity fields, continue.
-        }
-
-        // -----------------------------------------------------------------------
-        // Step 6: Build destination hint from scraped locality.
-        // -----------------------------------------------------------------------
-        let destinationHint: AccommodationImportResponse['destinationHint'];
-        try {
-            const hint = await buildDestinationHint({
-                locality: raw.scrapedLocality,
-                country: raw.scrapedCountry,
-                destinationService: this.destinationService,
-                actor
-            });
-            // Include the hint only when it carries a locality or has candidates.
-            if (hint.scrapedLocality !== undefined || hint.candidates.length > 0) {
-                destinationHint = {
-                    scrapedLocality: hint.scrapedLocality,
-                    candidates: [...hint.candidates]
-                };
-            }
-        } catch {
-            // buildDestinationHint threw — omit hint, continue.
-        }
-
-        // -----------------------------------------------------------------------
-        // Step 7: Collect media hints from raw image URLs.
-        // -----------------------------------------------------------------------
-        const mediaHints =
-            raw.imageUrls && raw.imageUrls.length > 0
-                ? { imageUrls: [...raw.imageUrls] }
-                : undefined;
-
-        // -----------------------------------------------------------------------
-        // Step 8: Compute partial and determine effective source + failureCode.
-        //
-        // Failure code precedence:
-        //  1. Propagate raw.failureCode when the adapter classified the failure.
-        //  2. When draft is empty and no hints exist and no adapter failureCode →
-        //     fall back to nothing_found.
-        //  3. When draft has content → no failureCode.
-        //
-        // A draft is considered "complete enough" only when it has name, summary,
-        // and type — the three fields the creation form requires unconditionally.
-        // -----------------------------------------------------------------------
-        const hasMandatoryFields = Boolean(draft.name && draft.summary && draft.type);
-        const partial = !hasMandatoryFields;
-
-        const isDraftEmpty = Object.keys(draft).length === 0;
-        const hasAnyHints =
-            resolvedAmenityIds !== undefined ||
-            unresolvedAmenities !== undefined ||
-            destinationHint !== undefined ||
-            mediaHints !== undefined;
-
-        // Determine the failureCode to surface on the response.
-        let responseFailureCode: ImportFailureCode | undefined;
-        if (raw.failureCode !== undefined) {
-            // Adapter already classified the failure — propagate it.
-            responseFailureCode = raw.failureCode;
-        } else if (isDraftEmpty && !hasAnyHints) {
-            // Source was reachable but yielded nothing recognisable as accommodation data.
-            responseFailureCode = 'nothing_found';
-        }
-        // If there is partial data (draft not empty or hints exist) → no failureCode.
-
-        // When nothing useful was extracted, signal source: 'none'.
-        const effectiveSource = isDraftEmpty && !hasAnyHints ? ('none' as const) : source;
-
-        // -----------------------------------------------------------------------
-        // Final guard: validate assembled object against the schema.
-        // If Zod somehow rejects it (should not happen), return a safe fallback.
-        // -----------------------------------------------------------------------
-        const assembled: AccommodationImportResponse = {
-            draft,
-            source: effectiveSource,
-            methodsUsed,
-            partial,
-            ...(responseFailureCode !== undefined ? { failureCode: responseFailureCode } : {}),
-            ...(destinationHint !== undefined ? { destinationHint } : {}),
-            ...(resolvedAmenityIds !== undefined ? { resolvedAmenityIds } : {}),
-            ...(unresolvedAmenities !== undefined ? { unresolvedAmenities } : {}),
-            ...(mediaHints !== undefined ? { mediaHints } : {})
-        };
-
-        const parsed = AccommodationImportResponseSchema.safeParse(assembled);
-        if (!parsed.success) {
-            // This should never happen in practice — degrade gracefully.
-            return this._buildDegradedResponse('provider_error');
-        }
-
-        return parsed.data;
+        return raw;
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Selects the first adapter in the registry whose `supports()` returns

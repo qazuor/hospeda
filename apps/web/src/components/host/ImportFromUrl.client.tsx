@@ -6,16 +6,25 @@
  * On success the parent receives the import response via `onImported` (the
  * actual form prefill is wired in T-025); a server notice (e.g. AI-quota
  * degraded) is surfaced inline.
+ *
+ * **HOS-50 / SPEC-277 R3 T-013**: for slow/blocked sources (Airbnb, or
+ * Booking on its Apify-fallback branch) the server responds `202` with a run
+ * handle instead of the finalized draft. This island then switches to
+ * polling mode via `useImportStatus` (T-012), keeping the "Importando..."
+ * spinner button active for the entire duration. Once the poll settles, the
+ * outcome is handled exactly like the synchronous `200` branch: success calls
+ * `onImported`, a classified failure renders the same i18n error banner.
  */
 
-import { accommodationsImportApi } from '@/lib/api/endpoints-protected';
+import { type ImportRunHandle, useImportStatus } from '@/hooks/use-import-status';
+import { accommodationsImportApi, isAsyncImportStart } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { AccommodationImportRequestSchema } from '@repo/schemas';
 import type { AccommodationImportResponse } from '@repo/schemas';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import styles from './ImportFromUrl.module.css';
 
 /** Platforms shown in the URL-acquisition help panel (US-7), in display order. */
@@ -73,6 +82,13 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [showHelp, setShowHelp] = useState(false);
+    // HOS-50 T-013: non-null while an async Apify run is being polled.
+    const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
+    // Guards against re-handling a settle outcome on unrelated re-renders
+    // while `runHandle` is unchanged, and is reset whenever a NEW run starts.
+    const handledSettleRef = useRef(false);
+
+    const pollResult = useImportStatus(runHandle, runHandle !== null);
 
     const submitDisabled = isSubmitting || !legalConfirmed;
 
@@ -119,8 +135,20 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         'No pudimos importar el alojamiento. Intentá de nuevo.'
                     )
                 );
+                setIsSubmitting(false);
                 return;
             }
+
+            // HOS-50 T-013: a 202 dispatch for a slow/blocked source — switch
+            // to polling mode via useImportStatus and keep the "Importando..."
+            // spinner active. The outcome is handled by the settle effect below;
+            // `isSubmitting` intentionally stays `true` here.
+            if (isAsyncImportStart(result.data)) {
+                handledSettleRef.current = false;
+                setRunHandle(result.data);
+                return;
+            }
+
             // Branch 2: 200 response with a machine-readable failureCode — render as error,
             // do NOT fire onImported (SPEC-258 C.1).
             if (result.data.failureCode) {
@@ -132,12 +160,14 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                     )
                 );
                 onError?.(result.data.failureCode);
+                setIsSubmitting(false);
                 return;
             }
             if (result.data.message) {
                 setNotice(result.data.message);
             }
             onImported?.(result.data);
+            setIsSubmitting(false);
         } catch (err) {
             webLogger.error('ImportFromUrl: import request failed', {
                 err: err instanceof Error ? err.message : String(err)
@@ -146,10 +176,42 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             setError(
                 t('host.importFromUrl.errors.network', 'No pudimos conectar con el servidor.')
             );
-        } finally {
             setIsSubmitting(false);
         }
     }
+
+    // HOS-50 T-013: handles the outcome once the polled async run settles —
+    // mirrors the synchronous 200 branch above (failureCode -> error banner,
+    // success -> notice + onImported). `handledSettleRef` prevents re-running
+    // this on unrelated re-renders while `pollResult` keeps reporting the same
+    // settled run (the hook's returned object is a fresh literal every call).
+    useEffect(() => {
+        if (!pollResult.settled || handledSettleRef.current) {
+            return;
+        }
+        handledSettleRef.current = true;
+        setIsSubmitting(false);
+        setRunHandle(null);
+
+        if (pollResult.failureCode) {
+            const camelKey = snakeToCamel(pollResult.failureCode);
+            setError(
+                t(
+                    `host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0],
+                    pollResult.failureCode
+                )
+            );
+            onError?.(pollResult.failureCode);
+            return;
+        }
+
+        if (pollResult.draft) {
+            if (pollResult.draft.message) {
+                setNotice(pollResult.draft.message);
+            }
+            onImported?.(pollResult.draft);
+        }
+    }, [pollResult, onError, onImported, t]);
 
     return (
         <section className={styles.importFromUrl}>
