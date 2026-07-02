@@ -210,3 +210,17 @@ Cover every failing file: `ListWidget`, `ChecklistWidget`, `StatusWidget`,
   cause don't already establish. Skipped per this task's own documented
   escape hatch (T-007 applies "if a real behavior change"; this was not
   one).
+- **T-010 pre-PR gate caught one real (non-widget) type break**: `pnpm
+  typecheck` in `apps/admin` failed at
+  `src/hooks/use-admin-tour-state.ts:256` —
+  `queryClient.setQueryData<UserProtected | null>(queryKey, {...previous,
+  settings: updatedSettings})` no longer type-checks under `5.101.2`. The
+  `queryKey` is data-tagged by the sibling `useQuery` call in the same hook,
+  and passing both an explicit generic *and* an object literal to
+  `setQueryData` now conflicts with that tag. Fixed by switching to the
+  functional-updater form (`queryClient.setQueryData(queryKey, (old) => old
+  ? { ...old, settings: updatedSettings } : old)`), which is also
+  TanStack's documented pattern for merging with previous cache data.
+  Runtime behavior unchanged (14/14 `use-admin-tour-state.test.tsx` tests
+  still pass) — this was a type-level-only fix, not a behavior fix, and out
+  of the widget scope this spec otherwise covers.
