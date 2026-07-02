@@ -205,7 +205,7 @@ describe('entitlementMiddleware', () => {
 
             // The crux of BETA-42: saving favorites must work with billing off.
             expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
-            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(5); // HOS-16 recalibration: tourist-free 3->5
             // HOST-only entitlements must NOT leak to a USER actor.
             expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
@@ -322,7 +322,7 @@ describe('entitlementMiddleware', () => {
 
             // tourist-free baseline must be granted even without a customer row
             expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
-            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(5); // HOS-16 recalibration: tourist-free 3->5
             // HOST-only entitlements must NOT leak to a USER actor
             expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
