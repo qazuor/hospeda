@@ -214,6 +214,61 @@ describe('PromotionForm — create mode', () => {
         expect(callArg.body.validFrom).toBeDefined();
     });
 
+    it('renders the VIP-only toggle unchecked by default (HOS-21 T-013)', () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        expect(screen.getByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+    });
+
+    it('sends touristAudience: "vip" when the VIP-only toggle is checked (HOS-21 T-013)', async () => {
+        mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        fillCreateFields();
+        fireEvent.click(screen.getByRole('checkbox', { name: /vip/i }));
+
+        fireEvent.click(getSubmitButton());
+
+        await waitFor(() => {
+            expect(mockCreate).toHaveBeenCalledOnce();
+        });
+
+        const callArg = mockCreate.mock.calls[0][0] as { body: Record<string, unknown> };
+        expect(callArg.body.touristAudience).toBe('vip');
+    });
+
+    it('does not send touristAudience when the VIP-only toggle is left off (HOS-21 T-013)', async () => {
+        mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        fillCreateFields();
+        fireEvent.click(getSubmitButton());
+
+        await waitFor(() => {
+            expect(mockCreate).toHaveBeenCalledOnce();
+        });
+
+        const callArg = mockCreate.mock.calls[0][0] as { body: Record<string, unknown> };
+        expect(callArg.body.touristAudience).toBeUndefined();
+    });
+
     it('shows generic form-error banner when create API returns non-ok', async () => {
         // Arrange
         mockCreate.mockResolvedValueOnce({
@@ -479,6 +534,7 @@ describe('PromotionForm — edit mode', () => {
         maxRedemptions: 50,
         currentRedemptions: 5,
         lifecycleState: 'ACTIVE',
+        touristAudience: 'plus',
         createdAt: '2026-06-01T00:00:00.000Z',
         updatedAt: '2026-06-01T00:00:00.000Z'
     };
@@ -513,6 +569,32 @@ describe('PromotionForm — edit mode', () => {
         // Date inputs
         expect(screen.getByLabelText(/Válido desde/i)).toHaveValue('2026-07-01');
         expect(screen.getByLabelText(/Válido hasta/i)).toHaveValue('2026-08-31');
+    });
+
+    it('pre-fills the VIP-only toggle as unchecked when touristAudience is "plus" (HOS-21 T-013)', () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                initialData={INITIAL_DATA}
+                promotionId="promo-uuid-1"
+            />
+        );
+
+        expect(screen.getByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+    });
+
+    it('pre-fills the VIP-only toggle as checked when touristAudience is "vip" (HOS-21 T-013)', () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                initialData={{ ...INITIAL_DATA, touristAudience: 'vip' }}
+                promotionId="promo-uuid-1"
+            />
+        );
+
+        expect(screen.getByRole('checkbox', { name: /vip/i })).toBeChecked();
     });
 
     it('calls ownerPromotionApi.update (not create) on submit', async () => {
