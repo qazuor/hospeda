@@ -1,0 +1,688 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-16",
+    "title": "Plan Packaging Recalibration (Entitlements & Limits Sanitation)",
+    "created": "2026-07-02T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Mark the 3 open questions as resolved in spec.md",
+            "description": "Update `.specs/HOS-16-plan-packaging-recalibration/spec.md` Open Questions section: OQ-1 (FEATURED_LISTING stays OUT of owner-basico), OQ-2 (MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH basico = 10), OQ-3 (owner-basico MAX_ACCOMMODATIONS = 1) — all resolved with the recommended values (owner did not respond in-session; recommended defaults already matched the spec's target tables, so no numeric change results from this task, only doc status). Add a one-line note that these were confirmed by default per session timeout, in case the owner wants to revisit before merge. No tests (docs only).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Mark OQ-1/OQ-2/OQ-3 as Resolved with chosen values",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:12:45Z",
+                    "details": "docs-only edit (spec.md), no lintable code"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:12:45Z",
+                    "details": "docs-only edit, no TS surface"
+                },
+                "tests": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:12:45Z",
+                    "details": "docs-only edit, task description explicitly scopes it as no-tests"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": "2026-07-02T08:12:05Z",
+                "completed": "2026-07-02T08:12:45Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Remove AD_FREE from EntitlementKey enum and ENTITLEMENT_DEFINITIONS",
+            "description": "Delete the `AD_FREE = 'ad_free'` member from `packages/billing/src/types/entitlement.types.ts:36`. Delete its matching entry from `ENTITLEMENT_DEFINITIONS` in `packages/billing/src/config/entitlements.config.ts:160-163`. There is no exhaustive switch over EntitlementKey, so this alone will not break the build — but plans.config.ts and 2 app files still reference it (handled in T-003). Tests: update `packages/billing/test/entitlements.test.ts` category counts (tourist 13->12, total 39->38) and the 'no dupes / completeness' assertions.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Remove AD_FREE from EntitlementKey enum",
+                    "completed": false
+                },
+                {
+                    "title": "Remove AD_FREE from ENTITLEMENT_DEFINITIONS",
+                    "completed": false
+                },
+                {
+                    "title": "Update entitlements.test.ts category counts",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Remove AD_FREE from plan grants and its 2 consumers",
+            "description": "Remove `EntitlementKey.AD_FREE` from `TOURIST_VIP_ENTITLEMENTS` (`packages/billing/src/config/plans.config.ts:56` — this shared constant is inherited by tourist-vip AND all 6 owner/complex plans via dedupe-spread, so this single edit removes it everywhere except tourist-plus) and from `TOURIST_PLUS_PLAN.entitlements` (`plans.config.ts:453`). Then update the 2 consumers: `apps/api/src/utils/tourist-entitlement-filter.ts` (lines 109 and 275) — remove the `hasEntitlement(c, EntitlementKey.AD_FREE)` gate; confirm whether the surrounding ad-filtering branch becomes fully dead code (no ad system exists per spec motivation) and remove it if so, or leave a narrower no-op if other logic in that block is still load-bearing. `apps/admin/src/features/billing-plans/components/plan-entitlement-groups.ts:57` — drop AD_FREE from its grouping list. Tests: update `packages/billing/test/owner-inherits-tourist.test.ts` (inherited-entitlement-count assertions shrink by 1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-014", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Remove AD_FREE from TOURIST_VIP_ENTITLEMENTS and TOURIST_PLUS_PLAN",
+                    "completed": false
+                },
+                {
+                    "title": "Clean up tourist-entitlement-filter.ts AD_FREE gate",
+                    "completed": false
+                },
+                {
+                    "title": "Clean up admin plan-entitlement-groups.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update owner-inherits-tourist.test.ts counts",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements", "api", "admin"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Move CAN_VIEW_RECOMMENDATIONS from tourist-free to tourist-plus",
+            "description": "In `packages/billing/src/config/plans.config.ts`, remove `CAN_VIEW_RECOMMENDATIONS` from `TOURIST_FREE_PLAN.entitlements` and add it to `TOURIST_PLUS_PLAN.entitlements`. Verify it is (or add it to) `TOURIST_VIP_ENTITLEMENTS` shared constant so vip/owner/complex keep it via inheritance (vip must always be a superset of plus). Tests: update any test asserting tourist-free's entitlement list (should drop to 3: SAVE_FAVORITES, READ_REVIEWS, WRITE_REVIEWS) and tourist-plus's list (gains CAN_VIEW_RECOMMENDATIONS).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Remove CAN_VIEW_RECOMMENDATIONS from TOURIST_FREE_PLAN",
+                    "completed": false
+                },
+                {
+                    "title": "Add CAN_VIEW_RECOMMENDATIONS to TOURIST_PLUS_PLAN",
+                    "completed": false
+                },
+                {
+                    "title": "Verify VIP/owner/complex still inherit it",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Grant CREATE_PROMOTIONS entitlement to owner-basico",
+            "description": "Add `EntitlementKey.CREATE_PROMOTIONS` to `OWNER_BASICO_PLAN.entitlements` in `packages/billing/src/config/plans.config.ts` (currently only granted from owner-pro/complex-pro up). Do NOT touch complex plans (out of scope, being hidden regardless). Tests: update whichever test asserts owner-basico's entitlement list (plans.test.ts or a dedicated grant test) to include CREATE_PROMOTIONS.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Add CREATE_PROMOTIONS to OWNER_BASICO_PLAN.entitlements",
+                    "completed": false
+                },
+                {
+                    "title": "Update owner-basico entitlement assertions in tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Recalibrate tourist MAX_FAVORITES and MAX_COMPARE_ITEMS",
+            "description": "In `packages/billing/src/config/plans.config.ts`: set `TOURIST_FREE_PLAN` MAX_FAVORITES to 5 (verify current value first, spec target=5), `TOURIST_PLUS_PLAN` MAX_FAVORITES to 25 (spec target), MAX_COMPARE_ITEMS on `TOURIST_PLUS_PLAN` from 2 to 3 (coordinate with unmerged SPEC-288 branch `spec/SPEC-289-search-history` — this is the value that must survive that merge). Bump `TOURIST_VIP_LIMITS.MAX_COMPARE_ITEMS` shared constant from 4 to 5 (this constant is inherited by tourist-vip AND all 6 owner/complex plans, so this single edit also raises MAX_COMPARE_ITEMS to 5 for owner/complex — intended per SPEC-216 inheritance, note it in the PR description). Do NOT touch MAX_SEARCH_HISTORY_ENTRIES or MAX_ACTIVE_ALERTS — both already match target values, no change needed. Do NOT touch MAX_AI_SEARCH_PER_MONTH / MAX_AI_CHAT_CONSUMER_PER_MONTH (SPEC-283 territory, explicitly out of scope). Tests: `packages/billing/test/plans.test.ts` and `packages/billing/test/limits.test.ts` MAX_COMPARE_ITEMS/MAX_FAVORITES expected values across all 9 plans.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Set tourist-free/plus MAX_FAVORITES",
+                    "completed": false
+                },
+                {
+                    "title": "Set tourist-plus MAX_COMPARE_ITEMS to 3",
+                    "completed": false
+                },
+                {
+                    "title": "Bump TOURIST_VIP_LIMITS.MAX_COMPARE_ITEMS to 5",
+                    "completed": false
+                },
+                {
+                    "title": "Update plans.test.ts / limits.test.ts expected values",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "limits"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Recalibrate owner-basico limits",
+            "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_BASICO_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 5->15, MAX_ACTIVE_PROMOTIONS 0->2, MAX_AI_TEXT_IMPROVE_PER_MONTH 20->50, MAX_AI_CHAT_PER_MONTH 20->50, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 200->10 (OQ-2 resolved). Leave MAX_AI_TRANSLATE_PER_MONTH at 200 (no change) and MAX_ACCOMMODATIONS at 1 (OQ-3 resolved, no change). This edits the same plan object T-005 touches (entitlements) — run after T-005 to avoid duplicate-edit conflicts. Tests: `packages/billing/test/grant-matrix.snapshot.test.ts` EXPECTED_AI_MATRIX for owner-basico (text-improve/chat/import); note translate is NOT in this snapshot's AI_LIMIT_KEYS list, so also check plans.test.ts if it independently asserts translate.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012", "T-013", "T-014", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=15",
+                    "completed": false
+                },
+                {
+                    "title": "Set MAX_ACTIVE_PROMOTIONS=2",
+                    "completed": false
+                },
+                {
+                    "title": "Set AI text-improve/chat=50, import=10 (OQ-2)",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "limits"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Recalibrate owner-pro limits",
+            "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_PRO_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 15->30, MAX_ACTIVE_PROMOTIONS 3->5, MAX_AI_TEXT_IMPROVE_PER_MONTH 100->250, MAX_AI_CHAT_PER_MONTH 100->250, MAX_AI_TRANSLATE_PER_MONTH 500->1000, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 500->50. MAX_ACCOMMODATIONS stays 3 (no change). Tests: grant-matrix.snapshot.test.ts EXPECTED_AI_MATRIX for owner-pro.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-014", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=30, MAX_ACTIVE_PROMOTIONS=5",
+                    "completed": false
+                },
+                {
+                    "title": "Set AI text-improve/chat=250, translate=1000, import=50",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "limits"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Recalibrate owner-premium limits (incl. AI chat decrease)",
+            "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_PREMIUM_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 30->50, MAX_AI_TEXT_IMPROVE_PER_MONTH 1000->1250, MAX_AI_CHAT_PER_MONTH 2000->1250 (this is a DECREASE — intentional, spec normalizes the owner-side AI ladder to a uniform x5-per-tier progression: text/chat 50/250/1250, translate 200/1000/5000, import 10/50/250; see spec Risks table 'few/no real owner subs pre-go-live, net change mostly upward' — this is the one exception, call it out explicitly in the PR description), MAX_AI_TRANSLATE_PER_MONTH 2000->5000, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 2000->250. MAX_ACCOMMODATIONS stays 10, MAX_ACTIVE_PROMOTIONS stays -1 (unlimited) — no change to either. Tests: grant-matrix.snapshot.test.ts EXPECTED_AI_MATRIX for owner-premium (make sure the chat DECREASE to 1250 is the asserted value, not left at 2000).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-014", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=50",
+                    "completed": false
+                },
+                {
+                    "title": "Set AI text-improve=1250, chat=1250 (decrease), translate=5000, import=250",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "limits"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Hide the 3 complex plans (isActive: false)",
+            "description": "Set `isActive: false` on `COMPLEX_BASICO_PLAN`, `COMPLEX_PRO_PLAN`, `COMPLEX_PREMIUM_PLAN` in `packages/billing/src/config/plans.config.ts` (the field already exists on PlanDefinition, this is a value change only). Do NOT touch entitlements, limits, slug, or isDefault. Note: `validatePlans()` in `packages/billing/src/validation/config-validator.ts` and `getDefaultPlan()` do NOT check `isActive` today (confirmed by exploration) — this is exactly the mitigation the spec's Risks table relies on ('validator still finds a default per category'), so no new validator code is needed here. Tests covered in T-017 (regression).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Set isActive:false on all 3 complex plans",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "plans"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "One-time ops SQL: deactivate complex plans on existing DBs",
+            "description": "`billing_plans.active` is classified 'commercial' in Model-C (`packages/billing/src/config/model-c-field-split.ts`) — a config-level `isActive:false` does NOT auto-propagate to already-seeded rows on staging/prod (DB wins on seed for this field). Write a one-off SQL file following the existing precedent pattern (`packages/db/src/migrations/extras/014-spec211-ai-monetization.data.sql`), named with the next sequential number after the current highest (024 as of this writing — check `ls packages/db/src/migrations/extras/` for the true latest before naming, e.g. `025-hos16-deactivate-complex-plans.data.sql`): `UPDATE billing_plans SET active = false WHERE name IN ('complex-basico', 'complex-pro', 'complex-premium');` with a header comment documenting the dry-run SELECT to run first and confirming exactly 3 rows are affected. This is NOT applied automatically by `pnpm db:apply-extras` in the same reversible way as trigger/view extras — confirm whether one-off data UPDATEs in this directory are re-run idempotently (should be, since the UPDATE is naturally idempotent) or need manual execution; document the chosen path in the file header.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Determine next sequential extras/ number",
+                    "completed": false
+                },
+                {
+                    "title": "Write idempotent UPDATE with dry-run header",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Investigate and fix the 'promotions' comparison-table row status",
+            "description": "In `apps/web/src/components/billing/PlanComparisonTable.astro`, the owner 'promotions' row (MAX_ACTIVE_PROMOTIONS limit cell, currently line ~141) is marked `status: 'upcoming'` (renders a 'Próximamente' badge) — but CREATE_PROMOTIONS/MAX_ACTIVE_PROMOTIONS was NOT flagged as phantom in the original packaging audit (unlike respond-reviews/calendar/whatsapp/branding/featured), meaning the promotions feature may already be genuinely implemented and working for owner-pro/premium today. Verify by checking `packages/service-core` for an actual accommodation-promotions service (distinct from `billing_promo_codes`, which is a billing-discount mechanism, not this). If the feature is real and working: flip this row's `status` from `'upcoming'` to `'available'`, since owner-basico now also gets it (T-007) and it would be misleading to keep advertising a working feature as 'coming soon'. If it turns out to be phantom after all: leave `status: 'upcoming'` as-is and note the discrepancy for a follow-up Linear issue. Either way, document the finding in the task's completion notes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Verify whether accommodation-promotions is a real implemented feature",
+                    "completed": false
+                },
+                {
+                    "title": "Flip row status to 'available' if real, else leave and note",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "billing-ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Verify Model-C seed propagation locally",
+            "description": "After all core config edits (T-002 through T-010) land, run the local seed pipeline (`pnpm db:fresh-dev` against a scratch/worktree DB) and confirm: (a) structural changes — AD_FREE removal, CAN_VIEW_RECOMMENDATIONS move, CREATE_PROMOTIONS grant, MAX_COMPARE_ITEMS key presence — auto-sync via the capability-layer (`detectDivergences`/`buildCapabilitySyncPayload` in `billingPlans.seed.ts`), confirming the Model-C 'capability fields propagate' claim; (b) numeric-value-only changes (photos, promotions count, AI limits, isActive) do NOT retroactively update an already-seeded row (expected — commercial-layer, DB wins), only affect fresh inserts. Add a short note to T-011's SQL file header confirming this behavior was verified, since it's the reason the one-off UPDATE in T-011 is necessary for existing envs.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run pnpm db:fresh-dev and inspect billing_entitlements/billing_plans rows",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "seed"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update grant-matrix.snapshot.test.ts",
+            "description": "In `packages/billing/test/grant-matrix.snapshot.test.ts`, update `EXPECTED_AI_MATRIX` for owner-basico/pro/premium with the new AI limit values from T-007/T-008/T-009 (text-improve, chat, chat-consumer where applicable). Do NOT change complex-plan rows (complex is hidden, not recalibrated, per spec scope). Confirm the AD_FREE removal (T-002/T-003) doesn't break this file's entitlement-grant assertions (AD_FREE isn't part of AI_LIMIT_KEYS but may appear in a broader entitlement list elsewhere in the file — check).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-007", "T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update EXPECTED_AI_MATRIX owner rows",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm AD_FREE cleanup doesn't break this file",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update plans.test.ts and limits.test.ts",
+            "description": "In `packages/billing/test/plans.test.ts` and `packages/billing/test/limits.test.ts`: update expected `MAX_COMPARE_ITEMS` (plus=3, vip/owner/complex=5), `MAX_FAVORITES` (free=5, plus=25), tourist-free/plus entitlement lists (CAN_VIEW_RECOMMENDATIONS moved, T-004), owner-basico entitlement list (CREATE_PROMOTIONS added, T-005). Leave MAX_SEARCH_HISTORY_ENTRIES / MAX_ACTIVE_ALERTS assertions untouched (no value change).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update MAX_COMPARE_ITEMS / MAX_FAVORITES expectations",
+                    "completed": false
+                },
+                {
+                    "title": "Update tourist-free/plus/owner-basico entitlement list expectations",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Update entitlements.test.ts and owner-inherits-tourist.test.ts",
+            "description": "In `packages/billing/test/entitlements.test.ts`: update category counts (tourist 13->12, total 39->38) after AD_FREE removal (T-002). In `packages/billing/test/owner-inherits-tourist.test.ts`: update the 'every owner/complex plan grants every TOURIST_VIP_ENTITLEMENTS key' invariant to reflect the shrunk shared constant (T-003) and the CAN_VIEW_RECOMMENDATIONS membership check (T-004).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update entitlements.test.ts counts",
+                    "completed": false
+                },
+                {
+                    "title": "Update owner-inherits-tourist.test.ts invariants",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add regression tests for AD_FREE removal and complex deactivation",
+            "description": "Add tests asserting: (a) `AD_FREE` is no longer a member of `EntitlementKey` (type-level or `Object.values()` check) and not referenced by `ENTITLEMENT_DEFINITIONS`; (b) all 3 complex plans (`complex-basico/pro/premium`) have `isActive: false` in `ALL_PLANS`; (c) the public plans endpoint / filter (wherever `GET /api/v1/public/plans` sources its list — likely a service in `packages/service-core/src/services/billing`) excludes inactive complex plans from its response while `getPlanBySlug('complex-basico')` still resolves for internal/admin use; (d) `validateBillingConfig()` does not throw and `getDefaultPlan('complex')` still resolves (even though inactive) — proves the spec's stated mitigation holds. Place in the most relevant existing test file (`plans.test.ts` or a new `plan-visibility.test.ts` if none fits cleanly).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "AD_FREE-removed assertion",
+                    "completed": false
+                },
+                {
+                    "title": "complex isActive:false assertion",
+                    "completed": false
+                },
+                {
+                    "title": "public plans endpoint excludes complex",
+                    "completed": false
+                },
+                {
+                    "title": "validateBillingConfig/getDefaultPlan don't throw",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "tests", "regression"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Local manual smoke: db:fresh-dev + dev test-user spot check",
+            "description": "Per CLAUDE.md's local-first billing testing guidance (SPEC-143, zero MercadoPago dependency needed here): run `pnpm db:fresh-dev`, then verify via `pnpm db:studio` or a direct query that `billing_entitlements` no longer contains `ad_free` and the 3 complex `billing_plans` rows have `active=false`. Log in as `owner-basico@local.test` / `Password123!` and spot-check the admin/web UI reflects CREATE_PROMOTIONS + MAX_ACTIVE_PROMOTIONS=2 + MAX_PHOTOS_PER_ACCOMMODATION=15. Log in as a tourist-free test user and confirm CAN_VIEW_RECOMMENDATIONS is gone (recommendations feature gated/hidden) while it still works for a tourist-plus user. No staging smoke needed (no MP/webhook/cron surface touched).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "db:fresh-dev + inspect seeded rows",
+                    "completed": false
+                },
+                {
+                    "title": "Spot-check owner-basico test user",
+                    "completed": false
+                },
+                {
+                    "title": "Spot-check tourist-free vs tourist-plus recommendations gate",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "manual-smoke"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Update docs/billing/endpoint-gate-matrix.md",
+            "description": "Reflect the packaging changes in `docs/billing/endpoint-gate-matrix.md`: remove any AD_FREE gate row, move CAN_VIEW_RECOMMENDATIONS's documented minimum tier from free to plus, note CREATE_PROMOTIONS now gates from owner-basico (not owner-pro).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update gate matrix rows",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Fix stale EntitlementKey count in packages/billing/CLAUDE.md",
+            "description": "`packages/billing/CLAUDE.md` states the `EntitlementKey` enum has 48 members; the actual count was 39 before this spec and will be 38 after AD_FREE removal (T-002). Update the doc to the correct post-spec count.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Correct the EntitlementKey count in CLAUDE.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 20,
+        "pending": 19,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 1.6
+    }
+}
