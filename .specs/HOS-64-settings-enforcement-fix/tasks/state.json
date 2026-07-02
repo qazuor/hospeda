@@ -335,35 +335,35 @@
             "id": "T-010",
             "title": "Read retry count and webhook timeout from settings",
             "description": "In `packages/service-core/src/services/social/social-publish-dispatch.service.ts`, replace the hard-coded `MAX_RETRY_COUNT` (3) and `MAKE_WEBHOOK_TIMEOUT_MS` (40_000) constants (lines ~421-436) with reads from `social_settings` (`max_retry_count`, `make_webhook_timeout_ms`, seeded in T-003) via the existing raw-model read pattern. Add bounds validation (R-1): clamp retry count to a sane min/max (e.g. 1-10) and timeout to a sane range (e.g. 5000-120000ms), falling back to the current hard-coded defaults if the stored value is missing or out of bounds. Unit test the clamping/fallback logic.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-037", "T-040"],
             "subtasks": [
                 {
                     "title": "Replace MAX_RETRY_COUNT constant with settings read + bounds clamp",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace MAKE_WEBHOOK_TIMEOUT_MS constant with settings read + bounds clamp",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test valid, missing, and out-of-bounds values",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["social", "dispatch", "settings", "risk"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T17:10:00Z",
+                "completed": "2026-07-02T17:55:00Z"
             }
         },
         {

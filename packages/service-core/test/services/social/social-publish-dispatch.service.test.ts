@@ -958,8 +958,10 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(mocks.targetModel.update).not.toHaveBeenCalled();
         });
 
-        it('uses the webhookUrl override param directly and does NOT query settings', async () => {
-            // Arrange — webhook override provided; no settings query needed.
+        it('uses the webhookUrl override param directly and does NOT query the webhook URL setting', async () => {
+            // Arrange — webhook override provided; the webhook URL setting is skipped.
+            // Retry count / timeout are still read from settings regardless of the
+            // override (HOS-64 G-2) — they are independent of which URL is dispatched to.
             // The default buildFetchResponse returns a Make SUCCESS body.
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
             // cascadePostStatus dependencies
@@ -981,9 +983,11 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 webhookUrl: WEBHOOK_URL
             });
 
-            // Assert — published synchronously; settings not queried (override used)
+            // Assert — published synchronously; webhook URL setting not queried (override used)
             expect(result.outcome).toBe('published');
-            expect(mocks.settingModel.findOne).not.toHaveBeenCalled();
+            expect(mocks.settingModel.findOne).not.toHaveBeenCalledWith({
+                key: 'make_webhook_url'
+            });
         });
     });
 
@@ -1578,6 +1582,99 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                     socialPostTargetId: TARGET_ID
                 })
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Settings-driven max_retry_count (HOS-64 G-2, risk item R-1)
+    // -------------------------------------------------------------------------
+
+    describe('settings-driven max_retry_count', () => {
+        it('exhausts at a custom lower max_retry_count from settings (2 instead of default 3)', async () => {
+            // Arrange — max_retry_count=2 configured; retryCount already at 2
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '2' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 2 });
+            const post = buildPost();
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [{ ...buildTarget({ retryCount: 2 }), status: SocialPostStatusEnum.FAILED }],
+                total: 1
+            });
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — exhausted at retryCount=2 because the configured max is 2, not the default 3
+            expect(result.outcome).toBe('exhausted');
+        });
+
+        it('does NOT exhaust at retryCount=3 when max_retry_count is raised to 5', async () => {
+            // Arrange — max_retry_count=5 configured; retryCount=3 (would exhaust at the default of 3)
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '5' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 3 });
+            const post = buildPost();
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — still retryable because the configured max (5) is higher than the default (3)
+            expect(result.outcome).toBe('retry_scheduled');
+            expect(result.retryCount).toBe(4);
+        });
+
+        it('falls back to the default of 3 when the stored max_retry_count is out of bounds', async () => {
+            // Arrange — an operator-entered out-of-range value (99) falls back to the default (3)
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '99' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 3 });
+            const post = buildPost();
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [{ ...buildTarget({ retryCount: 3 }), status: SocialPostStatusEnum.FAILED }],
+                total: 1
+            });
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — out-of-bounds (99 > max of 10) falls back to the default of 3, so retryCount=3 exhausts
+            expect(result.outcome).toBe('exhausted');
         });
     });
 });
