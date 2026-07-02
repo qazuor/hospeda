@@ -82,35 +82,35 @@
             "id": "T-003",
             "title": "Seed 5 new operational social_settings rows",
             "description": "Add 5 new rows to the `SETTINGS` array in `packages/seed/src/required/socialAutomation.seed.ts` (around lines 300-351, following the exact existing row shape): `max_retry_count` (value '3', type 'number'), `make_webhook_timeout_ms` (value '40000', type 'number'), `download_timeout_ms` (value '15000', type 'number'), `social_assets_folder` (value 'hospeda/social/assets', type 'string'), `dispatch_cron_cadence` (value '*/5 * * * *', type 'string'). `seedSocialSettings()` already handles idempotent insert — no other wiring needed. Write a unit test asserting all 5 keys are present with correct types/defaults after seeding.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-012"],
             "subtasks": [
                 {
                     "title": "Add 5 rows to SETTINGS array",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify seedSocialSettings() picks them up idempotently",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write/extend seed unit test for the 5 new keys",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "database", "social"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:50:00Z",
+                "completed": "2026-07-02T17:05:00Z"
             }
         },
         {

@@ -4,7 +4,7 @@
  * Seeds all static catalog data required by the social media publish pipeline:
  *   1. Platforms         — social_platforms (3 rows, unique on platform enum)
  *   2. Platform formats  — social_platform_formats (13 rows, unique on platform+publish_format)
- *   3. Settings          — social_settings (7 rows, unique on key)
+ *   3. Settings          — social_settings (12 rows, unique on key)
  *   4. Campaign          — social_campaigns (1 default row, unique on slug)
  *   5. Content batch     — social_content_batches (1 default row, unique on slug)
  *   6. Footer            — social_post_footers (1 default row, unique on slug)
@@ -297,7 +297,7 @@ const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
     // (IG STORY VIDEO variant is skipped — unique on (platform, publish_format))
 ];
 
-const SETTINGS: InsertSocialSetting[] = [
+export const SETTINGS: InsertSocialSetting[] = [
     {
         key: 'default_timezone',
         value: 'America/Argentina/Cordoba',
@@ -347,6 +347,41 @@ const SETTINGS: InsertSocialSetting[] = [
         active: true,
         description:
             'Make.com webhook URL used by the dispatch cron to push posts. Must be set before publishing.'
+    },
+    {
+        key: 'max_retry_count',
+        value: '3',
+        type: 'number',
+        active: true,
+        description: 'Maximum number of retry attempts for a failed social-publish dispatch'
+    },
+    {
+        key: 'make_webhook_timeout_ms',
+        value: '40000',
+        type: 'number',
+        active: true,
+        description: 'Timeout in milliseconds for the outbound Make.com webhook call'
+    },
+    {
+        key: 'download_timeout_ms',
+        value: '15000',
+        type: 'number',
+        active: true,
+        description: 'Timeout in milliseconds for downloading source media before Cloudinary upload'
+    },
+    {
+        key: 'social_assets_folder',
+        value: 'hospeda/social/assets',
+        type: 'string',
+        active: true,
+        description: 'Cloudinary folder path where processed social media assets are uploaded'
+    },
+    {
+        key: 'dispatch_cron_cadence',
+        value: '*/5 * * * *',
+        type: 'string',
+        active: true,
+        description: 'Cron expression controlling how often the social dispatch job runs'
     }
 ];
 
