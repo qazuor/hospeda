@@ -485,40 +485,40 @@
         {
             "id": "T-015",
             "title": "Component tests for ExclusiveDealsList.client.tsx",
-            "description": "Component tests (testing-library) covering loading, empty, upgrade-prompt (403), and populated-list states of T-012, mirroring AlertsList.client.tsx's existing test coverage shape.",
-            "status": "pending",
+            "description": "Component tests (testing-library) covering loading, empty, upgrade-prompt (403), and populated-list states of T-012, mirroring AlertsList.client.tsx's existing test coverage shape. [Satisfied by the ExclusiveDealsList.test.tsx written during T-012 — no new code needed; verified all 4 subtasks already covered.]",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test loading state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test empty state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test 403 upgrade-prompt state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test populated list state incl. VIP-only badge",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "tests", "component"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:26:47Z",
+                "completed": "2026-07-02T16:26:47Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.3
     }
