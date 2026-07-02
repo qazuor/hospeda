@@ -51,35 +51,35 @@
             "id": "T-002",
             "title": "Add ApifyRunStatus to ImportFailureCode mapping helper",
             "description": "Create mapApifyRunStatusToFailureCode(status: ApifyRunStatus): ImportFailureCode | null in a new file packages/service-core/src/services/accommodation-import/adapters/apify-run-status-mapping.ts. Map TIMED-OUT -> 'timeout', FAILED -> 'provider_error', ABORTED -> 'provider_error'; return null for READY/RUNNING/SUCCEEDED. Add JSDoc explaining Apify has no native 'blocked' run status, so this mapping never returns 'source_blocked' (that's only inferred from a start-time HTTP 429, handled elsewhere).\n\nTest requirements: unit tests, one case per ApifyRunStatus value (6 total), asserting the exact mapping.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Implement mapApifyRunStatusToFailureCode",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add JSDoc documenting the no-native-blocked-signal limitation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for all 6 ApifyRunStatus values",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "mapping", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T10:09:56Z",
+                "completed": "2026-07-02T10:11:33Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.2
     }
