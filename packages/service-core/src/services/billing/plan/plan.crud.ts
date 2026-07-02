@@ -31,6 +31,7 @@ import {
 import { ServiceErrorCode } from '@repo/schemas';
 import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
+import { findCapabilityFieldViolation } from './plan.types.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 
 // ---------------------------------------------------------------------------
@@ -538,6 +539,23 @@ export async function updatePlan(
     ctx?: QueryContext
 ) {
     try {
+        // HOS-39 T-027: reject capability-layer fields before any DB work.
+        // Capability fields are config-driven — the seed sync overwrites them
+        // on every deploy, so allowing an update here would silently repeat
+        // the HOS-39 live bug for any future field. Checked against RUNTIME
+        // keys (not just the TS type) so a caller bypassing UpdatePlanInput
+        // via an unsafe cast is caught too.
+        const capabilityViolation = findCapabilityFieldViolation(input);
+        if (capabilityViolation) {
+            return {
+                success: false as const,
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Cannot update capability-layer field "${capabilityViolation}" — it is config-driven (see MODEL_C_FIELD_SPLIT) and would be silently reverted by the next seed sync`
+                }
+            };
+        }
+
         const actorId = options.actorId ?? null;
 
         const doUpdate = async (db: DrizzleClient) => {

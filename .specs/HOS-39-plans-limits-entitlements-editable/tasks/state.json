@@ -886,7 +886,7 @@
             "id": "T-027",
             "title": "Add runtime Model C guard to PlanService.update()",
             "description": "In `plan.crud.ts`'s `updatePlan()` (or its entry point in `plan.service.ts`), add a runtime check that validates the incoming update payload's keys against `MODEL_C_FIELD_SPLIT`: any key classified `'capability'` must be rejected with `ServiceError(VALIDATION_ERROR, ...)`. This is the structural fix - it makes `UpdatePlanInput` and `MODEL_C_FIELD_SPLIT` impossible to silently drift apart again for any FUTURE field someone adds, closing the root cause of this bug class, not just today's instance.\n\nTest requirements: unit test that calls `updatePlan()` with a capability-layer key (bypass TS via an unsafe cast, simulating a future field that hasn't been removed from the type yet) and asserts it throws `VALIDATION_ERROR`. Unit test confirming all current commercial-layer fields (description, active, displayName, monthlyPriceArs, annualPriceArs, limits) still pass through successfully.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024", "T-026"],
             "blocks": ["T-022"],
@@ -907,22 +907,22 @@
             "tags": ["service-core", "billing", "model-c", "bugfix", "validation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T15:25:16.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:48:40Z",
+                "completed": "2026-07-02T15:56:04Z"
             }
         }
     ],
     "summary": {
         "total": 14,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

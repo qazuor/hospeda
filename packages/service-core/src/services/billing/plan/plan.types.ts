@@ -7,6 +7,7 @@
  * @module services/billing/plan/plan.types
  */
 
+import { MODEL_C_FIELD_SPLIT, type ModelCField } from '@repo/billing';
 import type { BillingPlanCategory, BillingPlanResponse } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +77,55 @@ export interface UpdatePlanInput {
     readonly limits?: Record<string, number>;
     /** Whether the plan is active */
     readonly isActive?: boolean;
+}
+
+/**
+ * Maps each `UpdatePlanInput` key to its corresponding {@link ModelCField}
+ * classification key (HOS-39 T-027).
+ *
+ * `UpdatePlanInput`'s field names and `MODEL_C_FIELD_SPLIT`'s classification
+ * keys are two independently maintained lists — the exact drift that caused
+ * the HOS-39 live bug (T-024..T-026). This mapping is the single place that
+ * ties them together so {@link findCapabilityFieldViolation} can guard every
+ * field, present or future, without duplicating field names.
+ *
+ * `monthlyPriceUsdRef` is intentionally absent — it has no `MODEL_C_FIELD_SPLIT`
+ * entry (a pre-existing gap, out of scope for this fix); unmapped fields are
+ * not guarded.
+ */
+export const UPDATE_PLAN_INPUT_MODEL_C_KEYS: Partial<Record<keyof UpdatePlanInput, ModelCField>> = {
+    name: 'metadata.displayName',
+    description: 'description',
+    monthlyPriceArs: 'metadata.monthlyPriceArs',
+    annualPriceArs: 'metadata.annualPriceArs',
+    hasTrial: 'metadata.hasTrial',
+    trialDays: 'metadata.trialDays',
+    sortOrder: 'metadata.sortOrder',
+    entitlements: 'entitlements',
+    limits: 'limitsValues',
+    isActive: 'active'
+};
+
+/**
+ * Guards `PlanService.update()` against writing a capability-layer field
+ * (HOS-39 T-027). Capability fields are config-driven (`MODEL_C_FIELD_SPLIT`);
+ * the seed sync overwrites them on every deploy, so allowing an update here
+ * would silently repeat the HOS-39 live bug for any future field.
+ *
+ * Iterates the RUNTIME keys of `input` (not just the TS-typed ones) so it
+ * also catches a caller bypassing `UpdatePlanInput` via an unsafe cast.
+ *
+ * @param input - The raw update input (may contain untyped keys)
+ * @returns The first capability-classified field name found, or `null` if none
+ */
+export function findCapabilityFieldViolation(input: object): string | null {
+    for (const key of Object.keys(input)) {
+        const modelCKey = UPDATE_PLAN_INPUT_MODEL_C_KEYS[key as keyof UpdatePlanInput];
+        if (modelCKey && MODEL_C_FIELD_SPLIT[modelCKey] === 'capability') {
+            return key;
+        }
+    }
+    return null;
 }
 
 /**

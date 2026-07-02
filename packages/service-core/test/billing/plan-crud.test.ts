@@ -83,6 +83,7 @@ vi.mock('../../src/services/billing/plan/plan.audit.js', () => ({
 
 // ─── Imports (after mocks) ─────────────────────────────────────────────────
 
+import { MODEL_C_FIELD_SPLIT } from '@repo/billing';
 import {
     createPlan,
     getPlanById,
@@ -864,41 +865,84 @@ describe('plan.crud', () => {
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
         });
 
-        it('HOS-39 T-026: ignores category/isDefault even if passed via an unsafe cast', async () => {
-            // Arrange — category/isDefault are capability-layer per Model C and were
-            // removed from UpdatePlanInput; this test bypasses TS via `as never` to
-            // simulate a caller that still tries to pass them (e.g. stale client code)
-            // and verifies the service layer does not write them regardless.
+        // All fields UpdatePlanInput currently maps to are commercial-layer
+        // (post T-024), so there is no REAL capability field left to trigger the
+        // guard through today's classification. These two tests simulate a
+        // future regression by temporarily flipping a mapped field's live
+        // classification (MODEL_C_FIELD_SPLIT is a plain object at runtime, not
+        // frozen) — proving the guard's WIRING works for whatever the
+        // classification says, not just today's values. Always restored in a
+        // `finally` so no other test in this file observes the flip.
+        it('HOS-39 T-027: rejects a mapped field with VALIDATION_ERROR if it were still capability', async () => {
             const existingPlan = makePlanRow();
-            const updatedPlan = makePlanRow();
-            const priceRow = makePriceRow();
-            let capturedDb: ReturnType<typeof buildMockDb> | undefined;
-
             mockWithTransaction.mockImplementation(
                 async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
-                    capturedDb = db;
+                    const db = buildMockDb([[existingPlan]]);
                     return fn(db);
                 }
             );
 
-            // Act
-            const result = await updatePlan('plan-uuid-1', {
-                category: 'complex',
-                isDefault: true
-            } as never);
+            const original = MODEL_C_FIELD_SPLIT.entitlements;
+            (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
+            try {
+                const result = await updatePlan('plan-uuid-1', { entitlements: ['ai_chat'] });
 
-            // Assert
+                expect(result.success).toBe(false);
+                if (result.success) return;
+                expect(result.error.code).toBe('VALIDATION_ERROR');
+            } finally {
+                (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = original;
+            }
+        });
+
+        it('HOS-39 T-027: rejects update BEFORE touching the DB when a capability field is present', async () => {
+            // The guard must run before any DB read/write — no partial side effects.
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([]);
+                    return fn(db);
+                }
+            );
+
+            const original = MODEL_C_FIELD_SPLIT.entitlements;
+            (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
+            try {
+                await updatePlan('plan-uuid-1', { entitlements: ['ai_chat'] });
+
+                expect(mockWithTransaction).not.toHaveBeenCalled();
+            } finally {
+                (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = original;
+            }
+        });
+
+        it('HOS-39 T-027: allows all current commercial-layer fields through in one update', async () => {
+            // Every field UpdatePlanInput currently exposes is commercial-layer
+            // post T-024 (entitlements/sortOrder/hasTrial/trialDays reclassified)
+            // — none of them should trip the guard.
+            const existingPlan = makePlanRow();
+            const updatedPlan = makePlanRow();
+            const priceRow = makePriceRow();
+
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan], []]);
+                    return fn(db);
+                }
+            );
+
+            const result = await updatePlan('plan-uuid-1', {
+                name: 'New Display Name',
+                description: 'New description',
+                monthlyPriceArs: 700000,
+                hasTrial: true,
+                trialDays: 7,
+                sortOrder: 5,
+                entitlements: ['ai_chat'],
+                limits: { max_ai_chat_per_month: 30 },
+                isActive: true
+            });
+
             expect(result.success).toBe(true);
-            const setCall = capturedDb?.update.mock.results[0]?.value.set.mock.calls[0]?.[0] as
-                | { metadata?: Record<string, unknown> }
-                | undefined;
-            const metadata = setCall?.metadata ?? {};
-            // Existing values must be PRESERVED unchanged (merge from existingMeta),
-            // NOT overwritten with the attempted 'complex'/true from the input —
-            // proves the service layer ignores these fields entirely.
-            expect(metadata.category).toBe('owner');
-            expect(metadata.isDefault).toBe(false);
         });
 
         it('should update monthly price when monthlyPriceArs is provided', async () => {
