@@ -19,26 +19,30 @@ import type { CronJobContext } from '../../src/cron/types.js';
 // Hoisted: advisory-lock transaction stub
 // ---------------------------------------------------------------------------
 
-const { mockWithTransaction, _mockTx, mockFindEligibleTargets, mockDispatchTarget } = vi.hoisted(
-    () => {
-        const tx = {
-            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-        };
-        const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) =>
-            callback(tx)
-        );
+const {
+    mockWithTransaction,
+    _mockTx,
+    mockFindEligibleTargets,
+    mockDispatchTarget,
+    mockSettingFindOne
+} = vi.hoisted(() => {
+    const tx = {
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+    };
+    const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
 
-        const findEligibleTargets = vi.fn().mockResolvedValue({ targets: [] });
-        const dispatchTarget = vi.fn().mockResolvedValue({ outcome: 'dispatched' });
+    const findEligibleTargets = vi.fn().mockResolvedValue({ targets: [] });
+    const dispatchTarget = vi.fn().mockResolvedValue({ outcome: 'dispatched' });
+    const settingFindOne = vi.fn().mockResolvedValue(undefined);
 
-        return {
-            mockWithTransaction: withTx,
-            _mockTx: tx,
-            mockFindEligibleTargets: findEligibleTargets,
-            mockDispatchTarget: dispatchTarget
-        };
-    }
-);
+    return {
+        mockWithTransaction: withTx,
+        _mockTx: tx,
+        mockFindEligibleTargets: findEligibleTargets,
+        mockDispatchTarget: dispatchTarget,
+        mockSettingFindOne: settingFindOne
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Module mocks (must appear before any import of the module under test)
@@ -57,6 +61,9 @@ vi.mock('@repo/db', () => ({
         __sql: true,
         strings,
         values
+    })),
+    SocialSettingModel: vi.fn().mockImplementation(() => ({
+        findOne: mockSettingFindOne
     }))
 }));
 
@@ -64,12 +71,16 @@ vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-vi.mock('@repo/service-core', () => ({
-    SocialPublishDispatchService: vi.fn().mockImplementation(() => ({
-        findEligibleTargets: mockFindEligibleTargets,
-        dispatchTarget: mockDispatchTarget
-    }))
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        SocialPublishDispatchService: vi.fn().mockImplementation(() => ({
+            findEligibleTargets: mockFindEligibleTargets,
+            dispatchTarget: mockDispatchTarget
+        }))
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Import module under test AFTER mocks are wired
@@ -106,6 +117,7 @@ describe('Social Publish Dispatch Cron Job', () => {
         _mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
         mockFindEligibleTargets.mockResolvedValue({ targets: [] });
         mockDispatchTarget.mockResolvedValue({ outcome: 'dispatched' });
+        mockSettingFindOne.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -123,6 +135,48 @@ describe('Social Publish Dispatch Cron Job', () => {
             expect(socialPublishDispatchJob.enabled).toBe(true);
             expect(socialPublishDispatchJob.timeoutMs).toBe(120_000);
             expect(typeof socialPublishDispatchJob.handler).toBe('function');
+        });
+
+        it('exposes a resolveSchedule resolver', () => {
+            expect(typeof socialPublishDispatchJob.resolveSchedule).toBe('function');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Settings-driven cron cadence (HOS-64 T-013)
+    // -----------------------------------------------------------------------
+
+    describe('resolveSchedule — settings-driven cron cadence', () => {
+        it('reads the dispatch_cron_cadence key from social_settings', async () => {
+            mockSettingFindOne.mockResolvedValue({ value: '*/10 * * * *' });
+
+            await socialPublishDispatchJob.resolveSchedule?.();
+
+            expect(mockSettingFindOne).toHaveBeenCalledWith({ key: 'dispatch_cron_cadence' });
+        });
+
+        it('resolves to the stored cadence when it is a valid cron expression', async () => {
+            mockSettingFindOne.mockResolvedValue({ value: '*/10 * * * *' });
+
+            const resolved = await socialPublishDispatchJob.resolveSchedule?.();
+
+            expect(resolved).toBe('*/10 * * * *');
+        });
+
+        it('falls back to the default cadence when the setting row is missing', async () => {
+            mockSettingFindOne.mockResolvedValue(undefined);
+
+            const resolved = await socialPublishDispatchJob.resolveSchedule?.();
+
+            expect(resolved).toBe('*/5 * * * *');
+        });
+
+        it('falls back to the default cadence when the stored value is not a valid cron expression', async () => {
+            mockSettingFindOne.mockResolvedValue({ value: 'every 10 minutes' });
+
+            const resolved = await socialPublishDispatchJob.resolveSchedule?.();
+
+            expect(resolved).toBe('*/5 * * * *');
         });
     });
 

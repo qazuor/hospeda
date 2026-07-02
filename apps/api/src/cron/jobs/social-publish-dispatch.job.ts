@@ -18,8 +18,12 @@
  * @module cron/jobs/social-publish-dispatch
  */
 
-import { sql, withTransaction } from '@repo/db';
-import { SocialPublishDispatchService } from '@repo/service-core';
+import { SocialSettingModel, sql, withTransaction } from '@repo/db';
+import {
+    DISPATCH_CRON_CADENCE_KEY,
+    SocialPublishDispatchService,
+    resolveDispatchCronCadence
+} from '@repo/service-core';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
@@ -54,18 +58,37 @@ type CronTransactionResult =
       };
 
 /**
+ * Reads `dispatch_cron_cadence` from `social_settings` and resolves it to a
+ * validated cron expression via `resolveDispatchCronCadence`, falling back
+ * to the default when the row is missing or invalid.
+ *
+ * Consulted once by `cron/bootstrap.ts` (`resolveSchedule`) at scheduler
+ * startup — a changed setting takes effect on the next process restart, not
+ * live (HOS-64 / SPEC-297a G-2, T-013).
+ */
+async function resolveSocialDispatchCronSchedule(): Promise<string> {
+    const settingModel = new SocialSettingModel();
+    const settingRow = await settingModel.findOne({ key: DISPATCH_CRON_CADENCE_KEY });
+    return resolveDispatchCronCadence({
+        rawValue: settingRow?.value as string | null | undefined
+    });
+}
+
+/**
  * Social publish dispatch cron job definition.
  *
- * Schedule: Every 5 minutes (`*\/5 * * * *`). Configurable in future via env.
+ * Schedule: settings-driven via `resolveSocialDispatchCronSchedule`,
+ * defaulting to every 5 minutes (`*\/5 * * * *`) when unset or invalid.
  * Purpose: Push approved social post targets to Make.com for publication.
  */
 export const socialPublishDispatchJob: CronJobDefinition = {
     name: 'social-publish-dispatch',
     description:
         'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11)',
-    schedule: '*/5 * * * *', // Every 5 minutes
+    schedule: '*/5 * * * *', // Documented default — see resolveSocialDispatchCronSchedule
     enabled: true,
     timeoutMs: 120_000, // 2 minutes — allows up to ~3 sequential targets at 40s each
+    resolveSchedule: resolveSocialDispatchCronSchedule,
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;

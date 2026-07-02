@@ -440,35 +440,35 @@
             "id": "T-013",
             "title": "Wire settings-driven cadence into dispatch cron job",
             "description": "In `apps/api/src/cron/jobs/social-publish-dispatch.job.ts`, replace the hard-coded `schedule: '*/5 * * * *'` literal (line ~66) with the value from the T-012 helper, read at job registration/startup. First read `apps/api/src/cron/schedules.manifest.ts` to confirm it doesn't independently duplicate/override this schedule — reconcile if it does. Write an integration test asserting the job registers with the settings-driven cadence and falls back correctly when the setting is absent.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-037", "T-040"],
             "subtasks": [
                 {
                     "title": "Read schedules.manifest.ts to check for duplication",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace hard-coded schedule literal with T-012 helper output",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test: settings-driven + fallback registration",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cron", "settings", "social", "new-pattern"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T19:25:00Z",
+                "completed": "2026-07-02T20:10:00Z"
             }
         },
         {
