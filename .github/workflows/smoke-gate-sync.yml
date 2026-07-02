@@ -1,0 +1,146 @@
+name: Smoke Gate Sync
+
+# Keeps a Linear issue out of "Done" while it still needs manual smoke testing.
+# See CLAUDE.md -> "Smoke-gate labels for any spec" for the full convention.
+#
+# Trigger: only PRs whose body contains a real GitHub/Linear closing keyword
+# (Closes/Fixes/Resolves/Implements HOS-N) — i.e. only the ONE PR that actually
+# completes a spec, never an intermediate PR in a multi-PR spec (intermediate
+# PRs must never carry a magic word, per the closeSpec convention).
+#
+# On merge, if the referenced issue still carries any status-needs-smoke-*
+# label, this Action moves it to "In Review" (an existing Linear state, reused
+# as the "merged but not verified" signal — not a new workflow state). This
+# also corrects the native GitHub<->Linear integration, which reacts to the
+# same magic word and may set the issue Done first; this job runs after and
+# forces it back whenever a smoke label is still present, so Done can never
+# coexist with an outstanding smoke gate.
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - staging
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  sync-smoke-gate:
+    name: Sync smoke-gate state
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: Extract closed HOS-N issues from PR body
+        id: extract
+        env:
+          # Read via env (not inline interpolation) to avoid shell injection
+          # from an attacker-controlled PR body.
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+
+          IDS="$(printf '%s' "$PR_BODY" \
+            | grep -oiP '(close[sd]?|fix(e[sd])?|resolve[sd]?|implements)\s+HOS-[0-9]+' \
+            | grep -oiP 'HOS-[0-9]+' \
+            | tr '[:lower:]' '[:upper:]' \
+            | sort -u || true)"
+
+          if [ -z "$IDS" ]; then
+            echo "No closing-keyword HOS-N reference found in PR body — not the completing PR, nothing to do."
+            echo "ids=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Found: $IDS"
+          # Flatten to a single space-separated line for the next step.
+          echo "ids=$(printf '%s' "$IDS" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Move issue(s) back to In Review if a smoke label is still present
+        if: steps.extract.outputs.ids != ''
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          ISSUE_IDS: ${{ steps.extract.outputs.ids }}
+        run: |
+          set -euo pipefail
+
+          SMOKE_LABELS="status-needs-smoke-local status-needs-smoke-staging status-needs-smoke-prod"
+
+          gql() {
+            curl -sS https://api.linear.app/graphql \
+              -H "Authorization: $LINEAR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$1"
+          }
+
+          for ISSUE_ID in $ISSUE_IDS; do
+            echo "::group::$ISSUE_ID"
+
+            QUERY=$(jq -n --arg id "$ISSUE_ID" '{
+              query: "query($id: String!) { issue(id: $id) { id identifier team { id } labels { nodes { name } } state { name } } }",
+              variables: { id: $id }
+            }')
+            RESPONSE="$(gql "$QUERY")"
+
+            ISSUE_UUID="$(echo "$RESPONSE" | jq -r '.data.issue.id // empty')"
+            if [ -z "$ISSUE_UUID" ]; then
+              echo "Could not resolve $ISSUE_ID via Linear API — skipping. Response: $RESPONSE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            TEAM_UUID="$(echo "$RESPONSE" | jq -r '.data.issue.team.id')"
+            CURRENT_STATE="$(echo "$RESPONSE" | jq -r '.data.issue.state.name')"
+            LABEL_NAMES="$(echo "$RESPONSE" | jq -r '.data.issue.labels.nodes[].name')"
+
+            NEEDS_SMOKE="false"
+            for L in $SMOKE_LABELS; do
+              if echo "$LABEL_NAMES" | grep -qx "$L"; then
+                NEEDS_SMOKE="true"
+              fi
+            done
+
+            if [ "$NEEDS_SMOKE" != "true" ]; then
+              echo "$ISSUE_ID: no outstanding smoke label, nothing to do (current state: $CURRENT_STATE)."
+              echo "::endgroup::"
+              continue
+            fi
+
+            if [ "$CURRENT_STATE" = "In Review" ]; then
+              echo "$ISSUE_ID: already In Review, smoke label(s) still present, nothing to change."
+              echo "::endgroup::"
+              continue
+            fi
+
+            STATE_QUERY=$(jq -n --arg teamId "$TEAM_UUID" '{
+              query: "query($teamId: String!) { team(id: $teamId) { states(filter: { name: { eq: \"In Review\" } }) { nodes { id name } } } }",
+              variables: { teamId: $teamId }
+            }')
+            STATE_RESPONSE="$(gql "$STATE_QUERY")"
+            REVIEW_STATE_ID="$(echo "$STATE_RESPONSE" | jq -r '.data.team.states.nodes[0].id // empty')"
+
+            if [ -z "$REVIEW_STATE_ID" ]; then
+              echo "$ISSUE_ID: could not resolve an 'In Review' state for this team — skipping. Response: $STATE_RESPONSE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            MUTATION=$(jq -n --arg issueId "$ISSUE_UUID" --arg stateId "$REVIEW_STATE_ID" '{
+              query: "mutation($issueId: String!, $stateId: String!) { issueUpdate(id: $issueId, input: { stateId: $stateId }) { success } }",
+              variables: { issueId: $issueId, stateId: $stateId }
+            }')
+            MUTATION_RESPONSE="$(gql "$MUTATION")"
+            SUCCESS="$(echo "$MUTATION_RESPONSE" | jq -r '.data.issueUpdate.success // false')"
+
+            if [ "$SUCCESS" = "true" ]; then
+              echo "$ISSUE_ID: moved $CURRENT_STATE -> In Review (outstanding: $(echo "$LABEL_NAMES" | grep -Fx -f <(printf '%s\n' $SMOKE_LABELS) | tr '\n' ',' ))."
+            else
+              echo "$ISSUE_ID: failed to update state. Response: $MUTATION_RESPONSE"
+            fi
+
+            echo "::endgroup::"
+          done
