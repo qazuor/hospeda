@@ -68,7 +68,6 @@ const _ENTITLEMENT_VALUES = new Set([
     'save_favorites',
     'write_reviews',
     'read_reviews',
-    'ad_free',
     'price_alerts',
     'exclusive_deals',
     'vip_support',

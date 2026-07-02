@@ -178,14 +178,14 @@ describe('Entitlement Configuration', () => {
             }
         });
 
-        it('should have 14 tourist entitlements', () => {
+        it('should have 13 tourist entitlements', () => {
             // Arrange (EARLY_ACCESS_EVENTS, CONCIERGE_SERVICE, AIRPORT_TRANSFERS removed in SPEC-216;
+            // AD_FREE removed in HOS-16, obsolete — no ad system exists;
             // VIP_PROMOTIONS_ACCESS added in HOS-21 T-003)
             const touristKeys: readonly EntitlementKey[] = [
                 EntitlementKey.SAVE_FAVORITES,
                 EntitlementKey.WRITE_REVIEWS,
                 EntitlementKey.READ_REVIEWS,
-                EntitlementKey.AD_FREE,
                 EntitlementKey.PRICE_ALERTS,
                 EntitlementKey.EXCLUSIVE_DEALS,
                 EntitlementKey.VIP_SUPPORT,
@@ -199,19 +199,28 @@ describe('Entitlement Configuration', () => {
             ] as const;
 
             // Act & Assert
-            expect(touristKeys).toHaveLength(14);
+            expect(touristKeys).toHaveLength(13);
             for (const key of touristKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
         });
 
+        it('should not include the obsolete AD_FREE entitlement (HOS-16)', () => {
+            // Arrange & Act
+            const allKeys = Object.values(EntitlementKey);
+
+            // Assert
+            expect(allKeys).not.toContain('ad_free');
+            expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === 'ad_free')).toBeUndefined();
+        });
+
         it('should have all 6 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
-            // HOS-21 T-003: tourist 13→14)
+            // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added))
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
-            const touristCount = 14;
+            const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
 
             // Act & Assert

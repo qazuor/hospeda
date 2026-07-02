@@ -301,7 +301,7 @@ describe('migrateAddonPurchases', () => {
             // Query 2: billing_plans — resolves UUID to slug so ALL_PLANS lookup works.
             //   chain: select -> from -> where -> limit
             // name='owner-basico' maps to the canonical ALL_PLANS entry with
-            // max_photos_per_accommodation = 5 (basePlanLimit for owner-basico).
+            // max_photos_per_accommodation = 15 (basePlanLimit for owner-basico, HOS-16 recalibration).
             mockDbSelect.mockReturnValueOnce({
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
@@ -327,7 +327,7 @@ describe('migrateAddonPurchases', () => {
                 expect.objectContaining({
                     customerId: 'cust_456',
                     limitKey: 'max_photos_per_accommodation',
-                    maxValue: 25, // basePlanLimit(5) + limitIncrease(20)
+                    maxValue: 35, // basePlanLimit(15) + limitIncrease(20), HOS-16 recalibration
                     source: 'addon',
                     sourceId: 'purchase_limit_1'
                 })
@@ -401,7 +401,7 @@ describe('migrateAddonPurchases', () => {
             expect(mockLimitsSet).toHaveBeenCalledWith(
                 expect.objectContaining({
                     limitKey: 'max_photos_per_accommodation',
-                    maxValue: 25, // owner-basico basePlanLimit(5) + limitIncrease(20)
+                    maxValue: 35, // owner-basico basePlanLimit(15) + limitIncrease(20), HOS-16 recalibration
                     source: 'addon',
                     sourceId: 'purchase_regression_1'
                 })
@@ -485,7 +485,7 @@ describe('migrateAddonPurchases', () => {
                     entitlements: expect.arrayContaining(['publish_accommodations']),
                     limits: expect.objectContaining({
                         max_accommodations: 1,
-                        max_photos_per_accommodation: 5
+                        max_photos_per_accommodation: 15 // HOS-16 recalibration: owner-basico 5->15
                     })
                 })
             );

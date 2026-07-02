@@ -54,7 +54,6 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.SAVE_FAVORITES,
             EntitlementKey.WRITE_REVIEWS,
             EntitlementKey.READ_REVIEWS,
-            EntitlementKey.AD_FREE,
             EntitlementKey.PRICE_ALERTS,
             EntitlementKey.EXCLUSIVE_DEALS,
             EntitlementKey.VIP_SUPPORT,

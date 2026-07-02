@@ -123,6 +123,5 @@ Schedule quarterly audits to:
 
 ## Related Documentation
 
-- [SPEC-276](../../.qtm/specs/SPEC-276-feature-flag-system/spec.md) - Feature Flag System Specification
 - [API Documentation](../../apps/api/docs/route-architecture.md) - Admin API Routes
 - [Admin Panel Guide](../../apps/admin/docs/development/creating-pages.md) - Managing Flags via UI

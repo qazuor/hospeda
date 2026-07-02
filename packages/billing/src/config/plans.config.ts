@@ -53,7 +53,6 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
     EntitlementKey.SAVE_FAVORITES,
     EntitlementKey.WRITE_REVIEWS,
     EntitlementKey.READ_REVIEWS,
-    EntitlementKey.AD_FREE,
     EntitlementKey.PRICE_ALERTS,
     EntitlementKey.EXCLUSIVE_DEALS,
     EntitlementKey.VIP_SUPPORT,
@@ -85,7 +84,7 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
     limit(LimitKey.MAX_ACTIVE_ALERTS, -1),
-    limit(LimitKey.MAX_COMPARE_ITEMS, 4), // SPEC-288: capped (was -1); cascades to owner/complex
+    limit(LimitKey.MAX_COMPARE_ITEMS, 5), // HOS-16: was 4 (SPEC-288 originally capped from -1); cascades to owner/complex
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
@@ -119,6 +118,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CREATE_PROMOTIONS,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,
@@ -127,13 +127,13 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
-        limit(LimitKey.MAX_ACCOMMODATIONS, 1),
-        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200),
-        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 200)
+        limit(LimitKey.MAX_ACCOMMODATIONS, 1), // OQ-3: individual host
+        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15), // HOS-16: was 5
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 2), // HOS-16: was 0
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50), // HOS-16: was 20 (x5 ladder)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 50), // HOS-16: was 20 (x5 ladder)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200), // unchanged
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 10) // HOS-16: was 200, OQ-2 (one-off op)
         // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
         // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
@@ -177,13 +177,13 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
-        limit(LimitKey.MAX_ACCOMMODATIONS, 3),
-        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500),
-        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 500)
+        limit(LimitKey.MAX_ACCOMMODATIONS, 3), // unchanged
+        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30), // HOS-16: was 15
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5), // HOS-16: was 3
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 250), // HOS-16: was 100 (x5 ladder)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 250), // HOS-16: was 100 (x5 ladder)
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 1000), // HOS-16: was 500
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 50) // HOS-16: was 500
         // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
         // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
@@ -229,14 +229,17 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
-        limit(LimitKey.MAX_ACCOMMODATIONS, 10),
-        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
-        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 2000)
+        limit(LimitKey.MAX_ACCOMMODATIONS, 10), // unchanged
+        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50), // HOS-16: was 30
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited, unchanged
+        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1).
+        // HOS-16: normalizes the owner AI ladder to a uniform x5-per-tier
+        // (basico 50 -> pro 250 -> premium 1250). Chat DROPS from 2000 to 1250 —
+        // intentional; text-improve/translate/import all move upward.
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1250),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 1250),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 250)
         // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
         // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
@@ -256,7 +259,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: true,
     sortOrder: 1,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific
@@ -300,7 +303,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 2,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific
@@ -355,7 +358,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     trialDays: COMPLEX_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 3,
-    isActive: true,
+    isActive: false, // HOS-16: complex vertical not implemented; hidden but reversible
     entitlements: dedupe([
         ...TOURIST_VIP_ENTITLEMENTS,
         // complex-specific
@@ -419,14 +422,14 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     entitlements: [
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+        EntitlementKey.READ_REVIEWS
+        // can_view_recommendations moved to tourist-plus (HOS-16)
         // ai_chat removed from tourist plans (SPEC-211 T-003)
         // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, 3),
+        limit(LimitKey.MAX_FAVORITES, 5), // HOS-16: was 3
         // AI consumer quotas — entry tier (SPEC-283 §5). ai_chat stays
         // owner-governed; this consumer-side quota only caps the tourist's usage.
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 10),
@@ -437,7 +440,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
 export const TOURIST_PLUS_PLAN: PlanDefinition = {
     slug: 'tourist-plus',
     name: 'Plus',
-    description: 'Plus plan for frequent tourists. Ad-free experience and price alerts.',
+    description:
+        'Plus plan for frequent tourists. Compare accommodations, search history, and price alerts.',
     category: 'tourist',
     monthlyPriceArs: 500000, // ARS $5,000
     annualPriceArs: 5000000, // ARS $50,000/year
@@ -451,7 +455,6 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS,
-        EntitlementKey.AD_FREE,
         EntitlementKey.PRICE_ALERTS,
         EntitlementKey.EXCLUSIVE_DEALS,
         EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
@@ -465,9 +468,9 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_FAVORITES, 25), // HOS-16: was 20
         limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 2), // SPEC-288: Plus tier (was 4)
+        limit(LimitKey.MAX_COMPARE_ITEMS, 3), // HOS-16: was 2 (coord SPEC-288)
         // AI consumer quotas — mid tier (SPEC-283 §5).
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
         limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),

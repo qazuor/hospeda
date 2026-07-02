@@ -12,7 +12,7 @@ areas:
 # Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
 > Migrated from `.qtm/specs/SPEC-310-plan-packaging-recalibration/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-16.
-
+>
 > Discovery-first. Owner-driven product decision. This spec is the **single source of truth for the target packaging** of every billing plan. The implementation of the still-missing features is tracked as SEPARATE specs (see Roadmap), not here.
 
 ## Overview
@@ -143,9 +143,11 @@ Owner-side AI ladder = **×5 parejo**: text/chat 50/250/1250 · translate 200/10
 
 ## Open questions
 
-- **OQ-1**: `FEATURED_LISTING` in owner-basico — keep as pro upsell (recommended) or include in basico?
-- **OQ-2**: AI import basico = 10 (recommended, it's a one-off op) — acceptable or higher?
-- **OQ-3**: owner-basico `MAX_ACCOMMODATIONS` = 1 (recommended, individual host) or raise to 2?
+- **OQ-1** (Resolved): `FEATURED_LISTING` in owner-basico — kept as pro upsell (NOT included in basico). Target tables above already reflect this.
+- **OQ-2** (Resolved): AI import basico = **10** (it's a one-off op). Target tables above already reflect this.
+- **OQ-3** (Resolved): owner-basico `MAX_ACCOMMODATIONS` = **1** (individual host). Target tables above already reflect this.
+
+> Note: all 3 resolved with the recommended value after the owner did not respond to an in-session confirmation prompt (2026-07-02). The recommended values were already the ones baked into the target tables above, so this resolution changes documentation status only, not any numeric target. If the owner wants a different value for any of these before merge, flag it and re-open before implementation of the corresponding task (T-005/T-007 for OQ-1/OQ-3 area, T-007 for OQ-2).
 
 ## Related
 

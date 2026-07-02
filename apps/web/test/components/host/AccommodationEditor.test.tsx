@@ -14,7 +14,7 @@ import { AccommodationEditor } from '@/components/host/AccommodationEditor.clien
 import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -122,6 +122,30 @@ const DEFAULT_PROPS: AccommodationEditorProps = {
 // ---------------------------------------------------------------------------
 
 describe('AccommodationEditor', () => {
+    // ExternalReputationSection fetches its own data on mount; stub `fetch`
+    // so that unrelated call resolves cleanly instead of rendering its own
+    // `role="alert"` error banner, which collides with these tests' field
+    // validation assertions.
+    beforeEach(() => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    data: {
+                        listings: [],
+                        reputation: { showExternalReputation: false, aggregateFetchedAt: null }
+                    }
+                })
+            })
+        );
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('should render all section headings', () => {
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 

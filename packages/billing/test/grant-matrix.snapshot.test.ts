@@ -99,7 +99,8 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
             LimitKey.MAX_AI_SEARCH_PER_MONTH,
             LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
         ],
-        limitValues: [20, 20, 200, 200]
+        // HOS-16: text-improve/chat 20->50 (owner AI ladder x5 normalization)
+        limitValues: [50, 50, 200, 200]
     },
     'owner-pro': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
@@ -109,7 +110,8 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
             LimitKey.MAX_AI_SEARCH_PER_MONTH,
             LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
         ],
-        limitValues: [100, 100, 200, 200]
+        // HOS-16: text-improve/chat 100->250 (owner AI ladder x5 normalization)
+        limitValues: [250, 250, 200, 200]
     },
     'owner-premium': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
@@ -119,8 +121,10 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
             LimitKey.MAX_AI_SEARCH_PER_MONTH,
             LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
         ],
-        // Phase 0 §6.1: -1 replaced with finite values; SPEC-283 consumer quotas at 200
-        limitValues: [1000, 2000, 200, 200]
+        // Phase 0 §6.1: -1 replaced with finite values; SPEC-283 consumer quotas at 200.
+        // HOS-16: text-improve 1000->1250, chat 2000->1250 (DECREASE — intentional,
+        // normalizes the owner AI ladder to a uniform x5-per-tier: 50/250/1250).
+        limitValues: [1250, 1250, 200, 200]
     },
     'complex-basico': {
         grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],

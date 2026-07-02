@@ -253,10 +253,9 @@ export function useAdminTourState(): UseAdminTourStateReturn {
                         adminTours: updatedAdminTours
                     }
                 };
-                queryClient.setQueryData<UserProtected | null>(queryKey, {
-                    ...previous,
-                    settings: updatedSettings
-                });
+                queryClient.setQueryData(queryKey, (old) =>
+                    old ? { ...old, settings: updatedSettings } : old
+                );
             }
 
             return { previous };

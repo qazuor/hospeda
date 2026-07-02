@@ -373,8 +373,7 @@ describe('ChartWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('chart-widget');
-        expect(screen.getByTestId('chart-bars')).toBeInTheDocument();
+        expect(await screen.findByTestId('chart-bars')).toBeInTheDocument();
     });
 
     it('does not render the line or area container for chartType=bar', async () => {
@@ -412,8 +411,7 @@ describe('ChartWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('chart-widget');
-        expect(screen.getByTestId('chart-line')).toBeInTheDocument();
+        expect(await screen.findByTestId('chart-line')).toBeInTheDocument();
     });
 
     it('does not render the bar or area container for chartType=line', async () => {
@@ -451,8 +449,7 @@ describe('ChartWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('chart-widget');
-        expect(screen.getByTestId('chart-area')).toBeInTheDocument();
+        expect(await screen.findByTestId('chart-area')).toBeInTheDocument();
     });
 
     it('does not render the bar or line container for chartType=area', async () => {
@@ -490,7 +487,6 @@ describe('ChartWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('chart-widget');
-        expect(screen.getByTestId('chart-bars')).toBeInTheDocument();
+        expect(await screen.findByTestId('chart-bars')).toBeInTheDocument();
     });
 });

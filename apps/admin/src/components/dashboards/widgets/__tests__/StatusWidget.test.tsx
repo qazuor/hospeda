@@ -486,8 +486,7 @@ describe('StatusWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('status-widget');
-        expect(screen.getByTestId('status-indicator-dot')).toBeInTheDocument();
+        expect(await screen.findByTestId('status-indicator-dot')).toBeInTheDocument();
     });
 
     // ── Accessibility ─────────────────────────────────────────────────────
@@ -504,7 +503,8 @@ describe('StatusWidget', () => {
             </TestWrapper>
         );
 
-        const card = await screen.findByTestId('status-widget');
+        await screen.findByTestId('status-plan-name');
+        const card = screen.getByTestId('status-widget');
         expect(card).toHaveAttribute('aria-label', 'Estado del sistema: Healthy');
     });
 });
