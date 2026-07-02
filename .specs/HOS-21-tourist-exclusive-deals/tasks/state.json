@@ -78,35 +78,35 @@
             "id": "T-003",
             "title": "Wire VIP_PROMOTIONS_ACCESS entitlement metadata + plan assignment",
             "description": "In packages/billing/src/config/entitlements.config.ts, add the metadata entry for EntitlementKey.VIP_PROMOTIONS_ACCESS (label, description referencing VIP-only exclusive deals — do not reuse VIP_VISIBILITY_ACCESS's copy, this is a distinct perk). In packages/billing/src/config/plans.config.ts, assign it to the tourist-vip plan's entitlement list. Currently the enum member exists but has zero metadata and zero plan assignment (orphaned since the SPEC-286 rename) — this task fully activates it for this feature.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Add entitlements.config.ts entry for VIP_PROMOTIONS_ACCESS",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assign VIP_PROMOTIONS_ACCESS to the tourist-vip plan in plans.config.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: tourist-vip plan grants VIP_PROMOTIONS_ACCESS, tourist-plus plan does not",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements", "config"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:18:26Z",
+                "completed": "2026-07-02T09:26:16Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }
