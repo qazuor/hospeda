@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 28/30 tasks (93%)
+## Progress: 30/30 tasks (100%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -99,12 +99,12 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-017, T-018 · Blocks: T-030
 - [x] **T-028** (complexity: 2) - Tests — owner self-service toggle gate (T-019/T-020) [DONE]
   - Blocked by: T-020 · Blocks: T-030
-- [ ] **T-029** (complexity: 2) - Tests — reconcile cron per-accommodation addon drift (T-014)
+- [x] **T-029** (complexity: 2) - Tests — reconcile cron per-accommodation addon drift (T-014) [DONE]
   - Blocked by: T-014 · Blocks: T-030
 
 ### Docs Phase
 
-- [ ] **T-030** (complexity: 1) - Docs: cross-reference and close-out notes
+- [x] **T-030** (complexity: 1) - Docs: cross-reference and close-out notes [DONE]
   - Blocked by: T-021..T-029 (all 9 testing tasks) · Blocks: none
 
 ---

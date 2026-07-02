@@ -1137,37 +1137,49 @@
             "id": "T-029",
             "title": "Tests — reconcile cron per-accommodation addon drift (T-014)",
             "description": "Extend apps/api/test/cron/featured-by-plan-reconcile.test.ts (rename alongside T-014's file rename to featured-by-entitlement-reconcile.test.ts) with cases for the new per-accommodation addon-drift pass: (1) zero-drift fast path still makes no writes for either source; (2) plan-drift correction (existing SPEC-292 cases, regression-safe); (3) addon-drift correction: an accommodation whose addon grant is active but `featuredByEntitlement` is false gets corrected to true; (4) an accommodation whose addon grant expired but the column is still true (expiry hook missed) gets corrected to false, UNLESS the owner's plan grants it (compose with the plan-guard).\n\nKey files:\n- apps/api/test/cron/featured-by-entitlement-reconcile.test.ts (renamed)\n\nAcceptance criteria: all 4 cases pass; existing SPEC-292 owner-wide cases remain green.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/cron/featured-by-entitlement-reconcile.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Zero-drift fast path regression", "completed": false },
-                { "title": "Plan-drift correction regression", "completed": false },
-                { "title": "Addon-drift grant-missed correction", "completed": false },
+                { "title": "Zero-drift fast path regression", "completed": true },
+                { "title": "Plan-drift correction regression", "completed": true },
+                { "title": "Addon-drift grant-missed correction", "completed": true },
                 {
                     "title": "Addon-drift expiry-missed correction with plan-guard composition",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend", "cron", "billing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "featured-by-entitlement-reconcile.test.ts 12/12 (10 pre-existing SPEC-292/T-014 cases + 2 new T-029 expiry-composition cases). Cases 1-3 of the task's 4 required scenarios were already covered by T-014's own test authoring; only case 4 (expiry-missed via the plan-drift path composition) was net-new."
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Docs: cross-reference and close-out notes",
             "description": "Once all tasks above are green: leave a short cross-reference note documenting the SPEC-292 -> SPEC-309 relationship and the new architecture pieces for future readers. Suggested locations:\n\n- A short note in this spec's directory or in packages/db/CLAUDE.md / packages/billing/CLAUDE.md (whichever already documents the featured-listing mechanism, if any) pointing to: the `featuredByEntitlement` rename (OQ-1), the new `featured_listing_addon_grants` link table and its purpose (OQ-3 scoping), and the reconcile cron rename.\n- If CLAUDE.md's billing quick-reference section references `featuredByPlan` anywhere, update it to `featuredByEntitlement` and mention the addon-scoping mechanism briefly (1-2 lines), consistent with how the Promo code effect engine (SPEC-262) section is documented there.\n- Note the SPEC-320 absorption is already recorded in the indices; no further action needed there.\n\nAcceptance criteria: no dangling references to `featuredByPlan`/`syncFeaturedByPlan` remain in checked-in docs; the new mechanism is discoverable from CLAUDE.md or the nearest package CLAUDE.md.\n\nTesting requirements:\n- None (docs-only). Grep for `featuredByPlan` across `docs/` and `CLAUDE.md` files as a final check — zero hits expected outside historical/changelog references.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [
                 "T-021",
@@ -1184,20 +1196,36 @@
             "subtasks": [
                 {
                     "title": "Add/adjust CLAUDE.md reference for featuredByEntitlement + addon scoping",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Grep-verify no dangling featuredByPlan references in docs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the touched schema file — no fixes needed; CLAUDE.md is markdown, not biome-linted"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter @repo/schemas typecheck — clean (comment-only change)"
+                },
+                "tests": {
+                    "status": "n/a",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "docs-only task, no test requirement per description"
+                }
+            },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         }
     ],
