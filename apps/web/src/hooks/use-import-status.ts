@@ -152,6 +152,14 @@ export function useImportStatus(
             return;
         }
 
+        // Reset any settled state left over from a PREVIOUS run handle so a
+        // caller reusing this hook across sequential imports doesn't briefly
+        // see stale settle data before the fresh fetch resolves (HOS-50 T-013).
+        setSettled(false);
+        setDraft(null);
+        setFailureCode(null);
+        setError(null);
+
         // Initial fetch immediately on enable.
         setIsPolling(true);
         void fetchStatus(runHandle).then(({ ok, settled: firstSettled }) => {

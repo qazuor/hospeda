@@ -482,40 +482,41 @@
             "id": "T-013",
             "title": "Wire ImportFromUrl.client.tsx to the async polling flow",
             "description": "When importFromUrl responds 202, switch to polling mode via useImportStatus (T-012) instead of resolving immediately; keep the existing 'Importando...' spinner button state active throughout polling. On settle: success calls onImported?.() exactly as today; failure renders the existing i18n error-banner keyed by failureCode, unchanged. 200 responses (unchanged sources) behave identically to today.\n\nTest requirements: component tests — 200-response path unchanged (regression), 202->poll->settle-success calls onImported, 202->poll->settle-failure shows the error banner, unmount/cancel mid-poll doesn't update state after unmount.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-012"],
             "blocks": ["T-018"],
             "subtasks": [
                 {
                     "title": "Detect 202 response and switch to polling mode via useImportStatus",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep spinner active during polling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle settle-success (onImported) and settle-failure (error banner)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for the 4 scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "component", "import", "async"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T13:55:00Z",
+                "completed": "2026-07-02T14:40:00Z"
+            },
+            "summary": "Widened accommodationsImportApi.importFromUrl's return type to AccommodationImportResponse|AccommodationImportAsyncStartResponse (fetch's response.ok is true for both 200 and 202) and added an exported isAsyncImportStart() structural guard (checks 'runId' in data) in endpoints-protected.ts. ImportFromUrl.client.tsx now calls useImportStatus(runHandle, runHandle!==null); on a 202 it stores the run handle and returns early WITHOUT resetting isSubmitting (spinner stays active); a new settle-effect (guarded by a handledSettleRef to survive unrelated re-renders since the hook returns a fresh object each render) mirrors the sync 200 branch exactly: failureCode -> i18n error banner + onError, success -> notice + onImported. Found+fixed a real bug in T-012's use-import-status.ts: reused across sequential runs, the hook's settled/draft/failureCode state didn't reset when a NEW runHandle was passed, so a second import would briefly report the FIRST run's stale settle data before the fresh fetch resolved — fixed by resetting that state at the top of the enable effect, with a regression test. Fixed a test-mock gap (existing ImportFromUrl.test.tsx mocked endpoints-protected without isAsyncImportStart, breaking 5 tests when the component started calling it) by adding a structural-guard mock + a default IDLE useImportStatus mock in every beforeEach. 5 new component tests (regression, spinner-active, settle-success, settle-failure, unmount-mid-poll) + 1 hook regression test. All 19 pre-existing component tests and 11 pre-existing hook tests still pass."
         },
         {
             "id": "T-014",
@@ -734,9 +735,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.2
     }

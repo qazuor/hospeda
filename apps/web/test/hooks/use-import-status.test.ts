@@ -200,6 +200,40 @@ describe('useImportStatus', () => {
             expect(result.current.draft).toBeNull();
             expect(result.current.isPolling).toBe(false);
         });
+
+        it('resets settled/draft/failureCode when a new run handle is provided after a previous run settled', async () => {
+            // Arrange — first run settles with a failure.
+            vi.mocked(global.fetch).mockResolvedValue(makeOkResponse(makeStatusBody(true, true)));
+
+            const { result, rerender } = renderHook(
+                ({ handle }: { handle: ImportRunHandle }) => useImportStatus(handle, true),
+                { initialProps: { handle: RUN_HANDLE } }
+            );
+
+            await act(async () => {
+                await flushPromises();
+            });
+            expect(result.current.settled).toBe(true);
+            expect(result.current.failureCode).toBe('timeout');
+
+            // Act — a second, distinct run handle is provided (e.g. the host
+            // re-submitted a different URL); the second run has not settled yet.
+            vi.mocked(global.fetch).mockResolvedValue(makeOkResponse(makeStatusBody(false)));
+            const secondHandle: ImportRunHandle = { ...RUN_HANDLE, runId: 'run-second' };
+            rerender({ handle: secondHandle });
+
+            // Assert — immediately after the handle changes (before the fresh
+            // fetch resolves), stale settle data from the first run must NOT
+            // leak through.
+            expect(result.current.settled).toBe(false);
+            expect(result.current.failureCode).toBeNull();
+            expect(result.current.draft).toBeNull();
+
+            await act(async () => {
+                await flushPromises();
+            });
+            expect(result.current.settled).toBe(false);
+        });
     });
 
     // ── 3. Interval cleanup on unmount ──────────────────────────────────────
