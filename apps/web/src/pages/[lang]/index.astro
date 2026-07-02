@@ -1,8 +1,12 @@
 ---
 /**
  * @file Homepage
- * @description Static homepage rendered with BaseLayout for all supported locales.
+ * @description Homepage rendered with BaseLayout for all supported locales.
  * Renders all 10 content sections in alternating bg-background / bg-surface-warm order.
+ * @route /{lang}/
+ * @rendering SSR + Cloudflare cache (HOS-30 2.C — was prerender=true; the
+ * static-file path @astrojs/node uses for prerendered routes never re-invokes
+ * middleware, so the CSP header set there never reached real responses).
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
 import CategoryTiles from "@/components/CategoryTiles.astro";
@@ -35,13 +39,6 @@ import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
-import type { GetStaticPaths } from "astro";
-
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: "es" } }, { params: { lang: "en" } }, { params: { lang: "pt" } }];
-}) satisfies GetStaticPaths;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);

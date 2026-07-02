@@ -43,6 +43,7 @@ import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
 import { dbRestore } from './commands/db-restore.ts';
+import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSeed } from './commands/db-seed.ts';
 import { dbSuperAdminPass } from './commands/db-superadmin-pass.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
@@ -203,6 +204,15 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Wipes and repopulates the target DB — highly destructive.
         targetPolicy: 'explicit-required',
         run: dbSeed
+    },
+    {
+        name: 'db-seed-test-users',
+        summary:
+            'Additively seed the 13 SPEC-143 test-user accounts (role×plan matrix, staging only).',
+        // Writes rows (no reset) but creates dev-only login credentials —
+        // the operator must know which environment they are targeting.
+        targetPolicy: 'explicit-required',
+        run: dbSeedTestUsers
     },
     {
         name: 'db-superadmin-pass',

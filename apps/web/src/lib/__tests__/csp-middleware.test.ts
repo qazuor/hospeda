@@ -2,31 +2,37 @@
  * @file csp-middleware.test.ts
  * @description Unit tests for CSP header emission in the web middleware.
  *
- * SPEC-142 T-004 fixed a bug where prerendered pages (e.g. /es/) did not
- * receive the Content-Security-Policy-Report-Only header. Root cause: the
- * @astrojs/node adapter with `staticHeaders: true` does NOT set content-type
- * on the Response object returned from `next()` for prerendered pages (the
- * MIME type is set by the file server after the middleware pipeline). The fix
+ * SPEC-142 T-004 fixed a bug where prerendered pages did not receive the
+ * Content-Security-Policy-Report-Only header. Root cause: the @astrojs/node
+ * adapter with `staticHeaders: true` does NOT set content-type on the
+ * Response object returned from `next()` for prerendered pages (the MIME
+ * type is set by the file server after the middleware pipeline). The fix
  * introduces `context.isPrerendered` as a fallback signal so the CSP header
- * reaches static pages even when content-type is absent.
+ * reaches static pages even when content-type is absent. This fallback is
+ * still exercised by the app's other prerendered routes (nosotros, legal/*,
+ * faq, contacto, etc.) — see the "index.astro (home)" describe block below
+ * for the home-specific fix.
  *
  * Tests:
  * - Regression guard: middleware source contains the isPrerendered fallback.
  * - buildCspHeader is invokable without body context (prerendered case).
  * - The generated header satisfies minimum Phase-1 policy invariants.
  *
- * CAVEAT (HOS-30, 2026-07-02 — see
+ * HOS-30 2.C (2026-07-02, see
  * .specs/HOS-30-csp-phase-2-and-coverage/docs/2026-07-02-premise-corrections.md
- * item 1): the "prerendered CSP emission guard" tests below only assert that
- * specific strings appear in middleware.ts's SOURCE. They do NOT start a
- * real server or make an HTTP request, so they cannot prove — and do not
- * prove — that `/es/` (or any prerendered route) actually emits the header
- * over the wire. Verified live (staging curl) and locally (production build
- * + standalone Node server, bypassing any CDN/deploy staleness) that it does
- * NOT: `@astrojs/node`'s `staticHeaders: true` only forwards headers Astro's
- * native `security.csp` build feature registers; this app's hand-built
- * middleware CSP is invisible to that mechanism for prerendered routes. Do
- * not treat this file passing as evidence the home-CSP-header gap is closed.
+ * item 1): the "prerendered CSP emission guard" tests above only assert that
+ * specific strings appear in middleware.ts's SOURCE — they cannot prove a
+ * given route's response actually carries the header over the wire (that
+ * gap is exactly what let the home-page bug ship as "completed" originally).
+ * For `/es/` specifically, this is no longer a gap: home was moved OFF the
+ * prerendered path entirely (removed `export const prerender = true` from
+ * `pages/[lang]/index.astro`), so it now goes through the identical SSR code
+ * path as `/es/alojamientos/` and every other already-covered route — no
+ * `isPrerendered` fallback involved. Verified with a local production build
+ * + standalone Node server: `/es/` returns `content-security-policy-report-only`
+ * with no `Last-Modified`/`ETag` (the static-file fingerprints that used to
+ * appear instead). The regression guard below locks in that home stays off
+ * the prerendered path.
  */
 
 import { readFileSync } from 'node:fs';
@@ -35,6 +41,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCspHeader, generateCspNonce } from '../middleware-helpers';
 
 const MIDDLEWARE_SRC = readFileSync(resolve(__dirname, '../../middleware.ts'), 'utf8');
+const HOME_PAGE_SRC = readFileSync(resolve(__dirname, '../../pages/[lang]/index.astro'), 'utf8');
 
 // ---------------------------------------------------------------------------
 // Regression guard — SPEC-142 T-004 fix must stay in the middleware source
@@ -62,6 +69,20 @@ describe('middleware.ts — prerendered CSP emission guard (SPEC-142 T-004)', ()
         const cspSetIdx = MIDDLEWARE_SRC.indexOf('response.headers.set(CSP_HEADER_NAME');
         expect(bodyRewriteIdx).toBeGreaterThan(0);
         expect(cspSetIdx).toBeGreaterThan(bodyRewriteIdx);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// index.astro (home) — HOS-30 2.C regression guard
+// ---------------------------------------------------------------------------
+
+describe('pages/[lang]/index.astro (home) — stays off the prerendered path (HOS-30 2.C)', () => {
+    it('does not declare prerender = true', () => {
+        expect(HOME_PAGE_SRC).not.toContain('prerender = true');
+    });
+
+    it('does not declare getStaticPaths (only meaningful for prerendered routes)', () => {
+        expect(HOME_PAGE_SRC).not.toContain('getStaticPaths');
     });
 });
 
@@ -95,7 +116,7 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         expect(scriptSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('frame-src is none (will be updated in T-012 for MP Brick)', () => {
+    it('frame-src is none (MercadoPago checkout is a redirect, not an embedded Brick — no allowlist needed, see HOS-30 2.B)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe("frame-src 'none'");
