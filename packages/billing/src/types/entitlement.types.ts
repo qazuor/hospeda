@@ -33,7 +33,6 @@ export enum EntitlementKey {
     SAVE_FAVORITES = 'save_favorites',
     WRITE_REVIEWS = 'write_reviews',
     READ_REVIEWS = 'read_reviews',
-    AD_FREE = 'ad_free',
     PRICE_ALERTS = 'price_alerts',
     EXCLUSIVE_DEALS = 'exclusive_deals',
     VIP_SUPPORT = 'vip_support',
