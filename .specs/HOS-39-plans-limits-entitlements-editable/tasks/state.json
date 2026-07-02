@@ -781,7 +781,7 @@
             "id": "T-024",
             "title": "Reclassify entitlements/sortOrder/hasTrial/trialDays to commercial in Model C",
             "description": "In `packages/billing/src/config/model-c-field-split.ts`, change `entitlements`, `metadata.sortOrder`, `metadata.hasTrial`, `metadata.trialDays` from `'capability'` to `'commercial'` in `MODEL_C_FIELD_SPLIT`. Update the JSDoc on each entry to explain why: these fields are already editable via `PlanService.update()`/`PlanDialog.tsx` (shipped by SPEC-168), so the seed must stop overwriting them - DB wins, matching what the admin UI already implies. `category` and `isDefault` stay `capability` (see T-026 - they get removed from the editable surface instead of reclassified).\n\nTest requirements: run `packages/billing/test/model-c-field-split.test.ts` (the exhaustiveness guard) to confirm it still passes against the updated classification.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-025", "T-027"],
@@ -802,21 +802,21 @@
             "tags": ["billing", "config", "model-c", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T15:25:16.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:31:09Z",
+                "completed": "2026-07-02T15:37:19Z"
             }
         },
         {
             "id": "T-025",
             "title": "Stop seed sync from overwriting the 4 reclassified fields",
             "description": "In `packages/seed/src/required/billingPlans.seed.ts`'s `buildCapabilitySyncPayload()` (around lines 245-322): remove the `entitlements` capability-sync block (currently lines 253-255), and remove `'metadata.sortOrder'`, `'metadata.hasTrial'`, `'metadata.trialDays'` from the hardcoded `META_CAPABILITY_FIELDS` array (keep only `'metadata.category'` and `'metadata.isDefault'`, which stay capability). This closes the actual bug - the classification table alone (T-024) does not change sync behavior since this function has its own hardcoded field list.\n\nTest requirements: seed sync unit tests verifying that when a DB row's `entitlements`/`sortOrder`/`hasTrial`/`trialDays` diverge from config (simulating an operator edit), a seed re-run does NOT revert them - the previous behavior (revert) must now fail these tests without the fix.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": [],
@@ -837,14 +837,14 @@
             "tags": ["billing", "seed", "model-c", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T15:25:16.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:37:19Z",
+                "completed": "2026-07-02T15:37:19Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 14,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

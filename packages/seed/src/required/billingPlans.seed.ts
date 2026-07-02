@@ -250,9 +250,9 @@ function buildCapabilitySyncPayload(
     const payload: Record<string, unknown> = {};
     const capabilityFields = new Set(capabilityDiffs.map((d) => d.field));
 
-    if (capabilityFields.has('entitlements')) {
-        payload.entitlements = plan.entitlements as string[];
-    }
+    // `entitlements` is COMMERCIAL as of HOS-39 (2026-07-02) — the admin
+    // PlanDialog.tsx already lets operators edit it, so the seed must not
+    // sync it from config. No handling here; DB wins.
 
     if (capabilityFields.has('limitsKeysPresent')) {
         // Merge: start from DB values (preserving commercial values), then
@@ -278,13 +278,13 @@ function buildCapabilitySyncPayload(
     }
 
     // Metadata: only sync the capability sub-fields, leaving commercial ones
-    // (displayName, monthlyPriceArs, annualPriceArs) as-is.
+    // (displayName, monthlyPriceArs, annualPriceArs, sortOrder, hasTrial,
+    // trialDays — the last three reclassified to commercial by HOS-39,
+    // 2026-07-02, since the admin PlanDialog.tsx already lets operators edit
+    // them) as-is.
     const META_CAPABILITY_FIELDS: ReadonlyArray<ModelCField> = [
         'metadata.category',
-        'metadata.isDefault',
-        'metadata.sortOrder',
-        'metadata.hasTrial',
-        'metadata.trialDays'
+        'metadata.isDefault'
     ];
 
     const metaUpdate: Record<string, unknown> = {};
@@ -297,15 +297,6 @@ function buildCapabilitySyncPayload(
                 case 'metadata.isDefault':
                     metaUpdate.isDefault = plan.isDefault;
                     break;
-                case 'metadata.sortOrder':
-                    metaUpdate.sortOrder = plan.sortOrder;
-                    break;
-                case 'metadata.hasTrial':
-                    metaUpdate.hasTrial = plan.hasTrial;
-                    break;
-                case 'metadata.trialDays':
-                    metaUpdate.trialDays = plan.trialDays;
-                    break;
                 // no default: exhaustive over the capability metadata fields above
             }
         }
@@ -313,7 +304,8 @@ function buildCapabilitySyncPayload(
 
     if (Object.keys(metaUpdate).length > 0) {
         // Merge with the existing metadata to preserve commercial sub-fields
-        // (displayName, monthlyPriceArs, annualPriceArs, slug, monthlyPriceUsdRef).
+        // (displayName, monthlyPriceArs, annualPriceArs, sortOrder, hasTrial,
+        // trialDays, slug, monthlyPriceUsdRef).
         const existingMeta = (dbRow.metadata ?? {}) as Record<string, unknown>;
         payload.metadata = { ...existingMeta, ...metaUpdate };
     }

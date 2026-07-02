@@ -177,8 +177,8 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
     });
 
     describe('specific field classifications (§8.2 spec table)', () => {
-        it('entitlements is capability (config wins — propagated on deploy)', () => {
-            expect(MODEL_C_FIELD_SPLIT.entitlements).toBe('capability');
+        it('entitlements is commercial (HOS-39: operators toggle via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT.entitlements).toBe('commercial');
         });
 
         it('limitsKeysPresent is capability (structural — which keys exist)', () => {
@@ -217,16 +217,16 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
             expect(MODEL_C_FIELD_SPLIT['metadata.category']).toBe('capability');
         });
 
-        it('metadata.sortOrder is capability (structural — display ordering)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.sortOrder']).toBe('capability');
+        it('metadata.sortOrder is commercial (HOS-39: operators reorder via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.sortOrder']).toBe('commercial');
         });
 
-        it('metadata.hasTrial is capability (structural — trial availability)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.hasTrial']).toBe('capability');
+        it('metadata.hasTrial is commercial (HOS-39: operators toggle trial via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.hasTrial']).toBe('commercial');
         });
 
-        it('metadata.trialDays is capability (structural — trial duration)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.trialDays']).toBe('capability');
+        it('metadata.trialDays is commercial (HOS-39: operators edit trial length via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.trialDays']).toBe('commercial');
         });
 
         it('billing_prices.unitAmount is commercial (price = operator decision)', () => {
