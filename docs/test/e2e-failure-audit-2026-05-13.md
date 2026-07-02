@@ -153,3 +153,46 @@ changed `data?.some(...)` to `data?.bookmarks?.some(...)`.
 
 Cron re-enabled at `0 5 * * *` (02:00 ART = 05:00 UTC). Spec complete when 3 consecutive
 nightly runs succeed.
+
+---
+
+## Root Cause 3 — step order regression (found post-PR #1856, 2026-07-01)
+
+Every nightly run since reactivation (2026-06-28 → 2026-07-02, 5/5 runs) failed identically,
+never reaching the E2E suite:
+
+**Error:**
+
+```
+[1/26] 001-search-index.matview.sql ... FAIL
+  Error: relation "accommodations" does not exist
+```
+
+**Step:** `Apply Postgres extras`
+
+**Cause:** `.github/workflows/e2e-nightly.yml` ran `Apply Postgres extras` before
+`Push Drizzle schema to E2E database` — the extras SQL (matviews/CHECK constraints) reference
+tables the Drizzle push hasn't created yet. A second, unrelated regression shipped in the same
+window: the T-105-05 script-path fix pointed CI scripts at `scripts/*-validator.ts` when the
+real location is `scripts/ci/*-validator.ts`.
+
+**Fix:** commit `3c0fa4a1c` (PR #1972, merged to `staging` 2026-07-01) reorders the steps
+(schema push first, extras second) and corrects the script paths.
+
+**Promotion gap:** the nightly cron always runs against whatever is on `main` at trigger time
+(`headBranch: main` on every scheduled run — GitHub Actions resolves scheduled-workflow content
+from the repo's default branch, not `staging`). The fix landed on `staging` 2026-07-01 but
+wasn't promoted to `main` until PR #1986 (`chore: promote staging to main`), merged
+2026-07-02T06:49:20Z — 33 minutes _after_ that morning's nightly run (2026-07-02T06:16Z) had
+already failed against the pre-fix commit. Both the 2026-07-01 and 2026-07-02 runs used the same
+stale `main` commit (`eb6d43f`), predating the fix.
+
+**Status:** fix is on `main` as of 2026-07-02T06:49Z. No nightly run has exercised it yet — the
+next scheduled run (2026-07-03 ~05:00 UTC) is the first real test.
+
+**Process note:** any future infra fix to `e2e-nightly.yml` must be promoted `staging` → `main`
+before the next 05:00 UTC trigger to take effect, since the cron never reads `staging` directly.
+
+| Root cause | Type | Status |
+|---|---|---|
+| RC-3: `Apply Postgres extras` ran before schema push | Infra | ✅ Fixed on `main` (2026-07-02T06:49Z), unverified by a live run |
