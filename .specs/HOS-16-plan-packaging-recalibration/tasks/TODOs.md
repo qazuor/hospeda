@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 1/20 tasks (5%)
+## Progress: 3/20 tasks (15%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -17,13 +17,14 @@
 
 ### Core Phase
 
-- [ ] **T-002** (complexity: 2) - Remove AD_FREE from EntitlementKey enum and ENTITLEMENT_DEFINITIONS
+- [x] **T-002** (complexity: 2) - Remove AD_FREE from EntitlementKey enum and ENTITLEMENT_DEFINITIONS [DONE]
   - entitlement.types.ts:36 + entitlements.config.ts:160-163
   - Blocked by: none
   - Blocks: T-003, T-016
 
-- [ ] **T-003** (complexity: 2) - Remove AD_FREE from plan grants and its 2 consumers
+- [x] **T-003** (complexity: 2) - Remove AD_FREE from plan grants and its 2 consumers [DONE]
   - plans.config.ts (TOURIST_VIP_ENTITLEMENTS + TOURIST_PLUS_PLAN), tourist-entitlement-filter.ts, admin plan-entitlement-groups.ts
+  - Also cleaned 5 more residual AD_FREE refs found opportunistically: 2 api/admin test fixtures, 3 i18n locale JSONs (+ regenerated types.ts)
   - Blocked by: T-002
   - Blocks: T-014, T-016
 

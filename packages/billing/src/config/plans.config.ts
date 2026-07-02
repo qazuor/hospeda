@@ -53,7 +53,6 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
     EntitlementKey.SAVE_FAVORITES,
     EntitlementKey.WRITE_REVIEWS,
     EntitlementKey.READ_REVIEWS,
-    EntitlementKey.AD_FREE,
     EntitlementKey.PRICE_ALERTS,
     EntitlementKey.EXCLUSIVE_DEALS,
     EntitlementKey.VIP_SUPPORT,
@@ -436,7 +435,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
 export const TOURIST_PLUS_PLAN: PlanDefinition = {
     slug: 'tourist-plus',
     name: 'Plus',
-    description: 'Plus plan for frequent tourists. Ad-free experience and price alerts.',
+    description:
+        'Plus plan for frequent tourists. Compare accommodations, search history, and price alerts.',
     category: 'tourist',
     monthlyPriceArs: 500000, // ARS $5,000
     annualPriceArs: 5000000, // ARS $50,000/year
@@ -450,7 +450,6 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS,
-        EntitlementKey.AD_FREE,
         EntitlementKey.PRICE_ALERTS,
         EntitlementKey.EXCLUSIVE_DEALS,
         EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,

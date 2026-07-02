@@ -47,74 +47,96 @@
             "id": "T-002",
             "title": "Remove AD_FREE from EntitlementKey enum and ENTITLEMENT_DEFINITIONS",
             "description": "Delete the `AD_FREE = 'ad_free'` member from `packages/billing/src/types/entitlement.types.ts:36`. Delete its matching entry from `ENTITLEMENT_DEFINITIONS` in `packages/billing/src/config/entitlements.config.ts:160-163`. There is no exhaustive switch over EntitlementKey, so this alone will not break the build — but plans.config.ts and 2 app files still reference it (handled in T-003). Tests: update `packages/billing/test/entitlements.test.ts` category counts (tourist 13->12, total 39->38) and the 'no dupes / completeness' assertions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003", "T-016"],
             "subtasks": [
                 {
                     "title": "Remove AD_FREE from EntitlementKey enum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove AD_FREE from ENTITLEMENT_DEFINITIONS",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update entitlements.test.ts category counts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z",
+                    "details": "scoped: @repo/billing, hospeda-api, admin, @repo/i18n"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z",
+                    "details": "@repo/billing 522/522, admin plan-dialog 18/18, api entitlement-plan.cutover 10/10, @repo/i18n 752/752"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:15:45Z",
+                "completed": "2026-07-02T08:26:17Z"
             }
         },
         {
             "id": "T-003",
             "title": "Remove AD_FREE from plan grants and its 2 consumers",
             "description": "Remove `EntitlementKey.AD_FREE` from `TOURIST_VIP_ENTITLEMENTS` (`packages/billing/src/config/plans.config.ts:56` — this shared constant is inherited by tourist-vip AND all 6 owner/complex plans via dedupe-spread, so this single edit removes it everywhere except tourist-plus) and from `TOURIST_PLUS_PLAN.entitlements` (`plans.config.ts:453`). Then update the 2 consumers: `apps/api/src/utils/tourist-entitlement-filter.ts` (lines 109 and 275) — remove the `hasEntitlement(c, EntitlementKey.AD_FREE)` gate; confirm whether the surrounding ad-filtering branch becomes fully dead code (no ad system exists per spec motivation) and remove it if so, or leave a narrower no-op if other logic in that block is still load-bearing. `apps/admin/src/features/billing-plans/components/plan-entitlement-groups.ts:57` — drop AD_FREE from its grouping list. Tests: update `packages/billing/test/owner-inherits-tourist.test.ts` (inherited-entitlement-count assertions shrink by 1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-014", "T-016"],
             "subtasks": [
                 {
                     "title": "Remove AD_FREE from TOURIST_VIP_ENTITLEMENTS and TOURIST_PLUS_PLAN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Clean up tourist-entitlement-filter.ts AD_FREE gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Clean up admin plan-entitlement-groups.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update owner-inherits-tourist.test.ts counts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements", "api", "admin"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z",
+                    "details": "scoped: @repo/billing, hospeda-api, admin, @repo/i18n"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:26:17Z",
+                    "details": "@repo/billing 522/522, admin plan-dialog 18/18, api entitlement-plan.cutover 10/10, @repo/i18n 752/752"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:16:52Z",
+                "completed": "2026-07-02T08:26:17Z"
             }
         },
         {
@@ -679,9 +701,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 19,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 1.6
     }

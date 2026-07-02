@@ -325,7 +325,6 @@ describe('SPEC-288 T-005 — POST /api/v1/protected/accommodations/compare gates
                 'save_favorites',
                 'write_reviews',
                 'read_reviews',
-                'ad_free',
                 E.CAN_COMPARE_ACCOMMODATIONS
             ],
             limits: { [L.MAX_COMPARE_ITEMS]: 4 }

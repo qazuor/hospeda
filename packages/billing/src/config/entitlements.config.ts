@@ -157,11 +157,6 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description: 'Access to read reviews from other guests'
     },
     {
-        key: EntitlementKey.AD_FREE,
-        name: 'Ad-free',
-        description: 'Ad-free browsing experience'
-    },
-    {
         key: EntitlementKey.PRICE_ALERTS,
         name: 'Price alerts',
         description: 'Notifications when favorite accommodation prices drop'
