@@ -452,7 +452,10 @@ export async function createPlan(
                     entitlements: input.entitlements as string[],
                     limits: input.limits,
                     livemode,
-                    metadata
+                    metadata,
+                    displayName: input.name,
+                    monthlyPriceArs: input.monthlyPriceArs,
+                    annualPriceArs: input.annualPriceArs
                 })
                 .returning();
 

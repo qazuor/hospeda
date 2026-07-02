@@ -696,6 +696,32 @@ describe('plan.crud', () => {
             expect(mockWithTransaction).not.toHaveBeenCalled();
         });
 
+        it('HOS-39 T-003: writes displayName/monthlyPriceArs/annualPriceArs to the typed columns', async () => {
+            // Arrange
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                    return fn(insertedDb);
+                }
+            );
+
+            // Act
+            await createPlan(baseInput);
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            expect(insertChain?.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    displayName: baseInput.name,
+                    monthlyPriceArs: baseInput.monthlyPriceArs,
+                    annualPriceArs: baseInput.annualPriceArs
+                })
+            );
+        });
+
         it('should return ALREADY_EXISTS when slug is duplicate', async () => {
             // Arrange
             mockWithTransaction.mockImplementation(
