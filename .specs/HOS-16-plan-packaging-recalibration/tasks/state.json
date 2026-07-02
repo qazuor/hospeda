@@ -365,31 +365,41 @@
             "id": "T-009",
             "title": "Recalibrate owner-premium limits (incl. AI chat decrease)",
             "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_PREMIUM_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 30->50, MAX_AI_TEXT_IMPROVE_PER_MONTH 1000->1250, MAX_AI_CHAT_PER_MONTH 2000->1250 (this is a DECREASE — intentional, spec normalizes the owner-side AI ladder to a uniform x5-per-tier progression: text/chat 50/250/1250, translate 200/1000/5000, import 10/50/250; see spec Risks table 'few/no real owner subs pre-go-live, net change mostly upward' — this is the one exception, call it out explicitly in the PR description), MAX_AI_TRANSLATE_PER_MONTH 2000->5000, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 2000->250. MAX_ACCOMMODATIONS stays 10, MAX_ACTIVE_PROMOTIONS stays -1 (unlimited) — no change to either. Tests: grant-matrix.snapshot.test.ts EXPECTED_AI_MATRIX for owner-premium (make sure the chat DECREASE to 1250 is the asserted value, not left at 2000).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-013", "T-014", "T-018"],
             "subtasks": [
                 {
                     "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=50",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set AI text-improve=1250, chat=1250 (decrease), translate=5000, import=250",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "limits"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:51:09Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:51:09Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:51:09Z",
+                    "details": "@repo/billing 544/544"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:49:43Z",
+                "completed": "2026-07-02T08:51:09Z"
             }
         },
         {
@@ -752,9 +762,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.6
     }

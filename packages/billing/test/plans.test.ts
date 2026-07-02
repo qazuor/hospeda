@@ -4,6 +4,7 @@ import {
     COMPLEX_BASICO_PLAN,
     COMPLEX_PREMIUM_PLAN,
     OWNER_BASICO_PLAN,
+    OWNER_PREMIUM_PLAN,
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
@@ -420,6 +421,42 @@ describe('Plan Configuration', () => {
 
         it('MAX_ACCOMMODATIONS stays 3 (unchanged)', () => {
             expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(3);
+        });
+    });
+
+    describe('Owner-premium limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 50 (was 30)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(50);
+        });
+
+        it('MAX_AI_TEXT_IMPROVE_PER_MONTH = 1250 (was 1000)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(
+                1250
+            );
+        });
+
+        it('MAX_AI_CHAT_PER_MONTH = 1250 — intentional DECREASE from 2000 (x5 ladder normalization)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(1250);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH = 5000 (was 2000)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(5000);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 250 (was 2000)', () => {
+            expect(
+                limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)
+            ).toBe(250);
+        });
+
+        it('MAX_ACCOMMODATIONS stays 10 and MAX_ACTIVE_PROMOTIONS stays unlimited (-1)', () => {
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(10);
+            expect(limitValue(OWNER_PREMIUM_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(-1);
         });
     });
 

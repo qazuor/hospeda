@@ -228,14 +228,17 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
     limits: mergeLimits(TOURIST_VIP_LIMITS, [
-        limit(LimitKey.MAX_ACCOMMODATIONS, 10),
-        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
-        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 2000)
+        limit(LimitKey.MAX_ACCOMMODATIONS, 10), // unchanged
+        limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50), // HOS-16: was 30
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited, unchanged
+        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1).
+        // HOS-16: normalizes the owner AI ladder to a uniform x5-per-tier
+        // (basico 50 -> pro 250 -> premium 1250). Chat DROPS from 2000 to 1250 —
+        // intentional; text-improve/translate/import all move upward.
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1250),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 1250),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000),
+        limit(LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH, 250)
         // AI search + consumer-chat quotas inherited at 200 from TOURIST_VIP_LIMITS
         // (SPEC-283 consumer tier). MAX_AI_CHAT_PER_MONTH above is the owner-side cost cap.
     ])
