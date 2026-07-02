@@ -45,7 +45,19 @@ This spec builds owner replies to accommodation reviews.
 
 - **OQ-1** One reply per review vs editable/threaded.
 - **OQ-2** Moderation: are owner replies moderated like reviews?
+- **OQ-3** Should the tourist who wrote the review be notified when the owner
+  responds, and on which channel (email, in-app)?
 
 ## 6. Relationship to SPEC-282
 
 The "Responder reseñas" row stays *Próximamente* until this ships.
+
+## 7. Related
+
+- **SPEC-317** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `RESPOND_REVIEWS`/
+  `gateReviewResponse` phantom gate). Consolidated into this spec on
+  2026-07-01 (folded in OQ-3, the reviewer-notification question); marked
+  `obsolete` in the tracking indices.
+- **SPEC-311** (WhatsApp contact) — sibling owner-basico+ feature in the same
+  tier block.

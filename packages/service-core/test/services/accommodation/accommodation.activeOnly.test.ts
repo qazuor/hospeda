@@ -97,7 +97,7 @@ function makeVipActor(): Actor {
         type: 'user',
         role: RoleEnum.USER,
         permissions: [],
-        entitlements: new Set(['vip_promotions_access'])
+        entitlements: new Set(['vip_visibility_access'])
     } as Actor;
 }
 
@@ -215,7 +215,7 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
     // VIP / staff scope — activeOnly must be false
     // =========================================================================
 
-    describe('VIP actor (vip_promotions_access entitlement)', () => {
+    describe('VIP actor (vip_visibility_access entitlement)', () => {
         it('passes activeOnly=false so VIP users see all lifecycle states', async () => {
             // Arrange
             const actor = makeVipActor();

@@ -109,11 +109,12 @@ export function LocationMapInner(props: LocationMapProps) {
     };
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; role="group" is the correct ARIA for an interactive map widget that contains focusable Leaflet controls.
         <div
+            role="group"
             ref={containerRef}
             className={mapRoot}
             aria-label={ariaLabel}
-            role="img"
         >
             <div className={styles.mapWrapper}>
                 <MapContainer

@@ -11,6 +11,12 @@ on:
   # Cron re-enabled 2026-06-25 (SPEC-105 T-105-06).
   # Infra drift (RC-1 wrong filter + RC-2 stale script paths) fixed.
   # Schema/API drift in 4 test assertions fixed (T-105-04).
+  # 2026-07-01: T-105-06's own RC-2 fix regressed (paths pointed at
+  # scripts/*-validator.ts, real location is scripts/ci/*-validator.ts) and
+  # "Apply Postgres extras" ran before the schema push, so both the CI
+  # scripts step and the extras step failed on every run since reactivation
+  # (4 consecutive nightly failures, 2026-06-28..07-01). Fixed: step order
+  # swapped, script paths corrected.
   # Schedule: 05:00 UTC = 02:00 ART — 4 h before daily backup window.
   schedule:
     - cron: '0 5 * * *'
@@ -124,7 +130,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -140,13 +146,13 @@ jobs:
       - name: Build apps
         run: pnpm exec turbo run build --filter=hospeda-api --filter=admin --filter=hospeda-web
 
-      - name: Apply Postgres extras
-        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
-
       - name: Push Drizzle schema to E2E database
         run: pnpm --filter @repo/db db:push
         env:
           HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
+
+      - name: Apply Postgres extras
+        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
 
       - name: Seed E2E database
         run: pnpm --filter hospeda-e2e e2e:seed
@@ -165,8 +171,8 @@ jobs:
         if: always()
         run: |
           bash scripts/check-unsafe-ilike.sh
-          pnpm exec tsx scripts/seo-validator.ts
-          pnpm exec tsx scripts/sitemap-validator.ts
+          pnpm exec tsx scripts/ci/seo-validator.ts
+          pnpm exec tsx scripts/ci/sitemap-validator.ts
 
       - name: Upload Playwright HTML report
         if: always()

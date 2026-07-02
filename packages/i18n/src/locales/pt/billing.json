@@ -235,7 +235,15 @@
             "comp": "Grátis para sempre",
             "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
             "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
-            "errorGeneric": "Não conseguimos verificar o código. Tente novamente."
+            "errorGeneric": "Não conseguimos verificar o código. Tente novamente.",
+            "errorNotFound": "Não encontramos esse código. Verifique se está escrito corretamente.",
+            "errorInactive": "Este código não está mais ativo.",
+            "errorExpired": "Este código expirou.",
+            "errorMaxUses": "Este código atingiu seu limite de usos.",
+            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
+            "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
+            "errorNewUsersOnly": "Este código é apenas para novos clientes.",
+            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código."
         }
     },
     "limit": {
@@ -458,7 +466,7 @@
         "price_alerts": "Alertas de preço",
         "exclusive_deals": "Ofertas exclusivas",
         "vip_support": "Suporte VIP",
-        "vip_promotions_access": "Acesso a promoções VIP",
+        "vip_visibility_access": "Acesso VIP de visibilidade",
         "can_compare_accommodations": "Comparar hospedagens",
         "can_attach_review_photos": "Enviar fotos nas avaliações",
         "can_view_search_history": "Ver histórico de buscas",

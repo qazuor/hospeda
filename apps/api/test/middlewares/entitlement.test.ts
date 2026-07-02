@@ -32,6 +32,7 @@ import {
 import { createErrorHandler } from '../../src/middlewares/response';
 import {
     gateAlerts,
+    gateCollections,
     gateComparator,
     gateExclusiveDeals,
     gateFavorites,
@@ -2583,6 +2584,38 @@ describe('Tourist Entitlement Gates', () => {
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('historial de búsqueda');
+        });
+    });
+
+    describe('gateCollections', () => {
+        it('should allow using collections when user has entitlement', async () => {
+            const collectionsEntitlement = 'can_use_collections' as EntitlementKey;
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set([collectionsEntitlement]));
+                return next();
+            });
+            app.use(gateCollections());
+            app.get('/collections', (c) => c.json({ collections: [] }));
+
+            const res = await app.request('/collections');
+            expect(res.status).toBe(200);
+        });
+
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateCollections());
+            app.get('/collections', (c) => c.json({ collections: [] }));
+            app.onError(createErrorHandler());
+
+            const res = await app.request('/collections');
+            expect(res.status).toBe(403);
+
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.message).toContain('colecciones');
         });
     });
 

@@ -826,14 +826,42 @@ export function createDbMock() {
         SocialPublishLogModel: GenericMockModel,
         SocialSettingModel: GenericMockModel,
 
+        // SPEC-286 T-005: AlertSubscriptionService instantiates
+        // `new TouristPriceAlertModel()` at construction time when the
+        // price-alert route module is loaded, same collection-breaking risk
+        // as the other eagerly-instantiated models above.
+        TouristPriceAlertModel: GenericMockModel,
+
         // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
         // instantiate at module scope when the service-core barrel is loaded by any job
         // that imports @repo/service-core. The instance is returned directly (not a class)
         // because entityViewModel is a singleton, not a constructor.
+        // getRecentlyViewedByUser added SPEC-284 T-001 — RecommendationService default-
+        // injects this singleton at module scope, same collection-breaking risk as above.
         entityViewModel: {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
-            purgeOlderThan: vi.fn().mockResolvedValue(0)
+            purgeOlderThan: vi.fn().mockResolvedValue(0),
+            getRecentlyViewedByUser: vi.fn().mockResolvedValue({ accommodationIds: [] })
+        },
+
+        // SPEC-284: accommodationModel/destinationModel/userBookmarkModel singleton
+        // instances. RecommendationService default-injects all three at module scope
+        // (`accommodationModel as defaultAccommodationModel`, etc. from '@repo/db'), so
+        // once the service-core barrel re-exports RecommendationService (T-006), every
+        // route/job test that mocks '@repo/db' loads this module transitively and needs
+        // these exports to exist. Return shapes mirror the real model methods used:
+        // findTopRated → Accommodation[]; findAllWithRelations/findAll → {items, total};
+        // findByIds → T[].
+        accommodationModel: {
+            findTopRated: vi.fn().mockResolvedValue([]),
+            findAllWithRelations: vi.fn().mockResolvedValue({ items: [], total: 0 })
+        },
+        destinationModel: {
+            findByIds: vi.fn().mockResolvedValue([])
+        },
+        userBookmarkModel: {
+            findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
         },
 
         // SPEC-243 T-011: UserPushTokenModel singleton. Required so UserService can

@@ -59,6 +59,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'alerts-digest',
+        displayName: 'Digest de alertas y ofertas',
+        category: 'notifications',
+        schedule: '0 8 * * *',
+        description:
+            'Send the daily price-drop and promo-offer digest email to subscribed tourists.'
+    },
+    {
         name: 'app-log-purge',
         displayName: 'Purga de logs de aplicación',
         category: 'system',

@@ -145,6 +145,21 @@ export const createBasicInfoConsolidatedSection = (
             typeConfig: {}
         },
         {
+            id: 'isVerified',
+            type: FieldTypeEnum.SWITCH,
+            required: false,
+            modes: ['view', 'edit'],
+            label: t('fields.accommodation.isVerified.label'),
+            description: t('fields.accommodation.isVerified.description'),
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_VERIFY]
+            },
+            // No entitlementKey: verification is an admin-only action gated by
+            // ACCOMMODATION_VERIFY, not by the owner's plan (SPEC-291).
+            typeConfig: {}
+        },
+        {
             id: 'destinationId',
             type: FieldTypeEnum.DESTINATION_SELECT,
             required: true,

@@ -35,67 +35,44 @@ const createGastronomyIdentityFields = () => ({
 });
 
 /**
- * Creates opening hours in the expected format.
+ * Creates opening hours in the format expected by OpeningHoursSchema.
+ * Uses `days` with three-letter keys (mon–sun) and DaySchedule objects
+ * ({ closed, shifts }), matching the schema exactly.
  */
 const createOpeningHoursFields = () => ({
     openingHours: faker.helpers.maybe(
         () => ({
-            monday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            tuesday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            wednesday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            thursday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            friday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '23:59',
-                    isClosed: false
-                }),
-                { probability: 0.9 }
-            ),
-            saturday: faker.helpers.maybe(
-                () => ({
-                    open: '11:00',
-                    close: '23:59',
-                    isClosed: false
-                }),
-                { probability: 0.9 }
-            ),
-            sunday: faker.helpers.maybe(
-                () => ({
-                    open: '11:00',
-                    close: '20:00',
-                    isClosed: faker.datatype.boolean({ probability: 0.3 })
-                }),
-                { probability: 0.7 }
-            )
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: {
+                mon: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                tue: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                wed: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                thu: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                fri: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '23:59' }]
+                },
+                sat: {
+                    closed: faker.datatype.boolean({ probability: 0.2 }),
+                    shifts: [{ open: '11:00', close: '23:59' }]
+                },
+                sun: {
+                    closed: faker.datatype.boolean({ probability: 0.3 }),
+                    shifts: [{ open: '11:00', close: '20:00' }]
+                }
+            }
         }),
         { probability: 0.7 }
     )

@@ -182,7 +182,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
 
     if (entity.visibility === 'RESTRICTED') {
         if (
-            actor.entitlements?.has('vip_promotions_access') ||
+            actor.entitlements?.has('vip_visibility_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
             isOwner(actor, entity)
         ) {
@@ -256,6 +256,25 @@ export function checkCanFindOptions(actor: Actor): void {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: admin panel access required for options lookup'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to verify or unverify an accommodation (SPEC-291).
+ *
+ * This is a sensitive admin-only operation that requires `ACCOMMODATION_VERIFY`.
+ * There is no `_OWN` equivalent — the verification badge is an admin-trust signal and
+ * must never be self-applied by the owner.
+ *
+ * @param actor The actor performing the action.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks `ACCOMMODATION_VERIFY`.
+ */
+export function checkCanVerify(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_VERIFY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied to verify accommodation'
         );
     }
 }

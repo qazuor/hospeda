@@ -15,6 +15,7 @@
 
 // Import job definitions
 export { abandonedPendingSubsJob } from './abandoned-pending-subs.job.js';
+export { alertsDigestJob } from './alerts-digest.job.js';
 export { trialExpiryJob } from './trial-expiry.js';
 export { trialPreEndNotifJob } from './trial-pre-end-notif.job.js';
 export { webhookRetryJob } from './webhook-retry.job.js';

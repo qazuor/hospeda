@@ -44,6 +44,24 @@ vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
 
+/**
+ * Mock gateCollections (CAN_USE_COLLECTIONS entitlement gate, SPEC-287) to
+ * always pass through. Entitlement gating is already tested by
+ * entitlement.test.ts; these tests only care about the route business logic.
+ * Uses importOriginal so every OTHER gate exported by this module (imported
+ * by unrelated routes in the app graph loaded via initApp()) stays real.
+ */
+vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
+    return {
+        ...actual,
+        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
+            await next();
+        }
+    };
+});
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COLLECTION_BASE = '/api/v1/protected/user-bookmark-collections';
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';

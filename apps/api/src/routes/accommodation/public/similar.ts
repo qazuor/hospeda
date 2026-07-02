@@ -8,6 +8,9 @@ import { ServiceError } from '@repo/service-core';
 import { type SQL, and, desc, eq, ne, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+import type { AccommodationData } from '../../../utils/entitlement-filter';
+import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -102,6 +105,11 @@ export const publicGetSimilarRoute = createPublicRoute({
                 description: true,
                 type: true,
                 isFeatured: true,
+                // SPEC-291 Phase 3b: select isVerified so the badge gate can read the
+                // real DB value. Previously omitted → defaulted to false by stripWithSchema
+                // regardless of the actual DB value. Now selected so the gate can surface
+                // true for entitled owners and force false for non-entitled owners.
+                isVerified: true,
                 averageRating: true,
                 reviewsCount: true,
                 media: true,
@@ -160,7 +168,7 @@ export const publicGetSimilarRoute = createPublicRoute({
         // it. We strip it explicitly here as a second layer of defense (the DB
         // projection above is the first layer — this ensures the field is absent
         // even if the query layer changes or is mocked in tests).
-        return rows.map((row) => {
+        const mappedRows = rows.map((row) => {
             const {
                 destination,
                 richDescription: _droppedRich,
@@ -171,6 +179,23 @@ export const publicGetSimilarRoute = createPublicRoute({
             };
             return destination ? { ...rest, cityDestination: destination } : rest;
         });
+
+        // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
+        // Collect unique ownerIds for this page, resolve entitlements in ONE batch
+        // query, then apply the gate synchronously. Fail-closed: owners absent from
+        // the map (e.g. billing lookup failed) have isVerified forced to false.
+        const uniqueOwnerIds = [
+            ...new Set(
+                mappedRows
+                    .map((r) => (r as { ownerId?: string }).ownerId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
+        return filterAccommodationListByOwnerEntitlements(
+            mappedRows as AccommodationData[],
+            ownerEntitlementsMap
+        );
     },
     options: {
         cacheTTL: 300,

@@ -46,3 +46,15 @@ This spec defines and builds custom branding for premium owners.
 ## 6. Relationship to SPEC-282
 
 The "Branding personalizado" row stays *Próximamente* until this ships.
+
+## 7. Related
+
+- **SPEC-319** (Accommodation Verification Badge, Premium) — the other real
+  owner-premium exclusive identified by the SPEC-310 plan-packaging audit.
+  Today owner-premium has no tangible differentiators; these two features
+  should be planned together to define the full premium-tier value
+  proposition.
+- **SPEC-318** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `CUSTOM_BRANDING` phantom
+  gate). Consolidated into this spec on 2026-07-01; marked `obsolete` in the
+  tracking indices.

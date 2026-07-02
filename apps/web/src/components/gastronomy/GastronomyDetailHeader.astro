@@ -162,7 +162,7 @@ const isNew = gastronomy.createdAt
         padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--brand-primary-a12);
-        color: var(--brand-primary);
+        color: var(--brand-primary-link);
         border: 1px solid var(--brand-primary-a25);
         font-family: var(--font-sans);
         font-size: 13px;
@@ -176,7 +176,7 @@ const isNew = gastronomy.createdAt
         padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--brand-accent-a12);
-        color: var(--brand-accent);
+        color: var(--brand-accent-text);
         border: 1px solid var(--brand-accent-a25);
         font-family: var(--font-sans);
         font-size: 13px;
@@ -190,7 +190,9 @@ const isNew = gastronomy.createdAt
         padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--hospeda-forest);
-        color: var(--primary-foreground);
+        /* SPEC-308: white ink on the saturated green badge (primary-foreground
+           flips to dark in dark mode and fails AA on green). */
+        color: white;
         font-family: var(--font-sans);
         font-size: 13px;
         font-weight: 600;

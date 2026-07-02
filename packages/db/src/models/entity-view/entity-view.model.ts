@@ -27,7 +27,7 @@
  * @see SPEC-159 tech-analysis §4–§5
  */
 
-import type { EntityViewStats, TrackableEntityType } from '@repo/schemas';
+import { EntityTypeEnum, type EntityViewStats, type TrackableEntityType } from '@repo/schemas';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { entityViews } from '../../schemas/entity-view/entity_view.dbschema.ts';
@@ -168,6 +168,28 @@ export interface AdminSummaryTotalsRow {
 }
 
 /**
+ * Input to retrieve the accommodations a user recently viewed (SPEC-284 §5.6).
+ */
+export interface GetRecentlyViewedByUserInput {
+    /**
+     * UUID of the authenticated user, as stored in `visitor_hash` for logged-in
+     * viewers (`'user:<uuid>'` — see {@link InsertViewInput.visitorHash}).
+     */
+    readonly userId: string;
+}
+
+/**
+ * Result of {@link EntityViewModel.getRecentlyViewedByUser}.
+ */
+export interface RecentlyViewedByUserResult {
+    /**
+     * Distinct accommodation UUIDs the user viewed in the last 30 days,
+     * ordered by most recent view first (deduplicated by entity, capped at 25).
+     */
+    readonly accommodationIds: readonly string[];
+}
+
+/**
  * Input to purge telemetry rows older than a given threshold.
  */
 export interface PurgeOlderThanInput {
@@ -222,6 +244,16 @@ interface RawSummaryTotalsRow extends Record<string, unknown> {
     entityType: string;
     unique: string | number;
     total: string | number;
+}
+
+/**
+ * Raw shape of one row returned by the `getRecentlyViewedByUser` query.
+ * `lastViewedAt` is only used for ORDER BY / debugging — it is not surfaced
+ * in {@link RecentlyViewedByUserResult}.
+ */
+interface RawRecentlyViewedRow extends Record<string, unknown> {
+    entityId: string;
+    lastViewedAt: string | Date;
 }
 
 // ─── Model ───────────────────────────────────────────────────────────────────
@@ -799,6 +831,85 @@ export class EntityViewModel {
                 logError('entityViews', 'getAdminSummaryTotals', logContext, err);
             } catch {}
             throw new DbError('entityViews', 'getAdminSummaryTotals', logContext, err.message);
+        }
+    }
+
+    /**
+     * Returns the accommodations a user recently viewed, most-recent first
+     * (SPEC-284 §5.6 — closes the data-layer gap for the recommendations feed).
+     *
+     * Filters on `visitor_hash = 'user:<userId>'` (the convention used for
+     * authenticated viewers — see {@link InsertViewInput.visitorHash} and
+     * `computeVisitorHash` in `apps/api/src/utils/visitor-hash.ts`) and
+     * `entity_type = 'ACCOMMODATION'`. Only the last 30 days are considered.
+     *
+     * **Dedup semantics:** unlike {@link getStatsForEntities} (which dedupes by
+     * 30-minute visit bucket for counting), this method returns each viewed
+     * accommodation **once**, ordered by its most recent `viewed_at` — repeat
+     * views of the same accommodation do not produce duplicate entries or bump
+     * the result past the 25-item cap.
+     *
+     * @param input - userId of the authenticated viewer.
+     * @param tx - Optional transaction client.
+     * @returns `{ accommodationIds }` ordered by most recent view first,
+     *   length ≤ 25.
+     * @throws {DbError} If the database operation fails.
+     */
+    async getRecentlyViewedByUser(
+        input: GetRecentlyViewedByUserInput,
+        tx?: DrizzleClient
+    ): Promise<RecentlyViewedByUserResult> {
+        const { userId } = input;
+        const db = this.getClient(tx);
+        const logContext = { userId };
+
+        try {
+            const visitorHash = `user:${userId}`;
+
+            /*
+             * SELECT
+             *   entity_id                AS "entityId",
+             *   MAX(viewed_at)            AS "lastViewedAt"
+             * FROM entity_views
+             * WHERE visitor_hash = $visitorHash
+             *   AND entity_type = 'ACCOMMODATION'::entity_type_enum
+             *   AND viewed_at >= NOW() - interval '30 days'
+             * GROUP BY entity_id
+             * ORDER BY "lastViewedAt" DESC
+             * LIMIT 25
+             */
+            const rows = await db.execute<RawRecentlyViewedRow>(sql`
+                SELECT
+                    entity_id                                              AS "entityId",
+                    MAX(viewed_at)                                         AS "lastViewedAt"
+                FROM entity_views
+                WHERE visitor_hash = ${visitorHash}
+                  AND entity_type = ${EntityTypeEnum.ACCOMMODATION}::entity_type_enum
+                  AND viewed_at >= NOW() - interval '30 days'
+                GROUP BY entity_id
+                ORDER BY "lastViewedAt" DESC
+                LIMIT 25
+            `);
+
+            const rawRows: RawRecentlyViewedRow[] = Array.isArray(rows)
+                ? (rows as RawRecentlyViewedRow[])
+                : ((rows as { rows?: RawRecentlyViewedRow[] }).rows ?? []);
+
+            const accommodationIds = rawRows.map((row) => row.entityId);
+
+            try {
+                logQuery('entityViews', 'getRecentlyViewedByUser', logContext, {
+                    rowCount: accommodationIds.length
+                });
+            } catch {}
+
+            return { accommodationIds };
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'getRecentlyViewedByUser', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'getRecentlyViewedByUser', logContext, err.message);
         }
     }
 

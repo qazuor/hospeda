@@ -43,7 +43,13 @@ export enum LimitKey {
      * Free plan has no entitlement so this limit is never evaluated for free users.
      * Plus = 50, VIP = 200 (owner/complex inherit 200 via `TOURIST_VIP_LIMITS`).
      */
-    MAX_SEARCH_HISTORY_ENTRIES = 'max_search_history_entries'
+    MAX_SEARCH_HISTORY_ENTRIES = 'max_search_history_entries',
+    /**
+     * Maximum number of active favorites collections per user (SPEC-287).
+     * Free plan has no entitlement so this limit is never evaluated for free users.
+     * Plus = 10, VIP = 25 (owner/complex inherit 25 via `TOURIST_VIP_LIMITS`).
+     */
+    MAX_COLLECTIONS = 'max_collections'
 }
 
 /**

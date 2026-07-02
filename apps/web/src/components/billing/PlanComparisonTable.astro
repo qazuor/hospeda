@@ -91,9 +91,9 @@ interface GroupConfig {
 
 const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
 	{ id: 'favorites',      labelKey: 'billing.comparison.row.favorites',      cell: { kind: 'limit',    key: LimitKey.MAX_FAVORITES },            status: 'available' },
-	{ id: 'collections',    labelKey: 'billing.comparison.row.collections',    cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'collections',    labelKey: 'billing.comparison.row.collections',    cell: { kind: 'limit',    key: LimitKey.MAX_COLLECTIONS },            status: 'available' },
 	{ id: 'reviews',        labelKey: 'billing.comparison.row.reviews',        cell: { kind: 'all-yes' },                                           status: 'available' },
-	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'upcoming'  },
+	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'available' },
 	{ id: 'compare',        labelKey: 'billing.comparison.row.compare',        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
 	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'limit',    key: LimitKey.MAX_SEARCH_HISTORY_ENTRIES }, status: 'available' },
 	{ id: 'alertsOffers',   labelKey: 'billing.comparison.row.alertsOffers',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
@@ -142,7 +142,7 @@ const OWNER_ROWS: readonly RowConfig[] = [
 	{ id: 'prioritySupport',   labelKey: 'billing.comparison.row.prioritySupport',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
 	{ id: 'featured',          labelKey: 'billing.comparison.row.featured',          cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'upcoming'  },
 	{ id: 'branding',          labelKey: 'billing.comparison.row.branding',          cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
-	{ id: 'verificationBadge', labelKey: 'billing.comparison.row.verificationBadge', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
+	{ id: 'verificationBadge', labelKey: 'billing.comparison.row.verificationBadge', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'available'  },
 ];
 
 const OWNER_AI_ROWS: readonly RowConfig[] = [

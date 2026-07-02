@@ -237,6 +237,9 @@ export function toAccommodationCardProps({
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
         isFeatured: Boolean(item.isFeatured),
+        // SPEC-291: manual verification flag. Owner entitlement gating
+        // (HAS_VERIFICATION_BADGE) is already applied server-side.
+        isVerified: Boolean(item.isVerified),
         createdAt: item.createdAt ? String(item.createdAt) : undefined,
         price:
             priceData?.price != null || priceData?.amount != null
@@ -651,6 +654,9 @@ export function toAccommodationDetailPageProps({
                 : undefined,
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
+        // SPEC-291: manual verification flag. Owner entitlement gating
+        // (HAS_VERIFICATION_BADGE) is already applied server-side.
+        isVerified: Boolean(item.isVerified),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
@@ -1905,7 +1911,13 @@ export function toGastronomyCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        // Fall back to the legacy flat `name` when the i18n map resolves empty.
+        // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
+        // while `name` holds the real value; without this guard the card and
+        // detail headings render empty (a11y empty-heading violation, SPEC-308).
+        name:
+            resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale) ||
+            String(item.name ?? ''),
         type: String(item.type || ''),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,

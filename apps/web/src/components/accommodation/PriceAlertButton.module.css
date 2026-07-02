@@ -1,0 +1,104 @@
+/**
+ * PriceAlertButton.module.css
+ * Colocated CSS Module for the PriceAlertButton React island (SPEC-286 T-011).
+ * Uses design tokens only — no Tailwind utility classes.
+ */
+
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.priceAlertWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+/* ─── Shared button base ─────────────────────────────────────────────────── */
+
+.priceAlertButtonCreate,
+.priceAlertButtonActive,
+.priceAlertButtonDisabled,
+.priceAlertButtonLocked {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity var(--duration-fast) ease, background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+/* ─── Create state (primary CTA) ─────────────────────────────────────────── */
+
+.priceAlertButtonCreate {
+    color: #fff;
+    background-color: var(--brand-primary);
+    border: 1px solid transparent;
+}
+
+.priceAlertButtonCreate:hover:enabled {
+    opacity: 0.9;
+}
+
+.priceAlertButtonCreate:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+/* ─── Active state (already subscribed — cancel action) ──────────────────── */
+
+.priceAlertButtonActive {
+    color: var(--core-foreground);
+    background-color: transparent;
+    border: 1px solid var(--core-foreground-a20);
+}
+
+.priceAlertButtonActive:hover:enabled {
+    color: var(--destructive, oklch(0.6 0.22 25));
+    border-color: var(--destructive-a25);
+    background-color: var(--destructive-a08);
+}
+
+.priceAlertButtonActive:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+/* ─── Max-reached state (disabled, tooltip explains why) ─────────────────── */
+
+.priceAlertButtonDisabled {
+    color: var(--core-muted-foreground);
+    background-color: var(--core-foreground-a08);
+    border: 1px solid transparent;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* ─── Locked state (free plan — link to plans page) ───────────────────────── */
+
+.priceAlertButtonLocked {
+    color: var(--brand-primary);
+    background-color: transparent;
+    border: 1px solid var(--brand-primary-a30);
+}
+
+.priceAlertButtonLocked:hover {
+    background-color: var(--brand-primary-a05);
+}
+
+/* ─── Inline error message ────────────────────────────────────────────────── */
+
+.priceAlertError {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+    text-align: center;
+}

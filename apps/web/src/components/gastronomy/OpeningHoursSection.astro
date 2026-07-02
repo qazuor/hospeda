@@ -166,7 +166,8 @@ const rows = ORDERED_DAY_KEYS.map((dayKey) => {
         padding: 1px 8px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--brand-accent);
-        color: white;
+        /* SPEC-308: dark ink on the vibrant orange fill (white fails AA). */
+        color: var(--accent-foreground);
         font-family: var(--font-sans);
         font-size: 10px;
         font-weight: 700;

@@ -49,6 +49,42 @@ vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
 
+/**
+ * Mock gateCollections (CAN_USE_COLLECTIONS entitlement gate, SPEC-287 T-014)
+ * to always pass through. Entitlement gating is already tested by
+ * entitlement.test.ts; these tests only care about the usage-block logic.
+ * Uses importOriginal so every OTHER gate exported by this module (imported
+ * by unrelated routes in the app graph loaded via initApp()) stays real.
+ */
+vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
+    return {
+        ...actual,
+        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
+            await next();
+        }
+    };
+});
+
+/**
+ * Mock getRemainingLimit so usage.max resolution can be tested deterministically
+ * (SPEC-287 T-014). Defaults to 10 (matches DEFAULT_MAX below, the pre-existing
+ * expectation baked into TC1-TC9) unless a test overrides it via
+ * mockGetRemainingLimit.mockReturnValueOnce(...).
+ */
+const { mockGetRemainingLimit } = vi.hoisted(() => ({
+    mockGetRemainingLimit: vi.fn(() => 10)
+}));
+
+vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
+    return {
+        ...actual,
+        getRemainingLimit: mockGetRemainingLimit
+    };
+});
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const BASE_URL = '/api/v1/protected/user-bookmark-collections';
@@ -242,11 +278,13 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
     });
 
     // =========================================================================
-    // TC5 — Env override: HOSPEDA_MAX_COLLECTIONS_PER_USER=5
+    // TC5 — Env var no longer has effect (SPEC-287): the cap is plan-driven now,
+    // not env-configurable. This documents the T-006 migration; T-014 will
+    // replace usage.max's resolution with getRemainingLimit(ctx, MAX_COLLECTIONS).
     // =========================================================================
 
-    describe('TC5: Env override — HOSPEDA_MAX_COLLECTIONS_PER_USER=5', () => {
-        it('usage.max equals 5 when env var is set to 5', async () => {
+    describe('TC5: HOSPEDA_MAX_COLLECTIONS_PER_USER no longer has effect (SPEC-287)', () => {
+        it('usage.max stays at the default (10) even when the env var is set', async () => {
             // Arrange
             vi.stubEnv('HOSPEDA_MAX_COLLECTIONS_PER_USER', '5');
             const actor = buildUserActor();
@@ -264,7 +302,7 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
             // Assert
             expect(res.status).toBe(200);
             const body = await res.json();
-            expect(body.data.usage.max).toBe(5);
+            expect(body.data.usage.max).toBe(DEFAULT_MAX);
             expect(body.data.usage.current).toBe(4);
         });
     });
@@ -393,6 +431,72 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
                 expect.anything(),
                 expect.objectContaining({ includeBookmarkCount: false })
             );
+        });
+    });
+
+    // =========================================================================
+    // TC10 — usage.max resolves from the plan limit (SPEC-287 T-014)
+    // =========================================================================
+
+    describe('TC10: usage.max resolves from the plan-based limit', () => {
+        it('reflects planLimit=10 (plus tier)', async () => {
+            // Arrange
+            mockGetRemainingLimit.mockReturnValueOnce(10);
+            const actor = buildUserActor();
+            mockCollectionService.listCollectionsByUser.mockResolvedValue({
+                data: { rows: [], total: 0, page: 1, pageSize: 10 }
+            });
+
+            // Act
+            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.usage.max).toBe(10);
+        });
+
+        it('reflects planLimit=25 (vip tier)', async () => {
+            // Arrange
+            mockGetRemainingLimit.mockReturnValueOnce(25);
+            const actor = buildUserActor();
+            mockCollectionService.listCollectionsByUser.mockResolvedValue({
+                data: { rows: [], total: 0, page: 1, pageSize: 10 }
+            });
+
+            // Act
+            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.usage.max).toBe(25);
+        });
+
+        it('maps -1 (unlimited, e.g. staff) to the VIP hard cap (25) as a safe default', async () => {
+            // Arrange
+            mockGetRemainingLimit.mockReturnValueOnce(-1);
+            const actor = buildUserActor();
+            mockCollectionService.listCollectionsByUser.mockResolvedValue({
+                data: { rows: [], total: 0, page: 1, pageSize: 10 }
+            });
+
+            // Act
+            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.usage.max).toBe(25);
         });
     });
 });

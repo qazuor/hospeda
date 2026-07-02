@@ -75,7 +75,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlements
+    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlements,
+    // SPEC-291 Phase 3b: stub the batch resolver added for the badge gate.
+    // Returns an empty Map so isVerified is not the concern of this test file —
+    // isVerified will be gated to false for all items, which doesn't affect
+    // hasAiChat assertions.
+    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
 }));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {

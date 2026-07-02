@@ -413,7 +413,9 @@
                 "myPropertiesDesc": "Gestioná tus alojamientos publicados",
                 "hostDashboard": "Panel del anfitrión",
                 "hostDashboardDesc": "Resumen de tu actividad como anfitrión",
-                "promotions": "Mis promociones"
+                "promotions": "Mis promociones",
+                "recommendations": "Recomendaciones",
+                "recommendationsDesc": "Alojamientos elegidos para vos"
             },
             "stats": {
                 "favorites": "Mis favoritos",
@@ -576,6 +578,14 @@
         "searchHistory": {
             "title": "Historial de búsquedas",
             "description": "Revisá y repetí tus búsquedas recientes en Hospeda"
+        },
+        "alerts": {
+            "title": "Alertas de precio",
+            "description": "Gestioná tus alertas de bajada de precio en Hospeda"
+        },
+        "recommendations": {
+            "title": "Para vos",
+            "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
         }
     },
     "newsletter": {
@@ -760,5 +770,47 @@
             "filterCount_other": "{{count}} filtros"
         },
         "entitlementRequired": "Esta función está disponible para suscriptores Plus y VIP."
+    },
+    "alerts": {
+        "loading": "Cargando alertas...",
+        "errorFetch": "No se pudieron cargar tus alertas de precio",
+        "empty": {
+            "title": "No tenés alertas activas",
+            "body": "Explorá alojamientos y activá alertas para enterarte cuando bajen de precio.",
+            "cta": "Explorar alojamientos"
+        },
+        "item": {
+            "priceLabel": "Precio al suscribirte",
+            "targetLabel": "Alertar cuando baje",
+            "targetAny": "Cualquier baja",
+            "targetPercent": "{{percent}}% o más"
+        },
+        "deleteOne": "Eliminar",
+        "deleteOneConfirm": "Sí, eliminar",
+        "deleteCancel": "Cancelar",
+        "deleteConfirmAria": "Confirmar eliminación de alerta",
+        "deleteSuccess": "Alerta eliminada",
+        "deleteError": "No se pudo eliminar la alerta",
+        "upgrade": {
+            "title": "Alertas de precio",
+            "message": "Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "cta": "Ver planes"
+        },
+        "listLabel": "Tus alertas de precio activas"
+    },
+    "recommendations": {
+        "loading": "Cargando recomendaciones...",
+        "errorFetch": "No pudimos cargar tus recomendaciones",
+        "listLabel": "Recomendaciones para vos",
+        "viewDetails": "Ver alojamiento",
+        "coldStart": {
+            "title": "Todavía estamos conociendo tus gustos",
+            "body": "Mientras tanto, te mostramos alojamientos populares. Guardá favoritos, mirá alojamientos o hacé una búsqueda para recibir recomendaciones más precisas."
+        },
+        "empty": {
+            "title": "No encontramos recomendaciones por ahora",
+            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos."
+        },
+        "entitlementRequired": "Esta función no está disponible para tu cuenta."
     }
 }

@@ -3,7 +3,7 @@ specId: SPEC-284
 title: Personalized Recommendations Feed
 type: feat
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-26
 tags: [tourist, recommendations, entitlements, web]
 ---
@@ -45,16 +45,98 @@ suggested accommodations based on the user's activity/preferences.
   heuristic/rule-based recommender).
 - No cross-vertical recommendations (accommodations only in v1).
 
-## 5. Open Questions
+## 5. Recommendation Signal Design (v1)
 
-- **OQ-1** Recommendation signal: recently viewed + favorites + same destination/
-  similar price, or something richer?
-- **OQ-2** Heuristic v1 vs an embedding-based recommender — scope/effort tradeoff.
-- **OQ-3** Per-plan differentiation: is the feed gated only by the entitlement
-  (binary), or do plans differ (e.g. count/freshness)? Confirm at planning.
-- **OQ-4** Placement in the web UI (home, post-search, a dedicated section).
+> Resolves OQ-1 and OQ-2. Decided 2026-06-30 after a discovery-first inventory of
+> which user-signal data actually exists in the codebase.
 
-## 6. Relationship to SPEC-282
+### 5.1 Approach — heuristic preference profile
+
+v1 is a **heuristic, rule-based content recommender** (no ML/embeddings). All user
+signals collapse into a single weighted **preference profile**, and the
+accommodation catalog is scored against that profile. Chosen over item-to-item
+similarity because search history expresses *criteria*, not a seed item, and only
+the profile approach fuses heterogeneous signals cleanly.
+
+### 5.2 Seed signals (with recency)
+
+Three behavioral sources feed the profile. Recency uses a **hard window + cap N**
+(no time-decay in v1):
+
+| Signal | Source | Window / cap | Weight |
+|---|---|---|---|
+| Favorites | `user_bookmarks` (entity_type=ACCOMMODATION) | last 20, no time window | 3 |
+| Recently viewed | `entity_views` (visitor_hash=`user:<uuid>`) | last 30 days, cap 25 | 1 |
+| Search history | `user_search_history.filters_json` (SPEC-289) | last 30 days, cap 10 | 2 |
+
+Rationale: a favorite is an explicit act that does not expire (no window); a view
+is passive and recent by nature; a search expresses time-bound intent, so stale
+searches are dropped. Search history is **degradable**: if absent (no data, or
+SPEC-289 not yet capturing in prod), the recommender still works on the other two.
+
+### 5.3 Building the profile
+
+Favorites and recently-viewed contribute the **attributes** of their items
+(destination, type, price, amenities). Search history contributes its
+`filters_json` **directly** (searched destination, price range, amenities). The
+result is one weighted profile: preferred destinations, dominant type(s), price
+range, frequent amenities.
+
+### 5.4 Scoring candidates
+
+Each candidate accommodation is scored against the profile (weights sum to 100):
+
+| Component | Weight | Notes |
+|---|---|---|
+| Destination | 40 | Graduated by the destinations materialized-path hierarchy (same city > province > region > country) |
+| Type | 20 | Exact / category match |
+| Price | 20 | Distance to the profile's price range |
+| Amenities | 15 | Jaccard overlap vs frequent amenities |
+| Quality | 5 | `average_rating` / `is_featured` — tie-break + editorial boost |
+
+Destination is intentionally dominant: in tourism, *place* is the primary decision
+driver. Items the user already bookmarked or viewed are **excluded** from the feed
+(surface new discoveries, not the already-known).
+
+### 5.5 Cold-start
+
+A user with no favorites, views, or recent searches has no profile. Fall back to
+**popular / featured** accommodations (optionally scoped to a default destination).
+
+### 5.6 Data-layer gap to close
+
+`EntityViewModel` exposes no method to list a user's recently-viewed
+accommodations — the data is in `entity_views`, but only aggregate / top-N queries
+exist. This spec must add a `getRecentlyViewedByUser()`-style query.
+
+## 6. Open Questions
+
+- **OQ-1** ✅ RESOLVED (§5): favorites + recently-viewed + search-history fused
+  into a weighted preference profile.
+- **OQ-2** ✅ RESOLVED (§5): heuristic / rule-based v1, no embeddings.
+- **OQ-3** ✅ RESOLVED: **binary in v1**. The feed is gated only by the
+  `CAN_VIEW_RECOMMENDATIONS` entitlement; every plan that has it sees the same
+  feed (same count, same freshness). No per-plan differentiation yet.
+- **OQ-4** ✅ RESOLVED: **dedicated page/section** (e.g. `/recomendaciones`,
+  "Para vos"), reachable from the logged-in tourist "mi-cuenta" surface (created
+  in SPEC-289). Chosen over a home block or post-search slot because it is the
+  natural home for a plan-gated feature and keeps the anonymous-shared home clean.
+  A home teaser linking to this page can be added later without rework.
+
+## 7. Relationship to SPEC-282
 
 SPEC-282 shows this row as **Próximamente**. When SPEC-284 ships, the badge is
 removed and the row reflects the real availability/limits.
+
+## 7. Related
+
+- **SPEC-315** — duplicate stub of this spec, generated independently by the
+  SPEC-310 roadmap audit (created 2026-06-30, same `CAN_VIEW_RECOMMENDATIONS`
+  phantom gate). Consolidated into this spec on 2026-07-01; marked `obsolete`
+  in the tracking indices. Folded in from SPEC-315:
+  - **Pricing note:** SPEC-310 moved this entitlement from the free tier to
+    the plus tier — it was never actually reachable when it was "free"
+    either.
+  - **Signal source:** SPEC-289 (search history, in-progress) is a candidate
+    input for OQ-1's recommendation signal alongside favorites/recently
+    viewed — confirm its data is available before relying on it.
