@@ -405,35 +405,35 @@
             "id": "T-012",
             "title": "Read and validate dispatch cron cadence setting",
             "description": "Add a helper that reads `dispatch_cron_cadence` from `social_settings` (seeded in T-003) via the raw-model read pattern and validates it is a syntactically valid 5-field cron expression, falling back to the current literal `*/5 * * * *` if missing or invalid. This is new ground (no existing precedent for settings-driven cron cadence in this codebase) — keep the helper isolated and pure/testable apart from cron registration wiring (T-013). Unit test valid, invalid, and missing-setting cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Implement settings read + cron-expression validation helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement fallback-to-default-on-invalid logic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test valid/invalid/missing cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cron", "settings", "social", "new-pattern"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T19:00:00Z",
+                "completed": "2026-07-02T19:20:00Z"
             }
         },
         {
