@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 0/19 tasks (0%)
+## Progress: 1/19 tasks (5%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -10,7 +10,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) - Add async import Zod schemas
+- [x] **T-001** (complexity: 2) - Add async import Zod schemas — DONE
   - New start/status request/response schemas in accommodation-import.schema.ts
   - Blocked by: none
   - Blocks: T-005, T-006, T-010, T-011, T-012, T-014

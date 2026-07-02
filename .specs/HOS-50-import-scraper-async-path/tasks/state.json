@@ -8,30 +8,43 @@
             "id": "T-001",
             "title": "Add async import Zod schemas",
             "description": "Add three Zod schemas to accommodation-import.schema.ts: AccommodationImportAsyncStartResponseSchema {runId, datasetId, source: ImportSource, startedAt: ISO string}; AccommodationImportStatusQuerySchema (same 4 fields, since the client echoes the full 202 payload back); AccommodationImportStatusResponseSchema as a discriminated union on `settled` — settled:false, or settled:true with either draft-shaped fields (reuse AccommodationImportResponseSchema) or failureCode. Export inferred types.\n\nTest requirements: unit tests in packages/schemas covering valid/invalid parse cases for each schema (missing fields, wrong enum value, malformed ISO date, both settled:true variants).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005", "T-006", "T-010", "T-011", "T-012", "T-014"],
             "subtasks": [
                 {
                     "title": "Define AccommodationImportAsyncStartResponseSchema",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Define AccommodationImportStatusQuerySchema", "completed": false },
+                {
+                    "title": "Define AccommodationImportStatusQuerySchema",
+                    "completed": true
+                },
                 {
                     "title": "Define AccommodationImportStatusResponseSchema (discriminated union)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Export inferred TS types", "completed": false },
-                { "title": "Write schema unit tests", "completed": false }
+                {
+                    "title": "Export inferred TS types",
+                    "completed": true
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "accommodation-import"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:27:43Z",
+                "completed": "2026-07-02T09:31:25Z"
             }
         },
         {
@@ -43,16 +56,26 @@
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Implement mapApifyRunStatusToFailureCode", "completed": false },
+                {
+                    "title": "Implement mapApifyRunStatusToFailureCode",
+                    "completed": false
+                },
                 {
                     "title": "Add JSDoc documenting the no-native-blocked-signal limitation",
                     "completed": false
                 },
-                { "title": "Write unit tests for all 6 ApifyRunStatus values", "completed": false }
+                {
+                    "title": "Write unit tests for all 6 ApifyRunStatus values",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "mapping", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -72,12 +95,22 @@
                     "title": "Add extractAsync? to ImportSourceAdapter interface",
                     "completed": false
                 },
-                { "title": "Add supportsAsyncExtraction type guard", "completed": false },
-                { "title": "Write unit tests for the type guard", "completed": false }
+                {
+                    "title": "Add supportsAsyncExtraction type guard",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for the type guard",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "types", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -97,7 +130,10 @@
                     "title": "Implement startApifyRunWithRetry with 3-attempt jittered backoff",
                     "completed": false
                 },
-                { "title": "Retry only on null result (transient failure)", "completed": false },
+                {
+                    "title": "Retry only on null result (transient failure)",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests for success-first-try and retry-then-succeed",
                     "completed": false
@@ -109,7 +145,11 @@
             ],
             "tags": ["service-core", "retry", "apify", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -125,7 +165,10 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Implement running/not-settled branch", "completed": false },
+                {
+                    "title": "Implement running/not-settled branch",
+                    "completed": false
+                },
                 {
                     "title": "Implement succeeded+items -> RawExtraction branch",
                     "completed": false
@@ -138,11 +181,18 @@
                     "title": "Implement unreachable(null) -> provider_error branch",
                     "completed": false
                 },
-                { "title": "Write unit tests for all 4 branches", "completed": false }
+                {
+                    "title": "Write unit tests for all 4 branches",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "apify", "import", "polling"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -158,18 +208,34 @@
             "blockedBy": ["T-001", "T-002", "T-005"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Map terminal failure statuses via T-002's helper", "completed": false },
+                {
+                    "title": "Map terminal failure statuses via T-002's helper",
+                    "completed": false
+                },
                 {
                     "title": "Trigger R2 fallback on source_blocked/provider_error for airbnb/booking",
                     "completed": false
                 },
-                { "title": "Apply existing fallback-acceptance rule", "completed": false },
-                { "title": "Skip fallback for 'timeout'", "completed": false },
-                { "title": "Write unit tests for all 4 terminal scenarios", "completed": false }
+                {
+                    "title": "Apply existing fallback-acceptance rule",
+                    "completed": false
+                },
+                {
+                    "title": "Skip fallback for 'timeout'",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for all 4 terminal scenarios",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "apify", "import", "fallback"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -193,12 +259,22 @@
                     "title": "Call startApifyRunWithRetry with the existing actor input builder",
                     "completed": false
                 },
-                { "title": "Map retry-exhaustion to provider_error", "completed": false },
-                { "title": "Write unit tests for the 3 outcomes", "completed": false }
+                {
+                    "title": "Map retry-exhaustion to provider_error",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for the 3 outcomes",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "airbnb", "adapter", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -226,11 +302,18 @@
                     "title": "Document the 'only call when async is needed' precondition",
                     "completed": false
                 },
-                { "title": "Write unit tests for the 3 outcomes", "completed": false }
+                {
+                    "title": "Write unit tests for the 3 outcomes",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "booking", "adapter", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -265,7 +348,11 @@
             ],
             "tags": ["service-core", "refactor", "import"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -293,11 +380,18 @@
                     "title": "Preserve existing 200 flow for all other sources/branches",
                     "completed": false
                 },
-                { "title": "Write route tests for the 4 scenarios", "completed": false }
+                {
+                    "title": "Write route tests for the 4 scenarios",
+                    "completed": false
+                }
             ],
             "tags": ["api", "route", "import", "async"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -313,7 +407,10 @@
             "blockedBy": ["T-001", "T-006", "T-009"],
             "blocks": ["T-013", "T-015", "T-016", "T-019"],
             "subtasks": [
-                { "title": "Add the new GET route and register it", "completed": false },
+                {
+                    "title": "Add the new GET route and register it",
+                    "completed": false
+                },
                 {
                     "title": "Enforce the apifyTimeoutMs poll ceiling before calling Apify",
                     "completed": false
@@ -322,11 +419,18 @@
                     "title": "Call resolveImportRunStatus and finalizeImportDraft on success",
                     "completed": false
                 },
-                { "title": "Write route tests for the 4 scenarios", "completed": false }
+                {
+                    "title": "Write route tests for the 4 scenarios",
+                    "completed": false
+                }
             ],
             "tags": ["api", "route", "import", "async", "polling"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -346,7 +450,10 @@
                     "title": "Implement useImportStatus adapting the use-reputation-status.ts pattern",
                     "completed": false
                 },
-                { "title": "Stop polling on settle/unmount/hard-error", "completed": false },
+                {
+                    "title": "Stop polling on settle/unmount/hard-error",
+                    "completed": false
+                },
                 {
                     "title": "Swallow and retry transient network errors silently",
                     "completed": false
@@ -358,7 +465,11 @@
             ],
             "tags": ["web", "hook", "polling", "import"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -378,16 +489,26 @@
                     "title": "Detect 202 response and switch to polling mode via useImportStatus",
                     "completed": false
                 },
-                { "title": "Keep spinner active during polling", "completed": false },
+                {
+                    "title": "Keep spinner active during polling",
+                    "completed": false
+                },
                 {
                     "title": "Handle settle-success (onImported) and settle-failure (error banner)",
                     "completed": false
                 },
-                { "title": "Write component tests for the 4 scenarios", "completed": false }
+                {
+                    "title": "Write component tests for the 4 scenarios",
+                    "completed": false
+                }
             ],
             "tags": ["web", "component", "import", "async"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -407,7 +528,10 @@
                     "title": "Implement useAccommodationImportStatusQuery with conditional refetchInterval",
                     "completed": false
                 },
-                { "title": "Gate the query on presence of a run handle", "completed": false },
+                {
+                    "title": "Gate the query on presence of a run handle",
+                    "completed": false
+                },
                 {
                     "title": "Write hook tests for enabled/disabled and interval-stop-on-settle",
                     "completed": false
@@ -415,7 +539,11 @@
             ],
             "tags": ["admin", "hook", "tanstack-query", "polling", "import"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -435,16 +563,26 @@
                     "title": "Detect 202 response and switch to the status-query polling flow",
                     "completed": false
                 },
-                { "title": "Keep loader spin active during polling", "completed": false },
+                {
+                    "title": "Keep loader spin active during polling",
+                    "completed": false
+                },
                 {
                     "title": "Defer field prefill until settled:true with a draft",
                     "completed": false
                 },
-                { "title": "Write component tests for the 4 scenarios", "completed": false }
+                {
+                    "title": "Write component tests for the 4 scenarios",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "component", "import", "async"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -460,8 +598,14 @@
             "blockedBy": ["T-009", "T-010", "T-011"],
             "blocks": ["T-018"],
             "subtasks": [
-                { "title": "Test Airbnb start->running->succeeded happy path", "completed": false },
-                { "title": "Test Booking JSON-LD-sparse->async->succeeded", "completed": false },
+                {
+                    "title": "Test Airbnb start->running->succeeded happy path",
+                    "completed": false
+                },
+                {
+                    "title": "Test Booking JSON-LD-sparse->async->succeeded",
+                    "completed": false
+                },
                 {
                     "title": "Test poll-ceiling-exceeded->timeout with no further Apify call",
                     "completed": false
@@ -473,7 +617,11 @@
             ],
             "tags": ["api", "testing", "integration", "import", "async"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -500,7 +648,11 @@
             ],
             "tags": ["api", "testing", "regression", "import"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -524,11 +676,18 @@
                     "title": "Run full admin test suite for the import polling feature, review for flakiness",
                     "completed": false
                 },
-                { "title": "Fix any coverage gaps found", "completed": false }
+                {
+                    "title": "Fix any coverage gaps found",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "web", "admin", "import", "polling"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -559,7 +718,11 @@
             ],
             "tags": ["docs", "import", "async"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
                 "started": null,
@@ -569,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.2
     }
