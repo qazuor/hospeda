@@ -1,6 +1,15 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 18/20 tasks (90%)
+## Progress: 18/20 tasks (90%) — remaining 2 blocked on a DB incident, see note below
+
+**INCIDENT NOTE (2026-07-02)**: `pnpm db:fresh-dev` run from this worktree destroyed the
+SHARED `hospeda-postgres` Docker container (it runs `docker compose down -v`, which is not
+worktree-scoped despite what T-013's original description assumed). Lost: `hospeda_template`
+and 5 other worktrees' isolated DBs (`worktree_hospeda_hos_21_...`, `worktree_hospeda_hos_35_...`,
+`worktree_spec_291`, `worktree_spec_308`, `worktree_spec_321`), all dev-only and rebuildable, but
+DB session state in those worktrees was lost. T-013/T-018 left pending — do NOT run
+`pnpm db:fresh-dev` from inside a worktree again; only `wt-db.sh create` (isolated DB within
+the shared container) is worktree-safe, never the docker-compose reset.
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
