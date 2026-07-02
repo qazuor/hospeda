@@ -169,15 +169,15 @@
             "id": "T-005",
             "title": "Verify /es/ home route now emits CSP header on staging",
             "description": "After deploying T-004 fix: curl -I https://staging.hospeda.com.ar/es/ and confirm Content-Security-Policy-Report-Only header is present with the same directives as other routes (e.g. /es/alojamientos/). Screenshot or save the response headers. This is acceptance criterion 2.C: done when curl on /es/ shows the header. Tests: none (verification step). Document result in a short note.",
-            "status": "in_progress",
-            "note": "2026-07-02: initial verification FAILED (curl -I on live staging and a local production build both showed /es/ served as a static file, no CSP header — see .specs/HOS-30-csp-phase-2-and-coverage/docs/2026-07-02-premise-corrections.md item 1). User decision: option B — removed `export const prerender = true` (and the now-unused `getStaticPaths`) from apps/web/src/pages/[lang]/index.astro so home goes through the same SSR+Cloudflare-cache path as /es/alojamientos/ and other dynamic routes, instead of Astro's build-time static-file path that never re-invokes middleware. Re-verified LOCALLY: production build + standalone Node server, `curl -I http://localhost:4399/es/` now returns `content-security-policy-report-only` with no Last-Modified/ETag (confirms SSR, not static-file serving); nonce also now stamps correctly on inline tags (body-rewrite branch runs for non-prerendered pages). Regression guard added in csp-middleware.test.ts asserting home never re-declares prerender=true. Left in_progress (not completed) because the task's actual acceptance criterion is a STAGING curl — this branch has not been merged/deployed yet. Re-run `curl -I https://staging.hospeda.com.ar/es/` after this PR deploys to staging and flip to completed.",
+            "status": "completed",
+            "note": "2026-07-02: initial verification FAILED (curl -I on live staging and a local production build both showed /es/ served as a static file, no CSP header — see .specs/HOS-30-csp-phase-2-and-coverage/docs/2026-07-02-premise-corrections.md item 1). User decision: option B — removed `export const prerender = true` (and the now-unused `getStaticPaths`) from apps/web/src/pages/[lang]/index.astro so home goes through the same SSR+Cloudflare-cache path as /es/alojamientos/ and other dynamic routes, instead of Astro's build-time static-file path that never re-invokes middleware. Merged in PR #1997. Deployed to staging (Coolify redeploy for hospeda-web-staging — first attempt failed the build, user retriggered; second attempt succeeded). LIVE STAGING VERIFICATION PASSED: `curl -I https://staging.hospeda.com.ar/es/` now returns `content-security-policy-report-only` with the full directive set and no Last-Modified/ETag (confirms SSR, not static-file serving) — checked ~10min after the retriggered redeploy. Sanity-checked `/es/alojamientos/` still emits the header correctly (unaffected). 2.C is now fully closed.",
             "complexity": 1,
             "blockedBy": ["T-004"],
             "blocks": ["T-007", "T-008", "T-009", "T-010", "T-019"],
             "subtasks": [
                 {
                     "title": "curl -I /es/ on staging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm header present and matches other routes",
@@ -206,18 +206,18 @@
             "title": "Set up staging authenticated session for crawl (test credentials and session token)",
             "description": "Create or identify a staging test account with HOST role that has at least one accommodation in /mi-cuenta/propiedades/ and an active billing subscription (to access /es/suscriptores/checkout/). Obtain a valid session cookie (using pnpm db:seed:ready-user or manually seeded user). Document the credentials and session capture method so T-007/T-008/T-009/T-010 can reuse them. Tests: none (setup only). Reference: docs/migration/mercadopago-sandbox-runbook.md for MP sandbox test users.",
             "status": "in_progress",
-            "note": "2026-07-02: still blocked — this agent has no SSH/Coolify/staging-DB access, only the local worktree DB (db:seed:ready-user only reaches local/worktree Postgres, not the staging instance). Needs a human with hops VPS access (or Coolify DB console) to seed/identify a HOST-role staging account with an accommodation + active subscription and hand off a session cookie. Nothing else in 2.A (T-007-T-010) can start until this unblocks.",
+            "note": "2026-07-02: agent-side blocker (no SSH/Coolify/staging-DB access) resolved by adding `hops db-seed-test-users` (ADD-ONLY, rejects --target=prod) plus a HOS-30 extension so every HOST-role test user also gets one fully-featured accommodation (every catalog amenity/feature, full gallery, rich pricing, FAQs) — see PR #1997. User ran `hops db-seed-test-users --target=staging` against the real staging DB: the 13 SPEC-143 test users now exist there, including host-basico/host-pro/host-premium/host-pro-plus-addon/host-trial@local.test, each with an active billing subscription AND one accommodation. Subtasks 1-2 done. Remaining: capture a session cookie (log in as one of the host-*@local.test accounts, password Password123!, at https://staging.hospeda.com.ar) and document the method — then T-007-T-010 can start.",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-007", "T-008", "T-009", "T-010"],
             "subtasks": [
                 {
                     "title": "Identify or create staging test account with HOST role",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ensure account has accommodation + active subscription",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Capture session cookie for authenticated crawl",
@@ -1110,11 +1110,11 @@
     "summary": {
         "total": 28,
         "pending": 14,
-        "inProgress": 2,
-        "completed": 9,
+        "inProgress": 1,
+        "completed": 10,
         "blocked": 0,
         "cancelled": 3,
         "averageComplexity": 1.8,
-        "note": "2026-07-02 (continued): after the premise-corrections session (docs/2026-07-02-premise-corrections.md) surfaced two decisions, the user chose: (1) home CSP fix = option B — removed prerender=true from [lang]/index.astro so home adopts the SSR+Cloudflare-cache pattern already used by /es/alojamientos/ etc.; verified locally (production build + standalone server) that /es/ now emits the header. T-005 left in_progress (not completed) pending a live staging curl once deployed. (2) MP allowlist = descope — T-012/T-013/T-014 cancelled, no allowlist entries added; T-010/T-015 narrowed to a redirect-page verification task. T-019 completed with a source-content regression guard (home never re-declares prerender=true), consistent with this app's Astro-component testing convention. T-006 (staging authenticated session) remains the sole real blocker for 2.A/2.B verification and 2.D — still needs a human with staging DB/VPS access."
+        "note": "2026-07-02 (continued): T-005 now COMPLETED — PR #1997 merged to staging, hospeda-web-staging redeployed (first Coolify attempt failed the build, user retriggered; second succeeded), curl -I https://staging.hospeda.com.ar/es/ confirmed live: content-security-policy-report-only present, no Last-Modified/ETag. 2.C is fully closed. User also ran `hops db-seed-test-users --target=staging` — the 13 SPEC-143 test users (incl. 5 HOST accounts, each now with one fully-featured accommodation) exist on staging, so T-006's account-setup subtasks are satisfied; only the session-cookie-capture step remains before the 2.A authenticated crawl (T-007-T-010) can start. MP allowlist (2.B) stays descoped — T-012/T-013/T-014 cancelled; T-010/T-015 narrowed to a redirect-page verification task."
     }
 }
