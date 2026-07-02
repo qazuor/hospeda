@@ -10,7 +10,7 @@
  * 6. Parse session only for routes that need it (protected + auth)
  * 7. Protect /mi-cuenta/* routes (redirect to login if unauthenticated)
  * 8. Rewrite 404 responses to the custom 404 page
- * 9. Set Content-Security-Policy-Report-Only header on HTML responses
+ * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  */
 
@@ -50,6 +50,12 @@ import {
  * truth so the two mechanisms can never drift.
  */
 const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
+
+/**
+ * CSP header name for all HTML responses (main pipeline and `/beta` docs).
+ * HOS-30 T-020: Phase 2 enforce — flipped from `Content-Security-Policy-Report-Only`.
+ */
+const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 /**
  * Main middleware handler for all requests in the web application.
@@ -136,7 +142,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
                 // Sentry tunnel is active (SPEC-181 follow-up).
                 sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
             });
-            betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);
+            betaResponse.headers.set(CSP_HEADER_NAME, directives);
         }
 
         return betaResponse;
@@ -285,13 +291,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.rewrite('/404');
     }
 
-    // Step 9: Attach a Content-Security-Policy-Report-Only header to all HTML responses
-    // AND stamp the per-request nonce on every inline <style>/<script> Astro
-    // emitted without one (so they match the policy below). The CSP header
-    // is the single source of truth; the body rewrite makes the policy
-    // actually enforceable for inline emissions Astro doesn't tag itself.
-    // Phase 1 uses Report-Only so violations are reported without blocking content.
-    // Switch to 'Content-Security-Policy' for Phase 2 enforcement (T-020).
+    // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,
+    // T-020) to all HTML responses AND stamp the per-request nonce on every inline
+    // <style>/<script> Astro emitted without one (so they match the policy below).
+    // The CSP header is the single source of truth; the body rewrite makes the
+    // policy actually enforceable for inline emissions Astro doesn't tag itself.
     //
     // @astrojs/node with `staticHeaders: true` does NOT forward content-type in
     // the Response object returned from next() for prerendered pages — MIME type
@@ -303,9 +307,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (isHtmlPage) {
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
         const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
-
-        // T-020: change 'Content-Security-Policy-Report-Only' → 'Content-Security-Policy'
-        const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only';
 
         const directives = buildCspHeader({
             nonce: cspNonce,
@@ -333,8 +334,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             });
         }
         // Prerendered pages: skip body rewrite — nonces cannot be embedded at
-        // build time. Inline-script violations will appear in Report-Only logs
-        // until they are addressed before the Phase 2 enforce flip (T-020).
+        // build time, so any un-nonced inline <style>/<script> on these routes
+        // is dropped under enforce mode (verified via Sentry, HOS-30 T-020: the
+        // 15 SSG routes only ever showed the accepted GAP-30-01 ClientRouter
+        // style, no other type — safe to enforce).
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

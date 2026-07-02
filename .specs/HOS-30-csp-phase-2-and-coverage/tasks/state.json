@@ -764,39 +764,40 @@
             "id": "T-020",
             "title": "Flip header name from Content-Security-Policy-Report-Only to Content-Security-Policy",
             "description": "ONE-LINE CHANGE in apps/web/src/lib/middleware-helpers.ts: change the response header setter from 'Content-Security-Policy-Report-Only' to 'Content-Security-Policy'. This is the entire Phase 2 flip. Pre-requisites (must ALL be green before this task): T-017 (zero net-new Sentry violations), T-015 (MP Brick clean), T-005 (home header fix deployed). Rollback: revert this one line. Run pnpm typecheck --filter=hospeda-web and pnpm lint. Commit atomically and push for staging deploy.",
-            "status": "pending",
+            "status": "completed",
+            "note": "2026-07-02: the actual flip point is apps/web/src/middleware.ts (NOT middleware-helpers.ts as the task description assumed — that file only holds buildCspHeader, the directive builder, not the header-name setter). Also found a SECOND call site the 'one-line change' description missed: the /beta docs route (line ~139) hardcoded 'Content-Security-Policy-Report-Only' independently of the main pipeline's flip point, which would have silently stayed Report-Only forever. Extracted both to a shared module-level CSP_HEADER_NAME constant so they can't drift. Pre-flip safety check: queried Sentry for all 15 prerendered (SSG) routes (nosotros, legal/*, contacto, beneficios, colaborar/*, preguntas-frecuentes, propietarios, etc.) over 90d -- none of them were ever crawled by T-002/T-016, and the middleware skips nonce body-rewrite for prerendered pages, so any un-nonced inline content there would newly break under enforce. Confirmed via Sentry: the only violation type on any of these routes is the already-accepted GAP-30-01 (ClientRouter), zero new/unexpected types -- safe to flip. Added 3 regression tests to csp-middleware.test.ts locking in CSP_HEADER_NAME = 'Content-Security-Policy' and the shared-constant usage (2 call sites). pnpm --filter=hospeda-web lint and typecheck both pass (0 errors). PR pending merge to staging; T-021's 48h soak starts once deployed.",
             "complexity": 1,
             "blockedBy": ["T-017"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "Confirm all pre-requisites are green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Change header name in middleware-helpers.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run typecheck + lint",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Commit and push to trigger staging deploy",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["csp", "enforce", "web", "phase-2"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
@@ -843,13 +844,14 @@
             "title": "Write regression test for enforce-mode header name in CSP middleware",
             "description": "After T-021 soak passes: update apps/web/src/lib/__tests__/csp-middleware.test.ts to assert the header name is Content-Security-Policy (NOT Content-Security-Policy-Report-Only). This locks in the enforce mode and prevents accidental revert. Also add a test asserting the header is present on all routes (home, alojamientos, checkout). Run pnpm test --filter=hospeda-web.",
             "status": "pending",
+            "note": "2026-07-02: subtask 1 (assert enforce header name, not Report-Only) already landed ahead of schedule in T-020's PR — 3 new regression tests in csp-middleware.test.ts (CSP_HEADER_NAME constant value + shared-constant usage across both call sites), following this file's existing source-string-assertion pattern (no live HTTP harness exists for middleware in this codebase). Subtask 2 (presence across live routes: home, alojamientos, checkout) intentionally NOT done here — no route-specific HTTP test infra exists, and this is functionally covered by the existing 'sets CSP header outside the body-rewrite block' guard (structurally proves the header applies to every HTML route, not gated per-route) plus T-021's live soak monitoring. Still formally blocked by T-021 per its own dependency; not marking completed.",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update csp-middleware.test.ts: assert enforce header name",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add test for header presence across multiple routes",

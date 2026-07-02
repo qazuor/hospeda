@@ -73,6 +73,25 @@ describe('middleware.ts — prerendered CSP emission guard (SPEC-142 T-004)', ()
 });
 
 // ---------------------------------------------------------------------------
+// CSP_HEADER_NAME — Phase 2 enforce mode (HOS-30 T-020)
+// ---------------------------------------------------------------------------
+
+describe('CSP_HEADER_NAME — enforce mode, not Report-Only (HOS-30 T-020)', () => {
+    it('declares the enforce header name, not the Report-Only variant', () => {
+        expect(MIDDLEWARE_SRC).toContain("const CSP_HEADER_NAME = 'Content-Security-Policy';");
+    });
+
+    it('never sets the Report-Only header name anywhere in the middleware', () => {
+        expect(MIDDLEWARE_SRC).not.toContain("headers.set('Content-Security-Policy-Report-Only'");
+    });
+
+    it('uses the shared CSP_HEADER_NAME constant on both the main pipeline and the /beta docs route, so neither can drift to a different header', () => {
+        const occurrences = MIDDLEWARE_SRC.split('headers.set(CSP_HEADER_NAME').length - 1;
+        expect(occurrences).toBe(2);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // index.astro (home) — HOS-30 2.C regression guard
 // ---------------------------------------------------------------------------
 
