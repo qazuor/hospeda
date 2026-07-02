@@ -350,31 +350,31 @@
             "id": "T-011",
             "title": "Build the exclusive-deals Astro SSR-shell page",
             "description": "Create apps/web/src/pages/[lang]/mi-cuenta/ofertas-exclusivas/index.astro as a thin SSR shell resolving the authenticated user, following the apps/web/src/pages/[lang]/mi-cuenta/alertas/index.astro precedent. Delegates rendering to the T-012 client island.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Create the Astro page resolving the authenticated user",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mount the client island with client:load, matching the alertas precedent",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "astro"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:25:09Z",
+                "completed": "2026-07-02T15:34:36Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.3
     }
