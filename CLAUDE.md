@@ -522,6 +522,40 @@ that numbering belongs to the retired `.qtm/` system (see below). If ambiguous
 - **NEVER** start working on code without first checking Linear + `.specs/` for a relevant spec/task
 - If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications, then reflect the change on the Linear issue
 
+### Closing a spec — `/closeSpec` is mandatory, not optional
+
+**When implementation of a spec is finished, you MUST run `/closeSpec HOS-N` before
+considering the task done.** This is a non-negotiable end-of-work step, same tier
+as running the quality gate before marking a task `completed` — do not skip it
+because "the code merged" or "it's obviously done". A merged PR is NOT the same
+thing as a closed Linear issue; leaving the gap between them is exactly the drift
+pattern the 2026-07-01 migration audit found repeatedly (specs shipped for weeks
+with a stale Backlog/In-Progress issue nobody remembered to close).
+
+`/closeSpec` marks the Linear issue `Done` deterministically via the `index-sync`
+skill's Linear backend (`mcp__linear__save_issue({id, state: "Done"})`) — see
+`~/.claude/commands/closeSpec.md`. Do not hand-roll this with a raw
+`mcp__linear__save_issue` call outside the command; keep the write path centralized.
+
+**PR magic-word convention (belt-and-suspenders, not a replacement for
+`/closeSpec`)**: the ONE pull request that truly completes a spec's implementation
+(whichever PR that is — the only PR for a single-PR spec, or the final one for a
+multi-PR spec) should include the literal phrase **`Closes HOS-N`** somewhere in
+its PR **description** (GitHub/Linear only recognize magic words in the PR body,
+never in a comment or the title alone). Merging that PR then auto-transitions the
+Linear issue to Done via the GitHub integration, independent of whether
+`/closeSpec` gets run afterward. **Never** put `Closes`/`Fixes`/`Resolves`/
+`Implements` (or any other Linear magic word) in a partial/incremental PR that
+does NOT complete the spec — doing so prematurely closes the issue on an unrelated
+merge. This is exactly what happened once already: PR #1982 (a batch doc-migration
+PR, not real implementation work) had `HOS-36` in its title and Linear's
+`On PR merge → Done` team automation closed that issue on merge with zero actual
+work done. That blanket automation should be disabled (or scoped down) in
+`Linear → Settings → Team "Hospeda" → Workflows & automations → Pull request and
+commit automations` — set `On PR merge, move to...` to `No action` so that ONLY
+a deliberate `Closes HOS-N` in a PR description (or `/closeSpec` itself) can close
+an issue, never an incidental title mention.
+
 ### Legacy system (`.qtm/`) — do not use for new work
 
 `.qtm/specs/index.json`, `.qtm/tasks/index.json`, and `specs-prioritization.csv` are
