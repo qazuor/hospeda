@@ -71,4 +71,3 @@ media patch. See `MediaField.tsx` + `CommerceListingEditor.client.tsx`.
 - API route reference: [`apps/api/docs/route-architecture.md`](../../api/docs/route-architecture.md)
   (the `/mine` and protected `{id}` rows).
 - Admin "Approve & provision" loop: `apps/admin/src/features/commerce-leads/`.
-- Spec: `.qtm/specs/SPEC-249-commerce-owner-self-service-web/spec.md`.
