@@ -689,35 +689,35 @@
             "id": "T-020",
             "title": "Implement getDecrypted and list vault functions",
             "description": "Add `getDecryptedSocialCredential({ key })` (decrypts via T-014's shared util, returns plaintext — for internal server-side callers only, never exposed over HTTP) and `listSocialCredentials()` (masked: `id/key/label/createdAt/updatedAt/deletedAt`, never ciphertext/iv/authTag) to `social-credential-vault.service.ts`. Unit tests: decrypt returns correct plaintext, list never includes ciphertext/iv/authTag fields, not-found key returns NOT_FOUND.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-021", "T-022", "T-023", "T-024", "T-026", "T-040"],
             "subtasks": [
                 {
                     "title": "Implement getDecryptedSocialCredential",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement listSocialCredentials (masked)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: decrypt correctness, masking, not-found",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "crypto", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 6 new tests added (31 total in social-credential-vault.service.test.ts); social-credential-vault.service.ts now has the full CRUD+list+decrypt surface (create/rotate/updateMetadata/delete/list/getDecrypted)"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T01:00:00Z",
+                "completed": "2026-07-03T01:20:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.2
     }

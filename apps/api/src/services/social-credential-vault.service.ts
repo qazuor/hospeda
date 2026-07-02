@@ -43,7 +43,7 @@ import type { ServiceOutput } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { apiLogger } from '../utils/logger.js';
-import { encryptSecret } from '../utils/social-vault.js';
+import { decryptSecret, encryptSecret } from '../utils/social-vault.js';
 
 // ---------------------------------------------------------------------------
 // Credential keys
@@ -126,6 +126,19 @@ const DeleteSocialCredentialInputSchema = z.object({
 /** Input for soft-deleting a social credential. */
 export type DeleteSocialCredentialInput = z.infer<typeof DeleteSocialCredentialInputSchema>;
 
+/** Input for listing social credentials (masked — no secrets). */
+export interface ListSocialCredentialsInput {
+    /** When `true`, soft-deleted rows are included in the result. Default `false`. */
+    readonly includeDeleted?: boolean;
+}
+
+/** Input for reading and decrypting an active social credential. No actor —
+ * read path has no audit; used by internal server-side callers only (T-021-T-024). */
+export interface GetDecryptedSocialCredentialInput {
+    /** Social credential key to look up. */
+    readonly key: SocialCredentialKey;
+}
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
@@ -139,6 +152,26 @@ export interface SocialCredentialMutationResult {
 /** Returned by `deleteSocialCredential`. */
 export interface SocialCredentialDeleteResult {
     readonly key: SocialCredentialKey;
+}
+
+/**
+ * Masked social credential shape returned by `listSocialCredentials`.
+ * `ciphertext`, `iv`, and `authTag` are NEVER included.
+ */
+export interface SocialCredentialMasked {
+    readonly id: string;
+    readonly key: SocialCredentialKey;
+    readonly label: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly deletedAt: string | null;
+}
+
+/** Returned by `getDecryptedSocialCredential`. */
+export interface DecryptedSocialCredentialResult {
+    readonly key: SocialCredentialKey;
+    /** Plaintext secret. MUST NOT be logged. */
+    readonly plaintext: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -583,6 +616,163 @@ export async function deleteSocialCredential(
         return errorOutput<SocialCredentialDeleteResult>(
             ServiceErrorCode.INTERNAL_ERROR,
             'Unexpected error while deleting credential'
+        );
+    }
+}
+
+/**
+ * Lists social credentials, returning only the masked (non-secret) subset.
+ *
+ * The fields `ciphertext`, `iv`, and `authTag` are NEVER included in the result.
+ * Only metadata safe to surface in the admin UI is returned.
+ *
+ * @param input - `{ includeDeleted?: boolean }` — defaults to active rows only.
+ * @returns `ServiceOutput` with `{ items, total }` on success.
+ *
+ * @example
+ * ```ts
+ * const result = await listSocialCredentials({ includeDeleted: false });
+ * if (result.data) {
+ *   console.log(result.data.total);
+ * }
+ * ```
+ */
+export async function listSocialCredentials(
+    input: ListSocialCredentialsInput = {}
+): Promise<ServiceOutput<{ items: SocialCredentialMasked[]; total: number }>> {
+    const { includeDeleted = false } = input;
+
+    try {
+        const db = getDb();
+
+        const condition = includeDeleted ? undefined : isNull(socialCredentials.deletedAt);
+
+        // Select only masked fields — NEVER ciphertext, iv, or authTag.
+        const rows = condition
+            ? await db
+                  .select({
+                      id: socialCredentials.id,
+                      key: socialCredentials.key,
+                      label: socialCredentials.label,
+                      createdAt: socialCredentials.createdAt,
+                      updatedAt: socialCredentials.updatedAt,
+                      deletedAt: socialCredentials.deletedAt
+                  })
+                  .from(socialCredentials)
+                  .where(condition)
+            : await db
+                  .select({
+                      id: socialCredentials.id,
+                      key: socialCredentials.key,
+                      label: socialCredentials.label,
+                      createdAt: socialCredentials.createdAt,
+                      updatedAt: socialCredentials.updatedAt,
+                      deletedAt: socialCredentials.deletedAt
+                  })
+                  .from(socialCredentials);
+
+        // Serialize Date → ISO string to match SocialCredentialMasked.
+        const items: SocialCredentialMasked[] = rows.map((row) => ({
+            id: row.id,
+            key: row.key as SocialCredentialKey,
+            label: row.label ?? null,
+            createdAt: row.createdAt.toISOString(),
+            updatedAt: row.updatedAt.toISOString(),
+            deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null
+        }));
+
+        return { data: { items, total: items.length } };
+    } catch (error) {
+        apiLogger.error(
+            { error: error instanceof Error ? error.message : String(error) },
+            'social-credential-vault: unexpected error in listSocialCredentials'
+        );
+        return errorOutput<{ items: SocialCredentialMasked[]; total: number }>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while listing credentials'
+        );
+    }
+}
+
+/**
+ * Reads and decrypts the active social credential for `key`.
+ *
+ * Read-only path — no audit row is written. Used by the read-site call
+ * migrations (T-021-T-024) to supply the plaintext secret at call time.
+ *
+ * **SECURITY**: The returned `plaintext` MUST NOT be logged anywhere in the
+ * call stack. This function itself never logs the plaintext.
+ *
+ * Fails with `NOT_FOUND` when no active credential exists for `key`.
+ *
+ * @param input - Object containing the `key` to look up.
+ * @returns `ServiceOutput` with `{ key, plaintext }` on success.
+ *
+ * @example
+ * ```ts
+ * const result = await getDecryptedSocialCredential({ key: 'make_webhook_url' });
+ * if (result.data) {
+ *   // Use result.data.plaintext — NEVER log it.
+ * }
+ * ```
+ */
+export async function getDecryptedSocialCredential(
+    input: GetDecryptedSocialCredentialInput
+): Promise<ServiceOutput<DecryptedSocialCredentialResult>> {
+    const { key } = input;
+
+    try {
+        const db = getDb();
+
+        const rows = await db
+            .select({
+                ciphertext: socialCredentials.ciphertext,
+                iv: socialCredentials.iv,
+                authTag: socialCredentials.authTag
+            })
+            .from(socialCredentials)
+            .where(and(eq(socialCredentials.key, key), isNull(socialCredentials.deletedAt)))
+            .limit(1);
+
+        if (rows.length === 0) {
+            return errorOutput<DecryptedSocialCredentialResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for key '${key}'`
+            );
+        }
+
+        const row = rows[0];
+        if (row === undefined) {
+            return errorOutput<DecryptedSocialCredentialResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for key '${key}'`
+            );
+        }
+
+        const { plaintext } = decryptSecret({
+            ciphertext: row.ciphertext,
+            iv: row.iv,
+            authTag: row.authTag
+        });
+
+        // Log only the key — NEVER log the plaintext.
+        apiLogger.debug(
+            { key },
+            'social-credential-vault: credential decrypted for internal caller'
+        );
+
+        return { data: { key, plaintext } };
+    } catch (error) {
+        apiLogger.error(
+            {
+                key,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'social-credential-vault: unexpected error in getDecryptedSocialCredential'
+        );
+        return errorOutput<DecryptedSocialCredentialResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while decrypting credential'
         );
     }
 }

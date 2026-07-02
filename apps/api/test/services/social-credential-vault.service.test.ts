@@ -29,6 +29,15 @@
  *  17. Sets deletedAt/deletedById and inserts an audit row with action 'deleted'.
  *  18. Returns NOT_FOUND when no active credential exists (including already-deleted).
  *
+ * listSocialCredentials:
+ *  19. Returns masked items — never ciphertext/iv/authTag.
+ *  20. Excludes soft-deleted rows by default.
+ *
+ * getDecryptedSocialCredential:
+ *  21. Returns the decrypted plaintext via decryptSecret.
+ *  22. Returns NOT_FOUND when no active credential exists.
+ *  23. Never logs the plaintext (security check).
+ *
  * @module test/services/social-credential-vault.service
  */
 
@@ -40,6 +49,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     mockEncryptSecret,
+    mockDecryptSecret,
     mockWithTransaction,
     mockGetDb,
     mockDbSelectChain,
@@ -91,6 +101,8 @@ const {
         authTag: 'MOCK_AUTHTAG'
     });
 
+    const mockDecryptSecret = vi.fn().mockReturnValue({ plaintext: 'decrypted-secret-value' });
+
     const mockApiLogger = {
         info: vi.fn(),
         warn: vi.fn(),
@@ -100,6 +112,7 @@ const {
 
     return {
         mockEncryptSecret,
+        mockDecryptSecret,
         mockWithTransaction,
         mockGetDb,
         mockDbSelectChain,
@@ -153,7 +166,8 @@ vi.mock('drizzle-orm', async (importOriginal) => {
 });
 
 vi.mock('../../src/utils/social-vault.js', () => ({
-    encryptSecret: mockEncryptSecret
+    encryptSecret: mockEncryptSecret,
+    decryptSecret: mockDecryptSecret
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
@@ -167,6 +181,8 @@ vi.mock('../../src/utils/logger.js', () => ({
 import {
     createSocialCredential,
     deleteSocialCredential,
+    getDecryptedSocialCredential,
+    listSocialCredentials,
     rotateSocialCredential,
     updateSocialCredentialMetadata
 } from '../../src/services/social-credential-vault.service';
@@ -217,6 +233,8 @@ function resetAllMocks(): void {
         iv: 'MOCK_IV',
         authTag: 'MOCK_AUTHTAG'
     });
+
+    mockDecryptSecret.mockReturnValue({ plaintext: 'decrypted-secret-value' });
 
     const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
     mockDbInsertValues.mockReturnValue({ returning: returningMock });
@@ -726,6 +744,122 @@ describe('deleteSocialCredential', () => {
             expect(result.error?.code).toBe('NOT_FOUND');
             expect(result.data).toBeUndefined();
             expect(mockWithTransaction).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe('listSocialCredentials', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    const ROW = {
+        id: 'cred-uuid-1',
+        key: KEY,
+        label: 'Prod webhook',
+        // Real SELECTs never fetch these columns for this function — included
+        // here only to prove the mapping step can't leak them even if it did.
+        ciphertext: 'SHOULD_NEVER_APPEAR',
+        iv: 'SHOULD_NEVER_APPEAR',
+        authTag: 'SHOULD_NEVER_APPEAR',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-02T00:00:00Z'),
+        deletedAt: null
+    };
+
+    it('should return masked items — never ciphertext/iv/authTag', async () => {
+        mockDbSelectWhere.mockReturnValue(
+            Object.assign(Promise.resolve([ROW]), { limit: mockDbSelectLimit })
+        );
+
+        const result = await listSocialCredentials({});
+
+        expect(result.data).toBeDefined();
+        expect(result.data?.total).toBe(1);
+        const item = result.data?.items[0];
+        expect(item).toBeDefined();
+        expect(JSON.stringify(item)).not.toContain('SHOULD_NEVER_APPEAR');
+        expect(item).not.toHaveProperty('ciphertext');
+        expect(item).not.toHaveProperty('iv');
+        expect(item).not.toHaveProperty('authTag');
+        expect(item?.id).toBe(ROW.id);
+        expect(item?.key).toBe(ROW.key);
+        expect(item?.label).toBe(ROW.label);
+    });
+
+    it('should exclude soft-deleted rows by default (non-undefined where condition)', async () => {
+        mockDbSelectWhere.mockReturnValue(
+            Object.assign(Promise.resolve([]), { limit: mockDbSelectLimit })
+        );
+
+        await listSocialCredentials();
+
+        expect(mockDbSelectWhere).toHaveBeenCalledOnce();
+        const conditionArg = mockDbSelectWhere.mock.calls[0]?.[0];
+        expect(conditionArg).toBeDefined();
+    });
+});
+
+describe('getDecryptedSocialCredential', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    const ENCRYPTED_ROW = {
+        ciphertext: 'STORED_CIPHERTEXT',
+        iv: 'STORED_IV',
+        authTag: 'STORED_AUTHTAG'
+    };
+
+    describe('when an active credential exists', () => {
+        beforeEach(() => {
+            mockDbSelectLimit.mockResolvedValue([ENCRYPTED_ROW]);
+        });
+
+        it('should call decryptSecret with the stored encrypted values', async () => {
+            await getDecryptedSocialCredential({ key: KEY });
+
+            expect(mockDecryptSecret).toHaveBeenCalledOnce();
+            expect(mockDecryptSecret).toHaveBeenCalledWith({
+                ciphertext: ENCRYPTED_ROW.ciphertext,
+                iv: ENCRYPTED_ROW.iv,
+                authTag: ENCRYPTED_ROW.authTag
+            });
+        });
+
+        it('should return the decrypted plaintext', async () => {
+            const result = await getDecryptedSocialCredential({ key: KEY });
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.plaintext).toBe('decrypted-secret-value');
+            expect(result.data?.key).toBe(KEY);
+            expect(result.error).toBeUndefined();
+        });
+
+        it('should NOT log the plaintext in any logger call (security check)', async () => {
+            await getDecryptedSocialCredential({ key: KEY });
+
+            const allLoggerCalls = [
+                ...mockApiLogger.info.mock.calls,
+                ...mockApiLogger.warn.mock.calls,
+                ...mockApiLogger.debug.mock.calls,
+                ...mockApiLogger.error.mock.calls
+            ];
+
+            for (const callArgs of allLoggerCalls) {
+                expect(JSON.stringify(callArgs)).not.toContain('decrypted-secret-value');
+            }
+        });
+    });
+
+    describe('when no active credential exists', () => {
+        it('should return NOT_FOUND', async () => {
+            mockDbSelectLimit.mockResolvedValue([]);
+
+            const result = await getDecryptedSocialCredential({ key: KEY });
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(result.data).toBeUndefined();
+            expect(mockDecryptSecret).not.toHaveBeenCalled();
         });
     });
 });
