@@ -117,78 +117,78 @@
             "id": "T-004",
             "title": "Create social_credentials Drizzle schema",
             "description": "Create `packages/db/src/schemas/social/social_credentials.dbschema.ts`, mirroring `ai_provider_credentials.dbschema.ts` file-for-file: columns `id` (uuid pk), `key` (varchar, unique per active row — 'make_webhook_url'|'make_api_key'|'ai_social_key'|'operator_pin'), `ciphertext` (text), `iv` (varchar 32), `authTag` (varchar 32), `label` (varchar, optional), `createdAt`/`updatedAt`, `deletedAt`/`deletedById` (soft-delete, FK to users with onDelete:set null). Add a partial unique index on `key` `WHERE deleted_at IS NULL`. Export `InsertSocialCredential`/`SelectSocialCredential` types. Write a schema unit test verifying column types and the partial unique index exist.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Define table columns mirroring ai_provider_credentials",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add partial unique index on key where deleted_at IS NULL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from db package barrel file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "schema", "vault"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 18 tests"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:15:00Z",
+                "completed": "2026-07-02T22:45:00Z"
             }
         },
         {
             "id": "T-005",
             "title": "Create social_credential_audit Drizzle schema",
             "description": "Create `packages/db/src/schemas/social/social_credential_audit.dbschema.ts`, mirroring `ai_credential_audit.dbschema.ts` file-for-file: columns `id` (uuid pk), `actorId` (FK to users, onDelete:set null), `action` (varchar 20 — 'created'|'rotated'|'updated'|'deleted'), `key` (varchar, instead of providerId), `ipAddress` (varchar 45), `createdAt` only — append-only, no updatedAt/deletedAt. Add index on `(key, createdAt desc)` and on `actorId`. Export `InsertSocialCredentialAudit`/`SelectSocialCredentialAudit` types. Write a schema unit test verifying columns and indexes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Define table columns mirroring ai_credential_audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add (key, createdAt desc) and actorId indexes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from db package barrel file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "schema", "vault", "audit"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 18 tests"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:15:00Z",
+                "completed": "2026-07-02T22:45:00Z"
             }
         },
         {

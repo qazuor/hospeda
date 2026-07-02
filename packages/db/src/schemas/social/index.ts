@@ -4,6 +4,8 @@ export * from './social_audiences.dbschema.ts';
 export * from './social_audit_log.dbschema.ts';
 export * from './social_campaigns.dbschema.ts';
 export * from './social_content_batches.dbschema.ts';
+export * from './social_credential_audit.dbschema.ts';
+export * from './social_credentials.dbschema.ts';
 export * from './social_hashtag_sets.dbschema.ts';
 export * from './social_hashtags.dbschema.ts';
 export * from './social_platform_formats.dbschema.ts';
