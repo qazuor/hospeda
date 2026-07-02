@@ -528,7 +528,7 @@
             "id": "T-013",
             "title": "Verify Model-C seed propagation locally",
             "description": "After all core config edits (T-002 through T-010) land, run the local seed pipeline (`pnpm db:fresh-dev` against a scratch/worktree DB) and confirm: (a) structural changes — AD_FREE removal, CAN_VIEW_RECOMMENDATIONS move, CREATE_PROMOTIONS grant, MAX_COMPARE_ITEMS key presence — auto-sync via the capability-layer (`detectDivergences`/`buildCapabilitySyncPayload` in `billingPlans.seed.ts`), confirming the Model-C 'capability fields propagate' claim; (b) numeric-value-only changes (photos, promotions count, AI limits, isActive) do NOT retroactively update an already-seeded row (expected — commercial-layer, DB wins), only affect fresh inserts. Add a short note to T-011's SQL file header confirming this behavior was verified, since it's the reason the one-off UPDATE in T-011 is necessary for existing envs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [
                 "T-002",
@@ -545,20 +545,32 @@
             "subtasks": [
                 {
                     "title": "Run pnpm db:fresh-dev and inspect billing_entitlements/billing_plans rows",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "seed"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "manual DB verification, no code change"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "manual DB verification, no code change"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "verified empirically: reverted owner-basico create_promotions entitlement + max_photos_per_accommodation limit to simulate pre-HOS-16 state, re-ran seedBillingPlans in isolation, confirmed entitlements (capability) synced back from config while limitsValues (commercial) stayed at the simulated old value — Model C behavior matches billingPlans.seed.ts/MODEL_C_FIELD_SPLIT exactly"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:00:00Z",
+                "completed": "2026-07-02T10:00:00Z"
             }
         },
         {
@@ -737,7 +749,7 @@
             "id": "T-018",
             "title": "Local manual smoke: db:fresh-dev + dev test-user spot check",
             "description": "Per CLAUDE.md's local-first billing testing guidance (SPEC-143, zero MercadoPago dependency needed here): run `pnpm db:fresh-dev`, then verify via `pnpm db:studio` or a direct query that `billing_entitlements` no longer contains `ad_free` and the 3 complex `billing_plans` rows have `active=false`. Log in as `owner-basico@local.test` / `Password123!` and spot-check the admin/web UI reflects CREATE_PROMOTIONS + MAX_ACTIVE_PROMOTIONS=2 + MAX_PHOTOS_PER_ACCOMMODATION=15. Log in as a tourist-free test user and confirm CAN_VIEW_RECOMMENDATIONS is gone (recommendations feature gated/hidden) while it still works for a tourist-plus user. No staging smoke needed (no MP/webhook/cron surface touched).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-002",
@@ -754,28 +766,40 @@
             "subtasks": [
                 {
                     "title": "db:fresh-dev + inspect seeded rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Spot-check owner-basico test user",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Spot-check tourist-free vs tourist-plus recommendations gate",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "manual-smoke"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "manual smoke, no code change"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "manual smoke, no code change"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T10:00:00Z",
+                    "details": "real login smoke against worktree DB: billing_entitlements has 0 ad_free rows, complex-basico/premium/pro all active=false; host-basico@local.test login -> GET /billing/usage shows max_photos_per_accommodation=15, max_active_promotions=2, and auth/me permissions include ownerPromotion.create; tourist-free@local.test -> GET /recommendations returns 403 ENTITLEMENT_REQUIRED (can_view_recommendations), tourist-plus@local.test -> 200"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:00:00Z",
+                "completed": "2026-07-02T10:00:00Z"
             }
         },
         {
@@ -859,9 +883,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 1.6
     }

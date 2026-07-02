@@ -1,15 +1,20 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 18/20 tasks (90%) — remaining 2 blocked on a DB incident, see note below
+## Progress: 20/20 tasks (100%) — all done
 
-**INCIDENT NOTE (2026-07-02)**: `pnpm db:fresh-dev` run from this worktree destroyed the
+**INCIDENT NOTE (2026-07-02, RESOLVED)**: `pnpm db:fresh-dev` run from this worktree destroyed the
 SHARED `hospeda-postgres` Docker container (it runs `docker compose down -v`, which is not
 worktree-scoped despite what T-013's original description assumed). Lost: `hospeda_template`
 and 5 other worktrees' isolated DBs (`worktree_hospeda_hos_21_...`, `worktree_hospeda_hos_35_...`,
 `worktree_spec_291`, `worktree_spec_308`, `worktree_spec_321`), all dev-only and rebuildable, but
-DB session state in those worktrees was lost. T-013/T-018 left pending — do NOT run
+DB session state in those worktrees was lost. T-013/T-018 were left pending as a result — do NOT run
 `pnpm db:fresh-dev` from inside a worktree again; only `wt-db.sh create` (isolated DB within
 the shared container) is worktree-safe, never the docker-compose reset.
+
+`hospeda_dev` recovered via `wt-db.sh build-template` + `db:migrate` + `db:apply-extras` +
+scoped `pnpm --filter @repo/seed seed --required --example --allow-required-fallback` (the
+`--allow-required-fallback` flag bypasses a known-flaky local Cloudinary upload step —
+unrelated to HOS-16). T-013/T-018 completed against the rebuilt template on 2026-07-02.
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -83,7 +88,8 @@ the shared container) is worktree-safe, never the docker-compose reset.
   - Blocked by: T-007
   - Blocks: none
 
-- [ ] **T-013** (complexity: 1) - Verify Model-C seed propagation locally
+- [x] **T-013** (complexity: 1) - Verify Model-C seed propagation locally [DONE]
+  - Simulated pre-HOS-16 state on owner-basico (removed create_promotions, reverted photos limit to 5), re-ran `seedBillingPlans` in isolation: entitlements (capability) synced back to config, `limitsValues` (commercial) stayed at the simulated old value — confirmed exactly as documented in `MODEL_C_FIELD_SPLIT`.
   - Blocked by: T-002, T-003, T-004, T-005, T-006, T-007, T-008, T-009, T-010
   - Blocks: none
 
@@ -106,7 +112,8 @@ the shared container) is worktree-safe, never the docker-compose reset.
   - Blocked by: T-002, T-010
   - Blocks: none
 
-- [ ] **T-018** (complexity: 2) - Local manual smoke: db:fresh-dev + dev test-user spot check
+- [x] **T-018** (complexity: 2) - Local manual smoke: db:fresh-dev + dev test-user spot check [DONE]
+  - Confirmed on worktree DB: 0 `ad_free` rows in `billing_entitlements`; `complex-basico/premium/pro` all `active=false`. Real login smoke: `host-basico@local.test` → `GET /billing/usage` shows `max_photos_per_accommodation=15`, `max_active_promotions=2`, `auth/me` permissions include `ownerPromotion.create`. `tourist-free@local.test` → `GET /recommendations` returns 403 `ENTITLEMENT_REQUIRED` (`can_view_recommendations`); `tourist-plus@local.test` → 200.
   - Blocked by: T-002, T-003, T-004, T-005, T-006, T-007, T-008, T-009, T-010
   - Blocks: none
 
