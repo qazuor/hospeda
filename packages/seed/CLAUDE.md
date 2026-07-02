@@ -54,6 +54,29 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 
+### HOST accommodation fixture (HOS-30)
+
+Every HOST-role user in the matrix above (`host-basico`, `host-pro`, `host-premium`,
+`host-pro-plus-addon`, `host-trial`) also gets **exactly one fully-featured accommodation
+they own**, created directly (no `--example` JSON fixture involved). This unblocks staging
+crawl/smoke testing of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
+gallery) without depending on the `--example` seed group.
+
+Each fixture accommodation has: every catalog amenity/feature applicable to the
+`accommodation` vertical (SPEC-266), a full curated image gallery (25 photos from
+`IMAGE_POOL_BY_TYPE`), a rich Tier-3-equivalent price block (base + named fees + discounts +
+`others[]`), and a handful of FAQs. Name/slug/description clearly identify it as seed/test
+content tied to the owner (e.g. slug `alojamiento-completo-host-pro`) so it is obviously not
+real production content in a staging review.
+
+Idempotent: before creating, the seed checks whether the user already owns a non-deleted
+accommodation (by `ownerId`) and skips entirely if so — re-running `db:seed:test-users`
+against live staging never creates a second accommodation for the same host.
+
+Source: [`src/test-users/hostAccommodation.ts`](src/test-users/hostAccommodation.ts)
+(`ensureHostAccommodation` — the idempotency check + orchestration; `buildHostAccommodationCoreFields`
+/ `buildHostAccommodationPrice` — pure, unit-tested payload builders).
+
 **Workflow:**
 
 ```bash

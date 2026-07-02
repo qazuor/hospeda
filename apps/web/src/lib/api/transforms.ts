@@ -1775,6 +1775,9 @@ export function transformOwnerPromotion({
         maxRedemptions: item.maxRedemptions != null ? Number(item.maxRedemptions) : null,
         currentRedemptions: Number(item.currentRedemptions ?? 0),
         lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
+        touristAudience: String(item.touristAudience ?? 'plus') as import(
+            './types'
+        ).OwnerPromotionTouristAudience,
         createdAt: String(item.createdAt ?? ''),
         updatedAt: String(item.updatedAt ?? '')
     };

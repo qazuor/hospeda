@@ -1,7 +1,11 @@
 import { relations } from 'drizzle-orm';
 import { boolean, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
-import { LifecycleStatusPgEnum, OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
+import {
+    LifecycleStatusPgEnum,
+    OwnerPromotionDiscountTypePgEnum,
+    TouristAudiencePgEnum
+} from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 export const ownerPromotions = pgTable(
@@ -31,6 +35,10 @@ export const ownerPromotions = pgTable(
         // 'restricted-by-plan' context needed for selective restore on re-upgrade.
         // Reversible: flipped back to false on re-upgrade or manual restore.
         planRestricted: boolean('plan_restricted').notNull().default(false),
+        // HOS-21 D1: which tourist tier can see this promotion. Additive —
+        // 'vip' tourists see 'plus' + 'vip' rows, 'plus' tourists see 'plus'
+        // only. Independent from planRestricted (owner-side plan limit).
+        touristAudience: TouristAudiencePgEnum('tourist_audience').notNull().default('plus'),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -54,6 +62,9 @@ export const ownerPromotions = pgTable(
         ).on(table.ownerId, table.lifecycleState),
         ownerPromotions_planRestricted_idx: index('ownerPromotions_planRestricted_idx').on(
             table.planRestricted
+        ),
+        ownerPromotions_touristAudience_idx: index('ownerPromotions_touristAudience_idx').on(
+            table.touristAudience
         ),
         // SPEC-063-gaps T-015 (GAP-033): composite for the dominant query of the
         // hourly archive cron (archive-expired-promotions.job.ts filters on both

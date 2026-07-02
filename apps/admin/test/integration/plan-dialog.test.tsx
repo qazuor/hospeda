@@ -78,11 +78,11 @@ vi.mock('@repo/billing', () => {
         SAVE_FAVORITES: 'save_favorites',
         WRITE_REVIEWS: 'write_reviews',
         READ_REVIEWS: 'read_reviews',
-        AD_FREE: 'ad_free',
         PRICE_ALERTS: 'price_alerts',
         EXCLUSIVE_DEALS: 'exclusive_deals',
         VIP_SUPPORT: 'vip_support',
-        VIP_VISIBILITY_ACCESS: 'vip_visibility_access'
+        VIP_VISIBILITY_ACCESS: 'vip_visibility_access',
+        VIP_PROMOTIONS_ACCESS: 'vip_promotions_access'
     } as const;
 
     const LimitKey = {
@@ -130,11 +130,11 @@ vi.mock('@repo/billing', () => {
         { key: 'save_favorites', name: 'Save favorites', description: '' },
         { key: 'write_reviews', name: 'Write reviews', description: '' },
         { key: 'read_reviews', name: 'Read reviews', description: '' },
-        { key: 'ad_free', name: 'Ad-free', description: '' },
         { key: 'price_alerts', name: 'Price alerts', description: '' },
         { key: 'exclusive_deals', name: 'Exclusive deals', description: '' },
         { key: 'vip_support', name: 'VIP support', description: '' },
-        { key: 'vip_visibility_access', name: 'VIP visibility access', description: '' }
+        { key: 'vip_visibility_access', name: 'VIP visibility access', description: '' },
+        { key: 'vip_promotions_access', name: 'VIP promotions access', description: '' }
     ];
 
     return { EntitlementKey, LimitKey, LIMIT_METADATA, ENTITLEMENT_DEFINITIONS };

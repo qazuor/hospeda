@@ -205,7 +205,7 @@ describe('entitlementMiddleware', () => {
 
             // The crux of BETA-42: saving favorites must work with billing off.
             expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
-            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(5); // HOS-16 recalibration: tourist-free 3->5
             // HOST-only entitlements must NOT leak to a USER actor.
             expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
@@ -322,7 +322,7 @@ describe('entitlementMiddleware', () => {
 
             // tourist-free baseline must be granted even without a customer row
             expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
-            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(5); // HOS-16 recalibration: tourist-free 3->5
             // HOST-only entitlements must NOT leak to a USER actor
             expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
@@ -578,8 +578,9 @@ describe('entitlementMiddleware', () => {
             // AI_SUPPORT was removed (SPEC-200 pending, owner 2026-06-05).
             // SPEC-211 then removed AI_CHAT (chat is now owner-governed — the
             // listing owner pays, not the tourist) and AI_SEARCH (search is a
-            // free platform feature, no per-plan entitlement), so the pinned
-            // set is now 4 keys.
+            // free platform feature, no per-plan entitlement).
+            // HOS-16 then moved CAN_VIEW_RECOMMENDATIONS free->plus, so the
+            // pinned set is now 3 keys.
             app.use((c, next) => {
                 c.set('billingEnabled', true);
                 c.set('billingCustomerId', 'test-customer-id');
@@ -600,13 +601,12 @@ describe('entitlementMiddleware', () => {
                 readonly keys: readonly string[];
             };
 
-            expect(data.entitlementsCount).toBe(4);
+            expect(data.entitlementsCount).toBe(3);
             expect(data.keys).toEqual(
                 [
                     EntitlementKey.SAVE_FAVORITES,
                     EntitlementKey.WRITE_REVIEWS,
-                    EntitlementKey.READ_REVIEWS,
-                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+                    EntitlementKey.READ_REVIEWS
                 ].sort()
             );
         });

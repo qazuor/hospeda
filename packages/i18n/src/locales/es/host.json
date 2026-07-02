@@ -451,7 +451,9 @@
             "accommodationId": "Propiedad",
             "accommodationIdAll": "Todas mis propiedades",
             "accommodationIdLoading": "Cargando propiedades...",
-            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
+            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas.",
+            "vipOnly": "Exclusiva para plan VIP",
+            "vipOnlyHint": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven turistas Plus y VIP."
         },
         "discountTypes": {
             "percentage": "Porcentaje",

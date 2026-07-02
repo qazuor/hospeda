@@ -292,8 +292,15 @@
         {
             "idx": 41,
             "version": "7",
+            "when": 1782981049922,
+            "tag": "0041_volatile_colossus",
+            "breakpoints": true
+        },
+        {
+            "idx": 42,
+            "version": "7",
             "when": 1783018942891,
-            "tag": "0041_add_plan_typed_attribute_columns",
+            "tag": "0042_add_plan_typed_attribute_columns",
             "breakpoints": true
         }
     ]

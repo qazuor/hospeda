@@ -130,7 +130,12 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         });
 
         // Assert
-        const raw = JSON.stringify(await res.json());
+        // Scoped to `data` only — `metadata.timestamp`/`requestId` are
+        // non-deterministic and can coincidentally contain digit substrings
+        // (e.g. a millisecond value of "7xx" after a second ending in "4"
+        // forms "4.7"), causing a flaky false positive against the full body.
+        const body = (await res.json()) as { data: unknown };
+        const raw = JSON.stringify(body.data);
         expect(raw).not.toMatch(/aggregateRating|ratingValue|reviewBody|reviewCount/i);
         expect(raw).not.toContain('Excelente lugar');
         expect(raw).not.toContain('4.7');

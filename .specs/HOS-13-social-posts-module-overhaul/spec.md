@@ -2,6 +2,7 @@
 title: Social Posts Module Overhaul
 linear: HOS-13
 statusSource: linear
+status: superseded
 created: 2026-07-01
 type: feature
 areas:
@@ -12,7 +13,20 @@ areas:
 # Social Posts Module Overhaul
 
 > Migrated from `.qtm/specs/SPEC-297-social-posts-module-overhaul/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-13.
-
+>
+> **SUPERSEDED 2026-07-02.** Discovery phase (Section 7) is complete — all 9 open
+> questions resolved, owner decisions made, functional design settled for the
+> batch/campaign flow. This spec's deliverable (the research + split) is done.
+> Implementation continues in 4 sub-specs:
+>
+> - [HOS-64 — Settings Enforcement Fix](https://linear.app/hospeda-beta/issue/HOS-64) (`.specs/HOS-64-settings-enforcement-fix/`)
+> - [HOS-65 — Publishing Engine Extension](https://linear.app/hospeda-beta/issue/HOS-65) (`.specs/HOS-65-publishing-engine-extension/`)
+> - [HOS-66 — Composer + Dashboard UX](https://linear.app/hospeda-beta/issue/HOS-66) (`.specs/HOS-66-composer-dashboard-ux/`)
+> - [HOS-67 — GPT/MAKE Config Export](https://linear.app/hospeda-beta/issue/HOS-67) (`.specs/HOS-67-gpt-make-config-export/`)
+>
+> This document remains as the discovery record (all research findings, resolved
+> OQs, and the reasoning behind the split) — do not implement directly against it.
+>
 > A discovery-first spec. Goals are **provisional** — they capture the full owner
 > wish-list before design. The first deliverable is a research phase + owner
 > alignment session, after which this spec will almost certainly be split into
@@ -94,19 +108,26 @@ phase and a likely spec split.
 - **G-3 [provisional]** Multi-format publishing: end-to-end support for TEXT_POST,
   VIDEO_POST, CAROUSEL, STORY (not just photo/image). Likely requires per-format
   Make.com scenarios or a per-format dispatch branch.
-- **G-4 [provisional]** Batch draft creation from GPT: a single GPT call can submit
-  N drafts (sequential or parallel array); the API ingests all and returns N draft
-  IDs with per-draft warnings.
-- **G-5 [provisional]** Campaign/batch auto-detection: the ingestion service scans
-  incoming draft metadata for campaign/batch signals and, when confident, suggests
-  (or auto-assigns) the association. Exact trigger TBD in OQ-2.
+- **G-4 [functional design resolved, see OQ-5]** Batch draft creation from GPT:
+  chained single-draft submissions in one conversation (not a bulk array endpoint),
+  each optionally carrying an explicit campaign/batch name that the backend resolves
+  or creates.
+- **G-5 [functional design resolved, see OQ-6]** Campaign/batch auto-detection:
+  explicit-declaration flow (operator names the batch, GPT fuzzy-checks for
+  near-duplicates before creating) as the primary path; implicit fallback where the
+  GPT reasons over the catalog's active-campaigns/batches list and proposes/asks
+  when no explicit name was given. Detection logic lives in the GPT's own reasoning,
+  not backend heuristics — backend exposes the active list and an idempotent
+  resolve-or-create by name/slug.
 - **G-6 [provisional]** Config export: a single admin page exports the GPT OpenAPI
   schema AND the Make.com payload spec + webhook configuration in a form the operator
   can paste directly, without further manual editing.
 - **G-7 [provisional]** Dashboard improvements: date-range picker on dashboard KPIs,
   per-platform breakdown chart, thumbnail column on the posts list table.
-- **G-8 [provisional]** Platform multi-select in composer: creating a post fans out
-  to multiple platforms at once; UI and API must support simultaneous target creation.
+- **G-8 [functional design resolved, see OQ-8]** Platform multi-select in composer:
+  creating a post fans out to N target rows on save, sharing the base caption by
+  default with optional per-platform override. Pure UI work — the target-level
+  override columns already exist in the schema.
 - **G-9 [provisional]** Icon audit + migration: replace all inline SVG / direct
   phosphor imports in social module components with `@repo/icons` references.
 - **G-10 [provisional]** Pull public Hospeda data: define a safe, rate-limited path
@@ -133,6 +154,7 @@ phase and a likely spec split.
 The existing system is fully implemented and in staging. Key anchors:
 
 ### API layer (`apps/api/src/routes/social/`)
+
 66 route files across: `admin/posts/`, `admin/batches/`, `admin/campaigns/`,
 `admin/hashtags/`, `admin/hashtag-sets/`, `admin/footers/`, `admin/platform-formats/`,
 `admin/audiences/`, `admin/settings/` (list + patch-by-key), `admin/publish-logs/`,
@@ -140,12 +162,14 @@ The existing system is fully implemented and in staging. Key anchors:
 ingest. The social routes mount under `/api/v1/admin/social/` and `/api/v1/ai/social/`.
 
 ### Service layer (`packages/service-core/src/services/social/`)
+
 17 service files including `social-publish-dispatch.service.ts` (Make.com HTTP
 dispatch + retry + cascade), `social-setting.service.ts` (key-value CRUD),
 `social-image-pipeline.service.ts` (Cloudinary upload), `social-draft-ingestion.service.ts`,
 `social-campaign.service.ts`, `social-content-batch.service.ts`.
 
 ### DB layer (`packages/db/src/schemas/social/` + `models/social/`)
+
 18 Drizzle schemas: `social_posts`, `social_post_targets`, `social_platforms`,
 `social_platform_formats`, `social_settings`, `social_campaigns`,
 `social_content_batches`, `social_audiences`, `social_hashtags`, `social_hashtag_sets`,
@@ -153,12 +177,14 @@ dispatch + retry + cascade), `social-setting.service.ts` (key-value CRUD),
 `social_publish_logs`, `social_audit_log`, `social_ai_requests`.
 
 ### Admin UI (`apps/admin/src/routes/_authed/social/`)
+
 Sections: `posts/`, `batches/`, `campaigns/`, `catalog/`, `footers/`, `hashtags/`,
 `platform-formats/`, `settings/`, `audiences/`, plus `index.tsx` (marketing hub).
 Hooks: `use-social-posts.ts`, `use-social-dashboard.ts`, `use-social-catalog.ts`,
 `use-social-platform-settings.ts`.
 
 ### Newsletter (separate system)
+
 API: `apps/api/src/routes/user/protected/newsletter.ts`, cron:
 `apps/api/src/cron/jobs/newsletter-close-campaigns.job.ts`, worker:
 `apps/api/src/workers/newsletter-dispatch.worker.ts`.
@@ -167,6 +193,7 @@ Schemas: `packages/schemas/src/entities/newsletter/`,
 `packages/schemas/src/enums/newsletter-*.ts`.
 
 ### Integration env vars
+
 - `HOSPEDA_AI_SOCIAL_KEY` — GPT inbound API key.
 - `HOSPEDA_OPERATOR_PIN` / `HOSPEDA_OPERATOR_PIN_HASH` — GPT draft-submission PIN.
 - `HOSPEDA_MAKE_API_KEY` — outbound key to Make.com webhook dispatch.
@@ -174,78 +201,203 @@ Schemas: `packages/schemas/src/entities/newsletter/`,
 
 ## 6. Open Questions (rich — most must be resolved before design)
 
-- **OQ-1 — Publishing mechanism for new platforms.** How should TikTok, LinkedIn,
-  and others be integrated? Three candidate approaches: (a) one Make.com scenario per
-  platform, adding new scenarios as platforms are onboarded; (b) a third-party
-  aggregator (Buffer, Ayrshare, Publer) that abstracts platform APIs behind one
-  endpoint, replacing or wrapping Make.com; (c) direct native API integration
-  per platform (Meta Graph API for Instagram/Facebook, LinkedIn API, TikTok for
-  Developers). Each carries radically different complexity, cost, and maintenance
-  burden. **Owner decision required.** This answer determines whether G-2 is a
-  one-week schema extension or a multi-month platform engineering effort.
+- **OQ-1 — Publishing mechanism for new platforms. [DECIDED 2026-07-02, discovery
+  Step 2]** How should TikTok, LinkedIn, and others be
+  integrated? Three candidate approaches, compared against the actual codebase:
+  - **(a) One Make.com scenario per platform.** `social-publish-dispatch.service.ts`
+    is already fully platform-agnostic (no `if (platform === ...)` branching anywhere
+    in eligibility/payload/dispatch/retry/cascade) — this option is essentially free
+    on the Hospeda code side. Caveat found: `SocialPlatformEnum` is a hardcoded
+    3-value TS enum backing a real Postgres `pgEnum`, so adding a platform still needs
+    a code change + a structural migration (`ALTER TYPE ... ADD VALUE`) before any DB
+    rows can be inserted — not a pure DB-row operation as the draft implied. Lowest
+    risk, fastest for 1-2 platforms; risk grows with scenario count/cost at scale.
+  - **(b) Third-party aggregator (Ayrshare/Buffer/Publer).** Would replace the
+    webhook-POST dispatch mechanism with an aggregator SDK call; `makeChannelKey`
+    becomes vestigial. Recurring vendor cost (rough, needs live pricing check before
+    committing budget) vs. Hospeda owning zero platform-API churn. Best if onboarding
+    many platforms quickly.
+  - **(c) Direct native API per platform.** Slowest (OAuth2 + token refresh + app
+    review per platform), highest long-term engineering ownership, zero vendor
+    dependency. Reserve for a platform needing deep non-standard control.
+  No prior evaluation of any aggregator or native API exists anywhere in the repo —
+  this is a clean-slate decision, not a revisit.
+  **DECIDED 2026-07-02 — owner picked (a): one Make.com scenario per new platform.**
+  G-2 sub-specs as a schema-extension-plus-scenario effort (SPEC-297b), not a
+  platform-engineering project.
 
-- **OQ-2 — Why don't settings apply today?** The `social_settings` table and PATCH
-  endpoint exist, but it is not confirmed whether `social-publish-dispatch.service.ts`,
-  `social-image-pipeline.service.ts`, or the GPT catalog endpoint actually READ from
-  that table at runtime. Investigation needed: are settings only stored, never
-  consumed? Or are they consumed but a code path bypasses them? The answer determines
-  whether G-1 is a bug fix (trivial) or a design gap (medium effort).
+- **OQ-2 — Why don't settings apply today? [RESOLVED 2026-07-02, discovery Step 1]**
+  Audited `social-setting.service.ts`, `social-publish-dispatch.service.ts`,
+  `social-image-pipeline.service.ts`, and `apps/api/src/routes/ai/social/catalog.ts`.
+  **The original premise was false**: all 7 seeded `social_settings` rows
+  (`default_timezone`, `default_campaign_slug`, `default_batch_slug`,
+  `max_hashtags_instagram/facebook/x`, `make_webhook_url`) ARE read at runtime, via
+  two legitimate paths — the permission-gated `SocialSettingService` (admin CRUD
+  routes only) and a direct `socialSettingModel` read (dispatch/cron/GPT-catalog,
+  which run without an actor). None are orphaned.
+  The real gap is narrower: (1) **genuine small bug** — `max_hashtags_*` settings
+  are surfaced to the GPT as advisory text but have zero server-side enforcement in
+  `social-draft-ingestion.service.ts` or any route; an operator changing the setting
+  changes only what the LLM is told, not what the API accepts. (2) **not a bug, new
+  scope** — retry count, Make webhook timeout, image download timeout, Cloudinary
+  folder, and cron cadence were never modeled as `social_settings` rows at all (no
+  seed entry exists); wiring these up is new design work, not a fix. (3)
+  **architecture inconsistency worth a decision**: `make_webhook_url` is stored as a
+  DB-backed secret in `social_settings`, while the sibling credential
+  `HOSPEDA_MAKE_API_KEY` lives in an env var — two credentials for the same
+  integration, two different storage strategies.
+  **Verdict: G-1 is small-to-medium, weighted small** — not the "design gap" the
+  spec draft assumed.
 
-- **OQ-3 — What does "unify with newsletter" mean?** At minimum it could be a shared
-  nav/marketing hub in the admin. At maximum it could be a merged data model with
-  shared scheduling, shared audience segmentation, shared composer, and a unified
-  campaign concept spanning both social posts and email. The former is two hours of
-  routing work; the latter is a multi-spec project. The owner must draw the line.
-  Candidates: (a) shared marketing hub route only (nav unification); (b) shared
-  audience/subscriber list so social campaigns can target newsletter subscribers;
-  (c) shared campaign entity with `channel: 'social' | 'email'`; (d) full composer
-  unification. Recommendation: start with (a), defer (b)+(c)+(d) to a sub-spec.
+- **OQ-3 — What does "unify with newsletter" mean? [DECIDED 2026-07-02, discovery
+  Step 3]** Four candidate levels, grounded in the
+  actual schemas:
+  - **(a) Shared marketing hub route.** Already ~90% done: the admin "Marketing"
+    sidebar (SPEC-254, `apps/admin/src/config/ia/sidebars.ts`) already groups
+    `/social/*` and `/newsletter/*` nav under one section. Only a shared `/marketing`
+    landing page is missing. **Effort: ~half a day, not the "two hours" originally
+    guessed but still trivial.**
+  - **(b) Shared audience/subscriber list.** Structurally shaky: `social_audiences`
+    is a content-targeting *label* table with no contact list behind it, while
+    `newsletter_subscribers` is a real GDPR/Ley 25.326-audited contact list. Social
+    reach is platform-follower-based, not subscriber-based — "audience" doesn't mean
+    the same thing in both domains. This needs a design answer before it's buildable,
+    not just a join table.
+  - **(c) Shared campaign entity (`channel: 'social'|'email'`).** `social_campaigns`
+    is a lightweight folder/label with no lifecycle; `newsletter_campaigns` is a full
+    send-lifecycle entity (draft/sending/sent, `sentAt`, `totalRecipients`,
+    compliance-relevant, referenced by `newsletter_campaign_deliveries`). A real merge
+    risks the newsletter compliance audit trail if rushed — this is weeks of work,
+    not a discriminator column.
+  - **(d) Full composer unification.** Short-form multi-platform + hashtags/media vs.
+    long-form rich-text email are fundamentally different content shapes with
+    different renderers. Weeks-to-months, a genuine UX redesign, and its risk
+    compounds whatever (c) resolves to.
+  Zero code coupling exists today between the social and newsletter schemas/services
+  (verified via grep).
+  **DECIDED 2026-07-02 — owner picked (a): shared marketing hub route only.** (b),
+  (c), (d) are explicitly deferred, not scoped into any current sub-spec — they would
+  need their own future spec if revisited. G-11 is downsized to "add a `/marketing`
+  landing page linking social + newsletter" and folds into SPEC-297c (composer +
+  dashboard UX) rather than needing SPEC-297e as a separate newsletter-unification
+  spec.
 
-- **OQ-4 — What does "export GPT/MAKE config" mean exactly?** The GPT OpenAPI schema
-  endpoint (`/api/v1/admin/social/gpt-action-schema`) already exists. What is missing
-  on the Make.com side? Is the export a downloadable JSON spec of the Make.com
-  webhook payload schema? A copy-paste block with the webhook URL, expected headers,
-  and payload shape? A how-to page? This needs a concrete mockup before the export
-  UI is built.
+- **OQ-4 — What does "export GPT/MAKE config" mean exactly? [RESOLVED 2026-07-02,
+  discovery Step 4 — mockup ready, folds into SPEC-297d]** Mockup produced: a new
+  admin page/section "Integration Config Export" with two panels. Panel 1 (GPT)
+  wraps the existing `/api/v1/admin/social/gpt-action-schema` endpoint (today it's a
+  bare API route with no admin UI — operators curl it directly). Panel 2 (Make.com,
+  the actually-missing piece) shows the webhook URL (from `social_settings.
+  make_webhook_url`), the outbound headers Hospeda sends (`x-make-apikey`, masked),
+  and a live JSON Schema of `SocialMakePayloadSchema` / `MakeWebhookResponseSchema`
+  (both already exist, untouched, in
+  `packages/schemas/src/entities/social/social-make-payload.schema.ts`) — generated
+  the same programmatic way as the GPT export, not a static/hand-written doc, per
+  Risk R-5. Requires one new endpoint (`GET /api/v1/admin/social/
+  make-webhook-schema`, ~150 LOC mirroring `gpt-action-schema.ts`) + one new admin
+  page + two small components. **Small, fits inside SPEC-297d as scoped — does not
+  need its own spec.**
+  **Side discrepancy found (unresolved, needs owner/eng confirmation, not
+  investigated further here):** `apps/api/src/routes/integrations/make/social/jobs/
+  claim.ts` and `result.ts` (inbound routes gated by `HOSPEDA_MAKE_INBOUND_KEY` /
+  `x-hospeda-make-key`) look like leftovers from a pre-synchronous async design —
+  `social-make-payload.schema.ts`'s own doc comment says callback URLs "have been
+  removed" in favor of the current synchronous `Webhook Response` round-trip. If
+  these routes are dead code, the export mockup's Panel 2 must NOT mention that
+  header (would mislead the operator into wiring up a dead callback); if they're a
+  live legacy/fallback path, that needs explaining. Flag for SPEC-297d
+  implementation, not blocking the rest of this discovery.
 
-- **OQ-5 — Batch GPT creation: chained or array?** Two sub-options for G-4: (a) the
-  GPT calls `POST /api/v1/ai/social/drafts` N times in sequence (one call per draft,
-  GPT-side chaining via Custom GPT Actions); (b) a new `POST /api/v1/ai/social/
-  drafts/batch` endpoint accepts an array of drafts and returns an array of results.
-  Option (a) requires no API changes but is slower and more GPT-prompt-engineering-
-  heavy. Option (b) requires a new endpoint, a bulk ingestion service method, and
-  transactional atomicity decisions (fail all vs. fail individual). Which does the
-  owner prefer?
+- **OQ-5 — Batch GPT creation: chained or array? [RESOLVED 2026-07-02, functional
+  design session]** Owner's real workflow: "vamos a hacer un batch de Lanzamiento
+  2026" → then iteratively "armame otra" per draft, reviewing each as it comes. This
+  workflow is inherently sequential (the operator can't know all N drafts upfront),
+  so **option (a), chained `POST /api/v1/ai/social/drafts` calls, is the correct fit
+  — not a cost tradeoff, a UX fit.** No new batch-array endpoint needed. Each
+  submission in an active-batch conversation carries an explicit campaign/batch
+  reference (name or slug); see OQ-6 for resolution + creation semantics.
 
-- **OQ-6 — Campaign/batch auto-detection heuristics.** G-5 requires the ingestion
-  service to detect whether an incoming draft belongs to a campaign or batch. What
-  signals are reliable? Hashtag overlap with existing campaigns? Caption keyword
-  matching? An explicit `batch_hint` / `campaign_hint` field in the GPT payload?
-  Or a pure UI affordance (GPT suggests, admin confirms, no automatic assignment)?
-  Automatic assignment is risky if wrong; confirmation-only is safe but adds friction.
+- **OQ-6 — Campaign/batch auto-detection heuristics. [RESOLVED 2026-07-02,
+  functional design session]** Two flows, both required for v1:
+  1. **Explicit declaration (primary flow).** Operator states intent in the GPT
+     conversation ("vamos a hacer un batch de Lanzamiento 2026"); every subsequent
+     draft submission in that session carries the batch/campaign name. Backend
+     resolves by slug: match → associate; no match → create. **Fuzzy-match guard
+     before creating**: the GPT must first check the existing active
+     campaigns/batches list for a near-duplicate name (e.g. operator says
+     "Lanzamiento 26" when "Lanzamiento 2026" already exists) and ask the operator
+     to confirm "use the existing one" vs. "create a new one" — never silently
+     create a likely-duplicate. This detection is done by the GPT's own reasoning
+     over the list (see below), not backend string-similarity code.
+  2. **Implicit fallback (no explicit declaration).** Requires the GPT catalog
+     endpoint (`/api/v1/ai/social/catalog`) to expose the **list of active
+     campaigns and batches** (name, slug, description, date window) — today it only
+     returns a single `default_campaign_slug`/`default_batch_slug`, not the active
+     list; this is new scope, not existing plumbing. The GPT reasons semantically
+     over that list against the draft's content: confident match → propose it to the
+     operator for confirmation; unsure → ask, offering the list as options; no match
+     / operator declines → draft ships unassociated. **Matching is LLM-side
+     reasoning, not backend keyword/hashtag heuristics** — the backend's job is
+     limited to exposing the active list and accepting an optional
+     `campaignSlug`/`batchSlug` (create-if-new, per the fuzzy-match guard above) on
+     draft submission.
+  Campaigns and batches remain two distinct concepts (owner confirmed) — same table
+  shape today, different semantics (campaign = thematic/ongoing, e.g. "Institucional
+  Hospeda"; batch = time-boxed publishing sprint, e.g. "Hospeda Launch 2026-06",
+  matching the owner's "Lanzamiento 2026" scenario). No schema merge.
 
-- **OQ-7 — "Pull from hospeda.com.ar" scope.** The owner wants the admin or GPT to
-  query live public Hospeda data. The safest interpretation is: the GPT calls
-  existing `/api/v1/public/*` endpoints (already authenticated as admin) before
-  drafting. The more ambitious interpretation is a server-side web-scrape or
-  structured data extract from the public web app. Which is intended? And is this
-  a GPT-side feature (the GPT calls the API directly as part of its Action chain)
-  or a server-side feature (a new endpoint that proxies or aggregates public data)?
+- **OQ-7 — "Pull from hospeda.com.ar" scope. [DECIDED 2026-07-02]** Owner picked the
+  server-side option: a new endpoint that aggregates/proxies multiple public-data
+  sources into one call shaped for draft enrichment, rather than having the GPT call
+  `/api/v1/public/*` piecemeal via its own Action chain. Centralizes the logic of
+  which public data feeds a draft in one place (SPEC-297c). Functional shape (which
+  entities, what triggers the pull, how it's surfaced in the composer) still needs
+  definition — technical/API design deferred to SPEC-297c's own design phase.
 
-- **OQ-8 — Platform multi-select UX.** G-8 asks for multi-platform selection in the
-  composer. Today `social_post_targets` is one row per platform-format. Multi-select
-  means the composer creates N target rows on save. Does it also need per-platform
-  caption customisation (Instagram caption vs. X caption may need different lengths)?
-  Or is the caption shared across all targets? This affects the data model and the
-  form layout significantly.
+- **OQ-8 — Platform multi-select UX. [RESOLVED 2026-07-02, functional design
+  session]** Turns out this needs zero schema work: `social_post_targets` already
+  has `captionOverride`, `hashtagsOverrideText`, and `footerOverride` (nullable —
+  null means "inherit the parent post's `finalCaption`/`finalHashtagsText`/footer",
+  set means "override for this platform only"), shipped in SPEC-254. This is a pure
+  UI feature for SPEC-297b/c: multi-selecting platforms in the composer creates N
+  target rows on save, all sharing the base caption by default; the operator can
+  optionally customize one platform's text via a "customize for this platform"
+  affordance (same pattern as Buffer/Hootsuite), which sets that target's
+  `captionOverride`. No data model change needed.
 
-- **OQ-9 — Should this spec be split, and how?** Recommended split (see Section 7):
-  (a) SPEC-297a: Settings enforcement bug fix (G-1, small); (b) SPEC-297b: Publishing
-  engine extension — new platforms, new formats, multi-select (G-2, G-3, G-8,
-  depends on OQ-1); (c) SPEC-297c: Composer and dashboard UX (G-4, G-5, G-7, G-8
-  UI, G-9, G-10); (d) SPEC-297d: GPT/MAKE config export (G-6, G-4); (e) SPEC-297e:
-  Newsletter unification (G-11, depends on OQ-3). Owner must confirm or reshape the
-  split before any implementation starts.
+- **OQ-9 — Should this spec be split, and how? [FINALIZED 2026-07-02, pending
+  Linear allocation]** With OQ-1 and OQ-3 both decided, the split collapses from
+  the originally-proposed 5 sub-specs to **4**, since OQ-3(a) removes the need for a
+  standalone newsletter-unification spec:
+  - **SPEC-297a — Settings enforcement fix** (G-1, small): add server-side
+    enforcement of `max_hashtags_*` in draft ingestion; owner decision on which of
+    the never-modeled knobs (retry count, timeouts, Cloudinary folder, cron cadence)
+    are worth promoting to `social_settings` rows, if any.
+  - **SPEC-297b — Publishing engine extension** (G-2, G-3, G-8; OQ-1 = Make.com
+    scenario per platform): new platform enum values + migration + `social_platforms`/
+    `social_platform_formats` rows per new platform, multi-format publishing
+    (TEXT_POST/VIDEO_POST/CAROUSEL/STORY end-to-end), platform multi-select
+    (API fan-out side).
+  - **SPEC-297c — Composer + dashboard UX** (G-4, G-5, G-7, G-8 UI, G-9, G-10,
+    downsized G-11): batch GPT draft creation (chained calls, resolved via OQ-5),
+    campaign/batch auto-detection (explicit-name + fuzzy-duplicate guard + implicit
+    catalog-driven fallback, resolved via OQ-6 — needs the catalog endpoint extended
+    with the active campaigns/batches list), dashboard date-range + per-platform
+    breakdown + thumbnails, composer multi-select UI, icon audit, public-data pull
+    (G-10, server-side aggregation endpoint per OQ-7), and the downsized newsletter
+    hub landing page (OQ-3 outcome).
+  - **SPEC-297d — GPT/MAKE config export** (G-6): the Integration Config Export
+    admin page mocked in discovery Step 4 — new `make-webhook-schema` endpoint +
+    admin page. Should also close out R-6 (remove the confirmed-dead Make.com
+    callback routes) before/alongside shipping, so the export never advertises a
+    dead header.
+  - A separate **small NOSPEC cleanup PR** (not a sub-spec) removes the R-6 dead
+    code — independent of the above, can land anytime.
+  Three open questions remain genuinely open going into SPEC-297b/c implementation:
+  **OQ-5** (batch GPT creation: chained vs. new batch endpoint), **OQ-6** (campaign
+  auto-detection heuristics), **OQ-7** ("pull from hospeda.com.ar" scope: GPT-side
+  vs. server-side). These are implementation-detail decisions for each sub-spec's own
+  design phase, not blockers to allocating the sub-specs now.
 
 ## 7. First Steps — Discovery Plan
 
@@ -311,6 +463,26 @@ After Steps 1-4, produce the sub-specs (see OQ-9). Allocate numbers via
   spec export that is hand-written or snapshot-based can drift. The right design is
   a programmatic export of the actual `SocialMakePayload` Zod schema as a JSON Schema
   document — which also serves as live documentation.
+- **R-6 — Dead inbound-callback routes [CONFIRMED 2026-07-02, discovery follow-up].**
+  `apps/api/src/routes/integrations/make/social/jobs/claim.ts` and `result.ts`
+  (+ `SocialPublishDispatchService.handleMakeCallbackClaim`/
+  `handleMakeCallbackResult`) are **confirmed dead-in-practice legacy code**, high
+  confidence. Git history: commit `c73e036ca` (2026-06-22) added them for the
+  original async-callback design; two days later `7b0dba8d8`/`5130b484e`
+  (2026-06-24) replaced it with the current synchronous Make.com "Webhook Response"
+  round-trip and explicitly removed `callbackClaimUrl`/`callbackResultUrl` from
+  `SocialMakePayloadSchema` — but the callback routes/handlers were never deleted.
+  Nothing in the current dispatch path (`social-publish-dispatch.job.ts` calls only
+  `dispatchTarget`/`dispatchPostNow`) constructs a URL pointing at them.
+  `packages/service-core/test/services/social/full-pipeline.integration.test.ts`
+  already labels these test scenarios "(legacy)" and seeds state directly via SQL
+  to exercise them, confirming the team already treats them as legacy. Caveat: a
+  live Make.com scenario could theoretically still be hardcoded to call these URLs
+  outside of the payload-driven config — not verifiable from the repo alone, worth
+  a quick check in the Make.com dashboard before removal.
+  **Action: schedule a small removal PR** (routes + handlers + `HOSPEDA_MAKE_INBOUND_KEY`
+  registry entry) — not urgent enough to block SPEC-297d, but should land before or
+  alongside it so the config-export UI never advertises the dead header.
 
 ## 9. Relationship to existing systems
 
@@ -339,3 +511,45 @@ After Steps 1-4, produce the sub-specs (see OQ-9). Allocate numbers via
   discovery plan defined. No owner alignment or design decisions made yet — the first
   deliverable is the research phase described in Section 7. This spec is expected to
   be split into 3-5 sub-specs before implementation begins.
+- 2026-07-02 — Discovery Step 1 (settings enforcement audit) complete. OQ-2 resolved:
+  original premise wrong, all seeded settings are read; real gap is one small
+  server-side enforcement bug (`max_hashtags_*`) plus unmodeled config knobs that are
+  new scope, not bugs. G-1 sized small-to-medium. See OQ-2 above for full detail.
+- 2026-07-02 — Discovery Steps 2-4 complete (research only, no code changes). OQ-1
+  researched: dispatch service is already platform-agnostic, option (a) is cheapest
+  but `SocialPlatformEnum` needs a code+migration change per platform (not pure DB
+  rows as assumed); owner decision on (a)/(b)/(c) still pending. OQ-3 researched:
+  nav-level hub unification (level a) already ~90% shipped via SPEC-254's Marketing
+  sidebar; levels (b)/(c)/(d) hit real structural mismatches (audience-as-label vs.
+  audience-as-contacts, campaign-as-folder vs. campaign-as-send-lifecycle); findings
+  support "start with (a), defer rest" but owner confirmation still pending. OQ-4
+  resolved: config-export mockup produced, small enough to fold into SPEC-297d as
+  scoped, no new sub-spec needed; surfaced a possible dead-code discrepancy in
+  Make.com inbound callback routes (R-6), unresolved. All four research steps of
+  Section 7 are now complete; Step 5 (spec split + number allocation) is blocked on
+  the owner picking OQ-1 and confirming OQ-3/OQ-9.
+- 2026-07-02 — Owner decisions: OQ-1 = (a) Make.com scenario per platform. OQ-3 =
+  (a) shared marketing hub route only, (b)/(c)/(d) deferred indefinitely. OQ-7 =
+  (b) new server-side aggregation endpoint for public Hospeda data, not GPT-side
+  direct calls. Split finalized to 4 sub-specs (297a-d), see OQ-9. R-6 confirmed as
+  dead code via git-history investigation (commits `c73e036ca` then
+  `7b0dba8d8`/`5130b484e`), scheduled for a small NOSPEC removal PR.
+- 2026-07-02 — Functional design session resolved OQ-5 and OQ-6 together: the
+  owner's real batch-creation workflow (declare batch by name in the GPT
+  conversation, then iteratively request one draft at a time) is inherently
+  sequential, making the chained-calls option the correct fit for G-4 (not a cost
+  tradeoff). G-5 auto-detection confirmed required for v1: explicit-name resolution
+  with a fuzzy-duplicate confirmation step, plus an implicit fallback where the GPT
+  reasons over an active-campaigns/batches list (new catalog scope) rather than the
+  backend running keyword/hashtag heuristics. Campaigns and batches confirmed as
+  staying two distinct concepts despite identical table shape. OQ-8 also resolved
+  in the same session: `social_post_targets.captionOverride`/
+  `hashtagsOverrideText`/`footerOverride` already support per-platform
+  customization (shipped SPEC-254, previously unnoticed) — multi-select is a pure
+  UI feature, no schema work. All 9 open questions are now resolved; discovery
+  phase (Section 7) is complete.
+- 2026-07-02 — Step 5 complete. Allocated 4 sub-spec Linear issues and
+  `.specs/` folders: HOS-64 (Settings Enforcement Fix), HOS-65 (Publishing Engine
+  Extension), HOS-66 (Composer + Dashboard UX), HOS-67 (GPT/MAKE Config Export).
+  This spec is marked `superseded` — it remains as the discovery record; all
+  further implementation happens against the 4 sub-specs.

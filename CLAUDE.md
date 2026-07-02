@@ -516,6 +516,28 @@ All non-trivial work MUST go through Linear + `.specs/`. This replaced the old
 `.qtm/`-based system (index.json + CSV) to eliminate desync across worktrees/agents —
 see "Legacy system" below for why.
 
+### Terminology: "spec" vs "issue"
+
+These two words are used precisely in this repo and are NOT interchangeable:
+
+- **"spec"** = a formal spec tracked in Linear team **`Hospeda`** (key `HOS`, e.g.
+  `HOS-123`), with a `.specs/HOS-123-slug/` folder in this repo. Created via
+  `/spec`, `/task-master:spec`, or resumed via `/startIssue`. This is what
+  `/closeIssue` closes and what the rest of this section governs.
+- **"issue"** (bare, with no other qualifier) = an item in Linear team **`Beta
+  Feedback`** (key `BETA`, e.g. `BETA-96`) — a user/QA-reported bug or small item
+  filed via the `/linear-backlog` skill. It has no `.specs/` folder and is not
+  implemented through the workflow below. `/startIssue` and `/closeIssue` operate
+  on Hospeda specs (`HOS-NNN`) despite the word "issue" in their names — Linear
+  itself calls every tracked item an "issue" regardless of team, which is the
+  source of the ambiguity; in this file, a bare "issue" always means `BETA-NNN`.
+- If the team isn't clear from context, ask before creating or searching — never
+  guess `HOS` vs `BETA` from the word "issue" alone.
+- `Beta Feedback`'s name/key is under active reconsideration
+  ([HOS-70](https://linear.app/hospeda-beta/issue/HOS-70)). If it's renamed,
+  update every `BETA`/"Beta Feedback" reference in this file to match — this
+  section is provisional on that key until HOS-70 resolves.
+
 ### Model
 
 - **Linear** (workspace `hospeda-beta`, team **`Hospeda`**, key **`HOS`**) owns: which
@@ -553,12 +575,31 @@ see "Legacy system" below for why.
 ### Workflow
 
 1. **Before creating anything new** — search Linear first (`mcp__linear__list_issues`
-   or the Hospeda team views) for an existing issue: a `kind:needs-spec`, an existing
-   `kind:spec`, a related bug, or a pending owner decision. Don't create a duplicate.
-2. **New feature/change** → create (or use an existing) Linear issue in team `Hospeda`
-   using the "Spec Implementation" template (`kind-spec` label), then create
-   `.specs/HOS-<n>-<slug>/spec.md` (the "Spec Implementation" template) with
-   `linear: HOS-<n>` + `statusSource: linear` in its frontmatter.
+   or the Hospeda team views) for an existing spec: a `kind-needs-spec` idea, an
+   existing `kind-spec`, a related bug, or a pending owner decision. Don't create a
+   duplicate.
+2. **New feature/change, no `spec.md` written yet** → create (or use an existing)
+   Linear issue in team `Hospeda` labeled **`kind-needs-spec`** (the default — see
+   the labeling table below). Only once the spec is actually drafted and
+   `.specs/HOS-<n>-<slug>/spec.md` exists (frontmatter `linear: HOS-<n>` +
+   `statusSource: linear`) does the label change to **`kind-spec`**. Do NOT apply
+   `kind-spec` at creation time — that's the exact bug that mislabeled
+   HOS-68/69/70 (fixed in the `task-master` plugin's `spec-allocation` skill and
+   `/task-master:spec` command, which now create with `kind-needs-spec` and
+   relabel to `kind-spec` only after `spec.md` is published).
+
+#### Labels when creating a Hospeda (`HOS`) issue
+
+| Label | When |
+|---|---|
+| `kind-needs-spec` | **Default.** A new idea/request with NO `spec.md` written yet (Phase 1 not started). |
+| `kind-spec` | Only once `.specs/HOS-<n>-slug/spec.md` already exists — the issue tracks an already-written formal spec. |
+| `kind-owner-decision` | What's needed is an owner decision, not implementation work. |
+| `area-*` (`area-web`, `area-admin`, `area-api`, `area-db`, `area-auth`, `area-billing`, `area-content`, `area-devops`) | Per which apps/packages the request touches — infer from context, apply as many as fit. |
+| `source-*` (`source-owner`, `source-agent`, `source-promoted-from-beta`) | Reflects the issue's origin (owner request, an agent noticed it, or promoted from a `BETA-NN` item). |
+
+Never guess a label that doesn't exist in Linear — validate against
+`mcp__linear__list_issue_labels({team: "Hospeda"})` first if unsure.
 3. **Implementing** → use `/task-master:task-from-spec` and `/task-master:next-task` as
    before, but tracking lives inside `.specs/HOS-<n>-<slug>/tasks/`, not a global index.
 4. **Task completed** → quality gate (`/task-master:quality-gate`) before marking done.
@@ -709,8 +750,10 @@ un dir nuevo en `.specs/HOS-<n>-slug/`):
 1. **NO crear worktree ni el branch de implementación.** Trabajar en una **branch
    ligera de docs**, sin worktree. Una branch de git es gratis (unos KB); lo caro
    es el worktree (node_modules + DB), y eso NO se crea en esta fase.
-2. **Crear (o reusar) el issue en Linear primero** (team `Hospeda`, template "Spec
-   Implementation" o "Needs Spec") — el número `HOS-<n>` sale de ahí, nunca se inventa.
+2. **Crear (o reusar) el issue en Linear primero** (team `Hospeda`, label
+   `kind-needs-spec` por default — recién pasa a `kind-spec` cuando ya existe
+   `spec.md`, ver [Spec & Task Management](#spec--task-management) → "Labels when
+   creating a Hospeda issue") — el número `HOS-<n>` sale de ahí, nunca se inventa.
 3. **Generar los docs** en `.specs/HOS-<n>-slug/spec.md` (frontmatter con
    `linear: HOS-<n>` + `statusSource: linear`). Sin índices que actualizar — el
    macro-estado vive en el issue de Linear, no en el repo.
