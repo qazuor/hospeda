@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 4/19 tasks (21%)
+## Progress: 5/19 tasks (26%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -29,7 +29,7 @@
   - Blocked by: none
   - Blocks: T-007, T-008
 
-- [ ] **T-005** (complexity: 2) - Implement resolveImportRunStatus running/succeeded branches
+- [x] **T-005** (complexity: 2) - Implement resolveImportRunStatus running/succeeded branches — DONE
   - Blocked by: T-001
   - Blocks: T-006
 

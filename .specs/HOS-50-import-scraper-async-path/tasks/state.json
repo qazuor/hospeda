@@ -160,43 +160,43 @@
             "id": "T-005",
             "title": "Implement resolveImportRunStatus running/succeeded branches",
             "description": "Implement resolveImportRunStatus({token, runId, datasetId, source}) in a new file adapters/resolve-import-run-status.ts: calls getApifyRunStatus; READY/RUNNING -> {settled: false}; SUCCEEDED -> call getApifyDatasetItems, map the first item to RawExtraction using the same per-source item mapper the sync path already uses, return {settled: true, raw}. Empty dataset -> {settled: true, failureCode: 'nothing_found'}. getApifyRunStatus returning null (unreachable) -> {settled: true, failureCode: 'provider_error'}.\n\nTest requirements: unit tests for running->not-settled, succeeded-with-items->raw, succeeded-empty->nothing_found, status-null->provider_error.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Implement running/not-settled branch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement succeeded+items -> RawExtraction branch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement succeeded+empty -> nothing_found branch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement unreachable(null) -> provider_error branch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for all 4 branches",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "apify", "import", "polling"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T10:12:00Z",
+                "completed": "2026-07-02T10:24:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.2
     }

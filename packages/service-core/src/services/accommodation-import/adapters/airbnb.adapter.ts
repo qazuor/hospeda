@@ -206,8 +206,12 @@ interface AirbnbSubDescription {
  * key are INTENTIONALLY ABSENT from this interface.  Because TypeScript only
  * surfaces declared keys on a typed object, mapping code in this file cannot
  * reference them — they are structurally unreachable.
+ *
+ * Exported so the async run-status resolver (HOS-50 / SPEC-277 R3,
+ * `resolve-import-run-status.ts`) can type the dataset item it hands to
+ * {@link mapItemToRawExtraction} without loosening the review/rating guard.
  */
-interface AirbnbItem {
+export interface AirbnbItem {
     // Name
     readonly name?: string | null | undefined;
     readonly title?: string | null | undefined;
@@ -597,10 +601,14 @@ function parseSubDescriptionItems(sub: AirbnbSubDescription | null | undefined):
  * **Hard rule**: reviews, ratings, and any related fields are structurally
  * excluded via the typed `AirbnbItem` interface and are never referenced here.
  *
+ * Exported so the async run-status resolver (HOS-50 / SPEC-277 R3) can reuse
+ * this exact mapping once a polled Apify run reaches `SUCCEEDED`, keeping a
+ * single source of truth for the Airbnb dataset item shape.
+ *
  * @param raw - The first item from the Apify actor's dataset (typed narrowly).
  * @returns A populated {@link RawExtraction}.
  */
-function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
+export function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     const result: {
         sourcePlatform: 'airbnb';
         name?: RawExtraction['name'];

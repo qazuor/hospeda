@@ -178,8 +178,12 @@ type BookingImageEntry =
  * - `location: { lat, lng }` — nested coordinate strings.
  * - `facilities: [{ name, facilities: [{ name, additionalInfo }] }]` — grouped amenities.
  * - `price: null`, `currency: null`, `rooms: []` — without check-in/out dates.
+ *
+ * Exported so the async run-status resolver (HOS-50 / SPEC-277 R3,
+ * `resolve-import-run-status.ts`) can type the dataset item it hands to
+ * {@link mapApifyItemToRawExtraction} without loosening the review/rating guard.
  */
-interface BookingItem {
+export interface BookingItem {
     // Name
     readonly name?: string | null | undefined;
     readonly title?: string | null | undefined;
@@ -500,10 +504,14 @@ function extractPerNightPriceBooking(
  * groups into `result.amenityNames`, and maps `price` (total) ÷ nights
  * into a per-night "from" price when a positive number is present.
  *
+ * Exported so the async run-status resolver (HOS-50 / SPEC-277 R3) can reuse
+ * this exact mapping once a polled Apify run reaches `SUCCEEDED`, keeping a
+ * single source of truth for the Booking.com dataset item shape.
+ *
  * @param raw - The first item from the Apify actor's dataset (typed narrowly).
  * @returns A populated {@link RawExtraction} tagged `source: 'official_api'`.
  */
-function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
+export function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
     const result: {
         sourcePlatform: 'booking';
         name?: RawExtraction['name'];
