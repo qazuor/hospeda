@@ -746,35 +746,35 @@
             "id": "T-023",
             "title": "Audit and prune now-dead ALL_PLANS display-surface references",
             "description": "SCOPE REVISED (spec-realign 2026-07-02): the functionality this test/audit targets already exists (shipped via SPEC-168/192/211) — verify EXISTING behavior, do not assume it needs to be built. Grep the 5 originally-identified display-surface files (spec section 2.1) plus any new call sites introduced during this spec, and confirm none still read `ALL_PLANS` for display purposes. Leave the section 2.2 internal-logic references untouched (they intentionally stay on config per Q6=B). Remove any now-unused imports.\n\nTest requirements: none new (a pure grep/prune audit); existing test suite must still pass after removal.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Grep for remaining ALL_PLANS display-surface usages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove unused imports/dead code",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run full existing test suite to confirm no regression",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "billing"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a",
+                "typecheck": "n/a",
+                "tests": "n/a"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:20:00Z",
+                "completed": "2026-07-02T22:35:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
