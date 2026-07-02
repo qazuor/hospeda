@@ -657,27 +657,27 @@
             "id": "T-020",
             "title": "Integration test: limit-value edit reflects at checkout without deploy",
             "description": "SCOPE REVISED (spec-realign 2026-07-02): the functionality this test/audit targets already exists (shipped via SPEC-168/192/211) — verify EXISTING behavior, do not assume it needs to be built. End-to-end integration test: call the admin edit-limits mutation (T-008), then exercise the addon-checkout limit lookup (T-009) and assert it resolves the new DB value, not the old config value.\n\nTest requirements: integration test in `apps/api/test/` covering the full write→read round trip through `addon-entitlement.service.ts`'s limit-value resolution.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "Write integration test: edit a limit value, verify via checkout-path lookup",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "billing", "checkout"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T20:51:49Z",
+                "completed": "2026-07-02T21:04:16Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
