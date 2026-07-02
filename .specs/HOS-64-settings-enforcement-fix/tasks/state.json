@@ -475,35 +475,35 @@
             "id": "T-014",
             "title": "Extract shared secret-vault crypto util",
             "description": "Create `apps/api/src/utils/secret-vault-crypto.ts` by extracting `encryptSecret`/`decryptSecret` out of `apps/api/src/utils/ai-vault.ts` verbatim, parameterizing `deriveKey()` by a master-key env var VALUE passed in as an argument (not hardcoded to `HOSPEDA_AI_VAULT_MASTER_KEY`) so both the AI vault and the new social vault can call it with their own master key. Keep AES-256-GCM, sha256 key derivation, 12-byte IV, 16-byte auth tag, base64 encoding — no behavior change. Do not modify `ai-vault.ts` in this task (that's T-015).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015", "T-016", "T-017"],
             "subtasks": [
                 {
                     "title": "Create secret-vault-crypto.ts with parameterized deriveKey",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Move encryptSecret/decryptSecret logic verbatim",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export EncryptedSecret type",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["crypto", "vault", "refactor"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a — no existing tests to run against this new file; coverage added in T-016"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T20:50:00Z",
+                "completed": "2026-07-02T21:05:00Z"
             }
         },
         {
