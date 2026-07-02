@@ -167,6 +167,14 @@ const INTERNAL_ERROR_RESULT = {
     error: { message: 'Unexpected database failure' }
 };
 
+const HASHTAG_LIMIT_EXCEEDED_RESULT = {
+    code: 'HASHTAG_LIMIT_EXCEEDED' as const,
+    error: {
+        message: 'Draft exceeds the configured hashtag limit for one or more target platforms',
+        violations: [{ platform: 'X', count: 6, max: 5, excessBy: 1 }]
+    }
+};
+
 // ---------------------------------------------------------------------------
 // Test setup
 // ---------------------------------------------------------------------------
@@ -456,6 +464,32 @@ describe('POST /api/v1/ai/social/drafts', () => {
             expect(body.error.message).toBe('All requested targets are invalid');
             expect(Array.isArray(body.error.details)).toBe(true);
             expect(body.error.details).toHaveLength(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Tests — Hashtag limit exceeded (400) — HOS-64 / SPEC-297a G-1
+    // -------------------------------------------------------------------------
+
+    describe('400 — hashtag limit exceeded', () => {
+        it('should return 400 with per-platform violations when service returns HASHTAG_LIMIT_EXCEEDED', async () => {
+            mockIngestDraft.mockResolvedValue(HASHTAG_LIMIT_EXCEEDED_RESULT);
+            const ctx = buildCtxMock();
+
+            await draftsHandler!(ctx, {}, VALID_BODY, {});
+
+            expect(ctx._calls).toHaveLength(1);
+            expect(ctx._calls[0]?.status).toBe(400);
+            const body = ctx._calls[0]?.body as {
+                success: false;
+                error: { code: string; message: string; details: unknown[] };
+            };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            expect(body.error.message).toBe(
+                'Draft exceeds the configured hashtag limit for one or more target platforms'
+            );
+            expect(body.error.details).toEqual([{ platform: 'X', count: 6, max: 5, excessBy: 1 }]);
         });
     });
 

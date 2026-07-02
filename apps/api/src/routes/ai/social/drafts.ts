@@ -13,6 +13,7 @@
  *
  * HTTP mapping:
  *   201 — success
+ *   400 — draft's hashtag count exceeds a configured max_hashtags_<platform>
  *   401 — missing / invalid api-key (handled by middleware)
  *   403 — missing / invalid operator_pin
  *   409 — duplicate draftId
@@ -169,6 +170,19 @@ export const socialDraftsRoute = createApiKeyRoute({
                         }
                     },
                     422
+                ) as never;
+
+            case 'HASHTAG_LIMIT_EXCEEDED':
+                return ctx.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'HASHTAG_LIMIT_EXCEEDED',
+                            message: result.error.message,
+                            details: result.error.violations
+                        }
+                    },
+                    400
                 ) as never;
 
             default:
