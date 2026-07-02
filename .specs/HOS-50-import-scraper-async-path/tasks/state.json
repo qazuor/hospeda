@@ -86,35 +86,35 @@
             "id": "T-003",
             "title": "Extend ImportSourceAdapter interface for async mode",
             "description": "Extend the ImportSourceAdapter interface (or add a sibling type) in adapter.types.ts with an optional extractAsync?(input): Promise<{runId: string; datasetId: string} | {failureCode: ImportFailureCode}> method, used only by adapters that support the async path (Airbnb, Booking). Keep the existing extract() untouched for all adapters. Add a type guard supportsAsyncExtraction(adapter) for the orchestrator/route to check.\n\nTest requirements: unit tests exercising the type guard against a mock sync-only adapter and a mock async-capable adapter, verifying it narrows correctly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
                 {
                     "title": "Add extractAsync? to ImportSourceAdapter interface",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add supportsAsyncExtraction type guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for the type guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "types", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:34:49Z",
+                "completed": "2026-07-02T09:38:01Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.2
     }
