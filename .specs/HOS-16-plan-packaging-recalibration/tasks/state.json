@@ -189,31 +189,41 @@
             "id": "T-005",
             "title": "Grant CREATE_PROMOTIONS entitlement to owner-basico",
             "description": "Add `EntitlementKey.CREATE_PROMOTIONS` to `OWNER_BASICO_PLAN.entitlements` in `packages/billing/src/config/plans.config.ts` (currently only granted from owner-pro/complex-pro up). Do NOT touch complex plans (out of scope, being hidden regardless). Tests: update whichever test asserts owner-basico's entitlement list (plans.test.ts or a dedicated grant test) to include CREATE_PROMOTIONS.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-007", "T-015"],
             "subtasks": [
                 {
                     "title": "Add CREATE_PROMOTIONS to OWNER_BASICO_PLAN.entitlements",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update owner-basico entitlement assertions in tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:38:11Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:38:11Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:38:11Z",
+                    "details": "@repo/billing 525/525"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:36:53Z",
+                "completed": "2026-07-02T08:38:11Z"
             }
         },
         {
@@ -712,9 +722,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.6
     }

@@ -117,6 +117,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CREATE_PROMOTIONS,
         EntitlementKey.AI_TEXT_IMPROVE,
         EntitlementKey.AI_CHAT,
         EntitlementKey.AI_TRANSLATE,

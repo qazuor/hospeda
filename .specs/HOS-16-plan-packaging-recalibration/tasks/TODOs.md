@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 4/20 tasks (20%)
+## Progress: 5/20 tasks (25%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -33,7 +33,7 @@
   - Blocked by: none
   - Blocks: T-015
 
-- [ ] **T-005** (complexity: 1) - Grant CREATE_PROMOTIONS entitlement to owner-basico
+- [x] **T-005** (complexity: 1) - Grant CREATE_PROMOTIONS entitlement to owner-basico [DONE]
   - Blocked by: none
   - Blocks: T-007, T-015
 

@@ -342,6 +342,12 @@ describe('Plan Configuration', () => {
         });
     });
 
+    describe('Owner-basico promotions grant (HOS-16)', () => {
+        it('owner-basico grants CREATE_PROMOTIONS (previously pro/premium only)', () => {
+            expect(OWNER_BASICO_PLAN.entitlements).toContain(EntitlementKey.CREATE_PROMOTIONS);
+        });
+    });
+
     describe('Recommendations entitlement (HOS-16)', () => {
         it('tourist-free has NO CAN_VIEW_RECOMMENDATIONS entitlement (moved free->plus)', () => {
             expect(TOURIST_FREE_PLAN.entitlements).not.toContain(
