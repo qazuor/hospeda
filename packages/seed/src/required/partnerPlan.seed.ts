@@ -51,6 +51,9 @@ export async function seedPartnerPlan(_context: SeedContext): Promise<void> {
                     entitlements: plan.entitlements as string[],
                     limits: limitsObj,
                     livemode: isProduction,
+                    displayName: plan.name,
+                    monthlyPriceArs: plan.monthlyPriceArs,
+                    annualPriceArs: plan.annualPriceArs,
                     metadata: {
                         slug: plan.slug,
                         displayName: plan.name,

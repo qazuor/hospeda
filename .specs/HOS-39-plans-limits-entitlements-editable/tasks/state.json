@@ -156,35 +156,35 @@
             "id": "T-005",
             "title": "Update seed sync to read/write typed plan-attribute columns",
             "description": "In `packages/seed/src/required/billingPlans.seed.ts`, update `detectDivergences` and `ensurePlan` to read/write `displayName`, `monthlyPriceArs`, `annualPriceArs` as top-level columns instead of `metadata.*` paths, consistent with T-004's reclassified keys. The Model C sync behavior (commercial = DB wins, seed never overwrites) must be preserved for these 3 fields — only the storage location changes, not the sync policy.\n\nTest requirements: update existing seed unit tests covering Model C sync for these 3 fields (config-vs-DB divergence scenarios) to assert against the new columns instead of metadata jsonb paths.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update detectDivergences for the 3 fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update ensurePlan write path for the 3 fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update seed sync unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "seed", "model-c"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T19:27:48Z",
+                "completed": "2026-07-02T19:36:14Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

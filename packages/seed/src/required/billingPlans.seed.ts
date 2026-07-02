@@ -31,10 +31,10 @@ const SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set<ModelCField>([
     'entitlements',
     'limitsKeysPresent',
     'limitsValues',
-    'metadata.displayName',
+    'displayName',
+    'monthlyPriceArs',
+    'annualPriceArs',
     'metadata.category',
-    'metadata.monthlyPriceArs',
-    'metadata.annualPriceArs',
     'metadata.isDefault',
     'metadata.sortOrder',
     'metadata.hasTrial',
@@ -93,6 +93,12 @@ interface DbRowSnapshot {
     readonly entitlements: unknown;
     readonly limits: unknown;
     readonly metadata: unknown;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.displayName. */
+    readonly displayName: string | null;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.monthlyPriceArs. */
+    readonly monthlyPriceArs: number | null;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.annualPriceArs. */
+    readonly annualPriceArs: number | null;
 }
 
 /**
@@ -174,18 +180,20 @@ function detectDivergences(
         push('limitsValues', configValues, dbValues);
     }
 
-    // ── metadata JSONB ──────────────────────────────────────────────────────
-    if (meta.displayName !== plan.name) {
-        push('metadata.displayName', plan.name, meta.displayName);
+    // ── typed top-level columns (HOS-39 T-003/T-005) ────────────────────────
+    if (dbRow.displayName !== plan.name) {
+        push('displayName', plan.name, dbRow.displayName);
     }
+    if (dbRow.monthlyPriceArs !== plan.monthlyPriceArs) {
+        push('monthlyPriceArs', plan.monthlyPriceArs, dbRow.monthlyPriceArs);
+    }
+    if (dbRow.annualPriceArs !== plan.annualPriceArs) {
+        push('annualPriceArs', plan.annualPriceArs, dbRow.annualPriceArs);
+    }
+
+    // ── metadata JSONB ──────────────────────────────────────────────────────
     if (meta.category !== plan.category) {
         push('metadata.category', plan.category, meta.category);
-    }
-    if (meta.monthlyPriceArs !== plan.monthlyPriceArs) {
-        push('metadata.monthlyPriceArs', plan.monthlyPriceArs, meta.monthlyPriceArs);
-    }
-    if (meta.annualPriceArs !== plan.annualPriceArs) {
-        push('metadata.annualPriceArs', plan.annualPriceArs, meta.annualPriceArs);
     }
     if (meta.isDefault !== plan.isDefault) {
         push('metadata.isDefault', plan.isDefault, meta.isDefault);
@@ -354,7 +362,10 @@ async function ensurePlan(
             active: billingPlans.active,
             entitlements: billingPlans.entitlements,
             limits: billingPlans.limits,
-            metadata: billingPlans.metadata
+            metadata: billingPlans.metadata,
+            displayName: billingPlans.displayName,
+            monthlyPriceArs: billingPlans.monthlyPriceArs,
+            annualPriceArs: billingPlans.annualPriceArs
         })
         .from(billingPlans)
         .where(eq(billingPlans.name, plan.slug))
@@ -423,6 +434,12 @@ async function ensurePlan(
             entitlements: plan.entitlements as string[],
             limits: limitsObj,
             livemode,
+            // HOS-39 T-005: dual-write the typed columns (promoted in T-003)
+            // alongside their metadata.* mirror below, matching what
+            // plan.crud.ts's createPlan/updatePlan already do.
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
                 slug: plan.slug,
                 displayName: plan.name,
