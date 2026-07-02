@@ -139,3 +139,53 @@ Cover every failing file: `ListWidget`, `ChecklistWidget`, `StatusWidget`,
   live admin app before merging (do not rely on tests alone).
 - **Scope creep**: resist bundling other TanStack bumps or dashboard rework into
   this migration. Keep it to react-query + the widgets it breaks.
+
+## 9. Findings (T-002/T-003/T-004)
+
+**Classification: test-harness brittleness, NOT a real production regression.**
+
+- Bumped `@tanstack/react-query` to `5.101.2` (T-001) and ran
+  `ListWidget.test.tsx` directly: **20 pass / 12 fail**, matching the spec's
+  reported `12/32` exactly.
+- All 12 failures share one pattern:
+
+  ```ts
+  await screen.findByTestId('list-widget'); // resolves immediately
+  const rows = screen.getAllByTestId('list-item'); // synchronous, fails
+  ```
+
+  `list-widget` is the `WidgetCard` shell's `data-testid`, present in **both**
+  the loading skeleton and the data-rendered states
+  (`apps/admin/src/components/dashboards/widgets/ListWidget.tsx:875` and
+  `:890`, both pass `dataTestId="list-widget"`). Because the element already
+  exists at mount (loading state), `findByTestId` resolves on its very first
+  check — before the query's `queryFn: () => Promise.resolve(data)` has
+  finished its resolve → observer-notify → React state-update → re-render
+  chain. The immediately-following synchronous assertion then reads the DOM
+  one tick too early and sees the skeleton instead of the list items.
+- `ListWidget.tsx:857,885` — `const { data, isLoading, error, refetch } =
+  useQuery(options); if (isLoading) { ... }` — this production logic is
+  unchanged and correct. Context7 docs for `/tanstack/query` confirm
+  `isLoading = isPending && isFetching` has been the v5 definition since the
+  v4→v5 migration; nothing in the 5.90→5.101 changelog redefines it for a
+  plain client-side `useQuery` outside SSR/hydration (the only related
+  entries found — e.g. #10444 "hydrating queries with promises that had
+  already resolved could cause queries to briefly and incorrectly show as
+  pending/fetching" — are dehydration/hydration-specific fixes, not
+  applicable to these widget tests, which mount a plain in-memory
+  `QueryClientProvider` with no SSR dehydrate/hydrate involved).
+- The 42-minor-version jump apparently added one extra microtask tick
+  somewhere in the observer's internal notify/schedule path for an
+  already-resolved `queryFn` promise. In production this is invisible: real
+  network requests are never synchronously-resolved promises, so by the time
+  actual data arrives the component has already re-rendered correctly
+  regardless of tick count.
+- **Fix direction (T-005/T-006)**: no widget production code needs to
+  change. Update the affected widget test files to `await` on the actual
+  data-bearing element (e.g. `await screen.findAllByTestId('list-item')`)
+  instead of a persistent wrapper testid (`list-widget`) that is present in
+  both the loading and success states. No shared widget test-utils file
+  exists — each widget test file defines its own `TestWrapper`/query-client
+  helpers, so this fix is per-file (`ListWidget`, `ChecklistWidget`,
+  `StatusWidget`, `resolver-widget-integration`, `KpiWidget`, `ChartWidget`,
+  `DashboardRenderer`).
