@@ -363,40 +363,41 @@
             "id": "T-010",
             "title": "Modify import-from-url route to dispatch 202 for async sources",
             "description": "After the orchestrator resolves the matching adapter, branch: if it's Airbnb, or Booking on its Apify-fallback condition, call extractAsync() (T-007/T-008) instead of extract(); on a run-handle result, respond ctx.json({runId, datasetId, source, startedAt}, 202), bypassing the route factory's 200/201 typing (same bypass as accommodation-external-reputation/protected/refresh.ts); on a failureCode result, fall through to the existing synchronous failure response unchanged. All other sources keep returning 200 exactly as today.\n\nTest requirements: fast source stays 200 (regression), Airbnb-with-creds returns 202 with expected shape, Airbnb-missing-creds still returns 200 sync-failure, Booking-JSON-LD-sufficient stays 200.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-007", "T-008"],
             "blocks": ["T-013", "T-015", "T-016", "T-017", "T-019"],
             "subtasks": [
                 {
                     "title": "Branch to extractAsync() for Airbnb / Booking-Apify-fallback",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Return 202 with run handle via the ctx.json bypass pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Preserve existing 200 flow for all other sources/branches",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write route tests for the 4 scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "route", "import", "async"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T12:35:00Z",
+                "completed": "2026-07-02T13:10:00Z"
+            },
+            "summary": "Added AccommodationImportService.dispatchImportFromUrl() (service-core), which shares URL-resolution/adapter-pick with importFromUrl via a new private _resolveEffectiveUrlAndAdapter helper (avoids double short-link fetches), then branches on supportsAsyncExtraction(adapter): non-async adapters and Booking's already-resolved {raw}/{failureCode} outcomes finalize through the existing finalizeImportDraft pipeline (kind:'sync'), a run handle returns kind:'async' with {runId,datasetId,source,startedAt,url}. The route's POST handler now calls dispatchImportFromUrl and a new pure buildImportFromUrlDispatchResponse() maps the result to {statusCode,body}, returning the ctx.json 202 bypass (refresh.ts pattern, {success,data,metadata} envelope) or the unchanged 200 flow. 36 service-core unit tests (5 new) + 5 new route-level dispatch tests, all existing import-from-url route tests (35) still pass. Lint+typecheck clean on both packages."
         },
         {
             "id": "T-011",
@@ -732,9 +733,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.2
     }

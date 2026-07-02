@@ -47,6 +47,7 @@
 import type { AiService } from '@repo/ai-core';
 import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
 import {
+    type AccommodationImportAsyncStartResponse,
     type AccommodationImportRequest,
     type LanguageEnum,
     PermissionEnum,
@@ -56,6 +57,7 @@ import { AccommodationImportRequestSchema, AccommodationImportResponseSchema } f
 import {
     AccommodationImportService,
     type ImportContext,
+    type ImportDispatchResult,
     type RawExtraction,
     ServiceError
 } from '@repo/service-core';
@@ -241,6 +243,54 @@ export function buildImportAiExtract(deps: {
 }
 
 // ---------------------------------------------------------------------------
+// Dispatch response builder (HOS-50 / SPEC-277 R3 T-010)
+// ---------------------------------------------------------------------------
+
+/** The status code + body pair {@link buildImportFromUrlDispatchResponse} returns. */
+export type ImportFromUrlDispatchResponse =
+    | { readonly statusCode: 200; readonly body: ReturnType<typeof applyAiGateNotice> }
+    | { readonly statusCode: 202; readonly body: AccommodationImportAsyncStartResponse };
+
+/**
+ * Builds the HTTP status code and response body for the import-from-url route
+ * from the orchestrator's {@link ImportDispatchResult} (HOS-50 / SPEC-277 R3).
+ *
+ * Extracted as a pure function (no Hono `Context`) so both branches are
+ * unit-testable without a full route harness — mirrors `handleImportStatusPoll`
+ * in `import-from-url-status.ts` (T-011):
+ *
+ * - `dispatch.kind === 'async'` → `202` with the run handle
+ *   (`runId`/`datasetId`/`source`/`startedAt`/`url`), echoed back verbatim by
+ *   the client on every poll against the status route.
+ * - `dispatch.kind === 'sync'` → `200` with the finalized response, after
+ *   applying the AI-gate notice (unchanged from the pre-HOS-50 behavior).
+ *
+ * @param dispatch - The orchestrator's dispatch result.
+ * @param gate - The AI gate state; applied as a notice on the sync branch only
+ *   (the async branch has no AI extraction outcome to report yet).
+ * @returns The status code and body the route handler should send.
+ */
+export function buildImportFromUrlDispatchResponse(
+    dispatch: ImportDispatchResult,
+    gate: AiGateState
+): ImportFromUrlDispatchResponse {
+    if (dispatch.kind === 'async') {
+        return {
+            statusCode: 202,
+            body: {
+                runId: dispatch.runId,
+                datasetId: dispatch.datasetId,
+                source: dispatch.source,
+                startedAt: dispatch.startedAt,
+                url: dispatch.url
+            }
+        };
+    }
+
+    return { statusCode: 200, body: applyAiGateNotice(dispatch.response, gate) };
+}
+
+// ---------------------------------------------------------------------------
 // Route
 // ---------------------------------------------------------------------------
 
@@ -336,8 +386,35 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         });
 
         const service = new AccommodationImportService({ logger: apiLogger });
-        const response = await service.importFromUrl({ url: input.url, locale, context }, actor);
-        const final = applyAiGateNotice(response, gate);
+        const dispatch = await service.dispatchImportFromUrl(
+            { url: input.url, locale, context },
+            actor
+        );
+        const dispatchResponse = buildImportFromUrlDispatchResponse(dispatch, gate);
+
+        if (dispatchResponse.statusCode === 202) {
+            getPostHogClient()?.capture({
+                distinctId: actor.id,
+                event: 'accommodation_import_started_async',
+                properties: { host: sourceHost, source: dispatchResponse.body.source }
+            });
+
+            // Bypass the route factory's 200/201 typing — same pattern as
+            // accommodation-external-reputation/protected/refresh.ts.
+            return ctx.json(
+                {
+                    success: true,
+                    data: dispatchResponse.body,
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        requestId: ctx.get('requestId') || 'unknown'
+                    }
+                },
+                202
+            );
+        }
+
+        const final = dispatchResponse.body;
 
         getPostHogClient()?.capture({
             distinctId: actor.id,
