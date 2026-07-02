@@ -1,0 +1,17 @@
+/**
+ * ExclusiveDealsList.module.css
+ * Colocated CSS Module for the ExclusiveDealsList React island (HOS-21).
+ * Uses design tokens only — no Tailwind utility classes.
+ */
+
+.dealsShell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.dealsLoading {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
