@@ -558,40 +558,41 @@
             "id": "T-015",
             "title": "Wire ImportFromUrlSection.tsx to the async polling flow",
             "description": "On a 202 mutation response, store the run handle and switch to T-014's status query instead of resolving the mutation immediately; keep the existing LoaderIcon spin active during polling. Defer the existing setFieldValue prefill logic until the status query reports settled:true with a draft; unchanged failureCode error-banner path on settled failure. 200 responses behave exactly as today.\n\nTest requirements: component tests — 200-response path unchanged (regression), 202->poll->settle-success prefills the form fields, 202->poll->settle-failure shows the error banner, mutation.isPending vs polling-in-progress are visually distinguished.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-014"],
             "blocks": ["T-018"],
             "subtasks": [
                 {
                     "title": "Detect 202 response and switch to the status-query polling flow",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep loader spin active during polling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Defer field prefill until settled:true with a draft",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for the 4 scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "component", "import", "async"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T17:05:00Z",
+                "completed": "2026-07-02T17:55:00Z"
+            },
+            "summary": "Widened useAccommodationImportMutation's return type to AccommodationImportResponse|AccommodationImportAsyncStartResponse and added an exported isAsyncImportStart() structural guard (admin twin of the web T-013 guard in endpoints-protected.ts). ImportFromUrlSection.tsx now calls useAccommodationImportStatusQuery(runHandle) (T-014); on a 202 it stores the run handle and returns early from handleImport WITHOUT resolving (spinner stays active, isDisabled includes isPolling). Extracted the prefill and failure-banner logic into two useCallback helpers (applySuccessfulDraft, applyFailure) shared by both the sync 200 branch and a new settle useEffect (guarded by a handledSettleRef mirroring T-013's fix, since the mocked/real query returns a fresh-looking data object on unrelated re-renders). Added a 'polling' i18n key (es/en/pt, host.importFromUrl.actions) distinct from 'submitting', and a data-state=idle|submitting|polling attribute on the submit button so the two in-flight states are both visually AND structurally distinguishable — required by the T-015 test spec. Updated the existing test file's useAccommodationImportMutation mock to use vi.importActual (preserving the real isAsyncImportStart) instead of a narrow factory, per the HOS-50 T-013 gotcha (a narrow mock silently returns undefined for a newly-called export). 4 new component tests (202-switches-to-polling-no-prefill-yet, settle-success-prefills, settle-failure-shows-banner, submitting-vs-polling-visually-distinct) + all 10 pre-existing tests still pass (14/14 in the file, 77/77 in the full accommodations feature). Lint (1 auto-fix) and typecheck clean; i18n generate-types + check-locales run after the locale JSON edits."
         },
         {
             "id": "T-016",
@@ -736,9 +737,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.2
     }
