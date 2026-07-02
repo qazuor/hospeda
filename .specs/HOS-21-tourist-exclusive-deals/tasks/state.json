@@ -43,35 +43,35 @@
             "id": "T-002",
             "title": "Add touristAudience to owner-promotion Zod schemas",
             "description": "Update packages/schemas owner-promotion entity schemas (create/update/public schemas) to include `touristAudience` (enum 'plus'|'vip', default 'plus'). Ensure the public schema exposes it (needed by the tourist-facing listing to visually distinguish vip-only deals) and the create/update input schemas accept it as optional (defaulting server-side).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-007"],
             "subtasks": [
                 {
                     "title": "Add touristAudience to OwnerPromotionCreateSchema / UpdateSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add touristAudience to OwnerPromotionPublicSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: schema accepts valid values, rejects invalid enum values, defaults to 'plus' when omitted",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "zod", "validation"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:39:08Z",
+                "completed": "2026-07-02T08:46:12Z"
             }
         },
         {
@@ -144,39 +144,39 @@
             "id": "T-005",
             "title": "Add tourist-audience-aware search to OwnerPromotionService",
             "description": "In packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts, extend the search path (new method or an optional `touristAudience` param on the existing search) so callers can request deals scoped to a tier: plus → touristAudience='plus' only, vip → touristAudience in ('plus','vip'). Must compose with the existing _executeSearch filters (lifecycleState=ACTIVE, planRestricted=false, deletedAt=null, validFrom<=now<=validUntil) — do not duplicate that filtering logic.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Add touristAudience-scoped search method/param to OwnerPromotionService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: plus tier excludes 'vip' rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: vip tier includes both 'plus' and 'vip' rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: planRestricted/expired/soft-deleted rows excluded regardless of tier",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "owner-promotion"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:48:09Z",
+                "completed": "2026-07-02T08:54:47Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 15,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.3
     }
