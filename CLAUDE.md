@@ -239,17 +239,46 @@ Failed smokes block merge. Notes-only passes (smoke surfaces a known documented 
 
 This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
 
-**Linear labels for smoke-gated specs**: when a spec's Linear issue requires the
-staging smoke above, apply the `status-needs-smoke-staging` label to it — remove
-it once the sign-off is filed and the PR merges. If the spec also requires the
-prod smoke (billing CORE, step 5 above), apply `status-needs-smoke-prod` after
-merge to staging — remove it once that sign-off is filed. **Never mark an issue
-`Done` (via `/closeSpec` or otherwise) while either label is still present** —
-their whole purpose is to make "waiting on smoke" visible on the board instead of
-an issue silently sitting in `In Progress`/`In Review` with no signal of what it's
-actually blocked on. These are deliberately labels, not workflow states: most
-specs never touch billing and never need them, so they stay opt-in rather than
-forcing every issue through an extra pipeline stage.
+### Smoke-gate labels for any spec (generalized 2026-07-02)
+
+The label mechanism below isn't billing-specific — any spec can require post-merge
+manual verification before it's actually done, and the labels + automation exist
+for the general case. Billing just happens to be the domain that always needs it.
+
+Three labels, each independently opt-in per issue:
+
+- `status-needs-smoke-local` — needs manual verification in local dev.
+- `status-needs-smoke-staging` — needs manual verification against the real VPS
+  (staging). For billing specifically this is the checklist workflow above.
+- `status-needs-smoke-prod` — needs manual verification against production, after
+  merge to staging, before promoting to `main` (billing CORE only, per step 5 above;
+  other domains rarely need this tier).
+
+**Who decides which labels apply**: declared in the spec's `spec.md` frontmatter
+when the spec is written, if the author already knows (e.g. anything touching a
+third-party integration, real timing/cron behavior, or payment flow). If
+unspecified, the implementing agent applies the relevant label(s) itself before
+opening the PR, based on judgment. An issue that needs none of these gets no
+label and follows the normal fast path straight to `Done`.
+
+**Automation**: a GitHub Action (`.github/workflows/smoke-gate-sync.yml`) triggers
+on any merged PR whose body contains a Linear magic word (`Closes`/`Fixes`/
+`Resolves`/`Implements HOS-N`) — i.e. only the PR that actually completes the
+spec, never an intermediate PR in a multi-PR spec (intermediate PRs must never
+carry a magic word, per the existing closeSpec convention). If the referenced
+issue still carries any `status-needs-smoke-*` label at that point, the Action
+moves it to **In Review** (an existing Linear state, repurposed for this — not a
+new workflow state). This also corrects the native GitHub↔Linear integration,
+which reacts to the same magic word and may set the issue `Done` first; the
+Action runs after and forces it back to `In Review` whenever a smoke label is
+still present, so `Done` can never coexist with an outstanding smoke gate.
+
+**Never mark an issue `Done` (via `/closeSpec` or otherwise) while any of these
+three labels is still present** — their whole purpose is to make "waiting on
+smoke" visible on the board instead of an issue silently sitting in
+`In Progress`/`In Review` with no signal of what it's actually blocked on.
+Removing a label (once the smoke sign-off is filed) stays a manual, human step —
+never automated, since that would defeat the guarantee the label exists to give.
 
 ### Git Conventions
 
@@ -509,13 +538,17 @@ see "Legacy system" below for why.
   issue counter is the collision-free ID source now.
   - Hospeda's `.claude/project.config.json` already declares `taskMaster.backend: "linear"`
     (team `Hospeda`, key `HOS`), so `/spec`, `/tasks`, `/next-task`, etc. resolve
-    against Linear once the plugin ships that support. As of 2026-07-01 this requires
-    `qazuor/claude-code-plugins` task-master ≥ 2.4.0, shipped in
-    [PR #2](https://github.com/qazuor/claude-code-plugins/pull/2) — **not yet merged**.
-    Until it merges, `/task-master:*` commands still run the local-index code path
-    and will NOT talk to Linear correctly; create/update Linear issues and
-    `.specs/HOS-xxx-slug/` folders by hand following this section's conventions in
-    the meantime.
+    against Linear. `qazuor/claude-code-plugins` task-master's Linear backend
+    ([PR #2](https://github.com/qazuor/claude-code-plugins/pull/2)) merged
+    2026-07-01; the plugin is live (verify locally installed version ≥ 2.4.0).
+    The sync mechanism is the `index-sync` skill: on the Linear backend it calls
+    `mcp__linear__save_issue` to move the issue's state, but **only when a real
+    task-master command runs** (`/task-master:next-task`, `task-from-spec`,
+    `quality-gate`, `replan`, `auto-loop`, ...). Hand-rolling the flow — reading
+    `tasks/state.json` directly and skipping the actual slash command — silently
+    skips the Linear write. When delegating "start/continue implementing spec
+    HOS-N" to an agent, always instruct it to invoke the real task-master command
+    as the first step, not to read the task state file directly.
 
 ### Workflow
 
