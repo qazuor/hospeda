@@ -58,7 +58,8 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.PRICE_ALERTS,
             EntitlementKey.EXCLUSIVE_DEALS,
             EntitlementKey.VIP_SUPPORT,
-            EntitlementKey.VIP_VISIBILITY_ACCESS
+            EntitlementKey.VIP_VISIBILITY_ACCESS,
+            EntitlementKey.VIP_PROMOTIONS_ACCESS
         ]
     }
 ];

@@ -38,6 +38,12 @@ export enum EntitlementKey {
     EXCLUSIVE_DEALS = 'exclusive_deals',
     VIP_SUPPORT = 'vip_support',
     VIP_VISIBILITY_ACCESS = 'vip_visibility_access',
+    /**
+     * Grants access to VIP-only tier exclusive deals (HOS-21). Distinct from
+     * `VIP_VISIBILITY_ACCESS`, which is an unrelated accommodation-visibility
+     * bypass.
+     */
+    VIP_PROMOTIONS_ACCESS = 'vip_promotions_access',
     CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
     CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',
