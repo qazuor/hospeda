@@ -218,35 +218,35 @@
             "id": "T-007",
             "title": "Accept touristAudience in owner-promotion create/update routes",
             "description": "Update apps/api/src/routes/owner-promotion/protected/create.ts and the corresponding update route to accept and persist the `touristAudience` field from T-002's schema. Self-service: any owner who can already create promotions can set touristAudience='vip' on their own, no new role/permission gating (existing _OWN permission model covers it).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Accept touristAudience in the create route handler",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Accept touristAudience in the update route handler",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test: owner can create/update a promotion with touristAudience='vip'",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "owner-promotion"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:34:15Z",
+                "completed": "2026-07-02T09:57:20Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.3
     }
