@@ -310,6 +310,63 @@ describe('featured-by-entitlement-reconcile cron job', () => {
         });
     });
 
+    describe('addon-drift via expiry (grant expired, column stale — SPEC-309 T-029)', () => {
+        // Not a separate addon-drift code path: once an addon grant expires,
+        // `getOwnerAccommodationIdsWithActiveFeaturedAddon` no longer returns the
+        // accommodation, so it falls into the PLAN-driven comparison (2c) instead
+        // of the addon-driven one (2d) — see the job's own header comment ("This
+        // also naturally clears any accommodation whose addon expired without
+        // T-016's hook firing"). These tests prove that composition, both
+        // directions.
+        it('clears a stale featuredByEntitlement=true left behind by a missed expiry hook, when the plan does not independently grant it', async () => {
+            const ownerId = 'owner-addon-expired-no-plan';
+            setupDbMocks([ownerId], {
+                [ownerId]: [{ id: 'accom-expired', featuredByEntitlement: true }]
+            });
+            mockResolveOwnerPlanGrantsFeatured.mockResolvedValue(false);
+            // Grant has expired — no longer in the addon-protected set, so this
+            // row is NOT excluded from the plan-driven comparison.
+            mockGetOwnerAccommodationIdsWithActiveFeaturedAddon.mockResolvedValue([]);
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.success).toBe(true);
+            expect(mockSyncFeaturedByEntitlementForOwner).toHaveBeenCalledOnce();
+            expect(mockSyncFeaturedByEntitlementForOwner).toHaveBeenCalledWith({
+                ownerId,
+                active: false
+            });
+            // The addon-drift pass (2d) is a no-op here: shouldBeFeaturedByPlan is
+            // false, so it runs, but the protected set is empty — nothing to grant.
+            expect(mockSyncFeaturedByEntitlementForAccommodation).not.toHaveBeenCalled();
+            expect(result.details).toMatchObject({
+                correctedPlanOwners: 1,
+                correctedAddonAccommodations: 0
+            });
+        });
+
+        it('leaves featuredByEntitlement=true untouched when the owner plan independently grants it (plan-guard composition)', async () => {
+            const ownerId = 'owner-addon-expired-plan-covers';
+            setupDbMocks([ownerId], {
+                [ownerId]: [{ id: 'accom-expired', featuredByEntitlement: true }]
+            });
+            // The plan grants it too — the value the addon-expiry hook left
+            // behind happens to still be correct, so there is no drift at all.
+            mockResolveOwnerPlanGrantsFeatured.mockResolvedValue(true);
+            mockGetOwnerAccommodationIdsWithActiveFeaturedAddon.mockResolvedValue([]);
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.success).toBe(true);
+            expect(mockSyncFeaturedByEntitlementForOwner).not.toHaveBeenCalled();
+            expect(mockSyncFeaturedByEntitlementForAccommodation).not.toHaveBeenCalled();
+            expect(result.details).toMatchObject({
+                correctedPlanOwners: 0,
+                correctedAddonAccommodations: 0
+            });
+        });
+    });
+
     describe('multiple owners', () => {
         it('corrects only the drifted owner when mixed states exist', async () => {
             const ownerIds = ['owner-ok', 'owner-drift'];
