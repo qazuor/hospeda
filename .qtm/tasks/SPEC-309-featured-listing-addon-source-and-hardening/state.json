@@ -1016,26 +1016,38 @@
         {
             "id": "T-026",
             "title": "Integration test — addon expiry plan-guard regression",
-            "description": "Proves H-1 consequence (a) and its mirror in T-016. Two scenarios against apps/api/src/cron/jobs/addon-expiry.job.ts's expire phase:\n\n1. Owner has ONLY the addon-sourced grant (no FEATURED_LISTING plan) -> on addon expiry, `featuredByEntitlement` clears on the linked accommodation.\n2. Owner has BOTH a FEATURED_LISTING plan AND the addon-sourced grant on the same accommodation -> on addon expiry, `featuredByEntitlement` stays true (plan-guard no-op in `syncFeaturedByEntitlementForAccommodation`, T-005/T-016).\n\nKey files:\n- apps/api/test/cron/addon-expiry.job.test.ts (extend)\n\nAcceptance criteria: both scenarios assert the correct final `featuredByEntitlement` state; scenario 2 additionally asserts the sync primitive was called but resulted in `updated: 0` (no-op, not skipped entirely — the call still happens for auditability).\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/cron/addon-expiry.job.test.ts`.",
-            "status": "pending",
+            "description": "Proves H-1 consequence (a) and its mirror in T-016. Two scenarios against apps/api/src/cron/jobs/addon-expiry.job.ts's expire phase:\n\n1. Owner has ONLY the addon-sourced grant (no FEATURED_LISTING plan) -> on addon expiry, `featuredByEntitlement` clears on the linked accommodation.\n2. Owner has BOTH a FEATURED_LISTING plan AND the addon-sourced grant on the same accommodation -> on addon expiry, `featuredByEntitlement` stays true (plan-guard no-op in `syncFeaturedByEntitlementForAccommodation`, T-005/T-016).\n\nKey files:\n- apps/api/test/cron/addon-expiry.test.ts (extend — the task's original suggested path addon-expiry.job.test.ts does not exist)\n\nAcceptance criteria: both scenarios assert the correct final `featuredByEntitlement` state; scenario 2 additionally asserts the sync primitive was called but resulted in `updated: 0` (no-op, not skipped entirely — the call still happens for auditability).\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/cron/addon-expiry.test.ts`.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016", "T-005"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Addon-only expiry clears featuring", "completed": false },
-                { "title": "Addon+plan expiry keeps featuring (plan guard)", "completed": false }
+                { "title": "Addon-only expiry clears featuring", "completed": true },
+                { "title": "Addon+plan expiry keeps featuring (plan guard)", "completed": true }
             ],
             "tags": ["testing", "backend", "billing", "addons", "cron"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on addon-expiry.test.ts — no fixes needed"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "addon-expiry.test.ts 48/48 (46 pre-existing + 2 new), scoped run, verified independently"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {

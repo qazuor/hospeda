@@ -49,6 +49,39 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
+// Mock: featured-entitlement resolver (SPEC-309 T-016 regression tests, T-026).
+//
+// `syncFeaturedByEntitlementForAccommodation` (called for REAL below — it is
+// NOT mocked, since these regression tests exercise its actual plan-guard
+// behavior) imports `resolveOwnerPlanGrantsFeatured` via a RELATIVE import
+// from this sibling module inside `packages/service-core`, NOT from the
+// `@repo/service-core` barrel. Mocking the barrel's `resolveOwnerPlanGrantsFeatured`
+// export (as the dunning/apply-scheduled-plan-changes cron tests do) has NO
+// effect here: those jobs call `resolveOwnerPlanGrantsFeatured` themselves,
+// directly, via the barrel import; `addon-expiry.job.ts` never does — only
+// the (real) sync primitive does, via its own relative import, which resolves
+// to a completely different module instance than the barrel. This module must
+// be mocked at its own path for the plan-guard branch to be controllable.
+// ---------------------------------------------------------------------------
+// vi.hoisted is required here (unlike mockDbSelect/mockDbUpdate below) because
+// this factory references `mockResolveOwnerPlanGrantsFeatured` DIRECTLY in its
+// top-level returned object — not nested inside a further deferred function —
+// so it is evaluated the moment the factory runs, which can happen before a
+// plain `const` declared later in file order has initialized.
+const { mockResolveOwnerPlanGrantsFeatured } = vi.hoisted(() => ({
+    mockResolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false)
+}));
+
+vi.mock(
+    '../../../../packages/service-core/src/services/accommodation/featured-entitlement.resolver.js',
+    () => ({
+        resolveOwnerPlanGrantsFeatured: mockResolveOwnerPlanGrantsFeatured,
+        getOwnerAccommodationIdsWithActiveFeaturedAddon: vi.fn().mockResolvedValue([]),
+        resolveAccommodationHasActiveFeaturedAddon: vi.fn().mockResolvedValue(false)
+    })
+);
+
+// ---------------------------------------------------------------------------
 // Mock: wasNotificationSent's DB dependency (no service layer exists for this)
 // ---------------------------------------------------------------------------
 const mockDbLimit = vi.fn();
@@ -63,6 +96,15 @@ const mockDbInnerJoin = vi.fn();
 const mockDbUpdateWhere = vi.fn();
 const mockDbUpdateSet = vi.fn();
 const mockDbUpdate = vi.fn();
+
+// ---------------------------------------------------------------------------
+// Mock: DB chains used by the SPEC-309 T-016 featured-listing addon-expiry
+// sync (grant-link lookup, accommodation owner lookup, and the accommodations
+// UPDATE issued by the real `syncFeaturedByEntitlementForAccommodation`).
+// ---------------------------------------------------------------------------
+const mockDbGrantLinkWhere = vi.fn();
+const mockDbAccommodationOwnerWhere = vi.fn();
+const mockDbUpdateReturning = vi.fn();
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
@@ -112,6 +154,21 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         deletedAt: 'deleted_at',
         updatedAt: 'updated_at'
+    },
+    // SPEC-309 T-016 (T-026 regression tests): consumed by the addon-expiry
+    // job's own grant-link/owner lookups AND by the real (unmocked)
+    // `syncFeaturedByEntitlementForAccommodation` primitive's UPDATE.
+    accommodations: {
+        id: 'id',
+        ownerId: 'owner_id',
+        deletedAt: 'deleted_at',
+        featuredByEntitlement: 'featured_by_entitlement',
+        slug: 'slug'
+    },
+    featuredListingAddonGrants: {
+        id: 'id',
+        purchaseId: 'purchase_id',
+        accommodationId: 'accommodation_id'
     },
     eq: vi.fn((...args: unknown[]) => ({ op: 'eq', args })),
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
@@ -164,9 +221,15 @@ vi.mock('../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: vi.fn()
 }));
 
-// Mock getAddonBySlug (billing config resolver)
+// Mock getAddonBySlug (billing config resolver).
+// SPEC-309 T-016 (T-026 regression tests): also provides EntitlementKey — the
+// job's grantedFeaturedListing check does
+// `adjustment.entitlementKey === EntitlementKey.FEATURED_LISTING`, so without
+// this the comparison target is `undefined` and every FEATURED_LISTING
+// adjustment silently fails to match (soft-failed by the surrounding try/catch).
 vi.mock('@repo/billing', () => ({
-    getAddonBySlug: vi.fn()
+    getAddonBySlug: vi.fn(),
+    EntitlementKey: { FEATURED_LISTING: 'featured_listing' }
 }));
 
 // Mock clearEntitlementCache (entitlement middleware)
@@ -191,8 +254,8 @@ vi.mock('../../src/services/addon-entitlement.service', () => ({
     }))
 }));
 
-import { getAddonBySlug } from '@repo/billing';
-import { getDb, withTransaction } from '@repo/db';
+import { EntitlementKey, getAddonBySlug } from '@repo/billing';
+import { accommodations, featuredListingAddonGrants, getDb, withTransaction } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
@@ -255,11 +318,50 @@ describe('Add-on Expiry Cron Job', () => {
         mockDbInnerJoin.mockReturnValue({
             where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
         });
-        mockDbFrom.mockReturnValue({ where: mockDbWhere, innerJoin: mockDbInnerJoin });
+        // SPEC-309 T-016 (T-026): mockDbFrom is now table-aware. The T-016
+        // grant-link lookup (`.from(featuredListingAddonGrants).where(...)`,
+        // no `.limit()`) and the accommodation-owner lookup
+        // (`.from(accommodations).where(...)`, no `.limit()`) need a DIFFERENT
+        // chain shape than every other `.from()` call site in this job (which
+        // all end in `.where().limit()` or `.innerJoin()`). Routing on the
+        // `table` argument keeps the pre-existing default (`{ where:
+        // mockDbWhere, innerJoin: mockDbInnerJoin }`) intact for every other
+        // caller (wasNotificationSent, revocation retry, split-state,
+        // entitlement reconciliation, grant reconciliation) while giving the
+        // two new call sites their own directly-resolving `.where()`.
+        mockDbFrom.mockImplementation((table: unknown) => {
+            if (table === featuredListingAddonGrants) {
+                return { where: mockDbGrantLinkWhere };
+            }
+            if (table === accommodations) {
+                return { where: mockDbAccommodationOwnerWhere };
+            }
+            return { where: mockDbWhere, innerJoin: mockDbInnerJoin };
+        });
         mockDbSelect.mockReturnValue({ from: mockDbFrom });
 
-        // Set up default DB chain for the revocation retry phase UPDATE
-        mockDbUpdateWhere.mockResolvedValue([]);
+        // SPEC-309 T-016 (T-026): default both new lookups to "not found" so
+        // the 46 pre-existing tests (whose fixtures never set a granted
+        // FEATURED_LISTING entitlementAdjustment) never accidentally exercise
+        // this branch, and so tests that DON'T care about T-016 still get a
+        // safe, defined default if the branch is ever reached.
+        mockDbGrantLinkWhere.mockResolvedValue([]);
+        mockDbAccommodationOwnerWhere.mockResolvedValue([]);
+        mockResolveOwnerPlanGrantsFeatured.mockResolvedValue(false);
+
+        // Set up default DB chain for the revocation retry phase UPDATE.
+        // SPEC-309 T-016 (T-026): `mockDbUpdateWhere` now returns an object
+        // exposing `.returning()` instead of resolving directly to a Promise.
+        // This is safe for the 5 pre-existing call sites that do
+        // `await db.update(...).set(...).where(...)` WITHOUT chaining
+        // `.returning()` — none of them use the awaited value, and `await`
+        // on a plain (non-thenable) object just resolves to that object on
+        // the next microtask. The real (unmocked)
+        // `syncFeaturedByEntitlementForAccommodation` DOES chain `.returning()`
+        // on its UPDATE, which needs `mockDbUpdateReturning` to be an
+        // awaitable function — configured per-test via `mockResolvedValueOnce`.
+        mockDbUpdateWhere.mockReturnValue({ returning: mockDbUpdateReturning });
+        mockDbUpdateReturning.mockResolvedValue([]);
         mockDbUpdateSet.mockReturnValue({ where: mockDbUpdateWhere });
         mockDbUpdate.mockReturnValue({ set: mockDbUpdateSet });
 
@@ -428,6 +530,135 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.success).toBe(true);
             expect(result.processed).toBe(3);
             expect(result.errors).toBeGreaterThan(0);
+        });
+    });
+
+    describe('SPEC-309 T-016: featured-listing addon-expiry sync (T-026 regression)', () => {
+        /**
+         * Builds a single expired addon fixture that granted FEATURED_LISTING
+         * (SPEC-309 T-016) via `entitlementAdjustments`, matching the shape
+         * returned by `AddonExpirationService.findExpiredAddons()`.
+         */
+        function buildFeaturedAddon(overrides?: {
+            id?: string;
+            customerId?: string;
+            addonSlug?: string;
+        }) {
+            return {
+                id: overrides?.id ?? 'purchase-featured',
+                customerId: overrides?.customerId ?? 'cust-featured',
+                addonSlug: overrides?.addonSlug ?? 'visibility-boost-7d',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: [
+                    { granted: true, entitlementKey: EntitlementKey.FEATURED_LISTING }
+                ]
+            };
+        }
+
+        /**
+         * Builds a mock AddonExpirationService whose `findExpiredAddons()`
+         * returns the given addon and whose `expireAddon()` always succeeds
+         * for it (mirrors "should process expired add-ons successfully").
+         */
+        function buildMockServiceForAddon(addon: ReturnType<typeof buildFeaturedAddon>) {
+            return {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [addon] }),
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: addon.id,
+                        customerId: addon.customerId,
+                        addonSlug: addon.addonSlug,
+                        expiredAt: new Date()
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }
+
+        it('should clear featuredByEntitlement when a FEATURED_LISTING addon expires and the owner plan does not independently grant it', async () => {
+            // Arrange — one expired addon that granted FEATURED_LISTING, linked
+            // (T-007) to an accommodation whose owner's plan does NOT grant it.
+            const ctx = createMockContext();
+            const addon = buildFeaturedAddon({
+                id: 'purchase-featured-1',
+                customerId: 'cust-featured-1'
+            });
+
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => buildMockServiceForAddon(addon) as never
+            );
+
+            // T-007 grant link: purchase -> accommodation
+            mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-1' }]);
+            // Accommodation owner lookup
+            mockDbAccommodationOwnerWhere.mockResolvedValueOnce([{ ownerId: 'owner-featured-1' }]);
+            // Owner's plan does NOT independently grant FEATURED_LISTING
+            mockResolveOwnerPlanGrantsFeatured.mockResolvedValueOnce(false);
+            // The accommodations UPDATE (real, unmocked sync primitive) returns the cleared row
+            mockDbUpdateReturning.mockResolvedValueOnce([
+                { id: 'acc-featured-1', slug: 'acc-featured-1-slug' }
+            ]);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — the expiry itself always succeeds regardless of the sync outcome
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+
+            // Assert — the plan-guard was consulted for the right owner...
+            expect(mockResolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                ownerId: 'owner-featured-1'
+            });
+
+            // ...and, since it resolved false, the accommodations UPDATE actually ran,
+            // clearing featuredByEntitlement on the linked accommodation.
+            expect(mockDbUpdate).toHaveBeenCalledWith(accommodations);
+            expect(mockDbUpdateSet).toHaveBeenCalledWith(
+                expect.objectContaining({ featuredByEntitlement: false })
+            );
+            expect(mockDbUpdateReturning).toHaveBeenCalledTimes(1);
+        });
+
+        it('should NOT clear featuredByEntitlement when the owner plan independently still grants FEATURED_LISTING (plan-guard no-op)', async () => {
+            // Arrange — same addon-expiry + grant-link setup as above, but this
+            // time the owner's plan still independently grants FEATURED_LISTING.
+            const ctx = createMockContext();
+            const addon = buildFeaturedAddon({
+                id: 'purchase-featured-2',
+                customerId: 'cust-featured-2',
+                addonSlug: 'visibility-boost-30d'
+            });
+
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => buildMockServiceForAddon(addon) as never
+            );
+
+            mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-2' }]);
+            mockDbAccommodationOwnerWhere.mockResolvedValueOnce([{ ownerId: 'owner-featured-2' }]);
+            // Owner's plan independently still grants FEATURED_LISTING
+            mockResolveOwnerPlanGrantsFeatured.mockResolvedValueOnce(true);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — the expiry itself still succeeds
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+
+            // Assert — the sync primitive DID run (auditability: the call happens,
+            // it just resolves to a no-op) — resolveOwnerPlanGrantsFeatured was
+            // called with the accommodation's owner id...
+            expect(mockResolveOwnerPlanGrantsFeatured).toHaveBeenCalledWith({
+                ownerId: 'owner-featured-2'
+            });
+
+            // ...but the plan-guard no-op means the accommodations UPDATE never ran.
+            expect(mockDbUpdateReturning).not.toHaveBeenCalled();
         });
     });
 

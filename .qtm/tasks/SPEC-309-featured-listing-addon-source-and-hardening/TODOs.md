@@ -1,6 +1,6 @@
 # SPEC-309: Featured Listing — Addon Source + Hardening
 
-## Progress: 25/30 tasks (83%)
+## Progress: 26/30 tasks (87%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-008 -> T-023 -> T-030 (7 steps)
@@ -93,7 +93,7 @@ owner self-service toggle (folded in from SPEC-320).
   - Blocked by: T-011, T-012, T-013 · Blocks: T-030
 - [x] **T-025** (complexity: 3) - Integration test — addon purchase to accommodation-scoped featuring, end-to-end [DONE]
   - Blocked by: T-007, T-015 · Blocks: T-030
-- [ ] **T-026** (complexity: 2) - Integration test — addon expiry plan-guard regression
+- [x] **T-026** (complexity: 2) - Integration test — addon expiry plan-guard regression [DONE]
   - Blocked by: T-016, T-005 · Blocks: T-030
 - [ ] **T-027** (complexity: 2) - Integration test — revalidation triggered on featuring changes
   - Blocked by: T-017, T-018 · Blocks: T-030
