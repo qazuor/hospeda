@@ -724,39 +724,39 @@
             "id": "T-021",
             "title": "Migrate operator PIN check to read from vault",
             "description": "In `apps/api/src/routes/ai/social/drafts.ts`, change `validateOperatorPin()` (lines ~56-74) to call `getDecryptedSocialCredential({ key: 'operator_pin' })` (T-020) instead of reading `env.HOSPEDA_OPERATOR_PIN`, keeping the existing `timingSafeEqual` comparison unchanged (that part was already correct per the spec). Update the stale JSDoc/comments that still reference the old hash-based scheme. Update existing tests for this route to mock the vault decrypt call instead of the env var.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": ["T-038"],
             "subtasks": [
                 {
                     "title": "Replace env.HOSPEDA_OPERATOR_PIN read with vault decrypt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep timingSafeEqual comparison unchanged",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update stale JSDoc comments",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tests to mock vault decrypt",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "auth", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 28 tests across social-drafts.test.ts + drafts-hashtag-limit.test.ts (both updated to mock the vault instead of env.HOSPEDA_OPERATOR_PIN); added 1 new test for the no-active-credential 403 case. HOSPEDA_OPERATOR_PIN env var itself NOT removed yet (that's T-042, gated on T-038/T-039 staging+prod smoke)"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T01:25:00Z",
+                "completed": "2026-07-03T01:50:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.2
     }

@@ -67,13 +67,22 @@ vi.mock('../../../../src/utils/route-factory-tiered', () => ({
     })
 }));
 
+// The operator PIN check now reads from the social credentials vault
+// (HOS-64 T-021) instead of env.HOSPEDA_OPERATOR_PIN.
+const { mockGetDecryptedSocialCredential } = vi.hoisted(() => ({
+    mockGetDecryptedSocialCredential: vi.fn()
+}));
+
+vi.mock('../../../../src/services/social-credential-vault.service.js', () => ({
+    getDecryptedSocialCredential: mockGetDecryptedSocialCredential
+}));
+
 const TEST_PIN = 'test-pin-1234';
 const TEST_AI_KEY = 'test-ai-secret-key';
 
 vi.mock('../../../../src/utils/env', () => ({
     env: {
-        HOSPEDA_AI_SOCIAL_KEY: TEST_AI_KEY,
-        HOSPEDA_OPERATOR_PIN: TEST_PIN
+        HOSPEDA_AI_SOCIAL_KEY: TEST_AI_KEY
     }
 }));
 
@@ -147,6 +156,9 @@ beforeEach(async () => {
     vi.clearAllMocks();
     capturedHandlers.clear();
     mockGetMediaProvider.mockReturnValue(null);
+    mockGetDecryptedSocialCredential.mockResolvedValue({
+        data: { key: 'operator_pin', plaintext: TEST_PIN }
+    });
 
     await import('../../../../src/routes/ai/social/drafts');
     draftsHandler = capturedHandlers.get('/');
