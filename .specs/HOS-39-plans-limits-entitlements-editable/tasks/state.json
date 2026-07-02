@@ -82,39 +82,39 @@
             "id": "T-003",
             "title": "Write migration promoting metadata fields to typed columns",
             "description": "Run `pnpm db:generate` to produce a Drizzle migration in `packages/db/src/migrations/` adding `display_name`, `monthly_price_ars`, `annual_price_ars` columns to `billing_plans` (per the new qzpay-drizzle schema from T-002). Hand-extend the generated SQL with a backfill `UPDATE billing_plans SET display_name = metadata->>'displayName', monthly_price_ars = (metadata->>'monthlyPriceArs')::integer, annual_price_ars = (metadata->>'annualPriceArs')::integer WHERE ...` for existing rows (additive migration, no DROP of metadata). Apply via `pnpm db:migrate` locally and verify all 9 existing plans have correct backfilled values.\n\nTest requirements: integration test in `packages/db/test/` verifying, after migration, the 3 new columns are populated correctly for every existing seeded plan (compare against known metadata values).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
             "subtasks": [
                 {
                     "title": "Run pnpm db:generate for the new columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add backfill UPDATE statement to the generated migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply locally via pnpm db:migrate and verify backfill",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write migration backfill integration test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "migration", "billing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T19:01:26Z",
+                "completed": "2026-07-02T19:14:16Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
