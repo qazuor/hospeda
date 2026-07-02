@@ -715,31 +715,31 @@
             "id": "T-022",
             "title": "Document the narrowed Model C admin-editable field policy",
             "description": "Update packages/billing/CLAUDE.md and docs/guides/managing-billing-plans.md to document: the 3 newly-typed commercial columns, the Q0 conflict resolution (sortOrder/trial/entitlements moved from capability to commercial per the T-024..T-027 live-bug fix, category/isDefault removed from the editable surface entirely), the new MODEL_C_FIELD_SPLIT runtime guard on PlanService.update(), and the SSR+revalidation pattern already in place for pricing pages. Cross-reference .specs/HOS-39-plans-limits-entitlements-editable/spec.md.\n\nTest requirements: none (docs-only task); verify markdown lint passes if the project enforces it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021", "T-027"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update packages/billing/CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update docs/guides/managing-billing-plans.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "n/a",
+                "tests": "n/a"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:05:00Z",
+                "completed": "2026-07-02T22:15:00Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
