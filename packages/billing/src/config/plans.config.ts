@@ -57,6 +57,7 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
     EntitlementKey.EXCLUSIVE_DEALS,
     EntitlementKey.VIP_SUPPORT,
     EntitlementKey.VIP_VISIBILITY_ACCESS,
+    EntitlementKey.VIP_PROMOTIONS_ACCESS,
     EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
     EntitlementKey.CAN_VIEW_SEARCH_HISTORY,

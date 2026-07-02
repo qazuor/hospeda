@@ -583,6 +583,10 @@
             "title": "Alertas de precio",
             "description": "Gestioná tus alertas de bajada de precio en Hospeda"
         },
+        "exclusiveDeals": {
+            "title": "Ofertas exclusivas",
+            "description": "Descubrí ofertas y descuentos exclusivos para tu plan en Hospeda"
+        },
         "recommendations": {
             "title": "Para vos",
             "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
@@ -797,6 +801,23 @@
             "cta": "Ver planes"
         },
         "listLabel": "Tus alertas de precio activas"
+    },
+    "exclusiveDeals": {
+        "loading": "Cargando ofertas exclusivas...",
+        "errorFetch": "No se pudieron cargar tus ofertas exclusivas",
+        "empty": {
+            "title": "No hay ofertas activas por ahora",
+            "body": "Volvé más tarde para ver nuevas ofertas exclusivas para tu plan."
+        },
+        "upgrade": {
+            "title": "Ofertas exclusivas",
+            "message": "Las ofertas exclusivas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "cta": "Ver planes"
+        },
+        "listLabel": "Tus ofertas exclusivas",
+        "item": {
+            "vipBadge": "Solo VIP"
+        }
     },
     "recommendations": {
         "loading": "Cargando recomendaciones...",

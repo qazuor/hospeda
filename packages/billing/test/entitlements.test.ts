@@ -178,8 +178,10 @@ describe('Entitlement Configuration', () => {
             }
         });
 
-        it('should have 12 tourist entitlements', () => {
-            // Arrange (EARLY_ACCESS_EVENTS, CONCIERGE_SERVICE, AIRPORT_TRANSFERS removed in SPEC-216; AD_FREE removed in HOS-16, obsolete — no ad system exists)
+        it('should have 13 tourist entitlements', () => {
+            // Arrange (EARLY_ACCESS_EVENTS, CONCIERGE_SERVICE, AIRPORT_TRANSFERS removed in SPEC-216;
+            // AD_FREE removed in HOS-16, obsolete — no ad system exists;
+            // VIP_PROMOTIONS_ACCESS added in HOS-21 T-003)
             const touristKeys: readonly EntitlementKey[] = [
                 EntitlementKey.SAVE_FAVORITES,
                 EntitlementKey.WRITE_REVIEWS,
@@ -188,6 +190,7 @@ describe('Entitlement Configuration', () => {
                 EntitlementKey.EXCLUSIVE_DEALS,
                 EntitlementKey.VIP_SUPPORT,
                 EntitlementKey.VIP_VISIBILITY_ACCESS,
+                EntitlementKey.VIP_PROMOTIONS_ACCESS,
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
                 EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
                 EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
@@ -196,7 +199,7 @@ describe('Entitlement Configuration', () => {
             ] as const;
 
             // Act & Assert
-            expect(touristKeys).toHaveLength(12);
+            expect(touristKeys).toHaveLength(13);
             for (const key of touristKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
@@ -212,11 +215,12 @@ describe('Entitlement Configuration', () => {
         });
 
         it('should have all 6 categories totaling to the full definitions count', () => {
-            // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13; HOS-16: tourist 13→12)
+            // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
+            // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added))
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
-            const touristCount = 12;
+            const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
 
             // Act & Assert

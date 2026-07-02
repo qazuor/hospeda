@@ -5,7 +5,11 @@ import type {
     OwnerPromotionIdType,
     UserIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionDiscountTypeEnum,
+    TouristAudienceEnum
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export class OwnerPromotionFactoryBuilder {
@@ -33,6 +37,7 @@ export class OwnerPromotionFactoryBuilder {
             currentRedemptions: 0,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             planRestricted: false,
+            touristAudience: TouristAudienceEnum.PLUS,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserIdType,
@@ -65,6 +70,7 @@ export const createMockOwnerPromotionCreateInput = (
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         maxRedemptions: 100,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
+        touristAudience: TouristAudienceEnum.PLUS,
         ...overrides
     };
 };

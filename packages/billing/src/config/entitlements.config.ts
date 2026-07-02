@@ -178,6 +178,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
             'VIP tourist visibility bypass: see RESTRICTED, owner-suspended, and plan-restricted accommodations'
     },
     {
+        key: EntitlementKey.VIP_PROMOTIONS_ACCESS,
+        name: 'VIP promotions access',
+        description: 'Access to VIP-only tier exclusive deals, in addition to the plus tier'
+    },
+    {
         key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
         name: 'Compare accommodations',
         description: 'Allows comparing multiple accommodations side by side'
