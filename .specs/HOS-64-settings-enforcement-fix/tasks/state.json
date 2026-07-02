@@ -510,31 +510,31 @@
             "id": "T-015",
             "title": "Reduce ai-vault.ts to a thin wrapper",
             "description": "Update `apps/api/src/utils/ai-vault.ts` so `encryptSecret`/`decryptSecret` call the new `secret-vault-crypto.ts` util (T-014) with `env.HOSPEDA_AI_VAULT_MASTER_KEY`, removing the now-duplicated crypto logic. This must be a pure extraction with NO behavior change — run the existing AI vault tests (`apps/api/test/integration/ai/vault-roundtrip.test.ts`) unchanged and confirm they still pass, since they are the only current coverage of this code path.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Delegate ai-vault.ts functions to secret-vault-crypto.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing vault-roundtrip.test.ts and confirm no regressions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["crypto", "vault", "refactor", "regression"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "5/10 fail with 500 on the HTTP create-credential path — verified PRE-EXISTING (identical failure with the pre-T-015 ai-vault.ts, confirmed via git checkout HEAD -- + rerun). No regression from this change. See engram discovery/pre-existing-500-in-ai-vault-roundtrip-e2e-test."
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T21:10:00Z",
+                "completed": "2026-07-02T21:35:00Z"
             }
         },
         {
