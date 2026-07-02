@@ -522,15 +522,13 @@ that numbering belongs to the retired `.qtm/` system (see below). If ambiguous
 - **NEVER** start working on code without first checking Linear + `.specs/` for a relevant spec/task
 - If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications, then reflect the change on the Linear issue
 
-### Closing a spec — `/closeSpec` is mandatory, not optional
+### Closing a spec — Linear state, not local files
 
-**When implementation of a spec is finished, you MUST run `/closeSpec HOS-N` before
-considering the task done.** This is a non-negotiable end-of-work step, same tier
-as running the quality gate before marking a task `completed` — do not skip it
-because "the code merged" or "it's obviously done". A merged PR is NOT the same
-thing as a closed Linear issue; leaving the gap between them is exactly the drift
-pattern the 2026-07-01 migration audit found repeatedly (specs shipped for weeks
-with a stale Backlog/In-Progress issue nobody remembered to close).
+Running `/closeSpec HOS-N` at the end of a spec's implementation is a standing
+personal-workflow rule from the user's global `~/.claude/CLAUDE.md` (not repeated
+here — that file is the source of truth for when it applies). What follows is
+Hospeda-specific: how `/closeSpec` actually writes the state, and a live incident
+worth knowing about before touching PR titles.
 
 `/closeSpec` marks the Linear issue `Done` deterministically via the `index-sync`
 skill's Linear backend (`mcp__linear__save_issue({id, state: "Done"})`) — see
@@ -547,14 +545,21 @@ Linear issue to Done via the GitHub integration, independent of whether
 `/closeSpec` gets run afterward. **Never** put `Closes`/`Fixes`/`Resolves`/
 `Implements` (or any other Linear magic word) in a partial/incremental PR that
 does NOT complete the spec — doing so prematurely closes the issue on an unrelated
-merge. This is exactly what happened once already: PR #1982 (a batch doc-migration
-PR, not real implementation work) had `HOS-36` in its title and Linear's
-`On PR merge → Done` team automation closed that issue on merge with zero actual
-work done. That blanket automation should be disabled (or scoped down) in
-`Linear → Settings → Team "Hospeda" → Workflows & automations → Pull request and
-commit automations` — set `On PR merge, move to...` to `No action` so that ONLY
-a deliberate `Closes HOS-N` in a PR description (or `/closeSpec` itself) can close
-an issue, never an incidental title mention.
+merge.
+
+**Known-live footgun (hit twice already, 2026-07-02)**: Hospeda's Linear team has
+`Settings → Workflows & automations → Pull request and commit automations →
+"On PR merge, move to..."` set to `Done`, and this fires on ANY PR whose **title**
+links an issue — no magic word required, no completeness check. PR #1982 (a batch
+doc-migration PR) had `HOS-36` in its title and closed that issue with zero real
+work done; PR #1983 did the identical thing to `HOS-54` (an Urgent-priority issue)
+the very next attempt. Both were manually reverted to Backlog. **Until the owner
+disables this automation** (set `On PR merge, move to...` to `No action`, leaving
+only `/closeSpec` and deliberate `Closes HOS-N` magic words as valid close paths),
+treat any bare `HOS-N` mention in a PR **title** as a live risk: after merging such
+a PR, spot-check `mcp__linear__get_issue` on every issue named in that title before
+trusting its state, and prefer NOT putting an HOS-N in a PR title unless that PR is
+genuinely the completing work for that issue.
 
 ### Legacy system (`.qtm/`) — do not use for new work
 
