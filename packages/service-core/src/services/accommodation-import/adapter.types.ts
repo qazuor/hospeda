@@ -274,8 +274,6 @@ export interface ImportContext {
         readonly apifyBookingActor?: string | undefined;
         /** Google Places API key for the Google Maps adapter. */
         readonly googlePlacesApiKey?: string | undefined;
-        /** MercadoLibre OAuth token for the MercadoLibre adapter. */
-        readonly mercadoLibreToken?: string | undefined;
     };
 
     /**
@@ -299,6 +297,27 @@ export interface ImportContext {
     readonly aiExtract?:
         | ((input: { text: string; locale?: string | undefined }) => Promise<RawExtraction | null>)
         | undefined;
+
+    /**
+     * Optional MercadoLibre access-token port (HOS-45 OAuth refresh flow).
+     *
+     * Dependency-injected by the route layer (`apps/api`), which owns the
+     * MercadoLibre OAuth credential store, the refresh-token rotation logic,
+     * and the encrypted vault the credential lives in. The MercadoLibre
+     * adapter calls this to obtain a live, valid access token immediately
+     * before calling the MercadoLibre API — refreshing it first if it is
+     * missing, near-expiry, or already expired.
+     *
+     * Keeping it as a port means `@repo/service-core` never imports the
+     * apps/api OAuth token service — the adapter stays decoupled and
+     * unit-testable, exactly like {@link ImportContext.aiExtract} stays
+     * decoupled from the AI engine factory.
+     *
+     * When absent, or when the returned promise rejects (e.g. no credential
+     * configured yet, or the refresh failed), the adapter MUST degrade
+     * gracefully — return an empty extraction, never throw.
+     */
+    readonly mercadoLibreTokenProvider?: (() => Promise<string>) | undefined;
 }
 
 // ---------------------------------------------------------------------------

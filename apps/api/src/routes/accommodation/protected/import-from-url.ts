@@ -74,6 +74,7 @@ import {
 } from '../../../middlewares/entitlement';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
+import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -319,10 +320,10 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
                 apifyToken: env.HOSPEDA_APIFY_TOKEN,
                 apifyAirbnbActor: env.HOSPEDA_APIFY_AIRBNB_ACTOR,
                 apifyBookingActor: env.HOSPEDA_APIFY_BOOKING_ACTOR,
-                googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY,
-                mercadoLibreToken: env.HOSPEDA_MERCADOLIBRE_TOKEN
+                googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY
             },
-            aiExtract: buildImportAiExtract({ c: ctx, actor, gate })
+            aiExtract: buildImportAiExtract({ c: ctx, actor, gate }),
+            mercadoLibreTokenProvider: () => getValidMercadoLibreToken()
         };
 
         // Ephemeral, fire-and-forget analytics (no DB). No-op when PostHog is
