@@ -1,17 +1,196 @@
 /**
  * ExclusiveDealsList.module.css
- * Colocated CSS Module for the ExclusiveDealsList React island (HOS-21).
+ * Colocated CSS Module for the ExclusiveDealsList React island (HOS-21 T-012).
  * Uses design tokens only — no Tailwind utility classes.
  */
 
-.dealsShell {
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.deals {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
 }
 
+/* ─── Loading / error states ─────────────────────────────────────────────── */
+
 .dealsLoading {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     color: var(--core-muted-foreground);
+    padding: var(--space-8) 0;
+    text-align: center;
+}
+
+.dealsError {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    padding: var(--space-4) var(--space-5);
+}
+
+.dealsRetryBtn {
+    align-self: flex-start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.dealsRetryBtn:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+/* ─── Upgrade (plan-gate) state ───────────────────────────────────────────── */
+
+.dealsUpgrade {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-card);
+    background-color: var(--brand-primary-a05);
+    text-align: center;
+    align-items: center;
+}
+
+.dealsUpgradeTitle {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.dealsUpgradeMessage {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 40ch;
+    margin: 0;
+}
+
+.dealsUpgradeCta {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--brand-primary);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    transition: opacity var(--duration-fast) ease;
+}
+
+.dealsUpgradeCta:hover {
+    opacity: 0.85;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.dealsEmpty {
+    padding: var(--space-12) var(--space-4);
+    text-align: center;
+}
+
+.dealsEmptyTitle {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3);
+}
+
+.dealsEmptyBody {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 36ch;
+    margin: 0 auto;
+}
+
+/* ─── List ────────────────────────────────────────────────────────────────── */
+
+.dealsList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ─── Deal card ───────────────────────────────────────────────────────────── */
+
+.dealsItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+}
+
+.dealsItemContent {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dealsItemHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.dealsItemName {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dealsItemDiscount {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ─── VIP-only badge ──────────────────────────────────────────────────────── */
+
+.dealsVipBadge {
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brand-accent);
+    background-color: var(--brand-accent-a12);
+    border-radius: var(--radius-pill);
+    padding: 0.125rem var(--space-2);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .dealsItem {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
 }
