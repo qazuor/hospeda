@@ -246,39 +246,39 @@
             "id": "T-007",
             "title": "Add async extraction mode to Airbnb adapter",
             "description": "Implement AirbnbAdapter.extractAsync() (from T-003's interface): same credential checks as the existing extract() (missing apifyToken/apifyAirbnbActor -> {failureCode: 'credentials_missing'}), then call startApifyRunWithRetry (T-004) with the same actor input the sync path builds today; success -> {runId, datasetId}; retry-exhaustion (null) -> {failureCode: 'provider_error'}. The existing extract() is untouched.\n\nTest requirements: unit tests for missing-credentials->credentials_missing, success->run-handle, retry-exhausted->provider_error.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Implement extractAsync() with existing credential checks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call startApifyRunWithRetry with the existing actor input builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Map retry-exhaustion to provider_error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for the 3 outcomes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "airbnb", "adapter", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T12:40:00Z",
+                "completed": "2026-07-02T13:00:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.2
     }

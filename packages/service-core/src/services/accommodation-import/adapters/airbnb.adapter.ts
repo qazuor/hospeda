@@ -41,8 +41,14 @@
  * @module services/accommodation-import/adapters/airbnb
  */
 
-import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
-import { runApifyActor } from './apify-client.js';
+import type {
+    AsyncExtractionResult,
+    ImportContext,
+    ImportSourceAdapter,
+    RawExtraction
+} from '../adapter.types.js';
+import { runApifyActor, startApifyRun } from './apify-client.js';
+import { startApifyRunWithRetry } from './start-apify-run-with-retry.js';
 import { withRetry } from './with-retry.js';
 
 // ---------------------------------------------------------------------------
@@ -898,5 +904,59 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // -------------------------------------------------------------------
         const firstItem = result.items[0] as AirbnbItem;
         return mapItemToRawExtraction(firstItem);
+    }
+
+    /**
+     * Starts an async Apify run for an Airbnb listing URL (HOS-50 / SPEC-277 R3).
+     *
+     * Builds the exact same actor input `extract()` sends synchronously
+     * (`startUrls`, locale, price-probe `checkIn`/`checkOut`/`adults`/`currency`),
+     * but starts the run via `startApifyRun` (SPEC-250) instead of blocking on
+     * `run-sync-get-dataset-items`, wrapped in {@link startApifyRunWithRetry}
+     * (SPEC-277 R1 — retries only a transient `null` start failure, never the
+     * polling that follows).
+     *
+     * **Credential degradation (US-11)**: identical to `extract()` — missing
+     * `ctx.credentials.apifyToken` or `ctx.credentials.apifyAirbnbActor`
+     * returns `{ failureCode: 'credentials_missing' }` immediately, no network
+     * call made.
+     *
+     * @param url - The parsed Airbnb listing URL.
+     * @param ctx - Per-request context with credentials and timeout.
+     * @returns A run handle `{ runId, datasetId }` to poll, or `{ failureCode }`
+     *   when the start call could not even begin.
+     */
+    async extractAsync(url: URL, ctx: ImportContext): Promise<AsyncExtractionResult> {
+        const token = ctx.credentials.apifyToken;
+        const actor = ctx.credentials.apifyAirbnbActor;
+
+        if (!token || !actor) {
+            return { failureCode: 'credentials_missing' };
+        }
+
+        const actorLocale = mapAirbnbActorLocale(ctx.locale);
+        const { checkIn, checkOut } = buildPriceProbeDates();
+
+        const result = await startApifyRunWithRetry({
+            fn: () =>
+                startApifyRun({
+                    token,
+                    actor,
+                    actorInput: {
+                        startUrls: [{ url: url.href }],
+                        ...(actorLocale ? { locale: actorLocale } : {}),
+                        checkIn,
+                        checkOut,
+                        adults: PRICE_PROBE_ADULTS,
+                        currency: PRICE_PROBE_CURRENCY
+                    }
+                })
+        });
+
+        if (result === null) {
+            return { failureCode: 'provider_error' };
+        }
+
+        return { runId: result.runId, datasetId: result.defaultDatasetId };
     }
 }
