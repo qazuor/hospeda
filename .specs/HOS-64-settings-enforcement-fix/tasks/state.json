@@ -619,35 +619,35 @@
             "id": "T-018",
             "title": "Implement rotateSocialCredential vault function",
             "description": "Add `rotateSocialCredential({ key, newPlaintext, actorId, ipAddress })` to `social-credential-vault.service.ts`, mirroring `rotateAiProviderCredential`: re-encrypts with a fresh IV, updates `ciphertext`/`iv`/`authTag` in place, writes an audit row (`action: 'rotated'`) in the same transaction. Unit test: success path, not-found key, audit row content assertion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Implement rotate logic (re-encrypt in place)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pair with transactional audit row (action: rotated)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: success, not-found, audit content",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "crypto", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 7 new tests added (17 total in social-credential-vault.service.test.ts)"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T00:20:00Z",
+                "completed": "2026-07-03T00:35:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.2
     }

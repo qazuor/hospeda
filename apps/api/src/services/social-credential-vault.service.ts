@@ -82,6 +82,20 @@ const CreateSocialCredentialInputSchema = z.object({
 /** Input for creating a new social credential. */
 export type CreateSocialCredentialInput = z.infer<typeof CreateSocialCredentialInputSchema>;
 
+/**
+ * Zod schema for {@link rotateSocialCredential} input. `key` is restricted to
+ * the 4 known values; `newPlaintext` must be non-empty.
+ */
+const RotateSocialCredentialInputSchema = z.object({
+    key: z.enum(SOCIAL_CREDENTIAL_KEYS),
+    newPlaintext: z.string().min(1, 'newPlaintext must not be empty'),
+    actorId: z.string().uuid(),
+    ipAddress: z.string().nullable()
+});
+
+/** Input for rotating an existing social credential. */
+export type RotateSocialCredentialInput = z.infer<typeof RotateSocialCredentialInputSchema>;
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
@@ -249,6 +263,103 @@ export async function createSocialCredential(
         return errorOutput<SocialCredentialMutationResult>(
             ServiceErrorCode.INTERNAL_ERROR,
             'Unexpected error while creating credential'
+        );
+    }
+}
+
+/**
+ * Rotates the active social credential by overwriting its ciphertext in-place.
+ *
+ * Encrypts `newPlaintext`, overwrites `ciphertext`, `iv`, and `authTag` on the
+ * existing row (and bumps `updatedAt`), then inserts an audit row
+ * (`action: 'rotated'`) — all in one transaction. The previous ciphertext is
+ * permanently overwritten and not recoverable.
+ *
+ * Fails with `VALIDATION_ERROR` when input fails Zod validation, or with
+ * `NOT_FOUND` when no active credential exists for `key`.
+ *
+ * @param input - Rotate input including key, newPlaintext, actorId, and ipAddress.
+ * @returns `ServiceOutput` with `{ id, key }` on success.
+ */
+export async function rotateSocialCredential(
+    input: RotateSocialCredentialInput
+): Promise<ServiceOutput<SocialCredentialMutationResult>> {
+    const parsed = RotateSocialCredentialInputSchema.safeParse(input);
+    if (!parsed.success) {
+        return errorOutput<SocialCredentialMutationResult>(
+            ServiceErrorCode.VALIDATION_ERROR,
+            parsed.error.issues.map((issue) => issue.message).join('; ')
+        );
+    }
+
+    const { key, newPlaintext, actorId, ipAddress } = parsed.data;
+
+    try {
+        const db = getDb();
+
+        // 1. Find the active credential.
+        const active = await db
+            .select({ id: socialCredentials.id })
+            .from(socialCredentials)
+            .where(and(eq(socialCredentials.key, key), isNull(socialCredentials.deletedAt)))
+            .limit(1);
+
+        if (active.length === 0) {
+            return errorOutput<SocialCredentialMutationResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for key '${key}'`
+            );
+        }
+
+        const credentialId = active[0]?.id;
+        if (credentialId === undefined) {
+            return errorOutput<SocialCredentialMutationResult>(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Active credential row did not return an ID'
+            );
+        }
+
+        // 2. Encrypt new secret.
+        const { ciphertext, iv, authTag } = encryptSecret({ plaintext: newPlaintext });
+
+        // 3. Transactional update: overwrite ciphertext + audit.
+        await withTransaction(async (tx) => {
+            await tx
+                .update(socialCredentials)
+                .set({
+                    ciphertext,
+                    iv,
+                    authTag,
+                    updatedAt: new Date()
+                })
+                .where(eq(socialCredentials.id, credentialId));
+
+            await tx.insert(socialCredentialAudit).values({
+                actorId,
+                action: 'rotated',
+                key,
+                ipAddress: ipAddress ?? null
+            });
+        });
+
+        apiLogger.info(
+            { key, credentialId, actorId },
+            'social-credential-vault: credential rotated'
+        );
+
+        return { data: { id: credentialId, key } };
+    } catch (error) {
+        apiLogger.error(
+            {
+                key,
+                actorId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'social-credential-vault: unexpected error in rotateSocialCredential'
+        );
+        return errorOutput<SocialCredentialMutationResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while rotating credential'
         );
     }
 }

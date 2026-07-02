@@ -13,6 +13,14 @@
  *   7. Returns VALIDATION_ERROR on a 23505 unique-violation race (post-check).
  *   8. Propagates as INTERNAL_ERROR (transaction rolled back) when the audit insert fails.
  *
+ * rotateSocialCredential:
+ *   9. Rejects invalid input with VALIDATION_ERROR.
+ *  10. encryptSecret is called with the new plaintext.
+ *  11. Updates ciphertext in-place on the existing row (not the plaintext).
+ *  12. Inserts an audit row with action 'rotated'.
+ *  13. Returns success with { id, key }.
+ *  14. Returns NOT_FOUND when no active credential exists.
+ *
  * @module test/services/social-credential-vault.service
  */
 
@@ -29,6 +37,9 @@ const {
     mockDbSelectChain,
     mockDbInsert,
     mockDbInsertValues,
+    mockDbUpdate,
+    mockDbUpdateSet,
+    mockDbUpdateSetWhere,
     mockDbSelectWhere,
     mockDbSelectLimit,
     mockApiLogger
@@ -39,6 +50,10 @@ const {
     });
     const mockDbInsert = vi.fn().mockReturnValue({ values: mockDbInsertValues });
 
+    const mockDbUpdateSetWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const mockDbUpdateSet = vi.fn().mockReturnValue({ where: mockDbUpdateSetWhere });
+    const mockDbUpdate = vi.fn().mockReturnValue({ set: mockDbUpdateSet });
+
     const mockDbSelectLimit = vi.fn().mockResolvedValue([]);
     const mockDbSelectWhere = vi.fn().mockReturnValue({ limit: mockDbSelectLimit });
     const mockDbSelectFrom = vi.fn().mockReturnValue({ where: mockDbSelectWhere });
@@ -46,7 +61,8 @@ const {
 
     const mockGetDb = vi.fn().mockReturnValue({
         select: mockDbSelectChain,
-        insert: mockDbInsert
+        insert: mockDbInsert,
+        update: mockDbUpdate
     });
 
     // withTransaction: immediately calls the callback with a tx mock
@@ -55,6 +71,7 @@ const {
         .mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
             const tx = {
                 insert: mockDbInsert,
+                update: mockDbUpdate,
                 select: mockDbSelectChain
             };
             await cb(tx);
@@ -80,6 +97,9 @@ const {
         mockDbSelectChain,
         mockDbInsert,
         mockDbInsertValues,
+        mockDbUpdate,
+        mockDbUpdateSet,
+        mockDbUpdateSetWhere,
         mockDbSelectWhere,
         mockDbSelectLimit,
         mockApiLogger
@@ -136,7 +156,10 @@ vi.mock('../../src/utils/logger.js', () => ({
 // Import SUT (after mocks)
 // ---------------------------------------------------------------------------
 
-import { createSocialCredential } from '../../src/services/social-credential-vault.service';
+import {
+    createSocialCredential,
+    rotateSocialCredential
+} from '../../src/services/social-credential-vault.service';
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -166,12 +189,14 @@ function resetAllMocks(): void {
 
     mockGetDb.mockReturnValue({
         select: mockDbSelectChain,
-        insert: mockDbInsert
+        insert: mockDbInsert,
+        update: mockDbUpdate
     });
 
     mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
         const tx = {
             insert: mockDbInsert,
+            update: mockDbUpdate,
             select: mockDbSelectChain
         };
         await cb(tx);
@@ -186,6 +211,10 @@ function resetAllMocks(): void {
     const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
     mockDbInsertValues.mockReturnValue({ returning: returningMock });
     mockDbInsert.mockReturnValue({ values: mockDbInsertValues });
+
+    mockDbUpdateSetWhere.mockResolvedValue({ rowCount: 1 });
+    mockDbUpdateSet.mockReturnValue({ where: mockDbUpdateSetWhere });
+    mockDbUpdate.mockReturnValue({ set: mockDbUpdateSet });
 }
 
 // ---------------------------------------------------------------------------
@@ -402,6 +431,133 @@ describe('createSocialCredential', () => {
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe('INTERNAL_ERROR');
             expect(result.data).toBeUndefined();
+        });
+    });
+});
+
+describe('rotateSocialCredential', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    const NEW_PLAINTEXT = 'https://hook.make.com/rotated-webhook';
+
+    describe('input validation', () => {
+        it('should return VALIDATION_ERROR for an unknown key and not touch the DB', async () => {
+            const result = await rotateSocialCredential({
+                key: 'not_a_real_key' as unknown as typeof KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockGetDb).not.toHaveBeenCalled();
+            expect(mockEncryptSecret).not.toHaveBeenCalled();
+        });
+
+        it('should return VALIDATION_ERROR for an empty newPlaintext', async () => {
+            const result = await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: '',
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockEncryptSecret).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('when an active credential exists', () => {
+        beforeEach(() => {
+            mockDbSelectLimit.mockResolvedValue([ACTIVE_CREDENTIAL_ROW]);
+        });
+
+        it('should call encryptSecret with the new plaintext', async () => {
+            await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(mockEncryptSecret).toHaveBeenCalledOnce();
+            expect(mockEncryptSecret).toHaveBeenCalledWith({ plaintext: NEW_PLAINTEXT });
+        });
+
+        it('should update ciphertext in-place — not the plaintext', async () => {
+            const capturedSetValues: unknown[] = [];
+            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+                capturedSetValues.push(vals);
+                return { where: mockDbUpdateSetWhere };
+            });
+
+            await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const updatePayload = capturedSetValues[0] as Record<string, unknown>;
+            expect(updatePayload.ciphertext).toBe('MOCK_CIPHERTEXT');
+            expect(updatePayload.iv).toBe('MOCK_IV');
+            expect(updatePayload.authTag).toBe('MOCK_AUTHTAG');
+            expect(JSON.stringify(updatePayload)).not.toContain(NEW_PLAINTEXT);
+        });
+
+        it('should insert an audit row with action "rotated"', async () => {
+            const allInsertedValues: unknown[] = [];
+            mockDbInsertValues.mockImplementation((vals: unknown) => {
+                allInsertedValues.push(vals);
+                return { returning: vi.fn().mockResolvedValue([]) };
+            });
+
+            await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            const auditValues = allInsertedValues[0] as Record<string, unknown>;
+            expect(auditValues).toBeDefined();
+            expect(auditValues.action).toBe('rotated');
+            expect(auditValues.actorId).toBe(ACTOR_ID);
+            expect(auditValues.key).toBe(KEY);
+        });
+
+        it('should return success with { id, key }', async () => {
+            const result = await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: null
+            });
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.id).toBe(ACTIVE_CREDENTIAL_ROW.id);
+            expect(result.data?.key).toBe(KEY);
+            expect(result.error).toBeUndefined();
+        });
+    });
+
+    describe('when no active credential exists', () => {
+        it('should return NOT_FOUND', async () => {
+            mockDbSelectLimit.mockResolvedValue([]);
+
+            const result = await rotateSocialCredential({
+                key: KEY,
+                newPlaintext: NEW_PLAINTEXT,
+                actorId: ACTOR_ID,
+                ipAddress: IP_ADDRESS
+            });
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(result.data).toBeUndefined();
+            expect(mockEncryptSecret).not.toHaveBeenCalled();
+            expect(mockWithTransaction).not.toHaveBeenCalled();
         });
     });
 });
