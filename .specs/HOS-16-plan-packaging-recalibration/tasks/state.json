@@ -565,93 +565,123 @@
             "id": "T-014",
             "title": "Update grant-matrix.snapshot.test.ts",
             "description": "In `packages/billing/test/grant-matrix.snapshot.test.ts`, update `EXPECTED_AI_MATRIX` for owner-basico/pro/premium with the new AI limit values from T-007/T-008/T-009 (text-improve, chat, chat-consumer where applicable). Do NOT change complex-plan rows (complex is hidden, not recalibrated, per spec scope). Confirm the AD_FREE removal (T-002/T-003) doesn't break this file's entitlement-grant assertions (AD_FREE isn't part of AI_LIMIT_KEYS but may appear in a broader entitlement list elsewhere in the file — check).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-007", "T-008", "T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update EXPECTED_AI_MATRIX owner rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm AD_FREE cleanup doesn't break this file",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:04:56Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:04:56Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:04:56Z",
+                    "details": "grant-matrix.snapshot.test.ts 64/64 (1 todo); confirmed zero AD_FREE references, already satisfied by T-007/T-008/T-009 edits"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:04:43Z",
+                "completed": "2026-07-02T09:04:56Z"
             }
         },
         {
             "id": "T-015",
             "title": "Update plans.test.ts and limits.test.ts",
             "description": "In `packages/billing/test/plans.test.ts` and `packages/billing/test/limits.test.ts`: update expected `MAX_COMPARE_ITEMS` (plus=3, vip/owner/complex=5), `MAX_FAVORITES` (free=5, plus=25), tourist-free/plus entitlement lists (CAN_VIEW_RECOMMENDATIONS moved, T-004), owner-basico entitlement list (CREATE_PROMOTIONS added, T-005). Leave MAX_SEARCH_HISTORY_ENTRIES / MAX_ACTIVE_ALERTS assertions untouched (no value change).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update MAX_COMPARE_ITEMS / MAX_FAVORITES expectations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tourist-free/plus/owner-basico entitlement list expectations",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:21Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:21Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:21Z",
+                    "details": "plans.test.ts 64/64, limits.test.ts 30/30 (metadata-only, no hardcoded values needed updating); already satisfied by T-004/T-005/T-006 edits"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:05:04Z",
+                "completed": "2026-07-02T09:05:21Z"
             }
         },
         {
             "id": "T-016",
             "title": "Update entitlements.test.ts and owner-inherits-tourist.test.ts",
             "description": "In `packages/billing/test/entitlements.test.ts`: update category counts (tourist 13->12, total 39->38) after AD_FREE removal (T-002). In `packages/billing/test/owner-inherits-tourist.test.ts`: update the 'every owner/complex plan grants every TOURIST_VIP_ENTITLEMENTS key' invariant to reflect the shrunk shared constant (T-003) and the CAN_VIEW_RECOMMENDATIONS membership check (T-004).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update entitlements.test.ts counts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update owner-inherits-tourist.test.ts invariants",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:45Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:45Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:05:45Z",
+                    "details": "entitlements.test.ts 21/21 (updated in T-002), owner-inherits-tourist.test.ts 28/28 (invariant-based, no hardcoded values needed updating)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:05:30Z",
+                "completed": "2026-07-02T09:05:45Z"
             }
         },
         {
@@ -795,9 +825,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 8,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 1.6
     }

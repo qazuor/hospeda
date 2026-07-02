@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 12/20 tasks (60%)
+## Progress: 15/20 tasks (75%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -80,15 +80,15 @@
 
 ### Testing Phase
 
-- [ ] **T-014** (complexity: 2) - Update grant-matrix.snapshot.test.ts
+- [x] **T-014** (complexity: 2) - Update grant-matrix.snapshot.test.ts [DONE — already satisfied by T-007/8/9]
   - Blocked by: T-003, T-007, T-008, T-009
   - Blocks: none
 
-- [ ] **T-015** (complexity: 2) - Update plans.test.ts and limits.test.ts
+- [x] **T-015** (complexity: 2) - Update plans.test.ts and limits.test.ts [DONE — already satisfied by T-004/5/6]
   - Blocked by: T-004, T-005, T-006
   - Blocks: none
 
-- [ ] **T-016** (complexity: 1) - Update entitlements.test.ts and owner-inherits-tourist.test.ts
+- [x] **T-016** (complexity: 1) - Update entitlements.test.ts and owner-inherits-tourist.test.ts [DONE — already satisfied by T-002/3]
   - Blocked by: T-002, T-003
   - Blocks: none
 
