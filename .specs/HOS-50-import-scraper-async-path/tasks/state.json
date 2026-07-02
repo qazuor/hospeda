@@ -442,40 +442,41 @@
             "id": "T-012",
             "title": "Build web import-status polling hook",
             "description": "Adapt use-reputation-status.ts's hand-rolled setInterval pattern into useImportStatus({runId, datasetId, source, startedAt, enabled}) in a new file apps/web/src/hooks/use-import-status.ts: polls the status route every 5s while enabled and not settled, exposes {data, isPolling, error}; stops on settle, unmount, or a hard 4xx/5xx (transient network errors are swallowed and retried silently, same as the reputation hook).\n\nTest requirements: use-import-status.test.ts — polling starts when enabled, stops on settle, stops on unmount (no state update after unmount), halts on hard error; use fake timers to assert the 5s interval.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Implement useImportStatus adapting the use-reputation-status.ts pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Stop polling on settle/unmount/hard-error",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swallow and retry transient network errors silently",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write hook tests (fake timers) for all 4 stop conditions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "hook", "polling", "import"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-07-02T13:20:00Z",
+                "completed": "2026-07-02T13:50:00Z"
+            },
+            "summary": "Added apps/web/src/hooks/use-import-status.ts: useImportStatus(runHandle: ImportRunHandle | null, enabled) polling GET .../import-from-url/status every 5s, typed against @repo/schemas (AccommodationImportAsyncStartResponse/AccommodationImportResponse/ImportFailureCode, matching the useAiTextImprove.ts precedent for hooks importing schema types directly). Mirrors use-reputation-status.ts's setInterval/ref pattern exactly: stops on settle, unmount, or hard 4xx/5xx; swallows and silently retries transient network errors. Returns {draft, failureCode, settled, isPolling, error}. 11 new tests (fake timers, same flush/tick helpers as the reputation hook's test suite) cover all required stop conditions plus the null-run-handle no-op case. Lint+typecheck clean (apps/web astro check: 0 errors)."
         },
         {
             "id": "T-013",
@@ -733,9 +734,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.2
     }
