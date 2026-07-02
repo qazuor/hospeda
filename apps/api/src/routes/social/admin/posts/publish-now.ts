@@ -9,7 +9,7 @@
 import { IdSchema, PermissionEnum, PublishNowResponseSchema } from '@repo/schemas';
 import { ServiceError, SocialPublishDispatchService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { env } from '../../../../utils/env.js';
+import { getDecryptedSocialCredential } from '../../../../services/social-credential-vault.service.js';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
@@ -25,11 +25,11 @@ const dispatchService = new SocialPublishDispatchService({ logger: apiLogger });
  *  - Post must have at least one media item (422 with reason NO_MEDIA).
  *
  * Make.com not configured:
- *  When `HOSPEDA_MAKE_API_KEY` is absent or empty, the service receives an
- *  empty string as `makeApiKey`. `dispatchTarget` will look up `make_webhook_url`
- *  from `social_settings` and — if that is also empty — return
- *  `{ outcome: 'skipped_no_webhook' }` for every target.  The route returns
- *  HTTP 200 with the `skipped` counter populated; it does NOT throw a 500.
+ *  When no active `make_api_key` vault credential exists, the service receives
+ *  an empty string as `makeApiKey`. `dispatchTarget` will look up
+ *  `make_webhook_url` from `social_settings` and — if that is also empty —
+ *  return `{ outcome: 'skipped_no_webhook' }` for every target.  The route
+ *  returns HTTP 200 with the `skipped` counter populated; it does NOT throw a 500.
  */
 export const adminPublishNowSocialPostRoute = createAdminRoute({
     method: 'post',
@@ -45,13 +45,13 @@ export const adminPublishNowSocialPostRoute = createAdminRoute({
     handler: async (_ctx: Context, params: Record<string, unknown>) => {
         const postId = params.id as string;
 
-        // Read env at call time so tests can stub process.env without the
+        // Decrypt at call time so tests can stub the vault without a
         // module-level singleton capturing a stale value.
-        // env.HOSPEDA_MAKE_API_KEY is optional (z.string().optional()). When
-        // absent we pass '' — the service then reads the webhook URL from the
-        // social_settings table and returns skipped_no_webhook if that is also
-        // empty.
-        const makeApiKey = env.HOSPEDA_MAKE_API_KEY ?? '';
+        // When no active make_api_key credential exists we pass '' — the
+        // service then reads the webhook URL from the social_settings table
+        // and returns skipped_no_webhook if that is also empty.
+        const makeApiKeyResult = await getDecryptedSocialCredential({ key: 'make_api_key' });
+        const makeApiKey = makeApiKeyResult.data?.plaintext ?? '';
 
         const result = await dispatchService
             .dispatchPostNow({

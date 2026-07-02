@@ -4,7 +4,8 @@
  * Mocking strategy:
  * - `@repo/service-core` → SocialPublishDispatchService (findEligibleTargets + dispatchTarget)
  * - `@repo/db` → withTransaction (advisory lock guard) + sql tag
- * - `../../src/utils/env.js` → env (HOSPEDA_MAKE_API_KEY, HOSPEDA_API_URL)
+ * - `../../src/services/social-credential-vault.service.js` → getDecryptedSocialCredential
+ *   (the make_api_key credential, HOS-64 T-022 — replaces the former env.HOSPEDA_MAKE_API_KEY read)
  * - `../../src/utils/logger.js` → apiLogger (lock-skip warn assertions)
  *
  * @module test/cron/social-publish-dispatch
@@ -24,7 +25,8 @@ const {
     _mockTx,
     mockFindEligibleTargets,
     mockDispatchTarget,
-    mockSettingFindOne
+    mockSettingFindOne,
+    mockGetDecryptedSocialCredential
 } = vi.hoisted(() => {
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
@@ -34,13 +36,15 @@ const {
     const findEligibleTargets = vi.fn().mockResolvedValue({ targets: [] });
     const dispatchTarget = vi.fn().mockResolvedValue({ outcome: 'dispatched' });
     const settingFindOne = vi.fn().mockResolvedValue(undefined);
+    const getDecryptedSocialCredential = vi.fn();
 
     return {
         mockWithTransaction: withTx,
         _mockTx: tx,
         mockFindEligibleTargets: findEligibleTargets,
         mockDispatchTarget: dispatchTarget,
-        mockSettingFindOne: settingFindOne
+        mockSettingFindOne: settingFindOne,
+        mockGetDecryptedSocialCredential: getDecryptedSocialCredential
     };
 });
 
@@ -48,11 +52,8 @@ const {
 // Module mocks (must appear before any import of the module under test)
 // ---------------------------------------------------------------------------
 
-vi.mock('../../src/utils/env.js', () => ({
-    env: {
-        HOSPEDA_MAKE_API_KEY: 'test-make-api-key',
-        HOSPEDA_API_URL: 'https://api.test.hospeda.com.ar'
-    }
+vi.mock('../../src/services/social-credential-vault.service.js', () => ({
+    getDecryptedSocialCredential: mockGetDecryptedSocialCredential
 }));
 
 vi.mock('@repo/db', () => ({
@@ -118,6 +119,10 @@ describe('Social Publish Dispatch Cron Job', () => {
         mockFindEligibleTargets.mockResolvedValue({ targets: [] });
         mockDispatchTarget.mockResolvedValue({ outcome: 'dispatched' });
         mockSettingFindOne.mockResolvedValue(undefined);
+        // Default: an active make_api_key credential exists in the vault.
+        mockGetDecryptedSocialCredential.mockResolvedValue({
+            data: { key: 'make_api_key', plaintext: 'test-make-api-key' }
+        });
     });
 
     afterEach(() => {
@@ -184,48 +189,45 @@ describe('Social Publish Dispatch Cron Job', () => {
     // Missing-API-key guard
     // -----------------------------------------------------------------------
 
-    describe('Missing HOSPEDA_MAKE_API_KEY guard', () => {
-        it('returns success with processed=0 when HOSPEDA_MAKE_API_KEY is absent', async () => {
-            // Arrange: temporarily replace env mock with missing key.
-            // Cast via `unknown` to widen to a mutable record without using `any`.
-            const { env } = await import('../../src/utils/env.js');
-            const envRecord = env as unknown as Record<string, string | undefined>;
-            const originalKey = envRecord.HOSPEDA_MAKE_API_KEY;
-            envRecord.HOSPEDA_MAKE_API_KEY = undefined;
+    describe('Missing make_api_key vault credential guard (HOS-64 T-022)', () => {
+        it('returns success with processed=0 when no active make_api_key credential exists', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValueOnce({
+                error: {
+                    code: 'NOT_FOUND',
+                    message: "No active credential found for key 'make_api_key'"
+                }
+            });
 
-            // Act
             const result = await socialPublishDispatchJob.handler(mockContext);
 
-            // Assert
             expect(result.success).toBe(true);
             expect(result.processed).toBe(0);
             expect(result.errors).toBe(0);
-            expect(result.message).toContain('HOSPEDA_MAKE_API_KEY is not configured');
+            expect(result.message).toContain(
+                'make_api_key credential is not configured in the vault'
+            );
             expect(result.details).toMatchObject({
                 skipped: true,
                 reason: 'missing_make_api_key'
             });
             expect(mockLogger.warn).toHaveBeenCalledWith(
-                expect.stringContaining('HOSPEDA_MAKE_API_KEY is not set')
+                expect.stringContaining('no active make_api_key credential in the vault')
             );
             // dispatchTarget must NOT have been called
             expect(mockDispatchTarget).not.toHaveBeenCalled();
-
-            // Restore
-            envRecord.HOSPEDA_MAKE_API_KEY = originalKey;
         });
 
-        it('does not call withTransaction when the API key is missing', async () => {
-            const { env } = await import('../../src/utils/env.js');
-            const envRecord = env as unknown as Record<string, string | undefined>;
-            const originalKey = envRecord.HOSPEDA_MAKE_API_KEY;
-            envRecord.HOSPEDA_MAKE_API_KEY = undefined;
+        it('does not call withTransaction when the vault credential is missing', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValueOnce({
+                error: {
+                    code: 'NOT_FOUND',
+                    message: "No active credential found for key 'make_api_key'"
+                }
+            });
 
             await socialPublishDispatchJob.handler(mockContext);
 
             expect(mockWithTransaction).not.toHaveBeenCalled();
-
-            envRecord.HOSPEDA_MAKE_API_KEY = originalKey;
         });
     });
 
@@ -328,7 +330,7 @@ describe('Social Publish Dispatch Cron Job', () => {
             expect(result.errors).toBe(0);
             expect(mockDispatchTarget).toHaveBeenCalledTimes(3);
 
-            // Every call must receive the env-sourced makeApiKey
+            // Every call must receive the vault-sourced makeApiKey
             // (apiBaseUrl removed in SPEC-254 dispatch redesign — Make webhook
             // response is now synchronous so no callback URL is needed)
             for (const call of vi.mocked(mockDispatchTarget).mock.calls) {

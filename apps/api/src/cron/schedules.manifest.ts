@@ -262,7 +262,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'content',
         schedule: '*/5 * * * *',
         description:
-            'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when HOSPEDA_MAKE_API_KEY is absent.'
+            'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when the make_api_key vault credential is absent.'
     },
     {
         name: 'partner-expiry',

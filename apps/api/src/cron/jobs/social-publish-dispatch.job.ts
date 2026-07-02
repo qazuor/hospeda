@@ -8,7 +8,8 @@
  *
  * Features:
  * - Advisory lock (43032) prevents overlapping executions across replicas
- * - Guard: skips the run when HOSPEDA_MAKE_API_KEY is absent (cannot dispatch)
+ * - Guard: skips the run when the `make_api_key` vault credential is absent
+ *   (cannot dispatch)
  * - Per-target error isolation: one failed dispatch does not abort the batch
  * - dry-run mode: identifies eligible targets without calling dispatchTarget
  * - Outcome breakdown reported in result.details (dispatched / retry_scheduled /
@@ -24,7 +25,7 @@ import {
     SocialPublishDispatchService,
     resolveDispatchCronCadence
 } from '@repo/service-core';
-import { env } from '../../utils/env.js';
+import { getDecryptedSocialCredential } from '../../services/social-credential-vault.service.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -99,16 +100,17 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         });
 
         // Guard: cannot dispatch without the outbound Make.com API key.
-        // HOSPEDA_MAKE_API_KEY is optional in the env schema because it is only
-        // required once the Make.com publish route is live. When absent, log a
-        // warning and exit cleanly so other cron jobs are not disrupted.
-        if (!env.HOSPEDA_MAKE_API_KEY) {
+        // The make_api_key vault credential is optional to seed because it is
+        // only required once the Make.com publish route is live. When absent,
+        // log a warning and exit cleanly so other cron jobs are not disrupted.
+        const makeApiKeyResult = await getDecryptedSocialCredential({ key: 'make_api_key' });
+        if (!makeApiKeyResult.data) {
             logger.warn(
-                'social-publish-dispatch: HOSPEDA_MAKE_API_KEY is not set — skipping dispatch'
+                'social-publish-dispatch: no active make_api_key credential in the vault — skipping dispatch'
             );
             return {
                 success: true,
-                message: 'Skipped: HOSPEDA_MAKE_API_KEY is not configured',
+                message: 'Skipped: make_api_key credential is not configured in the vault',
                 processed: 0,
                 errors: 0,
                 durationMs: Date.now() - startedAt.getTime(),
@@ -116,9 +118,9 @@ export const socialPublishDispatchJob: CronJobDefinition = {
             };
         }
 
-        // Snapshot the env value we will pass into service methods.
-        // Service-core must NEVER access env directly (testability constraint).
-        const makeApiKey = env.HOSPEDA_MAKE_API_KEY;
+        // Snapshot the decrypted value we will pass into service methods.
+        // Service-core must NEVER access the vault directly (testability constraint).
+        const makeApiKey = makeApiKeyResult.data.plaintext;
 
         try {
             const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
