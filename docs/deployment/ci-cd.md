@@ -71,7 +71,7 @@ All CI/CD workflows run on **GitHub Actions** using:
 | **Docs CI** | Changes to docs/** | Validate documentation quality | 15 min | No |
 | **Docs Validation** | Changes to .claude/** | Validate .claude structure | 10 min | No |
 | **Search Refresh** | Schedule (daily) | Refresh database search indexes | 15 min | Yes (1) |
-| **A11y Sweep** | PR to staging + dispatch | axe-core WCAG sweep of the built site, baseline-gated | 20 min | No (CI placeholders) |
+| **A11y Sweep** | PR to staging + dispatch | axe-core WCAG sweep of the built site, baseline-gated. **Blocking** (not report-only) — a red run must be green before merge, per the agent-side "CI must be fully green" convention (HOS-3 T-308-06, 2026-07-02). Native GitHub required-status-check enforcement is blocked on SPEC-103 (Free plan); add it to the required list with no policy change once that unblocks. | 20 min | No (CI placeholders) |
 
 ### Quick Links
 
