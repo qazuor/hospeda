@@ -1,0 +1,571 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-39",
+    "title": "Plans, Limits & Entitlements Editable Without Deploy",
+    "created": "2026-07-02T10:00:28.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add typed plan-attribute columns to qzpay-drizzle schema",
+            "description": "In the sibling qzpay repo (`/proyects/PACKAGES/qzpay/packages/drizzle/src/schema/plans.schema.ts`), add three typed columns to the `billingPlans` table: `displayName varchar(255) not null`, `monthlyPriceArs integer not null`, `annualPriceArs integer nullable`. These currently live only in the `metadata` jsonb column. Bump the `@qazuor/qzpay-drizzle` package version and publish. Verify via `drizzle-kit generate` in the qzpay repo that the new columns produce a clean migration diff. This is a cross-repo change — coordinate the publish before Hospeda-side work (T-002) can consume it.\n\nTest requirements: qzpay repo's own schema unit test (if any) covering the new columns' types/nullability; no Hospeda-side test needed for this task.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Add displayName/monthlyPriceArs/annualPriceArs columns to plans.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Run drizzle-kit generate in qzpay repo to confirm clean diff",
+                    "completed": false
+                },
+                { "title": "Bump qzpay-drizzle package version", "completed": false },
+                { "title": "Publish new qzpay-drizzle version", "completed": false }
+            ],
+            "tags": ["database", "schema", "cross-repo", "billing"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Bump qzpay-drizzle pin and install in Hospeda",
+            "description": "Update the `@qazuor/qzpay-drizzle` version pin in `packages/db/package.json` to the version published in T-001, then run `pnpm install` at the repo root to update the lockfile. Verify `packages/db/src/billing/drizzle-adapter.ts` still type-checks against the new schema shape (it re-exports `createQZPayDrizzleAdapter`, no code change expected, just a type surface check).\n\nTest requirements: none new — `pnpm typecheck --filter=@repo/db` must pass as verification.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Bump version in packages/db/package.json", "completed": false },
+                { "title": "Run pnpm install", "completed": false },
+                { "title": "Verify drizzle-adapter.ts typechecks", "completed": false }
+            ],
+            "tags": ["database", "dependency-bump"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Write migration promoting metadata fields to typed columns",
+            "description": "Run `pnpm db:generate` to produce a Drizzle migration in `packages/db/src/migrations/` adding `display_name`, `monthly_price_ars`, `annual_price_ars` columns to `billing_plans` (per the new qzpay-drizzle schema from T-002). Hand-extend the generated SQL with a backfill `UPDATE billing_plans SET display_name = metadata->>'displayName', monthly_price_ars = (metadata->>'monthlyPriceArs')::integer, annual_price_ars = (metadata->>'annualPriceArs')::integer WHERE ...` for existing rows (additive migration, no DROP of metadata). Apply via `pnpm db:migrate` locally and verify all 9 existing plans have correct backfilled values.\n\nTest requirements: integration test in `packages/db/test/` verifying, after migration, the 3 new columns are populated correctly for every existing seeded plan (compare against known metadata values).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate for the new columns", "completed": false },
+                {
+                    "title": "Add backfill UPDATE statement to the generated migration",
+                    "completed": false
+                },
+                {
+                    "title": "Apply locally via pnpm db:migrate and verify backfill",
+                    "completed": false
+                },
+                { "title": "Write migration backfill integration test", "completed": false }
+            ],
+            "tags": ["database", "migration", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Repoint MODEL_C_FIELD_SPLIT at new typed columns",
+            "description": "In `packages/billing/src/config/model-c-field-split.ts`, replace the `'metadata.displayName'`, `'metadata.monthlyPriceArs'`, `'metadata.annualPriceArs'` keys with `'displayName'`, `'monthlyPriceArs'`, `'annualPriceArs'` (the new column names from T-003), keeping their `'commercial'` classification unchanged. Update the JSDoc comments to reference the column, not the jsonb path. This keeps the exhaustiveness guard (AC-2.3) accurate for the new schema shape.\n\nTest requirements: update `packages/billing/test/model-c-field-split.test.ts` (the existing guard test) to expect the new key names; run it to confirm it still passes against the seed's field detection.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Rename the 3 metadata.* keys to their new column names",
+                    "completed": false
+                },
+                { "title": "Update JSDoc comments", "completed": false },
+                { "title": "Update and run the guard test", "completed": false }
+            ],
+            "tags": ["billing", "config", "model-c"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update seed sync to read/write typed plan-attribute columns",
+            "description": "In `packages/seed/src/required/billingPlans.seed.ts`, update `detectDivergences` and `ensurePlan` to read/write `displayName`, `monthlyPriceArs`, `annualPriceArs` as top-level columns instead of `metadata.*` paths, consistent with T-004's reclassified keys. The Model C sync behavior (commercial = DB wins, seed never overwrites) must be preserved for these 3 fields — only the storage location changes, not the sync policy.\n\nTest requirements: update existing seed unit tests covering Model C sync for these 3 fields (config-vs-DB divergence scenarios) to assert against the new columns instead of metadata jsonb paths.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Update detectDivergences for the 3 fields", "completed": false },
+                { "title": "Update ensurePlan write path for the 3 fields", "completed": false },
+                { "title": "Update seed sync unit tests", "completed": false }
+            ],
+            "tags": ["billing", "seed", "model-c"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add DB-backed plan-attribute read methods to PlanService",
+            "description": "In `packages/service-core/src/services/billing/` (verify exact filename, likely `plan.service.ts` — create if it doesn't exist yet as a dedicated file), add/extend read methods that select `description`, `active`, `displayName`, `monthlyPriceArs`, `annualPriceArs` directly from `billing_plans` DB rows (via the qzpay adapter), returning the shape currently produced by `ALL_PLANS` entries for these fields. This is the shared read layer T-007/T-010/T-011 build on.\n\nTest requirements: unit tests in the service's test file covering: returns correct shape for an existing plan, returns not-found for a missing plan id, correctly maps the 3 typed columns (not metadata) into the response.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Locate or create plan.service.ts in service-core billing services",
+                    "completed": false
+                },
+                {
+                    "title": "Implement DB-backed read method for plan attributes",
+                    "completed": false
+                },
+                { "title": "Write unit tests for the read method", "completed": false }
+            ],
+            "tags": ["service-core", "billing", "backend"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement admin edit-plan-attributes mutation with atomic price write",
+            "description": "In `PlanService`, add a mutation accepting `{ description?, active?, displayName?, monthlyPriceArs?, annualPriceArs? }`, validated by a new Zod schema in `@repo/schemas` (e.g. `billing-plan-attributes-update.schema.ts`). Per Q4=A, write `billing_plans` and the matching `billing_prices` row atomically in a single DB transaction — both succeed or neither does. Reject negative prices and empty `displayName`.\n\nTest requirements: unit tests covering successful atomic update (both tables reflect the change), transaction rollback on partial failure (simulate a `billing_prices` write error, assert `billing_plans` is unchanged), Zod rejection of negative price and empty displayName.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Create Zod schema for attribute updates", "completed": false },
+                {
+                    "title": "Implement atomic transaction (billing_plans + billing_prices)",
+                    "completed": false
+                },
+                { "title": "Write unit tests incl. rollback scenario", "completed": false }
+            ],
+            "tags": ["service-core", "billing", "backend", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement admin edit-plan-limit-values mutation",
+            "description": "In `PlanService`, add a mutation accepting a partial `Record<LimitKey, number>`. Validate every key against the `LimitKey` enum (reject unknown keys) and every value is a non-negative integer. Write to `billing_plans.limits` jsonb, merging with existing keys (do not clobber limit keys not included in the update — per Model C, `limitsKeysPresent` stays capability/config-driven, only `limitsValues` is commercial/admin-edited here). Independent of the T-001..T-006 migration chain since `limits` is already a top-level DB column.\n\nTest requirements: unit tests for partial update preserving untouched keys, rejection of a key not in `LimitKey`, rejection of a negative value.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Create Zod schema for limit-value updates", "completed": false },
+                { "title": "Implement merge-preserving write to limits jsonb", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "billing", "backend", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Switch addon-entitlement limit-value lookup to DB",
+            "description": "In `apps/api/src/services/addon-entitlement.service.ts` (around line 160, per the spec's Q2 implication), change the limit-VALUE lookup from `ALL_PLANS.find(p => p.slug === slug).limits` to a DB read (via qzpay `billing.plans.get()` or the new PlanService read method). Limit KEYS stay type-safe from the `LimitKey` enum — only the numeric VALUE resolution moves to DB, per Q2=A. Independent of the metadata-column migration (T-001..T-006) since `limits` is already a DB column.\n\nTest requirements: update the existing unit tests for this service to mock a DB read instead of the config lookup; add a test verifying a limit value changed in the DB (not config) is what gets returned.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Replace ALL_PLANS.find lookup with DB read", "completed": false },
+                { "title": "Update/add unit tests mocking the DB read", "completed": false }
+            ],
+            "tags": ["billing", "backend", "checkout"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Admin plans list endpoint reads from DB",
+            "description": "In `apps/api/src/routes/billing/admin/plans.ts`, replace `[...ALL_PLANS]` with a DB-backed read via T-006's PlanService method (or qzpay `billing.plans.list()` directly), mapped to the existing response shape. Resolves the deferred bug #8 from the SPEC-143 smoke session (PR #1215).\n\nTest requirements: update the route's existing test to assert the response now reflects DB row values (not `ALL_PLANS`), including a case where a DB row's displayName/price differs from the config default.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-012", "T-019"],
+            "subtasks": [
+                { "title": "Replace ALL_PLANS read with DB-backed read", "completed": false },
+                { "title": "Update route test to assert DB values, not config", "completed": false }
+            ],
+            "tags": ["api", "billing", "admin", "backend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Public listPlans endpoint reads from DB",
+            "description": "In `apps/api/src/routes/billing/public/listPlans.ts`, replace the `ALL_PLANS.filter(isActive)` logic with a DB-backed read (`WHERE active = true`) via T-006's PlanService method or qzpay `billing.plans.getActive()`.\n\nTest requirements: update the route's existing test to assert active/inactive filtering now comes from the DB `active` column, and that displayName/prices reflect DB values.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-013", "T-014", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Replace ALL_PLANS filter with DB-backed active-plans read",
+                    "completed": false
+                },
+                { "title": "Update route test", "completed": false }
+            ],
+            "tags": ["api", "billing", "public", "backend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Drop ALL_PLANS fallback in admin plans table",
+            "description": "In `apps/admin/src/routes/_authed/billing/plans.tsx`, remove the fallback-to-`ALL_PLANS`-on-Zod-fail logic. The table should trust the DB-backed API response shape from T-010 and render a genuine error state (not a silent config fallback) if the API call fails.\n\nTest requirements: component test verifying no fallback path triggers on a malformed response (renders error state instead), and the table renders DB values correctly on a normal response.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Remove ALL_PLANS fallback logic", "completed": false },
+                { "title": "Add proper error state rendering", "completed": false },
+                { "title": "Write/update component tests", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "billing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Convert owner pricing page from SSG to SSR+revalidation",
+            "description": "In `apps/web/src/pages/[lang]/suscriptores/planes/index.astro`, remove `export const prerender = true` and fetch plans from the public listPlans API (T-011) at request time, per Q5=C (SSR + Cloudflare cache + on-demand revalidation, the existing pattern documented in `apps/web/CLAUDE.md`).\n\nTest requirements: update/add an integration or component test verifying the page renders plan data from a live API call rather than build-time data.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Remove prerender=true, switch to SSR fetch", "completed": false },
+                {
+                    "title": "Verify Cloudflare cache headers per CLAUDE.md SSR pattern",
+                    "completed": false
+                },
+                { "title": "Update page test", "completed": false }
+            ],
+            "tags": ["web", "astro", "billing", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Convert tourist pricing page from SSG to SSR+revalidation",
+            "description": "Apply the same SSG→SSR conversion as T-013 to the parallel tourist pricing page (`apps/web/src/pages/[lang]/suscriptores/turistas/...`), fetching from the public listPlans API (T-011).\n\nTest requirements: same as T-013, scoped to the tourist page.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Remove prerender=true, switch to SSR fetch", "completed": false },
+                { "title": "Update page test", "completed": false }
+            ],
+            "tags": ["web", "astro", "billing", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Build admin edit-plan-attributes UI",
+            "description": "In `apps/admin/src/features/billing-plans/` (new directory), build a form/dialog (TanStack Form + Zod, per admin conventions) editing `description`, `active`, `displayName`, `monthlyPriceArs`, `annualPriceArs`, wired to T-007's mutation. Show a confirm dialog before saving a price change (per the spec's risk mitigation for wrong-price mistakes).\n\nTest requirements: component test covering form validation (rejects negative price), the price-change confirm dialog appears and blocks submission until confirmed, successful submit calls the mutation with the right payload.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-017", "T-019"],
+            "subtasks": [
+                { "title": "Build the edit-attributes form component", "completed": false },
+                { "title": "Add price-change confirm dialog", "completed": false },
+                { "title": "Wire to T-007 mutation", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "billing", "forms"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Build admin edit-limits UI",
+            "description": "In `apps/admin/src/features/billing-plans/`, build a form/dialog listing known `LimitKey`s (dropdown/select) with a numeric input per key, wired to T-008's mutation. Only shows/edits `limitsValues` (numbers) — key presence stays config-driven per Model C, not editable here.\n\nTest requirements: component test covering key selection, numeric validation (rejects negative), successful submit calls the mutation with the right payload.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-017", "T-020"],
+            "subtasks": [
+                { "title": "Build the edit-limits form component", "completed": false },
+                { "title": "Wire to T-008 mutation", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "billing", "forms"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Wire Cloudflare revalidation trigger on plan save",
+            "description": "On successful save from T-015 or T-016's mutations (server-side, in `PlanService` after the DB write commits), call the existing revalidation service (`initializeRevalidationService()` pattern, `apps/api/src/index.ts:84`) to purge the Cloudflare cache for `/suscriptores/planes/` and the tourist pricing path, per Q5=C. No API plan-cache to invalidate (Q7 = none exists).\n\nTest requirements: unit test verifying the revalidation service is called with the correct paths after a successful attribute or limit-value save.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-016"],
+            "blocks": ["T-018", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Call revalidation service after successful plan save",
+                    "completed": false
+                },
+                { "title": "Write unit test verifying correct paths purged", "completed": false }
+            ],
+            "tags": ["backend", "billing", "cache", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Invalidate admin TanStack Query cache on plan mutation success",
+            "description": "In the T-015/T-016 mutation hooks, add `onSuccess` handlers that invalidate/refetch the admin plans list TanStack Query so the plans table updates immediately after a save, without a manual page refresh.\n\nTest requirements: component test verifying the plans list query refetches after a successful edit mutation.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add onSuccess query invalidation to both mutation hooks",
+                    "completed": false
+                },
+                { "title": "Write test verifying refetch occurs", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "tanstack-query"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Integration test: admin attribute edit reflects live without deploy",
+            "description": "End-to-end integration test: call the admin edit-attributes mutation (T-007) via its API route, then immediately call the public listPlans endpoint (T-011) and assert the new value is present — no cache, no deploy, no restart involved.\n\nTest requirements: integration test in `apps/api/test/` (or the project's e2e-style integration suite) covering the full write→read round trip for `displayName` and `monthlyPriceArs`.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-015"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Write integration test: edit displayName, verify via public API",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration test: edit monthlyPriceArs, verify via public API",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Integration test: limit-value edit reflects at checkout without deploy",
+            "description": "End-to-end integration test: call the admin edit-limits mutation (T-008), then exercise the addon-checkout limit lookup (T-009) and assert it resolves the new DB value, not the old config value.\n\nTest requirements: integration test in `apps/api/test/` covering the full write→read round trip through `addon-entitlement.service.ts`'s limit-value resolution.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-016"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Write integration test: edit a limit value, verify via checkout-path lookup",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "billing", "checkout"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Integration test: web pricing page reflects DB change post-revalidation",
+            "description": "End-to-end test covering: admin saves a plan attribute → T-017's revalidation trigger fires → the owner and tourist pricing pages (T-013/T-014) serve the updated value on next request, without a deploy or manual cache purge.\n\nTest requirements: integration test simulating the save→revalidate→re-render flow for both pricing pages; assert stale Cloudflare cache is not served after revalidation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014", "T-017"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Write integration test for owner pricing page revalidation flow",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration test for tourist pricing page revalidation flow",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "billing", "web"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Document the narrowed Model C admin-editable field policy",
+            "description": "Update `packages/billing/CLAUDE.md` and `docs/guides/managing-billing-plans.md` to document: the 3 newly-typed commercial columns, the Q0 conflict resolution (entitlements/sortOrder/trial config stay config-only per Model C), and the SSR+revalidation pattern now used for pricing pages. Cross-reference `.specs/HOS-39-plans-limits-entitlements-editable/spec.md`.\n\nTest requirements: none (docs-only task); verify markdown lint passes if the project enforces it.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update packages/billing/CLAUDE.md", "completed": false },
+                { "title": "Update docs/guides/managing-billing-plans.md", "completed": false }
+            ],
+            "tags": ["docs", "billing"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Audit and prune now-dead ALL_PLANS display-surface references",
+            "description": "Grep the 5 originally-identified display-surface files (spec section 2.1) plus any new call sites introduced during this spec, and confirm none still read `ALL_PLANS` for display purposes. Leave the section 2.2 internal-logic references untouched (they intentionally stay on config per Q6=B). Remove any now-unused imports.\n\nTest requirements: none new (a pure grep/prune audit); existing test suite must still pass after removal.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep for remaining ALL_PLANS display-surface usages",
+                    "completed": false
+                },
+                { "title": "Remove unused imports/dead code", "completed": false },
+                {
+                    "title": "Run full existing test suite to confirm no regression",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "billing"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T10:00:28.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 23,
+        "pending": 23,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

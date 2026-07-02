@@ -14,7 +14,7 @@ areas:
 
 > Migrated from `.qtm/specs/SPEC-152-plans-limits-entitlements-editable/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-39.
 >
-> **Status**: DRAFT — base scope captured during smoke session 2026-05-21. Multiple architectural decisions still open; document includes explicit discussion sections (Q1-Q8) for owner alignment before tasks generation.
+> **Status**: Q1-Q8 RESOLVED (2026-07-02) — see decisions inline in section 4. Ready for task breakdown.
 
 ## 1. Origin
 
@@ -94,9 +94,35 @@ Editing without redeploy means:
 
 ## 4. Scope decision points (Q1-Q8 — owner must answer)
 
-### Q1 — Should plan ATTRIBUTES (name, description, active, prices, trial) be DB-editable?
+### Q0 — Model C conflict (discovered 2026-07-02, resolved)
 
-**This is the no-brainer scope.** Answer expected: **yes**. These are display + commercial fields with no type-safety risk.
+Mid-implementation-planning, found that `packages/billing/src/config/model-c-field-split.ts`
+(SPEC-211, already in production) already classifies every seed-controlled `billing_plans`
+field into `'commercial'` (DB wins, operator-editable, seed never overwrites) or
+`'capability'` (config wins, seed propagates on every deploy). This is a DIFFERENT axis than
+the original Q1-Q8 framing (which predates/ignored SPEC-211) and it directly contradicts three
+of the original answers below:
+
+- `entitlements` = `capability` → contradicts the original Q3 answer (admin-togglable).
+- `metadata.sortOrder` = `capability` → contradicts the original Q1/Q8 (admin-editable, promote to column).
+- `metadata.hasTrial` / `metadata.trialDays` = `capability` → contradicts the original Q1 (trial config admin-editable).
+
+**Resolution (option A, chosen over extending Model C)**: HOS-39 scope is narrowed to respect
+the existing Model C classification as-is. Only fields already classified `'commercial'` become
+admin-editable / DB-read-on-display: `description`, `active`, `metadata.displayName`,
+`metadata.monthlyPriceArs`, `metadata.annualPriceArs`, `limitsValues`, `billing_prices.unitAmount`.
+Entitlement toggling, `sortOrder` editing, and trial-config editing are OUT OF SCOPE — they stay
+config-only (`capability` layer), requiring a deploy to change, exactly as Model C already
+designed. Q1, Q3, and Q8 below are revised accordingly; extending Model C to reclassify these
+fields is explicitly deferred, not rejected — it would be its own follow-up spec if ever needed.
+
+### Q1 — Should plan ATTRIBUTES be DB-editable? (REVISED per Q0)
+
+**Answer: yes, but narrowed to the Model C `'commercial'` fields only**: `description`, `active`,
+`metadata.displayName`, `metadata.monthlyPriceArs`, `metadata.annualPriceArs`. `name` (the slug)
+is immutable post-creation (unrelated to Model C, a separate existing invariant) and stays
+non-editable. `sortOrder` and trial config (`hasTrial`/`trialDays`) are OUT OF SCOPE per Q0 —
+they remain `capability`-layer, config-only.
 
 Affected: web pricing + admin plans + public listPlans + admin plans.tsx (5 display surfaces).
 
@@ -111,7 +137,7 @@ Options:
 
 **Owner's stated preference**: YES (A). Implication: the `addon-entitlement.service.ts` line 160 lookup needs to change from `ALL_PLANS.find(...)` to a DB lookup. Latency + caching considerations apply.
 
-### Q3 — Plan-level entitlement KEYS editable from DB?
+### Q3 — Plan-level entitlement KEYS editable from DB? (REVISED per Q0 — now OUT OF SCOPE)
 
 Entitlement KEYS are an enum (`EntitlementKey` type). Each represents a feature flag (e.g., `can_create_featured_listing`).
 
@@ -121,9 +147,12 @@ Options:
 - **B**: No, keep on config.
 - **C**: Full DB-driven entitlement model — KEYS themselves can be added in DB. Requires defining what each new entitlement actually gates (impossible without code).
 
-**Recommendation**: A. C is impossible without code changes anyway — a new entitlement key has no effect unless code checks it somewhere.
-
-**Owner's stated preference**: YES (A) — "buscar una forma" for entitlements too. A is the workable approach.
+**Original recommendation was A**, but `entitlements` is classified `'capability'` in
+`MODEL_C_FIELD_SPLIT` (config wins, seed propagates on every deploy) — building an admin toggle
+UI without also reclassifying it to `'commercial'` would mean admin edits get silently
+overwritten on the next deploy. Per Q0 resolution (option A: respect Model C as-is), this is now
+**B — out of scope**. No admin entitlement-toggle UI in this spec. Revisit as a follow-up spec if
+entitlements need to move to the commercial layer.
 
 ### Q4 — Where does `billing_prices` fit?
 
@@ -168,7 +197,9 @@ When admin edits a plan, what needs to invalidate?
 - Admin app TanStack Query cache — yes (refetch on mutation).
 - API in-memory plan cache? Currently doesn't exist — would need to add if we want DB reads to be fast.
 
-**Open question**: do we add a plan-cache layer at the API to avoid hitting DB on every checkout? Default qzpay calls (`billing.plans.list()`) already hit DB but qzpay-core has its own caching layer.
+**RESOLVED (2026-07-02)**: the original framing ("qzpay-core has its own caching layer") was verified false — `@qazuor/qzpay-core@^1.12.0`'s `billing.plans.list/get/getActive` are pure pass-throughs to the storage adapter, with no TTL, no invalidation, no cross-request memoization. Our Drizzle adapter (`packages/db/src/billing/drizzle-adapter.ts`) adds nothing on top either. So every plan read today is already a live DB round-trip — there is no staleness problem to solve, only a per-request DB query cost that is unconfirmed to be a real bottleneck.
+
+**Decision**: **no plan-cache layer at the API.** Do not add one as part of this spec. Rationale: adding a cache would trade a confirmed-non-issue (staleness — currently zero, since reads are always live) for a real one (cache invalidation correctness, worse if the API ever moves off single-instance-per-env, since in-process TTL/invalidation wouldn't reach other replicas without pub/sub). If checkout-path DB load is later measured to be a real bottleneck, a short-TTL cache can be added incrementally outside this spec's scope.
 
 ### Q8 — Migration strategy
 
@@ -181,29 +212,49 @@ Existing DB has 9 plans (post our PR #1215 SQL update — `name = metadata->>'sl
 
 **Open question for the discussion**: should we promote `metadata` jsonb fields to top-level columns (typed) or stay jsonb (flexible)? Tradeoff: typed columns give validation + query support; jsonb gives schema-less iteration.
 
+**RESOLVED (2026-07-02), REVISED per Q0**: **option A — promote to typed top-level columns**, but
+narrowed by the Model C conflict resolution. `description` and `active` already ARE top-level
+Drizzle columns today (verified against `@qazuor/qzpay-drizzle`'s `plans.schema.ts` — not jsonb,
+no migration needed for those). Of the remaining `'commercial'`-layer metadata fields, only
+`metadata.displayName`, `metadata.monthlyPriceArs`, and `metadata.annualPriceArs` are
+admin-edited per the revised Q1 — those three get promoted to typed columns
+(`display_name varchar`, `monthly_price_ars integer`, `annual_price_ars integer nullable`).
+`metadata.sortOrder`, `metadata.category`, `metadata.isDefault`, `metadata.hasTrial`,
+`metadata.trialDays` are `'capability'`-layer (config-only, out of scope per Q0) and STAY in
+`metadata` jsonb — no migration needed for them. Existing rows stay (no DROP); additive structural
+migration via the standard carril (`packages/db/src/migrations/` + `pnpm db:generate` +
+`pnpm db:migrate`), not `extras/`. `entitlements` (text[]) and `limits` (jsonb) already have their
+own top-level columns and are unaffected. **Follow-up required**: after the migration,
+`MODEL_C_FIELD_SPLIT` in `packages/billing/src/config/model-c-field-split.ts` must be updated to
+point at the new column names instead of the `metadata.*` dot-paths for these three fields (its
+exhaustiveness guard test will fail otherwise — the seed sync logic reads/writes by these keys).
+
 ## 5. Out of scope (explicit)
 
 - New entitlement KEY definitions via admin UI (Q3 option C). Code must define what an entitlement actually gates.
-- New limit KEY definitions via admin UI. Same constraint.
+- **Entitlement TOGGLING via admin UI at all** (added per Q0) — `entitlements` stays `'capability'`-layer (config-only) in Model C; reclassifying it to `'commercial'` is deferred to a possible follow-up spec.
+- **`sortOrder` editing via admin UI** (added per Q0) — stays `'capability'`-layer, config-only.
+- **Trial config (`hasTrial`/`trialDays`) editing via admin UI** (added per Q0) — stays `'capability'`-layer, config-only.
+- New limit KEY definitions via admin UI. Same constraint as entitlement keys.
 - Per-customer overrides (already covered by SPEC-143 customer override flow).
 - Plan-level promo codes (separate concept, SPEC-143 already covers).
 - Sponsorship plans (separate, SPEC-151 area).
 
-## 6. Proposed phases (placeholder — depends on Q1-Q8)
+## 6. Proposed phases
 
-Once Q1-Q8 are answered, phases will look approximately:
+Q1-Q8 are resolved (section 4), narrowed by the Model C conflict resolution (Q0). Phases:
 
-1. **Phase 1** — Backend admin list reads from DB (resolves bug #8 from smoke).
-2. **Phase 2** — Backend public list reads from DB.
-3. **Phase 3** — Frontend admin drops fallback, expects DB shape.
-4. **Phase 4** — Frontend web pricing page switches SSG → SSR-with-revalidation (per Q5 = C).
-5. **Phase 5** — Admin "Edit plan" UI for attributes (Q1 scope: name, description, prices, active, sortOrder, trial).
-6. **Phase 6** — Admin "Edit limits" UI (Q2 scope).
-7. **Phase 7** — Admin "Toggle entitlements" UI (Q3 scope).
-8. **Phase 8** — Revalidation triggers wired from admin save → web cache purge.
-9. **Phase 9** — Cache invalidation strategy for entitlement load (Q7).
+1. **Phase 1** — Schema migration: promote only the three admin-edited `metadata` jsonb fields (`display_name`, `monthly_price_ars`, `annual_price_ars`) to typed top-level columns on `billing_plans` (Q8 = A, revised). `description`/`active` are already top-level columns. Update `MODEL_C_FIELD_SPLIT` to point at the new columns. Standard migration carril, additive, existing rows stay.
+2. **Phase 2** — Backend admin list reads from DB (resolves bug #8 from smoke).
+3. **Phase 3** — Backend public list reads from DB.
+4. **Phase 4** — Frontend admin drops `ALL_PLANS` fallback, expects DB shape.
+5. **Phase 5** — Frontend web pricing page switches SSG → SSR-with-revalidation (Q5 = C).
+6. **Phase 6** — Admin "Edit plan" UI for attributes, narrowed to Model C `'commercial'` fields only (Q1 revised: description, active, displayName, monthlyPriceArs, annualPriceArs — NOT sortOrder, NOT trial config), with `billing_prices` written atomically in the same transaction (Q4 = A).
+7. **Phase 7** — Admin "Edit limits" UI (Q2 scope: values from DB, keys stay type-safe enum).
+8. ~~Admin "Toggle entitlements" UI~~ — **REMOVED per Q0/Q3 revision.** Entitlements stay config-only.
+9. **Phase 8** (renumbered) — Revalidation triggers wired from admin save → web Cloudflare cache purge + admin TanStack Query refetch (Q7 = no API plan-cache layer; no entitlement-cache trigger since entitlements aren't admin-edited anymore).
 
-Estimated total: **2-3 weeks** of focused work.
+Estimated total: **1.5-2 weeks** of focused work (reduced from 2-3 weeks after Q0 scope narrowing).
 
 ## 7. Risk + tradeoffs
 
@@ -211,10 +262,11 @@ Estimated total: **2-3 weeks** of focused work.
 |------|--------|-----------|
 | Admin edits wrong price → checkout charges wrong amount | High | Confirm dialog + audit log + 24h "preview" mode? |
 | Drift between `ALL_PLANS` config and DB on values | Medium | Display always from DB; internal logic always from config; document the policy clearly |
-| Cache invalidation gaps → users see stale prices | Medium | Q7 design; integration tests |
-| Schema migration to promote metadata fields | Medium | Drizzle migration; backwards-compatible seed |
-| Admin UI complexity (edit limits + entitlements is a lot of surface) | High | Phase iteratively; start with attributes only |
+| Cache invalidation gaps → users see stale prices | Low | Q7 = no API plan-cache; reads are always live. Only Cloudflare/TanStack caches need invalidation (Phase 8) |
+| Schema migration to promote metadata fields | Medium | Additive Drizzle migration (Q8 = A, narrowed to 3 fields); backwards-compatible seed; `MODEL_C_FIELD_SPLIT` update required in the same PR or its guard test fails |
+| Admin UI complexity (edit limits is a lot of surface) | Medium | Phase iteratively; start with attributes only. Entitlements UI removed from scope (Q0), reducing surface vs original estimate |
 | Type-safety loss from removing `ALL_PLANS` entirely | High | Per Q6 recommendation B, keep config as shape definition |
+| Model C sync overwrites promoted columns unexpectedly | Medium | `MODEL_C_FIELD_SPLIT` guard test (AC-2.3) must pass after Phase 1's migration — verify the seed sync still respects the `'commercial'` layer against the new column names, not just the old `metadata.*` paths |
 
 ## 8. Cross-references
 
@@ -228,11 +280,9 @@ Estimated total: **2-3 weeks** of focused work.
 
 ## 9. Next action
 
-**Owner**: schedule a 30-60 min review session to walk through Q1-Q8. With answers I can:
+Q1-Q8 answered 2026-07-02 (worktree + branch already cut for HOS-39). Next:
 
 - Generate task breakdown (`/task-master:task-from-spec`)
-- Update this spec from `draft` to `in-progress`
-- Cut a worktree + branch (`spec/SPEC-152-plans-limits-entitlements-editable`)
-- Begin Phase 1 implementation
+- Begin Phase 1 implementation (schema migration)
 
-Until Q1-Q8 are answered, scope and effort remain estimates. The phasing above assumes Q1=yes, Q2=A, Q3=A, Q4=A, Q5=C, Q6=B, Q7=cache layer, Q8=keep metadata jsonb.
+Final decisions: Q0=A (respect Model C as-is, narrow scope), Q1=yes-narrowed (commercial fields only: description/active/displayName/monthlyPriceArs/annualPriceArs), Q2=A, Q3=B-out-of-scope (entitlements stay config-only per Q0), Q4=A, Q5=C, Q6=B, Q7=no API plan-cache layer, Q8=A-narrowed (promote only displayName/monthlyPriceArs/annualPriceArs; sortOrder/trial config stay in metadata jsonb, config-only).
