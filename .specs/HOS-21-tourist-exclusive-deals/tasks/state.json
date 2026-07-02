@@ -381,35 +381,35 @@
             "id": "T-012",
             "title": "Build ExclusiveDealsList.client.tsx",
             "description": "Create apps/web/src/components/account/ExclusiveDealsList.client.tsx following the AlertsList.client.tsx precedent: fetch from the T-009 route with credentials:'include', detect 403 + error.code==='ENTITLEMENT_REQUIRED' and render the upgrade CTA (using T-004's i18n copy) to /suscriptores/planes, render loading/empty/populated list states, and visually distinguish VIP-only deals (badge) from plus-tier deals.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-004"],
             "blocks": ["T-015", "T-016"],
             "subtasks": [
                 {
                     "title": "Implement fetch + loading/empty/populated states",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement 403 ENTITLEMENT_REQUIRED detection → upgrade CTA state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement VIP-only visual badge/distinction for vip-tier deals",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:37:29Z",
+                "completed": "2026-07-02T15:44:18Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.3
     }
