@@ -195,35 +195,35 @@
             "id": "T-006",
             "title": "Generate and apply social vault migration",
             "description": "Run `pnpm db:generate` to produce the Drizzle migration file(s) for `social_credentials` and `social_credential_audit` (from T-004/T-005), commit the generated SQL under `packages/db/src/migrations/`. Run `pnpm db:migrate` locally to apply and verify both tables + the partial unique index exist. Confirm the drift guard is clean (schema matches committed migration). No hand-written extras needed — both tables are structural (drizzle-generated carril).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Run pnpm db:generate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Review and commit generated migration SQL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm db:migrate locally and verify tables/index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "migration", "vault"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 1050 unit tests; drift guard clean; discovered + fixed infra issue: this worktree's HOSPEDA_DATABASE_URL was pointing at the SHARED hospeda_dev DB (owned by a different worktree's docker-compose) instead of its own isolated worktree_hospeda_hos_64_social_posts_settings_enforcement DB — fixed via wt-db.sh ensure-ready (not wt:up, which crashed on an unrelated full-stack build)"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:50:00Z",
+                "completed": "2026-07-02T23:40:00Z"
             }
         },
         {
