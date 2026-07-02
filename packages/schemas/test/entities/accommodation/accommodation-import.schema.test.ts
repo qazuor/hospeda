@@ -462,7 +462,8 @@ describe('AccommodationImportAsyncStartResponseSchema', () => {
         runId: 'run-abc123',
         datasetId: 'dataset-xyz789',
         source: 'airbnb' as const,
-        startedAt: '2026-07-02T09:20:00.000Z'
+        startedAt: '2026-07-02T09:20:00.000Z',
+        url: 'https://airbnb.com/rooms/123'
     };
 
     it('accepts a valid start response', () => {
@@ -477,6 +478,20 @@ describe('AccommodationImportAsyncStartResponseSchema', () => {
     it('rejects a missing datasetId', () => {
         const { datasetId: _datasetId, ...rest } = valid;
         expect(AccommodationImportAsyncStartResponseSchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a missing url (needed by T-006 R2 fallback re-fetch)', () => {
+        const { url: _url, ...rest } = valid;
+        expect(AccommodationImportAsyncStartResponseSchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a malformed url', () => {
+        expect(
+            AccommodationImportAsyncStartResponseSchema.safeParse({
+                ...valid,
+                url: 'not-a-url'
+            }).success
+        ).toBe(false);
     });
 
     it('rejects an unknown source enum value', () => {
@@ -503,7 +518,8 @@ describe('AccommodationImportStatusQuerySchema', () => {
         runId: 'run-abc123',
         datasetId: 'dataset-xyz789',
         source: 'booking' as const,
-        startedAt: '2026-07-02T09:20:00.000Z'
+        startedAt: '2026-07-02T09:20:00.000Z',
+        url: 'https://booking.com/hotel/ar/sol.html'
     };
 
     it('accepts a valid status query (same shape as the start response)', () => {

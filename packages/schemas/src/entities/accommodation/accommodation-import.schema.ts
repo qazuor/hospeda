@@ -558,6 +558,7 @@ export type AccommodationImportResponse = z.infer<typeof AccommodationImportResp
  *   datasetId: 'dataset-xyz789',
  *   source: 'airbnb',
  *   startedAt: '2026-07-02T09:20:00.000Z',
+ *   url: 'https://airbnb.com/rooms/123',
  * }); // ok
  * ```
  */
@@ -569,7 +570,13 @@ export const AccommodationImportAsyncStartResponseSchema = z.object({
     /** Import source that triggered the async path (currently `airbnb` or `booking`). */
     source: ImportSourceSchema,
     /** ISO 8601 timestamp when the run was started, used to enforce the poll ceiling. */
-    startedAt: z.string().datetime()
+    startedAt: z.string().datetime(),
+    /**
+     * The original listing URL, echoed back on every poll (SPEC-277 R2 via
+     * HOS-50 T-006): the status route's Generic-adapter fallback needs it to
+     * re-fetch JSON-LD/OpenGraph when the Apify run ends blocked or errored.
+     */
+    url: z.string().url().max(2048)
 });
 
 /**
@@ -598,6 +605,7 @@ export type AccommodationImportAsyncStartResponse = z.infer<
  *   datasetId: 'dataset-xyz789',
  *   source: 'booking',
  *   startedAt: '2026-07-02T09:20:00.000Z',
+ *   url: 'https://booking.com/hotel/ar/sol.html',
  * }); // ok
  * ```
  */

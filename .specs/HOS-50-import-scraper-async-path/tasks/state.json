@@ -203,43 +203,43 @@
             "id": "T-006",
             "title": "Extend resolveImportRunStatus with terminal-failure branch and R2 fallback",
             "description": "Extend resolve-import-run-status.ts to handle FAILED/TIMED-OUT/ABORTED: map via mapApifyRunStatusToFailureCode (T-002). If the code is 'source_blocked' or 'provider_error' AND source is airbnb/booking, call the existing _runFallbackGenericExtract orchestrator step verbatim; accept the fallback only if it yields name/summary/imageUrls (same rule as sync R2), returning {settled: true, raw} on success or {settled: true, failureCode} otherwise. For 'timeout', skip fallback entirely.\n\nTest requirements: unit tests for FAILED->fallback-succeeds, FAILED->fallback-insufficient, TIMED-OUT->timeout-no-fallback-attempted, ABORTED->fallback.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002", "T-005"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Map terminal failure statuses via T-002's helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Trigger R2 fallback on source_blocked/provider_error for airbnb/booking",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply existing fallback-acceptance rule",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Skip fallback for 'timeout'",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for all 4 terminal scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "apify", "import", "fallback"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T10:30:00Z",
+                "completed": "2026-07-02T10:55:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.2
     }
