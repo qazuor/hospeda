@@ -608,8 +608,19 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
     /** Google Places API (New) key for the Google Maps import tier */
     HOSPEDA_GOOGLE_PLACES_API_KEY: z.string().optional(),
-    /** MercadoLibre OAuth app access token for reading /items listings */
-    HOSPEDA_MERCADOLIBRE_TOKEN: z.string().optional(),
+    /** MercadoLibre OAuth app client ID (HOS-45 OAuth refresh flow). Optional: required only in environments where the ML import tier is enabled. */
+    HOSPEDA_MERCADOLIBRE_CLIENT_ID: z.string().optional(),
+    /** MercadoLibre OAuth app client secret (HOS-45 OAuth refresh flow) */
+    HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: z.string().optional(),
+    /** MercadoLibre OAuth redirect URI registered on the ML app (HOS-45 OAuth refresh flow) */
+    HOSPEDA_MERCADOLIBRE_REDIRECT_URI: z.string().optional(),
+    /**
+     * AES-256-GCM master key for the OAuth credentials vault (HOS-45). Provider-agnostic
+     * name (NOT ML-specific) because the encrypted credentials table is designed to extend
+     * to future OAuth providers beyond MercadoLibre. Optional until the OAuth vault is wired
+     * everywhere; required in environments where the ML import tier is enabled.
+     */
+    HOSPEDA_OAUTH_VAULT_MASTER_KEY: z.string().optional(),
     /** Timeout in milliseconds for the safeExternalFetch utility used in import adapters */
     HOSPEDA_IMPORT_FETCH_TIMEOUT_MS: z.coerce.number().default(8000),
     /** Timeout in milliseconds for synchronous Apify actor runs in import adapters (Airbnb, Booking fallback); actors take 8-120s so they get a longer budget than the fetch timeout */
