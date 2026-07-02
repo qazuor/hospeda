@@ -146,6 +146,8 @@ node_modules
 .claude/wt-logs/
 # task-master index lock (specs/tasks now live under .qtm/)
 .qtm/tasks/.index.lock
+# task-master per-spec state locks (Linear backend, .specs/<id>-slug/tasks/)
+.specs/**/tasks/*.lock
 apps/web-test
 apps/web-old
 
