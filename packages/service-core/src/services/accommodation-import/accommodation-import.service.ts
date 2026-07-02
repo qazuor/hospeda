@@ -15,12 +15,11 @@
  * 2. Detect the source platform (for labelling); pick the adapter by
  *    `supports()` (the authority for routing).
  * 3. Call `adapter.extract()`; on throw treat as empty extraction.
- * 4. Map raw candidates to a typed draft with `mapRawToDraft`.
- * 5. Resolve amenity names to catalog UUIDs; on throw omit them.
- * 6. Build a destination hint from scraped locality; on throw omit it.
- * 7. Collect `mediaHints` from raw image URLs.
- * 8. Compute `partial` and assemble the final response, validated against
- *    `AccommodationImportResponseSchema`.
+ * 4+. Map raw candidates to a draft, resolve amenities/destination hint/media
+ *    hints, and assemble the final response, validated against
+ *    `AccommodationImportResponseSchema` — delegated to
+ *    {@link finalizeImportDraft} (HOS-50 T-009) so the async status route
+ *    (T-011) can reuse identical draft-building logic.
  *
  * **Reviews/ratings are NEVER present** — `RawExtraction` excludes them by
  * design and this service adds no rating handling (SPEC-222 hard rule).
@@ -29,11 +28,7 @@
  * @module services/accommodation-import/accommodation-import.service
  */
 
-import {
-    type AccommodationImportResponse,
-    AccommodationImportResponseSchema,
-    type ImportFailureCode
-} from '@repo/schemas';
+import type { AccommodationImportResponse, ImportFailureCode } from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 import type { Actor, ServiceConfig } from '../../types/index.js';
@@ -46,9 +41,7 @@ import { GenericAdapter } from './adapters/generic.adapter.js';
 import { GooglePlacesAdapter } from './adapters/google-places.adapter.js';
 import { MercadoLibreAdapter } from './adapters/mercadolibre.adapter.js';
 import { detectSource } from './detect-source.js';
-import { mapRawToDraft } from './mapping.js';
-import { resolveAmenities } from './resolvers/amenities.js';
-import { buildDestinationHint } from './resolvers/destination.js';
+import { finalizeImportDraft } from './finalize-import-draft.js';
 
 // ---------------------------------------------------------------------------
 // Internal constants
@@ -433,123 +426,17 @@ export class AccommodationImportService {
         }
 
         // -----------------------------------------------------------------------
-        // Step 4: Map raw candidates to a typed draft.
+        // Step 4+: Map raw candidates to a draft, resolve amenities/destination
+        // hint/media hints, and assemble the final response (HOS-50 T-009 —
+        // extracted to finalizeImportDraft so the async status route T-011 can
+        // reuse identical draft-building logic).
         // -----------------------------------------------------------------------
-        const { draft, methodsUsed } = mapRawToDraft({ raw });
-
-        // -----------------------------------------------------------------------
-        // Step 5: Resolve amenity names to catalog UUIDs.
-        // -----------------------------------------------------------------------
-        let resolvedAmenityIds: string[] | undefined;
-        let unresolvedAmenities: string[] | undefined;
-        try {
-            const amenityNames = [...(raw.amenityNames ?? [])];
-            if (amenityNames.length > 0) {
-                const amenities = await resolveAmenities({
-                    names: amenityNames,
-                    amenityService: this.amenityService,
-                    actor
-                });
-                if (amenities.amenityIds.length > 0) {
-                    resolvedAmenityIds = amenities.amenityIds;
-                }
-                if (amenities.unresolved.length > 0) {
-                    unresolvedAmenities = amenities.unresolved;
-                }
-            }
-        } catch {
-            // resolveAmenities threw — omit amenity fields, continue.
-        }
-
-        // -----------------------------------------------------------------------
-        // Step 6: Build destination hint from scraped locality.
-        // -----------------------------------------------------------------------
-        let destinationHint: AccommodationImportResponse['destinationHint'];
-        try {
-            const hint = await buildDestinationHint({
-                locality: raw.scrapedLocality,
-                country: raw.scrapedCountry,
-                destinationService: this.destinationService,
-                actor
-            });
-            // Include the hint only when it carries a locality or has candidates.
-            if (hint.scrapedLocality !== undefined || hint.candidates.length > 0) {
-                destinationHint = {
-                    scrapedLocality: hint.scrapedLocality,
-                    candidates: [...hint.candidates]
-                };
-            }
-        } catch {
-            // buildDestinationHint threw — omit hint, continue.
-        }
-
-        // -----------------------------------------------------------------------
-        // Step 7: Collect media hints from raw image URLs.
-        // -----------------------------------------------------------------------
-        const mediaHints =
-            raw.imageUrls && raw.imageUrls.length > 0
-                ? { imageUrls: [...raw.imageUrls] }
-                : undefined;
-
-        // -----------------------------------------------------------------------
-        // Step 8: Compute partial and determine effective source + failureCode.
-        //
-        // Failure code precedence:
-        //  1. Propagate raw.failureCode when the adapter classified the failure.
-        //  2. When draft is empty and no hints exist and no adapter failureCode →
-        //     fall back to nothing_found.
-        //  3. When draft has content → no failureCode.
-        //
-        // A draft is considered "complete enough" only when it has name, summary,
-        // and type — the three fields the creation form requires unconditionally.
-        // -----------------------------------------------------------------------
-        const hasMandatoryFields = Boolean(draft.name && draft.summary && draft.type);
-        const partial = !hasMandatoryFields;
-
-        const isDraftEmpty = Object.keys(draft).length === 0;
-        const hasAnyHints =
-            resolvedAmenityIds !== undefined ||
-            unresolvedAmenities !== undefined ||
-            destinationHint !== undefined ||
-            mediaHints !== undefined;
-
-        // Determine the failureCode to surface on the response.
-        let responseFailureCode: ImportFailureCode | undefined;
-        if (raw.failureCode !== undefined) {
-            // Adapter already classified the failure — propagate it.
-            responseFailureCode = raw.failureCode;
-        } else if (isDraftEmpty && !hasAnyHints) {
-            // Source was reachable but yielded nothing recognisable as accommodation data.
-            responseFailureCode = 'nothing_found';
-        }
-        // If there is partial data (draft not empty or hints exist) → no failureCode.
-
-        // When nothing useful was extracted, signal source: 'none'.
-        const effectiveSource = isDraftEmpty && !hasAnyHints ? ('none' as const) : source;
-
-        // -----------------------------------------------------------------------
-        // Final guard: validate assembled object against the schema.
-        // If Zod somehow rejects it (should not happen), return a safe fallback.
-        // -----------------------------------------------------------------------
-        const assembled: AccommodationImportResponse = {
-            draft,
-            source: effectiveSource,
-            methodsUsed,
-            partial,
-            ...(responseFailureCode !== undefined ? { failureCode: responseFailureCode } : {}),
-            ...(destinationHint !== undefined ? { destinationHint } : {}),
-            ...(resolvedAmenityIds !== undefined ? { resolvedAmenityIds } : {}),
-            ...(unresolvedAmenities !== undefined ? { unresolvedAmenities } : {}),
-            ...(mediaHints !== undefined ? { mediaHints } : {})
-        };
-
-        const parsed = AccommodationImportResponseSchema.safeParse(assembled);
-        if (!parsed.success) {
-            // This should never happen in practice — degrade gracefully.
-            return this._buildDegradedResponse('provider_error');
-        }
-
-        return parsed.data;
+        return finalizeImportDraft(raw, {
+            source,
+            actor,
+            amenityService: this.amenityService,
+            destinationService: this.destinationService
+        });
     }
 
     // -------------------------------------------------------------------------

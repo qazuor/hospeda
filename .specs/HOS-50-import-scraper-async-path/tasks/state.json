@@ -324,39 +324,39 @@
             "id": "T-009",
             "title": "Extract finalizeImportDraft reusable post-extraction pipeline",
             "description": "Refactor the existing inline post-raw-extraction steps (mapRawToDraft, amenity resolution, destination hint, media hints — currently steps 4+ of importFromUrl) in accommodation-import.service.ts into an exported finalizeImportDraft(raw: RawExtraction, ctx): AccommodationImportResponse-shaped result, with no behavior change for the existing synchronous flow. Lets the async status route (T-011) reuse identical draft-building logic instead of duplicating it.\n\nTest requirements: the full existing importFromUrl test suite must pass unchanged (regression); add direct unit tests calling finalizeImportDraft in isolation with a fixed RawExtraction fixture.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-011", "T-016"],
             "subtasks": [
                 {
                     "title": "Extract steps 4+ into exported finalizeImportDraft function",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call it from the existing sync importFromUrl flow unchanged",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run full existing test suite to confirm no regression",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write direct unit tests for finalizeImportDraft in isolation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "refactor", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T11:05:00Z",
+                "completed": "2026-07-02T11:35:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.2
     }
