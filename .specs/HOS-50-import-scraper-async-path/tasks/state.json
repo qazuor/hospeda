@@ -706,43 +706,43 @@
             "id": "T-019",
             "title": "Document the new async import contract",
             "description": "Document the 202+poll contract shape (start response, status response, poll interval, apifyTimeoutMs ceiling) in apps/api/docs/route-architecture.md or a new short doc under docs/guides/, and explicitly call out that the async path triggers the R2 Generic fallback on both 'source_blocked' and 'provider_error' (diverging from the sync path's source_blocked-only trigger, since Apify's run status has no native 'blocked' signal) — so a future reader doesn't 'fix' this back. Add JSDoc to resolveImportRunStatus, finalizeImportDraft, and the status route handler.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document the 202+poll contract shape and poll ceiling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document the source_blocked/provider_error R2-fallback divergence rationale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add JSDoc to resolveImportRunStatus, finalizeImportDraft, and the status route handler",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "import", "async"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T22:34:56Z",
+                "completed": "2026-07-02T22:58:00Z"
             }
         }
     ],
     "summary": {
         "total": 19,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.2
     }
