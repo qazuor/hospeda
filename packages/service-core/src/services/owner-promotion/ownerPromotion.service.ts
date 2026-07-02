@@ -38,6 +38,7 @@ import {
     checkCanUpdateVisibility,
     checkCanView
 } from './ownerPromotion.permissions';
+import { buildAccommodationVisibilityCondition } from './ownerPromotion.visibility';
 
 /**
  * Per-request mutable hook state for `OwnerPromotionService`.
@@ -451,10 +452,12 @@ export class OwnerPromotionService extends BaseCrudService<
                 const audienceCondition = this.buildTouristAudienceCondition(
                     validated.audienceScope
                 );
+                const visibilityCondition = buildAccommodationVisibilityCondition();
 
                 return this.model.findAll(publicFilter, { page, pageSize }, [
                     windowCondition,
-                    audienceCondition
+                    audienceCondition,
+                    visibilityCondition
                 ]);
             }
         });

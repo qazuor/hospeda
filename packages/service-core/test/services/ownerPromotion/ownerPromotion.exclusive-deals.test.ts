@@ -58,8 +58,8 @@ describe('OwnerPromotionService.findExclusiveDeals (HOS-21 T-005)', () => {
         expect(modelMock.findAll).toHaveBeenCalled();
         const [, , additionalConditions] = modelMock.findAll.mock.calls[0] ?? [];
         expect(Array.isArray(additionalConditions)).toBe(true);
-        // window condition + audience-scope condition
-        expect((additionalConditions as unknown[]).length).toBe(2);
+        // window condition + audience-scope condition + accommodation-visibility condition (HOS-21 T-006)
+        expect((additionalConditions as unknown[]).length).toBe(3);
     });
 
     it('always forces lifecycleState=ACTIVE regardless of caller-supplied filter', async () => {
