@@ -5,7 +5,9 @@
  * - `@repo/service-core` → SocialPublishDispatchService (findEligibleTargets + dispatchTarget)
  * - `@repo/db` → withTransaction (advisory lock guard) + sql tag
  * - `../../src/services/social-credential-vault.service.js` → getDecryptedSocialCredential
- *   (the make_api_key credential, HOS-64 T-022 — replaces the former env.HOSPEDA_MAKE_API_KEY read)
+ *   (make_api_key + make_webhook_url credentials, HOS-64 T-022/T-024 —
+ *   replaces the former env.HOSPEDA_MAKE_API_KEY read and the per-target
+ *   social_settings.make_webhook_url lookup)
  * - `../../src/utils/logger.js` → apiLogger (lock-skip warn assertions)
  *
  * @module test/cron/social-publish-dispatch
@@ -119,9 +121,22 @@ describe('Social Publish Dispatch Cron Job', () => {
         mockFindEligibleTargets.mockResolvedValue({ targets: [] });
         mockDispatchTarget.mockResolvedValue({ outcome: 'dispatched' });
         mockSettingFindOne.mockResolvedValue(undefined);
-        // Default: an active make_api_key credential exists in the vault.
-        mockGetDecryptedSocialCredential.mockResolvedValue({
-            data: { key: 'make_api_key', plaintext: 'test-make-api-key' }
+        // Default: active make_api_key and make_webhook_url credentials exist
+        // in the vault (HOS-64 T-022 / T-024). Keyed by the requested `key` so
+        // both guards resolve independently.
+        mockGetDecryptedSocialCredential.mockImplementation(async (input: { key: string }) => {
+            if (input.key === 'make_api_key') {
+                return { data: { key: 'make_api_key', plaintext: 'test-make-api-key' } };
+            }
+            if (input.key === 'make_webhook_url') {
+                return {
+                    data: {
+                        key: 'make_webhook_url',
+                        plaintext: 'https://hook.make.com/test-webhook'
+                    }
+                };
+            }
+            return { error: { code: 'NOT_FOUND', message: `No credential for '${input.key}'` } };
         });
     });
 
@@ -232,6 +247,52 @@ describe('Social Publish Dispatch Cron Job', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Missing-webhook-URL guard (HOS-64 T-024)
+    // -----------------------------------------------------------------------
+
+    describe('Missing make_webhook_url vault credential guard (HOS-64 T-024)', () => {
+        beforeEach(() => {
+            // make_api_key resolves fine; make_webhook_url does not.
+            mockGetDecryptedSocialCredential.mockImplementation(async (input: { key: string }) => {
+                if (input.key === 'make_api_key') {
+                    return { data: { key: 'make_api_key', plaintext: 'test-make-api-key' } };
+                }
+                return {
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: "No active credential found for key 'make_webhook_url'"
+                    }
+                };
+            });
+        });
+
+        it('returns success with processed=0 when no active make_webhook_url credential exists', async () => {
+            const result = await socialPublishDispatchJob.handler(mockContext);
+
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBe(0);
+            expect(result.message).toContain(
+                'make_webhook_url credential is not configured in the vault'
+            );
+            expect(result.details).toMatchObject({
+                skipped: true,
+                reason: 'missing_make_webhook_url'
+            });
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('no active make_webhook_url credential in the vault')
+            );
+            expect(mockDispatchTarget).not.toHaveBeenCalled();
+        });
+
+        it('does not call withTransaction when the webhook credential is missing', async () => {
+            await socialPublishDispatchJob.handler(mockContext);
+
+            expect(mockWithTransaction).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // Advisory lock
     // -----------------------------------------------------------------------
 
@@ -318,7 +379,7 @@ describe('Social Publish Dispatch Cron Job', () => {
     // -----------------------------------------------------------------------
 
     describe('Production dispatch loop', () => {
-        it('dispatches each eligible target with makeApiKey and apiBaseUrl', async () => {
+        it('dispatches each eligible target with makeApiKey and webhookUrl', async () => {
             const targets = [makeTarget('t1'), makeTarget('t2'), makeTarget('t3')];
             mockFindEligibleTargets.mockResolvedValue({ targets });
             mockDispatchTarget.mockResolvedValue({ outcome: 'dispatched' });
@@ -330,12 +391,13 @@ describe('Social Publish Dispatch Cron Job', () => {
             expect(result.errors).toBe(0);
             expect(mockDispatchTarget).toHaveBeenCalledTimes(3);
 
-            // Every call must receive the vault-sourced makeApiKey
+            // Every call must receive the vault-sourced makeApiKey + webhookUrl
             // (apiBaseUrl removed in SPEC-254 dispatch redesign — Make webhook
             // response is now synchronous so no callback URL is needed)
             for (const call of vi.mocked(mockDispatchTarget).mock.calls) {
                 expect(call[0]).toMatchObject({
-                    makeApiKey: 'test-make-api-key'
+                    makeApiKey: 'test-make-api-key',
+                    webhookUrl: 'https://hook.make.com/test-webhook'
                 });
             }
         });

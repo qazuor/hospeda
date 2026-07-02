@@ -921,16 +921,17 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
     // -------------------------------------------------------------------------
 
     describe('skipped_no_webhook', () => {
-        it('returns skipped_no_webhook when make_webhook_url setting is missing (returns null)', async () => {
-            // Arrange
-            mocks.settingModel.findOne.mockResolvedValue(null);
+        it('returns skipped_no_webhook when webhookUrl is an empty string (HOS-64 T-024: caller-supplied, vault-sourced)', async () => {
+            // Arrange — the caller (apps/api) found no active make_webhook_url
+            // vault credential and passed '' through.
             const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
             // Act
             const result = await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: ''
             });
 
             // Assert
@@ -938,30 +939,17 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(fetchSpy).not.toHaveBeenCalled();
             // Target status must NOT be changed
             expect(mocks.targetModel.update).not.toHaveBeenCalled();
-        });
-
-        it('returns skipped_no_webhook when make_webhook_url setting value is empty string', async () => {
-            // Arrange
-            mocks.settingModel.findOne.mockResolvedValue(buildWebhookSetting(''));
-            const fetchSpy = vi.spyOn(globalThis, 'fetch');
-
-            // Act
-            const result = await service.dispatchTarget({
-                target: buildTarget(),
-                post: buildPost(),
-                makeApiKey: MAKE_API_KEY
+            // service-core must NEVER read social_settings for the webhook URL
+            expect(mocks.settingModel.findOne).not.toHaveBeenCalledWith({
+                key: 'make_webhook_url'
             });
-
-            // Assert
-            expect(result.outcome).toBe('skipped_no_webhook');
-            expect(fetchSpy).not.toHaveBeenCalled();
-            expect(mocks.targetModel.update).not.toHaveBeenCalled();
         });
 
-        it('uses the webhookUrl override param directly and does NOT query the webhook URL setting', async () => {
-            // Arrange — webhook override provided; the webhook URL setting is skipped.
-            // Retry count / timeout are still read from settings regardless of the
-            // override (HOS-64 G-2) — they are independent of which URL is dispatched to.
+        it('dispatches using the caller-supplied webhookUrl (HOS-64 T-024: vault-sourced, not social_settings)', async () => {
+            // Arrange — webhookUrl is always caller-supplied now; service-core
+            // never reads social_settings or the vault for it.
+            // Retry count / timeout are still read from settings regardless
+            // (HOS-64 G-2) — they are independent of which URL is dispatched to.
             // The default buildFetchResponse returns a Make SUCCESS body.
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
             // cascadePostStatus dependencies
@@ -983,7 +971,7 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 webhookUrl: WEBHOOK_URL
             });
 
-            // Assert — published synchronously; webhook URL setting not queried (override used)
+            // Assert — published synchronously; webhook URL setting never queried
             expect(result.outcome).toBe('published');
             expect(mocks.settingModel.findOne).not.toHaveBeenCalledWith({
                 key: 'make_webhook_url'
@@ -3210,7 +3198,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'NOT_FOUND' });
         });
@@ -3231,7 +3220,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
         });
@@ -3246,7 +3236,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
         });
@@ -3265,7 +3256,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NO_MEDIA' });
         });
@@ -3284,7 +3276,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3307,7 +3300,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3324,7 +3318,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3341,7 +3336,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert — retry_scheduled counts as failed in the aggregate
@@ -3373,7 +3369,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert: targetModel.update was first called to reset the terminal target
@@ -3411,7 +3408,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3439,7 +3437,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3464,7 +3463,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert — second target still dispatched despite first throwing

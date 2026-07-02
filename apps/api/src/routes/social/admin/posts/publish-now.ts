@@ -25,11 +25,12 @@ const dispatchService = new SocialPublishDispatchService({ logger: apiLogger });
  *  - Post must have at least one media item (422 with reason NO_MEDIA).
  *
  * Make.com not configured:
- *  When no active `make_api_key` vault credential exists, the service receives
- *  an empty string as `makeApiKey`. `dispatchTarget` will look up
- *  `make_webhook_url` from `social_settings` and — if that is also empty —
- *  return `{ outcome: 'skipped_no_webhook' }` for every target.  The route
- *  returns HTTP 200 with the `skipped` counter populated; it does NOT throw a 500.
+ *  When no active `make_api_key` and/or `make_webhook_url` vault credential
+ *  exists, the service receives an empty string for the missing one(s).
+ *  `dispatchTarget` returns `{ outcome: 'skipped_no_webhook' }` for every
+ *  target when `webhookUrl` is empty (HOS-64 T-024 — both credentials are
+ *  vault-sourced, never read from `social_settings`).  The route returns
+ *  HTTP 200 with the `skipped` counter populated; it does NOT throw a 500.
  */
 export const adminPublishNowSocialPostRoute = createAdminRoute({
     method: 'post',
@@ -47,16 +48,20 @@ export const adminPublishNowSocialPostRoute = createAdminRoute({
 
         // Decrypt at call time so tests can stub the vault without a
         // module-level singleton capturing a stale value.
-        // When no active make_api_key credential exists we pass '' — the
-        // service then reads the webhook URL from the social_settings table
-        // and returns skipped_no_webhook if that is also empty.
-        const makeApiKeyResult = await getDecryptedSocialCredential({ key: 'make_api_key' });
+        // When no active credential exists for either key we pass '' — the
+        // service returns skipped_no_webhook per target when webhookUrl is empty.
+        const [makeApiKeyResult, webhookUrlResult] = await Promise.all([
+            getDecryptedSocialCredential({ key: 'make_api_key' }),
+            getDecryptedSocialCredential({ key: 'make_webhook_url' })
+        ]);
         const makeApiKey = makeApiKeyResult.data?.plaintext ?? '';
+        const webhookUrl = webhookUrlResult.data?.plaintext ?? '';
 
         const result = await dispatchService
             .dispatchPostNow({
                 postId,
-                makeApiKey
+                makeApiKey,
+                webhookUrl
             })
             .catch((err: unknown) => {
                 if (err instanceof ServiceError) throw err;

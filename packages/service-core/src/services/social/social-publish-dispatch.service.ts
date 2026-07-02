@@ -142,8 +142,8 @@ export interface BuildMakePayloadResult {
  *                           APPROVED for the next cron run.
  * - `exhausted`           — Failure occurred and retryCount was already >= 3 at the time
  *                           of the failure; target set to FAILED; audit event logged.
- * - `skipped_no_webhook`  — `make_webhook_url` setting is empty/missing; no dispatch
- *                           attempted; target status unchanged.
+ * - `skipped_no_webhook`  — the `make_webhook_url` vault credential is empty/missing;
+ *                           no dispatch attempted; target status unchanged.
  * - `skipped_locked`      — Another concurrent cron run already claimed this target
  *                           (optimistic lock detected 0 affected rows); no work done.
  */
@@ -164,16 +164,18 @@ export interface DispatchTargetInput {
     readonly post: Record<string, unknown>;
     /**
      * Make.com API key sent in the `x-make-apikey` header.
-     * Provided by the cron caller (which has env access). NEVER read env inside
-     * service-core.
+     * Provided by the caller (which decrypts it from the social credentials
+     * vault). NEVER read env or the vault inside service-core.
      */
     readonly makeApiKey: string;
     /**
-     * Optional webhook URL override — when set, skips the live settings look-up.
-     * Primarily for testing. In production, pass `undefined` and the method
-     * reads `make_webhook_url` from `social_settings`.
+     * Make.com webhook URL to POST the payload to.
+     * Provided by the caller (which decrypts it from the social credentials
+     * vault, `make_webhook_url` key — HOS-64 T-024). An empty string means
+     * "not configured" and short-circuits to `skipped_no_webhook`. NEVER read
+     * the vault or `social_settings` inside service-core.
      */
-    readonly webhookUrl?: string;
+    readonly webhookUrl: string;
 }
 
 /**
@@ -353,10 +355,18 @@ export interface DispatchPostNowInput {
     readonly postId: string;
     /**
      * Make.com API key sent in the `x-make-apikey` header.
-     * Sourced by the caller from `env.HOSPEDA_MAKE_API_KEY`.
-     * Never read env inside service-core.
+     * Sourced by the caller from the social credentials vault
+     * (`make_api_key` key — HOS-64 T-022). Never read env or the vault
+     * inside service-core.
      */
     readonly makeApiKey: string;
+    /**
+     * Make.com webhook URL to POST the payload to.
+     * Sourced by the caller from the social credentials vault
+     * (`make_webhook_url` key — HOS-64 T-024). Never read the vault or
+     * `social_settings` inside service-core.
+     */
+    readonly webhookUrl: string;
 }
 
 /**
@@ -441,11 +451,6 @@ const CASCADE_TERMINAL_STATUSES = new Set<string>([
  * round-trip completes. The prior 15 s was sized for the async
  * fire-and-forget model.
  */
-
-/**
- * `social_settings` key for the Make.com webhook URL.
- */
-const MAKE_WEBHOOK_URL_KEY = 'make_webhook_url';
 
 // ---------------------------------------------------------------------------
 // Service
@@ -783,8 +788,8 @@ export class SocialPublishDispatchService {
      * the outcome synchronously from the Webhook Response body.
      *
      * ## Steps (US-11, synchronous model)
-     * 1. **Webhook read** — load `make_webhook_url` from `social_settings` (or
-     *    use `input.webhookUrl` override for tests). If empty/missing → return
+     * 1. **Webhook read** — use `input.webhookUrl` (caller-supplied, vault-decrypted
+     *    `make_webhook_url` — HOS-64 T-024). If empty/missing → return
      *    `{ outcome: 'skipped_no_webhook' }` with a warning log. Target unchanged.
      * 2. **Optimistic lock** — set `target.status = PUBLISHING` before the HTTP
      *    call. If the model supports a guarded update (WHERE status != PUBLISHING),
@@ -834,7 +839,8 @@ export class SocialPublishDispatchService {
      * const result = await service.dispatchTarget({
      *   target: bundle.target,
      *   post: bundle.post,
-     *   makeApiKey: env.MAKE_API_KEY,
+     *   makeApiKey,
+     *   webhookUrl,
      * });
      * if (result.outcome === 'published') {
      *   logger.info('Target published synchronously via Make.com');
@@ -842,7 +848,7 @@ export class SocialPublishDispatchService {
      * ```
      */
     public async dispatchTarget(input: DispatchTargetInput): Promise<DispatchTargetResult> {
-        const { target, post, makeApiKey, webhookUrl: webhookOverride } = input;
+        const { target, post, makeApiKey, webhookUrl: inputWebhookUrl } = input;
 
         const targetId = target.id as string;
         const postId = post.id as string;
@@ -852,25 +858,17 @@ export class SocialPublishDispatchService {
 
         // -------------------------------------------------------------------------
         // Step 1: Resolve webhook URL
-        // Read live from settings unless a test override is provided.
+        // Sourced entirely from the caller (vault-decrypted, HOS-64 T-024) —
+        // this service NEVER reads social_settings or the vault directly.
         // -------------------------------------------------------------------------
-        let webhookUrl: string;
-
-        if (webhookOverride !== undefined && webhookOverride !== '') {
-            webhookUrl = webhookOverride;
-        } else {
-            const settingRow = await this.settingModel.findOne({ key: MAKE_WEBHOOK_URL_KEY });
-            const settingValue = (settingRow?.value as string | null | undefined) ?? '';
-
-            if (!settingValue) {
-                serviceLogger.warn(
-                    { targetId, postId },
-                    `SocialPublishDispatchService.dispatchTarget: '${MAKE_WEBHOOK_URL_KEY}' setting is empty or missing — skipping dispatch`
-                );
-                return { outcome: 'skipped_no_webhook' };
-            }
-            webhookUrl = settingValue;
+        if (!inputWebhookUrl) {
+            serviceLogger.warn(
+                { targetId, postId },
+                "SocialPublishDispatchService.dispatchTarget: 'make_webhook_url' vault credential is empty or missing — skipping dispatch"
+            );
+            return { outcome: 'skipped_no_webhook' };
         }
+        const webhookUrl = inputWebhookUrl;
 
         // Resolve the settings-driven retry/timeout config for this dispatch
         // (HOS-64 G-2) — read once up front so both the HTTP timeout and the
@@ -1824,13 +1822,14 @@ export class SocialPublishDispatchService {
      * ```ts
      * const result = await service.dispatchPostNow({
      *   postId: 'abc-123',
-     *   makeApiKey: env.HOSPEDA_MAKE_API_KEY ?? '',
+     *   makeApiKey,
+     *   webhookUrl,
      * });
      * // result.outcomes[0].outcome === 'published' | 'skipped_no_webhook' | ...
      * ```
      */
     public async dispatchPostNow(input: DispatchPostNowInput): Promise<DispatchPostNowResult> {
-        const { postId, makeApiKey } = input;
+        const { postId, makeApiKey, webhookUrl } = input;
 
         // -------------------------------------------------------------------------
         // Guard 1: Post must exist and not be soft-deleted
@@ -1906,7 +1905,7 @@ export class SocialPublishDispatchService {
             const platform = (target.platform as string | undefined) ?? '';
 
             try {
-                const result = await this.dispatchTarget({ target, post, makeApiKey });
+                const result = await this.dispatchTarget({ target, post, makeApiKey, webhookUrl });
                 outcomes.push({ targetId, platform, outcome: result.outcome });
 
                 if (

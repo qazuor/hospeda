@@ -122,6 +122,26 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         // Service-core must NEVER access the vault directly (testability constraint).
         const makeApiKey = makeApiKeyResult.data.plaintext;
 
+        // Guard: cannot dispatch without the Make.com webhook URL either
+        // (HOS-64 T-024 — previously read live from social_settings inside
+        // service-core on every target; now resolved once here, mirroring the
+        // make_api_key guard above).
+        const webhookUrlResult = await getDecryptedSocialCredential({ key: 'make_webhook_url' });
+        if (!webhookUrlResult.data) {
+            logger.warn(
+                'social-publish-dispatch: no active make_webhook_url credential in the vault — skipping dispatch'
+            );
+            return {
+                success: true,
+                message: 'Skipped: make_webhook_url credential is not configured in the vault',
+                processed: 0,
+                errors: 0,
+                durationMs: Date.now() - startedAt.getTime(),
+                details: { skipped: true, reason: 'missing_make_webhook_url' }
+            };
+        }
+        const webhookUrl = webhookUrlResult.data.plaintext;
+
         try {
             const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
                 // Prevent overlapping cron executions via PostgreSQL advisory lock.
@@ -182,7 +202,8 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                         const result = await dispatchService.dispatchTarget({
                             target,
                             post,
-                            makeApiKey
+                            makeApiKey,
+                            webhookUrl
                         });
                         outcomes[result.outcome] = (outcomes[result.outcome] ?? 0) + 1;
 
