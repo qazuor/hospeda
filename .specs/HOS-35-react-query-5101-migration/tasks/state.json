@@ -108,47 +108,47 @@
             "id": "T-005",
             "title": "Apply the root-cause fix to widgets and/or shared test setup",
             "description": "Based on the T-004 classification: if a real behavior change, update the affected widgets' loading/data-state logic in apps/admin/src/components/dashboards/** so they render data under 5.101 (production fix). If test-harness brittleness, update the shared widget test setup (mock query client / render helpers, likely under apps/admin/src/test-utils or similar) so mocked query results resolve as the widgets expect. Do not touch unrelated dashboard UX.\n\nTest requirements: no new test files unless the fix changes widget behavior in a way not covered by existing assertions — in that case add the missing assertion to the relevant *.test.tsx file. Existing widget suites are the regression gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Implement the fix at the classified layer (widget code or test setup)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Re-run the previously failing files from T-003", "completed": false },
-                { "title": "Confirm no unrelated widget behavior changed", "completed": false }
+                { "title": "Re-run the previously failing files from T-003", "completed": true },
+                { "title": "Confirm no unrelated widget behavior changed", "completed": true }
             ],
             "tags": ["fix", "admin", "dashboards"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Iterate until full dashboard widget suite is green",
             "description": "Re-run apps/admin/src/components/dashboards/** test suite after T-005's fix. Fix any remaining failing widget test files one by one (ListWidget, ChecklistWidget, StatusWidget, resolver-widget-integration, KpiWidget, ChartWidget, DashboardRenderer) until all 270+ dashboard tests pass under react-query 5.101.x, matching the pre-bump (5.59.20) green baseline.\n\nTest requirements: no new tests unless a straggler failure reveals an untested edge case, in which case add it to the corresponding widget's *.test.tsx.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
-                { "title": "Re-run dashboard widget suite", "completed": false },
-                { "title": "Fix any remaining stragglers file by file", "completed": false },
-                { "title": "Confirm 270+ tests green", "completed": false }
+                { "title": "Re-run dashboard widget suite", "completed": true },
+                { "title": "Fix any remaining stragglers file by file", "completed": true },
+                { "title": "Confirm 270+ tests green", "completed": true }
             ],
             "tags": ["fix", "admin", "dashboards", "testing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
@@ -249,9 +249,9 @@
     ],
     "summary": {
         "total": 10,
-        "pending": 6,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 1.7
     }

@@ -1,6 +1,6 @@
 # HOS-35: Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)
 
-## Progress: 4/10 tasks (40%)
+## Progress: 6/10 tasks (60%)
 
 **Average Complexity:** 1.7/3 (max)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-005 -> T-006 -> T-008 -> T-009 -> T-010 (8 steps)
@@ -32,13 +32,13 @@
   - Blocked by: T-002, T-003
   - Blocks: T-005
 
-- [ ] **T-005** (complexity: 3) - Apply the root-cause fix to widgets and/or shared test setup
-  - Fix widget code (if real regression) or shared test setup (if test-harness)
+- [x] **T-005** (complexity: 3) - Apply the root-cause fix to widgets and/or shared test setup
+  - Fixed 32 assertions across 6 test files: await real data testid, not persistent wrapper (commit a3be0e22f)
   - Blocked by: T-004
   - Blocks: T-006
 
-- [ ] **T-006** (complexity: 2) - Iterate until full dashboard widget suite is green
-  - Fix remaining stragglers until 270+ dashboard tests pass under 5.101
+- [x] **T-006** (complexity: 2) - Iterate until full dashboard widget suite is green
+  - Confirmed 270/270 dashboard tests green under 5.101.2 (independently re-verified)
   - Blocked by: T-005
   - Blocks: T-007, T-008
 
