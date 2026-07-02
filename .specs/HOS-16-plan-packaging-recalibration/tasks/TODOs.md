@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 11/20 tasks (55%) — CORE PHASE COMPLETE
+## Progress: 12/20 tasks (60%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -69,8 +69,8 @@
 
 ### Integration Phase
 
-- [ ] **T-012** (complexity: 2) - Investigate and fix the 'promotions' comparison-table row status
-  - PlanComparisonTable.astro — flip upcoming->available if the feature is genuinely real
+- [x] **T-012** (complexity: 2) - Investigate and fix the 'promotions' comparison-table row status [DONE]
+  - Confirmed real feature (OwnerPromotionService + PR #1900 tourist display, merged 2026-06-30) — flipped upcoming->available
   - Blocked by: T-007
   - Blocks: none
 

@@ -486,31 +486,42 @@
             "id": "T-012",
             "title": "Investigate and fix the 'promotions' comparison-table row status",
             "description": "In `apps/web/src/components/billing/PlanComparisonTable.astro`, the owner 'promotions' row (MAX_ACTIVE_PROMOTIONS limit cell, currently line ~141) is marked `status: 'upcoming'` (renders a 'Próximamente' badge) — but CREATE_PROMOTIONS/MAX_ACTIVE_PROMOTIONS was NOT flagged as phantom in the original packaging audit (unlike respond-reviews/calendar/whatsapp/branding/featured), meaning the promotions feature may already be genuinely implemented and working for owner-pro/premium today. Verify by checking `packages/service-core` for an actual accommodation-promotions service (distinct from `billing_promo_codes`, which is a billing-discount mechanism, not this). If the feature is real and working: flip this row's `status` from `'upcoming'` to `'available'`, since owner-basico now also gets it (T-007) and it would be misleading to keep advertising a working feature as 'coming soon'. If it turns out to be phantom after all: leave `status: 'upcoming'` as-is and note the discrepancy for a follow-up Linear issue. Either way, document the finding in the task's completion notes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify whether accommodation-promotions is a real implemented feature",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Flip row status to 'available' if real, else leave and note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "billing-ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:01:21Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:01:21Z",
+                    "details": "hospeda-web astro check: 0 errors"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:01:21Z",
+                    "details": "PlanComparisonTable.test.ts 42/42"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:58:19Z",
+                "completed": "2026-07-02T09:01:21Z"
             }
         },
         {
@@ -784,9 +795,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 1.6
     }
