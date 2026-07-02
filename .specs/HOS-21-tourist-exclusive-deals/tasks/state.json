@@ -288,35 +288,35 @@
             "id": "T-009",
             "title": "Wire gateExclusiveDeals + vip entitlement check into the new route",
             "description": "Wire apps/api/src/middlewares/tourist-entitlements.ts's gateExclusiveDeals() into the T-008 route's middlewares array, following the gateAlerts precedent (apps/api/src/routes/price-alert/protected/create.ts:97 → tourist-entitlements.ts:117-168): entitlement check first, 403 ENTITLEMENT_REQUIRED + upgradeUrl:'/suscriptores/planes' if EXCLUSIVE_DEALS is missing. Additionally check VIP_PROMOTIONS_ACCESS (from T-003) to decide whether to pass touristAudience scope 'vip' vs 'plus' into the T-006 search call. This is the task that un-phantoms gateExclusiveDeals — remove the PHANTOM-GATE comment once wired.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-003"],
             "blocks": ["T-010", "T-011", "T-014"],
             "subtasks": [
                 {
                     "title": "Wire gateExclusiveDeals() into the route's middlewares array",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove the PHANTOM-GATE comment from gateExclusiveDeals now that it's wired",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Check VIP_PROMOTIONS_ACCESS to scope the search call to 'plus' vs 'plus'+'vip'",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "entitlements", "security"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T10:08:44Z",
+                "completed": "2026-07-02T10:16:07Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.3
     }
