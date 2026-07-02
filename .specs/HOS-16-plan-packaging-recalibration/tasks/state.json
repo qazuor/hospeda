@@ -443,31 +443,43 @@
             "id": "T-011",
             "title": "One-time ops SQL: deactivate complex plans on existing DBs",
             "description": "`billing_plans.active` is classified 'commercial' in Model-C (`packages/billing/src/config/model-c-field-split.ts`) — a config-level `isActive:false` does NOT auto-propagate to already-seeded rows on staging/prod (DB wins on seed for this field). Write a one-off SQL file following the existing precedent pattern (`packages/db/src/migrations/extras/014-spec211-ai-monetization.data.sql`), named with the next sequential number after the current highest (024 as of this writing — check `ls packages/db/src/migrations/extras/` for the true latest before naming, e.g. `025-hos16-deactivate-complex-plans.data.sql`): `UPDATE billing_plans SET active = false WHERE name IN ('complex-basico', 'complex-pro', 'complex-premium');` with a header comment documenting the dry-run SELECT to run first and confirming exactly 3 rows are affected. This is NOT applied automatically by `pnpm db:apply-extras` in the same reversible way as trigger/view extras — confirm whether one-off data UPDATEs in this directory are re-run idempotently (should be, since the UPDATE is naturally idempotent) or need manual execution; document the chosen path in the file header.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Determine next sequential extras/ number",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write idempotent UPDATE with dry-run header",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:56:31Z",
+                    "details": "SQL file, no lint-staged rule for .sql in this repo"
+                },
+                "typecheck": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:56:31Z",
+                    "details": "not applicable — SQL, not TS"
+                },
+                "tests": {
+                    "status": "skipped",
+                    "timestamp": "2026-07-02T08:56:31Z",
+                    "details": "not executed against any environment — this is an ops migration file, applied deliberately at deploy time via pnpm db:apply-extras / hops db-migrate, not during implementation"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:55:24Z",
+                "completed": "2026-07-02T08:56:31Z"
             }
         },
         {
@@ -772,9 +784,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.6
     }

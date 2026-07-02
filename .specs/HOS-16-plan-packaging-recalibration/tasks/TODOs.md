@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 10/20 tasks (50%)
+## Progress: 11/20 tasks (55%) — CORE PHASE COMPLETE
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -62,8 +62,8 @@
   - Blocked by: none
   - Blocks: T-011, T-017
 
-- [ ] **T-011** (complexity: 1) - One-time ops SQL: deactivate complex plans on existing DBs
-  - extras/0NN-hos16-deactivate-complex-plans.data.sql
+- [x] **T-011** (complexity: 1) - One-time ops SQL: deactivate complex plans on existing DBs [DONE]
+  - packages/db/src/migrations/extras/025-hos16-deactivate-complex-plans.plan.sql. NOT executed against any environment yet — applied deliberately at deploy time.
   - Blocked by: T-010
   - Blocks: none
 
