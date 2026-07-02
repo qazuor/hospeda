@@ -781,9 +781,9 @@ describe('ChecklistWidget', () => {
             </TestWrapper>
         );
 
-        expect(await screen.findByTestId('checklist-widget')).toBeInTheDocument();
-        expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
+        expect(await screen.findByTestId('checklist-completeness-fraction')).toHaveTextContent(
             '6 de 6 completos'
         );
+        expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
     });
 });

@@ -75,12 +75,6 @@ updates:
     #     a lone extension at v3 peer-mismatches the v2 core at runtime). Gating
     #     the whole scope prevents a single-extension PR (e.g. extension-underline
     #     2 -> 3) from landing a split-version state. Owner: SPEC-307 (tiptap v3).
-    #   - @tanstack/react-query: 5.59 -> 5.101 changes useQuery loading-state
-    #     resolution and leaves the admin dashboard widgets (ListWidget,
-    #     ChecklistWidget, StatusWidget, resolver-widget-integration, KpiWidget,
-    #     ChartWidget, DashboardRenderer) stuck in their skeleton state. Possibly
-    #     a real dashboard regression, not just test brittleness. Needs a
-    #     deliberate migration with dashboard verification. Owner: SPEC-322.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
@@ -92,7 +86,6 @@ updates:
       - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
       - dependency-name: '@tiptap/*'
-      - dependency-name: '@tanstack/react-query'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
