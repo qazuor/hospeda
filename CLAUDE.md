@@ -216,6 +216,18 @@ Failed smokes block merge. Notes-only passes (smoke surfaces a known documented 
 
 This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
 
+**Linear labels for smoke-gated specs**: when a spec's Linear issue requires the
+staging smoke above, apply the `status-needs-smoke-staging` label to it — remove
+it once the sign-off is filed and the PR merges. If the spec also requires the
+prod smoke (billing CORE, step 5 above), apply `status-needs-smoke-prod` after
+merge to staging — remove it once that sign-off is filed. **Never mark an issue
+`Done` (via `/closeSpec` or otherwise) while either label is still present** —
+their whole purpose is to make "waiting on smoke" visible on the board instead of
+an issue silently sitting in `In Progress`/`In Review` with no signal of what it's
+actually blocked on. These are deliberately labels, not workflow states: most
+specs never touch billing and never need them, so they stay opt-in rather than
+forcing every issue through an extra pipeline stage.
+
 ### Git Conventions
 
 - **Conventional Commits**: `type(scope): description`
