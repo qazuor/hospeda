@@ -183,35 +183,35 @@
             "id": "T-006",
             "title": "Cross-check accommodation-visibility rules in the exclusive-deals search",
             "description": "Locate the existing accommodation-visibility check used by VIP_VISIBILITY_ACCESS (per SPEC-286, in accommodation.service.ts — described as having 8 checks for RESTRICTED/owner-suspended/plan-restricted accommodations). Reuse it (do not re-derive the rule) as a join/exists-filter in the T-005 search path: a deal referencing an accommodationId the caller cannot see is excluded from results, for both plus and vip tiers.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-008"],
             "subtasks": [
                 {
                     "title": "Locate the existing accommodation-visibility check in accommodation.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add exists/join filter to the T-005 search path reusing that check",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: a deal referencing a restricted/suspended accommodation is excluded from results for both tiers",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "owner-promotion", "entitlements"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:04:52Z",
+                "completed": "2026-07-02T09:15:36Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }
