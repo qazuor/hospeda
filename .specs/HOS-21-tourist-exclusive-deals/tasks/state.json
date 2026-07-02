@@ -525,51 +525,51 @@
             "id": "T-016",
             "title": "E2E test for the full exclusive-deals flow",
             "description": "E2E test covering: tourist-plus browses and sees plus-tier deals only; free tourist sees the upgrade CTA and cannot reach the listing; tourist-vip sees plus-tier deals plus vip-only ones, visually distinguished; a deal on an accommodation-visibility-restricted accommodation never appears in any tier's listing; an owner can mark a promotion VIP-only via the form (T-013) and it appears correctly scoped.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012", "T-013", "T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "E2E: tourist-plus sees plus-tier deals only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E: free tourist sees upgrade CTA, cannot reach listing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E: tourist-vip sees plus + vip-only deals, visually distinguished",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E: accommodation-visibility-restricted deal never appears",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E: owner marks a promotion VIP-only via the form and it appears correctly scoped",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "not-executed: written + typechecked/linted against the real e2e patterns (guest-05 precedent); requires the full e2e stack (dev servers + seeded e2e DB + Playwright) to actually run, which was deliberately out of scope this session per user choice"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:36:32Z",
+                "completed": "2026-07-02T16:36:40Z"
             }
         }
     ],
     "summary": {
         "total": 16,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.3
     }
