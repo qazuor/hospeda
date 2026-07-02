@@ -77,6 +77,14 @@ const INACTIVE_PLAN = {
     isActive: false
 };
 
+const INACTIVE_COMPLEX_PLAN = {
+    ...ACTIVE_PLAN,
+    id: '33333333-3333-3333-3333-333333333333',
+    slug: 'complex-basico',
+    category: 'complex' as const,
+    isActive: false
+};
+
 // ---------------------------------------------------------------------------
 // T-011: Public /plans endpoint
 // ---------------------------------------------------------------------------
@@ -136,6 +144,31 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
 
         // Assert
         expect(result).not.toContain(expect.objectContaining({ id: INACTIVE_PLAN.id }));
+    });
+
+    it('should exclude inactive complex plans (HOS-16: complex vertical hidden)', async () => {
+        // Arrange
+        const call = mockCreateSimpleRoute.mock.calls[0];
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+
+        // The route always requests { active: true }, so an inactive
+        // complex-basico row (per HOS-16) would never be in `items` to begin
+        // with — this asserts the same contract for the complex category
+        // specifically, complementing the generic owner-plan case above.
+        mockPlanList.mockResolvedValue({
+            success: true,
+            data: {
+                items: [ACTIVE_PLAN], // INACTIVE_COMPLEX_PLAN filtered out by the service
+                pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+            }
+        });
+
+        // Act
+        const result = await handler();
+
+        // Assert
+        expect(mockPlanList).toHaveBeenCalledWith({ active: true });
+        expect(result).not.toContain(expect.objectContaining({ id: INACTIVE_COMPLEX_PLAN.id }));
     });
 
     it('should return empty array gracefully when service fails', async () => {

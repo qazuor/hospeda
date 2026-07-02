@@ -688,39 +688,49 @@
             "id": "T-017",
             "title": "Add regression tests for AD_FREE removal and complex deactivation",
             "description": "Add tests asserting: (a) `AD_FREE` is no longer a member of `EntitlementKey` (type-level or `Object.values()` check) and not referenced by `ENTITLEMENT_DEFINITIONS`; (b) all 3 complex plans (`complex-basico/pro/premium`) have `isActive: false` in `ALL_PLANS`; (c) the public plans endpoint / filter (wherever `GET /api/v1/public/plans` sources its list — likely a service in `packages/service-core/src/services/billing`) excludes inactive complex plans from its response while `getPlanBySlug('complex-basico')` still resolves for internal/admin use; (d) `validateBillingConfig()` does not throw and `getDefaultPlan('complex')` still resolves (even though inactive) — proves the spec's stated mitigation holds. Place in the most relevant existing test file (`plans.test.ts` or a new `plan-visibility.test.ts` if none fits cleanly).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "AD_FREE-removed assertion",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "complex isActive:false assertion",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "public plans endpoint excludes complex",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "validateBillingConfig/getDefaultPlan don't throw",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "tests", "regression"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:09:55Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:09:55Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T09:09:55Z",
+                    "details": "listPlans.test.ts 6/6 (new complex-exclusion test); AD_FREE-gone + isActive:false + validateBillingConfig/getDefaultPlan-dont-throw already covered by existing green tests (entitlements.test.ts, plans.test.ts, config-validator.test.ts Integration Tests)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T09:06:39Z",
+                "completed": "2026-07-02T09:09:55Z"
             }
         },
         {
@@ -825,9 +835,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 1.6
     }

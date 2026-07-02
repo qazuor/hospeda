@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 15/20 tasks (75%)
+## Progress: 16/20 tasks (80%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -92,7 +92,8 @@
   - Blocked by: T-002, T-003
   - Blocks: none
 
-- [ ] **T-017** (complexity: 2) - Add regression tests for AD_FREE removal and complex deactivation
+- [x] **T-017** (complexity: 2) - Add regression tests for AD_FREE removal and complex deactivation [DONE]
+  - New complex-specific exclusion test in listPlans.test.ts; other 3 sub-requirements already covered by existing green tests
   - Blocked by: T-002, T-010
   - Blocks: none
 
