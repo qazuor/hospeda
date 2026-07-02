@@ -864,6 +864,43 @@ describe('plan.crud', () => {
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
         });
 
+        it('HOS-39 T-026: ignores category/isDefault even if passed via an unsafe cast', async () => {
+            // Arrange — category/isDefault are capability-layer per Model C and were
+            // removed from UpdatePlanInput; this test bypasses TS via `as never` to
+            // simulate a caller that still tries to pass them (e.g. stale client code)
+            // and verifies the service layer does not write them regardless.
+            const existingPlan = makePlanRow();
+            const updatedPlan = makePlanRow();
+            const priceRow = makePriceRow();
+            let capturedDb: ReturnType<typeof buildMockDb> | undefined;
+
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
+                    capturedDb = db;
+                    return fn(db);
+                }
+            );
+
+            // Act
+            const result = await updatePlan('plan-uuid-1', {
+                category: 'complex',
+                isDefault: true
+            } as never);
+
+            // Assert
+            expect(result.success).toBe(true);
+            const setCall = capturedDb?.update.mock.results[0]?.value.set.mock.calls[0]?.[0] as
+                | { metadata?: Record<string, unknown> }
+                | undefined;
+            const metadata = setCall?.metadata ?? {};
+            // Existing values must be PRESERVED unchanged (merge from existingMeta),
+            // NOT overwritten with the attempted 'complex'/true from the input —
+            // proves the service layer ignores these fields entirely.
+            expect(metadata.category).toBe('owner');
+            expect(metadata.isDefault).toBe(false);
+        });
+
         it('should update monthly price when monthlyPriceArs is provided', async () => {
             // Arrange
             const existingPlan = makePlanRow();

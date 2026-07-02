@@ -556,8 +556,9 @@ export async function updatePlan(
                 ...existingMeta
             };
             if (input.name !== undefined) updatedMeta.displayName = input.name;
-            if (input.category !== undefined) updatedMeta.category = input.category;
-            if (input.isDefault !== undefined) updatedMeta.isDefault = input.isDefault;
+            // category/isDefault removed from UpdatePlanInput (HOS-39 T-026) — both
+            // are capability-layer per Model C and were never requested as
+            // admin-editable; only CreatePlanInput sets them, at plan creation.
             if (input.sortOrder !== undefined) updatedMeta.sortOrder = input.sortOrder;
             if (input.trialDays !== undefined) updatedMeta.trialDays = input.trialDays;
             if (input.hasTrial !== undefined) updatedMeta.hasTrial = input.hasTrial;

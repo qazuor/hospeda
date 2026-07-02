@@ -851,7 +851,7 @@
             "id": "T-026",
             "title": "Remove category/isDefault from UpdatePlanInput",
             "description": "In `packages/service-core/src/services/billing/plan/plan.types.ts`, remove `category` and `isDefault` from `UpdatePlanInput` (lines ~62, ~74) - these are `capability`-layer per Model C and were never actually requested as admin-editable; their presence in the update type is an oversight, not a deliberate feature. Verify `updatePlan()` in `plan.crud.ts` doesn't specifically process these two fields (if it does, remove that handling too). Check `apps/admin/src/features/billing-plans/components/PlanDialog.tsx` for whether its edit form submits `category`/`isDefault` - if so, remove those inputs from the edit (not create) mode.\n\nTest requirements: TypeScript compilation is the primary guard (removing the fields makes passing them a compile error). Add/update a unit test asserting `updatePlan()`'s accepted input shape no longer includes these keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-027"],
@@ -872,14 +872,14 @@
             "tags": ["service-core", "billing", "model-c", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T15:25:16.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:40:38Z",
+                "completed": "2026-07-02T15:47:51Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

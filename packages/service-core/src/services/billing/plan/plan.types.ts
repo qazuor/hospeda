@@ -58,8 +58,6 @@ export interface UpdatePlanInput {
     readonly name?: string;
     /** Plan description */
     readonly description?: string;
-    /** Target user category */
-    readonly category?: BillingPlanCategory;
     /** Monthly price in ARS cents */
     readonly monthlyPriceArs?: number;
     /** Annual price in ARS cents (null to remove annual option) */
@@ -70,8 +68,6 @@ export interface UpdatePlanInput {
     readonly hasTrial?: boolean;
     /** Trial duration in days */
     readonly trialDays?: number;
-    /** Whether this is the default plan for its category */
-    readonly isDefault?: boolean;
     /** Display sort order */
     readonly sortOrder?: number;
     /** Entitlement keys */
