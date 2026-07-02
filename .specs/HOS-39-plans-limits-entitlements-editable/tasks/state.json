@@ -626,31 +626,31 @@
             "id": "T-019",
             "title": "Integration test: admin attribute edit reflects live without deploy",
             "description": "SCOPE REVISED (spec-realign 2026-07-02): the functionality this test/audit targets already exists (shipped via SPEC-168/192/211) — verify EXISTING behavior, do not assume it needs to be built. End-to-end integration test: call the admin edit-attributes mutation (T-007) via its API route, then immediately call the public listPlans endpoint (T-011) and assert the new value is present — no cache, no deploy, no restart involved.\n\nTest requirements: integration test in `apps/api/test/` (or the project's e2e-style integration suite) covering the full write→read round trip for `displayName` and `monthlyPriceArs`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-022", "T-023"],
             "subtasks": [
                 {
                     "title": "Write integration test: edit displayName, verify via public API",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write integration test: edit monthlyPriceArs, verify via public API",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "billing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T20:29:16Z",
+                "completed": "2026-07-02T20:50:43Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

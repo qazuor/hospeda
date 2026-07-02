@@ -156,6 +156,16 @@ export async function createTestPlan(
     const timestamp = Date.now();
     const name = overrides.name ?? `Test Plan ${timestamp}`;
 
+    const metadata: Record<string, unknown> = {
+        slug: `test-plan-${timestamp}`,
+        category: 'test',
+        isDefault: false,
+        sortOrder: 0,
+        trialDays: 0,
+        hasTrial: false,
+        ...(overrides.metadata ?? {})
+    };
+
     const inserted = await db
         .insert(billingPlans)
         .values({
@@ -167,15 +177,16 @@ export async function createTestPlan(
             entitlements: [...(overrides.entitlements ?? ['public:read'])],
             limits: { ...(overrides.limits ?? { ads_per_month: 5 }) },
             livemode: overrides.livemode ?? false,
-            metadata: {
-                slug: `test-plan-${timestamp}`,
-                category: 'test',
-                isDefault: false,
-                sortOrder: 0,
-                trialDays: 0,
-                hasTrial: false,
-                ...(overrides.metadata ?? {})
-            }
+            // HOS-39 T-003/T-005: dual-write the typed columns alongside their
+            // metadata.* mirror, derived from the merged metadata so callers
+            // that pass displayName/monthlyPriceArs/annualPriceArs via
+            // `overrides.metadata` (the existing convention) still populate them.
+            displayName: typeof metadata.displayName === 'string' ? metadata.displayName : name,
+            monthlyPriceArs:
+                typeof metadata.monthlyPriceArs === 'number' ? metadata.monthlyPriceArs : 0,
+            annualPriceArs:
+                typeof metadata.annualPriceArs === 'number' ? metadata.annualPriceArs : null,
+            metadata
         })
         .returning({ id: billingPlans.id });
 
