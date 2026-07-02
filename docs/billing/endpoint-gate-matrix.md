@@ -604,6 +604,9 @@
 | `POST /api/v1/admin/newsletter/campaigns` | `newsletter/admin/campaigns.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | **CRON — ADMIN** | | | | | |
 | `GET /api/v1/admin/cron/runs` | `cron-admin/runs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| **MERCADOLIBRE OAUTH — ADMIN (HOS-45)** | | | | | |
+| `GET /api/v1/admin/mercadolibre-oauth/authorize` | `integrations/mercadolibre-oauth/authorize.ts` | none | - | n/a | Admin action (302 redirect to ML's OAuth authorization page); PermissionEnum.INTEGRATION_MERCADOLIBRE_MANAGE gated |
+| `GET /api/v1/admin/mercadolibre-oauth/callback` | `integrations/mercadolibre-oauth/callback.ts` | none | - | n/a | Admin mutation (exchanges OAuth code, persists encrypted credential); PermissionEnum.INTEGRATION_MERCADOLIBRE_MANAGE gated |
 | **APP-LOGS — ADMIN** | | | | | |
 | `GET /api/v1/admin/logs` | `app-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **AUDIT/SECURITY LOGS — ADMIN** | | | | | |
