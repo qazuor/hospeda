@@ -409,18 +409,28 @@ export interface AsyncExtractionRunHandle {
 }
 
 /**
- * Result of an adapter's `extractAsync` call: either a run handle to poll,
- * or a machine-readable failure when the run could not even be started.
+ * Result of an adapter's `extractAsync` call: a run handle to poll, a
+ * machine-readable failure when the run could not even be started, or an
+ * already-resolved {@link RawExtraction} when no async run was needed at all.
+ *
+ * The third (`raw`) variant exists for adapters whose async mode is
+ * conditional on a free primary check (HOS-50 T-008 — Booking's JSON-LD-first
+ * tier): when that free check already yields enough data, the adapter
+ * resolves synchronously instead of starting (and immediately having to
+ * report back on) an unnecessary Apify run. Callers must check for `raw`
+ * before treating the result as a run handle to poll.
  *
  * @example
  * ```ts
- * const result: AsyncExtractionResult = { runId: 'run-1', datasetId: 'ds-1' };
+ * const started: AsyncExtractionResult = { runId: 'run-1', datasetId: 'ds-1' };
  * const failed: AsyncExtractionResult = { failureCode: 'credentials_missing' };
+ * const resolved: AsyncExtractionResult = { raw: { sourcePlatform: 'booking' } };
  * ```
  */
 export type AsyncExtractionResult =
     | AsyncExtractionRunHandle
-    | { readonly failureCode: ImportFailureCode };
+    | { readonly failureCode: ImportFailureCode }
+    | { readonly raw: RawExtraction };
 
 /**
  * Type guard narrowing an {@link ImportSourceAdapter} to one that implements

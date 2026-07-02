@@ -31,9 +31,15 @@
  */
 
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
-import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
+import type {
+    AsyncExtractionResult,
+    ImportContext,
+    ImportSourceAdapter,
+    RawExtraction
+} from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
-import { runApifyActor } from './apify-client.js';
+import { runApifyActor, startApifyRun } from './apify-client.js';
+import { startApifyRunWithRetry } from './start-apify-run-with-retry.js';
 import { withRetry } from './with-retry.js';
 
 // ---------------------------------------------------------------------------
@@ -915,6 +921,114 @@ export class BookingAdapter implements ImportSourceAdapter {
         } catch {
             // Catch-all: no exception must escape `extract`.
             return empty;
+        }
+    }
+
+    /**
+     * Starts an async Apify run for a Booking.com listing URL, but ONLY when
+     * the free JSON-LD-first tier is insufficient (HOS-50 / SPEC-277 R3).
+     *
+     * **Reuses `extract()`'s primary tier unchanged**: the same SSRF-safe
+     * fetch + {@link extractJsonLd} + {@link USEFUL_FIELD_THRESHOLD} check. If
+     * that already yields enough structured data, this method resolves
+     * synchronously with `{ raw }` — no Apify run is started, and callers
+     * (the orchestrator, T-010) MUST NOT call this method again for the same
+     * request in that case; the caller should have used `extract()` directly
+     * had it known the JSON-LD tier would be sufficient. In practice callers
+     * simply always try `extractAsync()` for Booking and branch on whether the
+     * result is a run handle (`runId`/`datasetId`) or an already-resolved `raw`.
+     *
+     * Only past the primary tier does this method start the async run via
+     * {@link startApifyRunWithRetry} (T-004) instead of the sync `withRetry`
+     * + `runApifyActor` path — same credential degradation and actor-input
+     * shape as the sync Apify fallback in `extract()`.
+     *
+     * **Never throws** — mirrors `extract()`'s catch-all, degrading to
+     * `{ raw: { sourcePlatform: 'booking' } }` on any unexpected error.
+     *
+     * @param url - The parsed Booking.com listing URL.
+     * @param ctx - Per-request context with credentials, timeout, and size limit.
+     * @returns `{ raw }` when JSON-LD alone was sufficient (or partial data
+     *   with no Apify credentials to fall back on), a run handle to poll, or
+     *   `{ failureCode }` when the start call could not even begin.
+     */
+    async extractAsync(url: URL, ctx: ImportContext): Promise<AsyncExtractionResult> {
+        const empty: RawExtraction = { sourcePlatform: this.source };
+
+        try {
+            // -----------------------------------------------------------------
+            // Step 1: Primary — SSRF-safe fetch + JSON-LD (identical to extract()).
+            // -----------------------------------------------------------------
+            let primaryBlocked = false;
+            let primaryExtraction: RawExtraction = empty;
+
+            const fetchResult = await safeExternalFetch({
+                url: url.href,
+                timeoutMs: ctx.timeoutMs,
+                maxBytes: ctx.maxBytes,
+                headers: {
+                    'User-Agent': BROWSER_USER_AGENT,
+                    'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8'
+                }
+            });
+
+            if (fetchResult.ok) {
+                const jsonLd = extractJsonLd({ html: fetchResult.body });
+                primaryExtraction = mapJsonLdToRawExtraction(jsonLd);
+
+                if (countUsefulFields(primaryExtraction) >= USEFUL_FIELD_THRESHOLD) {
+                    // Sufficient structured data — no async run needed.
+                    return { raw: primaryExtraction };
+                }
+                // Not enough fields — will try the Apify async fallback below.
+            } else {
+                // Blocked (bot-detection, SSRF policy, timeout, etc.)
+                primaryBlocked = true;
+            }
+
+            // -----------------------------------------------------------------
+            // Step 2: Start the async Apify run — credential degradation
+            // mirrors extract()'s sync Apify fallback exactly.
+            // -----------------------------------------------------------------
+            const token = ctx.credentials.apifyToken;
+            const actor = ctx.credentials.apifyBookingActor;
+
+            if (!token || !actor) {
+                // Credentials absent — skip the async run.
+                // If primary produced something (but < threshold), return it
+                // rather than a completely empty result.
+                if (!primaryBlocked && countUsefulFields(primaryExtraction) > 0) {
+                    return { raw: primaryExtraction };
+                }
+                // Both primary blocked and no Apify creds → credentials_missing.
+                return { failureCode: 'credentials_missing' };
+            }
+
+            // Build date-based price probe so the actor returns a real price.
+            const { checkIn, checkOut } = buildPriceProbeDates();
+            const result = await startApifyRunWithRetry({
+                fn: () =>
+                    startApifyRun({
+                        token,
+                        actor,
+                        actorInput: {
+                            startUrls: [{ url: url.href }],
+                            checkIn,
+                            checkOut,
+                            adults: PRICE_PROBE_ADULTS,
+                            currency: PRICE_PROBE_CURRENCY
+                        }
+                    })
+            });
+
+            if (result === null) {
+                return { failureCode: 'provider_error' };
+            }
+
+            return { runId: result.runId, datasetId: result.defaultDatasetId };
+        } catch {
+            // Catch-all: no exception must escape `extractAsync`.
+            return { raw: empty };
         }
     }
 }

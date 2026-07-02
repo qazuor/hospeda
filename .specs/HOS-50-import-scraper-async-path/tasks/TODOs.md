@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 9/19 tasks (47%)
+## Progress: 10/19 tasks (53%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -41,7 +41,7 @@
   - Blocked by: T-003, T-004
   - Blocks: T-010
 
-- [ ] **T-008** (complexity: 3) - Add async extraction mode to Booking adapter
+- [x] **T-008** (complexity: 3) - Add async extraction mode to Booking adapter — DONE
   - Blocked by: T-003, T-004
   - Blocks: T-010
 

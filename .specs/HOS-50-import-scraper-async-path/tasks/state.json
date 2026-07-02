@@ -285,39 +285,39 @@
             "id": "T-008",
             "title": "Add async extraction mode to Booking adapter",
             "description": "Implement BookingAdapter.extractAsync(): reuse the existing free JSON-LD-first logic unchanged; only when JSON-LD is sparse/blocked (the same condition that today triggers the sync Apify fallback), call startApifyRunWithRetry (T-004) instead of runApifyActor and return {runId, datasetId} or {failureCode}. When JSON-LD alone is sufficient, extractAsync must not be used — the orchestrator (T-010) calls the existing sync extract() in that case. Document this precondition in JSDoc.\n\nTest requirements: unit tests for JSON-LD-sparse->async-start-success, JSON-LD-sparse+missing-credentials, JSON-LD-sparse+retry-exhausted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Implement extractAsync() reusing existing JSON-LD-sparse detection",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call startApifyRunWithRetry only on the Apify-fallback branch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document the 'only call when async is needed' precondition",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for the 3 outcomes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "booking", "adapter", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T13:05:00Z",
+                "completed": "2026-07-02T13:40:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.2
     }
