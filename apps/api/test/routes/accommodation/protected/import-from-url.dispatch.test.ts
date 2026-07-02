@@ -25,7 +25,7 @@ describe('buildImportFromUrlDispatchResponse', () => {
         const dispatch: ImportDispatchResult = {
             kind: 'sync',
             response: {
-                draft: { name: { value: 'Hotel Sol', source: 'jsonld' } },
+                draft: { name: { value: 'Hotel Sol', confidence: 90, source: 'jsonld' } },
                 source: 'generic',
                 methodsUsed: ['jsonld'],
                 partial: true
@@ -94,7 +94,9 @@ describe('buildImportFromUrlDispatchResponse', () => {
         const dispatch: ImportDispatchResult = {
             kind: 'sync',
             response: {
-                draft: { name: { value: 'Hotel Booking JSON-LD', source: 'jsonld' } },
+                draft: {
+                    name: { value: 'Hotel Booking JSON-LD', confidence: 90, source: 'jsonld' }
+                },
                 source: 'booking',
                 methodsUsed: ['jsonld'],
                 partial: true
@@ -115,7 +117,7 @@ describe('buildImportFromUrlDispatchResponse', () => {
         const syncDispatch: ImportDispatchResult = {
             kind: 'sync',
             response: {
-                draft: { name: { value: 'Hotel Sol', source: 'jsonld' } },
+                draft: { name: { value: 'Hotel Sol', confidence: 90, source: 'jsonld' } },
                 source: 'generic',
                 methodsUsed: ['jsonld'],
                 partial: false
