@@ -416,31 +416,31 @@
             "id": "T-013",
             "title": "Add VIP-only toggle to the owner promotion form",
             "description": "In the owner-facing promotion create/edit form (apps/web mi-cuenta/promociones), add a toggle/checkbox for touristAudience='vip', wired to the T-007 route payload. Self-service, no eligibility gating beyond the existing ability to create promotions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Add the VIP-only toggle to the promotion create/edit form",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire the toggle to the touristAudience field in the form payload",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "owner-promotion", "form"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:46:21Z",
+                "completed": "2026-07-02T15:55:06Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.3
     }
