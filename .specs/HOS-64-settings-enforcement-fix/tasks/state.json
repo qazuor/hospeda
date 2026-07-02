@@ -580,39 +580,39 @@
             "id": "T-017",
             "title": "Implement createSocialCredential vault function",
             "description": "Create `apps/api/src/services/social-credential-vault.service.ts`, mirroring `ai-credential-vault.service.ts`'s shape (plain exported functions, not a class). Implement `createSocialCredential({ key, plaintext, label, actorId, ipAddress })`: Zod-validate input, encrypt via T-014's shared util with `env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY`, insert into `social_credentials` and an audit row (`action: 'created'`) in one `withTransaction`. Catch Postgres `23505` (partial unique index violation) and map to the same VALIDATION_ERROR a pre-check SELECT would return. Unit test: success, duplicate-key rejection, transaction rollback on audit-insert failure.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-014", "T-001", "T-002"],
             "blocks": ["T-018", "T-019", "T-020", "T-025", "T-026"],
             "subtasks": [
                 {
                     "title": "Define Zod input schema for create",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement encrypt + transactional insert + audit row",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle 23505 unique-violation race",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: success, duplicate, rollback",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "social", "crypto", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 10 new tests in social-credential-vault.service.test.ts; also created apps/api/src/utils/social-vault.ts as a thin crypto wrapper (mirrors ai-vault.ts) pinning T-014's shared util to HOSPEDA_SOCIAL_VAULT_MASTER_KEY"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T23:45:00Z",
+                "completed": "2026-07-03T00:15:00Z"
             }
         },
         {
@@ -1520,9 +1520,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 39,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.2
     }
