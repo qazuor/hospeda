@@ -2079,6 +2079,9 @@
         "tagType": {
             "invalid": "El tag type no es válido"
         },
+        "touristAudience": {
+            "invalid": "El tourist audience no es válido"
+        },
         "visibility": {
             "invalid": "El visibility no es válido"
         }
