@@ -174,12 +174,12 @@ describe('Plan Configuration', () => {
             expect(searchLimit?.value).toBe(200);
         });
 
-        it('owner-pro max_ai_text_improve_per_month should be 100', () => {
+        it('owner-pro max_ai_text_improve_per_month should be 250 (HOS-16: was 100)', () => {
             const found = OWNER_PRO_PLAN.limits.find(
                 (l) => l.key === LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH
             );
             expect(found).toBeDefined();
-            expect(found?.value).toBe(100);
+            expect(found?.value).toBe(250);
         });
 
         it('complex-premium AI limits should be finite — text 2000, chat 5000, search 200, consumer-chat 200 (SPEC-283)', () => {
@@ -387,6 +387,39 @@ describe('Plan Configuration', () => {
 
         it('MAX_ACCOMMODATIONS stays 1 (OQ-3, unchanged)', () => {
             expect(limitValue(OWNER_BASICO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(1);
+        });
+    });
+
+    describe('Owner-pro limit recalibration (HOS-16)', () => {
+        const limitValue = (
+            plan: { limits: ReadonlyArray<{ key: string; value: number }> },
+            key: LimitKey
+        ) => plan.limits.find((l) => l.key === key)?.value;
+
+        it('MAX_PHOTOS_PER_ACCOMMODATION = 30 (was 15)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(30);
+        });
+
+        it('MAX_ACTIVE_PROMOTIONS = 5 (was 3)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_ACTIVE_PROMOTIONS)).toBe(5);
+        });
+
+        it('MAX_AI_CHAT_PER_MONTH = 250 (was 100)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(250);
+        });
+
+        it('MAX_AI_TRANSLATE_PER_MONTH = 1000 (was 500)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_TRANSLATE_PER_MONTH)).toBe(1000);
+        });
+
+        it('MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 50 (was 500)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH)).toBe(
+                50
+            );
+        });
+
+        it('MAX_ACCOMMODATIONS stays 3 (unchanged)', () => {
+            expect(limitValue(OWNER_PRO_PLAN, LimitKey.MAX_ACCOMMODATIONS)).toBe(3);
         });
     });
 

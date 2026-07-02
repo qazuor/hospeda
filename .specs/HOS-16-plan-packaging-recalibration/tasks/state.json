@@ -324,31 +324,41 @@
             "id": "T-008",
             "title": "Recalibrate owner-pro limits",
             "description": "In `packages/billing/src/config/plans.config.ts`, on `OWNER_PRO_PLAN.limits`: MAX_PHOTOS_PER_ACCOMMODATION 15->30, MAX_ACTIVE_PROMOTIONS 3->5, MAX_AI_TEXT_IMPROVE_PER_MONTH 100->250, MAX_AI_CHAT_PER_MONTH 100->250, MAX_AI_TRANSLATE_PER_MONTH 500->1000, MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH 500->50. MAX_ACCOMMODATIONS stays 3 (no change). Tests: grant-matrix.snapshot.test.ts EXPECTED_AI_MATRIX for owner-pro.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-013", "T-014", "T-018"],
             "subtasks": [
                 {
                     "title": "Set MAX_PHOTOS_PER_ACCOMMODATION=30, MAX_ACTIVE_PROMOTIONS=5",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set AI text-improve/chat=250, translate=1000, import=50",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "limits"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:49:13Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:49:13Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:49:13Z",
+                    "details": "@repo/billing 538/538"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:47:50Z",
+                "completed": "2026-07-02T08:49:13Z"
             }
         },
         {
@@ -742,9 +752,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 1.6
     }
