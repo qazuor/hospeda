@@ -103,7 +103,7 @@
 | `GET /api/v1/protected/recommendations` | `recommendations/protected/get.ts` | gate | `can_view_recommendations` | wired | gateRecommendations() — binary in v1 (OQ-3): every plan carrying the entitlement sees the same feed. RecommendationService.getFeed() also enforces PermissionEnum.RECOMMENDATION_VIEW (role axis, separate from the plan-axis entitlement gate) — SPEC-284 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
-| `GET /api/v1/protected/owner-promotions/exclusive-deals` | `owner-promotion/protected/exclusive-deals.ts` | gate | `exclusive_deals` | wired | HOS-21 T-008/T-009: reuses `findExclusiveDeals` (T-005/T-006). `gateExclusiveDeals()` enforces EXCLUSIVE_DEALS (granted to tourist-plus and tourist-vip); a caller additionally carrying VIP_PROMOTIONS_ACCESS (tourist-vip only) is scoped to plus+vip, everyone else to plus-only. See the phantom-gates section below — `gateExclusiveDeals` is pending removal from there in T-010. |
+| `GET /api/v1/protected/owner-promotions/exclusive-deals` | `owner-promotion/protected/exclusive-deals.ts` | gate | `exclusive_deals` | wired | HOS-21 T-008/T-009: reuses `findExclusiveDeals` (T-005/T-006). `gateExclusiveDeals()` enforces EXCLUSIVE_DEALS (granted to tourist-plus and tourist-vip); a caller additionally carrying VIP_PROMOTIONS_ACCESS (tourist-vip only) is scoped to plus+vip, everyone else to plus-only. |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
 | `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) before enforcePromotionLimit() (SPEC-145 T-005) |
 | `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
@@ -946,7 +946,7 @@ eventually built, move its entry from this section to the main table.
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | ~~`gateRecommendations`~~ | ~~`can_view_recommendations`~~ | `middlewares/tourist-entitlements.ts` | SPEC-284 — **promoted to main table** (route built in SPEC-284 T-008; moved out of phantom gates) |
-| `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateExclusiveDeals`~~ | ~~`exclusive_deals`~~ | `middlewares/tourist-entitlements.ts` | HOS-21 T-009 — **promoted to main table** (route built in HOS-21 T-008/T-009; moved out of phantom gates) |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateWhatsAppDisplay` | `can_contact_whatsapp_display` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
