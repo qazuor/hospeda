@@ -1,6 +1,6 @@
 # HOS-50: Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)
 
-## Progress: 2/19 tasks (11%)
+## Progress: 3/19 tasks (16%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 -> T-005 -> T-006 -> T-011 -> T-013 -> T-018 (6 steps)
@@ -25,7 +25,7 @@
   - Blocked by: none
   - Blocks: T-007, T-008
 
-- [ ] **T-004** (complexity: 2) - Create startApifyRun retry wrapper for R1
+- [x] **T-004** (complexity: 2) - Create startApifyRun retry wrapper for R1 — DONE
   - Blocked by: none
   - Blocks: T-007, T-008
 

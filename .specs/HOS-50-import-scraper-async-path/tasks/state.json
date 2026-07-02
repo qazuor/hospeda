@@ -121,39 +121,39 @@
             "id": "T-004",
             "title": "Create startApifyRun retry wrapper for R1",
             "description": "Add startApifyRunWithRetry(input: StartApifyRunInput): Promise<StartApifyRunResult | null> in a new file adapters/start-apify-run-with-retry.ts, wrapping SPEC-250's startApifyRun with the same retry shape as with-retry.ts (maxRetries=2, jittered backoff, baseDelayMs=500) adapted to startApifyRun's null-on-failure contract: retry when the result is null, give up after 3 total attempts and return null. Do not modify with-retry.ts (it stays scoped to the sync path).\n\nTest requirements: unit tests — succeeds on first try, succeeds after 1-2 nulls, gives up after 3 nulls, asserts backoff delay is jittered and increasing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
                 {
                     "title": "Implement startApifyRunWithRetry with 3-attempt jittered backoff",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Retry only on null result (transient failure)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests for success-first-try and retry-then-succeed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit test for exhausted-retries and backoff jitter",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "retry", "apify", "import"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T10:01:43Z",
+                "completed": "2026-07-02T10:04:18Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.2
     }
