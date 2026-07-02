@@ -1,6 +1,6 @@
 # HOS-35: Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)
 
-## Progress: 6/10 tasks (60%)
+## Progress: 8/10 tasks (80%)
 
 **Average Complexity:** 1.7/3 (max)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-005 -> T-006 -> T-008 -> T-009 -> T-010 (8 steps)
@@ -44,13 +44,13 @@
 
 ### Integration Phase
 
-- [ ] **T-007** (complexity: 2) - Manually verify live admin dashboards render data under 5.101
-  - Staff + owner dashboards against running admin app, if real regression
+- [x] **T-007** (complexity: 2) - Manually verify live admin dashboards render data under 5.101
+  - Skipped with justification: test-harness-only classification, no prod code touched, no seeded STAFF/ADMIN login in a fresh worktree DB (see spec.md §9)
   - Blocked by: T-006
   - Blocks: T-010
 
-- [ ] **T-008** (complexity: 1) - Run full admin unit suite to confirm no wider regressions
-  - Full apps/admin suite, not just dashboard scope
+- [x] **T-008** (complexity: 1) - Run full admin unit suite to confirm no wider regressions
+  - Full apps/admin suite: 4425 pass / 0 fail / 1 pending (unrelated)
   - Blocked by: T-006
   - Blocks: T-010
 

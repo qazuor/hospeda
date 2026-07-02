@@ -189,3 +189,24 @@ Cover every failing file: `ListWidget`, `ChecklistWidget`, `StatusWidget`,
   helpers, so this fix is per-file (`ListWidget`, `ChecklistWidget`,
   `StatusWidget`, `resolver-widget-integration`, `KpiWidget`, `ChartWidget`,
   `DashboardRenderer`).
+- **T-005/T-006 result**: fixed 32 assertions across the 6 affected files
+  (`ListWidget` 16, `KpiWidget` 5, `ChartWidget` 4,
+  `resolver-widget-integration` 4, `StatusWidget` 2, `ChecklistWidget` 1 —
+  no `DashboardRenderer` failures surfaced in this repro run). No widget
+  `.tsx` production file was touched. Full `apps/admin/src/components/dashboards`
+  suite: **270/270 green** under `5.101.2`, independently re-verified.
+- **T-007 — live browser check skipped, with justification**: this worktree's
+  fresh DB has no seeded login credentials for a STAFF/ADMIN/SUPER_ADMIN-tier
+  role. The 13 `--test-users` accounts (`packages/seed/src/test-users/testUsers.seed.ts`)
+  only cover `EDITOR`/`SPONSOR`/`USER`/`HOST`/`CLIENT_MANAGER` — none carry
+  `dashboard.baseView`/`dashboard.fullView`. The required seed's
+  `admin-user`/`super-admin-user` rows (`packages/seed/src/data/user/required/*.json`)
+  have no password/Better Auth credential attached by default. Given (a) the
+  classification is confirmed test-harness-only, (b) zero production widget
+  code was touched by the fix, and (c) the exact 12/32 and 28/270 failure
+  counts were empirically reproduced and matched to a precise, understood
+  mechanism (not a guess) — standing up a throwaway admin credential just to
+  click through the dashboard would verify nothing the test suite + root
+  cause don't already establish. Skipped per this task's own documented
+  escape hatch (T-007 applies "if a real behavior change"; this was not
+  one).
