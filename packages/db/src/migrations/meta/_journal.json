@@ -288,6 +288,13 @@
             "when": 1782922159692,
             "tag": "0040_fantastic_menace",
             "breakpoints": true
+        },
+        {
+            "idx": 41,
+            "version": "7",
+            "when": 1783018942891,
+            "tag": "0041_add_plan_typed_attribute_columns",
+            "breakpoints": true
         }
     ]
 }
