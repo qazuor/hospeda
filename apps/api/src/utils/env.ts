@@ -628,7 +628,16 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_PEXELS_API_KEY: z.string().optional(),
 
     // Social Automation (SPEC-254)
-    // All four vars are optional for now — the GPT/Make routes that consume them
+    /**
+     * AES-256-GCM master key for the social credentials vault (HOS-64 G-4).
+     * Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse.
+     * Optional until the vault data migration (T-025/T-033) runs.
+     */
+    HOSPEDA_SOCIAL_VAULT_MASTER_KEY: z
+        .string()
+        .min(32, 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY must be at least 32 characters')
+        .optional(),
+    // All four vars below are optional for now — the GPT/Make routes that consume them
     // are NOT mounted yet (Phase 2 / Phase 4). Making them required here would
     // break API boot in every environment before the feature is wired. Flip each
     // to .min(1) (required) when the consuming route is mounted.

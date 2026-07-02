@@ -7,19 +7,19 @@
         {
             "id": "T-001",
             "title": "Decide social credentials vault permission gate",
-            "description": "Decide whether the new Social Credentials Vault (G-4) reuses the existing `SOCIAL_SETTINGS_MANAGE` permission (mirroring how the AI Vault reuses `AI_SETTINGS_MANAGE` instead of a dedicated permission, per packages/schemas/src/enums/permission.enum.ts) or needs a new `SOCIAL_CREDENTIALS_MANAGE` member. Default recommendation: reuse `SOCIAL_SETTINGS_MANAGE` for consistency. If a new permission is required, add it to `PermissionEnum` with JSDoc matching the existing entries' style. Document the decision inline as a code comment on whichever route file ends up gating the vault (T-026/T-027).",
-            "status": "pending",
+            "description": "Decide whether the new Social Credentials Vault (G-4) reuses the existing `SOCIAL_SETTINGS_MANAGE` permission (mirroring how the AI Vault reuses `AI_SETTINGS_MANAGE` instead of a dedicated permission, per packages/schemas/src/enums/permission.enum.ts) or needs a new `SOCIAL_CREDENTIALS_MANAGE` member. Default recommendation: reuse `SOCIAL_SETTINGS_MANAGE` for consistency. If a new permission is required, add it to `PermissionEnum` with JSDoc matching the existing entries' style. Document the decision inline as a code comment on whichever route file ends up gating the vault (T-026/T-027).\n\nDECISION (2026-07-02): reuse `SOCIAL_SETTINGS_MANAGE`. It already gates the settings route that owns `make_webhook_url` (apps/api/src/routes/social/admin/settings/*), which the vault migration (T-024) retires -- so the vault is a natural extension of the same permission surface, exactly mirroring the AI Vault reusing `AI_SETTINGS_MANAGE` instead of minting `AI_CREDENTIALS_MANAGE`. No new PermissionEnum member added. The inline code comment lands in T-026 when the vault route file is created.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-017", "T-026"],
             "subtasks": [
                 {
                     "title": "Compare AI vault's permission reuse precedent vs a dedicated permission",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add PermissionEnum member if a new permission is chosen",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document the decision inline near the gating route",
@@ -29,53 +29,53 @@
             "tags": ["auth", "decision", "vault"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a",
+                "typecheck": "n/a",
+                "tests": "n/a"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:30:00Z",
+                "completed": "2026-07-02T16:32:00Z"
             }
         },
         {
             "id": "T-002",
             "title": "Register HOSPEDA_SOCIAL_VAULT_MASTER_KEY env var",
             "description": "Register the new master key env var `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (separate blast radius from `HOSPEDA_AI_VAULT_MASTER_KEY`) in `packages/config/src/env-registry.hospeda.ts` (description, type, required:false initially, secret:true, category) and add Zod validation in `apps/api/src/utils/env.ts` alongside the existing social env vars. Add a placeholder to `apps/api/.env.example`. Run `pnpm env:check:registry` to confirm sync. Do NOT set the real value anywhere yet — that is a separate operational step (T-033) requiring Coolify access.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-017", "T-033", "T-041"],
             "subtasks": [
                 {
                     "title": "Add registry entry in env-registry.hospeda.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add Zod field in apps/api/src/utils/env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add placeholder in .env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm env:check:registry",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["config", "env", "vault"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:35:00Z",
+                "completed": "2026-07-02T16:48:00Z"
             }
         },
         {
