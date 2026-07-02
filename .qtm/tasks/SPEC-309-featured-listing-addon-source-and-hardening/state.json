@@ -979,26 +979,38 @@
             "id": "T-025",
             "title": "Integration test — addon purchase to accommodation-scoped featuring, end-to-end",
             "description": "Exercise the full OQ-3/G-1/G-2 chain in one integration test: create an addon checkout for `visibility-boost-7d` with a valid `accommodationId` (T-006) -> confirm the purchase (T-007, asserts a `featured_listing_addon_grants` row is written) -> assert `AddonEntitlementService.applyAddonEntitlements`'s post-grant hook (T-015) flips `featuredByEntitlement=true` ONLY on the targeted accommodation (not the owner's other accommodations, proving OQ-3 scoping — an owner-wide plan grant would flip all of them, an addon grant must flip exactly one).\n\nKey files:\n- apps/api/test/services/addon.checkout.integration.test.ts (new, or extend an existing integration suite for addon purchase)\n\nAcceptance criteria: the targeted accommodation's `featuredByEntitlement` becomes true; a second, unrelated accommodation owned by the same user stays false; the link row exists and correctly references both ids.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/services/addon.checkout.integration.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-015"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Checkout + confirm + link-row assertion", "completed": false },
-                { "title": "Targeted accommodation flips true", "completed": false },
-                { "title": "Sibling accommodation stays false (scoping proof)", "completed": false }
+                { "title": "Checkout + confirm + link-row assertion", "completed": true },
+                { "title": "Targeted accommodation flips true", "completed": true },
+                { "title": "Sibling accommodation stays false (scoping proof)", "completed": true }
             ],
             "tags": ["testing", "backend", "billing", "addons", "integration"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the new file — 1 formatting fix, no lint errors"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "New file addon.checkout.integration.test.ts 2/2; regression check addon.checkout.test.ts 60/60 + addon-entitlement.service.test.ts 40/40 untouched (102/102 total, run together scoped)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
