@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 5/20 tasks (25%)
+## Progress: 6/20 tasks (30%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -37,8 +37,8 @@
   - Blocked by: none
   - Blocks: T-007, T-015
 
-- [ ] **T-006** (complexity: 2) - Recalibrate tourist MAX_FAVORITES and MAX_COMPARE_ITEMS
-  - plus 2->3, vip/owner/complex 4->5 (coord SPEC-288)
+- [x] **T-006** (complexity: 2) - Recalibrate tourist MAX_FAVORITES and MAX_COMPARE_ITEMS [DONE]
+  - plus 2->3, vip/owner/complex 4->5 (coord SPEC-288); favorites free 3->5, plus 20->25
   - Blocked by: none
   - Blocks: T-015
 

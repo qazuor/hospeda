@@ -302,24 +302,24 @@ describe('Plan Configuration', () => {
             expect(compareItems(TOURIST_FREE_PLAN)).toBeUndefined();
         });
 
-        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 2', () => {
+        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 3 (HOS-16: was 2)', () => {
             expect(TOURIST_PLUS_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
             );
-            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(2);
+            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(3);
         });
 
-        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 4 (was unlimited)', () => {
+        it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 5 (HOS-16: was 4)', () => {
             expect(TOURIST_VIP_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
             );
-            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(4);
+            expect(compareItems(TOURIST_VIP_PLAN)?.value).toBe(5);
         });
 
-        it('owner/complex plans inherit the VIP-tier compare cap of 4 (not unlimited)', () => {
+        it('owner/complex plans inherit the VIP-tier compare cap of 5 (HOS-16: was 4, not unlimited)', () => {
             // The VIP limit lives in TOURIST_VIP_LIMITS, inherited via mergeLimits.
             // None of the owner/complex plans override MAX_COMPARE_ITEMS, so they
-            // all land on 4 — never -1 (SPEC-288 D-1).
+            // all land on 5 — never -1 (SPEC-288 D-1).
             const inheriting = ALL_PLANS.filter(
                 (p) => p.category === 'owner' || p.category === 'complex'
             );
@@ -327,7 +327,7 @@ describe('Plan Configuration', () => {
             for (const plan of inheriting) {
                 const found = compareItems(plan);
                 expect(found, `plan "${plan.slug}" must carry MAX_COMPARE_ITEMS`).toBeDefined();
-                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(4);
+                expect(found?.value, `plan "${plan.slug}" compare cap`).toBe(5);
             }
         });
 
@@ -339,6 +339,19 @@ describe('Plan Configuration', () => {
                     expect(found.value, `plan "${plan.slug}"`).toBeGreaterThan(0);
                 }
             }
+        });
+    });
+
+    describe('Tourist favorites limits (HOS-16)', () => {
+        const favoritesLimit = (plan: { limits: ReadonlyArray<{ key: string; value: number }> }) =>
+            plan.limits.find((l) => l.key === LimitKey.MAX_FAVORITES);
+
+        it('tourist-free MAX_FAVORITES = 5 (was 3)', () => {
+            expect(favoritesLimit(TOURIST_FREE_PLAN)?.value).toBe(5);
+        });
+
+        it('tourist-plus MAX_FAVORITES = 25 (was 20)', () => {
+            expect(favoritesLimit(TOURIST_PLUS_PLAN)?.value).toBe(25);
         });
     });
 

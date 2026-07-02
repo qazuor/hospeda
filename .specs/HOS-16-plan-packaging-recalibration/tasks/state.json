@@ -230,39 +230,49 @@
             "id": "T-006",
             "title": "Recalibrate tourist MAX_FAVORITES and MAX_COMPARE_ITEMS",
             "description": "In `packages/billing/src/config/plans.config.ts`: set `TOURIST_FREE_PLAN` MAX_FAVORITES to 5 (verify current value first, spec target=5), `TOURIST_PLUS_PLAN` MAX_FAVORITES to 25 (spec target), MAX_COMPARE_ITEMS on `TOURIST_PLUS_PLAN` from 2 to 3 (coordinate with unmerged SPEC-288 branch `spec/SPEC-289-search-history` — this is the value that must survive that merge). Bump `TOURIST_VIP_LIMITS.MAX_COMPARE_ITEMS` shared constant from 4 to 5 (this constant is inherited by tourist-vip AND all 6 owner/complex plans, so this single edit also raises MAX_COMPARE_ITEMS to 5 for owner/complex — intended per SPEC-216 inheritance, note it in the PR description). Do NOT touch MAX_SEARCH_HISTORY_ENTRIES or MAX_ACTIVE_ALERTS — both already match target values, no change needed. Do NOT touch MAX_AI_SEARCH_PER_MONTH / MAX_AI_CHAT_CONSUMER_PER_MONTH (SPEC-283 territory, explicitly out of scope). Tests: `packages/billing/test/plans.test.ts` and `packages/billing/test/limits.test.ts` MAX_COMPARE_ITEMS/MAX_FAVORITES expected values across all 9 plans.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Set tourist-free/plus MAX_FAVORITES",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set tourist-plus MAX_COMPARE_ITEMS to 3",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Bump TOURIST_VIP_LIMITS.MAX_COMPARE_ITEMS to 5",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update plans.test.ts / limits.test.ts expected values",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "limits"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:41:56Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:41:56Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:41:56Z",
+                    "details": "@repo/billing 527/527"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:38:48Z",
+                "completed": "2026-07-02T08:41:56Z"
             }
         },
         {
@@ -722,9 +732,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 1.6
     }

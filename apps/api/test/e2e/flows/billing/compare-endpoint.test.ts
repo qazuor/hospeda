@@ -297,7 +297,8 @@ describe('SPEC-288 T-005 — POST /api/v1/protected/accommodations/compare gates
         });
         touristFreePlanId = touristFree.planId;
 
-        // TC2/TC4/TC6/TC7: tourist-plus — max=2 (matches production TOURIST_PLUS_PLAN)
+        // TC2/TC4/TC6/TC7: tourist-plus — max=2 (synthetic fixture value, gate mechanism
+        // test only; production TOURIST_PLUS_PLAN.MAX_COMPARE_ITEMS is 3 as of HOS-16)
         // setCompareCount reports ids.length-1:
         //   2 ids → count=1, 1<2=true → pass (TC4/TC7)
         //   3 ids → count=2, 2<2=false → LIMIT_REACHED (TC2)
@@ -315,7 +316,8 @@ describe('SPEC-288 T-005 — POST /api/v1/protected/accommodations/compare gates
         });
         touristPlusPlanId = touristPlus.planId;
 
-        // TC3/TC5: tourist-vip — max=4 (matches production TOURIST_VIP_PLAN)
+        // TC3/TC5: tourist-vip — max=4 (synthetic fixture value, gate mechanism
+        // test only; production TOURIST_VIP_PLAN.MAX_COMPARE_ITEMS is 5 as of HOS-16)
         // setCompareCount reports ids.length-1:
         //   4 ids → count=3, 3<4=true → pass (TC5)
         //   5 ids → count=4, 4<4=false → LIMIT_REACHED (TC3)

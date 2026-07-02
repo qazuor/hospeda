@@ -83,7 +83,7 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
     limit(LimitKey.MAX_ACTIVE_ALERTS, -1),
-    limit(LimitKey.MAX_COMPARE_ITEMS, 4), // SPEC-288: capped (was -1); cascades to owner/complex
+    limit(LimitKey.MAX_COMPARE_ITEMS, 5), // HOS-16: was 4 (SPEC-288 originally capped from -1); cascades to owner/complex
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
@@ -425,7 +425,7 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, 3),
+        limit(LimitKey.MAX_FAVORITES, 5), // HOS-16: was 3
         // AI consumer quotas — entry tier (SPEC-283 §5). ai_chat stays
         // owner-governed; this consumer-side quota only caps the tourist's usage.
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 10),
@@ -464,9 +464,9 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_FAVORITES, 25), // HOS-16: was 20
         limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 2), // SPEC-288: Plus tier (was 4)
+        limit(LimitKey.MAX_COMPARE_ITEMS, 3), // HOS-16: was 2 (coord SPEC-288)
         // AI consumer quotas — mid tier (SPEC-283 §5).
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
         limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),
