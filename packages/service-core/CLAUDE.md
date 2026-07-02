@@ -1159,6 +1159,27 @@ Admin list paths do NOT apply this override — admins need to query all states.
 
 Full reference: [docs/guides/review-moderation.md](../../docs/guides/review-moderation.md)
 
+## Decoupled External Ports (ImportContext)
+
+`ImportContext` (in `services/accommodation-import/adapter.types.ts`) carries optional
+**port functions** for capabilities that require credentials or infrastructure this
+package must NOT own directly — `apps/api` builds and injects the implementation,
+`packages/service-core` only calls the function. This keeps service-core decoupled and
+unit-testable without pulling in apps/api's AI engine, vault master keys, or OAuth token
+services.
+
+Two ports exist today, both following the same shape:
+
+| Port | Owner (apps/api) | Purpose |
+|------|-------------------|---------|
+| `aiExtract` | AI engine + entitlement/quota gate | AI-assisted field extraction (SPEC-222 Strategy B) |
+| `mercadoLibreTokenProvider` | OAuth token service + credential vault (HOS-45) | Returns a valid, transparently-refreshed MercadoLibre access token |
+
+When adding a new OAuth-backed or credential-gated provider, add a new port to
+`ImportContext` following this same pattern (an async function with no arguments or a
+small typed input, apps/api wires the real implementation, service-core only calls it
+and degrades gracefully — never throws — when the port is absent).
+
 ## Related Documentation
 
 - [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern, including the service layer
