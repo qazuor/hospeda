@@ -14,6 +14,19 @@
  * - Regression guard: middleware source contains the isPrerendered fallback.
  * - buildCspHeader is invokable without body context (prerendered case).
  * - The generated header satisfies minimum Phase-1 policy invariants.
+ *
+ * CAVEAT (HOS-30, 2026-07-02 — see
+ * .specs/HOS-30-csp-phase-2-and-coverage/docs/2026-07-02-premise-corrections.md
+ * item 1): the "prerendered CSP emission guard" tests below only assert that
+ * specific strings appear in middleware.ts's SOURCE. They do NOT start a
+ * real server or make an HTTP request, so they cannot prove — and do not
+ * prove — that `/es/` (or any prerendered route) actually emits the header
+ * over the wire. Verified live (staging curl) and locally (production build
+ * + standalone Node server, bypassing any CDN/deploy staleness) that it does
+ * NOT: `@astrojs/node`'s `staticHeaders: true` only forwards headers Astro's
+ * native `security.csp` build feature registers; this app's hand-built
+ * middleware CSP is invisible to that mechanism for prerendered routes. Do
+ * not treat this file passing as evidence the home-CSP-header gap is closed.
  */
 
 import { readFileSync } from 'node:fs';
