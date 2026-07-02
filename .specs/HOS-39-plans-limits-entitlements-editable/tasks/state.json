@@ -684,31 +684,31 @@
             "id": "T-021",
             "title": "Integration test: web pricing page reflects DB change post-revalidation",
             "description": "SCOPE REVISED (spec-realign 2026-07-02): the functionality this test/audit targets already exists (shipped via SPEC-168/192/211) — verify EXISTING behavior, do not assume it needs to be built. End-to-end test covering: admin saves a plan attribute → T-017's revalidation trigger fires → the owner and tourist pricing pages (T-013/T-014) serve the updated value on next request, without a deploy or manual cache purge.\n\nTest requirements: integration test simulating the save→revalidate→re-render flow for both pricing pages; assert stale Cloudflare cache is not served after revalidation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "Write integration test for owner pricing page revalidation flow",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write integration test for tourist pricing page revalidation flow",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "billing", "web"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T21:10:20Z",
+                "completed": "2026-07-02T21:13:51Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
