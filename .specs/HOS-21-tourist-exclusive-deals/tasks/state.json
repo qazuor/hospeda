@@ -447,39 +447,39 @@
             "id": "T-014",
             "title": "API integration tests for the gated exclusive-deals route",
             "description": "Integration tests in apps/api for the T-009 route: 403 ENTITLEMENT_REQUIRED for free tourist and unauthenticated caller; 200 with tier-correct item set for plus and vip; accommodation-visibility-restricted deals excluded for both tiers. Follow the existing gateAlerts integration test as a template.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Test: 403 ENTITLEMENT_REQUIRED for free tourist / unauthenticated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: 200 with plus-tier-only items for a plus tourist",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: 200 with plus+vip items for a vip tourist",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: accommodation-visibility-restricted deal excluded for both tiers",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "tests", "integration"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T08:20:07.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T15:56:35Z",
+                "completed": "2026-07-02T16:23:08Z"
             }
         },
         {
@@ -567,9 +567,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.3
     }
