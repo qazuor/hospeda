@@ -49,14 +49,15 @@ export interface EncryptedSecret {
  *
  * @param masterKey - The raw master key value (e.g. `env.HOSPEDA_AI_VAULT_MASTER_KEY`
  * or `env.HOSPEDA_SOCIAL_VAULT_MASTER_KEY`).
+ * @param masterKeyName - The env var name to name in the error message, so
+ * each vault's error stays actionable (e.g. `'HOSPEDA_AI_VAULT_MASTER_KEY'`).
  * @returns The 32-byte key buffer.
  * @throws {Error} When `masterKey` is not configured.
  */
-function deriveKey(masterKey: string | undefined): Buffer {
+function deriveKey(masterKey: string | undefined, masterKeyName: string): Buffer {
     if (masterKey === undefined || masterKey.length === 0) {
         throw new Error(
-            'Vault master key is not set. The credential vault cannot encrypt or ' +
-                'decrypt without it. Generate one with: openssl rand -base64 32'
+            `${masterKeyName} is not set. The credential vault cannot encrypt or decrypt without it. Generate one with: openssl rand -base64 32`
         );
     }
     // sha256 always yields exactly 32 bytes — the AES-256 key length.
@@ -66,22 +67,28 @@ function deriveKey(masterKey: string | undefined): Buffer {
 /**
  * Encrypts a plaintext secret with AES-256-GCM using a fresh random IV.
  *
- * @param input - The plaintext to encrypt and the master key to derive from.
+ * @param input - The plaintext to encrypt, the master key to derive from,
+ * and its env var name (for the "not set" error message).
  * @returns The base64-encoded {@link EncryptedSecret} (ciphertext + iv + authTag).
  * @throws {Error} When the master key is not configured.
  *
  * @example
  * ```ts
- * const enc = encryptSecret({ plaintext: 'sk-provider-api-key', masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY });
+ * const enc = encryptSecret({
+ *     plaintext: 'sk-provider-api-key',
+ *     masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY,
+ *     masterKeyName: 'HOSPEDA_AI_VAULT_MASTER_KEY'
+ * });
  * // → { ciphertext: '...', iv: '...', authTag: '...' } (all base64)
  * ```
  */
 export function encryptSecret(input: {
     readonly plaintext: string;
     readonly masterKey: string | undefined;
+    readonly masterKeyName: string;
 }): EncryptedSecret {
-    const { plaintext, masterKey } = input;
-    const key = deriveKey(masterKey);
+    const { plaintext, masterKey, masterKeyName } = input;
+    const key = deriveKey(masterKey, masterKeyName);
     const iv = randomBytes(IV_BYTES);
 
     // authTagLength is explicit so a future algorithm/default change can never
@@ -103,22 +110,30 @@ export function encryptSecret(input: {
  * The GCM auth tag is verified on `final()`: any tampering with the ciphertext,
  * iv, or auth tag throws instead of returning corrupted plaintext.
  *
- * @param input - The base64-encoded ciphertext + iv + authTag, and the master
- * key to derive from (must match the key used to encrypt).
+ * @param input - The base64-encoded ciphertext + iv + authTag, the master
+ * key to derive from (must match the key used to encrypt), and its env var
+ * name (for the "not set" error message).
  * @returns The decrypted plaintext.
  * @throws {Error} When the master key is not configured, or when authentication
  *   fails (tampered ciphertext/iv/authTag, or wrong key).
  *
  * @example
  * ```ts
- * const { plaintext } = decryptSecret({ ...enc, masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY });
+ * const { plaintext } = decryptSecret({
+ *     ...enc,
+ *     masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY,
+ *     masterKeyName: 'HOSPEDA_AI_VAULT_MASTER_KEY'
+ * });
  * ```
  */
 export function decryptSecret(
-    input: EncryptedSecret & { readonly masterKey: string | undefined }
+    input: EncryptedSecret & {
+        readonly masterKey: string | undefined;
+        readonly masterKeyName: string;
+    }
 ): { readonly plaintext: string } {
-    const { ciphertext, iv, authTag, masterKey } = input;
-    const key = deriveKey(masterKey);
+    const { ciphertext, iv, authTag, masterKey, masterKeyName } = input;
+    const key = deriveKey(masterKey, masterKeyName);
 
     // Explicit authTagLength rejects truncated auth tags outright instead of
     // accepting any tag length the attacker supplies (semgrep gcm-no-tag-length).

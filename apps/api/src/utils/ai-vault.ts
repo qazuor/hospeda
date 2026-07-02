@@ -39,7 +39,8 @@ export type { EncryptedSecret } from './secret-vault-crypto.js';
 export function encryptSecret(input: { readonly plaintext: string }): EncryptedSecret {
     return encryptSecretShared({
         plaintext: input.plaintext,
-        masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY
+        masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY,
+        masterKeyName: 'HOSPEDA_AI_VAULT_MASTER_KEY'
     });
 }
 
@@ -65,6 +66,7 @@ export function decryptSecret(input: EncryptedSecret): { readonly plaintext: str
         ciphertext: input.ciphertext,
         iv: input.iv,
         authTag: input.authTag,
-        masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY
+        masterKey: env.HOSPEDA_AI_VAULT_MASTER_KEY,
+        masterKeyName: 'HOSPEDA_AI_VAULT_MASTER_KEY'
     });
 }
