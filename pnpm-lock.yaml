@@ -438,8 +438,8 @@ importers:
         specifier: ^1.2.2
         version: 1.2.2(hono@4.12.25)(zod@4.3.6)
       '@linear/sdk':
-        specifier: ^75.0.0
-        version: 75.0.0(graphql@16.14.2)
+        specifier: ^87.0.0
+        version: 87.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
         specifier: ^1.12.0
         version: 1.12.0
@@ -676,28 +676,6 @@ importers:
         version: 4.22.4
       typescript:
         specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@26.0.1)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@26.0.1)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
-
-  apps/landing:
-    dependencies:
-      astro:
-        specifier: ^6.4.6
-        version: 6.4.7(@netlify/blobs@9.1.2)(@types/node@26.0.1)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.1)(jiti@2.6.1)(rollup@4.62.0)(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
-    devDependencies:
-      '@astrojs/check':
-        specifier: ^0.9.4
-        version: 0.9.9(prettier@3.9.4)(typescript@5.9.3)
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      sharp:
-        specifier: ^0.34.5
-        version: 0.34.5
-      typescript:
-        specifier: 5.9.3
         version: 5.9.3
       vitest:
         specifier: 3.2.6
@@ -3427,8 +3405,8 @@ packages:
   '@lhci/utils@0.15.1':
     resolution: {integrity: sha512-WclJnUQJeOMY271JSuaOjCv/aA0pgvuHZS29NFNdIeI14id8eiFsjith85EGKYhljgoQhJ2SiW4PsVfFiakNNw==}
 
-  '@linear/sdk@75.0.0':
-    resolution: {integrity: sha512-gf/xmbiWc4cLHjoeOGCNVTglpy+M+ENHpP3bvU57wxD17s7j8zJGXp4wOStnRcQYR0FT+n/76fPp+XR3ZtEjDw==}
+  '@linear/sdk@87.0.0':
+    resolution: {integrity: sha512-hYJhmhDIuhu7tyca1T9xZ5y0sf6EiCnFYbdGX3I5kylkGGMrrVszasoIfrkopwBCuJjolFnnVVwqqzCbURVftA==}
     engines: {node: '>=18.x'}
 
   '@mapbox/node-pre-gyp@2.0.3':
@@ -9143,6 +9121,10 @@ packages:
     resolution: {integrity: sha512-YeLUMlvR4Ou1B119LIaM0r65JvbOBooJDc9yEu0dClb/uSC5P4FrLU8OCCz/HXWvtPoIrR0dRzABTjo1sTN9Bw==}
     hasBin: true
 
+  js-yaml@5.2.1:
+    resolution: {integrity: sha512-zfLtNfQqxVqq3uaTqSkh4x4hZw3KHobGUA0fJUj4wawW8bsQLTVqpHdXSIzidh7o+4lEW36tANuAGdaFx6Zgnw==}
+    hasBin: true
+
   jsc-safe-url@0.2.4:
     resolution: {integrity: sha512-0wM3YBWtYePOjfyXQH5MWQ8H7sdk5EXSwZvmSLKk2RboVQ2Bu239jycHDz5J/8Blf3K0Qnoy2b6xD+z10MFB+Q==}
 
@@ -14737,7 +14719,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@linear/sdk@75.0.0(graphql@16.14.2)':
+  '@linear/sdk@87.0.0(graphql@16.14.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
     transitivePeerDependencies:
@@ -21199,6 +21181,11 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  js-yaml@5.2.1:
+    dependencies:
+      argparse: 2.0.1
+    optional: true
+
   jsc-safe-url@0.2.4: {}
 
   jsdom@26.0.0:
@@ -25369,7 +25356,7 @@ snapshots:
       '@oozcitak/dom': 2.0.2
       '@oozcitak/infra': 2.0.2
       '@oozcitak/util': 10.0.0
-      js-yaml: 5.2.0
+      js-yaml: 5.2.1
     optional: true
 
   xmlbuilder@11.0.1: {}
