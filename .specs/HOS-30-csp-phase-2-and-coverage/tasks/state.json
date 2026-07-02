@@ -804,14 +804,15 @@
             "id": "T-021",
             "title": "Deploy Phase 2 enforce to staging and monitor 48-hour soak period",
             "description": "After T-020 is deployed to staging: monitor for 48 hours. Check: (1) Sentry for new CSP block events that were not in Report-Only data; (2) any user reports of broken UX (auth, checkout, owner forms); (3) Sentry violation count stays at or near zero (excluding GAP-046-10 eval probe). If violations appear: document them and revert T-020 immediately (rollback = one-line revert + redeploy). If clean after 48h: document the soak pass. Acceptance criterion 2.D: header flipped + 48h clean soak.",
-            "status": "pending",
+            "status": "in_progress",
+            "note": "2026-07-02: hospeda-web-staging redeployed by the user. Verified live via curl: SSR routes (/es/, /es/alojamientos/) correctly emit 'content-security-policy' (no -report-only). 48h soak clock starts now (2026-07-02 ~20:40 UTC), ends ~2026-07-04 ~20:40 UTC. Separate finding while spot-checking prerendered routes as part of this verification: all 15 SSG routes ship ZERO CSP header at all (pre-existing bug, not caused by T-020 -- see HOS-74). Does not block this soak, which covers the SSR routes that were actually crawled in T-002/T-016 and are correctly enforcing.",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": ["T-022", "T-028"],
             "subtasks": [
                 {
                     "title": "Confirm staging deploy is live with enforce header",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Monitor Sentry CSP block events at 4h, 12h, 24h, 48h",
@@ -835,7 +836,7 @@
             },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
+                "started": "2026-07-02T20:40:00.000Z",
                 "completed": null
             }
         },
