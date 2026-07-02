@@ -1091,34 +1091,46 @@
         {
             "id": "T-028",
             "title": "Tests — owner self-service toggle gate (T-019/T-020)",
-            "description": "G-6 verification. API-level tests for the new `PATCH /api/v1/protected/accommodations/:id/featured-toggle` route (T-019): owner without any active FEATURED_LISTING entitlement gets 403; owner with an active plan-derived entitlement succeeds; owner with only an addon-derived entitlement (scoped to that specific accommodation) succeeds; owner attempting to toggle a DIFFERENT owner's accommodation gets 403/ownership-denied regardless of entitlement state. If apps/web has component/interaction test conventions for the editor (check apps/web's existing test setup), add a light component test for T-020's toggle visibility gating; otherwise document that web UI coverage is manual/e2e per this spec's smoke-checklist convention if one applies, or skip with a clear note if apps/web has no component test harness for Astro islands of this kind.\n\nKey files:\n- apps/api/test/routes/accommodation/protected/featured-toggle.test.ts (new)\n- apps/web test suite (if applicable, per existing web test conventions)\n\nAcceptance criteria: all 4 API-level cases pass.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run apps/api/test/routes/accommodation/protected/featured-toggle.test.ts`.",
-            "status": "pending",
+            "description": "G-6 verification. API-level tests for the new `PATCH /api/v1/protected/accommodations/:id/featured-toggle` route (T-019): owner without any active FEATURED_LISTING entitlement gets 403; owner with an active plan-derived entitlement succeeds; owner with only an addon-derived entitlement (scoped to that specific accommodation) succeeds; owner attempting to toggle a DIFFERENT owner's accommodation gets 403/ownership-denied regardless of entitlement state. If apps/web has component/interaction test conventions for the editor (check apps/web's existing test setup), add a light component test for T-020's toggle visibility gating; otherwise document that web UI coverage is manual/e2e per this spec's smoke-checklist convention if one applies, or skip with a clear note if apps/web has no component test harness for Astro islands of this kind.\n\nKey files:\n- packages/service-core/test/services/accommodation/accommodation.featured-toggle.test.ts (new — the 4 gating scenarios; the route has no declarative ownership config and delegates 100% of gating to this service, and the resolver it depends on is only mockable from inside packages/service-core, see file header)\n- apps/api/test/routes/accommodation/protected/featured-toggle.test.ts (new — thin route-registration smoke test only)\n- apps/web: no component/interaction test harness exists for any .client.tsx island (verified — 6 test files total, all pure-logic under lib/**/__tests__/); T-020 UI coverage stays manual/e2e, consistent with the rest of apps/web.\n\nAcceptance criteria: all 4 API-level cases pass.\n\nTesting requirements:\n- Run scoped: `pnpm vitest run packages/service-core/test/services/accommodation/accommodation.featured-toggle.test.ts apps/api/test/routes/accommodation/protected/featured-toggle.test.ts`.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "403 without entitlement", "completed": false },
-                { "title": "Success with plan-derived entitlement", "completed": false },
+                { "title": "403 without entitlement", "completed": true },
+                { "title": "Success with plan-derived entitlement", "completed": true },
                 {
                     "title": "Success with addon-derived (accommodation-scoped) entitlement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "403 on foreign accommodation regardless of entitlement",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend", "owner", "featured"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on both new files — clean"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "pnpm --filter service-core typecheck + pnpm --filter hospeda-api typecheck — both clean"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T00:00:00.000Z",
+                    "details": "accommodation.featured-toggle.test.ts 15/15 (service-level, 4 required scenarios + NOT_FOUND/ACCOMMODATION_UPDATE_ANY/GET counterpart); featured-toggle.test.ts (apps/api) 7/7 route smoke (registration + 401/400 mapping)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T00:00:00.000Z",
+                "completed": "2026-07-02T00:00:00.000Z"
             }
         },
         {
