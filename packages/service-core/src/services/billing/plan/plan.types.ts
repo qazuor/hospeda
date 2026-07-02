@@ -94,10 +94,10 @@ export interface UpdatePlanInput {
  * not guarded.
  */
 export const UPDATE_PLAN_INPUT_MODEL_C_KEYS: Partial<Record<keyof UpdatePlanInput, ModelCField>> = {
-    name: 'metadata.displayName',
+    name: 'displayName',
     description: 'description',
-    monthlyPriceArs: 'metadata.monthlyPriceArs',
-    annualPriceArs: 'metadata.annualPriceArs',
+    monthlyPriceArs: 'monthlyPriceArs',
+    annualPriceArs: 'annualPriceArs',
     hasTrial: 'metadata.hasTrial',
     trialDays: 'metadata.trialDays',
     sortOrder: 'metadata.sortOrder',

@@ -598,6 +598,14 @@ export async function updatePlan(
                 planUpdateData.entitlements = input.entitlements as string[];
             if (input.limits !== undefined) planUpdateData.limits = input.limits;
             if (input.isActive !== undefined) planUpdateData.active = input.isActive;
+            // HOS-39 T-004: dual-write the typed columns alongside their
+            // metadata.* mirror above, so the typed columns (promoted in
+            // T-003) never drift from what the admin UI actually saved.
+            if (input.name !== undefined) planUpdateData.displayName = input.name;
+            if (input.monthlyPriceArs !== undefined)
+                planUpdateData.monthlyPriceArs = input.monthlyPriceArs;
+            if (input.annualPriceArs !== undefined)
+                planUpdateData.annualPriceArs = input.annualPriceArs;
 
             const [updatedPlan] = await db
                 .update(billingPlans)

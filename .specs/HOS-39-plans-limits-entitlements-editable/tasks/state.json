@@ -121,35 +121,35 @@
             "id": "T-004",
             "title": "Repoint MODEL_C_FIELD_SPLIT at new typed columns",
             "description": "In `packages/billing/src/config/model-c-field-split.ts`, replace the `'metadata.displayName'`, `'metadata.monthlyPriceArs'`, `'metadata.annualPriceArs'` keys with `'displayName'`, `'monthlyPriceArs'`, `'annualPriceArs'` (the new column names from T-003), keeping their `'commercial'` classification unchanged. Update the JSDoc comments to reference the column, not the jsonb path. This keeps the exhaustiveness guard (AC-2.3) accurate for the new schema shape.\n\nTest requirements: update `packages/billing/test/model-c-field-split.test.ts` (the existing guard test) to expect the new key names; run it to confirm it still passes against the seed's field detection.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Rename the 3 metadata.* keys to their new column names",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update JSDoc comments",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update and run the guard test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "model-c"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T19:18:53Z",
+                "completed": "2026-07-02T19:26:55Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13

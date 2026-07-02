@@ -118,15 +118,32 @@ export const MODEL_C_FIELD_SPLIT = {
      */
     limitsValues: 'commercial',
 
-    // ── Nested `billing_plans.metadata` JSONB fields ─────────────────────────
-
     /**
-     * `billing_plans.metadata.displayName` — human-readable name shown in the
-     * admin UI and public-facing plan picker.
+     * `billing_plans.display_name` — human-readable name shown in the admin
+     * UI and public-facing plan picker. Typed column (HOS-39 T-003),
+     * promoted off the `metadata.displayName` jsonb mirror.
      * COMMERCIAL: operators may update display names via the SPEC-168 admin UI
      * without a code deploy (OQ-9).
      */
-    'metadata.displayName': 'commercial',
+    displayName: 'commercial',
+
+    /**
+     * `billing_plans.monthly_price_ars` — ARS monthly price. Typed column
+     * (HOS-39 T-003), promoted off the `metadata.monthlyPriceArs` jsonb
+     * mirror (which itself mirrors `billing_prices.unitAmount`).
+     * COMMERCIAL: price is an operator/commercial decision; DB wins.
+     */
+    monthlyPriceArs: 'commercial',
+
+    /**
+     * `billing_plans.annual_price_ars` — ARS annual price. Typed column
+     * (HOS-39 T-003), promoted off the `metadata.annualPriceArs` jsonb
+     * mirror.
+     * COMMERCIAL: same rationale as `monthlyPriceArs`.
+     */
+    annualPriceArs: 'commercial',
+
+    // ── Nested `billing_plans.metadata` JSONB fields ─────────────────────────
 
     /**
      * `billing_plans.metadata.category` — plan category (`owner` | `complex`
@@ -135,20 +152,6 @@ export const MODEL_C_FIELD_SPLIT = {
      * CAPABILITY: config wins.
      */
     'metadata.category': 'capability',
-
-    /**
-     * `billing_plans.metadata.monthlyPriceArs` — ARS monthly price snapshot
-     * in metadata (mirrored from `billing_prices.unitAmount`).
-     * COMMERCIAL: price is an operator/commercial decision; DB wins.
-     */
-    'metadata.monthlyPriceArs': 'commercial',
-
-    /**
-     * `billing_plans.metadata.annualPriceArs` — ARS annual price snapshot
-     * in metadata.
-     * COMMERCIAL: same rationale as `metadata.monthlyPriceArs`.
-     */
-    'metadata.annualPriceArs': 'commercial',
 
     /**
      * `billing_plans.metadata.isDefault` — whether this is the default plan

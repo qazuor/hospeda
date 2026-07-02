@@ -891,6 +891,52 @@ describe('plan.crud', () => {
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
         });
 
+        it('HOS-39 T-004: dual-writes displayName/monthlyPriceArs/annualPriceArs to the typed columns', async () => {
+            // Arrange
+            const existingPlan = makePlanRow();
+            const updatedPlan = makePlanRow();
+            const existingMonthlyPrice = makePriceRow({ id: 'price-monthly-1' });
+            const existingAnnualPrice = makePriceRow({
+                id: 'price-annual-1',
+                billingInterval: 'year'
+            });
+            const priceRow = makePriceRow();
+            let updatedDb: ReturnType<typeof buildMockDb> | undefined;
+
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    updatedDb = buildMockDb(
+                        [
+                            [existingPlan], // getPlanByIdInternal
+                            [existingMonthlyPrice], // monthly price lookup
+                            [existingAnnualPrice], // annual price lookup
+                            [priceRow] // final price fetch
+                        ],
+                        [],
+                        [[updatedPlan], [], []] // plan update / monthly update / annual update
+                    );
+                    return fn(updatedDb);
+                }
+            );
+
+            // Act
+            await updatePlan('plan-uuid-1', {
+                name: 'New Display Name',
+                monthlyPriceArs: 700000,
+                annualPriceArs: 7000000
+            });
+
+            // Assert — the FIRST update() call is the billingPlans row update
+            const planUpdateChain = updatedDb?.update.mock.results[0]?.value;
+            expect(planUpdateChain?.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    displayName: 'New Display Name',
+                    monthlyPriceArs: 700000,
+                    annualPriceArs: 7000000
+                })
+            );
+        });
+
         // All fields UpdatePlanInput currently maps to are commercial-layer
         // (post T-024), so there is no REAL capability field left to trigger the
         // guard through today's classification. These two tests simulate a
