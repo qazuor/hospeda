@@ -15,6 +15,12 @@ areas:
 > Migrated from `.qtm/specs/SPEC-152-plans-limits-entitlements-editable/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-39.
 >
 > **Status**: Q1-Q8 RESOLVED (2026-07-02) — see decisions inline in section 4. Ready for task breakdown.
+>
+> **⚠ MAJOR DRIFT FOUND (2026-07-02, spec-realign)**: this spec's "Origin" (section 1) and
+> "Current state" (section 2) describe the codebase as of 2026-05-21. Since then, SPEC-168,
+> SPEC-192, and SPEC-211 shipped and already implemented most of what this spec asked for — see
+> Revision History at the bottom of this document before trusting sections 1-2 or the original
+> 9-phase plan in section 6. 13 of the original 23 generated tasks were cancelled as already-done.
 
 ## 1. Origin
 
@@ -286,3 +292,9 @@ Q1-Q8 answered 2026-07-02 (worktree + branch already cut for HOS-39). Next:
 - Begin Phase 1 implementation (schema migration)
 
 Final decisions: Q0=A (respect Model C as-is, narrow scope), Q1=yes-narrowed (commercial fields only: description/active/displayName/monthlyPriceArs/annualPriceArs), Q2=A, Q3=B-out-of-scope (entitlements stay config-only per Q0), Q4=A, Q5=C, Q6=B, Q7=no API plan-cache layer, Q8=A-narrowed (promote only displayName/monthlyPriceArs/annualPriceArs; sortOrder/trial config stay in metadata jsonb, config-only).
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-07-02 | spec-realign | **Bucket A (already done, tasks cancelled)**: `apps/api/src/routes/billing/admin/plans.ts` and `.../public/listPlans.ts` are fully DB-backed via `PlanService` (no `ALL_PLANS`) — T-010/T-011 cancelled. `apps/web/.../suscriptores/planes/index.astro` and `.../turistas/index.astro` are already SSR (`prerender=false`) fetching `/api/v1/public/plans` at request time — T-013/T-014 cancelled. `apps/admin/src/routes/_authed/billing/plans.tsx` has zero `ALL_PLANS` refs, drives full CRUD via `apps/admin/src/features/billing-plans/components/PlanDialog.tsx` — T-012/T-015 cancelled. `PlanService` exists at `packages/service-core/src/services/billing/plan/{plan.service,plan.crud,plan.types,plan.audit}.ts` — T-006 cancelled. `plan.crud.ts`'s `updatePlan()` already does atomic `billing_plans` + `billing_prices` writes — T-007 cancelled. `UpdatePlanInput` (`plan.types.ts:56-79`) already accepts `entitlements`, `limits`, `sortOrder`, `hasTrial`, `trialDays` as editable fields, all wired through `PlanDialog.tsx` — T-008/T-016 cancelled. `addon.checkout.ts` and `addon-entitlement.service.ts` already resolve via `PlanService.getById` (SPEC-192 T-025), not `ALL_PLANS` — T-009 cancelled. Every `PlanService` mutation already calls `getRevalidationService().revalidatePaths()` (SPEC-168 T-017) — T-017 cancelled. `apps/api/src/index.ts`'s revalidation-service init is at line 263, not 84 as originally cited. T-018 also cancelled (TanStack Query invalidation is part of the same already-shipped admin UI). **Bucket C (still valid)**: T-001-T-005 (typed-column migration for `displayName`/`monthlyPriceArs`/`annualPriceArs`) — these 3 fields are confirmed still stored in `metadata` jsonb, not typed columns. **Bucket D (new, not covered by any task — DECISION PENDING)**: a LIVE BUG was found — `MODEL_C_FIELD_SPLIT` classifies `entitlements`/`sortOrder`/`hasTrial`/`trialDays` as `'capability'` (config wins, seed silently reverts), but `PlanDialog.tsx`/`PlanService.update()` already let admins edit those exact fields today — any such edit is silently undone by the next `db:apply-extras`/seed sync. This is NOT hypothetical (unlike the original Q0 framing assumed) — it is an active correctness bug in production. Also found: `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`, `apps/api/src/routes/webhooks/mercadopago/payment-logic.ts`, and `apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts` still reference `ALL_PLANS` and were never covered by section 2 or any task — scope of T-023's audit expanded to include them. T-019/T-020/T-021 (integration tests) had their descriptions revised: they must verify EXISTING shipped behavior, not assume they're testing new code. | 13/23 tasks cancelled (already shipped); 10/23 remain pending; awaiting owner decision on the live Model-C bug before continuing |
