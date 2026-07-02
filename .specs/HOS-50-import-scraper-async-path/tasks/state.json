@@ -1,0 +1,578 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-50",
+    "title": "Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)",
+    "created": "2026-07-02T09:20:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add async import Zod schemas",
+            "description": "Add three Zod schemas to accommodation-import.schema.ts: AccommodationImportAsyncStartResponseSchema {runId, datasetId, source: ImportSource, startedAt: ISO string}; AccommodationImportStatusQuerySchema (same 4 fields, since the client echoes the full 202 payload back); AccommodationImportStatusResponseSchema as a discriminated union on `settled` — settled:false, or settled:true with either draft-shaped fields (reuse AccommodationImportResponseSchema) or failureCode. Export inferred types.\n\nTest requirements: unit tests in packages/schemas covering valid/invalid parse cases for each schema (missing fields, wrong enum value, malformed ISO date, both settled:true variants).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-006", "T-010", "T-011", "T-012", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Define AccommodationImportAsyncStartResponseSchema",
+                    "completed": false
+                },
+                { "title": "Define AccommodationImportStatusQuerySchema", "completed": false },
+                {
+                    "title": "Define AccommodationImportStatusResponseSchema (discriminated union)",
+                    "completed": false
+                },
+                { "title": "Export inferred TS types", "completed": false },
+                { "title": "Write schema unit tests", "completed": false }
+            ],
+            "tags": ["schemas", "accommodation-import"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add ApifyRunStatus to ImportFailureCode mapping helper",
+            "description": "Create mapApifyRunStatusToFailureCode(status: ApifyRunStatus): ImportFailureCode | null in a new file packages/service-core/src/services/accommodation-import/adapters/apify-run-status-mapping.ts. Map TIMED-OUT -> 'timeout', FAILED -> 'provider_error', ABORTED -> 'provider_error'; return null for READY/RUNNING/SUCCEEDED. Add JSDoc explaining Apify has no native 'blocked' run status, so this mapping never returns 'source_blocked' (that's only inferred from a start-time HTTP 429, handled elsewhere).\n\nTest requirements: unit tests, one case per ApifyRunStatus value (6 total), asserting the exact mapping.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Implement mapApifyRunStatusToFailureCode", "completed": false },
+                {
+                    "title": "Add JSDoc documenting the no-native-blocked-signal limitation",
+                    "completed": false
+                },
+                { "title": "Write unit tests for all 6 ApifyRunStatus values", "completed": false }
+            ],
+            "tags": ["service-core", "mapping", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extend ImportSourceAdapter interface for async mode",
+            "description": "Extend the ImportSourceAdapter interface (or add a sibling type) in adapter.types.ts with an optional extractAsync?(input): Promise<{runId: string; datasetId: string} | {failureCode: ImportFailureCode}> method, used only by adapters that support the async path (Airbnb, Booking). Keep the existing extract() untouched for all adapters. Add a type guard supportsAsyncExtraction(adapter) for the orchestrator/route to check.\n\nTest requirements: unit tests exercising the type guard against a mock sync-only adapter and a mock async-capable adapter, verifying it narrows correctly.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Add extractAsync? to ImportSourceAdapter interface",
+                    "completed": false
+                },
+                { "title": "Add supportsAsyncExtraction type guard", "completed": false },
+                { "title": "Write unit tests for the type guard", "completed": false }
+            ],
+            "tags": ["service-core", "types", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create startApifyRun retry wrapper for R1",
+            "description": "Add startApifyRunWithRetry(input: StartApifyRunInput): Promise<StartApifyRunResult | null> in a new file adapters/start-apify-run-with-retry.ts, wrapping SPEC-250's startApifyRun with the same retry shape as with-retry.ts (maxRetries=2, jittered backoff, baseDelayMs=500) adapted to startApifyRun's null-on-failure contract: retry when the result is null, give up after 3 total attempts and return null. Do not modify with-retry.ts (it stays scoped to the sync path).\n\nTest requirements: unit tests — succeeds on first try, succeeds after 1-2 nulls, gives up after 3 nulls, asserts backoff delay is jittered and increasing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Implement startApifyRunWithRetry with 3-attempt jittered backoff",
+                    "completed": false
+                },
+                { "title": "Retry only on null result (transient failure)", "completed": false },
+                {
+                    "title": "Write unit tests for success-first-try and retry-then-succeed",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test for exhausted-retries and backoff jitter",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "retry", "apify", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement resolveImportRunStatus running/succeeded branches",
+            "description": "Implement resolveImportRunStatus({token, runId, datasetId, source}) in a new file adapters/resolve-import-run-status.ts: calls getApifyRunStatus; READY/RUNNING -> {settled: false}; SUCCEEDED -> call getApifyDatasetItems, map the first item to RawExtraction using the same per-source item mapper the sync path already uses, return {settled: true, raw}. Empty dataset -> {settled: true, failureCode: 'nothing_found'}. getApifyRunStatus returning null (unreachable) -> {settled: true, failureCode: 'provider_error'}.\n\nTest requirements: unit tests for running->not-settled, succeeded-with-items->raw, succeeded-empty->nothing_found, status-null->provider_error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Implement running/not-settled branch", "completed": false },
+                {
+                    "title": "Implement succeeded+items -> RawExtraction branch",
+                    "completed": false
+                },
+                {
+                    "title": "Implement succeeded+empty -> nothing_found branch",
+                    "completed": false
+                },
+                {
+                    "title": "Implement unreachable(null) -> provider_error branch",
+                    "completed": false
+                },
+                { "title": "Write unit tests for all 4 branches", "completed": false }
+            ],
+            "tags": ["service-core", "apify", "import", "polling"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Extend resolveImportRunStatus with terminal-failure branch and R2 fallback",
+            "description": "Extend resolve-import-run-status.ts to handle FAILED/TIMED-OUT/ABORTED: map via mapApifyRunStatusToFailureCode (T-002). If the code is 'source_blocked' or 'provider_error' AND source is airbnb/booking, call the existing _runFallbackGenericExtract orchestrator step verbatim; accept the fallback only if it yields name/summary/imageUrls (same rule as sync R2), returning {settled: true, raw} on success or {settled: true, failureCode} otherwise. For 'timeout', skip fallback entirely.\n\nTest requirements: unit tests for FAILED->fallback-succeeds, FAILED->fallback-insufficient, TIMED-OUT->timeout-no-fallback-attempted, ABORTED->fallback.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002", "T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Map terminal failure statuses via T-002's helper", "completed": false },
+                {
+                    "title": "Trigger R2 fallback on source_blocked/provider_error for airbnb/booking",
+                    "completed": false
+                },
+                { "title": "Apply existing fallback-acceptance rule", "completed": false },
+                { "title": "Skip fallback for 'timeout'", "completed": false },
+                { "title": "Write unit tests for all 4 terminal scenarios", "completed": false }
+            ],
+            "tags": ["service-core", "apify", "import", "fallback"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add async extraction mode to Airbnb adapter",
+            "description": "Implement AirbnbAdapter.extractAsync() (from T-003's interface): same credential checks as the existing extract() (missing apifyToken/apifyAirbnbActor -> {failureCode: 'credentials_missing'}), then call startApifyRunWithRetry (T-004) with the same actor input the sync path builds today; success -> {runId, datasetId}; retry-exhaustion (null) -> {failureCode: 'provider_error'}. The existing extract() is untouched.\n\nTest requirements: unit tests for missing-credentials->credentials_missing, success->run-handle, retry-exhausted->provider_error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Implement extractAsync() with existing credential checks",
+                    "completed": false
+                },
+                {
+                    "title": "Call startApifyRunWithRetry with the existing actor input builder",
+                    "completed": false
+                },
+                { "title": "Map retry-exhaustion to provider_error", "completed": false },
+                { "title": "Write unit tests for the 3 outcomes", "completed": false }
+            ],
+            "tags": ["service-core", "airbnb", "adapter", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add async extraction mode to Booking adapter",
+            "description": "Implement BookingAdapter.extractAsync(): reuse the existing free JSON-LD-first logic unchanged; only when JSON-LD is sparse/blocked (the same condition that today triggers the sync Apify fallback), call startApifyRunWithRetry (T-004) instead of runApifyActor and return {runId, datasetId} or {failureCode}. When JSON-LD alone is sufficient, extractAsync must not be used — the orchestrator (T-010) calls the existing sync extract() in that case. Document this precondition in JSDoc.\n\nTest requirements: unit tests for JSON-LD-sparse->async-start-success, JSON-LD-sparse+missing-credentials, JSON-LD-sparse+retry-exhausted.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Implement extractAsync() reusing existing JSON-LD-sparse detection",
+                    "completed": false
+                },
+                {
+                    "title": "Call startApifyRunWithRetry only on the Apify-fallback branch",
+                    "completed": false
+                },
+                {
+                    "title": "Document the 'only call when async is needed' precondition",
+                    "completed": false
+                },
+                { "title": "Write unit tests for the 3 outcomes", "completed": false }
+            ],
+            "tags": ["service-core", "booking", "adapter", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Extract finalizeImportDraft reusable post-extraction pipeline",
+            "description": "Refactor the existing inline post-raw-extraction steps (mapRawToDraft, amenity resolution, destination hint, media hints — currently steps 4+ of importFromUrl) in accommodation-import.service.ts into an exported finalizeImportDraft(raw: RawExtraction, ctx): AccommodationImportResponse-shaped result, with no behavior change for the existing synchronous flow. Lets the async status route (T-011) reuse identical draft-building logic instead of duplicating it.\n\nTest requirements: the full existing importFromUrl test suite must pass unchanged (regression); add direct unit tests calling finalizeImportDraft in isolation with a fixed RawExtraction fixture.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Extract steps 4+ into exported finalizeImportDraft function",
+                    "completed": false
+                },
+                {
+                    "title": "Call it from the existing sync importFromUrl flow unchanged",
+                    "completed": false
+                },
+                {
+                    "title": "Run full existing test suite to confirm no regression",
+                    "completed": false
+                },
+                {
+                    "title": "Write direct unit tests for finalizeImportDraft in isolation",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "refactor", "import"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Modify import-from-url route to dispatch 202 for async sources",
+            "description": "After the orchestrator resolves the matching adapter, branch: if it's Airbnb, or Booking on its Apify-fallback condition, call extractAsync() (T-007/T-008) instead of extract(); on a run-handle result, respond ctx.json({runId, datasetId, source, startedAt}, 202), bypassing the route factory's 200/201 typing (same bypass as accommodation-external-reputation/protected/refresh.ts); on a failureCode result, fall through to the existing synchronous failure response unchanged. All other sources keep returning 200 exactly as today.\n\nTest requirements: fast source stays 200 (regression), Airbnb-with-creds returns 202 with expected shape, Airbnb-missing-creds still returns 200 sync-failure, Booking-JSON-LD-sufficient stays 200.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-007", "T-008"],
+            "blocks": ["T-013", "T-015", "T-016", "T-017", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Branch to extractAsync() for Airbnb / Booking-Apify-fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Return 202 with run handle via the ctx.json bypass pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve existing 200 flow for all other sources/branches",
+                    "completed": false
+                },
+                { "title": "Write route tests for the 4 scenarios", "completed": false }
+            ],
+            "tags": ["api", "route", "import", "async"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create GET import-from-url status polling route",
+            "description": "New GET route (modeled on reputation-status.ts) validating query params via T-001's status-query schema. If now - startedAt exceeds the existing apifyTimeoutMs config, short-circuit to {settled: true, failureCode: 'timeout'} without calling Apify again. Otherwise call resolveImportRunStatus (T-005/T-006); on {settled:true, raw}, pass raw through finalizeImportDraft (T-009); on {settled:true, failureCode}, return it directly; on {settled:false}, return as-is. Register the route in the accommodation route index.\n\nTest requirements: route tests for running->not-settled, succeeded->draft-shaped-response, failure->failureCode, ceiling-exceeded->timeout with no Apify call made (assert mock not invoked).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-006", "T-009"],
+            "blocks": ["T-013", "T-015", "T-016", "T-019"],
+            "subtasks": [
+                { "title": "Add the new GET route and register it", "completed": false },
+                {
+                    "title": "Enforce the apifyTimeoutMs poll ceiling before calling Apify",
+                    "completed": false
+                },
+                {
+                    "title": "Call resolveImportRunStatus and finalizeImportDraft on success",
+                    "completed": false
+                },
+                { "title": "Write route tests for the 4 scenarios", "completed": false }
+            ],
+            "tags": ["api", "route", "import", "async", "polling"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Build web import-status polling hook",
+            "description": "Adapt use-reputation-status.ts's hand-rolled setInterval pattern into useImportStatus({runId, datasetId, source, startedAt, enabled}) in a new file apps/web/src/hooks/use-import-status.ts: polls the status route every 5s while enabled and not settled, exposes {data, isPolling, error}; stops on settle, unmount, or a hard 4xx/5xx (transient network errors are swallowed and retried silently, same as the reputation hook).\n\nTest requirements: use-import-status.test.ts — polling starts when enabled, stops on settle, stops on unmount (no state update after unmount), halts on hard error; use fake timers to assert the 5s interval.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Implement useImportStatus adapting the use-reputation-status.ts pattern",
+                    "completed": false
+                },
+                { "title": "Stop polling on settle/unmount/hard-error", "completed": false },
+                {
+                    "title": "Swallow and retry transient network errors silently",
+                    "completed": false
+                },
+                {
+                    "title": "Write hook tests (fake timers) for all 4 stop conditions",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "hook", "polling", "import"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Wire ImportFromUrl.client.tsx to the async polling flow",
+            "description": "When importFromUrl responds 202, switch to polling mode via useImportStatus (T-012) instead of resolving immediately; keep the existing 'Importando...' spinner button state active throughout polling. On settle: success calls onImported?.() exactly as today; failure renders the existing i18n error-banner keyed by failureCode, unchanged. 200 responses (unchanged sources) behave identically to today.\n\nTest requirements: component tests — 200-response path unchanged (regression), 202->poll->settle-success calls onImported, 202->poll->settle-failure shows the error banner, unmount/cancel mid-poll doesn't update state after unmount.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-012"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Detect 202 response and switch to polling mode via useImportStatus",
+                    "completed": false
+                },
+                { "title": "Keep spinner active during polling", "completed": false },
+                {
+                    "title": "Handle settle-success (onImported) and settle-failure (error banner)",
+                    "completed": false
+                },
+                { "title": "Write component tests for the 4 scenarios", "completed": false }
+            ],
+            "tags": ["web", "component", "import", "async"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Build admin import-status query hook",
+            "description": "Add a TanStack Query hook in a new file apps/admin/src/features/accommodations/hooks/useAccommodationImportStatusQuery.ts, modeled on useCronJobsQuery's refetchInterval pattern: useQuery keyed by {runId, datasetId, source}, enabled only when a run handle is present, refetchInterval: (query) => query.state.data?.settled ? false : 5000.\n\nTest requirements: hook tests — query is disabled without a run handle, refetchInterval keeps polling while unsettled, refetchInterval returns false once settled (mirrors useCronJobsQuery test patterns).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Implement useAccommodationImportStatusQuery with conditional refetchInterval",
+                    "completed": false
+                },
+                { "title": "Gate the query on presence of a run handle", "completed": false },
+                {
+                    "title": "Write hook tests for enabled/disabled and interval-stop-on-settle",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "hook", "tanstack-query", "polling", "import"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Wire ImportFromUrlSection.tsx to the async polling flow",
+            "description": "On a 202 mutation response, store the run handle and switch to T-014's status query instead of resolving the mutation immediately; keep the existing LoaderIcon spin active during polling. Defer the existing setFieldValue prefill logic until the status query reports settled:true with a draft; unchanged failureCode error-banner path on settled failure. 200 responses behave exactly as today.\n\nTest requirements: component tests — 200-response path unchanged (regression), 202->poll->settle-success prefills the form fields, 202->poll->settle-failure shows the error banner, mutation.isPending vs polling-in-progress are visually distinguished.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-014"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Detect 202 response and switch to the status-query polling flow",
+                    "completed": false
+                },
+                { "title": "Keep loader spin active during polling", "completed": false },
+                {
+                    "title": "Defer field prefill until settled:true with a draft",
+                    "completed": false
+                },
+                { "title": "Write component tests for the 4 scenarios", "completed": false }
+            ],
+            "tags": ["admin", "component", "import", "async"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write integration tests for the full async 202+poll route contract",
+            "description": "New test file (matching the existing test-dir convention) with end-to-end route-level tests mocking the Apify HTTP layer (not resolveImportRunStatus internals): Airbnb start->poll-running->poll-succeeded happy path returning a draft; Booking JSON-LD-sparse->async->succeeded; poll-ceiling-exceeded returns failureCode 'timeout' without a further Apify call; FAILED->provider_error->R2-fallback-success returns a draft; FAILED->provider_error->R2-fallback-insufficient surfaces the failureCode. Assert response shapes match the T-001 schemas exactly.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010", "T-011"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Test Airbnb start->running->succeeded happy path", "completed": false },
+                { "title": "Test Booking JSON-LD-sparse->async->succeeded", "completed": false },
+                {
+                    "title": "Test poll-ceiling-exceeded->timeout with no further Apify call",
+                    "completed": false
+                },
+                {
+                    "title": "Test FAILED->fallback-success and FAILED->fallback-insufficient",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "integration", "import", "async"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Write regression tests for the unchanged synchronous contract",
+            "description": "Add or verify test cases confirming Google Places / MercadoLibre / Generic sources, and Booking's JSON-LD-sufficient branch, still return 200 with the exact response shape they had before this feature — no 202, no polling, no behavior change. Run against the modified route (T-010) to catch any accidental regression in the dispatch branching.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add/verify 200-response regression tests for Google Places, MercadoLibre, Generic",
+                    "completed": false
+                },
+                {
+                    "title": "Add/verify 200-response regression test for Booking JSON-LD-sufficient",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "regression", "import"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Run cross-cutting client polling UX regression pass",
+            "description": "Run the full web + admin test suites scoped to ImportFromUrl / ImportFromUrlSection and their new hooks (T-012/T-013/T-014/T-015), confirm no flakiness from fake-timer usage in the polling tests, and fix any coverage gaps surfaced (e.g. a missed unmount-cleanup case). Verification/hardening task — only touch files if a real gap is found.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run full web test suite for the import polling feature, review for flakiness",
+                    "completed": false
+                },
+                {
+                    "title": "Run full admin test suite for the import polling feature, review for flakiness",
+                    "completed": false
+                },
+                { "title": "Fix any coverage gaps found", "completed": false }
+            ],
+            "tags": ["testing", "web", "admin", "import", "polling"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Document the new async import contract",
+            "description": "Document the 202+poll contract shape (start response, status response, poll interval, apifyTimeoutMs ceiling) in apps/api/docs/route-architecture.md or a new short doc under docs/guides/, and explicitly call out that the async path triggers the R2 Generic fallback on both 'source_blocked' and 'provider_error' (diverging from the sync path's source_blocked-only trigger, since Apify's run status has no native 'blocked' signal) — so a future reader doesn't 'fix' this back. Add JSDoc to resolveImportRunStatus, finalizeImportDraft, and the status route handler.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document the 202+poll contract shape and poll ceiling",
+                    "completed": false
+                },
+                {
+                    "title": "Document the source_blocked/provider_error R2-fallback divergence rationale",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc to resolveImportRunStatus, finalizeImportDraft, and the status route handler",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "import", "async"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T09:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 19,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}
