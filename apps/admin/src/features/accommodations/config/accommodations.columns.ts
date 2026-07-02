@@ -3,6 +3,7 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { InlineVerifiedCell } from '@/components/entity-list/InlineVerifiedCell';
 import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import { Views30dCell } from '@/components/entity-list/Views30dCell';
@@ -231,6 +232,20 @@ export const createAccommodationsColumns = (
                     checked: Boolean(row.isFeatured),
                     permission: PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
                     useUpdateMutation: useUpdateAccommodationMutation
+                })
+        },
+        {
+            id: 'isVerified',
+            header: t('admin-entities.columns.verified'),
+            accessorKey: 'isVerified',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineVerifiedCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    checked: Boolean(row.isVerified),
+                    permission: PermissionEnum.ACCOMMODATION_VERIFY
                 })
         },
         {

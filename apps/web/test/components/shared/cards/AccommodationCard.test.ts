@@ -236,6 +236,17 @@ describe('AccommodationCard.astro', () => {
         });
     });
 
+    describe('verified badge (SPEC-291)', () => {
+        it('should conditionally render the verified badge when data.isVerified is true', () => {
+            expect(src).toContain('data.isVerified');
+            expect(src).toContain('acc-card__verified-badge');
+        });
+
+        it('should import and render CheckCircleIcon from @repo/icons', () => {
+            expect(src).toContain('CheckCircleIcon');
+        });
+    });
+
     describe('content', () => {
         it('should use font-heading for the accommodation name', () => {
             expect(src).toContain('font-heading');

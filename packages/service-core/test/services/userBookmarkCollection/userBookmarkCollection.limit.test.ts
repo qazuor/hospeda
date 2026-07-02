@@ -1,15 +1,21 @@
 /**
  * userBookmarkCollection.limit.test.ts
  *
- * Unit tests for the per-user collection quota guard implemented in
- * `UserBookmarkCollectionService._canCreate`.
+ * Unit tests for the per-user collection quota guard.
  *
- * Strategy: call the public `service.create()` (which internally invokes
- * `_canCreate`) with a mocked `UserBookmarkCollectionModel` whose
- * `countActiveByUserId` is controlled per test.
+ * SPEC-287 (2026-07-01): the quota check moved from `_canCreate` (a
+ * BaseCrudService lifecycle hook) into `createCollection()`'s own execute
+ * callback. Reason: `BaseCrudService.create()` never forwards `ctx` to
+ * `_canCreate` (see BETA-106) — `execCtx` is only reliably available inside
+ * `createCollection()`'s own `runWithLoggingAndValidation` callback. The
+ * plan-based limit is read from `ctx.hookState.planLimit` (falling back to
+ * `DEFAULT_MAX_COLLECTIONS_PER_USER` when absent), replacing the old
+ * `HOSPEDA_MAX_COLLECTIONS_PER_USER` env var.
  *
- * `getMaxCollectionsPerUser` reads `process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER`
- * at call time — vi.stubEnv() therefore takes effect without module re-import.
+ * Strategy: call the public `service.createCollection()` (the real
+ * production entry point — the only caller in apps/api) with a mocked
+ * `UserBookmarkCollectionModel` whose `countActiveByUserId` is controlled
+ * per test.
  *
  * AAA pattern is used throughout. Each test asserts ONE behaviour.
  */
@@ -55,7 +61,7 @@ function makeOwnerActor(id: string = OWNER_ID) {
 // Suite setup
 // ---------------------------------------------------------------------------
 
-describe('UserBookmarkCollectionService._canCreate — collection limit guard', () => {
+describe('UserBookmarkCollectionService.createCollection — collection limit guard', () => {
     let service: UserBookmarkCollectionService;
     let modelMock: UserBookmarkCollectionModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
@@ -74,14 +80,13 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
     });
 
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.clearAllMocks();
     });
 
     // -----------------------------------------------------------------------
-    // TC-1  Under limit: actor has 5 active collections, max = 10 → allowed
+    // TC-1  Under default fallback limit: no ctx passed, count (5) < 10 → allowed
     // -----------------------------------------------------------------------
-    it('allows creation when active collection count (5) is below default limit (10)', async () => {
+    it('allows creation when active collection count (5) is below the default fallback limit (10)', async () => {
         // Arrange
         const actor = makeOwnerActor();
         asMock(modelMock.countActiveByUserId).mockResolvedValue(5);
@@ -93,8 +98,8 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
             updatedAt: new Date()
         });
 
-        // Act
-        const result = await service.create(actor, makeCreateInput());
+        // Act — no ctx passed: planLimit is absent, falls back to default (10)
+        const result = await service.createCollection(actor, makeCreateInput());
 
         // Assert
         expect(result.error).toBeUndefined();
@@ -102,15 +107,15 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
     });
 
     // -----------------------------------------------------------------------
-    // TC-2  At limit: actor has 10 active collections, max = 10 → QUOTA_EXCEEDED
+    // TC-2  At default fallback limit: count (10) === 10 → QUOTA_EXCEEDED
     // -----------------------------------------------------------------------
-    it('rejects creation when active collection count equals the default limit (10)', async () => {
+    it('rejects creation when active collection count equals the default fallback limit (10)', async () => {
         // Arrange
         const actor = makeOwnerActor();
         asMock(modelMock.countActiveByUserId).mockResolvedValue(10);
 
         // Act
-        const result = await service.create(actor, makeCreateInput());
+        const result = await service.createCollection(actor, makeCreateInput());
 
         // Assert
         expect(result.error?.code).toBe('QUOTA_EXCEEDED');
@@ -119,15 +124,15 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
     });
 
     // -----------------------------------------------------------------------
-    // TC-3  Over limit: actor has 12 active collections, max = 10 → QUOTA_EXCEEDED
+    // TC-3  Over default fallback limit: count (12) > 10 → QUOTA_EXCEEDED
     // -----------------------------------------------------------------------
-    it('rejects creation when active collection count exceeds the default limit (12 > 10)', async () => {
+    it('rejects creation when active collection count exceeds the default fallback limit (12 > 10)', async () => {
         // Arrange
         const actor = makeOwnerActor();
         asMock(modelMock.countActiveByUserId).mockResolvedValue(12);
 
         // Act
-        const result = await service.create(actor, makeCreateInput());
+        const result = await service.createCollection(actor, makeCreateInput());
 
         // Assert
         expect(result.error?.code).toBe('QUOTA_EXCEEDED');
@@ -136,11 +141,10 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
     });
 
     // -----------------------------------------------------------------------
-    // TC-4  Env override high: max = 20, count = 15 → allowed
+    // TC-4  Explicit plan limit (vip=25 style): planLimit=20, count=15 → allowed
     // -----------------------------------------------------------------------
-    it('allows creation when count (15) is below an env-overridden limit (20)', async () => {
+    it('allows creation when count (15) is below an explicit ctx.hookState.planLimit (20)', async () => {
         // Arrange
-        vi.stubEnv('HOSPEDA_MAX_COLLECTIONS_PER_USER', '20');
         const actor = makeOwnerActor();
         asMock(modelMock.countActiveByUserId).mockResolvedValue(15);
         asMock(modelMock.create).mockResolvedValue({
@@ -152,23 +156,26 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
         });
 
         // Act
-        const result = await service.create(actor, makeCreateInput());
+        const result = await service.createCollection(actor, makeCreateInput(), {
+            hookState: { planLimit: 20 }
+        });
 
         // Assert
         expect(result.error).toBeUndefined();
     });
 
     // -----------------------------------------------------------------------
-    // TC-5  Env override low: max = 3, count = 3 → QUOTA_EXCEEDED
+    // TC-5  Explicit plan limit (plus=10 style): planLimit=3, count=3 → QUOTA_EXCEEDED
     // -----------------------------------------------------------------------
-    it('rejects creation when count equals an env-overridden low limit (3)', async () => {
+    it('rejects creation when count equals an explicit low ctx.hookState.planLimit (3)', async () => {
         // Arrange
-        vi.stubEnv('HOSPEDA_MAX_COLLECTIONS_PER_USER', '3');
         const actor = makeOwnerActor();
         asMock(modelMock.countActiveByUserId).mockResolvedValue(3);
 
         // Act
-        const result = await service.create(actor, makeCreateInput());
+        const result = await service.createCollection(actor, makeCreateInput(), {
+            hookState: { planLimit: 3 }
+        });
 
         // Assert
         expect(result.error?.code).toBe('QUOTA_EXCEEDED');
@@ -177,11 +184,10 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
     });
 
     // -----------------------------------------------------------------------
-    // TC-6  Default fallback: env var absent → limit is 10
+    // TC-6  hookState present but planLimit key absent → falls back to default (10)
     // -----------------------------------------------------------------------
-    it('falls back to default limit of 10 when env var is not set', async () => {
-        // Arrange — ensure the var is absent (afterEach unstubs, beforeEach starts fresh)
-        vi.stubEnv('HOSPEDA_MAX_COLLECTIONS_PER_USER', '');
+    it('falls back to the default limit of 10 when hookState is present but planLimit is absent', async () => {
+        // Arrange
         const actor = makeOwnerActor();
         // 9 collections → should be allowed (below default 10)
         asMock(modelMock.countActiveByUserId).mockResolvedValue(9);
@@ -193,10 +199,10 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
             updatedAt: new Date()
         });
 
-        // Act
-        const result = await service.create(actor, makeCreateInput());
+        // Act — hookState object present, but no planLimit key inside it
+        const result = await service.createCollection(actor, makeCreateInput(), { hookState: {} });
 
-        // Assert: no error means the limit resolved to >=10 (default)
+        // Assert: no error means the limit resolved to the default (10)
         expect(result.error).toBeUndefined();
     });
 
@@ -218,30 +224,34 @@ describe('UserBookmarkCollectionService._canCreate — collection limit guard', 
         });
 
         // Act
-        const result = await service.create(actor, makeCreateInput());
+        const result = await service.createCollection(actor, makeCreateInput());
 
-        // Assert: _canCreate calls countActiveByUserId (not a generic count), so
-        // the mock confirms only the active-collection query is used for quota.
+        // Assert: only the active-collection query is used for the quota check.
         expect(asMock(modelMock.countActiveByUserId)).toHaveBeenCalledTimes(1);
         expect(asMock(modelMock.countActiveByUserId)).toHaveBeenCalledWith(OWNER_ID, undefined);
         expect(result.error).toBeUndefined();
     });
 
     // -----------------------------------------------------------------------
-    // TC-8  Owner mismatch: actor.id !== input.userId → FORBIDDEN, not QUOTA_EXCEEDED
+    // TC-8  Owner mismatch: actor.id !== input.userId → VALIDATION_ERROR, not QUOTA_EXCEEDED
+    //
+    // Note: `createCollection()`'s own step-1 owner check fires BEFORE the
+    // quota check is ever reached, so this is VALIDATION_ERROR (not the
+    // FORBIDDEN that `canCreateCollection`/`_canCreate` would throw via a
+    // direct `service.create()` call — a path production code never takes).
     // -----------------------------------------------------------------------
-    it('returns FORBIDDEN (not QUOTA_EXCEEDED) when input.userId does not match actor.id', async () => {
+    it('returns VALIDATION_ERROR (not QUOTA_EXCEEDED) when input.userId does not match actor.id', async () => {
         // Arrange
         const actor = makeOwnerActor(OWNER_ID);
         const differentUserId = getMockId('user', 'different-user');
-        // Even if count is 0 the permission check fires first
+        // Even if count is 0 the owner check fires first
         asMock(modelMock.countActiveByUserId).mockResolvedValue(0);
 
         // Act
-        const result = await service.create(actor, makeCreateInput(differentUserId));
+        const result = await service.createCollection(actor, makeCreateInput(differentUserId));
 
         // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
         // Quota check must NOT have been reached
         expect(asMock(modelMock.countActiveByUserId)).not.toHaveBeenCalled();
     });

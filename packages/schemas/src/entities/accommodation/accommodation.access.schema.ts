@@ -27,6 +27,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     summary: true,
     description: true,
     isFeatured: true,
+    isVerified: true,
 
     // SPEC-212: I18nText translations (public-safe content fields).
     // Web public pages render these to switch the visible locale to en/pt.

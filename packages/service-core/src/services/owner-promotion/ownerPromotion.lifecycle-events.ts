@@ -4,8 +4,12 @@
  * Centralises `created` and `activated` lifecycle transitions for the
  * owner-promotion domain. Current implementation: structured logging via @repo/logger.
  *
- * SPEC-286 consumers (alerts / notifications) MUST subscribe via the
- * `// TODO(SPEC-286)` stub below — no other call site should be added.
+ * SPEC-286 G-2 (promo-offer alerts) does NOT subscribe to this emitter.
+ * Per SPEC-286 D-3 (daily-digest cadence), promo-offer notification is
+ * handled by the `alerts-digest` cron job (`apps/api/src/cron/jobs/alerts-digest.job.ts`),
+ * which queries `owner_promotions` directly on its own schedule instead of
+ * reacting to this event in real time. See the note in the emitter body
+ * below for the full reasoning.
  *
  * @module services/ownerPromotion-lifecycle-events
  */
@@ -114,8 +118,14 @@ export interface OwnerPromotionLifecycleLogger {
  * Current side-effects:
  * 1. Structured log entry (INFO level) via `@repo/logger` for observability.
  *
- * Future side-effects — add implementation inside the `TODO` blocks:
- * 2. SPEC-286 alert/notification dispatch.
+ * There is deliberately no second side-effect here dispatching to
+ * alert/notification consumers. SPEC-286 G-2 (promo-offer alerts) is
+ * fulfilled by the `alerts-digest` cron job polling `owner_promotions`
+ * directly once a day, NOT by this emitter pushing an immediate
+ * notification on every `created`/`activated` transition — that matches the
+ * SPEC-286 D-3 "daily digest cadence" product decision (a promotion
+ * activated at 2 AM and one activated at 7:59 AM both surface in the same
+ * 8 AM digest run; there is no per-event fan-out to build or maintain here).
  *
  * Callers MUST NOT handle logging or side-effects themselves. All dispatch
  * is centralised here so adding new channels never requires touching `OwnerPromotionService`.
@@ -160,19 +170,9 @@ export async function emitOwnerPromotionLifecycleEvent(
     // data object, label is the human-readable prefix shown in log output.
     logger.info(logData, '[owner-promotion lifecycle]');
 
-    // ── 2. Alert / notification dispatch (future) ────────────────────────────
-    // TODO(SPEC-286): dispatch to alert/notification consumers based on event.type.
-    //
-    // Example implementation (once SPEC-286 ships):
-    //   if (type === OwnerPromotionLifecycleEventType.CREATED) {
-    //     await notificationService.send({
-    //       type: NotificationType.OWNER_PROMOTION_CREATED,
-    //       payload: { promotionId, ownerId, slug: event.slug },
-    //     });
-    //   } else if (type === OwnerPromotionLifecycleEventType.ACTIVATED) {
-    //     await alertService.trigger({
-    //       type: AlertType.OWNER_PROMOTION_ACTIVATED,
-    //       payload: { promotionId, ownerId, previousState: event.previousState },
-    //     });
-    //   }
+    // ── 2. Alert / notification dispatch ─────────────────────────────────────
+    // Intentionally absent (SPEC-286 G-2, D-3): promo-offer notification is
+    // handled by the `alerts-digest` cron job polling `owner_promotions`
+    // directly, not by an immediate push from this emitter. See the
+    // `emitOwnerPromotionLifecycleEvent` JSDoc above for the full reasoning.
 }

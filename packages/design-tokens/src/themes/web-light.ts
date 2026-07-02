@@ -87,6 +87,10 @@ export const webLight: Theme = {
 
     'brand-primary': river[500],
     'brand-primary-text': river[700],
+    // SPEC-308: primary blue when used as TEXT/links on light surfaces. The
+    // vibrant brand-primary (river[500]) only reaches ~3.5:1; this darker step
+    // hits WCAG AA (>=4.5:1) without touching the brand fill color.
+    'brand-primary-link': oklchValue(0.54, 0.19, 259),
     'primary-foreground': oklchValue(0.99, 0, 0),
     'brand-secondary': brandSecondary,
     'brand-secondary-foreground': brandSecondaryForeground,
@@ -96,6 +100,11 @@ export const webLight: Theme = {
     'core-muted-foreground': oklchValue(0.45, 0.03, 261),
 
     'brand-accent': accent[500],
+    // SPEC-308: orange when used as TEXT on light surfaces (brand-accent fill
+    // stays vibrant). `-strong` is for large text (>=18.66px bold / 24px, AA
+    // 3:1); `-text` is for normal-size text (AA 4.5:1).
+    'brand-accent-strong': oklchValue(0.62, 0.18, 55),
+    'brand-accent-text': oklchValue(0.58, 0.18, 55),
     'rating-star': ratingStar,
     'accent-foreground': oklchValue(0.99, 0, 0),
 
@@ -155,6 +164,11 @@ export const webLight: Theme = {
     'hospeda-sky-light': skyLight,
     'hospeda-river': river[500],
     'hospeda-forest': forest[500],
+    // SPEC-308: AA-safe forest text token. In light it equals the base forest
+    // (already legible on the pale forest-tinted chips); web-dark.ts lifts it so
+    // green category chip text clears AA on the navy-tinted chips. Keeps the
+    // saturated forest as the fill color (used as date-block bg) untouched.
+    'hospeda-forest-link': forest[500],
     'hospeda-sand': sand[500],
 
     // ========================================================================

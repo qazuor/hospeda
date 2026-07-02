@@ -107,7 +107,7 @@
 }
 
 .learnMore {
-    color: var(--brand-primary);
+    color: var(--brand-primary-link);
     text-decoration: underline;
     text-underline-offset: 2px;
     font-weight: 500;

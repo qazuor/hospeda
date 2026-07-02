@@ -55,7 +55,11 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
     planRestricted: true,
     // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
-    showExternalReputation: true
+    showExternalReputation: true,
+    // Server-managed (SPEC-291): only the verify admin action flips these.
+    isVerified: true,
+    verifiedAt: true,
+    verifiedById: true
 }).extend({
     slug: z
         .string()
@@ -146,7 +150,11 @@ export const AccommodationUpdateInputSchema = z
                 // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
                 planRestricted: true,
                 // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
-                showExternalReputation: true
+                showExternalReputation: true,
+                // Server-managed (SPEC-291): only the verify admin action flips these.
+                isVerified: true,
+                verifiedAt: true,
+                verifiedById: true
             }).shape
         )
     )

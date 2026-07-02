@@ -1,0 +1,282 @@
+/**
+ * AlertsList.module.css
+ * Colocated CSS Module for the AlertsList React island (SPEC-286 T-010).
+ * Uses design tokens only — no Tailwind utility classes.
+ */
+
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.alerts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* ─── Loading / error states ─────────────────────────────────────────────── */
+
+.alertsLoading {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    padding: var(--space-8) 0;
+    text-align: center;
+}
+
+.alertsError {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--destructive, oklch(0.6 0.22 25));
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    padding: var(--space-4) var(--space-5);
+}
+
+.alertsRetryBtn {
+    align-self: flex-start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.alertsRetryBtn:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+/* ─── Upgrade (plan-gate) state ───────────────────────────────────────────── */
+
+.alertsUpgrade {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-card);
+    background-color: var(--brand-primary-a05);
+    text-align: center;
+    align-items: center;
+}
+
+.alertsUpgradeTitle {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.alertsUpgradeMessage {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 40ch;
+    margin: 0;
+}
+
+.alertsUpgradeCta {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--brand-primary);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    transition: opacity var(--duration-fast) ease;
+}
+
+.alertsUpgradeCta:hover {
+    opacity: 0.85;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.alertsEmpty {
+    padding: var(--space-12) var(--space-4);
+    text-align: center;
+}
+
+.alertsEmptyTitle {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3);
+}
+
+.alertsEmptyBody {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 36ch;
+    margin: 0 auto var(--space-5);
+}
+
+.alertsEmptyCta {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.alertsEmptyCta:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+}
+
+/* ─── List ────────────────────────────────────────────────────────────────── */
+
+.alertsList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ─── Entry card ────────────────────────────────────────────────────────────── */
+
+.alertsItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    transition: opacity var(--duration-fast) ease;
+}
+
+.alertsItemDeleting {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.alertsItemContent {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.alertsItemName {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.alertsItemMeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.alertsItemPrice,
+.alertsItemTarget {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ─── Per-item actions ────────────────────────────────────────────────────── */
+
+.alertsItemActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.alertsDeleteBtn {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+
+.alertsDeleteBtn:hover:enabled {
+    color: var(--destructive, oklch(0.6 0.22 25));
+    border-color: var(--destructive-a25);
+}
+
+.alertsDeleteBtn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.alertsDeleteConfirm {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.alertsConfirmYes {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: var(--destructive, oklch(0.6 0.22 25));
+    border: none;
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity var(--duration-fast) ease;
+}
+
+.alertsConfirmYes:hover {
+    opacity: 0.85;
+}
+
+.alertsConfirmNo {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    background: transparent;
+    border: 1px solid var(--core-foreground-a20);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.alertsConfirmNo:hover {
+    background-color: var(--core-foreground-a08);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .alertsItem {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .alertsItemActions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}

@@ -133,12 +133,13 @@ import { adminModerationRoutes } from './moderation/admin';
 import {
     newsletterAdminRoutes,
     newsletterProtectedRoutes,
-    newsletterPublicRoutes,
-    newsletterRoutes
+    newsletterPublicRoutes
 } from './newsletter';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { protectedSearchHistoryRoutes } from './search-history';
 import { publicSearchRoutes } from './search/public';
@@ -281,7 +282,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
-        app.route('/api/v1/public', newsletterRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
@@ -374,6 +374,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         );
         // Search history (SPEC-289 — entitlement-gated, plan-limited)
         app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
+        // Price alerts (SPEC-286 — entitlement-gated, plan-limited)
+        app.route('/api/v1/protected/price-alerts', protectedPriceAlertRoutes);
+        // Personalized recommendations feed (SPEC-284 — entitlement-gated, binary in v1)
+        app.route('/api/v1/protected/recommendations', protectedRecommendationsRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

@@ -65,7 +65,8 @@ const RESOURCE_NAMES: Record<LimitKey, string> = {
     max_ai_support_per_month: 'consultas al soporte IA por mes',
     max_ai_translate_per_month: 'traducciones de contenido con IA por mes',
     max_ai_accommodation_import_per_month: 'importaciones de alojamiento con IA por mes',
-    max_search_history_entries: 'entradas en el historial de búsquedas'
+    max_search_history_entries: 'entradas en el historial de búsquedas',
+    max_collections: 'colecciones'
 };
 
 /**

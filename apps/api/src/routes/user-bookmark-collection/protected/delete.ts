@@ -9,6 +9,7 @@ import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core'
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { gateCollections } from '../../../middlewares/tourist-entitlements';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -33,6 +34,7 @@ export const deleteUserBookmarkCollectionRoute = createProtectedRoute({
     tags: ['User Bookmark Collections'],
     requestParams: UserBookmarkCollectionIdParamSchema.shape,
     responseSchema: DeleteCollectionResponseSchema,
+    options: { middlewares: [gateCollections()] },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { id } = params as { id: string };

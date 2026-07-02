@@ -735,6 +735,16 @@
             "archivedAt": "2026-06-25"
         },
         {
+            "specId": "SPEC-184",
+            "title": "API Log Observability",
+            "status": "completed",
+            "progress": "16/16",
+            "path": "SPEC-184-api-log-observability",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "archiveNote": "All 16 tasks done; PR #1412 merged to staging 2026-06-03 (+ 4 follow-ups #1423/#1430/#1434/#1438). Stranded in a short-lived index.archive.json split (2026-06-01..03) that was abandoned in favor of inline archived:true and never migrated back — restored 2026-07-01 per ground-truth audit against git/PR history."
+        },
+        {
             "specId": "SPEC-283",
             "title": "Graduated Per-Plan AI Usage Limits",
             "status": "in-progress",
@@ -762,47 +772,68 @@
         {
             "specId": "SPEC-284",
             "title": "Personalized Recommendations Feed",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "17/17",
             "path": "SPEC-284-recommendations-feed",
-            "branch": null,
+            "branch": "spec/SPEC-284-recommendations-feed",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS). Surfaced in SPEC-282 review."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "Implementation complete: all 16 atomized tasks (core 6 / integration 8 / testing 2, avg complexity 1.94) plus ad-hoc T-005b (dedicated PermissionEnum.RECOMMENDATION_VIEW, user-approved mid-implementation). Fresh-context review found 2 minor issues, both fixed. Absorbed duplicate SPEC-315 (2026-07-01, independently flagged by both this branch and a separate spec-dedup audit). Merged to staging via PR #1966 (2026-07-01) after resolving 5 rounds of CI fixes (SPEC-039 guard, shared @repo/db test mock gap, missing Postgres enum migration, another shared mock gap, and a merge conflict with a parallel spec-dedup PR touching the same indices)."
+        },
+        {
+            "specId": "SPEC-239",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+            "status": "completed",
+            "progress": "63/64",
+            "path": "SPEC-239-commerce-listings-core-gastronomy",
+            "branch": null,
+            "base": "main",
+            "createdAt": "2026-06-15T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and promoted to main via PR #1692 (\"promote staging to main\", includes SPEC-239 commerce core). Discovered during the Linear tracking migration audit — index had no entry at all for this epic despite full implementation across schemas/service-core/api/web/db/seed/e2e/docs (ADR-035). Only open item: T-061 (staging MP sandbox smoke sign-off, operational, not code) — tracked as a follow-up, not blocking closure."
         },
         {
             "specId": "SPEC-285",
             "title": "Owner Promotions — Tourist-Facing Display",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "9/9",
             "path": "SPEC-285-owner-promotions-tourist-display",
             "branch": "spec/SPEC-285-owner-promotions-tourist-display",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "In-progress (started 2026-06-29). Scope locked: D-1 detail page only, D-2 informational badge/banner, D-3 emit domain event for SPEC-286. Owner-create built; finishing tourist-facing display. Tasks not yet atomized."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and merged to staging via PR #1900 (2026-06-30). Full delivery confirmed: API route registration, visibility/permission logic, lifecycle event emission (satisfies SPEC-286's dependency), DB model changes, PromotionBanner.astro on accommodation detail, i18n, full test suite. Index was stale at in-progress despite 9/9 tasks complete — discovered during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-286",
             "title": "Alerts & Offers — Multichannel Notifications",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-286-alerts-offers-multichannel-notifications",
             "parent": "SPEC-285",
-            "branch": null,
+            "branch": "spec/SPEC-286-alerts-offers-multichannel-notifications",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Merges phantom price alerts + owner-promo offers, multichannel (email/whatsapp/push), per-plan limits. Depends on SPEC-285. Surfaced in SPEC-282 review."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "SHIPPED — PR #1973 merged to staging 2026-07-01. EMAIL-ONLY v1 (full multichannel core built, WhatsApp/push deferred to a follow-up spec). Absorbs SPEC-312 (price alerts, obsolete). Overlaps SPEC-313 (exclusive deals/offers) — D-5 renamed VIP_PROMOTIONS_ACCESS to VIP_VISIBILITY_ACCESS, resolving the naming collision SPEC-313's own consolidation with SPEC-316 was blocked on, but whether SPEC-313 proceeds standalone or is absorbed here is still a pending owner decision (see SPEC-313 spec.md). Depends on SPEC-285 (merged, PR #1900)."
         },
         {
             "specId": "SPEC-287",
             "title": "Favorites Collections — Per-Plan Limits",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "15/15",
             "path": "SPEC-287-favorites-collections-per-plan-limits",
-            "branch": null,
+            "branch": "spec/SPEC-287-favorites-collections-per-plan-limits",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Move built collections feature from env-var cap to per-plan billing LimitKey (free tourist excluded). Surfaced in SPEC-282 review."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "note": "Tasks atomized + spec-realigned (15 tasks, avg complexity 1.9/3): move built collections feature from env-var cap to per-plan billing LimitKey. CAN_USE_COLLECTIONS/MAX_COLLECTIONS (free=none, plus=10, vip=25 shared w/ owner-complex). spec-realign found list.ts also reads the env cap (T-014) and ADR-026 needs a superseded addendum (T-015); corrected T-006/T-008 to route the limit via ctx.hookState. Merged to staging via PR #1974."
         },
         {
             "specId": "SPEC-288",
@@ -820,13 +851,15 @@
         {
             "specId": "SPEC-289",
             "title": "Search History",
-            "status": "in-progress",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "4/4",
             "path": "SPEC-289-search-history",
             "branch": "spec/SPEC-289-search-history",
-            "base": "staging",
+            "base": "main",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "OQs resolved 2026-06-29. Entry-count limit (Plus=50/VIP=200, new LimitKey.MAX_SEARCH_HISTORY_ENTRIES), full self-service privacy (delete-one/clear-all/opt-out), dedicated mi-cuenta page. Phasing P1 data+billing / P2 API / P3 web / P4 SPEC-282 table. Impl in progress."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "Shipped and merged to staging via PR #1899 (2026-06-30), then promoted to main. All 4 phases confirmed (P1 data+billing, P2 API, P3 web, P4 comparison table). Index had a 0/0 stub despite full completion — discovered during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-290",
@@ -837,18 +870,20 @@
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Phantom RESPOND_REVIEWS (no reply endpoint/column). Surfaced in SPEC-282 owner audit."
+            "note": "Doc-only spec; tasks NOT atomized. Phantom RESPOND_REVIEWS (no reply endpoint/column). Surfaced in SPEC-282 owner audit. Absorbed duplicate SPEC-317 (2026-07-01)."
         },
         {
             "specId": "SPEC-291",
             "title": "Accommodation Verification Badge",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-291-accommodation-verification-badge",
-            "branch": null,
+            "branch": "spec/SPEC-291-accommodation-verification-badge",
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. HAS_VERIFICATION_BADGE is dead filter code. Surfaced in SPEC-282 owner audit."
+            "archived": true,
+            "archivedAt": "2026-07-01",
+            "archiveNote": "PR #1963 confirmed MERGED to staging (2026-07-01, verified via gh pr view + git merge-base --is-ancestor). All layers done: DB/schema/service/API/entitlement-filter/web/admin. Manual admin toggle (is_verified/verified_at/verified_by_id) + ACCOMMODATION_VERIFY perm + dedicated verify endpoint; badge gated by owner HAS_VERIFICATION_BADGE AND verified, on detail + listing cards (batch entitlement resolver). Fixes dead entitlement-filter actor bug. Doc-only spec; tasks NOT atomized. Absorbed duplicate SPEC-319 (2026-07-01). Index still said \"PR open\" and in-progress — discovered stale during the Linear tracking migration audit."
         },
         {
             "specId": "SPEC-292",
@@ -873,7 +908,7 @@
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit."
+            "note": "Doc-only spec; tasks NOT atomized. CUSTOM_BRANDING is a billing flag only. Surfaced in SPEC-282 owner audit. Absorbed duplicate SPEC-318 (2026-07-01); related to SPEC-319 (verification badge, the other owner-premium exclusive)."
         },
         {
             "specId": "SPEC-294",
@@ -1018,7 +1053,7 @@
         {
             "specId": "SPEC-306",
             "title": "SEO/AEO Landing-Page Strategy for Filter Facets",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-306-seo-aeo-category-pages",
             "branch": null,
@@ -1040,10 +1075,10 @@
         {
             "specId": "SPEC-308",
             "title": "Remediate the WCAG violations baselined by the A11y Sweep (SPEC-270 / SPEC-294 follow-up)",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/6",
             "path": "SPEC-308-a11y-sweep-debt-remediation",
-            "branch": null,
+            "branch": "spec/SPEC-308-a11y-sweep-debt-remediation",
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-294 (PR #1914): clear the 84 WCAG violations (6 critical aria-allowed-attr, 56 serious incl. color-contrast x38) the A11y Sweep baselined. Shared-component-driven; fix highest-impact first, shrink the baseline as fixes land, promote the sweep to required once empty."
@@ -1057,7 +1092,173 @@
             "branch": null,
             "base": "staging",
             "createdAt": "2026-06-30T00:00:00Z",
-            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes."
+            "note": "Doc-only spec; tasks NOT atomized. Follow-up of SPEC-292 (merged PR #1930) review: wire visibility-boost addons' customer-level FEATURED_LISTING grant into both resolvers + addon hooks (H-1), ISR revalidation (M-3), direct hook tests (M-4), paused/comp status alignment (M-5). M-2 (post-deploy backfill) is operational, tracked in SPEC-292 deploy notes. Absorbed overlapping duplicate SPEC-320 (2026-07-01): folded in owner self-service toggle (G-6) + slots/duration open questions."
+        },
+        {
+            "specId": "SPEC-310",
+            "title": "Plan Packaging Recalibration (Entitlements & Limits Sanitation)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-310-plan-packaging-recalibration",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Discovery-first. Source of truth for target packaging. Hide complex (option A reversible), remove AD_FREE, recalibrate tourist+owner limits, move recommendations free->plus, grant CREATE_PROMOTIONS to owner-basico. Missing features = SPEC-311..321. Consumer AI = SPEC-283. 3 OQs (featured-in-basico, AI-import level, accommodations-basico). Tasks NOT atomized."
+        },
+        {
+            "specId": "SPEC-311",
+            "title": "WhatsApp Contact (Display + Direct) for Accommodations",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-311-whatsapp-contact",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Two-layer phantom (no model fields + PHANTOM-GATE) yet advertised as available. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-312",
+            "title": "Tourist Price Alerts",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-312-tourist-price-alerts",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-286 (Alerts & Offers). Consolidated 2026-07-01.",
+            "note": "Stub from SPEC-310 audit. Phantom (gateAlerts). Needs price-history prerequisite check. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-313",
+            "title": "Tourist Exclusive Deals & VIP Promotions",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-313-tourist-exclusive-deals",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateExclusiveDeals). Consolidated 2026-07-01 with SPEC-316 into one tiered spec (plus=deals, vip=extension); blocked on SPEC-286 OQ-5 (VIP_PROMOTIONS_ACCESS naming collision). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-314",
+            "title": "Review Photo Attachments",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-314-review-photo-attachments",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewPhotos). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-315",
+            "title": "Personalized Recommendations",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-315-personalized-recommendations",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-284 (Personalized Recommendations Feed). Consolidated 2026-07-01.",
+            "note": "Superseded by SPEC-284 (Personalized Recommendations Feed, 17/17 tasks complete) — same feature, spec'd independently the same day. Never started here; no code to reconcile."
+        },
+        {
+            "specId": "SPEC-316",
+            "title": "VIP Promotions Access (Tourist)",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-316-vip-promotions-access",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate/sibling of SPEC-313 (Tourist Exclusive Deals & VIP Promotions). Consolidated 2026-07-01.",
+            "note": "Stub from SPEC-310 audit. Phantom. Gives tourist-vip a real exclusive. Relates to SPEC-313. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-317",
+            "title": "Owner Review Responses",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-317-owner-review-responses",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-290 (Owner Review Responses). Consolidated 2026-07-01.",
+            "note": "Stub from SPEC-310 audit. Phantom (gateReviewResponse). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-318",
+            "title": "Owner Custom Branding (Premium)",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-318-owner-custom-branding",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-293 (Owner Custom Branding). Consolidated 2026-07-01; SPEC-319 relation moved to SPEC-293.",
+            "note": "Stub from SPEC-310 audit. Phantom. One of two owner-premium real exclusives. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-319",
+            "title": "Accommodation Verification Badge (Premium)",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-319-accommodation-verification-badge",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Duplicate of SPEC-291 (Accommodation Verification Badge, in-progress/shipped PR #1963). Consolidated 2026-07-01.",
+            "note": "Stub from SPEC-310 audit. Phantom. Second owner-premium real exclusive. Needs full discovery."
+        },
+        {
+            "specId": "SPEC-320",
+            "title": "Featured Listing Automation (Auto-activation + Self-service)",
+            "status": "obsolete",
+            "progress": "0/0",
+            "path": "SPEC-320-featured-listing-automation",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "archiveNote": "Overlapping duplicate of SPEC-309 (Featured Listing — Addon Source + Hardening). Consolidated 2026-07-01.",
+            "note": "Stub from SPEC-310 audit. PARTIAL (admin manual toggle exists; no auto-activation/self-service). Needs full discovery."
+        },
+        {
+            "specId": "SPEC-321",
+            "title": "AI Text-Improve in Web Owner Editor",
+            "status": "completed",
+            "progress": "6/6",
+            "path": "SPEC-321-ai-text-improve-web-editor",
+            "branch": "spec/SPEC-321-ai-text-improve-web-editor",
+            "base": "staging",
+            "createdAt": "2026-06-30T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-07-01T00:00:00Z",
+            "note": "All 6 tasks done. Manual smoke (T-006) against real local Ollama confirmed the full chain end-to-end and caught a real bug: global Accept-header validation middleware rejected text/event-stream (fixed, apps/api/src/middlewares/validation.ts + regression test). Merged via PR #1975."
+        },
+        {
+            "specId": "SPEC-322",
+            "title": "Migrate @tanstack/react-query 5.59 → 5.101 (admin dashboard loading-state regression)",
+            "status": "draft",
+            "progress": "0/8",
+            "path": "SPEC-322-react-query-5101-migration",
+            "base": "staging",
+            "createdAt": "2026-07-01T00:00:00.000Z",
+            "taskCount": 8,
+            "averageComplexity": 2.0
         }
     ],
     "standalone": {

@@ -747,7 +747,7 @@ describe('FilterChip', () => {
 
 This app runs as two Coolify resources on the self-hosted VPS:
 
-- `hospeda-web-prod` — production. Currently serves `apps/landing/` (coming-soon Astro static) at `https://hospeda.com.ar` + `www.hospeda.com.ar`. At public launch the resource will be reconfigured to build this `apps/web/` Astro Node app (tracked as SPEC-103 T-087).
+- `hospeda-web-prod` — production, serving `https://hospeda.com.ar` + `www.hospeda.com.ar`. The `apps/landing/` coming-soon Astro static site it used to build has been removed pre-launch (2026-07-01); the resource needs to be reconfigured to build this `apps/web/` Astro Node app instead before its next deploy (tracked as SPEC-103 T-087).
 - `hospeda-web-staging` — staging, served at `https://staging.hospeda.com.ar`. Serves this `apps/web/` Astro Node app today with `noindex` via Traefik labels + dynamic `robots.txt`.
 
 The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale.

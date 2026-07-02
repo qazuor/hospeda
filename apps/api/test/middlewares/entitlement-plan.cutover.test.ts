@@ -72,7 +72,7 @@ const _ENTITLEMENT_VALUES = new Set([
     'price_alerts',
     'exclusive_deals',
     'vip_support',
-    'vip_promotions_access',
+    'vip_visibility_access',
     'can_compare_accommodations',
     'can_attach_review_photos',
     'can_view_search_history',

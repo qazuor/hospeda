@@ -177,9 +177,10 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description: 'Dedicated VIP support channel'
     },
     {
-        key: EntitlementKey.VIP_PROMOTIONS_ACCESS,
-        name: 'VIP promotions access',
-        description: 'Access to exclusive promotions created by accommodations'
+        key: EntitlementKey.VIP_VISIBILITY_ACCESS,
+        name: 'VIP visibility access',
+        description:
+            'VIP tourist visibility bypass: see RESTRICTED, owner-suspended, and plan-restricted accommodations'
     },
     {
         key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
@@ -200,6 +201,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         name: 'Personalized recommendations',
         description: 'Access to personalized accommodation recommendations based on preferences'
+    },
+    {
+        key: EntitlementKey.CAN_USE_COLLECTIONS,
+        name: 'Use favorites collections',
+        description: 'Allows organizing saved favorites into named collections'
     },
     // AI feature entitlements (SPEC-173)
     {

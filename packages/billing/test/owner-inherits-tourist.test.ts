@@ -21,8 +21,8 @@ describe('SPEC-216 — owner/complex plans inherit the tourist-VIP tier', () => 
         expect(VIP_ENTITLEMENTS.size).toBeGreaterThanOrEqual(14);
         // 3 base tourist-VIP limits (favorites/alerts/compare) + 2 AI consumer
         // quotas (search + consumer-side chat) added by SPEC-283 + 1 search-history
-        // cap added by SPEC-289.
-        expect(VIP_LIMIT_KEYS.size).toBe(6);
+        // cap added by SPEC-289 + 1 collections cap added by SPEC-287.
+        expect(VIP_LIMIT_KEYS.size).toBe(7);
     });
 
     describe.each(INHERITING_PLANS)('$slug', (plan) => {
