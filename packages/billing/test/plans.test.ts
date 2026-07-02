@@ -342,6 +342,20 @@ describe('Plan Configuration', () => {
         });
     });
 
+    describe('Recommendations entitlement (HOS-16)', () => {
+        it('tourist-free has NO CAN_VIEW_RECOMMENDATIONS entitlement (moved free->plus)', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(
+                EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+            );
+        });
+
+        it('tourist-plus grants CAN_VIEW_RECOMMENDATIONS (moved free->plus)', () => {
+            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
+                EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+            );
+        });
+    });
+
     describe('getUnlimitedEntitlements (SPEC-171)', () => {
         it('should grant every EntitlementKey', () => {
             const { entitlements } = getUnlimitedEntitlements();

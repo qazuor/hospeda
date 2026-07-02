@@ -417,8 +417,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     entitlements: [
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+        EntitlementKey.READ_REVIEWS
+        // can_view_recommendations moved to tourist-plus (HOS-16)
         // ai_chat removed from tourist plans (SPEC-211 T-003)
         // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)

@@ -1,6 +1,6 @@
 # HOS-16: Plan Packaging Recalibration (Entitlements & Limits Sanitation)
 
-## Progress: 3/20 tasks (15%)
+## Progress: 4/20 tasks (20%)
 
 **Average Complexity:** 1.6/3
 **Critical Path:** T-002 -> T-003 -> T-014 (3 steps, plus parallel T-005 -> T-007 -> T-012)
@@ -28,7 +28,8 @@
   - Blocked by: T-002
   - Blocks: T-014, T-016
 
-- [ ] **T-004** (complexity: 1) - Move CAN_VIEW_RECOMMENDATIONS from tourist-free to tourist-plus
+- [x] **T-004** (complexity: 1) - Move CAN_VIEW_RECOMMENDATIONS from tourist-free to tourist-plus [DONE]
+  - tourist-plus already had it granted; only removed from tourist-free. Updated 4 test files (middleware fallback + 2 e2e checkout assertions + new plans.test.ts regression pair).
   - Blocked by: none
   - Blocks: T-015
 

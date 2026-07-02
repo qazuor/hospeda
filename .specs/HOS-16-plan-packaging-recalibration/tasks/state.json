@@ -143,35 +143,46 @@
             "id": "T-004",
             "title": "Move CAN_VIEW_RECOMMENDATIONS from tourist-free to tourist-plus",
             "description": "In `packages/billing/src/config/plans.config.ts`, remove `CAN_VIEW_RECOMMENDATIONS` from `TOURIST_FREE_PLAN.entitlements` and add it to `TOURIST_PLUS_PLAN.entitlements`. Verify it is (or add it to) `TOURIST_VIP_ENTITLEMENTS` shared constant so vip/owner/complex keep it via inheritance (vip must always be a superset of plus). Tests: update any test asserting tourist-free's entitlement list (should drop to 3: SAVE_FAVORITES, READ_REVIEWS, WRITE_REVIEWS) and tourist-plus's list (gains CAN_VIEW_RECOMMENDATIONS).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Remove CAN_VIEW_RECOMMENDATIONS from TOURIST_FREE_PLAN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add CAN_VIEW_RECOMMENDATIONS to TOURIST_PLUS_PLAN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify VIP/owner/complex still inherit it",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:34:13Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:34:13Z",
+                    "details": "scoped: @repo/billing, hospeda-api"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-02T08:34:13Z",
+                    "details": "@repo/billing 524/524, api entitlement.test.ts 101/101; e2e monthly/annual-checkout updated but require test-DB setup not run locally"
+                }
             },
             "timestamps": {
                 "created": "2026-07-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T08:28:47Z",
+                "completed": "2026-07-02T08:34:13Z"
             }
         },
         {
@@ -701,9 +712,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 1.6
     }

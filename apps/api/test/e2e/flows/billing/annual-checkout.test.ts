@@ -649,19 +649,13 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             readonly billingLoadFailed: boolean;
         };
         // Tourist-free entitlements: SAVE_FAVORITES, WRITE_REVIEWS,
-        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS, AI_CHAT, AI_SEARCH (6 keys).
+        // READ_REVIEWS, AI_CHAT, AI_SEARCH (5 keys).
         // The exact shape comes from TOURIST_FREE_PLAN in packages/billing/src/config/plans.config.ts.
         // AI_CHAT and AI_SEARCH were added by SPEC-173 (ai core, merged ~2026-06-05),
         // causing this assertion to drift from the original 4-item set.
+        // HOS-16 then moved CAN_VIEW_RECOMMENDATIONS free->plus.
         expect(new Set(preBody.entitlements)).toEqual(
-            new Set([
-                'save_favorites',
-                'write_reviews',
-                'read_reviews',
-                'can_view_recommendations',
-                'ai_chat',
-                'ai_search'
-            ])
+            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'ai_chat', 'ai_search'])
         );
         expect(preBody.limits).toEqual({
             max_favorites: 3,
