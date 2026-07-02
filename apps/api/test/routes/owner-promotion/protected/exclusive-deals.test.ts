@@ -1,12 +1,13 @@
 /**
  * HOS-21 T-008: GET /api/v1/protected/owner-promotions/exclusive-deals
  *
- * This route is UNGATED at this point in the implementation — the entitlement
- * gate (`gateExclusiveDeals` + VIP_PROMOTIONS_ACCESS tier resolution) is wired
- * in T-009. T-008 only proves the route exists, is reachable by any
- * authenticated actor, forwards pagination/accommodationId, and reuses
+ * The EXCLUSIVE_DEALS entitlement gate (`gateExclusiveDeals`, wired in T-009)
+ * is mocked as pass-through here so these tests stay focused on T-008's own
+ * concerns: the route exists, is reachable by any authenticated actor,
+ * forwards pagination/accommodationId, and reuses
  * `OwnerPromotionService.findExclusiveDeals` (T-005/T-006) rather than the
- * public `search()` path.
+ * public `search()` path. Gate behavior itself (403 without the entitlement,
+ * plus-vs-plus+vip tier resolution) is covered by `exclusive-deals-gate.test.ts`.
  *
  * Mounted at a distinct sub-path (`/exclusive-deals`), NOT at `/`, so it does
  * not fall into the sibling-route middleware-union gotcha that affects
@@ -15,6 +16,17 @@
 
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
+    const orig =
+        await importOriginal<typeof import('../../../../src/middlewares/tourist-entitlements')>();
+    return {
+        ...orig,
+        gateExclusiveDeals: () => async (_c: unknown, next: () => Promise<void>) => {
+            await next();
+        }
+    };
+});
 
 const findExclusiveDealsCaptures: Array<{
     actor: unknown;
