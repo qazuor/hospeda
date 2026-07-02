@@ -99,7 +99,11 @@ export function ExternalReputationSection({
     locale,
     accommodationId
 }: ExternalReputationSectionProps) {
-    const { t } = createTranslations(locale);
+    // Memoized so `t` keeps a stable reference across renders — otherwise it
+    // recreates on every render, which cascades into `loadListings`'s
+    // useCallback deps and re-triggers its mount effect in an infinite loop
+    // (fetch -> setState -> render -> new `t` -> fetch -> ...).
+    const { t } = useMemo(() => createTranslations(locale), [locale]);
 
     // --- Remote state ---
     const [listings, setListings] = useState<readonly ExternalListingRow[]>([]);
