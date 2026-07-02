@@ -935,32 +935,44 @@
             "id": "T-024",
             "title": "Unit tests — call-site group B (cron jobs)",
             "description": "M-4/G-4: direct unit tests for the three cron-facing call-sites, same rationale as T-023.\n\n- apps/api/test/cron/finalize-cancelled-subs.test.ts (T-011): Step 3c revoke path fires; addon-protected accommodations excluded (assert via a mocked protected-set return); soft-fail isolation (a sync throw does not abort the rest of the cron's cancellation-finalization work).\n- apps/api/test/cron/dunning.job.test.ts (T-012): revoke-on-cancellation path fires; soft-fail isolation.\n- apps/api/test/cron/apply-scheduled-plan-changes.test.ts (T-013): both grant and revoke directions on a scheduled plan change; soft-fail isolation.\n\nKey files: the three test files above (extend).\n\nAcceptance criteria: every case passes; soft-fail isolation asserted for all three (a thrown sync error never fails the cron run itself).\n\nTesting requirements:\n- Run scoped per file, e.g. `pnpm vitest run apps/api/test/cron/dunning.job.test.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012", "T-013"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "finalize-cancelled-subs.ts revoke + exclusion + soft-fail tests",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "dunning.job.ts revoke + soft-fail tests", "completed": false },
+                { "title": "dunning.job.ts revoke + soft-fail tests", "completed": true },
                 {
                     "title": "apply-scheduled-plan-changes.ts grant/revoke + soft-fail tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "backend", "billing", "cron"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pnpm lint",
-                "typecheck": "pnpm typecheck",
-                "tests": "scoped"
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm exec biome check --write on the 3 touched test files — 1 auto-reformat, no logic change"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "pnpm --filter hospeda-api typecheck — clean (fixed a vi.mocked().mockResolvedValue(undefined) type mismatch along the way)"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-01T00:00:00.000Z",
+                    "details": "finalize-cancelled-subs.test.ts 34/34, dunning.job.test.ts 29/29, apply-scheduled-plan-changes.test.ts 44/44 (107/107 total, each run scoped)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-01T00:00:00.000Z",
+                "completed": "2026-07-01T00:00:00.000Z"
             }
         },
         {
