@@ -8,74 +8,74 @@
             "id": "T-001",
             "title": "Add typed plan-attribute columns to qzpay-drizzle schema",
             "description": "In the sibling qzpay repo (`/proyects/PACKAGES/qzpay/packages/drizzle/src/schema/plans.schema.ts`), add three typed columns to the `billingPlans` table: `displayName varchar(255) not null`, `monthlyPriceArs integer not null`, `annualPriceArs integer nullable`. These currently live only in the `metadata` jsonb column. Bump the `@qazuor/qzpay-drizzle` package version and publish. Verify via `drizzle-kit generate` in the qzpay repo that the new columns produce a clean migration diff. This is a cross-repo change — coordinate the publish before Hospeda-side work (T-002) can consume it.\n\nTest requirements: qzpay repo's own schema unit test (if any) covering the new columns' types/nullability; no Hospeda-side test needed for this task.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
                 {
                     "title": "Add displayName/monthlyPriceArs/annualPriceArs columns to plans.schema.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run drizzle-kit generate in qzpay repo to confirm clean diff",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Bump qzpay-drizzle package version",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Publish new qzpay-drizzle version",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "schema", "cross-repo", "billing"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T16:03:50Z",
+                "completed": "2026-07-02T18:57:44Z"
             }
         },
         {
             "id": "T-002",
             "title": "Bump qzpay-drizzle pin and install in Hospeda",
             "description": "Update the `@qazuor/qzpay-drizzle` version pin in `packages/db/package.json` to the version published in T-001, then run `pnpm install` at the repo root to update the lockfile. Verify `packages/db/src/billing/drizzle-adapter.ts` still type-checks against the new schema shape (it re-exports `createQZPayDrizzleAdapter`, no code change expected, just a type surface check).\n\nTest requirements: none new — `pnpm typecheck --filter=@repo/db` must pass as verification.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
                 {
                     "title": "Bump version in packages/db/package.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm install",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify drizzle-adapter.ts typechecks",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "dependency-bump"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a",
+                "typecheck": "pass",
+                "tests": "n/a"
             },
             "timestamps": {
                 "created": "2026-07-02T10:00:28.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T18:58:16Z",
+                "completed": "2026-07-02T19:00:19Z"
             }
         },
         {
@@ -920,9 +920,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5,
         "cancelled": 13
