@@ -362,8 +362,7 @@ describe('resolver → widget integration (shape contract)', () => {
                     <ListWidget widget={makeListWidget('admin.accommodations.latest')} />
                 </TestWrapper>
             );
-            await screen.findByTestId('list-widget');
-            expect(screen.getByText('Cabaña del Sol')).toBeInTheDocument();
+            expect(await screen.findByText('Cabaña del Sol')).toBeInTheDocument();
             expect(screen.getByText('Hotel Litoral')).toBeInTheDocument();
         });
     });
@@ -391,10 +390,9 @@ describe('resolver → widget integration (shape contract)', () => {
                     />
                 </TestWrapper>
             );
-            const statusEl = await screen.findByTestId('status-widget');
-            expect(statusEl).toBeInTheDocument();
+            const badge = await screen.findByTestId('status-badge');
+            expect(screen.getByTestId('status-widget')).toBeInTheDocument();
             // 'ok' is not in variantMap → resolves to 'neutral'
-            const badge = screen.getByTestId('status-badge');
             expect(badge).toHaveAttribute('data-variant', 'neutral');
         });
 
@@ -408,8 +406,7 @@ describe('resolver → widget integration (shape contract)', () => {
                     />
                 </TestWrapper>
             );
-            await screen.findByTestId('status-widget');
-            const badge = screen.getByTestId('status-badge');
+            const badge = await screen.findByTestId('status-badge');
             expect(badge).toHaveAttribute('data-variant', 'success');
         });
     });
@@ -545,8 +542,7 @@ describe('resolver → widget integration (shape contract)', () => {
                     />
                 </TestWrapper>
             );
-            await screen.findByTestId('status-widget');
-            const badge = screen.getByTestId('status-badge');
+            const badge = await screen.findByTestId('status-badge');
             expect(badge).toHaveAttribute('data-variant', 'success');
         });
     });

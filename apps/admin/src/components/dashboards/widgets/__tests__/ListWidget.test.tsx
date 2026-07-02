@@ -282,8 +282,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        const rows = screen.getAllByTestId('list-item');
+        const rows = await screen.findAllByTestId('list-item');
         expect(rows).toHaveLength(ITEMS.length);
     });
 
@@ -299,8 +298,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        expect(screen.getByText('Consulta sobre cabaña')).toBeInTheDocument();
+        expect(await screen.findByText('Consulta sobre cabaña')).toBeInTheDocument();
         expect(screen.getByText('Reserva pendiente')).toBeInTheDocument();
     });
 
@@ -316,8 +314,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        expect(screen.getByText('hace 2h')).toBeInTheDocument();
+        expect(await screen.findByText('hace 2h')).toBeInTheDocument();
         expect(screen.getByText('ayer')).toBeInTheDocument();
     });
 
@@ -334,7 +331,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
+        await screen.findByTestId('list-item');
         expect(screen.queryByTestId('list-item-meta')).not.toBeInTheDocument();
     });
 
@@ -356,8 +353,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        const badges = screen.getAllByTestId('list-item-badge');
+        const badges = await screen.findAllByTestId('list-item-badge');
         expect(badges).toHaveLength(2);
         expect(badges[0]).toHaveTextContent('nuevo');
         expect(badges[1]).toHaveTextContent('3');
@@ -375,7 +371,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
+        await screen.findByTestId('list-item');
         expect(screen.queryByTestId('list-item-badge')).not.toBeInTheDocument();
     });
 
@@ -397,8 +393,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        const rows = screen.getAllByTestId('list-item');
+        const rows = await screen.findAllByTestId('list-item');
         expect(rows).toHaveLength(2);
     });
 
@@ -444,10 +439,8 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-
         // One link per item (all items have an id).
-        const links = screen.getAllByTestId('list-item-action-link');
+        const links = await screen.findAllByTestId('list-item-action-link');
         expect(links).toHaveLength(ITEMS.length);
 
         // The href is correctly interpolated with the item id.
@@ -477,8 +470,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        const link = screen.getByTestId('list-item-action-link');
+        const link = await screen.findByTestId('list-item-action-link');
         expect(link).toHaveTextContent('Ver detalle');
     });
 
@@ -505,8 +497,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-        const link = screen.getByTestId('list-item-action-link');
+        const link = await screen.findByTestId('list-item-action-link');
         expect(link).toHaveAttribute('href', '/custom/path');
     });
 
@@ -535,9 +526,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
-
-        const buttons = screen.getAllByTestId('list-item-action-button');
+        const buttons = await screen.findAllByTestId('list-item-action-button');
         expect(buttons).toHaveLength(2);
         expect(buttons[0]).toHaveTextContent('Publicar');
 
@@ -557,7 +546,7 @@ describe('ListWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('list-widget');
+        await screen.findAllByTestId('list-item');
         expect(screen.queryByTestId('list-item-action-link')).not.toBeInTheDocument();
         expect(screen.queryByTestId('list-item-action-button')).not.toBeInTheDocument();
     });
@@ -785,9 +774,9 @@ describe('ListWidget', () => {
                 </TestWrapper>
             );
 
-            await screen.findByTestId('list-widget');
+            const footerLinkEl = await screen.findByTestId('list-widget-footer-link');
             expect(screen.getByTestId('list-widget-footer')).toBeInTheDocument();
-            expect(screen.getByTestId('list-widget-footer-link')).toHaveTextContent('Ver todas');
+            expect(footerLinkEl).toHaveTextContent('Ver todas');
         });
 
         it('fires onFooterLinkClick with the action key when clicked', async () => {
@@ -892,8 +881,7 @@ describe('ListWidget', () => {
                 </TestWrapper>
             );
 
-            await screen.findByTestId('list-widget');
-            const buttons = screen.getAllByTestId('list-item-action-button');
+            const buttons = await screen.findAllByTestId('list-item-action-button');
             expect(buttons).toHaveLength(2);
 
             fireEvent.click(buttons[0]);
@@ -926,10 +914,8 @@ describe('ListWidget', () => {
                 </TestWrapper>
             );
 
-            await screen.findByTestId('list-widget');
-
             // Normal data rendered.
-            expect(screen.getAllByTestId('list-item')).toHaveLength(3);
+            expect(await screen.findAllByTestId('list-item')).toHaveLength(3);
             // Links rendered (not buttons).
             expect(screen.getAllByTestId('list-item-action-link')).toHaveLength(3);
             // No footer.

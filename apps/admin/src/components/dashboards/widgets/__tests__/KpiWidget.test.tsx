@@ -308,8 +308,7 @@ describe('KpiWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('kpi-widget');
-        expect(screen.getByTestId('trending-up-icon')).toBeInTheDocument();
+        expect(await screen.findByTestId('trending-up-icon')).toBeInTheDocument();
         expect(screen.queryByTestId('trending-down-icon')).not.toBeInTheDocument();
     });
 
@@ -344,8 +343,7 @@ describe('KpiWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('kpi-widget');
-        expect(screen.getByTestId('trending-down-icon')).toBeInTheDocument();
+        expect(await screen.findByTestId('trending-down-icon')).toBeInTheDocument();
         expect(screen.queryByTestId('trending-up-icon')).not.toBeInTheDocument();
     });
 
@@ -379,8 +377,7 @@ describe('KpiWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('kpi-widget');
-        expect(screen.getByTestId('kpi-unit-prefix')).toHaveTextContent('$');
+        expect(await screen.findByTestId('kpi-unit-prefix')).toHaveTextContent('$');
     });
 
     it('renders the unit suffix from data', async () => {
@@ -395,8 +392,7 @@ describe('KpiWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('kpi-widget');
-        expect(screen.getByTestId('kpi-unit-suffix')).toHaveTextContent('hosts');
+        expect(await screen.findByTestId('kpi-unit-suffix')).toHaveTextContent('hosts');
     });
 
     it('config unitPrefix overrides data.unitPrefix', async () => {
@@ -415,9 +411,8 @@ describe('KpiWidget', () => {
             </TestWrapper>
         );
 
-        await screen.findByTestId('kpi-widget');
         // The config override takes precedence.
-        expect(screen.getByTestId('kpi-unit-prefix')).toHaveTextContent('USD');
+        expect(await screen.findByTestId('kpi-unit-prefix')).toHaveTextContent('USD');
     });
 
     it('does NOT render prefix element when neither data nor config provides one', async () => {
