@@ -541,39 +541,39 @@
             "id": "T-016",
             "title": "Add focused unit tests for shared crypto util",
             "description": "Create `apps/api/test/utils/secret-vault-crypto.test.ts` — the first dedicated unit test for this crypto logic (previously only covered transitively via an integration round-trip test). Cover: encrypt→decrypt round-trip returns original plaintext; tampered auth tag/ciphertext raises on decrypt; missing/empty master key throws a clear error from `deriveKey()`; two different master keys produce non-interchangeable ciphertext. AAA pattern, no real DB needed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Round-trip encrypt/decrypt test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tampered auth tag/ciphertext rejection test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Missing master key throw test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-master-key non-interchangeability test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["crypto", "vault", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 14 new tests in secret-vault-crypto.test.ts; while writing this, discovered ai-vault.test.ts (pre-existing, not mentioned in the task description) broke on the T-014/T-015 error-message change — fixed as a separate follow-up commit before this one, both files now green together"
             },
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T21:40:00Z",
+                "completed": "2026-07-02T22:10:00Z"
             }
         },
         {
