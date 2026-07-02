@@ -402,39 +402,39 @@
             "id": "T-011",
             "title": "Create GET import-from-url status polling route",
             "description": "New GET route (modeled on reputation-status.ts) validating query params via T-001's status-query schema. If now - startedAt exceeds the existing apifyTimeoutMs config, short-circuit to {settled: true, failureCode: 'timeout'} without calling Apify again. Otherwise call resolveImportRunStatus (T-005/T-006); on {settled:true, raw}, pass raw through finalizeImportDraft (T-009); on {settled:true, failureCode}, return it directly; on {settled:false}, return as-is. Register the route in the accommodation route index.\n\nTest requirements: route tests for running->not-settled, succeeded->draft-shaped-response, failure->failureCode, ceiling-exceeded->timeout with no Apify call made (assert mock not invoked).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-006", "T-009"],
             "blocks": ["T-013", "T-015", "T-016", "T-019"],
             "subtasks": [
                 {
                     "title": "Add the new GET route and register it",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enforce the apifyTimeoutMs poll ceiling before calling Apify",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call resolveImportRunStatus and finalizeImportDraft on success",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write route tests for the 4 scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "route", "import", "async", "polling"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-02T09:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-02T11:45:00Z",
+                "completed": "2026-07-02T12:30:00Z"
             }
         },
         {
@@ -732,9 +732,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.2
     }
