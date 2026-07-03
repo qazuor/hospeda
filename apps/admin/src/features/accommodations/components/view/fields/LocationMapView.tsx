@@ -7,18 +7,20 @@
  * external link.
  *
  * SSR safety: the actual Leaflet/react-leaflet implementation lives in
- * `LocationMapInner.tsx` and is loaded via `clientOnly(() => import(...))`
- * inside `React.lazy`. The TanStack-Start babel compiler strips the inner
- * dynamic import from the server build (replaced with a throwing arrow
- * function), so Leaflet (`window`-dependent at module init) never reaches
- * the SSR bundle. The `isMounted` guard ensures we never invoke the lazy
- * component during SSR, which would otherwise hit the throwing function.
+ * `LocationMapInner.tsx` and is loaded via
+ * `createClientOnlyFn(() => import(...))` (HOS-33: renamed from
+ * `clientOnly` in TanStack Start >= 1.132.0) inside `React.lazy`. The
+ * TanStack-Start compiler strips the inner dynamic import from the server
+ * build (replaced with a throwing arrow function), so Leaflet
+ * (`window`-dependent at module init) never reaches the SSR bundle. The
+ * `isMounted` guard ensures we never invoke the lazy component during SSR,
+ * which would otherwise hit the throwing function.
  */
-import { clientOnly } from '@tanstack/react-start';
+import { createClientOnlyFn } from '@tanstack/react-start';
 import * as React from 'react';
 
 const LazyLocationMapInner = React.lazy(
-    clientOnly(() =>
+    createClientOnlyFn(() =>
         import('./LocationMapInner').then((mod) => ({ default: mod.LocationMapInner }))
     )
 );

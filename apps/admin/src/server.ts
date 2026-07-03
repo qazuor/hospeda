@@ -1,25 +1,20 @@
-import {
-    createStartHandler,
-    defaultStreamHandler,
-    defineHandlerCallback
-} from '@tanstack/react-start/server';
-import { createRouter } from './router';
+import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
 
 /**
  * SPEC-209 T-002: cheap container healthcheck endpoint.
  *
- * The compiled virtual server-entry wraps our default export in:
+ * TanStack Start >= 1.132.0 replaces the curried `createStartHandler({
+ * createRouter })` + `defineHandlerCallback` pattern with a direct-callback
+ * API. `createStartHandler(cb)` returns a plain `(request: Request) =>
+ * Promise<Response>` function (verified against the installed
+ * `@tanstack/react-start` 1.168.27 source: `requestHandler()` in
+ * `dist/esm/server.js` wraps the resolver as `(request, requestOpts) =>
+ * ...`), so the exported default handler is now called directly with the
+ * Web API `Request`, not a `{ request }`-wrapped event object.
  *
- *   defineEventHandler(function(event) {
- *     const request = toWebRequest(event);
- *     return serverEntry({ request });  // ← calls us with { request: Request }
- *   })
- *
- * So the `ctx` parameter we receive is `{ request: Web Request }`.
- *
- * `/healthz` is intercepted HERE — before `createStartHandler` or
- * `createRouter` are ever called — so no React tree is built and no
- * QZPayBilling instance is constructed.
+ * `/healthz` is intercepted HERE — before `createStartHandler`'s resolver
+ * runs — so no React tree is built and no QZPayBilling instance is
+ * constructed.
  *
  * Background: TanStack Start 1.131.26 + @tanstack/router-generator 1.131.26
  * compile `server.handlers.GET` into the SSR bundle correctly, but the
@@ -27,6 +22,10 @@ import { createRouter } from './router';
  * The SSR dispatch code short-circuits on `t.serverRouteTree && …`, so
  * `server.handlers` is permanently a no-op in this version. Intercepting
  * at the renderer level is the correct workaround.
+ *
+ * HOS-33 note: re-verify whether `server.handlers` routes are still a no-op
+ * on 1.168.27 before converting this to a proper server route — that
+ * re-evaluation is out of scope for this task (tracked separately).
  */
 
 const HEALTHCHECK_PATH = '/healthz';
@@ -56,15 +55,25 @@ export function healthcheckResponse(request: Request): Response | null {
     });
 }
 
-const handler = createStartHandler({
-    createRouter
-});
+/**
+ * `defaultStreamHandler` already matches the `({ request, router,
+ * responseHeaders }) => Response | Promise<Response>` shape
+ * `createStartHandler` expects, and TanStack Start's own generated
+ * default-entry (`@tanstack/react-start/server-entry`) uses it exactly this
+ * way (`createStartHandler(defaultStreamHandler)`) with no manual router
+ * construction. `createStartHandler` builds and fully loads the router
+ * itself (via the auto-discovered router entry from `router.tsx`) BEFORE
+ * invoking the callback, so calling `createRouter()` again here would
+ * produce a second, unloaded router instance instead of reusing the
+ * framework-managed one — verified by reading `createStartHandler`'s
+ * bundled source (`executeRouter` awaits `routerInstance.load()` and
+ * `dehydrate()` prior to calling `cb`).
+ */
+const startHandler = createStartHandler(defaultStreamHandler);
 
-export default defineHandlerCallback(async (ctx) => {
-    // ctx.request is the Web API Request created by toWebRequest(h3Event).
-    const hc = healthcheckResponse(ctx.request);
+export default async function handler(request: Request): Promise<Response> {
+    const hc = healthcheckResponse(request);
     if (hc) return hc;
 
-    const startHandler = await handler(defaultStreamHandler);
-    return startHandler(ctx);
-});
+    return startHandler(request);
+}
