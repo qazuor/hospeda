@@ -1124,31 +1124,32 @@
             "id": "T-032",
             "title": "Register social credentials page in admin navigation",
             "description": "Add a sidebar/navigation entry for the new `/social/credentials` admin route (T-029), following the existing admin nav conventions (check how the AI Credentials nav entry is registered and mirror it), gated the same way the route itself is gated so the link doesn't appear for users without the permission.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add nav entry mirroring the AI Credentials entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate visibility by the same permission as the route",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui", "navigation"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — no new test file needed (pure nav-config addition); covered by the existing `pnpm validate:sidebar-routes` script (87 link items incl. the new `/social/credentials`, all resolve to real route files) and the pre-existing config/ia/__tests__ suite (103 tests, all green, no snapshot broke)."
             },
+            "decisionNote": "Added the `social-credentials` link inside marketingSidebar's existing `social` group (right after `social-settings`, same SOCIAL_SETTINGS_MANAGE permission per T-001) rather than as a new top-level sidebar entry — it belongs in the same functional group as the other social config items. Used `onMissing: 'hide'` (mirroring `ai-credentials`'s nav entry, per the task's explicit instruction to mirror it) even though the sibling `social-settings` item does NOT set `onMissing` — a pre-existing inconsistency in that sidebar, not something introduced or fixed here since the task only asked to mirror the AI Credentials entry's gating behavior.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T09:45:00Z",
+                "completed": "2026-07-03T10:05:00Z"
             }
         },
         {
@@ -1527,9 +1528,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 32,
+        "completed": 33,
         "blocked": 0,
         "averageComplexity": 2.2
     }
