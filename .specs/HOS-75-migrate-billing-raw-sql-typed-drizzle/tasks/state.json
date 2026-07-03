@@ -847,7 +847,7 @@
             "id": "T-028",
             "title": "Final scoped verification across all 3 phases",
             "description": "Run pnpm --filter @repo/service-core typecheck, pnpm --filter @repo/api typecheck, scoped pnpm test runs per domain (service-core promo-code/product-domain tests, api billing/webhooks/cron tests -- never the full suite at once), and pnpm lint/check for noExplicitAny/unused-import cleanup as manual row interfaces are deleted. This is the final gate before closing HOS-75.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-001",
@@ -883,22 +883,32 @@
             "tags": ["billing", "verification"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z",
+                    "details": "@repo/service-core typecheck clean; hospeda-api typecheck clean; 721/721 packages/service-core/test/billing/; 1029/1029 apps/api test/routes/billing + test/routes/webhooks + test/cron; biome check clean on every touched directory (5 pre-existing suppression warnings in untouched files, unrelated to HOS-75)."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:15:00Z",
+                "completed": "2026-07-03T14:20:00Z"
             }
         }
     ],
     "summary": {
         "total": 28,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 1.54
     }

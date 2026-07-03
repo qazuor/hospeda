@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 27/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 28/28
 
 ## Setup
 
@@ -46,4 +46,4 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 27/28
 
 ## Testing
 
-- [ ] T-028: Final scoped verification across all 3 phases (complexity: 2) [blocked by all T-001..T-027]
+- [x] T-028: Final scoped verification across all 3 phases (complexity: 2) [blocked by all T-001..T-027]
