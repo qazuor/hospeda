@@ -1,4 +1,29 @@
 #!/usr/bin/env tsx
+/**
+ * A11y sweep — crawls the public routes (static inventory + dynamically
+ * discovered detail pages) in light and dark themes, runs axe-core, and gates
+ * on NEW critical/serious violations relative to the committed baseline.
+ *
+ * Usage (app must be up on :4321 + API on :3001):
+ *   pnpm --filter @repo/web a11y:sweep
+ *
+ * Environment variables:
+ *   BASE_URL                 Web origin to crawl (default http://localhost:4321).
+ *   API_BASE_URL             API origin for detail-route discovery (default :3001).
+ *   ONLY_URL                 Restrict the run to a single route (exact or suffix match).
+ *   DRY_RUN=1                List the pages that would be swept, then exit.
+ *   REQUIRE_DYNAMIC_ROUTES=1 Fail if any detail route cannot be discovered.
+ *   A11Y_UPDATE_BASELINE=1   Rewrite the baseline from this run and exit without gating.
+ *
+ *   A11Y_DETAIL=1            Diagnosis mode. Additionally dumps per-node axe detail
+ *                            (target selector, offending html, failureSummary) for
+ *                            every violation, so the exact offending component can be
+ *                            located. Gating/report behavior is unchanged — this only
+ *                            writes an extra artifact. Shortcut: pnpm --filter @repo/web a11y:diagnose
+ *   A11Y_DETAIL_RULES        Comma-separated axe rule ids to include in the detail dump
+ *                            (e.g. "nested-interactive,aria-allowed-attr"). Empty = all.
+ *   A11Y_DETAIL_OUT          Detail dump path (default _fixtures/a11y-detail.json).
+ */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
@@ -20,6 +45,15 @@ const REPORT_DIR = resolve(import.meta.dirname, '_fixtures');
 // (the API's first item is not deterministic), so a URL key would drift and
 // report known violations as new. The value is the sorted set of accepted rule ids.
 const BASELINE_PATH = resolve(import.meta.dirname, 'a11y-baseline.json');
+
+// Diagnosis mode: additionally capture and dump per-node axe detail so the exact
+// offending component can be located (the normal report only records rule ids).
+const DETAIL = process.env.A11Y_DETAIL === '1';
+const DETAIL_RULES = (process.env.A11Y_DETAIL_RULES || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+const DETAIL_OUT = process.env.A11Y_DETAIL_OUT || resolve(REPORT_DIR, 'a11y-detail.json');
 
 const DESKTOP = { width: 1280, height: 800 };
 const PAGE_TIMEOUT = 25_000;
@@ -83,6 +117,18 @@ const DETAIL_ROUTE_SPECS: ReadonlyArray<DetailRouteSpec> = [
     }
 ];
 
+/** Per-node detail for one violation, captured only in diagnosis mode (A11Y_DETAIL=1). */
+type ViolationDetail = {
+    rule: string;
+    impact: string;
+    help: string;
+    nodes: ReadonlyArray<{
+        target: ReadonlyArray<string>;
+        html: string;
+        failureSummary?: string;
+    }>;
+};
+
 type PageResult = {
     url: string;
     name: string;
@@ -97,6 +143,8 @@ type PageResult = {
         minor: number;
         rules: ReadonlyArray<{ id: string; impact: string }>;
     };
+    /** Populated only when A11Y_DETAIL=1. */
+    details?: ReadonlyArray<ViolationDetail>;
     durationMs: number;
 };
 
@@ -272,6 +320,24 @@ async function sweepEntry(
             minor: violations.filter((v) => v.impact === 'minor').length,
             rules: violations.map((v) => ({ id: v.id, impact: v.impact ?? 'unknown' }))
         };
+
+        if (DETAIL) {
+            const detailed = DETAIL_RULES.length
+                ? violations.filter((v) => DETAIL_RULES.includes(v.id))
+                : violations;
+            result.details = detailed.map((v) => ({
+                rule: v.id,
+                impact: v.impact ?? 'unknown',
+                help: v.help,
+                nodes: v.nodes.map((n) => ({
+                    // Flatten any nested (iframe) selector into a single string
+                    // so the artifact is a plain string[] regardless of frame depth.
+                    target: n.target.map((t) => (Array.isArray(t) ? t.join(' ') : String(t))),
+                    html: n.html.slice(0, 300),
+                    failureSummary: n.failureSummary
+                }))
+            }));
+        }
     } catch (e) {
         result.status = 'error';
         result.error = (e as Error).message;
@@ -342,6 +408,22 @@ async function main() {
     const reportPath = resolve(REPORT_DIR, 'sweep-report.json');
     writeFileSync(reportPath, JSON.stringify({ summary, results }, null, 2));
     console.log(`\nReport saved to ${reportPath}`);
+
+    if (DETAIL) {
+        const detailReport = results
+            .filter((r): r is PageResult & { details: ReadonlyArray<ViolationDetail> } =>
+                Boolean(r.details && r.details.length > 0)
+            )
+            .map((r) => ({
+                page: r.name,
+                theme: r.theme,
+                url: r.url,
+                violations: r.details
+            }));
+        writeFileSync(DETAIL_OUT, `${JSON.stringify(detailReport, null, 2)}\n`);
+        const entryCount = detailReport.reduce((sum, r) => sum + r.violations.length, 0);
+        console.log(`Detail dump → ${DETAIL_OUT} (${entryCount} violation entries)`);
+    }
 
     console.log('\nSummary:');
     console.log(`  Pages:    ${summary.ok} OK, ${summary.error} error`);
