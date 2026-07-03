@@ -12,9 +12,12 @@
  *   - Robustness: query strings do not affect the pathname match
  *   - AC-1.2 proxy: non-healthz paths return null (fall through to SSR, so no
  *     React tree or QZPayBilling instance is constructed for those requests)
- *   - HOS-33 T-003: the default export is callable with a raw `Request` and
- *     returns a `Response`, both for the intercepted `/healthz` path and for
- *     a path that falls through to the (mocked) TanStack Start handler.
+ *   - HOS-33 T-003/T-014: the default export is an object with a `fetch`
+ *     method (required by Nitro's runtime dispatcher -- a bare function
+ *     export throws `TypeError: ... fetch is not a function` once the Nitro
+ *     plugin is wired), callable with a raw `Request` and returning a
+ *     `Response`, both for the intercepted `/healthz` path and for a path
+ *     that falls through to the (mocked) TanStack Start handler.
  *
  * Module mocks:
  *   - `@tanstack/react-start/server` is mocked so the module-level
@@ -113,7 +116,7 @@ describe('default export request handler (HOS-33 T-003)', () => {
         const request = new Request('http://localhost/healthz');
 
         // Act
-        const response = await handler(request);
+        const response = await handler.fetch(request);
 
         // Assert
         expect(response).toBeInstanceOf(Response);
@@ -127,7 +130,7 @@ describe('default export request handler (HOS-33 T-003)', () => {
         const request = new Request('http://localhost/dashboard');
 
         // Act
-        const response = await handler(request);
+        const response = await handler.fetch(request);
 
         // Assert: falls through to the (mocked) createStartHandler resolver,
         // proving the direct-callback API is wired without the removed

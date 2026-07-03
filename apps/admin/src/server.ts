@@ -1,4 +1,5 @@
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
+import { createServerEntry } from '@tanstack/react-start/server-entry';
 
 /**
  * SPEC-209 T-002: cheap container healthcheck endpoint.
@@ -71,9 +72,30 @@ export function healthcheckResponse(request: Request): Response | null {
  */
 const startHandler = createStartHandler(defaultStreamHandler);
 
-export default async function handler(request: Request): Promise<Response> {
-    const hc = healthcheckResponse(request);
-    if (hc) return hc;
+/**
+ * HOS-33 T-014 fix: the default export MUST be an object with a `fetch`
+ * method, not a bare function. Verified by reading the framework's own
+ * generated default entry source
+ * (`@tanstack/react-start/dist/default-entry/esm/server.js`):
+ *
+ *   var fetch = createStartHandler(defaultStreamHandler);
+ *   var server_default = createServerEntry({ fetch });
+ *
+ * A bare-function default export builds and typechecks fine (nothing in the
+ * type surface enforces the `.fetch` shape), and even worked under the
+ * plain Vite SSR build we had before wiring the Nitro plugin -- but Nitro's
+ * runtime dispatcher (`.output/server/_chunks/ssr-renderer.mjs`) calls
+ * `entry.fetch(request)` on whatever this module exports, so a bare
+ * function throws `TypeError: n.fetch is not a function` on every request.
+ * `createServerEntry` itself is a trivial identity wrapper (just re-exposes
+ * whatever `.fetch` it's given), used here only for parity with the
+ * framework's own convention.
+ */
+export default createServerEntry({
+    async fetch(request: Request): Promise<Response> {
+        const hc = healthcheckResponse(request);
+        if (hc) return hc;
 
-    return startHandler(request);
-}
+        return startHandler(request);
+    }
+});

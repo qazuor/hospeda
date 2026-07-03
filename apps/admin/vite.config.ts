@@ -3,6 +3,7 @@ import { URL, fileURLToPath } from 'node:url';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { nitro } from 'nitro/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -94,6 +95,16 @@ export default defineConfig({
         tsconfigPaths({ projects: ['./tsconfig.json'] }),
         tailwindcss(),
         tanstackStart(),
+        // HOS-33 T-014: TanStack Start >= 1.132 no longer bundles Nitro inside
+        // tanstackStart() -- it moved to a separate opt-in plugin. Without this,
+        // `vite build` falls back to a plain SSR build (hashed asset filenames
+        // under dist/server/assets/, no .output/ directory at all), breaking
+        // apps/admin/package.json's `start` script and the Dockerfile, which
+        // both expect the Nitro-produced `.output/server/index.mjs` entry.
+        // Default preset targets Node.js, matching our Docker deployment; no
+        // preset override needed (see the Bun-specific example in TanStack
+        // Start's hosting docs for how that would differ).
+        nitro(),
         // Fix better-auth esbuild conflict: "entry point cannot be marked as external".
         // crawlFrameworkPkgs marks better-auth as both ssr.noExternal (framework pkg)
         // AND optimizeDeps.exclude, causing esbuild to receive it as both entry point
