@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 18/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 19/28
 
 ## Setup
 
@@ -31,7 +31,7 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 18/28
 ## Integration — Phase C (webhooks/crons, ~5 files)
 
 - [x] T-018: Migrate payment-logic.ts to use shared discount-state helper (complexity: 1) [blocked by T-002]
-- [ ] T-019: Migrate dunning.job.ts to use shared discount-state helper (complexity: 1) [blocked by T-002]
+- [x] T-019: Migrate dunning.job.ts to use shared discount-state helper (complexity: 1) [blocked by T-002]
 - [ ] T-020: Migrate apply-scheduled-plan-changes.ts to use shared discount-state helper (complexity: 1) [blocked by T-002]
 - [ ] T-021: Migrate subscription-poll.job.ts bulk discount-amounts reconciliation (complexity: 2)
 - [ ] T-022: Migrate subscription-promo-effect.ts admin diagnostic JOIN (complexity: 2)

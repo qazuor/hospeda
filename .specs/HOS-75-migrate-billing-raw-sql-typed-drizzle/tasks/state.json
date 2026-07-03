@@ -609,7 +609,7 @@
             "id": "T-019",
             "title": "Migrate dunning.job.ts to use shared discount-state helper",
             "description": "isCompOrActivelyDiscounted's SELECT (~lines 66-72) becomes a call to loadSubscriptionDiscountState() from T-002. Verify dunning.job.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": ["T-028"],
@@ -617,14 +617,24 @@
             "tags": ["billing", "cron", "dedup"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z",
+                    "details": "508/508 test/cron/ full sweep. Test mock's @repo/db was execute-only (insert+execute); added select/eq/billingSubscriptions mocks. Initial 3 failures (comp/active-discount/forever-discount guard tests) traced to loadSubscriptionDiscountState() throwing on undefined eq()/billingSubscriptions inside the fail-open catch -- fixed by adding those to the mock."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:20:00Z",
+                "completed": "2026-07-03T13:33:00Z"
             }
         },
         {
@@ -856,9 +866,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 1.54
     }
