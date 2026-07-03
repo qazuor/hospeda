@@ -20,7 +20,7 @@
  * @module services/billing/subscription/subscription-product-domain
  */
 
-import { billingSubscriptions, eq, getDb } from '@repo/db';
+import { type DrizzleClient, billingSubscriptions, eq, getDb } from '@repo/db';
 
 /**
  * Discount-relevant state for a single subscription, as loaded by
@@ -92,12 +92,16 @@ export function isAccommodationSubscription(sub: unknown): boolean {
  * fields it needs.
  *
  * @param input.subscriptionId - The subscription's id.
+ * @param input.tx - Optional Drizzle client (e.g. a caller-provided
+ *   transaction) so the read participates in the caller's boundary. Defaults
+ *   to a standalone `getDb()` connection.
  * @returns The subscription's discount state, or `null` when no row matches.
  */
 export async function loadSubscriptionDiscountState(input: {
     subscriptionId: string;
+    tx?: DrizzleClient;
 }): Promise<SubscriptionDiscountState | null> {
-    const db = getDb();
+    const db = input.tx ?? getDb();
     const [row] = await db
         .select({
             id: billingSubscriptions.id,

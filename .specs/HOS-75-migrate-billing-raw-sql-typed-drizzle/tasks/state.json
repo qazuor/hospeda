@@ -385,7 +385,7 @@
             "id": "T-012",
             "title": "Migrate promo-code.renewal.ts to use shared discount-state helper",
             "description": "resolveRenewalPromoEffect's SELECT (~lines 232-239, reads promo_code_id/promo_effect_remaining_cycles) becomes a call to loadSubscriptionDiscountState() from T-002. persistRemainingCycles()'s UPDATE (~lines 519-525, decrements promo_effect_remaining_cycles) becomes typed .set({...}). Verify promo-code.renewal.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-028"],
@@ -393,14 +393,24 @@
             "tags": ["billing", "promo-code", "dedup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z",
+                    "details": "11/11 (promo-code.renewal.test.ts, fully rewritten mocks to typed select/update chains)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:48:44Z",
+                "completed": "2026-07-03T05:57:07Z"
             }
         },
         {
@@ -786,9 +796,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 1.54
     }
