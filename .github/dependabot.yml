@@ -86,9 +86,6 @@ updates:
     #     interop break in js-yaml (no longer exports a `default`), which cascades
     #     into A11y + E2E P0 failures (they never actually run, the build dies
     #     first). Owner: HOS-76.
-    #   - recharts: 2.15.4 -> 3.9.0 restructures the public Tooltip/Legend prop
-    #     types, breaking typecheck across 5 files in apps/admin (the shadcn
-    #     chart.tsx wrapper + 4 consumers). Owner: HOS-77.
     #   - expo / expo-*: Dependabot opens PRs for individual expo-* leaf packages
     #     (router, constants, linking, secure-store, splash-screen, web-browser)
     #     bumping 56.x -> 57.0.0, but never proposes bumping the core `expo`
@@ -97,7 +94,7 @@ updates:
     #     leaves a split-SDK state that Jest unit tests won't catch (they don't
     #     exercise the native module runtime). Gate the whole scope together,
     #     same pattern as @better-auth/* and @tiptap/* above. Owner: HOS-78.
-    #     Unlike the zod/better-auth/etc entries above, astro/recharts/expo are
+    #     Unlike the zod/better-auth/etc entries above, astro/expo are
     #     scoped to `update-types: [semver-major]` only — the breaking changes
     #     found so far are all major-version jumps, so minor/patch (including
     #     security fixes) for the current major keep flowing through the normal
@@ -114,8 +111,6 @@ updates:
       - dependency-name: '@tiptap/*'
       - dependency-name: '@tanstack/react-form'
       - dependency-name: 'astro'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'recharts'
         update-types: ['version-update:semver-major']
       - dependency-name: 'expo'
         update-types: ['version-update:semver-major']

@@ -554,15 +554,19 @@ function DailySeriesChartSection() {
                                     axisLine={false}
                                 />
                                 <Tooltip
-                                    formatter={(value: number, name: string) => [
-                                        value,
+                                    formatter={(value, name) => [
+                                        typeof value === 'number' ? value : Number(value ?? 0),
                                         name === 'ACCOMMODATION'
                                             ? t('admin-pages.analytics.views.chart.accommodation')
                                             : name === 'POST'
                                               ? t('admin-pages.analytics.views.chart.post')
                                               : t('admin-pages.analytics.views.chart.event')
                                     ]}
-                                    labelFormatter={formatXAxisTick}
+                                    labelFormatter={(label) =>
+                                        typeof label === 'string'
+                                            ? formatXAxisTick(label)
+                                            : String(label ?? '')
+                                    }
                                 />
                                 <Legend
                                     formatter={(value: string) =>
