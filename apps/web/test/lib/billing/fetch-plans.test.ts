@@ -346,6 +346,92 @@ describe('SPEC-192 T-028: DB-backed endpoint lock (no config fallback)', () => {
     });
 });
 
+/**
+ * HOS-39 T-021 — both pricing pages reflect a DB change on the next request,
+ * without a deploy.
+ *
+ * SCOPE REVISED (spec-realign 2026-07-02): the owner (`suscriptores/planes/`)
+ * and tourist (`suscriptores/turistas/`) pages are SSR (`prerender = false`)
+ * and both call `fetchPublicPlans()` fresh on every request — there is no
+ * page-rebuild step to test. The only thing "revalidation" buys is purging
+ * Cloudflare's edge HTTP cache (`Cache-Control: s-maxage=300`) so an
+ * in-window request doesn't see a stale response; that purge makes a real
+ * outbound HTTP call in production (`CloudflareRevalidationAdapter`) with no
+ * local stub, and is already covered by the staging smoke checklist
+ * (SPEC-143 staging-smoke-checklist.md, section "SPEC-168.2"). Locally, this
+ * suite proves the piece that IS testable and that both pages actually
+ * depend on: an admin-edited plan value returned by the API is correctly
+ * surfaced by `filterPlansByCategory` for BOTH the owner and tourist
+ * category filters on the very next fetch — the mechanism that lets a fresh
+ * (uncached) request always reflect the DB, deploy-free.
+ *
+ * The revalidation TRIGGER firing with the correct paths is already covered
+ * at the service layer by
+ * `packages/service-core/test/billing/plan-service-revalidation.test.ts`;
+ * the DB-write-visible-at-the-API-boundary leg is already covered by
+ * `apps/api/test/e2e/flows/billing/plan-price-change.test.ts` (SPEC-168
+ * T-020). This suite is specifically the missing web-layer piece.
+ */
+describe('HOS-39 T-021: owner + tourist pricing pages reflect DB changes on next request', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('owner pricing page data (filterPlansByCategory) reflects an admin-edited value on the next fetch', async () => {
+        // ARRANGE — simulate the API response AFTER an admin edit: a higher
+        // price and a new display name for the owner plan, as
+        // fetchPublicPlans() would see it on the very next request.
+        const editedOwnerPlan = makePlan({
+            slug: 'owner-basico',
+            category: 'owner',
+            name: 'Básico (Editado)',
+            monthlyPriceArs: 999_000,
+            isActive: true,
+            sortOrder: 1
+        });
+        mockFetchOk([editedOwnerPlan, TOURIST_ACTIVE]);
+
+        // ACT — a fresh fetch + owner-category filter, exactly what
+        // suscriptores/planes/index.astro does on every SSR request.
+        const result = await fetchPublicPlans();
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected ok:true');
+        const ownerPlans = filterPlansByCategory(result.plans, 'owner');
+
+        // ASSERT — the edited value is visible without any rebuild/deploy.
+        expect(ownerPlans).toHaveLength(1);
+        expect(ownerPlans[0]?.name).toBe('Básico (Editado)');
+        expect(ownerPlans[0]?.monthlyPriceArs).toBe(999_000);
+    });
+
+    it('tourist pricing page data (filterPlansByCategory) reflects an admin-edited value on the next fetch', async () => {
+        // ARRANGE — simulate the API response AFTER an admin edit to a
+        // tourist plan, as fetchPublicPlans() would see it on the very next
+        // request.
+        const editedTouristPlan = makePlan({
+            slug: 'tourist-plus',
+            category: 'tourist',
+            name: 'Plus (Editado)',
+            monthlyPriceArs: 777_000,
+            isActive: true,
+            sortOrder: 1
+        });
+        mockFetchOk([OWNER_ACTIVE, editedTouristPlan]);
+
+        // ACT — a fresh fetch + tourist-category filter, exactly what
+        // suscriptores/turistas/index.astro does on every SSR request.
+        const result = await fetchPublicPlans();
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected ok:true');
+        const touristPlans = filterPlansByCategory(result.plans, 'tourist');
+
+        // ASSERT — the edited value is visible without any rebuild/deploy.
+        expect(touristPlans).toHaveLength(1);
+        expect(touristPlans[0]?.name).toBe('Plus (Editado)');
+        expect(touristPlans[0]?.monthlyPriceArs).toBe(777_000);
+    });
+});
+
 describe('cache constants', () => {
     it('PRICING_CACHE_MAX_AGE_SECONDS is a positive number', () => {
         expect(typeof PRICING_CACHE_MAX_AGE_SECONDS).toBe('number');

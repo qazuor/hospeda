@@ -58,11 +58,12 @@ const EXPECTED_SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set([
     // limits JSONB — two logical facets (one physical column, two Model C layers)
     'limitsKeysPresent',
     'limitsValues',
+    // typed top-level columns (HOS-39 T-003/T-004: promoted off metadata.*)
+    'displayName',
+    'monthlyPriceArs',
+    'annualPriceArs',
     // metadata JSONB sub-fields compared by detectDivergences
-    'metadata.displayName',
     'metadata.category',
-    'metadata.monthlyPriceArs',
-    'metadata.annualPriceArs',
     'metadata.isDefault',
     'metadata.sortOrder',
     'metadata.hasTrial',
@@ -177,8 +178,8 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
     });
 
     describe('specific field classifications (§8.2 spec table)', () => {
-        it('entitlements is capability (config wins — propagated on deploy)', () => {
-            expect(MODEL_C_FIELD_SPLIT.entitlements).toBe('capability');
+        it('entitlements is commercial (HOS-39: operators toggle via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT.entitlements).toBe('commercial');
         });
 
         it('limitsKeysPresent is capability (structural — which keys exist)', () => {
@@ -189,12 +190,12 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
             expect(MODEL_C_FIELD_SPLIT.limitsValues).toBe('commercial');
         });
 
-        it('metadata.monthlyPriceArs is commercial (price = operator decision)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.monthlyPriceArs']).toBe('commercial');
+        it('monthlyPriceArs is commercial (price = operator decision)', () => {
+            expect(MODEL_C_FIELD_SPLIT.monthlyPriceArs).toBe('commercial');
         });
 
-        it('metadata.annualPriceArs is commercial (price = operator decision)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.annualPriceArs']).toBe('commercial');
+        it('annualPriceArs is commercial (price = operator decision)', () => {
+            expect(MODEL_C_FIELD_SPLIT.annualPriceArs).toBe('commercial');
         });
 
         it('active is commercial (OQ-9: operators toggle via admin UI)', () => {
@@ -205,8 +206,8 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
             expect(MODEL_C_FIELD_SPLIT.description).toBe('commercial');
         });
 
-        it('metadata.displayName is commercial (OQ-9: operators edit via admin UI)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.displayName']).toBe('commercial');
+        it('displayName is commercial (OQ-9: operators edit via admin UI)', () => {
+            expect(MODEL_C_FIELD_SPLIT.displayName).toBe('commercial');
         });
 
         it('metadata.isDefault is capability (structural — fallback resolution)', () => {
@@ -217,16 +218,16 @@ describe('MODEL_C_FIELD_SPLIT (AC-2.3 guard)', () => {
             expect(MODEL_C_FIELD_SPLIT['metadata.category']).toBe('capability');
         });
 
-        it('metadata.sortOrder is capability (structural — display ordering)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.sortOrder']).toBe('capability');
+        it('metadata.sortOrder is commercial (HOS-39: operators reorder via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.sortOrder']).toBe('commercial');
         });
 
-        it('metadata.hasTrial is capability (structural — trial availability)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.hasTrial']).toBe('capability');
+        it('metadata.hasTrial is commercial (HOS-39: operators toggle trial via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.hasTrial']).toBe('commercial');
         });
 
-        it('metadata.trialDays is capability (structural — trial duration)', () => {
-            expect(MODEL_C_FIELD_SPLIT['metadata.trialDays']).toBe('capability');
+        it('metadata.trialDays is commercial (HOS-39: operators edit trial length via admin PlanDialog)', () => {
+            expect(MODEL_C_FIELD_SPLIT['metadata.trialDays']).toBe('commercial');
         });
 
         it('billing_prices.unitAmount is commercial (price = operator decision)', () => {

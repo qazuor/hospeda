@@ -1,6 +1,6 @@
 {
-    "id": "9611c9e8-a34c-48e2-ba53-6d15f8b4e205",
-    "prevId": "40bc271e-4038-457c-b599-978cfdfe225e",
+    "id": "9dda0c17-ec4d-45b6-b524-9aa5b0afda1e",
+    "prevId": "9611c9e8-a34c-48e2-ba53-6d15f8b4e205",
     "version": "7",
     "dialect": "postgresql",
     "tables": {
@@ -18064,6 +18064,222 @@
                     "columns": ["slug"]
                 }
             },
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.social_credential_audit": {
+            "name": "social_credential_audit",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "actor_id": {
+                    "name": "actor_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "action": {
+                    "name": "action",
+                    "type": "varchar(20)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "key": {
+                    "name": "key",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "ip_address": {
+                    "name": "ip_address",
+                    "type": "varchar(45)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {
+                "socialCredentialAudit_key_created_idx": {
+                    "name": "socialCredentialAudit_key_created_idx",
+                    "columns": [
+                        {
+                            "expression": "key",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "created_at",
+                            "isExpression": false,
+                            "asc": false,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "socialCredentialAudit_actorId_idx": {
+                    "name": "socialCredentialAudit_actorId_idx",
+                    "columns": [
+                        {
+                            "expression": "actor_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "social_credential_audit_actor_id_users_id_fk": {
+                    "name": "social_credential_audit_actor_id_users_id_fk",
+                    "tableFrom": "social_credential_audit",
+                    "tableTo": "users",
+                    "columnsFrom": ["actor_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.social_credentials": {
+            "name": "social_credentials",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "key": {
+                    "name": "key",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "ciphertext": {
+                    "name": "ciphertext",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "iv": {
+                    "name": "iv",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "auth_tag": {
+                    "name": "auth_tag",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "label": {
+                    "name": "label",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "socialCredentials_key_idx": {
+                    "name": "socialCredentials_key_idx",
+                    "columns": [
+                        {
+                            "expression": "key",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "idx_social_credentials_active_key": {
+                    "name": "idx_social_credentials_active_key",
+                    "columns": [
+                        {
+                            "expression": "key",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "where": "deleted_at IS NULL",
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "social_credentials_deleted_by_id_users_id_fk": {
+                    "name": "social_credentials_deleted_by_id_users_id_fk",
+                    "tableFrom": "social_credentials",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
             "policies": {},
             "checkConstraints": {},
             "isRLSEnabled": false
