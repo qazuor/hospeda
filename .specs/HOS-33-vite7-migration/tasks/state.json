@@ -1,0 +1,359 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-33",
+    "title": "Vite 7 Migration for TanStack Start",
+    "created": "2026-07-03T04:30:09.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Bump TanStack Start/Router family and Vite in apps/admin",
+            "description": "Bump apps/admin/package.json: vite to ^7.0.0, @tanstack/react-start to 1.168.27, @tanstack/react-router to 1.170.17, @tanstack/router-plugin to 1.168.19, @tanstack/react-router-ssr-query to 1.167.1, @tanstack/react-router-devtools to 1.167.0. Remove @vitejs/plugin-react from both deps and devDeps. Run pnpm install to regenerate the lockfile. This is a dependency-only change, commit separately from code changes per spec's rollback-independence requirement.\n\nTest requirements: no unit tests (dependency-only task). Verify via `pnpm install` exiting 0 with no peer-dependency errors, and `pnpm ls @tanstack/react-router --filter apps/admin` showing 1.170.17 resolved.\n\nDONE NOTES: vite was already ^8.1.2 (repo drifted ahead of the stale spec's 6.4.1 baseline) and satisfies react-start's `>=7.0.0` peer, so no vite bump was needed. Removed the obsolete `patches/@tanstack__start-plugin-core@1.131.26.patch` (circular CSS chunk-import recursion fix) — confirmed upstream 1.171.19 fixes the same bug natively with proper cycle-detection (visited-state tracking), source inspected via npm pack. pnpm install succeeded; only pre-existing unrelated peer warnings remain (expo/react-native/tiptap/qzpay-drizzle in other workspaces, csstype on dev-only devtools packages).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Bump vite + 5 @tanstack/* packages to target versions",
+                    "completed": true
+                },
+                { "title": "Remove @vitejs/plugin-react from deps and devDeps", "completed": true },
+                { "title": "Run pnpm install and regenerate lockfile", "completed": true },
+                { "title": "Verify no peer-dependency conflicts", "completed": true }
+            ],
+            "tags": ["dependencies", "admin", "vite", "tanstack"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": "2026-07-03T04:29:00.000Z",
+                "completed": "2026-07-03T04:38:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Remove @vitejs/plugin-react from vite.config.ts",
+            "description": "TanStack Start >= 1.132.0 internalizes the React plugin. In apps/admin/vite.config.ts, remove `import react from '@vitejs/plugin-react'`, remove the `react()` plugin call, and remove `customViteReactPlugin: true` from the `tanstackStart()` options.\n\nTest requirements: no dedicated unit test (config file). Verify via `pnpm build --filter apps/admin` completing without plugin-react-related errors.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Remove react import and react() plugin call", "completed": false },
+                { "title": "Remove customViteReactPlugin: true flag", "completed": false }
+            ],
+            "tags": ["admin", "vite", "config"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Rewrite server.ts to the new non-curried createStartHandler API",
+            "description": "In apps/admin/src/server.ts, replace the curried `createStartHandler({ createRouter })` + `defineHandlerCallback` pattern with the new direct-callback API: `export default createStartHandler(({ request }) => { const router = createRouter(); return defaultStreamHandler({ request, router }); })`. Keep the existing /healthz path-intercept logic (healthcheckResponse) running BEFORE this handler, unchanged.\n\nTest requirements: existing test/routes/__root.ssr-guard.test.ts must still pass unmodified (guards against SSR singleton leaks). Add a smoke assertion that the exported default handler is callable and returns a Response for a basic GET request.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Replace curried handler with direct createStartHandler callback",
+                    "completed": false
+                },
+                { "title": "Remove defineHandlerCallback usage", "completed": false },
+                {
+                    "title": "Confirm /healthz intercept still runs before the new handler",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack-start", "server"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Rename getWebRequest() to getRequest() in auth-session.ts",
+            "description": "In apps/admin/src/lib/auth-session.ts, update the import and all call sites from `getWebRequest()` to `getRequest()` per the TanStack Start >= 1.132.0 rename. Grep apps/admin/src for any other getWebRequest usages and update those too.\n\nTest requirements: existing auth-session unit/integration tests must pass unmodified. If none exist for this file, add a minimal test asserting the session-resolution function still returns the expected shape given a mocked request.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Update import and rename call sites in auth-session.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Grep apps/admin/src for other getWebRequest usages",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "auth", "tanstack-start"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Replace registerGlobalMiddleware with createStart() in start.ts",
+            "description": "In apps/admin/src/start.ts, replace `registerGlobalMiddleware({ middleware: [cspMiddleware] })` with `export const start = createStart({ serverFnMiddleware: [cspMiddleware], requestMiddleware: [cspMiddleware] })`. Adding requestMiddleware is what enables SSR-level CSP coverage (consumed by T-006 and T-010).\n\nTest requirements: add/update a unit test (apps/admin/test/start.test.ts) asserting the exported `start` object wires cspMiddleware into both serverFnMiddleware and requestMiddleware arrays.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Replace registerGlobalMiddleware with createStart()",
+                    "completed": false
+                },
+                {
+                    "title": "Wire cspMiddleware into serverFnMiddleware and requestMiddleware",
+                    "completed": false
+                },
+                { "title": "Write/update start.ts unit test", "completed": false }
+            ],
+            "tags": ["admin", "tanstack-start", "csp", "middleware"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire CSP nonce pipeline in router.tsx",
+            "description": "In apps/admin/src/router.tsx: implement `getCspNonce` via `createIsomorphicFn()` (server side reads the nonce from `getGlobalStartContext()`; client side reads it from `<meta property=\"csp-nonce\" content=\"{nonce}\">`). Pass `ssr: { nonce: getCspNonce() }` to `createRouter()`. Ensure `HeadContent` emits the csp-nonce meta tag so the client can hydrate it. Remove the `import './start'` side-effect import if `createStart()` (T-005) now replaces it; verify the middleware registration path still fires.\n\nTest requirements: new test apps/admin/test/router.csp-nonce.test.ts covering both the server path (mock getGlobalStartContext returning a nonce) and the client path (mock a document meta tag and assert getCspNonce reads it).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Implement getCspNonce via createIsomorphicFn (server + client paths)",
+                    "completed": false
+                },
+                { "title": "Pass ssr.nonce to createRouter()", "completed": false },
+                { "title": "Emit csp-nonce meta tag via HeadContent", "completed": false },
+                { "title": "Remove/verify './start' side-effect import", "completed": false },
+                { "title": "Write router.csp-nonce.test.ts", "completed": false }
+            ],
+            "tags": ["admin", "csp", "tanstack-router"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Verify middleware.ts compatibility with the new TanStack Start version",
+            "description": "In apps/admin/src/middleware.ts, no API changes are expected (still uses `createMiddleware`), but verify compatibility against the bumped TanStack Start version and fix any surfaced typecheck/runtime issues.\n\nTest requirements: existing middleware tests must still pass unmodified. If a breakage is found, add a regression test reproducing it before fixing (per project's bug-fix testing standard).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Review middleware.ts against TanStack Start changelog for the target version",
+                    "completed": false
+                },
+                {
+                    "title": "Run existing middleware tests and fix any breakage",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack-start", "middleware"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Verify dev server, build, typecheck, and lint after the core rewrite",
+            "description": "After T-002, T-003, T-004, T-005, and T-007 land, run `pnpm dev:admin` (manual smoke, confirm it starts without errors), `pnpm build` (root), `pnpm typecheck`, and `pnpm lint`. Fix any errors surfaced by the version bump or the API rewrites before proceeding to CSP/testing phases.\n\nTest requirements: this is a verification task; no new test files unless a discovered regression needs a dedicated regression test, in which case follow the project's bug-fix testing standard (test reproducing the bug before the fix).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Run pnpm dev:admin smoke check", "completed": false },
+                { "title": "Run pnpm build and fix errors", "completed": false },
+                { "title": "Run pnpm typecheck and fix errors", "completed": false },
+                { "title": "Run pnpm lint and fix errors", "completed": false }
+            ],
+            "tags": ["admin", "verification", "ci"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Validate third-party Vite 7 compatibility",
+            "description": "Verify apps/admin's better-auth Vite-internals workaround plugin (fix-better-auth-ssr-optimize), vite-tsconfig-paths, @tailwindcss/vite, and the Rollup manualChunks config all work correctly under Vite 7. Rewrite or remove the better-auth workaround if Vite 7 fixes the underlying issue it patches around. Compare production build chunk sizes against the pre-migration baseline (must stay within 20%).\n\nTest requirements: run the full auth flow (login, session validation, protected routes) as an integration test/manual smoke and confirm it passes; document the before/after build chunk-size comparison in the task notes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Verify/rewrite better-auth Vite-internals workaround plugin",
+                    "completed": false
+                },
+                {
+                    "title": "Verify vite-tsconfig-paths and @tailwindcss/vite compatibility",
+                    "completed": false
+                },
+                {
+                    "title": "Compare manualChunks build output sizes vs baseline",
+                    "completed": false
+                },
+                { "title": "Run full auth flow smoke test", "completed": false }
+            ],
+            "tags": ["admin", "vite", "auth", "verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Verify CSP header coverage on SSR initial page loads and nonce hydration",
+            "description": "Verify that `createStart({ requestMiddleware })` (T-005) now makes CSP headers present on ALL admin responses, including the SSR initial HTML document (previously only server-function responses were covered). Verify the nonce set in T-006 appears correctly in rendered `<script>` tags and resolves identically via `getCspNonce()` on both server and client, with no hydration mismatch warnings.\n\nTest requirements: integration test asserting a root-route response includes a Content-Security-Policy(-Report-Only) header with a nonce; run a production build (`NODE_ENV=production`) and check the browser console for zero hydration warnings. All existing CSP report-only tests must still pass.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Write integration test for SSR CSP header + nonce presence",
+                    "completed": false
+                },
+                {
+                    "title": "Verify curl -I on root route returns CSP header with nonce",
+                    "completed": false
+                },
+                {
+                    "title": "Production build hydration check (no console warnings)",
+                    "completed": false
+                },
+                { "title": "Confirm existing CSP report-only tests still pass", "completed": false }
+            ],
+            "tags": ["admin", "csp", "verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Re-validate /healthz behavior on the upgraded TanStack Start version",
+            "description": "Confirm apps/admin's /healthz endpoint still returns `200 {\"status\":\"ok\"}` without invoking React SSR, the CSP middleware, the _authed auth guard, or any billing construction, on the bumped TanStack Start version. Per apps/admin/CLAUDE.md, also re-evaluate whether TanStack Start server.handlers routes are still a no-op at this version or whether the path-intercept workaround in server.ts can now be replaced by a proper server route — document the finding either way, only change the implementation if route-based handling is verified safe.\n\nTest requirements: existing/updated healthz test must assert 200 status, correct JSON body, and absence of SSR/auth/billing side effects. Add a regression test if none currently exists for this behavior.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Run /healthz smoke and confirm response shape unchanged",
+                    "completed": false
+                },
+                {
+                    "title": "Re-evaluate server.handlers viability at the new version",
+                    "completed": false
+                },
+                { "title": "Add/update healthz regression test", "completed": false }
+            ],
+            "tags": ["admin", "healthz", "verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Lift the @tanstack/react-router Dependabot ignore",
+            "description": "In .github/dependabot.yml, remove the `@tanstack/react-router` ignore entry now that the family is aligned on the target versions and /healthz has been re-validated (T-011). Leave the `@tanstack/react-router-devtools` ignore entry as-is (owned separately by HOS-58). Update the explanatory comment block to remove the now-resolved router entry.\n\nTest requirements: none (config-only). Verify the file remains valid YAML.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Remove @tanstack/react-router ignore entry", "completed": false },
+                { "title": "Update explanatory comment block", "completed": false }
+            ],
+            "tags": ["devops", "dependabot"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Update apps/admin/CLAUDE.md /healthz documentation",
+            "description": "Update the /healthz section of apps/admin/CLAUDE.md, which currently states the router is pinned 'until SPEC-045 takes on the upgrade and re-validates /healthz'. Reflect the new TanStack Start version, the T-011 re-validation outcome, and remove the stale SPEC-045/Dependabot-ignore reference now that it's lifted (T-012).\n\nTest requirements: none (docs-only).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update /healthz section with new version + re-validation outcome",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "admin"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-03T04:30:09.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 12,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}
