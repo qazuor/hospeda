@@ -449,7 +449,7 @@
             "id": "T-014",
             "title": "Migrate promo-discount-apply.service.ts SELECT + UPDATE",
             "description": "Replace the SELECT (~lines 116-122, loads id/customer_id/status/plan_id/mp_subscription_id) and the promo_effect_remaining_cycles UPDATE (~lines 242-246, the B1 fix correcting the reducer's N-1 seed) with typed Drizzle. Verify promo-discount-apply.service.test.ts still passes with the same corrected value.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -457,14 +457,24 @@
             "tags": ["billing", "promo-code"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z",
+                    "details": "736/736 full test/billing/ sweep -- also fixed forward regressions in promo-code.effect-engine.test.ts and promo-code.migration.test.ts left over from T-011/T-012 (missed on first pass, caught by broader sweep)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:59:22Z",
+                "completed": "2026-07-03T12:49:22Z"
             }
         },
         {
@@ -806,9 +816,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 1.54
     }

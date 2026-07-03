@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 13/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 14/28
 
 ## Setup
 
@@ -23,7 +23,7 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 13/28
 - [x] T-011: Migrate promo-code.redemption.ts promo_effect_remaining_cycles UPDATE (complexity: 1)
 - [x] T-012: Migrate promo-code.renewal.ts to use shared discount-state helper (complexity: 2) [blocked by T-002]
 - [x] T-013: Migrate promo-code.trial-extension.ts raw-SQL effect-column access (complexity: 2) [needs-verification: exact site]
-- [ ] T-014: Migrate promo-discount-apply.service.ts SELECT + UPDATE (complexity: 2)
+- [x] T-014: Migrate promo-discount-apply.service.ts SELECT + UPDATE (complexity: 2)
 - [ ] T-015: Migrate subscription-discount-signup.service.ts UPDATE (complexity: 1)
 - [ ] T-016: Fold effect-columns UPDATE into insert (billingPromoCodes.seed.ts) (complexity: 1)
 - [ ] T-017: Fix stale extras/018 comment in promo-code.schema.ts (complexity: 1)

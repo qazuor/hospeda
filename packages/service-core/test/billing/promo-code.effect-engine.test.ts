@@ -90,9 +90,12 @@ function selectForUpdateMock<T>(rows: T[]): { select: ReturnType<typeof vi.fn> }
 /**
  * Build a mock TX with all the operations used inside redeemAndRecordInTx:
  * - select (FOR UPDATE lock)
- * - update (usedCount increment)
+ * - update (usedCount increment on billingPromoCodes; promoEffectRemainingCycles
+ *   on billingSubscriptions — typed as of HOS-75 T-011 — both routed through the
+ *   same `updateSetSpy` so tests can find the call matching the field they care
+ *   about via `expect.objectContaining`)
  * - insert (usage record)
- * - execute (raw SQL for remaining_cycles update — discount path only)
+ * - execute (raw SQL for the unrelated status='comp' stamp — out of HOS-75 scope)
  */
 function buildTxMock(lockedRow: {
     id: string;
@@ -101,18 +104,21 @@ function buildTxMock(lockedRow: {
     expiresAt: null | string;
 }) {
     const executeMock = vi.fn().mockResolvedValue(undefined);
+    const updateSetSpy = vi.fn();
 
     return {
         ...selectForUpdateMock([lockedRow]),
         update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-                where: vi.fn().mockResolvedValue([])
-            })
+            set: (values: unknown) => {
+                updateSetSpy(values);
+                return { where: vi.fn().mockResolvedValue([]) };
+            }
         }),
         insert: vi.fn().mockReturnValue({
             values: vi.fn().mockResolvedValue([])
         }),
-        execute: executeMock
+        execute: executeMock,
+        updateSetSpy
     };
 }
 
@@ -172,10 +178,10 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             // Arrange
             const row = {
                 ...baseRow,
-                effect_kind: 'discount',
-                value_kind: 'percentage',
-                duration_cycles: 1,
-                extra_days: null
+                effectKind: 'discount',
+                valueKind: 'percentage',
+                durationCycles: 1,
+                extraDays: null
             };
 
             // Act
@@ -198,10 +204,10 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             const row = {
                 ...baseRow,
                 value: 500,
-                effect_kind: 'discount',
-                value_kind: 'fixed',
-                duration_cycles: 3,
-                extra_days: null
+                effectKind: 'discount',
+                valueKind: 'fixed',
+                durationCycles: 3,
+                extraDays: null
             };
 
             // Act
@@ -222,10 +228,10 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 ...baseRow,
                 code: 'FREEMONTH',
                 value: 0,
-                effect_kind: 'trial_extension',
-                value_kind: null,
-                duration_cycles: null,
-                extra_days: 30
+                effectKind: 'trial_extension',
+                valueKind: null,
+                durationCycles: null,
+                extraDays: 30
             };
 
             // Act
@@ -245,10 +251,10 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 ...baseRow,
                 code: 'HOSPEDA_FREE',
                 value: 0,
-                effect_kind: 'comp',
-                value_kind: null,
-                duration_cycles: null,
-                extra_days: null
+                effectKind: 'comp',
+                valueKind: null,
+                durationCycles: null,
+                extraDays: null
             };
 
             // Act
@@ -260,13 +266,13 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
         });
 
         it('should return undefined effect for a discount row with no value_kind (not yet backfilled)', () => {
-            // Arrange — effect_kind='discount' but value_kind=NULL (row before backfill migration)
+            // Arrange — effectKind='discount' but valueKind=NULL (row before backfill migration)
             const row = {
                 ...baseRow,
-                effect_kind: 'discount',
-                value_kind: null,
-                duration_cycles: null,
-                extra_days: null
+                effectKind: 'discount',
+                valueKind: null,
+                durationCycles: null,
+                extraDays: null
             };
 
             // Act
@@ -294,10 +300,10 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             // Arrange
             const row = {
                 ...baseRow,
-                effect_kind: 'trial_extension',
-                value_kind: null,
-                duration_cycles: null,
-                extra_days: 0
+                effectKind: 'trial_extension',
+                valueKind: null,
+                durationCycles: null,
+                extraDays: 0
             };
 
             // Act
@@ -363,7 +369,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
+            let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -373,7 +379,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                         maxUses: null,
                         expiresAt: null
                     });
-                    capturedTxExecute = tx.execute;
+                    capturedUpdateSetSpy = tx.updateSetSpy;
                     return fn(tx);
                 }
             );
@@ -396,9 +402,11 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 }
             }
 
-            // The tx.execute for remaining_cycles=0 was called (inside the transaction)
-            expect(capturedTxExecute).not.toBeNull();
-            expect(capturedTxExecute).toHaveBeenCalledTimes(1);
+            // The typed UPDATE for promoEffectRemainingCycles=0 was issued (HOS-75 T-011).
+            expect(capturedUpdateSetSpy).not.toBeNull();
+            expect(capturedUpdateSetSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ promoEffectRemainingCycles: 0 })
+            );
         });
     });
 
@@ -422,7 +430,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
+            let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -432,7 +440,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                         maxUses: null,
                         expiresAt: null
                     });
-                    capturedTxExecute = tx.execute;
+                    capturedUpdateSetSpy = tx.updateSetSpy;
                     return fn(tx);
                 }
             );
@@ -454,23 +462,11 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 }
             }
 
-            // The tx.execute for promo_effect_remaining_cycles was called
-            expect(capturedTxExecute).not.toBeNull();
-            expect(capturedTxExecute).toHaveBeenCalledTimes(1);
-
-            // The SQL passed to tx.execute contains the remaining_cycles update
-            // Cast via unknown to MockInstance — capturedTxExecute is non-null
-            // because expect().not.toBeNull() above would have thrown otherwise.
-            const executeMockInstance = capturedTxExecute as unknown as MockInstance;
-            const executeArg = (executeMockInstance.mock.calls[0] as [unknown] | undefined)?.[0] as
-                | { strings: TemplateStringsArray; values: unknown[] }
-                | undefined;
-            expect(executeArg).toBeDefined();
-            const sqlTemplate = (executeArg?.strings ?? []).join('');
-            expect(sqlTemplate).toContain('promo_effect_remaining_cycles');
-            expect(sqlTemplate).toContain('billing_subscriptions');
-            // The value 2 is passed as a bound parameter
-            expect(executeArg?.values).toContain(2);
+            // The typed UPDATE for promoEffectRemainingCycles=2 was issued (HOS-75 T-011).
+            expect(capturedUpdateSetSpy).not.toBeNull();
+            expect(capturedUpdateSetSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ promoEffectRemainingCycles: 2 })
+            );
         });
 
         it('should set promo_effect_remaining_cycles=null for a forever discount (durationCycles=null)', async () => {
@@ -488,7 +484,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
+            let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -498,7 +494,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                         maxUses: null,
                         expiresAt: null
                     });
-                    capturedTxExecute = tx.execute;
+                    capturedUpdateSetSpy = tx.updateSetSpy;
                     return fn(tx);
                 }
             );
@@ -518,17 +514,11 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 }
             }
 
-            // The UPDATE for remaining_cycles=null was executed
-            expect(capturedTxExecute).toHaveBeenCalledTimes(1);
-            // Cast via unknown to MockInstance — non-null guaranteed by toHaveBeenCalledTimes(1)
-            const executeMockInstanceForever = capturedTxExecute as unknown as MockInstance;
-            const executeArg = (
-                executeMockInstanceForever.mock.calls[0] as [unknown] | undefined
-            )?.[0] as { strings: TemplateStringsArray; values: unknown[] } | undefined;
-            const sqlTemplate = (executeArg?.strings ?? []).join('');
-            expect(sqlTemplate).toContain('promo_effect_remaining_cycles');
-            // null is passed as a bound parameter
-            expect(executeArg?.values).toContain(null);
+            // The typed UPDATE for promoEffectRemainingCycles=null was issued (HOS-75 T-011).
+            expect(capturedUpdateSetSpy).not.toBeNull();
+            expect(capturedUpdateSetSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ promoEffectRemainingCycles: null })
+            );
         });
 
         it('should NOT set remaining_cycles when no subscriptionId is provided (preview mode)', async () => {
@@ -546,7 +536,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
+            let capturedUpdateSetSpy: ReturnType<typeof vi.fn> | null = null;
 
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -556,7 +546,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                         maxUses: null,
                         expiresAt: null
                     });
-                    capturedTxExecute = tx.execute;
+                    capturedUpdateSetSpy = tx.updateSetSpy;
                     return fn(tx);
                 }
             );
@@ -564,9 +554,17 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             // Act — no subscriptionId
             const result = await applyPromoCode('LANZAMIENTO50', 'cust-1', 10000);
 
-            // Assert — success but no execute (no subscription to update)
+            // Assert — success but no promoEffectRemainingCycles UPDATE (no subscription
+            // to update); the usedCount-increment UPDATE still fires on billingPromoCodes.
             expect(result.success).toBe(true);
-            expect(capturedTxExecute).not.toHaveBeenCalled();
+            const updateSetSpy = capturedUpdateSetSpy as unknown as MockInstance;
+            const remainingCyclesCall = updateSetSpy.mock.calls.find(
+                (c) =>
+                    typeof c[0] === 'object' &&
+                    c[0] !== null &&
+                    'promoEffectRemainingCycles' in c[0]
+            );
+            expect(remainingCyclesCall).toBeUndefined();
             if (result.success) {
                 expect(result.data.effectKind).toBe('discount');
                 // remainingCycles not included when no subscriptionId

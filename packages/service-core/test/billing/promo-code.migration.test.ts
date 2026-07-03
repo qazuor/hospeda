@@ -37,8 +37,10 @@ const { mockLoggerError } = vi.hoisted(() => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock @repo/db — resolveRenewalPromoEffect reads subscription rows via
-// getDb().execute(sql`...`). We intercept execute() per-test.
+// Mock @repo/db — resolveRenewalPromoEffect reads the subscription row via
+// the shared typed helper (loadSubscriptionDiscountState, HOS-75 T-012 —
+// select().from().where().limit()) and persists the counter via a typed
+// UPDATE; the billing_prices lookup remains getDb().execute(sql`...`).
 // ---------------------------------------------------------------------------
 vi.mock('@repo/db', () => ({
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -46,6 +48,15 @@ vi.mock('@repo/db', () => ({
         values,
         _type: 'sql'
     })),
+    billingSubscriptions: {
+        id: 'id',
+        status: 'status',
+        planId: 'planId',
+        mpSubscriptionId: 'mpSubscriptionId',
+        promoCodeId: 'promoCodeId',
+        promoEffectRemainingCycles: 'promoEffectRemainingCycles'
+    },
+    eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     getDb: vi.fn()
 }));
 
@@ -81,9 +92,11 @@ const mockGetPromoCodeById = promoCrudModule.getPromoCodeById as ReturnType<type
 
 /**
  * Build a mock `getDb()` that returns per-query row fixtures.
- * Query discrimination mirrors promo-code.renewal.test.ts exactly.
+ * Query discrimination mirrors promo-code.renewal.test.ts exactly (HOS-75
+ * T-012: subscription lookup is `select().from().where().limit()`, the
+ * counter persist is `update().set().where()`; billing_prices stays `execute`).
  *
- * @param options.subRow - subscription row for the SELECT.
+ * @param options.subRow - subscription row for the SELECT (camelCase fields).
  * @param options.unitAmount - billing_prices.unit_amount (centavos).
  * @param options.executeSpy - optional spy for call inspection.
  */
@@ -97,19 +110,26 @@ function buildDbMock(options: {
 
     execute.mockImplementation((query: { strings: TemplateStringsArray }) => {
         const text = query.strings.join(' ');
-        if (text.includes('FROM billing_subscriptions') && text.includes('SELECT')) {
-            return Promise.resolve({ rows: subRow ? [subRow] : [] });
-        }
         if (text.includes('FROM billing_prices')) {
             return Promise.resolve({
                 rows: unitAmount !== undefined ? [{ unit_amount: unitAmount }] : []
             });
         }
-        // UPDATE billing_subscriptions ... promo_effect_remaining_cycles
         return Promise.resolve({ rows: [] });
     });
 
-    return { execute };
+    const select = vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue(subRow ? [subRow] : [])
+            }))
+        }))
+    }));
+    const update = vi.fn(() => ({
+        set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }))
+    }));
+
+    return { execute, select, update };
 }
 
 /**
@@ -197,10 +217,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-hospeda-free',
                     status: 'comp',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: null,
-                    promo_code_id: 'pc-hospeda-free',
-                    promo_effect_remaining_cycles: null
+                    planId: 'plan-1',
+                    mpSubscriptionId: null,
+                    promoCodeId: 'pc-hospeda-free',
+                    promoEffectRemainingCycles: null
                 }
             });
             mockGetDb.mockReturnValue(db);
@@ -229,10 +249,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-hospeda-free',
                     status: 'comp',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: null,
-                    promo_code_id: 'pc-hospeda-free',
-                    promo_effect_remaining_cycles: null
+                    planId: 'plan-1',
+                    mpSubscriptionId: null,
+                    promoCodeId: 'pc-hospeda-free',
+                    promoEffectRemainingCycles: null
                 }
             });
             mockGetDb.mockReturnValue(db);
@@ -263,10 +283,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                     subRow: {
                         id: 'sub-hospeda-free',
                         status: 'comp',
-                        plan_id: 'plan-1',
-                        mp_subscription_id: null,
-                        promo_code_id: 'pc-hospeda-free',
-                        promo_effect_remaining_cycles: remaining
+                        planId: 'plan-1',
+                        mpSubscriptionId: null,
+                        promoCodeId: 'pc-hospeda-free',
+                        promoEffectRemainingCycles: remaining
                     }
                 });
                 mockGetDb.mockReturnValue(db);
@@ -331,10 +351,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-bienvenido30',
                     status: 'active',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: 'mp-1',
-                    promo_code_id: 'pc-bienvenido30',
-                    promo_effect_remaining_cycles: 1 // last cycle
+                    planId: 'plan-1',
+                    mpSubscriptionId: 'mp-1',
+                    promoCodeId: 'pc-bienvenido30',
+                    promoEffectRemainingCycles: 1 // last cycle
                 },
                 unitAmount: FULL_PRICE
             });
@@ -361,10 +381,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-bienvenido30',
                     status: 'active',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: 'mp-1',
-                    promo_code_id: 'pc-bienvenido30',
-                    promo_effect_remaining_cycles: 2 // mid-flight (for a 3-cycle code e.g.)
+                    planId: 'plan-1',
+                    mpSubscriptionId: 'mp-1',
+                    promoCodeId: 'pc-bienvenido30',
+                    promoEffectRemainingCycles: 2 // mid-flight (for a 3-cycle code e.g.)
                 },
                 unitAmount: FULL_PRICE
             });
@@ -404,10 +424,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-comp-safety',
                     status: 'comp',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: null,
-                    promo_code_id: 'pc-hospeda-free',
-                    promo_effect_remaining_cycles: 0 // exhausted counter (would trigger noop for discount)
+                    planId: 'plan-1',
+                    mpSubscriptionId: null,
+                    promoCodeId: 'pc-hospeda-free',
+                    promoEffectRemainingCycles: 0 // exhausted counter (would trigger noop for discount)
                 }
             });
             mockGetDb.mockReturnValue(db);
@@ -426,10 +446,10 @@ describe('Promo-code migration regression locks (SPEC-262 T-013)', () => {
                 subRow: {
                     id: 'sub-discount',
                     status: 'active',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: 'mp-1',
-                    promo_code_id: 'pc-bienvenido30',
-                    promo_effect_remaining_cycles: 1
+                    planId: 'plan-1',
+                    mpSubscriptionId: 'mp-1',
+                    promoCodeId: 'pc-bienvenido30',
+                    promoEffectRemainingCycles: 1
                 },
                 unitAmount: 10000
             });

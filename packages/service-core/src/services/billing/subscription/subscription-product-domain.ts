@@ -30,6 +30,7 @@ export interface SubscriptionDiscountState {
     id: string;
     status: string;
     planId: string;
+    customerId: string;
     mpSubscriptionId: string | null;
     promoCodeId: string | null;
     promoEffectRemainingCycles: number | null;
@@ -107,6 +108,7 @@ export async function loadSubscriptionDiscountState(input: {
             id: billingSubscriptions.id,
             status: billingSubscriptions.status,
             planId: billingSubscriptions.planId,
+            customerId: billingSubscriptions.customerId,
             mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
             promoCodeId: billingSubscriptions.promoCodeId,
             promoEffectRemainingCycles: billingSubscriptions.promoEffectRemainingCycles

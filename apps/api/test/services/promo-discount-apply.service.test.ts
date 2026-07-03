@@ -9,7 +9,9 @@
  * - subscription without a live preapproval → typed VALIDATION_ERROR.
  * - subscription not found → NOT_FOUND.
  *
- * DB, MercadoPago, and service-core are fully mocked — no real infra.
+ * DB, MercadoPago, and service-core are fully mocked — no real infra. The
+ * subscription lookup and the B1-fix counter UPDATE are typed Drizzle queries
+ * as of HOS-75 T-014 (previously raw SQL).
  *
  * @module test/services/promo-discount-apply.service
  */
@@ -20,10 +22,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks (declared before importing the module under test).
 // ---------------------------------------------------------------------------
 
-const executeMock = vi.fn();
+const updateSetSpy = vi.fn();
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ execute: executeMock })),
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
+    getDb: vi.fn(() => ({
+        update: vi.fn(() => ({
+            set: (values: unknown) => {
+                updateSetSpy(values);
+                return { where: vi.fn().mockResolvedValue(undefined) };
+            }
+        }))
+    })),
+    billingSubscriptions: { id: 'id' },
+    eq: vi.fn((col: unknown, val: unknown) => ({ col, val }))
 }));
 
 vi.mock('@repo/schemas', () => ({
@@ -34,12 +44,16 @@ const getPromoCodeByCodeMock = vi.fn();
 const calculatePromoCodeEffectMock = vi.fn();
 const applyPromoCodeMock = vi.fn();
 const resolveFullPlanPriceCentavosMock = vi.fn();
+const loadSubscriptionDiscountStateMock = vi.fn();
 vi.mock('@repo/service-core', () => ({
     getPromoCodeByCode: (...args: unknown[]) => getPromoCodeByCodeMock(...args),
     calculatePromoCodeEffect: (...args: unknown[]) => calculatePromoCodeEffectMock(...args),
     applyPromoCode: (...args: unknown[]) => applyPromoCodeMock(...args),
     // S4: shared helper now exported from service-core (was local duplicate)
-    resolveFullPlanPriceCentavos: (...args: unknown[]) => resolveFullPlanPriceCentavosMock(...args)
+    resolveFullPlanPriceCentavos: (...args: unknown[]) => resolveFullPlanPriceCentavosMock(...args),
+    // HOS-75 T-014: subscription lookup now goes through the shared typed helper.
+    loadSubscriptionDiscountState: (...args: unknown[]) =>
+        loadSubscriptionDiscountStateMock(...args)
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -58,18 +72,11 @@ const billingStub = {} as never;
 
 const DURATION_CYCLES = 3; // finite discount: 3 cycles
 
-/** Configure the DB execute mock: sub SELECT + price SELECT (now handled by resolveFullPlanPriceCentavos mock) + UPDATE. */
+/** Configure the subscription lookup mock (HOS-75 T-014: typed helper, camelCase fields). */
 function configureDb(options: {
     subRow: Record<string, unknown> | null;
 }) {
-    executeMock.mockImplementation((query: { strings: TemplateStringsArray }) => {
-        const text = query.strings.join(' ');
-        if (text.includes('FROM billing_subscriptions')) {
-            return Promise.resolve({ rows: options.subRow ? [options.subRow] : [] });
-        }
-        // Any other execute (e.g. the B1-fix UPDATE to overwrite the counter)
-        return Promise.resolve({ rows: [] });
-    });
+    loadSubscriptionDiscountStateMock.mockResolvedValue(options.subRow);
 }
 
 describe('applyMultiCycleDiscountToExistingSubscription (fail-closed + B1)', () => {
@@ -102,10 +109,10 @@ describe('applyMultiCycleDiscountToExistingSubscription (fail-closed + B1)', () 
         configureDb({
             subRow: {
                 id: 'sub-1',
-                customer_id: 'cust-1',
+                customerId: 'cust-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1'
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1'
             }
         });
         applyInitialDiscountMutationMock.mockResolvedValue({
@@ -132,10 +139,10 @@ describe('applyMultiCycleDiscountToExistingSubscription (fail-closed + B1)', () 
         configureDb({
             subRow: {
                 id: 'sub-1',
-                customer_id: 'cust-1',
+                customerId: 'cust-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1'
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1'
             }
         });
         applyInitialDiscountMutationMock.mockResolvedValue({ success: true });
@@ -161,22 +168,17 @@ describe('applyMultiCycleDiscountToExistingSubscription (fail-closed + B1)', () 
         expect(applyInitialDiscountMutationMock).toHaveBeenCalledOnce();
         expect(applyPromoCodeMock).toHaveBeenCalledOnce();
         // The B1-fix UPDATE (overwrite to durationCycles) must have been issued.
-        const updateCall = executeMock.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        // The UPDATE must use durationCycles (3) as the target value.
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(DURATION_CYCLES);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: DURATION_CYCLES });
     });
 
     it('subscription without a live preapproval → VALIDATION_ERROR, no MP call', async () => {
         configureDb({
             subRow: {
                 id: 'sub-1',
-                customer_id: 'cust-1',
+                customerId: 'cust-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: null
+                planId: 'plan-1',
+                mpSubscriptionId: null
             }
         });
 
