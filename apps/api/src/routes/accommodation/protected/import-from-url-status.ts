@@ -48,6 +48,7 @@ import {
 } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -196,9 +197,9 @@ export const protectedImportFromUrlStatusRoute = createProtectedRoute({
                 apifyToken: env.HOSPEDA_APIFY_TOKEN,
                 apifyAirbnbActor: env.HOSPEDA_APIFY_AIRBNB_ACTOR,
                 apifyBookingActor: env.HOSPEDA_APIFY_BOOKING_ACTOR,
-                googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY,
-                mercadoLibreToken: env.HOSPEDA_MERCADOLIBRE_TOKEN
-            }
+                googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY
+            },
+            mercadoLibreTokenProvider: () => getValidMercadoLibreToken()
         };
 
         return handleImportStatusPoll(q, {

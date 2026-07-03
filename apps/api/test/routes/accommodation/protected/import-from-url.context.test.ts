@@ -14,8 +14,8 @@ import type { AccommodationImportResponse } from '@repo/schemas';
 import type { ImportContext } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockImportFromUrl, mockGetValidMercadoLibreToken } = vi.hoisted(() => ({
-    mockImportFromUrl: vi.fn(),
+const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken } = vi.hoisted(() => ({
+    mockDispatchImportFromUrl: vi.fn(),
     mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token')
 }));
 
@@ -24,7 +24,7 @@ vi.mock('@repo/service-core', async (importActual) => {
     return {
         ...actual,
         AccommodationImportService: vi.fn().mockImplementation(() => ({
-            importFromUrl: mockImportFromUrl
+            dispatchImportFromUrl: mockDispatchImportFromUrl
         }))
     };
 });
@@ -62,7 +62,7 @@ describe('import-from-url ImportContext.mercadoLibreTokenProvider wiring', () =>
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockImportFromUrl.mockResolvedValue(MINIMAL_RESPONSE);
+        mockDispatchImportFromUrl.mockResolvedValue({ kind: 'sync', response: MINIMAL_RESPONSE });
         mockGetValidMercadoLibreToken.mockResolvedValue('mock-ml-access-token');
         app = initApp();
     });
@@ -77,10 +77,12 @@ describe('import-from-url ImportContext.mercadoLibreTokenProvider wiring', () =>
 
         // Assert: request succeeded and the mocked service was invoked once.
         expect(res.status).toBe(200);
-        expect(mockImportFromUrl).toHaveBeenCalledOnce();
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
 
         // Assert: the ImportContext passed to the service carries the port.
-        const [{ context }] = mockImportFromUrl.mock.calls[0] as [{ context: ImportContext }];
+        const [{ context }] = mockDispatchImportFromUrl.mock.calls[0] as [
+            { context: ImportContext }
+        ];
         expect(typeof context.mercadoLibreTokenProvider).toBe('function');
 
         // Assert: calling the port delegates to getValidMercadoLibreToken.
