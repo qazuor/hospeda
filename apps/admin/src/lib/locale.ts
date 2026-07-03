@@ -9,7 +9,7 @@
 
 import { env } from '@/env';
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 
 /**
  * Arguments for {@link pickLocaleFromAcceptLanguage}.
@@ -111,7 +111,7 @@ const getSupportedLocales = (): readonly string[] => {
  */
 export const fetchPreferredLocale = createServerFn({ method: 'GET' }).handler(
     async (): Promise<PickLocaleResult> => {
-        const request = getWebRequest();
+        const request = getRequest();
         const header = request?.headers.get('accept-language') ?? null;
 
         return pickLocaleFromAcceptLanguage({

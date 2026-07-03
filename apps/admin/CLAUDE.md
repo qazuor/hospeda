@@ -480,6 +480,23 @@ This app runs as two Coolify resources on the self-hosted VPS:
 
 Each resource has its own database, env vars, and OAuth client. The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale.
 
+### Build output requires the `nitro/vite` plugin (HOS-33 T-014)
+
+TanStack Start `>= 1.132.0` no longer bundles Nitro inside `tanstackStart()` — it moved to a
+separate opt-in plugin. `vite.config.ts` MUST keep `import { nitro } from 'nitro/vite'` in its
+`plugins` array (right after `tanstackStart()`). Without it, `pnpm build` silently falls back to
+a plain Vite SSR build with content-hashed asset filenames under `dist/server/assets/` and no
+`.output/` directory at all — `package.json`'s `start` script (`node .output/server/index.mjs`)
+and the `Dockerfile` both depend on the Nitro-produced `.output/server/index.mjs` path existing.
+If a future dependency bump reintroduces this warning during a build — `manualChunks option is
+ignored because the codeSplitting option is specified` — see the `codeSplitting` block in
+`vite.config.ts`: Vite 8's Rolldown bundler removed `rollupOptions.output.manualChunks` in favor
+of `rolldownOptions.output.codeSplitting.groups`, and that migration is why the chunking config
+looks the way it does. The default export in `src/server.ts` must also stay an object with a
+`fetch(request)` method (via `createServerEntry` from `@tanstack/react-start/server-entry`), not
+a bare function — Nitro's runtime dispatcher requires that exact shape and throws
+`TypeError: ... fetch is not a function` on every request otherwise.
+
 ### Healthcheck — probe `/healthz`, never `GET /` (SPEC-209)
 
 The container healthcheck MUST hit `/healthz`, not `GET /`. Probing `/` server-renders
@@ -489,15 +506,20 @@ with no real users, fed almost entirely by the healthcheck. See engram
 `deploy/vps-memory-pressure` and `spec/SPEC-209/progress`.
 
 - **Endpoint**: `/healthz` returns `200 {"status":"ok"}` (`application/json`) without
-  invoking React SSR, the `cspMiddleware`, the `_authed` auth guard, or any billing
-  construction. It is implemented as a path intercept in `src/server.ts`
-  (`healthcheckResponse(request)`), returned BEFORE `createStartHandler` runs — NOT as a
-  TanStack Start `server.handlers` route. Server routes (`createFileRoute(...).server.handlers`)
-  are a **no-op** in TanStack Start / router-generator `1.131.26`: the generator never emits
-  `serverRouteTree`, so the SSR dispatch short-circuits and the handler never fires. Re-evaluate
-  if the framework is upgraded. For this reason `@tanstack/react-router` is pinned (Dependabot
-  `ignore`) until SPEC-045 takes on the upgrade and re-validates `/healthz` — see
-  [Dependabot Policy](../../docs/guides/dependabot-policy.md).
+  invoking React SSR, the `cspMiddleware` request middleware, the `_authed` auth guard, or
+  any billing construction. It is implemented as a path intercept in `src/server.ts`
+  (`healthcheckResponse(request)`), returned BEFORE `createStartHandler`'s resolver runs —
+  NOT as a TanStack Start `server.handlers` route. **Re-verified on TanStack Start
+  1.168.27 / router-generator 1.167.18 (HOS-33 T-011, 2026-07-03):** the file-based
+  server-route-handler mechanism (`createFileRoute(...).server.handlers`,
+  `serverRouteTree`) no longer exists in the route-tree generator at all — searched the
+  installed generator source directly, zero matches for `serverRouteTree`, `server.handlers`,
+  `serverHandlers`, or `ServerRoute`. The whole concept was removed/restructured out of the
+  framework in favor of `createStart()` + `requestMiddleware`-based HTTP interception (the
+  same mechanism this app now uses for CSP, see T-006). There is no "proper server route"
+  to migrate `/healthz` to in this version — the manual path-intercept in `server.ts` is the
+  only available pattern, not a stopgap. The `@tanstack/react-router` Dependabot ignore has
+  been lifted accordingly — see [Dependabot Policy](../../docs/guides/dependabot-policy.md).
 - **Dockerfile**: the `HEALTHCHECK` instruction in `apps/admin/Dockerfile` targets `/healthz`.
 - **Coolify caveat**: a healthcheck configured in the Coolify resource UI (Health Checks tab)
   OVERRIDES the Dockerfile instruction. When deploying, confirm the UI healthcheck (if any)

@@ -1,25 +1,46 @@
 /**
- * TanStack Start server function middleware for Content-Security-Policy header injection.
- * Generates a cryptographically random nonce per request and sets it in
- * the CSP Report-Only header.
+ * TanStack Start HTTP request middleware for Content-Security-Policy header
+ * injection. Generates a cryptographically random nonce per request and sets
+ * it in the CSP Report-Only header.
  *
- * NOTE: In v1.131.26, `createMiddleware({ type: 'function' })` creates a server function
- * middleware, not an HTTP request middleware. This means CSP headers are set on responses
- * to server function calls, but NOT on initial page loads (SSR HTML).
+ * HOS-33 T-006: converted from `createMiddleware({ type: 'function' })` to
+ * `createMiddleware({ type: 'request' })`. Verified against the installed
+ * `@tanstack/start-client-core` 1.170.13 source
+ * (`dist/esm/createMiddleware.d.ts` / `createStartHandler.js`):
  *
- * Full HTTP-level coverage requires either:
- * - TanStack Start >= 1.132.0 with `createStart({ requestMiddleware })` (Vite 7)
- * - Modifying server.ts to wrap the handler with h3 middleware
+ * - A `type: 'request'` middleware's `.server()` handler is invoked for
+ *   EVERY request the framework handles, with `handlerType: 'router'` for
+ *   page loads (including the initial SSR HTML document) and
+ *   `handlerType: 'serverFn'` for server function calls. One middleware now
+ *   gives full HTTP-level coverage (GAP-042-13) — there is no need for a
+ *   second, parallel `type: 'function'` middleware, and this one is no
+ *   longer registered in `functionMiddleware` (see `start.ts`).
+ * - `next({ context })` recursively runs the ENTIRE downstream chain
+ *   (including the SSR render / server-fn handler) before resolving, so
+ *   `await next(...)` returns only once `result.response` is a fully
+ *   populated `Response`. The context passed to `next()` is also threaded
+ *   through `runWithStartContext()` before the downstream handler runs,
+ *   which is what makes it readable via `getGlobalStartContext()` *during*
+ *   the SSR render itself (consumed by `getCspNonceOnServer` in
+ *   `src/lib/csp-nonce.ts`, wired into `router.tsx`'s `ssr.nonce`).
+ * - `result.response` is always a genuine Web API `Response` instance here
+ *   (verified via `renderRouterToStream.tsx`'s `new Response(stream, {
+ *   status, headers })` and `redirect()`'s `new Response(null, { status,
+ *   headers })` — TanStack redirects ARE `Response` subclasses, not a
+ *   distinct shape). Freshly-constructed `Response` objects have mutable
+ *   headers by default (the Fetch spec's immutable-headers guard only
+ *   applies to responses obtained via `Response.error()`/`Response.redirect()`
+ *   or intercepted via a Service Worker), so `response.headers.set(...)` is
+ *   safe to call directly — no need to reconstruct/clone the response.
  *
  * Phase 1 (Report-Only): Scripts without nonce are reported but not blocked.
- * Phase 2 (enforcement): Blocked until Vite 7 migration provides both
- * `createStart` for HTTP middleware and `ssr.nonce` for script tag injection.
+ * Phase 2 (enforcement) is a separate follow-up (SPEC-042 Phase 2 / SPEC-046),
+ * out of scope here.
  *
  * @see https://tanstack.com/start/latest/docs/framework/react/middleware
  */
 
 import { createMiddleware } from '@tanstack/react-start';
-import { setResponseHeader } from '@tanstack/react-start/server';
 import { buildCspDirectives } from './lib/csp-helpers';
 
 /** Header name for CSP Report-Only mode (does not block, only reports violations). */
@@ -40,35 +61,27 @@ function generateCspNonce(byteLength: number): string {
 }
 
 /**
- * CSP middleware that generates a per-request nonce and sets the CSP header.
+ * CSP middleware that generates a per-request nonce and sets the CSP header
+ * on every response the framework produces (SSR page loads AND server
+ * function calls — see the module doc above).
  *
- * Registered globally via `registerGlobalMiddleware` in `start.ts`, this middleware
- * runs on every server function invocation and injects CSP Report-Only headers
- * into the response.
- *
- * The nonce is also exposed in the server context as `cspNonce` for downstream
- * server functions that may need it (e.g., rendering inline scripts).
+ * Registered as `requestMiddleware` in `start.ts`. The nonce is exposed to
+ * the rest of the request lifecycle as `context.cspNonce`: downstream, the
+ * SSR render (triggered by the `next()` call below) reads it back out via
+ * `getGlobalStartContext()` (see `src/lib/csp-nonce.ts`'s
+ * `getCspNonceOnServer`, wired into `router.tsx`'s `ssr.nonce`), so the same
+ * nonce that ends up in this response's CSP header is also the one applied
+ * to `ssr.nonce` — and therefore to every nonce'd `<script>`/`<style>` tag
+ * TanStack Router renders for this request.
  */
-export const cspMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+export const cspMiddleware = createMiddleware({ type: 'request' }).server(async ({ next }) => {
     const nonce = generateCspNonce(16);
     const sentryDsn = import.meta.env.VITE_SENTRY_DSN ?? '';
     const cspValue = buildCspDirectives({ nonce, sentryDsn });
 
-    /**
-     * Sets the CSP header on the current HTTP response.
-     *
-     * Uses `setResponseHeader()` from `@tanstack/react-start/server`, which is an
-     * H3 API that accesses the underlying event from async local storage. This means
-     * it works in server function context (where this middleware runs) but does NOT
-     * apply to initial SSR page renders -- only to server function call responses.
-     *
-     * This deviates from the spec's `getResponseHeaders().set()` pattern because
-     * TanStack Start's `createMiddleware({ type: 'function' })` does not expose
-     * response headers directly. The H3 approach works correctly for server functions
-     * and will be replaced with `createStart({ requestMiddleware })` once Vite 7
-     * migration enables full HTTP-level middleware support.
-     */
-    setResponseHeader(CSP_HEADER_NAME, cspValue);
+    const result = await next({ context: { cspNonce: nonce } });
 
-    return next({ context: { cspNonce: nonce } });
+    result.response.headers.set(CSP_HEADER_NAME, cspValue);
+
+    return result;
 });

@@ -4,6 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
+import { nitro } from 'nitro/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -87,6 +88,21 @@ try {
     process.exit(1);
 }
 
+// HOS-33 T-010: see the long comment above `rolldownOptions.output.codeSplitting`
+// for why this exists -- matches the SolidJS-based devtools stack so it can be
+// excluded from every manual vendor group and left to Rolldown's default chunking.
+function isDevtoolsOrSolidJs(id: string): boolean {
+    return (
+        id.includes('/@tanstack/devtools') ||
+        id.includes('/@tanstack/react-devtools') ||
+        id.includes('/@tanstack/react-router-devtools') ||
+        id.includes('/@tanstack/router-devtools-core') ||
+        id.includes('/@solid-primitives/') ||
+        id.includes('/solid-js/') ||
+        id.includes('/goober/')
+    );
+}
+
 export default defineConfig({
     // Load .env files from the admin app directory, not the monorepo root.
     // Vite will auto-load: .env, .env.local, .env.[mode], .env.[mode].local
@@ -94,7 +110,29 @@ export default defineConfig({
     plugins: [
         tsconfigPaths({ projects: ['./tsconfig.json'] }),
         tailwindcss(),
-        tanstackStart({ customViteReactPlugin: true }),
+        tanstackStart(),
+        // HOS-33 T-014: TanStack Start >= 1.132 no longer bundles Nitro inside
+        // tanstackStart() -- it moved to a separate opt-in plugin. Without this,
+        // `vite build` falls back to a plain SSR build (hashed asset filenames
+        // under dist/server/assets/, no .output/ directory at all), breaking
+        // apps/admin/package.json's `start` script and the Dockerfile, which
+        // both expect the Nitro-produced `.output/server/index.mjs` entry.
+        // Default preset targets Node.js, matching our Docker deployment; no
+        // preset override needed (see the Bun-specific example in TanStack
+        // Start's hosting docs for how that would differ).
+        nitro(),
+        // HOS-33 T-002 correction (found via a real `pnpm dev` smoke test, not
+        // just a production build): removing @vitejs/plugin-react entirely broke
+        // dev-mode Fast Refresh -- `pnpm dev` 500s on every request with
+        // "TanStack Start React dev mode requires the React Refresh runtime,
+        // but /@react-refresh could not be resolved". Production builds worked
+        // fine without it (tanstackStart() covers the JSX transform at build
+        // time), but dev-mode HMR needs the actual React Refresh runtime, which
+        // only @vitejs/plugin-react provides. TanStack Start's own current
+        // hosting docs (fetched via Context7) confirm the recommended pattern is
+        // `[tanstackStart(), nitro(), viteReact()]` -- all three together, no
+        // `customViteReactPlugin` flag needed (that flag was the 1.131.26-era
+        // opt-in mechanism T-002 correctly removed).
         react(),
         // Fix better-auth esbuild conflict: "entry point cannot be marked as external".
         // crawlFrameworkPkgs marks better-auth as both ssr.noExternal (framework pkg)
@@ -256,7 +294,129 @@ export default defineConfig({
         minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
         // Target modern browsers for smaller bundles
         target: 'es2020',
-        // Code splitting configuration
+        // HOS-33 T-009: Vite 8's Rolldown bundler removed the object form of
+        // `rollupOptions.output.manualChunks` and ignores the (deprecated)
+        // function form entirely whenever `rolldownOptions.output.codeSplitting`
+        // is set (which one of our plugins -- tanstackStart()/nitro() -- sets by
+        // default). Confirmed via the build warning "manualChunks option is
+        // ignored because the codeSplitting option is specified" and via
+        // Rolldown's own CodeSplittingGroup type (`name`/`test` both accept a
+        // function, not just a static string/RegExp), which is what lets this
+        // preserve the original per-feature dynamic chunk naming. Groups are
+        // evaluated by `priority` (higher first); without an explicit priority
+        // Rolldown's default ordering is not guaranteed to match array order,
+        // so every group below is given one to keep vendor sub-splits taking
+        // precedence over their broader catch-alls.
+        //
+        // HOS-33 T-010 fix: @tanstack/react-devtools and @tanstack/react-router-devtools
+        // pull in a SolidJS-based UI (@tanstack/devtools, @tanstack/devtools-ui,
+        // @solid-primitives/*, solid-js, goober) that has module-scope,
+        // window-dependent side effects. __root.tsx statically imports
+        // TanstackDevtools (only the RENDER is env.NODE_ENV-gated, per
+        // apps/admin/CLAUDE.md's "Accepted dev-only console noise" -- the import
+        // itself always ships), so this code was always part of the root's eager
+        // module graph. Before this file wired manual codeSplitting groups,
+        // Rolldown's automatic (default) chunking happened to isolate it in a way
+        // that never got eagerly evaluated by the server entry. Grouping ANY
+        // @tanstack/* (or generic node_modules) match forced this into an eager
+        // vendor chunk instead, crashing the production server at startup with
+        // "Client-only API called on the server side" (solid-js's SSR stub
+        // throwing from module-scope code, not from a request handler). Excluded
+        // here so it falls through to Rolldown's own default splitting, matching
+        // the pre-existing (accidentally correct) behavior.
+        rolldownOptions: {
+            output: {
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'vendor-react',
+                            test: /node_modules\/(react|react-dom|scheduler)\//,
+                            priority: 100
+                        },
+                        {
+                            name: 'vendor-tanstack-router',
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*(router|start)/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
+                            priority: 90
+                        },
+                        {
+                            name: 'vendor-tanstack-query',
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*query/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
+                            priority: 90
+                        },
+                        {
+                            name: 'vendor-tanstack-table',
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*(table|virtual)/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
+                            priority: 90
+                        },
+                        {
+                            name: 'vendor-tanstack-form',
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*form/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
+                            priority: 90
+                        },
+                        {
+                            name: 'vendor-tanstack-other',
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\//.test(id) && !isDevtoolsOrSolidJs(id),
+                            priority: 80
+                        },
+                        { name: 'vendor-radix', test: /node_modules\/@radix-ui\//, priority: 90 },
+                        { name: 'vendor-zod', test: /node_modules\/zod\//, priority: 90 },
+                        {
+                            name: 'vendor',
+                            test: (id: string) =>
+                                /node_modules/.test(id) && !isDevtoolsOrSolidJs(id),
+                            priority: 10
+                        },
+                        {
+                            // Feature chunks from src/features/<slug>/ -- one dynamic
+                            // chunk per feature, same as the original manualChunks logic.
+                            name: (id: string) => {
+                                const match = id.match(/\/features\/([^/]+)\//);
+                                return match?.[1] ? `feature-${match[1]}` : 'features-other';
+                            },
+                            test: /\/features\//,
+                            priority: 70
+                        },
+                        {
+                            name: 'components-entity-list',
+                            test: /\/components\/entity-list\//,
+                            priority: 70
+                        },
+                        // Heavy fields (tiptap, leaflet, upload) are lazy-loaded via
+                        // React.lazy -- excluded here so Rolldown creates async chunks
+                        // for them automatically instead of bundling into
+                        // components-entity-form.
+                        {
+                            name: 'components-entity-form',
+                            test: (id: string) =>
+                                id.includes('/components/entity-form/') &&
+                                !id.includes('/components/entity-form/fields/'),
+                            priority: 70
+                        },
+                        {
+                            name: 'components-entity-pages',
+                            test: /\/components\/entity-pages\//,
+                            priority: 70
+                        },
+                        { name: 'components-table', test: /\/components\/table\//, priority: 70 },
+                        { name: 'components-ui', test: /\/components\/ui\//, priority: 70 },
+                        {
+                            name: 'lib-utils',
+                            test: (id: string) => id.includes('/lib/') || id.includes('/utils/'),
+                            priority: 60
+                        }
+                    ]
+                }
+            }
+        },
         rollupOptions: {
             output: {
                 // Force ESM execution order. Without this, Rolldown 1.0.0-rc.17
@@ -266,90 +426,6 @@ export default defineConfig({
                 // is assigned, producing `Cannot read properties of undefined (reading 'update')`
                 // at runtime. See https://github.com/rolldown/rolldown/issues/8812
                 strictExecutionOrder: true,
-                // Manual chunks for better code splitting
-                manualChunks: (id) => {
-                    // Vendor chunks - large external dependencies
-                    if (id.includes('node_modules')) {
-                        // React ecosystem
-                        if (
-                            id.includes('react') ||
-                            id.includes('react-dom') ||
-                            id.includes('scheduler')
-                        ) {
-                            return 'vendor-react';
-                        }
-
-                        // TanStack libraries
-                        if (id.includes('@tanstack')) {
-                            if (id.includes('router') || id.includes('start')) {
-                                return 'vendor-tanstack-router';
-                            }
-                            if (id.includes('query')) {
-                                return 'vendor-tanstack-query';
-                            }
-                            if (id.includes('table') || id.includes('virtual')) {
-                                return 'vendor-tanstack-table';
-                            }
-                            if (id.includes('form')) {
-                                return 'vendor-tanstack-form';
-                            }
-                            return 'vendor-tanstack-other';
-                        }
-
-                        // Radix UI components
-                        if (id.includes('@radix-ui')) {
-                            return 'vendor-radix';
-                        }
-
-                        // Zod validation
-                        if (id.includes('zod')) {
-                            return 'vendor-zod';
-                        }
-
-                        // Other vendor code
-                        return 'vendor';
-                    }
-
-                    // Feature chunks from src/features/
-                    if (id.includes('/features/')) {
-                        const match = id.match(/\/features\/([^/]+)\//);
-                        if (match?.[1]) {
-                            return `feature-${match[1]}`;
-                        }
-                    }
-
-                    // Component chunks — split entity trees so lazy-loaded
-                    // fields (entity-form/fields/) land in their own async chunks.
-                    if (id.includes('/components/entity-list/')) {
-                        return 'components-entity-list';
-                    }
-                    if (id.includes('/components/entity-form/fields/')) {
-                        // Heavy fields (tiptap, leaflet, upload) are lazy-loaded
-                        // via React.lazy — let Rollup create async chunks for them
-                        // by returning undefined (no manual chunk assignment).
-                        return undefined;
-                    }
-                    if (id.includes('/components/entity-form/')) {
-                        return 'components-entity-form';
-                    }
-                    if (id.includes('/components/entity-pages/')) {
-                        return 'components-entity-pages';
-                    }
-                    if (id.includes('/components/table/')) {
-                        return 'components-table';
-                    }
-                    if (id.includes('/components/ui/')) {
-                        return 'components-ui';
-                    }
-
-                    // Lib/utils chunks
-                    if (id.includes('/lib/') || id.includes('/utils/')) {
-                        return 'lib-utils';
-                    }
-
-                    // Default - let Rollup decide
-                    return undefined;
-                },
                 // Chunk file naming
                 chunkFileNames: (chunkInfo) => {
                     const name = chunkInfo.name || 'chunk';

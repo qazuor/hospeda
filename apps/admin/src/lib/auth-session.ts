@@ -9,7 +9,7 @@
  */
 
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 
 /**
  * Auth state returned by the session validation
@@ -144,7 +144,7 @@ export async function resolveAuthSession({
 
 export const fetchAuthSession = createServerFn({ method: 'GET' }).handler(
     async (): Promise<AuthState> => {
-        const request = getWebRequest();
+        const request = getRequest();
         if (!request) {
             return UNAUTHENTICATED_STATE;
         }

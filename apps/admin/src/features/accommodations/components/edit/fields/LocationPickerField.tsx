@@ -11,7 +11,7 @@
  * Controlled via `value`/`onChange` (RO-RO). The host can edit any structured
  * field manually too — typing those fields does NOT trigger geocoding.
  */
-import { clientOnly } from '@tanstack/react-start';
+import { createClientOnlyFn } from '@tanstack/react-start';
 import * as React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -23,15 +23,16 @@ import {
 
 /**
  * Leaflet map lives in `LocationPickerMapInner.tsx` and is loaded via
- * `clientOnly(() => import(...))` inside `React.lazy`. The TanStack-Start
- * babel compiler strips the inner dynamic import from the server build
- * (replaced with a throwing arrow function), so the `leaflet` runtime
+ * `createClientOnlyFn(() => import(...))` (HOS-33: renamed from
+ * `clientOnly` in TanStack Start >= 1.132.0) inside `React.lazy`. The
+ * TanStack-Start compiler strips the inner dynamic import from the server
+ * build (replaced with a throwing arrow function), so the `leaflet` runtime
  * (which references `window` at module init) never reaches the SSR bundle.
  * The `isMounted` guard below keeps the component from rendering on the
  * server, which is what the throwing function would otherwise reject.
  */
 const LazyLocationPickerMap = React.lazy(
-    clientOnly(() =>
+    createClientOnlyFn(() =>
         import('./LocationPickerMapInner').then((mod) => ({ default: mod.LocationPickerMapInner }))
     )
 );
