@@ -277,8 +277,7 @@ export function buildHostAccommodationCoreFields(
         },
         seo: {
             title: `Alojamiento Completo - ${spec.displayName} (Seed Test)`,
-            description: `Propiedad de prueba (seed) para el test user ${spec.displayName}, usada para ejercitar rutas de owner durante el crawl CSP de staging (HOS-30).`,
-            keywords: ['seed', 'test', 'hos-30', slugSuffix]
+            description: `Propiedad de prueba (seed) para el test user ${spec.displayName}, usada para ejercitar rutas de owner durante el crawl CSP de staging (HOS-30).`
         },
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PUBLIC,
