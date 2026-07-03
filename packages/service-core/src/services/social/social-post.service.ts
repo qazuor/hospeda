@@ -33,8 +33,7 @@ import type {
     SocialPostMediaModel as SocialPostMediaModelType,
     SocialPostModel as SocialPostModelType,
     SocialPostTargetModel as SocialPostTargetModelType,
-    SocialPublishLogModel as SocialPublishLogModelType,
-    SocialSettingModel as SocialSettingModelType
+    SocialPublishLogModel as SocialPublishLogModelType
 } from '@repo/db';
 import {
     SocialAssetModel,
@@ -47,7 +46,6 @@ import {
     SocialPostModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
-    SocialSettingModel,
     gte,
     lte,
     safeIlike,
@@ -516,6 +514,13 @@ export interface SocialDashboardData {
 export interface GetDashboardInput {
     /** Actor performing the action — must hold SOCIAL_POST_VIEW. */
     readonly actor: Actor;
+    /**
+     * Whether the Make.com webhook credential is configured — resolved by the
+     * caller against the social credential vault (mirrors the makeApiKey /
+     * webhookUrl injection pattern used by the dispatch pipeline, HOS-64 T-024).
+     * service-core cannot read the vault directly (apps/api-only isolation).
+     */
+    readonly makeWebhookConfigured: boolean;
 }
 
 /**
@@ -621,7 +626,6 @@ export class SocialPostService {
     private readonly postHashtagModel: SocialPostHashtagModelType;
     private readonly assetModel: SocialAssetModelType;
     private readonly publishLogModel: SocialPublishLogModelType;
-    private readonly settingModel: SocialSettingModelType;
     private readonly batchModel: SocialContentBatchModelType;
     private readonly campaignModel: SocialCampaignModelType;
     private readonly auditLog: SocialAuditLogServiceType;
@@ -637,7 +641,6 @@ export class SocialPostService {
         postHashtagModel?: SocialPostHashtagModelType,
         assetModel?: SocialAssetModelType,
         publishLogModel?: SocialPublishLogModelType,
-        settingModel?: SocialSettingModelType,
         batchModel?: SocialContentBatchModelType,
         campaignModel?: SocialCampaignModelType
     ) {
@@ -649,7 +652,6 @@ export class SocialPostService {
         this.postHashtagModel = postHashtagModel ?? new SocialPostHashtagModel();
         this.assetModel = assetModel ?? new SocialAssetModel();
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
-        this.settingModel = settingModel ?? new SocialSettingModel();
         this.batchModel = batchModel ?? new SocialContentBatchModel();
         this.campaignModel = campaignModel ?? new SocialCampaignModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
@@ -2032,7 +2034,8 @@ export class SocialPostService {
      * - KPI counters (totalPosts, pendingReview, scheduled, publishedLast30Days, failedActionNeeded).
      * - Quick-approval queue (up to 10 NEEDS_REVIEW / PENDING posts, oldest first).
      * - Recent failures (up to 10 FAILED social_post_targets, newest first).
-     * - makeWebhookConfigured flag (live check on social_settings.make_webhook_url).
+     * - makeWebhookConfigured flag (caller-supplied, resolved from the social
+     *   credential vault — see {@link GetDashboardInput.makeWebhookConfigured}).
      *
      * publishedLast30Days is derived from social_publish_logs rows with SUCCESS status
      * created in the last 30 days, de-duped by socialPostId. This is more faithful than
@@ -2053,7 +2056,7 @@ export class SocialPostService {
     public async getDashboard(
         input: GetDashboardInput
     ): Promise<ServiceOutput<SocialDashboardData>> {
-        const { actor } = input;
+        const { actor, makeWebhookConfigured } = input;
 
         try {
             // Permission check
@@ -2170,11 +2173,6 @@ export class SocialPostService {
                     };
                 })
             );
-
-            // --- Make webhook configured ---
-            const webhookSetting = await this.settingModel.findOne({ key: 'make_webhook_url' });
-            const makeWebhookConfigured =
-                typeof webhookSetting?.value === 'string' && webhookSetting.value.trim().length > 0;
 
             serviceLogger.info({ actorId: actor.id }, 'SocialPostService.getDashboard: completed');
 

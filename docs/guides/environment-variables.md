@@ -121,10 +121,11 @@ pnpm env:check
 
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
-| `HOSPEDA_AI_SOCIAL_KEY` | string | no | yes | - | Inbound key Custom GPT sends in `x-hospeda-ai-key` (SPEC-254) |
-| `HOSPEDA_OPERATOR_PIN_HASH` | string | no | yes | - | Bcrypt hash of operator PIN for GPT draft authorization (SPEC-254) |
-| `HOSPEDA_MAKE_API_KEY` | string | no | yes | - | Outbound key sent to Make.com in `x-make-apikey` for publish jobs (SPEC-254) |
+| `HOSPEDA_AI_SOCIAL_KEY` | string | no | yes | - | Inbound key Custom GPT sends in `x-hospeda-ai-key` (SPEC-254). Legacy plaintext source — being superseded by `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (HOS-64 G-4); removed once T-042 lands |
+| `HOSPEDA_OPERATOR_PIN_HASH` | string | no | yes | - | Bcrypt hash of operator PIN for GPT draft authorization (SPEC-254). Legacy plaintext source — being superseded by `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (HOS-64 G-4); removed once T-042 lands |
+| `HOSPEDA_MAKE_API_KEY` | string | no | yes | - | Outbound key sent to Make.com in `x-make-apikey` for publish jobs (SPEC-254). Legacy plaintext source — being superseded by `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (HOS-64 G-4); removed once T-042 lands |
 | `HOSPEDA_MAKE_INBOUND_KEY` | string | no | yes | - | Inbound key Make.com sends in `x-hospeda-make-key` on callbacks (SPEC-254) |
+| `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` | string | no | yes | - | AES-256-GCM master key (min 32 chars) for the Social Credentials Vault (`social_credentials`/`social_credential_audit` tables, HOS-64 G-4). Encrypts/decrypts the 4 social automation secrets: `make_webhook_url`, `make_api_key`, `ai_social_key`, `operator_pin`. Separate blast radius from `HOSPEDA_AI_VAULT_MASTER_KEY` (SPEC-173) — never reuse one for the other. Optional until the vault data migration (T-025/T-033) runs; required in every environment before any vault-backed read (T-021–T-024) can decrypt anything. Must be set in Coolify for `hospeda-api-staging` and `hospeda-api-prod` (`hops env-set <kind> HOSPEDA_SOCIAL_VAULT_MASTER_KEY <value> --secret`) before promoting the vault migration to that environment |
 
 ### Testing / Debugging (HOSPEDA_)
 

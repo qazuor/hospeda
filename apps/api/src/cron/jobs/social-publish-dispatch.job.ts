@@ -8,7 +8,8 @@
  *
  * Features:
  * - Advisory lock (43032) prevents overlapping executions across replicas
- * - Guard: skips the run when HOSPEDA_MAKE_API_KEY is absent (cannot dispatch)
+ * - Guard: skips the run when the `make_api_key` vault credential is absent
+ *   (cannot dispatch)
  * - Per-target error isolation: one failed dispatch does not abort the batch
  * - dry-run mode: identifies eligible targets without calling dispatchTarget
  * - Outcome breakdown reported in result.details (dispatched / retry_scheduled /
@@ -18,9 +19,13 @@
  * @module cron/jobs/social-publish-dispatch
  */
 
-import { sql, withTransaction } from '@repo/db';
-import { SocialPublishDispatchService } from '@repo/service-core';
-import { env } from '../../utils/env.js';
+import { SocialSettingModel, sql, withTransaction } from '@repo/db';
+import {
+    DISPATCH_CRON_CADENCE_KEY,
+    SocialPublishDispatchService,
+    resolveDispatchCronCadence
+} from '@repo/service-core';
+import { getDecryptedSocialCredential } from '../../services/social-credential-vault.service.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -54,18 +59,37 @@ type CronTransactionResult =
       };
 
 /**
+ * Reads `dispatch_cron_cadence` from `social_settings` and resolves it to a
+ * validated cron expression via `resolveDispatchCronCadence`, falling back
+ * to the default when the row is missing or invalid.
+ *
+ * Consulted once by `cron/bootstrap.ts` (`resolveSchedule`) at scheduler
+ * startup — a changed setting takes effect on the next process restart, not
+ * live (HOS-64 / SPEC-297a G-2, T-013).
+ */
+async function resolveSocialDispatchCronSchedule(): Promise<string> {
+    const settingModel = new SocialSettingModel();
+    const settingRow = await settingModel.findOne({ key: DISPATCH_CRON_CADENCE_KEY });
+    return resolveDispatchCronCadence({
+        rawValue: settingRow?.value as string | null | undefined
+    });
+}
+
+/**
  * Social publish dispatch cron job definition.
  *
- * Schedule: Every 5 minutes (`*\/5 * * * *`). Configurable in future via env.
+ * Schedule: settings-driven via `resolveSocialDispatchCronSchedule`,
+ * defaulting to every 5 minutes (`*\/5 * * * *`) when unset or invalid.
  * Purpose: Push approved social post targets to Make.com for publication.
  */
 export const socialPublishDispatchJob: CronJobDefinition = {
     name: 'social-publish-dispatch',
     description:
         'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11)',
-    schedule: '*/5 * * * *', // Every 5 minutes
+    schedule: '*/5 * * * *', // Documented default — see resolveSocialDispatchCronSchedule
     enabled: true,
     timeoutMs: 120_000, // 2 minutes — allows up to ~3 sequential targets at 40s each
+    resolveSchedule: resolveSocialDispatchCronSchedule,
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
@@ -76,16 +100,17 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         });
 
         // Guard: cannot dispatch without the outbound Make.com API key.
-        // HOSPEDA_MAKE_API_KEY is optional in the env schema because it is only
-        // required once the Make.com publish route is live. When absent, log a
-        // warning and exit cleanly so other cron jobs are not disrupted.
-        if (!env.HOSPEDA_MAKE_API_KEY) {
+        // The make_api_key vault credential is optional to seed because it is
+        // only required once the Make.com publish route is live. When absent,
+        // log a warning and exit cleanly so other cron jobs are not disrupted.
+        const makeApiKeyResult = await getDecryptedSocialCredential({ key: 'make_api_key' });
+        if (!makeApiKeyResult.data) {
             logger.warn(
-                'social-publish-dispatch: HOSPEDA_MAKE_API_KEY is not set — skipping dispatch'
+                'social-publish-dispatch: no active make_api_key credential in the vault — skipping dispatch'
             );
             return {
                 success: true,
-                message: 'Skipped: HOSPEDA_MAKE_API_KEY is not configured',
+                message: 'Skipped: make_api_key credential is not configured in the vault',
                 processed: 0,
                 errors: 0,
                 durationMs: Date.now() - startedAt.getTime(),
@@ -93,9 +118,29 @@ export const socialPublishDispatchJob: CronJobDefinition = {
             };
         }
 
-        // Snapshot the env value we will pass into service methods.
-        // Service-core must NEVER access env directly (testability constraint).
-        const makeApiKey = env.HOSPEDA_MAKE_API_KEY;
+        // Snapshot the decrypted value we will pass into service methods.
+        // Service-core must NEVER access the vault directly (testability constraint).
+        const makeApiKey = makeApiKeyResult.data.plaintext;
+
+        // Guard: cannot dispatch without the Make.com webhook URL either
+        // (HOS-64 T-024 — previously read live from social_settings inside
+        // service-core on every target; now resolved once here, mirroring the
+        // make_api_key guard above).
+        const webhookUrlResult = await getDecryptedSocialCredential({ key: 'make_webhook_url' });
+        if (!webhookUrlResult.data) {
+            logger.warn(
+                'social-publish-dispatch: no active make_webhook_url credential in the vault — skipping dispatch'
+            );
+            return {
+                success: true,
+                message: 'Skipped: make_webhook_url credential is not configured in the vault',
+                processed: 0,
+                errors: 0,
+                durationMs: Date.now() - startedAt.getTime(),
+                details: { skipped: true, reason: 'missing_make_webhook_url' }
+            };
+        }
+        const webhookUrl = webhookUrlResult.data.plaintext;
 
         try {
             const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
@@ -157,7 +202,8 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                         const result = await dispatchService.dispatchTarget({
                             target,
                             post,
-                            makeApiKey
+                            makeApiKey,
+                            webhookUrl
                         });
                         outcomes[result.outcome] = (outcomes[result.outcome] ?? 0) + 1;
 

@@ -83,4 +83,15 @@ export interface CronJobDefinition {
     enabled: boolean;
     /** Maximum execution time in milliseconds (default: 30000ms) */
     timeoutMs?: number;
+    /**
+     * Optional async resolver for a settings-driven cron cadence. When
+     * present, `startCronScheduler` awaits this once per job at scheduler
+     * startup and registers the returned cron expression with node-cron
+     * instead of the static `schedule` literal above. `schedule` still
+     * describes the documented default — it is what `schedules.manifest.ts`
+     * and the admin panel compare against — this is a startup-time override
+     * only: a changed setting takes effect on the next process restart, not
+     * live. If the resolver throws, registration falls back to `schedule`.
+     */
+    resolveSchedule?: () => Promise<string>;
 }

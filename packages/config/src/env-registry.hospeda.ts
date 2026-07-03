@@ -1952,6 +1952,23 @@ export const HOSPEDA_ENV_VARS = [
     // Social Automation (SPEC-254)
     // -------------------------------------------------------------------------
     {
+        name: 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the social credentials vault (apps/api only). Encrypts/decrypts make_webhook_url, make_api_key, ai_social_key, and operator_pin at rest. Min 32 chars (Zod). Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse. Optional until the social vault data migration (T-025/T-033) runs.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. Opcional hasta que corra la migración de datos del vault social (T-025/T-033).',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-yyyyyyyy',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
+    },
+    {
         name: 'HOSPEDA_AI_SOCIAL_KEY',
         description:
             'Inbound API key the Custom GPT sends in the `x-hospeda-ai-key` header when calling the social-draft endpoints. Validates that requests originate from the authorised Custom GPT and not arbitrary callers.',

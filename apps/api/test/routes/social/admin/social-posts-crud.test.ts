@@ -60,6 +60,16 @@ const {
     mockListAuditLogs: vi.fn()
 }));
 
+// getDashboard now resolves `makeWebhookConfigured` via the social credential
+// vault before calling into the service (HOS-64 — getDashboard vault migration).
+const { mockGetDecryptedSocialCredential } = vi.hoisted(() => ({
+    mockGetDecryptedSocialCredential: vi.fn()
+}));
+
+vi.mock('../../../../src/services/social-credential-vault.service.js', () => ({
+    getDecryptedSocialCredential: mockGetDecryptedSocialCredential
+}));
+
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -534,6 +544,9 @@ describe('admin social post CRUD + dashboard + logs routes — SPEC-254 T-037', 
     // -----------------------------------------------------------------------
     describe('GET / — social dashboard', () => {
         it('returns dashboard data with KPIs and queues on success', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({
+                data: { key: 'make_webhook_url', plaintext: 'https://hook.make.com/xyz' }
+            });
             mockGetDashboard.mockResolvedValue({ data: DASHBOARD_FIXTURE, error: undefined });
 
             const handler = getHandler('get', '/');
@@ -545,10 +558,35 @@ describe('admin social post CRUD + dashboard + logs routes — SPEC-254 T-037', 
             expect(result.makeWebhookConfigured).toBe(true);
             expect(result.quickApprovalQueue).toBeInstanceOf(Array);
             expect(result.recentFailures).toBeInstanceOf(Array);
-            expect(mockGetDashboard).toHaveBeenCalledWith({ actor: ADMIN_ACTOR });
+            expect(mockGetDashboard).toHaveBeenCalledWith({
+                actor: ADMIN_ACTOR,
+                makeWebhookConfigured: true
+            });
         });
 
-        it('returns makeWebhookConfigured=false when not configured', async () => {
+        it('returns makeWebhookConfigured=false when the vault credential is absent', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({
+                data: undefined,
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'not found' }
+            });
+            const dashboardNotConfigured = { ...DASHBOARD_FIXTURE, makeWebhookConfigured: false };
+            mockGetDashboard.mockResolvedValue({ data: dashboardNotConfigured, error: undefined });
+
+            const handler = getHandler('get', '/');
+            const ctx = buildMockCtx() as unknown as Context;
+            const result = (await handler(ctx, {}, {})) as typeof dashboardNotConfigured;
+
+            expect(result.makeWebhookConfigured).toBe(false);
+            expect(mockGetDashboard).toHaveBeenCalledWith({
+                actor: ADMIN_ACTOR,
+                makeWebhookConfigured: false
+            });
+        });
+
+        it('returns makeWebhookConfigured=false when the vault credential is whitespace-only', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({
+                data: { key: 'make_webhook_url', plaintext: '   ' }
+            });
             const dashboardNotConfigured = { ...DASHBOARD_FIXTURE, makeWebhookConfigured: false };
             mockGetDashboard.mockResolvedValue({ data: dashboardNotConfigured, error: undefined });
 
@@ -560,6 +598,7 @@ describe('admin social post CRUD + dashboard + logs routes — SPEC-254 T-037', 
         });
 
         it('throws ServiceError(FORBIDDEN) when actor lacks SOCIAL_POST_VIEW', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({ data: undefined });
             mockGetDashboard.mockResolvedValue({
                 data: undefined,
                 error: { code: ServiceErrorCode.FORBIDDEN, message: 'SOCIAL_POST_VIEW required' }
@@ -572,6 +611,7 @@ describe('admin social post CRUD + dashboard + logs routes — SPEC-254 T-037', 
         });
 
         it('throws ServiceError on INTERNAL_ERROR', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({ data: undefined });
             mockGetDashboard.mockResolvedValue({
                 data: undefined,
                 error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'Unexpected DB error' }
