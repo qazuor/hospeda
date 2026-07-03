@@ -1,9 +1,12 @@
 /**
- * HOS-75 T-002 — loadSubscriptionDiscountState() unit tests.
+ * HOS-75 T-002/T-003 — subscription-product-domain.ts unit tests.
  *
- * Verifies the new shared typed helper that replaces 4 near-identical raw-SQL
- * SELECTs (payment-logic.ts, dunning.job.ts, apply-scheduled-plan-changes.ts,
- * promo-code.renewal.ts) with a single typed Drizzle query.
+ * T-002: loadSubscriptionDiscountState() — the new shared typed helper that
+ * replaces 4 near-identical raw-SQL SELECTs (payment-logic.ts, dunning.job.ts,
+ * apply-scheduled-plan-changes.ts, promo-code.renewal.ts).
+ *
+ * T-003: isAccommodationSubscription() no longer reads the raw snake_case
+ * `product_domain` fallback — only the typed `productDomain` property.
  *
  * No DB, no network — all mocked.
  */
@@ -24,7 +27,10 @@ vi.mock('@repo/db', () => ({
 }));
 
 import * as dbModule from '@repo/db';
-import { loadSubscriptionDiscountState } from '../../src/services/billing/subscription/subscription-product-domain.js';
+import {
+    isAccommodationSubscription,
+    loadSubscriptionDiscountState
+} from '../../src/services/billing/subscription/subscription-product-domain.js';
 
 const mockGetDb = dbModule.getDb as ReturnType<typeof vi.fn>;
 
@@ -121,5 +127,27 @@ describe('loadSubscriptionDiscountState', () => {
 
         // Assert
         expect(result).toEqual(row);
+    });
+});
+
+describe('isAccommodationSubscription — dual-read removal (HOS-75 T-003)', () => {
+    it('does NOT fall back to the raw snake_case product_domain field ' +
+        '(only the typed camelCase productDomain is read)', () => {
+        // Arrange — a hypothetical row that carries ONLY the raw snake_case
+        // field (as if it came from an untyped `SELECT *`), no camelCase
+        // productDomain at all. Before HOS-75 T-003, the `?? record.product_domain`
+        // fallback would find 'commerce' here and exclude it (return false).
+        const snakeCaseOnlyCommerceRow = {
+            id: 'sub-1',
+            status: 'active',
+            product_domain: 'commerce'
+        };
+
+        // Act
+        const result = isAccommodationSubscription(snakeCaseOnlyCommerceRow);
+
+        // Assert — post-T-003, the function only reads `productDomain`, which
+        // is absent here, so the "undefined → include" default rule applies.
+        expect(result).toBe(true);
     });
 });

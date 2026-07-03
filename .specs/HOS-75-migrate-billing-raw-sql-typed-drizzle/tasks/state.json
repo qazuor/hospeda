@@ -62,7 +62,7 @@
             "id": "T-003",
             "title": "Remove dual camelCase/snake_case read in isAccommodationSubscription",
             "description": "In subscription-product-domain.ts, delete the `record.productDomain ?? record.product_domain` fallback -- keep only `record.productDomain`. Re-run spec-239-entitlement-isolation.test.ts to confirm the camelCase-only path still passes unchanged. Verify all 5 callers (entitlement.ts, addon-entitlement.service.ts x3, addon-user-addons.ts, featured-entitlement.resolver.ts) already pass a typed Drizzle row.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -70,14 +70,24 @@
             "tags": ["billing", "product-domain", "cleanup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z",
+                    "details": "35/35 (featured-entitlement.resolver.test.ts + subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:08:03Z",
+                "completed": "2026-07-03T05:15:36Z"
             }
         },
         {
@@ -194,7 +204,7 @@
             "id": "T-008",
             "title": "Migrate featured-entitlement.resolver.ts product_domain SELECT",
             "description": "Replace the raw SELECT (~lines 108-120, reads id/plan_id/status/product_domain from billing_subscriptions) with typed Drizzle, keeping the existing isAccommodationSubscription() filter call unchanged (per T-003). Verify featured-entitlement.resolver.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": ["T-028"],
@@ -202,14 +212,24 @@
             "tags": ["billing", "product-domain"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z",
+                    "details": "35/35 (featured-entitlement.resolver.test.ts + subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:10:42Z",
+                "completed": "2026-07-03T05:15:36Z"
             }
         },
         {
@@ -696,9 +716,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 26,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 1.54
     }

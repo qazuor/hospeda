@@ -38,11 +38,12 @@ export interface SubscriptionDiscountState {
 /**
  * Returns `true` when the subscription belongs to the accommodation domain.
  *
- * Reads `productDomain` defensively from an opaque runtime object because
- * the column is NOT in the `@qazuor/qzpay-core` TypeScript types — it is
- * added directly to the PostgreSQL table via the extras carril.  The value
- * is read by casting `sub` to `Record<string, unknown>` so that bracket
- * access avoids `any` and keeps strict-mode happy.
+ * Reads `productDomain` from an opaque runtime object, cast to
+ * `Record<string, unknown>` so that bracket access avoids `any` and keeps
+ * strict-mode happy. As of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) this is a
+ * typed Drizzle column, so every caller that fetches a subscription via a
+ * typed query gets `productDomain` (camelCase) populated directly — no
+ * snake_case fallback is needed (removed in HOS-75 T-003).
  *
  * **Inclusion rule**: include only when the row is clearly accommodation.
  * - `undefined` (column not yet in SELECT) → include
@@ -70,13 +71,7 @@ export function isAccommodationSubscription(sub: unknown): boolean {
         return true;
     }
     const record = sub as Record<string, unknown>;
-    // Read BOTH casings: the column is added via the extras carril and is NOT in
-    // the qzpay-drizzle TS schema, so depending on how the row is fetched it may
-    // surface as the camelCase `productDomain` (if mapped) or the raw snake_case
-    // `product_domain` (if selected via `*`). Reading both keeps the filter
-    // effective regardless of the read path — critical so a commerce sub is never
-    // silently treated as accommodation (the SPEC-239 isolation invariant).
-    const productDomain = record.productDomain ?? record.product_domain;
+    const productDomain = record.productDomain;
     // Include legacy rows (null / undefined) and explicit accommodation rows.
     if (
         productDomain === null ||
