@@ -180,6 +180,11 @@ function makeDashboardData(
             }
         ],
         makeWebhookConfigured: true,
+        platformBreakdown: [
+            { platform: 'INSTAGRAM', count: 1 },
+            { platform: 'FACEBOOK', count: 1 },
+            { platform: 'X', count: 0 }
+        ],
         ...overrides
     };
 }
