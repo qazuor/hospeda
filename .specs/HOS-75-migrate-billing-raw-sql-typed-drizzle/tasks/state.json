@@ -353,7 +353,7 @@
             "id": "T-011",
             "title": "Migrate promo-code.redemption.ts promo_effect_remaining_cycles UPDATE",
             "description": "Replace the raw UPDATE (~lines 918-931, sets promo_effect_remaining_cycles on redemption of a discount effect) with tx.update(billingSubscriptions).set({ promoEffectRemainingCycles: ... }).where(eq(...)). Verify promo-code.redemption.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -361,14 +361,24 @@
             "tags": ["billing", "promo-code"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z",
+                    "details": "19/19 (promo-code.redemption.test.ts, no assertions on this specific field previously either)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:46:45Z",
+                "completed": "2026-07-03T05:48:31Z"
             }
         },
         {
@@ -776,9 +786,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.54
     }

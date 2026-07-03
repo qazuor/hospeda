@@ -14,6 +14,7 @@ import {
     type QZPayBillingPromoCode,
     billingPromoCodeUsage,
     billingPromoCodes,
+    billingSubscriptions,
     count,
     eq,
     getDb,
@@ -924,11 +925,10 @@ export async function applyPromoCode(
                 promoCode.effect?.kind === PromoEffectKindEnum.DISCOUNT &&
                 remainingCycles !== undefined
             ) {
-                await tx.execute(
-                    sql`UPDATE billing_subscriptions
-                        SET promo_effect_remaining_cycles = ${remainingCycles}
-                        WHERE id = ${subscriptionId}`
-                );
+                await tx
+                    .update(billingSubscriptions)
+                    .set({ promoEffectRemainingCycles: remainingCycles })
+                    .where(eq(billingSubscriptions.id, subscriptionId));
             }
 
             return inner;
