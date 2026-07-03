@@ -149,8 +149,16 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * the HOS-45 merge above, for the social credential vault's AES-256-GCM
  * master key. Surfaced as CI drift only when this long-lived branch merged
  * staging afterward (247 + 1 = 248).
+ *
+ * 244 (2026-07-03, HOS-64 T-042): -4 vs 248, hard-cut-removes the legacy
+ * plaintext sources HOSPEDA_AI_SOCIAL_KEY, HOSPEDA_OPERATOR_PIN,
+ * HOSPEDA_OPERATOR_PIN_HASH, and HOSPEDA_MAKE_API_KEY (all
+ * social-automation category) now that every runtime read-site (T-021–T-024)
+ * reads exclusively from the vault. Landed ahead of the staging/prod
+ * migration-and-verify steps (T-033/T-034/T-038/T-039) by explicit decision
+ * — see docs/guides/environment-variables.md (248 - 4 = 244).
  */
-const EXPECTED_VAR_COUNT = 248;
+const EXPECTED_VAR_COUNT = 244;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

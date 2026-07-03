@@ -1459,39 +1459,40 @@
             "id": "T-042",
             "title": "Remove legacy plaintext env vars (AC-7)",
             "description": "Only after BOTH T-038 (staging verified) and T-039 (prod verified) — this is the R-2 gate. Remove `HOSPEDA_MAKE_API_KEY`, `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`, and the already-dead `HOSPEDA_OPERATOR_PIN_HASH` from `packages/config/src/env-registry.hospeda.ts`, `apps/api/src/utils/env.ts`'s Zod schema, and `.env.example`. Update `docs/guides/environment-variables.md` to note the removal and point at the vault as the new source of truth. Run `pnpm env:check:registry` to confirm sync.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-038", "T-039"],
             "blocks": ["T-043"],
             "subtasks": [
                 {
                     "title": "Remove the 4 vars from env-registry.hospeda.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove the 4 vars from apps/api/src/utils/env.ts and .env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Note the removal in environment-variables.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm env:check:registry to confirm sync",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "env", "vault"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass — full monorepo typecheck (39/39 turbo tasks) after the removal",
+                "tests": "pass — env:check:registry (api/admin/web/dockerfile cross-validation, 16 tests), env-registry.test.ts count+snapshot rebased 248->244 (social-automation 6->2), social-vault-migrate.ts/social-drafts.test.ts/drafts-hashtag-limit.test.ts/social-publish-dispatch.job.test.ts unaffected (48/48)"
             },
+            "decisionNote": "SEQUENCING OVERRIDE — 2026-07-03, explicit user instruction. This task is documented as blocked by BOTH T-038 and T-039 (staging+prod vault-read verification) — that gate exists so the plaintext env vars stay available as a rollback path while verifying the vault reads for real. The user explicitly asked to do the code removal now and defer all VPS work (T-033/T-034/T-038/T-039/T-043) to later. Verified this is safe from a runtime-correctness standpoint: grepped for any remaining `env.HOSPEDA_MAKE_API_KEY` / `env.HOSPEDA_AI_SOCIAL_KEY` / `env.HOSPEDA_OPERATOR_PIN` / `env.HOSPEDA_OPERATOR_PIN_HASH` reads and found none — all 4 read-sites were already fully migrated to the vault in T-021-T-024. The ONE place that still needed these values, T-025's own migration script (apps/api/scripts/social-vault-migrate.ts), read them through the Zod-validated `env` object and would have broken; fixed by switching those 3 reads to raw `process.env.X` (bypassing the schema, which is fine since the actual Coolify env vars are untouched until T-043). Net effect: the code no longer declares/validates these 4 vars, but nothing's runtime behavior changed, and the migration script that will eventually run against staging/prod (T-033/T-034) still works because it reads process.env directly. The documented rollback-safety rationale for the original T-038/T-039 gate no longer fully applies once this ships — if the staging vault smoke fails, there is no code path left that would fall back to reading the plaintext env var, only the vault. Flag this explicitly if staging smoke fails.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:00:00Z",
+                "completed": "2026-07-03T05:20:00Z"
             }
         },
         {

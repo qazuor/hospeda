@@ -22,6 +22,15 @@
  * against staging/prod per T-033/T-034):
  *   - HOSPEDA_DATABASE_URL
  *   - HOSPEDA_SOCIAL_VAULT_MASTER_KEY
+ *
+ * The 3 legacy source vars (HOSPEDA_MAKE_API_KEY, HOSPEDA_AI_SOCIAL_KEY,
+ * HOSPEDA_OPERATOR_PIN) are read directly off `process.env`, NOT the
+ * Zod-validated `env` object — HOS-64 T-042 removed them from the schema
+ * once every runtime read-site was vault-only, ahead of this script
+ * actually running against staging/prod (T-033/T-034). They still exist as
+ * real Coolify env vars at that point (T-043 unsets them only afterward),
+ * this script is simply no longer able to reach them through the typed
+ * `env` object.
  */
 import { resolve } from 'node:path';
 import { UserModel, eq, getDb, initializeDb, socialSettings } from '@repo/db';
@@ -75,9 +84,11 @@ async function main() {
         actorId: actor.id,
         source: {
             makeWebhookUrl: webhookRow?.value ?? null,
-            makeApiKey: env.HOSPEDA_MAKE_API_KEY,
-            aiSocialKey: env.HOSPEDA_AI_SOCIAL_KEY,
-            operatorPin: env.HOSPEDA_OPERATOR_PIN
+            // Read directly off process.env — HOS-64 T-042 removed these 3
+            // from the Zod-validated `env` object (see module doc comment).
+            makeApiKey: process.env.HOSPEDA_MAKE_API_KEY,
+            aiSocialKey: process.env.HOSPEDA_AI_SOCIAL_KEY,
+            operatorPin: process.env.HOSPEDA_OPERATOR_PIN
         }
     });
 
