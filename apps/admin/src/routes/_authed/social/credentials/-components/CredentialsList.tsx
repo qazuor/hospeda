@@ -10,6 +10,8 @@ import {
     type SocialCredentialMasked,
     getSocialCredentialKeyLabel
 } from '@/features/social-credentials';
+import { DeleteCredentialDialog } from './DeleteCredentialDialog';
+import { EditCredentialDialog } from './EditCredentialDialog';
 import { RotateCredentialDialog } from './RotateCredentialDialog';
 
 /** A single masked social credential card. */
@@ -23,10 +25,17 @@ function CredentialCard({ credential }: { readonly credential: SocialCredentialM
                     </CardTitle>
                     <CardDescription>{credential.label ?? 'Sin etiqueta'}</CardDescription>
                 </div>
-                <RotateCredentialDialog
-                    credentialKey={credential.key}
-                    currentLabel={credential.label}
-                />
+                <div className="flex items-center gap-2">
+                    <EditCredentialDialog credential={credential} />
+                    <RotateCredentialDialog
+                        credentialKey={credential.key}
+                        currentLabel={credential.label}
+                    />
+                    <DeleteCredentialDialog
+                        credentialKey={credential.key}
+                        currentLabel={credential.label}
+                    />
+                </div>
             </CardHeader>
             <CardContent>
                 <dl className="grid gap-4 text-sm md:grid-cols-3">

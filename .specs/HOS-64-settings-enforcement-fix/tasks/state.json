@@ -1088,35 +1088,36 @@
             "id": "T-031",
             "title": "Add edit-metadata and delete dialogs to credentials page",
             "description": "Add `EditCredentialDialog` (label-only metadata edit) and `DeleteCredentialDialog` (confirmation) sub-components to the T-029 page, mirroring `ai/credentials.tsx`'s equivalents. Component tests: edit submits label change via T-028's update mutation, delete requires confirmation and calls the delete mutation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Build EditCredentialDialog (metadata only)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build DeleteCredentialDialog (confirmation)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests: edit submit, delete confirm-then-call",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui", "vault", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 5 new tests (2 in EditCredentialDialog.test.tsx, 3 in DeleteCredentialDialog.test.tsx); full credentials/__tests__/ dir now 15 tests, all green. Edit: pre-fill from credential.label on open, submit calls update mutation with { key, payload: { label } }. Delete: mutation not called merely from rendering, confirm click calls delete with the credential key, cancel never calls it."
             },
+            "decisionNote": "Wired EditCredentialDialog + RotateCredentialDialog + DeleteCredentialDialog together into CredentialCard's header action row (mirrors ai/credentials.tsx's 3-button CredentialCard layout exactly). EditCredentialDialog's pre-fill logic lives in onOpenChange (fresh label from server on every open, matching the AI vault original) rather than a plain useState initializer, so its test needed a real React-context-based Dialog/DialogTrigger mock (Create/Rotate dialog tests didn't need this — their fields start blank and get filled via direct fireEvent.change, no dependency on the open transition itself). This context-mock pattern is now the reference for testing any future dialog here whose fields depend on open-time pre-fill.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T09:00:00Z",
+                "completed": "2026-07-03T09:40:00Z"
             }
         },
         {
@@ -1526,9 +1527,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.2
     }
