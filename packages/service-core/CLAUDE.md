@@ -1105,15 +1105,20 @@ The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.tra
 
 **Outcome A — GO.** The mutation is confirmed viable: Hospeda already performs this exact `PUT /preapproval/{id}` call in production (plan upgrade/downgrade cron). One staging verification remains (that restoring to the original authorized amount never requires payer re-authorization), but the mechanism is proven.
 
-### DB migration files (extras carril)
+### DB migration files
+
+`effect_kind`, `value_kind`, `duration_cycles`, `extra_days` (`billing_promo_codes`) and
+`promo_effect_remaining_cycles` (`billing_subscriptions`) are typed Drizzle columns as of
+`@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — added via the normal Carril 1 migration
+(`packages/db/src/migrations/0042_last_patriot.sql`), not the extras carril. The old
+extras files (`016`-`019`) that originally added these columns before they were
+promoted upstream have been removed.
 
 | File | What it adds |
 |---|---|
-| `packages/db/src/migrations/extras/018-billing-promo-codes-effect-columns.column.sql` | `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` on `billing_promo_codes` |
-| `packages/db/src/migrations/extras/019-billing-subscriptions-promo-effect-columns.column.sql` | `promo_effect_remaining_cycles` on `billing_subscriptions` |
-| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` |
+| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` (still extras — Drizzle can't declare CHECK constraints) |
 
-Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` for these.
+Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` against staging/prod.
 
 ## Review Moderation (SPEC-166)
 

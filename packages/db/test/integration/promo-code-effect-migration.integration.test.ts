@@ -1,5 +1,5 @@
 /**
- * Integration tests: SPEC-262 promo-code effect migration (extras/018, 019, 020)
+ * Integration tests: SPEC-262 promo-code effect migration (extras/020)
  *
  * Covers:
  * 1. Backfill idempotency (020 run twice → 0 rows changed on second run).
@@ -7,6 +7,15 @@
  *    effect_kind / value_kind / duration_cycles after the 020 backfill.
  * 3. CHECK constraint violations (AC-1.2/1.3): rows that violate the 020
  *    constraints are rejected at the DB level.
+ *
+ * HOS-73: `effect_kind`/`value_kind`/`duration_cycles`/`extra_days` on
+ * `billing_promo_codes` and `promo_effect_remaining_cycles` on
+ * `billing_subscriptions` were promoted from extras/016-019 (hand-written
+ * `ADD COLUMN` files) to first-class Drizzle-declared columns in
+ * `@qazuor/qzpay-drizzle` 1.11.0. Those columns now come from the normal
+ * schema push the integration global-setup already does — this suite no
+ * longer needs to apply 018/019 itself, only 020 (backfill + CHECK
+ * constraints, still Drizzle-invisible, still extras).
  *
  * Uses `withCleanSlate` (TRUNCATE-based) because the 020 DO $$ block commits
  * its writes as part of its own implicit statement — a rollback-only
@@ -39,20 +48,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ---------------------------------------------------------------------------
-// Paths to the three extras files under test
+// Path to the extras file still under test (backfill + CHECK constraints)
 // ---------------------------------------------------------------------------
-
-/** Path to 018: adds effect_kind / value_kind / duration_cycles / extra_days */
-const SQL_018 = join(
-    __dirname,
-    '../../src/migrations/extras/018-billing-promo-codes-effect-columns.column.sql'
-);
-
-/** Path to 019: adds promo_effect_remaining_cycles on billing_subscriptions */
-const SQL_019 = join(
-    __dirname,
-    '../../src/migrations/extras/019-billing-subscriptions-promo-effect-columns.column.sql'
-);
 
 /** Path to 020: backfill + CHECK constraints */
 const SQL_020 = join(
@@ -81,13 +78,13 @@ async function runSqlFile(filePath: string): Promise<void> {
 }
 
 /**
- * Apply the extras 018 + 019 + 020 files in order.
- * Mirrors how `pnpm db:apply-extras` applies them (lexical order).
- * All three are idempotent, so calling this multiple times is safe.
+ * Apply the 020 backfill + CHECK constraints file.
+ * effect_kind/value_kind/duration_cycles/extra_days themselves are already
+ * present via the normal Drizzle schema push (HOS-73) — only the
+ * Drizzle-invisible constraints/backfill still need the extras file.
+ * Idempotent, so calling this multiple times is safe.
  */
 async function applyExtras(): Promise<void> {
-    await runSqlFile(SQL_018);
-    await runSqlFile(SQL_019);
     await runSqlFile(SQL_020);
 }
 

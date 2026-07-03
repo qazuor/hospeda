@@ -167,6 +167,10 @@ export async function createTestPlan(
             entitlements: [...(overrides.entitlements ?? ['public:read'])],
             limits: { ...(overrides.limits ?? { ads_per_month: 5 }) },
             livemode: overrides.livemode ?? false,
+            // HOS-73: displayName/monthlyPriceArs are typed top-level columns as of
+            // qzpay-drizzle 1.10.0 — test-friendly defaults, not exercised by these tests.
+            displayName: name,
+            monthlyPriceArs: 0,
             metadata: {
                 slug: `test-plan-${timestamp}`,
                 category: 'test',
