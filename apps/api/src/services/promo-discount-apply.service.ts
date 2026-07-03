@@ -40,11 +40,12 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getDb, sql } from '@repo/db';
+import { billingSubscriptions, eq, getDb } from '@repo/db';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
     getPromoCodeByCode,
+    loadSubscriptionDiscountState,
     resolveFullPlanPriceCentavos
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
@@ -67,18 +68,6 @@ export type ApplyMultiCycleDiscountResult =
           readonly success: false;
           readonly error: { readonly code: string; readonly message: string };
       };
-
-/**
- * Minimal subscription row read for the discount apply.
- * @internal
- */
-interface DiscountApplySubscriptionRow {
-    id: string;
-    customer_id: string;
-    status: string;
-    plan_id: string | null;
-    mp_subscription_id: string | null;
-}
 
 /**
  * Apply a `discount` promo code to an EXISTING monthly subscription with a live
@@ -114,13 +103,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
 
     try {
         // Step 1: load the subscription.
-        const subResult = await db.execute(
-            sql`SELECT id, customer_id, status, plan_id, mp_subscription_id
-                FROM billing_subscriptions
-                WHERE id = ${subscriptionId}
-                LIMIT 1`
-        );
-        const sub = (subResult.rows?.[0] ?? null) as DiscountApplySubscriptionRow | null;
+        const sub = await loadSubscriptionDiscountState({ subscriptionId, tx: db });
 
         if (!sub) {
             return {
@@ -130,7 +113,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
         }
 
         // Step 2: require a live preapproval.
-        if (!sub.mp_subscription_id) {
+        if (!sub.mpSubscriptionId) {
             return {
                 success: false,
                 error: {
@@ -162,7 +145,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
 
         // Step 4: resolve full plan price + compute discounted amount.
         // Uses the canonical shared helper from service-core (S4 — no duplication).
-        const fullPriceCentavos = await resolveFullPlanPriceCentavos(getDb(), sub.plan_id);
+        const fullPriceCentavos = await resolveFullPlanPriceCentavos(getDb(), sub.planId);
         if (fullPriceCentavos === null) {
             return {
                 success: false,
@@ -190,7 +173,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
         // Step 5: FAIL-CLOSED MP mutation FIRST.
         const mpResult = await applyInitialDiscountMutation({
             billing,
-            mpSubscriptionId: sub.mp_subscription_id,
+            mpSubscriptionId: sub.mpSubscriptionId,
             targetTransactionAmountMajor: discountedMajor,
             subscriptionId
         });
@@ -209,7 +192,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
         // See the canonical invariant in promo-code.renewal.ts (B1 fix).
         const applyResult = await applyPromoCodeViaServiceCore({
             code,
-            customerId: sub.customer_id,
+            customerId: sub.customerId,
             amount: fullPriceCentavos,
             subscriptionId,
             subscriptionStatus: sub.status,
@@ -224,7 +207,7 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
             apiLogger.error(
                 {
                     subscriptionId,
-                    mpSubscriptionId: sub.mp_subscription_id,
+                    mpSubscriptionId: sub.mpSubscriptionId,
                     error: applyResult.error.message
                 },
                 'Promo discount: MP amount lowered but redemption commit failed — manual reconcile required'
@@ -239,14 +222,13 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
         const durationCycles = promoCode.effect.durationCycles;
         if (durationCycles !== null) {
             // Finite discount: override the reducer's N-1 seed with the correct N.
-            await getDb().execute(
-                sql`UPDATE billing_subscriptions
-                    SET promo_effect_remaining_cycles = ${durationCycles}
-                    WHERE id = ${subscriptionId}`
-            );
+            await getDb()
+                .update(billingSubscriptions)
+                .set({ promoEffectRemainingCycles: durationCycles })
+                .where(eq(billingSubscriptions.id, subscriptionId));
             apiLogger.info(
                 { subscriptionId, durationCycles },
-                'Promo discount: seeded promo_effect_remaining_cycles to durationCycles (existing-sub B1 fix)'
+                'Promo discount: seeded promoEffectRemainingCycles to durationCycles (existing-sub B1 fix)'
             );
         }
         // Forever discount (durationCycles=null): applyPromoCode already seeds

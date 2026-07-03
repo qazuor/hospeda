@@ -47,6 +47,7 @@ import { NotificationType } from '@repo/notifications';
 import {
     calculatePromoCodeEffect,
     getPromoCodeById,
+    loadSubscriptionDiscountState,
     resolveFullPlanPriceCentavos,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
@@ -92,22 +93,13 @@ async function resolveDiscountAwarePlanChangeAmount(
 ): Promise<number> {
     const db = getDb();
     try {
-        const result = await db.execute(
-            sql`SELECT promo_code_id, promo_effect_remaining_cycles
-                FROM billing_subscriptions
-                WHERE id = ${subscriptionId}
-                LIMIT 1`
-        );
-        const row = (result.rows?.[0] ?? null) as {
-            promo_code_id: string | null;
-            promo_effect_remaining_cycles: number | null;
-        } | null;
+        const discountState = await loadSubscriptionDiscountState({ subscriptionId });
 
-        if (!row?.promo_code_id) {
+        if (!discountState?.promoCodeId) {
             return nominalAmountMajor; // No discount — use full price.
         }
 
-        const remaining = row.promo_effect_remaining_cycles;
+        const remaining = discountState.promoEffectRemainingCycles;
         // Discount is active when remaining > 0 (finite) OR remaining === null (forever).
         if (remaining !== null && remaining <= 0) {
             return nominalAmountMajor; // Discount exhausted — use full price.
@@ -119,7 +111,7 @@ async function resolveDiscountAwarePlanChangeAmount(
             return nominalAmountMajor; // Can't resolve new price — fall back to nominal.
         }
 
-        const promoResult = await getPromoCodeById(row.promo_code_id);
+        const promoResult = await getPromoCodeById(discountState.promoCodeId);
         if (!promoResult.success || !promoResult.data?.effect) {
             return nominalAmountMajor;
         }

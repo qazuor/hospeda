@@ -25,6 +25,7 @@ import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
 import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
 import {
+    loadSubscriptionDiscountState,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
@@ -48,10 +49,11 @@ import type { CronJobDefinition } from '../types.js';
  * the subscription is below full price by design, so a failed full-price charge
  * must NOT be treated as delinquency.
  *
- * Reads via raw SQL because `status`, `promo_code_id` and
- * `promo_effect_remaining_cycles` (the latter two are extras-carril columns) are
- * not on the QZPay Drizzle schema. Fail-open on a read error (returns null) so a
- * transient DB hiccup never silently disables legitimate dunning.
+ * Reads via {@link loadSubscriptionDiscountState} (typed Drizzle, HOS-75
+ * T-019 — `status`, `promoCodeId` and `promoEffectRemainingCycles` are typed
+ * columns as of `@qazuor/qzpay-drizzle` 1.11.0, HOS-73). Fail-open on a read
+ * error (returns null) so a transient DB hiccup never silently disables
+ * legitimate dunning.
  *
  * @param subscriptionId - The local subscription ID being processed.
  * @returns A short reason string when the sub must be skipped, otherwise null.
@@ -63,18 +65,7 @@ async function isCompOrActivelyDiscounted(
         return null;
     }
     try {
-        const db = getDb();
-        const result = await db.execute(
-            sql`SELECT status, promo_code_id, promo_effect_remaining_cycles
-                FROM billing_subscriptions
-                WHERE id = ${subscriptionId}
-                LIMIT 1`
-        );
-        const row = (result.rows?.[0] ?? null) as {
-            status: string;
-            promo_code_id: string | null;
-            promo_effect_remaining_cycles: number | null;
-        } | null;
+        const row = await loadSubscriptionDiscountState({ subscriptionId });
 
         if (!row) {
             return null;
@@ -83,14 +74,11 @@ async function isCompOrActivelyDiscounted(
             return 'comp';
         }
         // Active multi-cycle discount: remaining cycles still pending (finite),
-        // OR a forever discount (promo_effect_remaining_cycles IS NULL but a
-        // promo_code_id is set — S2 fix: the previous guard incorrectly required
+        // OR a forever discount (promoEffectRemainingCycles IS NULL but a
+        // promoCodeId is set — S2 fix: the previous guard incorrectly required
         // remaining_cycles !== null, missing the forever-discount case).
-        if (row.promo_code_id !== null) {
-            if (
-                row.promo_effect_remaining_cycles === null ||
-                row.promo_effect_remaining_cycles > 0
-            ) {
+        if (row.promoCodeId !== null) {
+            if (row.promoEffectRemainingCycles === null || row.promoEffectRemainingCycles > 0) {
                 return 'active-discount';
             }
         }

@@ -38,7 +38,9 @@ const { mockLoggerError } = vi.hoisted(() => ({
 
 // ---------------------------------------------------------------------------
 // Mock @repo/db BEFORE importing the module under test.
-// resolveRenewalPromoEffect uses getDb().execute(sql) → { rows }.
+// The subscription lookup and the remaining-cycles UPDATE are typed Drizzle
+// queries (HOS-75 T-012); the billing_prices lookup remains getDb().execute(sql)
+// (out of HOS-75's scope — unit_amount is not one of the 6 migrated columns).
 // ---------------------------------------------------------------------------
 vi.mock('@repo/db', () => ({
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -46,6 +48,15 @@ vi.mock('@repo/db', () => ({
         values,
         _type: 'sql'
     })),
+    billingSubscriptions: {
+        id: 'id',
+        status: 'status',
+        planId: 'planId',
+        mpSubscriptionId: 'mpSubscriptionId',
+        promoCodeId: 'promoCodeId',
+        promoEffectRemainingCycles: 'promoEffectRemainingCycles'
+    },
+    eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     getDb: vi.fn()
 }));
 
@@ -79,38 +90,56 @@ const mockGetPromoCodeById = promoCrudModule.getPromoCodeById as ReturnType<type
 // ---------------------------------------------------------------------------
 
 /**
- * Build a mock `getDb()` whose `.execute(sql)` returns rows based on which
- * query is running. We discriminate by inspecting the interpolated values:
- * the subscription query carries the subscriptionId; the price query carries
- * the planId; the UPDATE carries the subscriptionId + remaining cycles.
+ * Build a mock `getDb()` covering all 3 access patterns
+ * `resolveRenewalPromoEffect` uses:
+ *  - `select().from().where().limit()` — the subscription lookup (typed,
+ *    via `loadSubscriptionDiscountState`, HOS-75 T-012).
+ *  - `execute(sql)` — the billing_prices lookup (still raw SQL, out of scope).
+ *  - `update().set().where()` — persisting the decremented remaining cycles
+ *    (typed, HOS-75 T-012). `updateSetSpy` observes the `.set({...})` call
+ *    so tests can assert the persisted value without string-matching raw SQL.
  *
- * @param options.subRow - the subscription row to return for the SELECT.
+ * @param options.subRow - the subscription row to return for the SELECT
+ *   (camelCase field names, matching `SubscriptionDiscountState`).
  * @param options.unitAmount - the billing_prices.unit_amount (centavos).
- * @param options.executeSpy - optional spy to observe every execute call.
+ * @param options.executeSpy - optional spy to observe every `execute` call.
+ * @param options.updateSetSpy - optional spy to observe every `.set({...})` call.
  */
 function buildDbMock(options: {
     subRow: Record<string, unknown> | null;
     unitAmount?: number;
     executeSpy?: ReturnType<typeof vi.fn>;
+    updateSetSpy?: ReturnType<typeof vi.fn>;
 }) {
-    const { subRow, unitAmount, executeSpy } = options;
+    const { subRow, unitAmount, executeSpy, updateSetSpy } = options;
     const execute = executeSpy ?? vi.fn();
 
     execute.mockImplementation((query: { strings: TemplateStringsArray }) => {
         const text = query.strings.join(' ');
-        if (text.includes('FROM billing_subscriptions') && text.includes('SELECT')) {
-            return Promise.resolve({ rows: subRow ? [subRow] : [] });
-        }
         if (text.includes('FROM billing_prices')) {
             return Promise.resolve({
                 rows: unitAmount !== undefined ? [{ unit_amount: unitAmount }] : []
             });
         }
-        // UPDATE billing_subscriptions ... promo_effect_remaining_cycles
         return Promise.resolve({ rows: [] });
     });
 
-    return { execute };
+    const setSpy = updateSetSpy ?? vi.fn();
+    const select = vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue(subRow ? [subRow] : [])
+            }))
+        }))
+    }));
+    const update = vi.fn(() => ({
+        set: (values: unknown) => {
+            setSpy(values);
+            return { where: vi.fn().mockResolvedValue(undefined) };
+        }
+    }));
+
+    return { execute, select, update };
 }
 
 /** Build a discount promo code DTO with the given duration. */
@@ -145,18 +174,18 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
     // Webhook #1: remaining=3 → 2 (apply-discount).
     it('webhook #1 (remaining=3 → 2): apply-discount, counter decremented to 2', async () => {
         // Arrange
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: 3 // correct B1 seed = durationCycles
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 3 // correct B1 seed = durationCycles
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(3));
@@ -173,27 +202,23 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         expect(result.data.targetTransactionAmountCentavos).toBe(5000);
         expect(result.data.targetTransactionAmountMajor).toBe(50);
         // counter persisted to 2
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(2);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 2 });
     });
 
     it('webhook #2 (remaining=2 → 1): apply-discount, counter decremented to 1', async () => {
         // Arrange
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: 2
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 2
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(3));
@@ -208,27 +233,23 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         expect(result.data.remainingCyclesAfter).toBe(1);
         expect(result.data.targetTransactionAmountCentavos).toBe(5000);
         expect(result.data.targetTransactionAmountMajor).toBe(50);
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(1);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 1 });
     });
 
     it('webhook #3 / last cycle (remaining=1 → 0): restore-full, effect exhausted (AC-1.5 stop)', async () => {
         // Arrange
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: 1
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 1
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(3));
@@ -244,10 +265,7 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         // restore to full price 10000 centavos → 100 major
         expect(result.data.targetTransactionAmountCentavos).toBe(10000);
         expect(result.data.targetTransactionAmountMajor).toBe(100);
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(0);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 0 });
     });
 
     it('end-to-end N=3: exactly 3 discounted webhooks then full price on #4 (B1 invariant)', async () => {
@@ -262,10 +280,10 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
                 subRow: {
                     id: 'sub-e2e',
                     status: 'active',
-                    plan_id: 'plan-1',
-                    mp_subscription_id: 'mp-1',
-                    promo_code_id: 'pc-1',
-                    promo_effect_remaining_cycles: remaining
+                    planId: 'plan-1',
+                    mpSubscriptionId: 'mp-1',
+                    promoCodeId: 'pc-1',
+                    promoEffectRemainingCycles: remaining
                 },
                 unitAmount: UNIT_AMOUNT,
                 executeSpy
@@ -297,18 +315,18 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
 
     it('forever (remaining=NULL, durationCycles=NULL): apply-discount, counter stays NULL (AC-2.2)', async () => {
         // Arrange
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: null
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: null
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(null));
@@ -323,25 +341,24 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         expect(result.data.remainingCyclesAfter).toBeNull();
         expect(result.data.targetTransactionAmountCentavos).toBe(5000);
         // No UPDATE should run for a forever discount (counter stays null).
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeUndefined();
+        expect(updateSetSpy).not.toHaveBeenCalled();
     });
 
     it('comp (status=comp): action=comp, no MP amount, counter untouched (AC-2.1/2.2)', async () => {
         // Arrange
         const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'comp',
-                plan_id: 'plan-1',
-                mp_subscription_id: null,
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: null
+                planId: 'plan-1',
+                mpSubscriptionId: null,
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: null
             },
-            executeSpy
+            executeSpy,
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
 
@@ -356,11 +373,11 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         // The promo code lookup is never needed for a comp sub.
         expect(mockGetPromoCodeById).not.toHaveBeenCalled();
         // No UPDATE / price query for comp.
-        const nonSelectCall = executeSpy.mock.calls.find((c) => {
-            const t = (c[0] as { strings: TemplateStringsArray }).strings.join(' ');
-            return t.includes('UPDATE') || t.includes('billing_prices');
-        });
-        expect(nonSelectCall).toBeUndefined();
+        expect(updateSetSpy).not.toHaveBeenCalled();
+        const priceQueryCall = executeSpy.mock.calls.find((c) =>
+            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('billing_prices')
+        );
+        expect(priceQueryCall).toBeUndefined();
     });
 
     it('no promo code linked: noop', async () => {
@@ -369,10 +386,10 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: null,
-                promo_effect_remaining_cycles: null
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: null,
+                promoEffectRemainingCycles: null
             }
         });
         mockGetDb.mockReturnValue(db);
@@ -393,10 +410,10 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: 0
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 0
             },
             unitAmount: 10000
         });
@@ -429,18 +446,18 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
 
     it('persist=false: decision computed but counter NOT written (safety-net preview)', async () => {
         // Arrange
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: 2
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 2
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(3));
@@ -456,28 +473,25 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         if (!result.success) throw new Error('expected success');
         expect(result.data.action).toBe('apply-discount');
         expect(result.data.remainingCyclesAfter).toBe(1);
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeUndefined();
+        expect(updateSetSpy).not.toHaveBeenCalled();
     });
 
     it('defensive branch (remaining=null, durationCycles set): restore-full + log.error called (NIT)', async () => {
         // Arrange: DB has remaining=null but the promo code has durationCycles=3 (inconsistent state).
         // Expected: restore-full + log.error called with a descriptive message (observable via Sentry
         // log transport in apps/api — service-core must not import @sentry/node directly).
-        const executeSpy = vi.fn();
+        const updateSetSpy = vi.fn();
         const db = buildDbMock({
             subRow: {
                 id: 'sub-1',
                 status: 'active',
-                plan_id: 'plan-1',
-                mp_subscription_id: 'mp-1',
-                promo_code_id: 'pc-1',
-                promo_effect_remaining_cycles: null // inconsistent: should be 0 if exhausted
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: null // inconsistent: should be 0 if exhausted
             },
             unitAmount: 10000,
-            executeSpy
+            updateSetSpy
         });
         mockGetDb.mockReturnValue(db);
         mockGetPromoCodeById.mockResolvedValue(discountCode(3)); // durationCycles=3, NOT null
@@ -497,10 +511,6 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         const logMsg = mockLoggerError.mock.calls[0]?.[1] as string;
         expect(logMsg).toContain('inconsistent state');
         // Counter written to 0 (persist=true by default).
-        const updateCall = executeSpy.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(0);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 0 });
     });
 });

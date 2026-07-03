@@ -29,6 +29,7 @@ import {
     type DrizzleClient,
     billingSubscriptions,
     commerceListingSubscriptions,
+    eq,
     getDb,
     partnerSubscriptions,
     sql,
@@ -652,8 +653,8 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  * Initiate a monthly commerce-listing subscription (SPEC-239 T-048).
  *
  * Reuses the accommodation `mode: 'paid'` MP preapproval flow, then:
- *   1. (D3) stamps `billing_subscriptions.product_domain = 'commerce'` via a raw
- *      SQL UPDATE — the column is NOT in qzpay-core's TS schema (extras carril).
+ *   1. (D3) stamps `billing_subscriptions.product_domain = 'commerce'` via a
+ *      typed Drizzle UPDATE.
  *   2. (D4) upserts the `commerce_listing_subscriptions` link row keyed on the
  *      UNIQUE(entity_type, entity_id) constraint (one link per entity), so a
  *      re-subscription overwrites `subscriptionId` + `status` rather than
@@ -717,10 +718,10 @@ export async function initiateCommerceMonthlySubscription(
     await withTransaction(async (tx) => {
         // D3: stamp product_domain='commerce' on the freshly-created subscription.
         // (tx reuses a caller-provided boundary via input.db when present.)
-        // The column is not in QZPay's TS schema, so we set it with raw SQL.
-        await tx.execute(
-            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.COMMERCE} WHERE id = ${subscription.id}`
-        );
+        await tx
+            .update(billingSubscriptions)
+            .set({ productDomain: ProductDomainEnum.COMMERCE })
+            .where(eq(billingSubscriptions.id, subscription.id));
 
         // D4: upsert the commerce_listing_subscriptions link row (one per entity).
         // On the UNIQUE(entity_type, entity_id) conflict, update subscriptionId +
@@ -828,9 +829,10 @@ export async function initiatePartnerMonthlySubscription(
     }
 
     await withTransaction(async (tx) => {
-        await tx.execute(
-            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.PARTNER} WHERE id = ${subscription.id}`
-        );
+        await tx
+            .update(billingSubscriptions)
+            .set({ productDomain: ProductDomainEnum.PARTNER })
+            .where(eq(billingSubscriptions.id, subscription.id));
 
         await tx
             .insert(partnerSubscriptions)

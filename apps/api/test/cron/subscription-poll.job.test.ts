@@ -11,9 +11,10 @@
  * behavior under test is the cron's own orchestration logic, not the
  * downstream provider/storage internals.
  *
- * - `@repo/db`: only `sql` and `withTransaction` are touched; mocked to
- *   short-circuit the advisory lock (acquired=true by default) and
- *   forward through to the inner callback.
+ * - `@repo/db`: `sql` and `withTransaction` are mocked to short-circuit the
+ *   advisory lock (acquired=true by default) and forward through to the
+ *   inner callback. `select` (HOS-75 T-021) backs the discount reconciler's
+ *   typed bulk query.
  * - `@repo/billing`: `createMercadoPagoAdapter` returns a stub adapter
  *   whose `subscriptions.retrieve` is per-test programmable.
  * - `getQZPayBilling`: returns a stub billing instance whose `getStorage`
@@ -59,15 +60,34 @@ vi.mock('@repo/billing', () => ({
 }));
 
 const mockExecute = vi.fn();
-// mockGetDbExecute is used by reconcileActiveDiscountAmounts which calls getDb().execute()
-// directly (outside withTransaction). Default: return no rows (reconciler skips).
-const mockGetDbExecute = vi.fn().mockResolvedValue({ rows: [] });
+// mockSelectWhere backs reconcileActiveDiscountAmounts's typed bulk
+// db.select({...}).from(billingSubscriptions).where(and(...)) call (HOS-75
+// T-021 — replaces the old raw getDb().execute() SELECT). Default: return no
+// rows (reconciler skips).
+const mockSelectWhere = vi.fn().mockResolvedValue([]);
+const mockDbSelect = vi.fn(() => ({
+    from: vi.fn().mockReturnValue({ where: mockSelectWhere })
+}));
 vi.mock('@repo/db', () => ({
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    getDb: vi.fn(() => ({ execute: mockGetDbExecute })),
+    getDb: vi.fn(() => ({ execute: mockExecute, select: mockDbSelect })),
     withTransaction: async <T>(fn: (tx: { execute: Mock }) => Promise<T>): Promise<T> => {
         return fn({ execute: mockExecute });
-    }
+    },
+    // Column-object sentinels for the typed select projection + where clause.
+    billingSubscriptions: {
+        id: 'ID',
+        status: 'STATUS',
+        planId: 'PLAN_ID',
+        mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
+        promoCodeId: 'PROMO_CODE_ID',
+        promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES',
+        deletedAt: 'DELETED_AT'
+    },
+    eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
+    isNotNull: (a: unknown) => ({ _isNotNull: a }),
+    isNull: (a: unknown) => ({ _isNull: a }),
+    and: (...args: unknown[]) => ({ _and: args })
 }));
 
 // @repo/service-core functions used by reconcileActiveDiscountAmounts.
@@ -960,10 +980,10 @@ describe('subscription-poll cron job', () => {
         // Sub fixture shared across reconciler tests.
         const RECONCILE_SUB = {
             id: 'sub-promo-1',
-            plan_id: 'plan-pro',
-            mp_subscription_id: 'mp-sub-promo-1',
-            promo_code_id: 'pc-1',
-            promo_effect_remaining_cycles: 2 // finite, still active
+            planId: 'plan-pro',
+            mpSubscriptionId: 'mp-sub-promo-1',
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 2 // finite, still active
         };
 
         // Full plan price: 10000 centavos = 100 ARS major.
@@ -973,8 +993,8 @@ describe('subscription-poll cron job', () => {
         const EXPECTED_DISCOUNTED_MAJOR = 50;
 
         function setupReconcilerMocks(liveAmountMajor: number): void {
-            // Make the reconciler's getDb().execute() return one discounted sub row.
-            mockGetDbExecute.mockResolvedValueOnce({ rows: [RECONCILE_SUB] });
+            // Make the reconciler's typed bulk select return one discounted sub row.
+            mockSelectWhere.mockResolvedValueOnce([RECONCILE_SUB]);
             // resolveFullPlanPriceCentavos returns the full price.
             mockResolveFullPlanPrice.mockResolvedValueOnce(FULL_PRICE_CENTAVOS);
             // getPromoCodeById returns a 50% discount code.
@@ -999,7 +1019,7 @@ describe('subscription-poll cron job', () => {
             // (as the real MP API returns). The reconciler reads
             // auto_recurring.transaction_amount — NOT top-level transaction_amount.
             mockRetrieve.mockResolvedValueOnce({
-                id: RECONCILE_SUB.mp_subscription_id,
+                id: RECONCILE_SUB.mpSubscriptionId,
                 status: 'active',
                 auto_recurring: {
                     transaction_amount: liveAmountMajor
@@ -1042,7 +1062,7 @@ describe('subscription-poll cron job', () => {
 
             // Assert: update was called to correct the drift.
             expect(mockAdapterSubsUpdate).toHaveBeenCalledOnce();
-            expect(mockAdapterSubsUpdate).toHaveBeenCalledWith(RECONCILE_SUB.mp_subscription_id, {
+            expect(mockAdapterSubsUpdate).toHaveBeenCalledWith(RECONCILE_SUB.mpSubscriptionId, {
                 transactionAmount: EXPECTED_DISCOUNTED_MAJOR
             });
         });

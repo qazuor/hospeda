@@ -1,0 +1,915 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-75",
+    "title": "Migrate billing raw-SQL column access to typed Drizzle",
+    "created": "2026-07-03T05:00:00Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Confirm qzpay-drizzle 1.11.0 in worktree",
+            "description": "Sanity check that the worktree's @qazuor/qzpay-drizzle install is 1.11.0 and the 6 target columns are present in packages/db/src/billing/schemas.ts (re-export barrel). No code change expected — just a pre-flight check before Phase A starts.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:03:21Z",
+                "completed": "2026-07-03T05:03:45Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add loadSubscriptionDiscountState() shared helper",
+            "description": "Add a new typed export to packages/service-core/src/services/billing/subscription/subscription-product-domain.ts: loadSubscriptionDiscountState({ subscriptionId }) returning { id, status, planId, mpSubscriptionId, promoCodeId, promoEffectRemainingCycles } via a typed db.select().from(billingSubscriptions).where(eq(...)).limit(1). This is infrastructure Phase C's 3 call sites (payment-logic.ts, dunning.job.ts, apply-scheduled-plan-changes.ts) and Phase B's promo-code.renewal.ts depend on.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-018", "T-019", "T-020", "T-028"],
+            "subtasks": [],
+            "tags": ["billing", "drizzle", "setup", "dedup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z",
+                    "details": "17/17 (subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:03:55Z",
+                "completed": "2026-07-03T05:07:00Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Remove dual camelCase/snake_case read in isAccommodationSubscription",
+            "description": "In subscription-product-domain.ts, delete the `record.productDomain ?? record.product_domain` fallback -- keep only `record.productDomain`. Re-run spec-239-entitlement-isolation.test.ts to confirm the camelCase-only path still passes unchanged. Verify all 5 callers (entitlement.ts, addon-entitlement.service.ts x3, addon-user-addons.ts, featured-entitlement.resolver.ts) already pass a typed Drizzle row.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "product-domain", "cleanup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z",
+                    "details": "35/35 (featured-entitlement.resolver.test.ts + subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:08:03Z",
+                "completed": "2026-07-03T05:15:36Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Migrate subscription-checkout.service.ts product_domain UPDATEs",
+            "description": "Replace the 2 raw `sql\\`UPDATE billing_subscriptions SET product_domain = ...\\`` sites (commerce ~line 722, partner ~line 832) with tx.update(billingSubscriptions).set({ productDomain: ... }).where(eq(billingSubscriptions.id, subscription.id)). Keep inside the existing withTransaction block. Verify subscription-checkout.service.test.ts still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "product-domain"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z",
+                    "details": "53/53 (commerce+partner start-subscription.service.test.ts + subscription-checkout.service.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:17:14Z",
+                "completed": "2026-07-03T05:22:30Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Migrate subscription-comp-create.service.ts + update test mocks",
+            "description": "Replace the SELECT (~line 81, reads product_domain to gate accommodation-only comp) and UPDATE (~lines 137-139, stamps product_domain + promo_code_id) with typed Drizzle. Update subscription-comp-create.service.test.ts (lines 73-172) which currently asserts on db.execute mock calls -- rewrite those assertions against the new db.select/db.insert typed mock calls, same resulting values. This file was NOT in the original Linear issue list (found during spec research).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Migrate SELECT gating comp to accommodation-only plans",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate INSERT/UPDATE stamping product_domain + promo_code_id",
+                    "completed": true
+                },
+                {
+                    "title": "Rewrite test mocks in subscription-comp-create.service.test.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "product-domain", "scope-gap"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:25:58Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:25:58Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:25:58Z",
+                    "details": "17/17 (subscription-comp-create.service.test.ts + subscription-checkout-promo-branches.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:22:51Z",
+                "completed": "2026-07-03T05:25:58Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Migrate listPlans.ts getNonAccommodationPlanSlugs()",
+            "description": "Replace `sql\\`SELECT name FROM billing_plans WHERE product_domain IS DISTINCT FROM ...\\`` with db.select({ name: billingPlans.name }).from(billingPlans).where(ne(billingPlans.productDomain, ProductDomainEnum.ACCOMMODATION)). Safe because productDomain is notNull() with a default -- no NULL is ever possible, so ne() is exactly equivalent to IS DISTINCT FROM here. Verify listPlans.test.ts / listPlans.partner-domain.test.ts / listPlans.cutover.test.ts still pass.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "product-domain"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z",
+                    "details": "16/16 (listPlans.test.ts + listPlans.partner-domain.test.ts + listPlans.cutover.test.ts)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:26:11Z",
+                "completed": "2026-07-03T05:31:03Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Migrate partners/admin/list-plans.ts + write net-new test",
+            "description": "Replace the raw SELECT (product_domain = 'partner' filter + correlated price subquery, ~lines 24-43) with typed Drizzle (eq(billingPlans.productDomain, ProductDomainEnum.PARTNER) plus a typed subquery/join for price). Write list-plans.test.ts (currently does not exist -- zero test coverage found during spec research): cover success response shape, the partner-domain filter excluding non-partner plans, and the price subquery returning the same shape.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Migrate SELECT + correlated subquery to typed Drizzle",
+                    "completed": true
+                },
+                {
+                    "title": "Write list-plans.test.ts (net-new file)",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "product-domain", "test-gap"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:38:01Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:38:01Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:38:01Z",
+                    "details": "4/4 (net-new list-plans.test.ts)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:31:24Z",
+                "completed": "2026-07-03T05:38:01Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Migrate featured-entitlement.resolver.ts product_domain SELECT",
+            "description": "Replace the raw SELECT (~lines 108-120, reads id/plan_id/status/product_domain from billing_subscriptions) with typed Drizzle, keeping the existing isAccommodationSubscription() filter call unchanged (per T-003). Verify featured-entitlement.resolver.test.ts still passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "product-domain"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:15:36Z",
+                    "details": "35/35 (featured-entitlement.resolver.test.ts + subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:10:42Z",
+                "completed": "2026-07-03T05:15:36Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Fold product_domain UPDATE into insert in commercePlan.seed.ts + partnerPlan.seed.ts",
+            "description": "Both packages/seed/src/required/commercePlan.seed.ts (~line 107) and partnerPlan.seed.ts (~line 84) currently do a raw `sql\\`UPDATE billing_plans SET product_domain = ...\\`` right after a typed .insert(). Fold product_domain directly into the .insert({...}) values object and delete the follow-up raw UPDATE. Verify with a local `pnpm db:seed:required` run that plans still get the correct product_domain value. Not in the original Linear issue list (found during spec research).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "product-domain", "seed", "scope-gap"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:41:02Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:41:02Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:41:02Z",
+                    "details": "No unit tests planned per spec (seed script); typecheck+lint verified. Live pnpm db:seed:required run SKIPPED -- this worktree has no provisioned per-worktree DB yet (wt:up not run), and .env.local still points at a stale worktree_spec_308 DB name from env copy. Flagged to user."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:38:19Z",
+                "completed": "2026-07-03T05:41:02Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Collapse promo-code.crud.ts column projection + fold persistEffectColumns()",
+            "description": "Collapse promoCodeColumnsWithEffect() to a plain getTableColumns(billingPromoCodes) call (drop the manual sql<string|null>`effect_kind` etc. projections). Delete persistEffectColumns() entirely -- fold its 3 branches' (comp / trial_extension / discount) effect-column values directly into the corresponding .insert({...}) calls (confirmed safe: none of the 3 branches reference the row's generated id when computing effect-column values). Verify promo-code.crud.test.ts still passes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Collapse promoCodeColumnsWithEffect() to getTableColumns()",
+                    "completed": true
+                },
+                {
+                    "title": "Fold persistEffectColumns()'s 3 branches into .insert({...})",
+                    "completed": true
+                },
+                {
+                    "title": "Delete persistEffectColumns() function",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "promo-code"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z",
+                    "details": "95/95 (promo-code.crud.test.ts + redemption/renewal/trial-extension/validation regression, no test changes needed)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:43:05Z",
+                "completed": "2026-07-03T05:46:29Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Migrate promo-code.redemption.ts promo_effect_remaining_cycles UPDATE",
+            "description": "Replace the raw UPDATE (~lines 918-931, sets promo_effect_remaining_cycles on redemption of a discount effect) with tx.update(billingSubscriptions).set({ promoEffectRemainingCycles: ... }).where(eq(...)). Verify promo-code.redemption.test.ts still passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:48:31Z",
+                    "details": "19/19 (promo-code.redemption.test.ts, no assertions on this specific field previously either)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:46:45Z",
+                "completed": "2026-07-03T05:48:31Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Migrate promo-code.renewal.ts to use shared discount-state helper",
+            "description": "resolveRenewalPromoEffect's SELECT (~lines 232-239, reads promo_code_id/promo_effect_remaining_cycles) becomes a call to loadSubscriptionDiscountState() from T-002. persistRemainingCycles()'s UPDATE (~lines 519-525, decrements promo_effect_remaining_cycles) becomes typed .set({...}). Verify promo-code.renewal.test.ts still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code", "dedup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:57:07Z",
+                    "details": "11/11 (promo-code.renewal.test.ts, fully rewritten mocks to typed select/update chains)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:48:44Z",
+                "completed": "2026-07-03T05:57:07Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Migrate promo-code.trial-extension.ts raw-SQL effect-column access",
+            "description": "Migrate this file's raw-SQL touch point on the effect columns to typed Drizzle -- update the stale 'added via extras/018' comment at ~line 124. NOTE: exact line range was not pinned during spec research (flagged as an open item in the spec's Internal Review Notes) -- re-confirm the precise site at implementation start before editing. Verify promo-code.trial-extension.test.ts still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code", "needs-verification"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z",
+                    "details": "16/16 (promo-code.trial-extension.test.ts, no regressions)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:57:28Z",
+                "completed": "2026-07-03T05:59:04Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Migrate promo-discount-apply.service.ts SELECT + UPDATE",
+            "description": "Replace the SELECT (~lines 116-122, loads id/customer_id/status/plan_id/mp_subscription_id) and the promo_effect_remaining_cycles UPDATE (~lines 242-246, the B1 fix correcting the reducer's N-1 seed) with typed Drizzle. Verify promo-discount-apply.service.test.ts still passes with the same corrected value.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:49:22Z",
+                    "details": "736/736 full test/billing/ sweep -- also fixed forward regressions in promo-code.effect-engine.test.ts and promo-code.migration.test.ts left over from T-011/T-012 (missed on first pass, caught by broader sweep)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:59:22Z",
+                "completed": "2026-07-03T12:49:22Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Migrate subscription-discount-signup.service.ts UPDATE",
+            "description": "Replace the raw UPDATE (~lines 152-157, stamps promo_code_id + seeds promo_effect_remaining_cycles at signup-time discount application) with typed .set({...}). Verify subscription-discount-signup.service.test.ts still passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:53:35Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:53:35Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:53:35Z",
+                    "details": "15/15 (subscription-discount-signup.service.test.ts + subscription-checkout-promo-branches.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T12:50:06Z",
+                "completed": "2026-07-03T12:53:35Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Fold effect-columns UPDATE into insert in billingPromoCodes.seed.ts",
+            "description": "billingPromoCodes.seed.ts (~lines 86-99) currently does a raw UPDATE for effect_kind/value_kind/duration_cycles/extra_days right after insert. Fold these directly into the .insert({...}) values object and delete the follow-up raw UPDATE. Verify with a local `pnpm db:seed:required` run. Not in the original Linear issue list (found during spec research).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code", "seed", "scope-gap"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:55:27Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:55:27Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:55:27Z",
+                    "details": "No unit tests for seed scripts (matches T-009 precedent); typecheck+lint verified. Live seed run not verified (no provisioned worktree DB, same caveat as T-009)."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T12:53:53Z",
+                "completed": "2026-07-03T12:55:27Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Fix stale extras/018 comment in promo-code.schema.ts",
+            "description": "Update the stale 'added via extras/018' JSDoc comment at packages/schemas/src/api/billing/promo-code.schema.ts:291 to reflect that these are now typed Drizzle columns (qzpay-drizzle 1.11.0, HOS-73).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "promo-code", "docs"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z",
+                    "details": "Doc-only change, no tests needed"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T12:55:44Z",
+                "completed": "2026-07-03T12:56:47Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Migrate payment-logic.ts to use shared discount-state helper",
+            "description": "resolveDiscountAwareUpgradeAmount's SELECT (~lines 353-360) becomes a call to loadSubscriptionDiscountState() from T-002. Verify payment-logic.test.ts and payment-logic.cutover.test.ts still pass.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "webhooks", "dedup"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z",
+                    "details": "100/100 test/routes/webhooks/ sweep -- added a net-new regression test (discount preservation was previously untestable/untested because db.execute() was unmocked and always fail-open; now genuinely exercised via loadSubscriptionDiscountState()'s typed select). Fixed a getDb()-select-index coupling regression in 'does not double-record...' test (payment-dedupe row moved from subRows to paymentDedupeRows since the discount-state select now consumes select-index 0 first)."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T13:00:00Z",
+                "completed": "2026-07-03T13:15:00Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Migrate dunning.job.ts to use shared discount-state helper",
+            "description": "isCompOrActivelyDiscounted's SELECT (~lines 66-72) becomes a call to loadSubscriptionDiscountState() from T-002. Verify dunning.job.test.ts still passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "cron", "dedup"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:33:00Z",
+                    "details": "508/508 test/cron/ full sweep. Test mock's @repo/db was execute-only (insert+execute); added select/eq/billingSubscriptions mocks. Initial 3 failures (comp/active-discount/forever-discount guard tests) traced to loadSubscriptionDiscountState() throwing on undefined eq()/billingSubscriptions inside the fail-open catch -- fixed by adding those to the mock."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T13:20:00Z",
+                "completed": "2026-07-03T13:33:00Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Migrate apply-scheduled-plan-changes.ts to use shared discount-state helper",
+            "description": "resolveDiscountAwarePlanChangeAmount's SELECT (~lines 94-100) becomes a call to loadSubscriptionDiscountState() from T-002. Verify apply-scheduled-plan-changes.test.ts still passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "cron", "dedup"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z",
+                    "details": "508/508 test/cron/ full sweep. Removed the now-unused execute() mock, added eq()/extended billingSubscriptions columns so loadSubscriptionDiscountState() resolves via the correct null-row path instead of an accidental exception-based fail-open."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T13:35:00Z",
+                "completed": "2026-07-03T13:40:00Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Migrate subscription-poll.job.ts bulk discount-amounts reconciliation",
+            "description": "reconcileActiveDiscountAmounts's bulk SELECT (~lines 463-470, loads id/plan_id/mp_subscription_id/promo_code_id/promo_effect_remaining_cycles for ALL active discounted subs) becomes its own typed db.select({...}).from(billingSubscriptions).where(and(...)) -- this is a bulk query, not a single-row lookup, so it does NOT use the loadSubscriptionDiscountState() helper from T-002. Verify subscription-poll.job.test.ts still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z",
+                    "details": "508/508 test/cron/ full sweep, including the 2 real S1 drift/in-sync tests (genuine math coverage, not fail-open masking). Updated the @repo/db mock: select/eq/isNotNull/isNull/and + camelCase billingSubscriptions columns replacing the execute()-only mock."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T13:41:00Z",
+                "completed": "2026-07-03T13:47:00Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Migrate subscription-promo-effect.ts admin diagnostic JOIN",
+            "description": "Replace the raw JOIN SELECT (~lines 90-101, joins billing_subscriptions<->billing_promo_codes selecting promo_effect_remaining_cycles/effect_kind/value_kind/duration_cycles/extra_days) with typed db.select({...}).from(billingSubscriptions).innerJoin(billingPromoCodes, ...). Update the stale extras/018-019 JSDoc tags at ~lines 36-48. Verify subscription-promo-effect.test.ts still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["billing", "admin", "promo-code"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z",
+                    "details": "14/14 subscription-promo-effect.test.ts + 421/421 test/routes/billing/ full sweep. NOTE: used leftJoin (not innerJoin as the task description said) -- the original raw SQL was a LEFT JOIN, required so a subscription with no promo code still returns exactly 1 row (null promo columns) instead of 0 rows, which the handler would otherwise misread as 404. Also found+fixed a real gap in the shared test/helpers/mocks/db-mock.ts (global @repo/db automock): billingPromoCodes was not exported at all, and billingSubscriptions was missing promoCodeId/promoEffectRemainingCycles -- added both (additive, verified no regressions across test/routes/billing/)."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T13:48:00Z",
+                "completed": "2026-07-03T14:00:00Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Update root CLAUDE.md extras-carril references",
+            "description": "Root CLAUDE.md (~lines 183-192) states product_domain ships via extras/017-billing-plans-product-domain.column.sql (deleted in hospeda PR #2031) and describes effect_kind/promo_effect_remaining_cycles as extras 018/019. Correct to describe all 6 columns as typed Drizzle columns from @qazuor/qzpay-drizzle 1.11.0 (HOS-73).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Update docs/guides/migrations.md extras-carril worked example",
+            "description": "docs/guides/migrations.md (~lines 224-241) has a whole worked-example section 'Extras-carril example: product_domain columns (SPEC-239)' citing the deleted extras/017 file and stating these columns 'cannot be expressed in the Hospeda Drizzle TS schema' -- no longer true. Rewrite or remove the section.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Update ADR-035 extras-carril tradeoff note",
+            "description": "docs/decisions/ADR-035-commerce-core-gastronomy-separation.md (~lines 77-81, 191-193) cites the deleted extras/017 file and lists as a stated tradeoff that product_domain is 'invisible to the Drizzle TS schema' -- now resolved. Update or mark historical.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Fix packages/service-core/CLAUDE.md wrong migration filename + stale caveat",
+            "description": "packages/service-core/CLAUDE.md cites a nonexistent migration file (0042_last_patriot.sql) -- the real file is packages/db/src/migrations/0044_adorable_longshot.sql. Also note that this spec (HOS-75) closed the 'raw SQL still pending' gap the doc previously flagged.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Annotate stale product_domain reference in .specs/HOS-20/spec.md",
+            "description": ".specs/HOS-20-iva-tax-handling/spec.md:110 cites product_domain as added '(extras/016)'/'(extras/017)' -- now stale since HOS-73/HOS-75. Add a correcting note or update the reference table.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Final scoped verification across all 3 phases",
+            "description": "Run pnpm --filter @repo/service-core typecheck, pnpm --filter @repo/api typecheck, scoped pnpm test runs per domain (service-core promo-code/product-domain tests, api billing/webhooks/cron tests -- never the full suite at once), and pnpm lint/check for noExplicitAny/unused-import cleanup as manual row interfaces are deleted. This is the final gate before closing HOS-75.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-001",
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027"
+            ],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["billing", "verification"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:20:00Z",
+                    "details": "@repo/service-core typecheck clean; hospeda-api typecheck clean; 721/721 packages/service-core/test/billing/; 1029/1029 apps/api test/routes/billing + test/routes/webhooks + test/cron; biome check clean on every touched directory (5 pre-existing suppression warnings in untouched files, unrelated to HOS-75)."
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T14:15:00Z",
+                "completed": "2026-07-03T14:20:00Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 28,
+        "blocked": 0,
+        "averageComplexity": 1.54
+    }
+}

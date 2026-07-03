@@ -121,9 +121,10 @@ interface SubscriptionRow {
  * Apply a `trial_extension` promo code to an existing subscription.
  *
  * Extends `billing_subscriptions.trial_end` by the number of days configured
- * on the promo code's `extra_days` column (added via extras/018). All three
- * writes — usage-count increment, usage-row insert, and trial_end UPDATE — run
- * in a single atomic transaction so they commit or roll back together.
+ * on the promo code's `extraDays` column (a typed Drizzle column as of
+ * `@qazuor/qzpay-drizzle` 1.11.0, HOS-73). All three writes — usage-count
+ * increment, usage-row insert, and trial_end UPDATE — run in a single atomic
+ * transaction so they commit or roll back together.
  *
  * **Usage limits are enforced** via `redeemAndRecordUsage` (which acquires a
  * `SELECT FOR UPDATE` row lock on the promo code, re-validates `maxUses` and

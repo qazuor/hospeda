@@ -8,10 +8,10 @@
  * createDbMock(). This file reconfigures getDb() per test to control
  * what the handler sees without leaking state between tests.
  *
- * The handler uses db.execute(sql`...`) — a single round-trip that LEFT JOINs
- * billing_promo_codes on billing_subscriptions. The mock returns
- * `{ rows: [...] }` to match the Drizzle execute() contract used by the real
- * production code (payment-logic.ts, dunning.job.ts).
+ * The handler uses a typed db.select({...}).from(billingSubscriptions)
+ * .leftJoin(billingPromoCodes, ...).where(...).limit(1) query (HOS-75 T-022).
+ * The mock resolves the chain directly to a rows array (no `{ rows }`
+ * wrapper — that shape was specific to the old raw db.execute() call).
  *
  * @module test/routes/billing/admin/subscription-promo-effect
  */
@@ -48,12 +48,34 @@ function createMockContext(): Context {
 }
 
 /**
- * Configures getDb().execute() to resolve with the given rows.
- * Wraps rows in `{ rows }` to match the Drizzle execute() return contract.
+ * Configures getDb().select(...).from(...).leftJoin(...).where(...).limit(1)
+ * to resolve with the given rows (HOS-75 T-022 typed query).
  */
 function buildMockDb(rows: unknown[]) {
+    const chain = {
+        from: () => chain,
+        leftJoin: () => chain,
+        where: () => chain,
+        limit: () => Promise.resolve(rows)
+    };
     vi.mocked(getDb).mockReturnValue({
-        execute: vi.fn().mockResolvedValue({ rows })
+        select: vi.fn(() => chain)
+    } as unknown as ReturnType<typeof getDb>);
+}
+
+/**
+ * Configures the same select chain to reject at `.limit()`, simulating a
+ * DB-level failure.
+ */
+function buildMockDbRejecting(error: Error) {
+    const chain = {
+        from: () => chain,
+        leftJoin: () => chain,
+        where: () => chain,
+        limit: () => Promise.reject(error)
+    };
+    vi.mocked(getDb).mockReturnValue({
+        select: vi.fn(() => chain)
     } as unknown as ReturnType<typeof getDb>);
 }
 
@@ -63,14 +85,14 @@ function buildMockDb(rows: unknown[]) {
  */
 function makeRow(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
     return {
-        promo_code_id: 'promo-code-uuid-001',
-        promo_effect_remaining_cycles: 2,
+        promoCodeId: 'promo-code-uuid-001',
+        promoEffectRemainingCycles: 2,
         code: 'SUMMER30',
-        effect_kind: 'discount',
-        value_kind: 'percentage',
+        effectKind: 'discount',
+        valueKind: 'percentage',
         value: 30,
-        duration_cycles: 3,
-        extra_days: null,
+        durationCycles: 3,
+        extraDays: null,
         ...overrides
     };
 }
@@ -117,11 +139,11 @@ describe('getSubscriptionPromoEffectHandler', () => {
             buildMockDb([
                 makeRow({
                     code: 'FIXED20',
-                    effect_kind: 'discount',
-                    value_kind: 'fixed',
+                    effectKind: 'discount',
+                    valueKind: 'fixed',
                     value: 2000,
-                    duration_cycles: 5,
-                    promo_effect_remaining_cycles: 2
+                    durationCycles: 5,
+                    promoEffectRemainingCycles: 2
                 })
             ]);
 
@@ -154,12 +176,12 @@ describe('getSubscriptionPromoEffectHandler', () => {
             buildMockDb([
                 makeRow({
                     code: 'HOSPEDA_FREE',
-                    effect_kind: 'comp',
-                    value_kind: null,
+                    effectKind: 'comp',
+                    valueKind: null,
                     value: 0,
-                    duration_cycles: null,
-                    extra_days: null,
-                    promo_effect_remaining_cycles: null
+                    durationCycles: null,
+                    extraDays: null,
+                    promoEffectRemainingCycles: null
                 })
             ]);
 
@@ -192,12 +214,12 @@ describe('getSubscriptionPromoEffectHandler', () => {
             buildMockDb([
                 makeRow({
                     code: 'FREEMONTH',
-                    effect_kind: 'trial_extension',
-                    value_kind: null,
+                    effectKind: 'trial_extension',
+                    valueKind: null,
                     value: 0,
-                    duration_cycles: null,
-                    extra_days: 30,
-                    promo_effect_remaining_cycles: null
+                    durationCycles: null,
+                    extraDays: 30,
+                    promoEffectRemainingCycles: null
                 })
             ]);
 
@@ -224,14 +246,14 @@ describe('getSubscriptionPromoEffectHandler', () => {
             // Arrange: subscription exists but no promo code linked
             buildMockDb([
                 makeRow({
-                    promo_code_id: null,
-                    promo_effect_remaining_cycles: null,
+                    promoCodeId: null,
+                    promoEffectRemainingCycles: null,
                     code: null,
-                    effect_kind: null,
-                    value_kind: null,
+                    effectKind: null,
+                    valueKind: null,
                     value: null,
-                    duration_cycles: null,
-                    extra_days: null
+                    durationCycles: null,
+                    extraDays: null
                 })
             ]);
 
@@ -261,11 +283,11 @@ describe('getSubscriptionPromoEffectHandler', () => {
             // Arrange: 1-cycle discount that has been consumed
             buildMockDb([
                 makeRow({
-                    effect_kind: 'discount',
-                    value_kind: 'percentage',
+                    effectKind: 'discount',
+                    valueKind: 'percentage',
                     value: 50,
-                    duration_cycles: 1,
-                    promo_effect_remaining_cycles: 0
+                    durationCycles: 1,
+                    promoEffectRemainingCycles: 0
                 })
             ]);
 
@@ -283,11 +305,11 @@ describe('getSubscriptionPromoEffectHandler', () => {
             // Arrange: forever discount (null remaining = never exhausted)
             buildMockDb([
                 makeRow({
-                    effect_kind: 'discount',
-                    value_kind: 'percentage',
+                    effectKind: 'discount',
+                    valueKind: 'percentage',
                     value: 20,
-                    duration_cycles: null,
-                    promo_effect_remaining_cycles: null
+                    durationCycles: null,
+                    promoEffectRemainingCycles: null
                 })
             ]);
 
@@ -305,7 +327,7 @@ describe('getSubscriptionPromoEffectHandler', () => {
     // -------------------------------------------------------------------------
 
     describe('404 for unknown subscription', () => {
-        it('should throw HTTPException(404) when db.execute returns empty rows', async () => {
+        it('should throw HTTPException(404) when the select query returns empty rows', async () => {
             // Arrange: no row found for the given subscription id
             buildMockDb([]);
 
@@ -342,11 +364,9 @@ describe('getSubscriptionPromoEffectHandler', () => {
     // -------------------------------------------------------------------------
 
     describe('error handling', () => {
-        it('should throw HTTPException(500) when db.execute rejects', async () => {
+        it('should throw HTTPException(500) when the select query rejects', async () => {
             // Arrange: simulate a DB connection failure
-            vi.mocked(getDb).mockReturnValue({
-                execute: vi.fn().mockRejectedValue(new Error('DB connection lost'))
-            } as unknown as ReturnType<typeof getDb>);
+            buildMockDbRejecting(new Error('DB connection lost'));
 
             // Act & Assert
             await expect(
@@ -356,9 +376,7 @@ describe('getSubscriptionPromoEffectHandler', () => {
 
         it('should wrap db errors in HTTPException(500)', async () => {
             // Arrange
-            vi.mocked(getDb).mockReturnValue({
-                execute: vi.fn().mockRejectedValue(new Error('timeout'))
-            } as unknown as ReturnType<typeof getDb>);
+            buildMockDbRejecting(new Error('timeout'));
 
             // Act
             let caughtError: unknown;
@@ -399,9 +417,9 @@ describe('getSubscriptionPromoEffectHandler', () => {
             expect(result).toHaveProperty('exhausted');
         });
 
-        it('should coerce unknown effect_kind to null', async () => {
-            // Arrange: DB returns an unknown effect_kind value
-            buildMockDb([makeRow({ effect_kind: 'unknown_kind' })]);
+        it('should coerce unknown effectKind to null', async () => {
+            // Arrange: DB returns an unknown effectKind value
+            buildMockDb([makeRow({ effectKind: 'unknown_kind' })]);
 
             // Act
             const result = await getSubscriptionPromoEffectHandler(ctx, { id: SUBSCRIPTION_ID });
@@ -411,9 +429,9 @@ describe('getSubscriptionPromoEffectHandler', () => {
             expect(result.exhausted).toBe(false);
         });
 
-        it('should coerce unknown value_kind to null', async () => {
-            // Arrange: DB returns an unknown value_kind
-            buildMockDb([makeRow({ value_kind: 'crypto' })]);
+        it('should coerce unknown valueKind to null', async () => {
+            // Arrange: DB returns an unknown valueKind
+            buildMockDb([makeRow({ valueKind: 'crypto' })]);
 
             // Act
             const result = await getSubscriptionPromoEffectHandler(ctx, { id: SUBSCRIPTION_ID });

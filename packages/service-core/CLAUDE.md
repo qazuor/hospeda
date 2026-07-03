@@ -1110,9 +1110,10 @@ The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.tra
 `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` (`billing_promo_codes`) and
 `promo_effect_remaining_cycles` (`billing_subscriptions`) are typed Drizzle columns as of
 `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — added via the normal Carril 1 migration
-(`packages/db/src/migrations/0042_last_patriot.sql`), not the extras carril. The old
+(`packages/db/src/migrations/0044_adorable_longshot.sql`), not the extras carril. The old
 extras files (`016`-`019`) that originally added these columns before they were
-promoted upstream have been removed.
+promoted upstream have been removed. HOS-75 replaced the remaining raw-SQL reads/writes
+of these columns across the billing services/routes/crons with typed Drizzle queries.
 
 | File | What it adds |
 |---|---|

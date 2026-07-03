@@ -16,14 +16,18 @@ const dbExecute = vi.fn((_query: unknown) => Promise.resolve(undefined));
 const onConflictDoUpdate = vi.fn((_config: unknown) => Promise.resolve(undefined));
 const insertValues = vi.fn((_values: unknown) => ({ onConflictDoUpdate }));
 const dbInsert = vi.fn((_table: unknown) => ({ values: insertValues }));
+const updateWhere = vi.fn((_cond: unknown) => Promise.resolve(undefined));
+const updateSet = vi.fn((_values: unknown) => ({ where: updateWhere }));
+const dbUpdate = vi.fn((_table: unknown) => ({ set: updateSet }));
 
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ execute: dbExecute, insert: dbInsert })),
+    getDb: vi.fn(() => ({ execute: dbExecute, insert: dbInsert, update: dbUpdate })),
     withTransaction: vi.fn((cb: (tx: unknown) => Promise<unknown>) =>
-        cb({ execute: dbExecute, insert: dbInsert })
+        cb({ execute: dbExecute, insert: dbInsert, update: dbUpdate })
     ),
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    billingSubscriptions: { __table: 'billing_subscriptions' },
+    eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     commerceListingSubscriptions: { entityType: 'entity_type', entityId: 'entity_id' },
     partnerSubscriptions: { partnerId: 'partner_id' }
 }));
@@ -106,7 +110,7 @@ describe('initiatePartnerMonthlySubscription (SPEC-271)', () => {
         expect(createArg.metadata.partnerId).toBe(PARTNER_ID);
     });
 
-    it('stamps product_domain=partner and upserts the partner link row', async () => {
+    it('stamps product_domain=partner via a typed UPDATE (HOS-75 T-004) and upserts the partner link row', async () => {
         const { billing } = createBillingMock();
 
         await initiatePartnerMonthlySubscription({
@@ -117,10 +121,9 @@ describe('initiatePartnerMonthlySubscription (SPEC-271)', () => {
             urls: URLS
         });
 
-        expect(dbExecute).toHaveBeenCalledTimes(1);
-        const sqlArg = dbExecute.mock.calls[0]?.[0] as { values: unknown[] };
-        expect(sqlArg.values).toContain(ProductDomainEnum.PARTNER);
-        expect(sqlArg.values).toContain(SUB_ID);
+        expect(dbExecute).not.toHaveBeenCalled();
+        expect(updateSet).toHaveBeenCalledWith({ productDomain: ProductDomainEnum.PARTNER });
+        expect(updateWhere).toHaveBeenCalledWith({ op: 'eq', col: 'id', val: SUB_ID });
 
         const insertedValues = insertValues.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(insertedValues.partnerId).toBe(PARTNER_ID);

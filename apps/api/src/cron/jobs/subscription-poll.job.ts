@@ -18,7 +18,17 @@
 import type { QZPaySubscriptionPollingJob, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { createMercadoPagoAdapter } from '@repo/billing';
-import { getDb, sql, withTransaction } from '@repo/db';
+import {
+    and,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNotNull,
+    isNull,
+    sql,
+    withTransaction
+} from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
     getPromoCodeById,
@@ -454,22 +464,34 @@ async function reconcileActiveDiscountAmounts(params: {
     const db = getDb();
     let rows: Array<{
         id: string;
-        plan_id: string | null;
-        mp_subscription_id: string;
-        promo_code_id: string;
-        promo_effect_remaining_cycles: number | null;
+        planId: string | null;
+        mpSubscriptionId: string;
+        promoCodeId: string;
+        promoEffectRemainingCycles: number | null;
     }>;
 
     try {
-        const result = await db.execute(
-            sql`SELECT id, plan_id, mp_subscription_id, promo_code_id, promo_effect_remaining_cycles
-                FROM billing_subscriptions
-                WHERE status = 'active'
-                  AND promo_code_id IS NOT NULL
-                  AND mp_subscription_id IS NOT NULL
-                  AND deleted_at IS NULL`
-        );
-        rows = (result.rows ?? []) as typeof rows;
+        const selected = await db
+            .select({
+                id: billingSubscriptions.id,
+                planId: billingSubscriptions.planId,
+                mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
+                promoCodeId: billingSubscriptions.promoCodeId,
+                promoEffectRemainingCycles: billingSubscriptions.promoEffectRemainingCycles
+            })
+            .from(billingSubscriptions)
+            .where(
+                and(
+                    eq(billingSubscriptions.status, SubscriptionStatusEnum.ACTIVE),
+                    isNotNull(billingSubscriptions.promoCodeId),
+                    isNotNull(billingSubscriptions.mpSubscriptionId),
+                    isNull(billingSubscriptions.deletedAt)
+                )
+            );
+        // The WHERE clause guarantees promoCodeId/mpSubscriptionId are non-null
+        // at runtime; the column types stay nullable since Drizzle can't
+        // narrow them from a WHERE predicate.
+        rows = selected as typeof rows;
     } catch (dbErr) {
         logger.warn('subscription-poll reconcile: failed to load discounted subscriptions', {
             error: dbErr instanceof Error ? dbErr.message : String(dbErr)
@@ -480,17 +502,17 @@ async function reconcileActiveDiscountAmounts(params: {
     for (const row of rows) {
         try {
             // Determine expected amount.
-            const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, row.plan_id);
+            const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, row.planId);
             if (fullPriceCentavos === null) {
                 continue; // Can't reconcile without a known price — skip silently.
             }
 
-            const remaining = row.promo_effect_remaining_cycles;
+            const remaining = row.promoEffectRemainingCycles;
             let expectedAmountMajor: number;
 
             if (remaining === null || remaining > 0) {
                 // Active discount (forever or finite with cycles remaining).
-                const promoResult = await getPromoCodeById(row.promo_code_id);
+                const promoResult = await getPromoCodeById(row.promoCodeId);
                 if (!promoResult.success || !promoResult.data?.effect) {
                     continue;
                 }
@@ -509,7 +531,7 @@ async function reconcileActiveDiscountAmounts(params: {
 
             // Retrieve live MP amount.
             const livePreapproval = await paymentAdapter.subscriptions.retrieve(
-                row.mp_subscription_id
+                row.mpSubscriptionId
             );
             // The MP preapproval (subscription) object stores the recurring amount
             // under `auto_recurring.transaction_amount` (MAJOR units), NOT at the
@@ -537,18 +559,18 @@ async function reconcileActiveDiscountAmounts(params: {
             // Amount drifted: re-issue the correct mutation (best-effort).
             logger.warn('subscription-poll reconcile: MP amount drift detected, re-issuing', {
                 subscriptionId: row.id,
-                mpSubscriptionId: row.mp_subscription_id,
+                mpSubscriptionId: row.mpSubscriptionId,
                 liveAmountMajor,
                 expectedAmountMajor,
                 remaining
             });
             try {
-                await paymentAdapter.subscriptions.update(row.mp_subscription_id, {
+                await paymentAdapter.subscriptions.update(row.mpSubscriptionId, {
                     transactionAmount: expectedAmountMajor
                 });
                 logger.info('subscription-poll reconcile: amount drift corrected', {
                     subscriptionId: row.id,
-                    mpSubscriptionId: row.mp_subscription_id,
+                    mpSubscriptionId: row.mpSubscriptionId,
                     correctedAmountMajor: expectedAmountMajor
                 });
             } catch (mpErr) {
@@ -562,7 +584,7 @@ async function reconcileActiveDiscountAmounts(params: {
                     {
                         extra: {
                             subscriptionId: row.id,
-                            mpSubscriptionId: row.mp_subscription_id,
+                            mpSubscriptionId: row.mpSubscriptionId,
                             liveAmountMajor,
                             expectedAmountMajor
                         },

@@ -9,7 +9,7 @@
  */
 
 import { z } from '@hono/zod-openapi';
-import { getDb, sql } from '@repo/db';
+import { billingPlans, getDb, ne } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { PlanService } from '../../../services/plan.service';
 import { apiLogger } from '../../../utils/logger';
@@ -17,11 +17,10 @@ import { createSimpleRoute } from '../../../utils/route-factory.js';
 
 /**
  * Resolve the set of plan slugs that do NOT belong to the accommodation domain
- * (SPEC-239 T-049 isolation). `billing_plans.product_domain` is added via the
- * extras carril and is NOT in the qzpay-drizzle / PlanService projection, so it
- * is queried with raw SQL here (the column is invisible to Drizzle's TS schema).
- * Any slug whose `product_domain` is not `'accommodation'` (e.g. `'commerce'`)
- * is excluded from the public list.
+ * (SPEC-239 T-049 isolation). Any plan whose `productDomain` is not
+ * `'accommodation'` (e.g. `'commerce'`) is excluded from the public list.
+ * `productDomain` is `notNull()` with a default, so no NULL is ever possible —
+ * `ne()` is exactly equivalent to the previous raw `IS DISTINCT FROM`.
  *
  * Fail-open: on any DB error the set is empty (no plans excluded) so the public
  * pricing list never breaks because of this isolation filter — at worst a
@@ -30,13 +29,10 @@ import { createSimpleRoute } from '../../../utils/route-factory.js';
 async function getNonAccommodationPlanSlugs(): Promise<Set<string>> {
     try {
         const db = getDb();
-        const result = await db.execute(
-            sql`SELECT name FROM billing_plans WHERE product_domain IS DISTINCT FROM ${ProductDomainEnum.ACCOMMODATION}`
-        );
-        // db.execute returns a driver-shaped result; normalize to a row array.
-        const rows = (Array.isArray(result) ? result : (result.rows ?? [])) as Array<{
-            name: string;
-        }>;
+        const rows = await db
+            .select({ name: billingPlans.name })
+            .from(billingPlans)
+            .where(ne(billingPlans.productDomain, ProductDomainEnum.ACCOMMODATION));
         return new Set(rows.map((r) => r.name));
     } catch (error) {
         apiLogger.warn(
