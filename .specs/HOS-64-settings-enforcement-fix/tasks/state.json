@@ -1016,35 +1016,36 @@
             "id": "T-029",
             "title": "Build social credentials admin list page",
             "description": "Create `apps/admin/src/routes/_authed/social/credentials.tsx`, mirroring `apps/admin/src/routes/_authed/ai/credentials.tsx`'s card-based layout (shadcn `Card`/`Dialog`/`Button`), gated by `RoutePermissionGuard` on the T-001 permission, using the T-028 query hook to render masked cards (key/label/createdAt/updatedAt, never plaintext). Component test rendering the masked list and asserting no ciphertext/iv/authTag ever appears in the DOM.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-028"],
             "blocks": ["T-030", "T-031", "T-032"],
             "subtasks": [
                 {
                     "title": "Scaffold route file with RoutePermissionGuard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render masked card list from useSocialCredentialsQuery",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test: no secret data ever in DOM",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui", "vault"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 4 new tests in credentials/__tests__/credentials-list.test.tsx (empty list, one card per credential, key/label/dates render, and the security-critical assertion that ciphertext/iv/authTag/plaintext never appear in the rendered DOM or on the masked type's own keys)."
             },
+            "decisionNote": "Used the nested-folder route convention (`social/credentials/index.tsx`) matching every other resource under `social/` (settings/, hashtags/, footers/, ...), not the flat `social/credentials.tsx` the task description literally named — `ai/credentials.tsx` is flat because the `ai/` area doesn't follow the nested list/view/edit convention at all, so it's not the right file-naming precedent even though its CARD LAYOUT is (which this does mirror). Extracted the card list into an exported `-components/CredentialsList.tsx` (route-private folder, excluded from route generation by the `-` prefix) rather than testing the top-level page function directly — no route page component in this codebase is ever exported for testing (confirmed by grep), and the local convention (see `settings/-components/SettingsTable.tsx` + its test) is always to extract and test the presentational sub-component. Loading/error/empty states stayed inline in the page and are untested at the unit level, consistent with how `settings/index.tsx` handles the same states. Read/create/rotate/edit/delete dialogs are intentionally NOT here — those are T-030 (create+rotate) and T-031 (edit+delete) per the task graph, so this page is read-only for now. Regenerating `apps/admin/src/routeTree.gen.ts` (gitignored, TanStack Router codegen) was required before typecheck passed — it hadn't been generated yet in this worktree for the new route path; ran `timeout 25 pnpm dev` once to trigger the Vite plugin's route-tree codegen, then killed it.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T07:10:00Z",
+                "completed": "2026-07-03T08:00:00Z"
             }
         },
         {
@@ -1524,9 +1525,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 29,
+        "completed": 30,
         "blocked": 0,
         "averageComplexity": 2.2
     }
