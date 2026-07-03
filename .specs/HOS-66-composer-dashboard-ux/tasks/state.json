@@ -331,35 +331,35 @@
             "id": "T-010",
             "title": "Add per-platform breakdown chart to dashboard",
             "description": "Add a per-platform breakdown chart component to the admin social dashboard, reusing the project's existing charting library per the `dataviz` skill conventions, rendering the `platformBreakdown` array from T-007.\n\nTest requirements:\n- Component test: renders one segment/bar per platform with the correct count; renders an empty state when `platformBreakdown` is empty.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Build PlatformBreakdownChart component",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire into dashboard index.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test: counts + empty state",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "frontend", "admin", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T21:23:23Z",
+                "completed": "2026-07-03T21:54:21Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 4,
         "averageComplexity": 2.0
     }
