@@ -226,35 +226,35 @@
             "id": "T-007",
             "title": "Wire dashboard route + schema for date range and platform breakdown",
             "description": "Extend the dashboard's request/response Zod schema (additive) with optional `dateFrom`/`dateTo` query params and the `platformBreakdown` response field. Update `apps/api/src/routes/social/admin/dashboard/get.ts` to parse the query params and pass them to `getDashboard()`.\n\nTest requirements:\n- Route test: query params are parsed and forwarded to the service; response includes `platformBreakdown`; omitted params keep current behavior.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-009", "T-010", "T-012"],
             "subtasks": [
                 {
                     "title": "Extend dashboard schema (additive)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire get.ts to parse dateFrom/dateTo query params",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route test: params forwarded + response shape",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "backend", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T15:07:38Z",
+                "completed": "2026-07-03T15:36:37Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 4,
         "averageComplexity": 2.0
     }

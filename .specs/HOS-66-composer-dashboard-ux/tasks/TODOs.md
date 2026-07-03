@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 6/27 tasks (22%)
+## Progress: 7/27 tasks (26%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -47,7 +47,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-002
   - Blocks: T-004, T-027
 
-- [ ] **T-007** (complexity: 2) - Wire dashboard route + schema for date range and platform breakdown
+- [x] **T-007** (complexity: 2) - Wire dashboard route + schema for date range and platform breakdown
   - Blocked by: T-005, T-006
   - Blocks: T-009, T-010, T-012
 
