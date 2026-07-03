@@ -124,8 +124,11 @@ const ogImageUrl = new URL(image ?? generatedOgPath, siteBase).href;
 <!-- Canonical URL -->
 <link rel="canonical" href={canonical} />
 
-<!-- Robots meta tag (only when noindex is true) -->
-{noindex && <meta name="robots" content="noindex,follow" />}
+<!-- Robots meta tag: noindex when set, otherwise positive with max-image-preview -->
+{noindex
+    ? <meta name="robots" content="noindex,follow" />
+    : <meta name="robots" content="index,follow,max-image-preview:large" />
+}
 
 <!-- Open Graph tags -->
 <meta property="og:type" content={type} />

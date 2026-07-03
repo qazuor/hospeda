@@ -74,8 +74,10 @@ describe('Breadcrumbs.astro', () => {
     });
 
     describe('JSON-LD BreadcrumbList', () => {
-        it('emits a <script type="application/ld+json">', () => {
-            expect(src).toContain('type="application/ld+json"');
+        it('delegates JSON-LD emission to JsonLd.astro component', () => {
+            // JsonLd.astro renders the <script type="application/ld+json"> with full XSS escaping.
+            expect(src).toContain("import JsonLd from './seo/JsonLd.astro'");
+            expect(src).toContain('<JsonLd data={jsonLd} />');
         });
 
         it('builds JSON-LD with @type BreadcrumbList', () => {
@@ -91,12 +93,15 @@ describe('Breadcrumbs.astro', () => {
             expect(src).toContain('index + 1');
         });
 
-        it('escapes < characters to prevent XSS', () => {
-            expect(src).toContain("replace(/</g, '\\\\u003c')");
+        it('delegates XSS escaping to JsonLd.astro (no raw set:html in this file)', () => {
+            // Escaping of <, >, & is handled by JsonLd.astro; Breadcrumbs.astro must not
+            // contain its own set:html injection to avoid a partial-escape footgun.
+            expect(src).not.toContain('set:html={jsonLdContent}');
+            expect(src).toContain("import JsonLd from './seo/JsonLd.astro'");
         });
 
-        it('uses set:html to inject JSON-LD content', () => {
-            expect(src).toContain('set:html={jsonLdContent}');
+        it('passes structured data as an object prop to JsonLd', () => {
+            expect(src).toContain('<JsonLd data={jsonLd} />');
         });
     });
 

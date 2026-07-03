@@ -37,6 +37,11 @@ interface Props {
 	 * everything else falls back to the SEOHead default ('website').
 	 */
 	readonly ogMetaType?: 'website' | 'article';
+	/**
+	 * When true, emits a `noindex` robots meta tag (via SEOHead, which renders
+	 * `noindex,follow`). Used by sub-pages like photo galleries.
+	 */
+	readonly noindex?: boolean;
 	/** ISO published date — forwarded as article:published_time for articles. */
 	readonly articlePublishedTime?: string;
 	/** ISO modified date — forwarded as article:modified_time for articles. */
@@ -55,6 +60,7 @@ const {
 	ogSubtitle,
 	ogRating,
 	ogMetaType,
+	noindex = false,
 	articlePublishedTime,
 	articleModifiedTime,
 } = Astro.props;
@@ -78,6 +84,7 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		ogSubtitle={ogSubtitle}
 		ogRating={ogRating}
 		type={ogMetaType}
+		noindex={noindex}
 		articlePublishedTime={articlePublishedTime}
 		articleModifiedTime={articleModifiedTime}
 	/>

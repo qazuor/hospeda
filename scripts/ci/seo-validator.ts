@@ -48,11 +48,13 @@ const TITLE_MIN_LENGTH = 10;
 const DESCRIPTION_MIN_LENGTH = 50;
 
 const DEFAULT_TARGETS: ReadonlyArray<PageTarget> = [
-    { path: '/', expectedJsonLdTypes: ['Organization', 'WebSite'] },
-    { path: '/alojamientos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
-    { path: '/destinos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
-    { path: '/eventos/', expectedJsonLdTypes: ['ItemList'] },
-    { path: '/publicaciones/', expectedJsonLdTypes: ['Blog', 'CollectionPage'] }
+    { path: '/es/', expectedJsonLdTypes: ['Organization', 'WebSite'] },
+    { path: '/es/alojamientos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
+    { path: '/es/destinos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
+    { path: '/es/eventos/', expectedJsonLdTypes: ['ItemList'] },
+    { path: '/es/gastronomia/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
+    { path: '/es/experiencias/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
+    { path: '/es/publicaciones/', expectedJsonLdTypes: ['ItemList', 'CollectionPage', 'Blog'] }
 ];
 
 function loadTargets(): ReadonlyArray<PageTarget> {
