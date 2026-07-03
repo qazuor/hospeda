@@ -980,35 +980,36 @@
             "id": "T-028",
             "title": "Build admin TanStack Query hooks for social credentials",
             "description": "Create `apps/admin/src/features/social-credentials/{types.ts,hooks.ts,index.ts}`, mirroring `apps/admin/src/features/ai-settings/` file-for-file: `useSocialCredentialsQuery`, `useCreateSocialCredentialMutation`, `useRotateSocialCredentialMutation`, `useUpdateSocialCredentialMutation`, `useDeleteSocialCredentialMutation`, hitting the T-026/T-027 admin routes. Type the masked credential shape (never ciphertext/iv/authTag). Component/hook tests mirroring the ai-settings hook tests if any exist, else a light render-hook test per mutation confirming cache invalidation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-026", "T-027"],
             "blocks": ["T-029"],
             "subtasks": [
                 {
                     "title": "Define masked credential types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement query + 4 mutation hooks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test cache invalidation on each mutation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "tanstack-query", "vault"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 6 new tests in src/features/social-credentials/__tests__/hooks.test.ts (renderHook + QueryClientProvider wrapper, mirrors features/faqs/hooks/__tests__/useFaqs.test.ts pattern since ai-settings itself has no hook tests to mirror per the task's fallback instruction). Covers: query envelope unwrapping, no-secret-fields-on-items, and cache invalidation (queryClient.invalidateQueries spy) for all 4 mutations (create/rotate/update/delete), plus exact fetchApi path/method/body assertions per call."
             },
+            "decisionNote": "ai-settings/ has no dedicated hook test file to mirror (grep confirmed), so followed the task's explicit fallback: a light render-hook test per mutation confirming cache invalidation, using features/faqs/hooks/__tests__/useFaqs.test.ts as the concrete pattern (mock fetchApi, QueryClientProvider wrapper, envelope-unwrap assertions) since it's the closest existing example of this exact style in the codebase. Only invalidates the single `social-credentials` query key (no settings-blob analog exists for the social vault, unlike ai-settings which also invalidates `ai-settings` on rotate/delete).",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T06:35:00Z",
+                "completed": "2026-07-03T07:05:00Z"
             }
         },
         {
@@ -1523,9 +1524,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 28,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.2
     }
