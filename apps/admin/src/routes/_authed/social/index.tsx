@@ -22,6 +22,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { DashboardDateRangeFilter } from './-components/DashboardDateRangeFilter';
 import { DashboardKpiCards } from './-components/DashboardKpiCards';
+import { PlatformBreakdownChart } from './-components/PlatformBreakdownChart';
 import { QuickApprovalQueue, QuickApprovalQueueSkeleton } from './-components/QuickApprovalQueue';
 import { RecentFailures, RecentFailuresSkeleton } from './-components/RecentFailures';
 import { WebhookAlert } from './-components/WebhookAlert';
@@ -109,6 +110,11 @@ function SocialDashboardPage() {
 
                 {/* KPI cards */}
                 {!isLoading && !error && data != null && <DashboardKpiCards kpis={data.kpis} />}
+
+                {/* Per-platform breakdown */}
+                {!isLoading && !error && data != null && (
+                    <PlatformBreakdownChart data={data.platformBreakdown} />
+                )}
 
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                     {/* Quick approval queue */}

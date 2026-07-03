@@ -13,6 +13,10 @@
             "to": "To",
             "reset": "Clear"
         },
+        "platformBreakdown": {
+            "title": "By platform",
+            "empty": "No platform data for this range"
+        },
         "approvalQueue": {
             "title": "Approval queue",
             "empty": "No posts pending approval",

@@ -13,6 +13,10 @@
             "to": "Até",
             "reset": "Limpar"
         },
+        "platformBreakdown": {
+            "title": "Por plataforma",
+            "empty": "Sem dados de plataforma para este período"
+        },
         "approvalQueue": {
             "title": "Fila de aprovação",
             "empty": "Nenhum post aguardando aprovação",

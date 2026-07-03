@@ -87,6 +87,25 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     };
 });
 
+// Recharts uses ResizeObserver + SVG APIs not available in jsdom.
+// Mock the charting primitives so render does not throw (mirrors
+// features/ai-usage/components/__tests__/AiUsageCharts.test.tsx).
+vi.mock('recharts', () => ({
+    ResponsiveContainer: ({ children }: { children: ReactNode }) => (
+        <div data-testid="recharts-container">{children}</div>
+    ),
+    BarChart: ({ children }: { children: ReactNode }) => (
+        <div data-testid="bar-chart">{children}</div>
+    ),
+    Bar: () => null,
+    Cell: () => null,
+    XAxis: () => null,
+    YAxis: () => null,
+    CartesianGrid: () => null,
+    Tooltip: () => null,
+    Legend: () => null
+}));
+
 vi.mock('@repo/icons', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/icons')>()),
     InstagramIcon: ({ className }: { className?: string }) => (
@@ -120,6 +139,7 @@ import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-pos
 import type { SocialDashboardResponse } from '@repo/schemas';
 import { DashboardDateRangeFilter } from '../-components/DashboardDateRangeFilter';
 import { DashboardKpiCards } from '../-components/DashboardKpiCards';
+import { PlatformBreakdownChart } from '../-components/PlatformBreakdownChart';
 import { QuickApprovalQueue } from '../-components/QuickApprovalQueue';
 import { RecentFailures } from '../-components/RecentFailures';
 import { WebhookAlert } from '../-components/WebhookAlert';
@@ -479,6 +499,32 @@ describe('DashboardDateRangeFilter', () => {
 
         expect(onChangeDateFrom).toHaveBeenCalledWith(undefined);
         expect(onChangeDateTo).toHaveBeenCalledWith(undefined);
+    });
+});
+
+describe('PlatformBreakdownChart', () => {
+    it('renders one item per platform with the correct count', () => {
+        render(
+            <PlatformBreakdownChart
+                data={[
+                    { platform: 'INSTAGRAM', count: 5 },
+                    { platform: 'FACEBOOK', count: 3 },
+                    { platform: 'X', count: 0 }
+                ]}
+            />
+        );
+
+        expect(screen.getByTestId('platform-breakdown-item-INSTAGRAM')).toHaveTextContent('5');
+        expect(screen.getByTestId('platform-breakdown-item-FACEBOOK')).toHaveTextContent('3');
+        expect(screen.getByTestId('platform-breakdown-item-X')).toHaveTextContent('0');
+        expect(screen.getByTestId('recharts-container')).toBeInTheDocument();
+    });
+
+    it('renders an empty state when platformBreakdown is empty', () => {
+        render(<PlatformBreakdownChart data={[]} />);
+
+        expect(screen.getByTestId('platform-breakdown-empty')).toBeInTheDocument();
+        expect(screen.queryByTestId('recharts-container')).not.toBeInTheDocument();
     });
 });
 
