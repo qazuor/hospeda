@@ -82,35 +82,35 @@
             "id": "T-003",
             "title": "Update GPT-facing route descriptions for fuzzy-duplicate + implicit fallback",
             "description": "Update the OpenAPI `description` text on `POST /api/v1/ai/social/drafts` (`apps/api/src/routes/ai/social/drafts.ts`) and `GET /api/v1/ai/social/catalog` (`apps/api/src/routes/ai/social/catalog.ts`) — these descriptions are the Custom GPT's own instructions (NG-2: no backend heuristic matching, so this is the only implementation surface for G-5's LLM-reasoning requirement). Instruct: (1) before submitting a new `campaignSlug`/`batchSlug` name, check the catalog's `campaigns`/`batches` arrays for a near-duplicate name and ask the operator to confirm \"use existing\" vs \"create new\"; (2) when no explicit slug is given, reason over the active campaigns/batches list against the draft content and propose an association when confident.\n\nTest requirements:\n- Update `apps/api/test/routes/social/admin/social-gpt-action-schema.test.ts` (or the drafts/catalog route test) to assert the generated OpenAPI description contains the new guidance text.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-027"],
             "subtasks": [
                 {
                     "title": "Update drafts.ts route description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update catalog.ts route description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: OpenAPI schema exposes updated description",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-5", "backend", "gpt", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:01:21Z",
+                "completed": "2026-07-03T14:10:14Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 4,
         "averageComplexity": 2.0
     }

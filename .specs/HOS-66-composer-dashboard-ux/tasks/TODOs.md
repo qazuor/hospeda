@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 2/27 tasks (7%)
+## Progress: 3/27 tasks (11%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -43,7 +43,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 
 ### Integration Phase
 
-- [ ] **T-003** (complexity: 2) - Update GPT-facing route descriptions for fuzzy-duplicate + implicit fallback
+- [x] **T-003** (complexity: 2) - Update GPT-facing route descriptions for fuzzy-duplicate + implicit fallback
   - Blocked by: T-002
   - Blocks: T-004, T-027
 
