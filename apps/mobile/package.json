@@ -29,7 +29,7 @@
         "expo-network": "~56.0.5",
         "expo-notifications": "~56.0.18",
         "expo-router": "~56.2.11",
-        "expo-secure-store": "~56.0.4",
+        "expo-secure-store": "~57.0.0",
         "expo-splash-screen": "~56.0.10",
         "expo-status-bar": "~56.0.4",
         "expo-web-browser": "~56.0.5",
