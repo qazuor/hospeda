@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 22/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 27/28
 
 ## Setup
 
@@ -38,11 +38,11 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 22/28
 
 ## Docs
 
-- [ ] T-023: Update root CLAUDE.md extras-carril references (complexity: 1)
-- [ ] T-024: Update docs/guides/migrations.md extras-carril worked example (complexity: 1)
-- [ ] T-025: Update ADR-035 extras-carril tradeoff note (complexity: 1)
-- [ ] T-026: Fix packages/service-core/CLAUDE.md wrong migration filename + stale caveat (complexity: 1)
-- [ ] T-027: Annotate stale product_domain reference in .specs/HOS-20/spec.md (complexity: 1)
+- [x] T-023: Update root CLAUDE.md extras-carril references (complexity: 1)
+- [x] T-024: Update docs/guides/migrations.md extras-carril worked example (complexity: 1)
+- [x] T-025: Update ADR-035 extras-carril tradeoff note (complexity: 1)
+- [x] T-026: Fix packages/service-core/CLAUDE.md wrong migration filename + stale caveat (complexity: 1)
+- [x] T-027: Annotate stale product_domain reference in .specs/HOS-20/spec.md (complexity: 1)
 
 ## Testing
 

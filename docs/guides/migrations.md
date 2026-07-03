@@ -222,29 +222,34 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 
 ---
 
-## Extras-carril example: `product_domain` columns (SPEC-239)
+## Extras-carril example: CHECK constraints on `billing_promo_codes` (SPEC-262)
 
-The `billing_plans` and `billing_subscriptions` tables are owned by the
-`@qazuor/qzpay-drizzle` library and cannot be expressed in the Hospeda Drizzle TS
-schema. SPEC-239 needs `product_domain` columns on both tables to isolate commerce
-subscriptions from the accommodation entitlement engine.
-
-These columns ship via the extras carril:
+`billing_plans` and `billing_subscriptions` are owned by the `@qazuor/qzpay-drizzle`
+library. As of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73), several columns that
+previously required the extras carril — `product_domain` on both tables,
+`effect_kind` / `value_kind` / `duration_cycles` / `extra_days` on
+`billing_promo_codes`, and `promo_effect_remaining_cycles` on
+`billing_subscriptions` — are now typed Drizzle columns, accessed via normal
+typed queries (see HOS-75). The extras carril remains the right home for
+anything Drizzle genuinely cannot express, such as multi-column CHECK
+constraints:
 
 ```
-packages/db/src/migrations/extras/017-billing-plans-product-domain.column.sql
+packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql
 ```
 
-The file is idempotent (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...`) and is
-re-applied by `pnpm db:apply-extras` on every `hops db-migrate` run. There is no
-corresponding Drizzle-generated migration file for these columns; the drift guard
-does not flag them because they are not declared in the Hospeda TS schema.
+This file enforces per-`effect_kind` shape invariants (e.g. a `'discount'` row
+must have a `value_kind`, a `'trial_extension'` row must have `extra_days`) —
+logic that spans multiple columns and cannot be expressed as a single-column
+Drizzle constraint. It is idempotent and re-applied by `pnpm db:apply-extras`
+on every `hops db-migrate` run; the drift guard does not flag it because it is
+not a column declared in the Hospeda TS schema.
 
 After any reset (`hops db-migrate --target=staging --reset`) run
-`pnpm db:apply-extras` to restore the columns before seeding, or use
-`hops db-migrate` which handles this automatically.
+`pnpm db:apply-extras` to restore it before seeding, or use `hops db-migrate`
+which handles this automatically.
 
-See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisions/ADR-035-commerce-core-gastronomy-separation.md) for the full rationale.
+See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisions/ADR-035-commerce-core-gastronomy-separation.md) for the `product_domain` rationale.
 
 ---
 

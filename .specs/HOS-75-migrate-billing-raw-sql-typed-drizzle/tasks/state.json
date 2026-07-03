@@ -737,7 +737,7 @@
             "id": "T-023",
             "title": "Update root CLAUDE.md extras-carril references",
             "description": "Root CLAUDE.md (~lines 183-192) states product_domain ships via extras/017-billing-plans-product-domain.column.sql (deleted in hospeda PR #2031) and describes effect_kind/promo_effect_remaining_cycles as extras 018/019. Correct to describe all 6 columns as typed Drizzle columns from @qazuor/qzpay-drizzle 1.11.0 (HOS-73).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -751,15 +751,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
             }
         },
         {
             "id": "T-024",
             "title": "Update docs/guides/migrations.md extras-carril worked example",
             "description": "docs/guides/migrations.md (~lines 224-241) has a whole worked-example section 'Extras-carril example: product_domain columns (SPEC-239)' citing the deleted extras/017 file and stating these columns 'cannot be expressed in the Hospeda Drizzle TS schema' -- no longer true. Rewrite or remove the section.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -773,15 +773,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
             }
         },
         {
             "id": "T-025",
             "title": "Update ADR-035 extras-carril tradeoff note",
             "description": "docs/decisions/ADR-035-commerce-core-gastronomy-separation.md (~lines 77-81, 191-193) cites the deleted extras/017 file and lists as a stated tradeoff that product_domain is 'invisible to the Drizzle TS schema' -- now resolved. Update or mark historical.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -795,15 +795,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
             }
         },
         {
             "id": "T-026",
             "title": "Fix packages/service-core/CLAUDE.md wrong migration filename + stale caveat",
             "description": "packages/service-core/CLAUDE.md cites a nonexistent migration file (0042_last_patriot.sql) -- the real file is packages/db/src/migrations/0044_adorable_longshot.sql. Also note that this spec (HOS-75) closed the 'raw SQL still pending' gap the doc previously flagged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -817,15 +817,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
             }
         },
         {
             "id": "T-027",
             "title": "Annotate stale product_domain reference in .specs/HOS-20/spec.md",
             "description": ".specs/HOS-20-iva-tax-handling/spec.md:110 cites product_domain as added '(extras/016)'/'(extras/017)' -- now stale since HOS-73/HOS-75. Add a correcting note or update the reference table.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -839,8 +839,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:05:00Z",
+                "completed": "2026-07-03T14:10:00Z"
             }
         },
         {
@@ -896,9 +896,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 6,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 1.54
     }
