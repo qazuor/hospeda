@@ -893,19 +893,19 @@
         {
             "id": "T-027",
             "title": "Document campaign/batch resolve-or-create and public-data-pull scope",
-            "description": "Document (in `apps/api/CLAUDE.md` or a relevant `docs/` guide) the new resolve-or-create behavior for campaign/batch slugs (NG-2: matching stays LLM-side, never add backend keyword/hashtag heuristics) and the intentionally narrow scope of the public-data-pull endpoint (R-1: accommodations + destinations only \u2014 extend deliberately, not speculatively).\n\nTest requirements: none (documentation-only task).",
-            "status": "pending",
+            "description": "Document (in `apps/api/CLAUDE.md` or a relevant `docs/` guide) the new resolve-or-create behavior for campaign/batch slugs (NG-2: matching stays LLM-side, never add backend keyword/hashtag heuristics) and the intentionally narrow scope of the public-data-pull endpoint (R-1: accommodations + destinations only \u2014 extend deliberately, not speculatively).\n\nTest requirements: none (documentation-only task).\n\nDONE (2026-07-03): added an \"AI Social routes \u2014 Custom GPT integration\" section to `apps/api/CLAUDE.md` documenting (1) campaign/batch resolve-or-create (unknown slug creates an active row; audience/footer/hashtagSet stay resolve-only) with the NG-2 rationale (fuzzy-matching/implicit-association reasoning lives in the GPT's OpenAPI description text, never as a backend heuristic \u2014 a new slug always means create at the backend), and (2) the public-data-pull R-1 narrow scope (ACCOMMODATION|DESTINATION only) with the exact 3-step procedure to extend it deliberately and a pointer to the scope guard test that fails on silent enum growth.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001", "T-002", "T-003", "T-022"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document resolve-or-create behavior + NG-2 rationale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document public-data-pull scope + R-1 rationale",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "social"],
@@ -917,16 +917,16 @@
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T23:50:00Z",
+                "completed": "2026-07-03T23:52:00Z"
             }
         }
     ],
     "summary": {
         "total": 27,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 4,
         "averageComplexity": 2.0
     }
