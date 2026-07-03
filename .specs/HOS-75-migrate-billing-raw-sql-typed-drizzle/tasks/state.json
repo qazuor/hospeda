@@ -673,7 +673,7 @@
             "id": "T-021",
             "title": "Migrate subscription-poll.job.ts bulk discount-amounts reconciliation",
             "description": "reconcileActiveDiscountAmounts's bulk SELECT (~lines 463-470, loads id/plan_id/mp_subscription_id/promo_code_id/promo_effect_remaining_cycles for ALL active discounted subs) becomes its own typed db.select({...}).from(billingSubscriptions).where(and(...)) -- this is a bulk query, not a single-row lookup, so it does NOT use the loadSubscriptionDiscountState() helper from T-002. Verify subscription-poll.job.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -681,14 +681,24 @@
             "tags": ["billing", "cron"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:47:00Z",
+                    "details": "508/508 test/cron/ full sweep, including the 2 real S1 drift/in-sync tests (genuine math coverage, not fail-open masking). Updated the @repo/db mock: select/eq/isNotNull/isNull/and + camelCase billingSubscriptions columns replacing the execute()-only mock."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:41:00Z",
+                "completed": "2026-07-03T13:47:00Z"
             }
         },
         {
@@ -876,9 +886,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 1.54
     }
