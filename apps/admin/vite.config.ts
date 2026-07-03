@@ -87,6 +87,21 @@ try {
     process.exit(1);
 }
 
+// HOS-33 T-010: see the long comment above `rolldownOptions.output.codeSplitting`
+// for why this exists -- matches the SolidJS-based devtools stack so it can be
+// excluded from every manual vendor group and left to Rolldown's default chunking.
+function isDevtoolsOrSolidJs(id: string): boolean {
+    return (
+        id.includes('/@tanstack/devtools') ||
+        id.includes('/@tanstack/react-devtools') ||
+        id.includes('/@tanstack/react-router-devtools') ||
+        id.includes('/@tanstack/router-devtools-core') ||
+        id.includes('/@solid-primitives/') ||
+        id.includes('/solid-js/') ||
+        id.includes('/goober/')
+    );
+}
+
 export default defineConfig({
     // Load .env files from the admin app directory, not the monorepo root.
     // Vite will auto-load: .env, .env.local, .env.[mode], .env.[mode].local
@@ -278,6 +293,23 @@ export default defineConfig({
         // Rolldown's default ordering is not guaranteed to match array order,
         // so every group below is given one to keep vendor sub-splits taking
         // precedence over their broader catch-alls.
+        //
+        // HOS-33 T-010 fix: @tanstack/react-devtools and @tanstack/react-router-devtools
+        // pull in a SolidJS-based UI (@tanstack/devtools, @tanstack/devtools-ui,
+        // @solid-primitives/*, solid-js, goober) that has module-scope,
+        // window-dependent side effects. __root.tsx statically imports
+        // TanstackDevtools (only the RENDER is env.NODE_ENV-gated, per
+        // apps/admin/CLAUDE.md's "Accepted dev-only console noise" -- the import
+        // itself always ships), so this code was always part of the root's eager
+        // module graph. Before this file wired manual codeSplitting groups,
+        // Rolldown's automatic (default) chunking happened to isolate it in a way
+        // that never got eagerly evaluated by the server entry. Grouping ANY
+        // @tanstack/* (or generic node_modules) match forced this into an eager
+        // vendor chunk instead, crashing the production server at startup with
+        // "Client-only API called on the server side" (solid-js's SSR stub
+        // throwing from module-scope code, not from a request handler). Excluded
+        // here so it falls through to Rolldown's own default splitting, matching
+        // the pre-existing (accidentally correct) behavior.
         rolldownOptions: {
             output: {
                 codeSplitting: {
@@ -289,32 +321,46 @@ export default defineConfig({
                         },
                         {
                             name: 'vendor-tanstack-router',
-                            test: /node_modules\/@tanstack\/[^/]*(router|start)/,
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*(router|start)/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
                             priority: 90
                         },
                         {
                             name: 'vendor-tanstack-query',
-                            test: /node_modules\/@tanstack\/[^/]*query/,
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*query/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
                             priority: 90
                         },
                         {
                             name: 'vendor-tanstack-table',
-                            test: /node_modules\/@tanstack\/[^/]*(table|virtual)/,
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*(table|virtual)/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
                             priority: 90
                         },
                         {
                             name: 'vendor-tanstack-form',
-                            test: /node_modules\/@tanstack\/[^/]*form/,
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\/[^/]*form/.test(id) &&
+                                !isDevtoolsOrSolidJs(id),
                             priority: 90
                         },
                         {
                             name: 'vendor-tanstack-other',
-                            test: /node_modules\/@tanstack\//,
+                            test: (id: string) =>
+                                /node_modules\/@tanstack\//.test(id) && !isDevtoolsOrSolidJs(id),
                             priority: 80
                         },
                         { name: 'vendor-radix', test: /node_modules\/@radix-ui\//, priority: 90 },
                         { name: 'vendor-zod', test: /node_modules\/zod\//, priority: 90 },
-                        { name: 'vendor', test: /node_modules/, priority: 10 },
+                        {
+                            name: 'vendor',
+                            test: (id: string) =>
+                                /node_modules/.test(id) && !isDevtoolsOrSolidJs(id),
+                            priority: 10
+                        },
                         {
                             // Feature chunks from src/features/<slug>/ -- one dynamic
                             // chunk per feature, same as the original manualChunks logic.
