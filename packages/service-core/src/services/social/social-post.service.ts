@@ -57,6 +57,7 @@ import {
     PermissionEnum,
     ServiceErrorCode,
     SocialApprovalStatusEnum,
+    SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialPublishResultStatusEnum,
     SocialRecurrenceTypeEnum
@@ -500,6 +501,15 @@ export interface SocialDashboardFailureItem {
 }
 
 /**
+ * Per-platform target count returned by {@link SocialPostService.getDashboard}
+ * (HOS-66 T-006, G-7).
+ */
+export interface SocialDashboardPlatformBreakdown {
+    readonly platform: string;
+    readonly count: number;
+}
+
+/**
  * Data returned by {@link SocialPostService.getDashboard}.
  */
 export interface SocialDashboardData {
@@ -507,6 +517,8 @@ export interface SocialDashboardData {
     readonly quickApprovalQueue: SocialDashboardQueueItem[];
     readonly recentFailures: SocialDashboardFailureItem[];
     readonly makeWebhookConfigured: boolean;
+    /** Target count per platform, scoped to the same optional date range as the KPIs. */
+    readonly platformBreakdown: SocialDashboardPlatformBreakdown[];
 }
 
 /**
@@ -2226,12 +2238,25 @@ export class SocialPostService {
                 })
             );
 
-            // --- Recent failures from social_post_targets ---
             const targetDateRangeConditions = this.buildDateRangeConditions(
                 socialPostTargets.createdAt,
                 dateFrom,
                 dateTo
             );
+
+            // --- Per-platform breakdown (HOS-66 T-006, G-7) ---
+            const platformBreakdown: SocialDashboardPlatformBreakdown[] = await Promise.all(
+                Object.values(SocialPlatformEnum).map(async (platform) => {
+                    const { total: count } = await this.postTargetModel.findAll(
+                        { platform },
+                        { page: 1, pageSize: 1 },
+                        targetDateRangeConditions
+                    );
+                    return { platform, count };
+                })
+            );
+
+            // --- Recent failures from social_post_targets ---
             const { items: failedTargets } = await this.postTargetModel.findAll(
                 { status: SocialPostStatusEnum.FAILED },
                 { page: 1, pageSize: 10, sortBy: 'updatedAt', sortOrder: 'desc' },
@@ -2266,7 +2291,8 @@ export class SocialPostService {
                     },
                     quickApprovalQueue,
                     recentFailures,
-                    makeWebhookConfigured
+                    makeWebhookConfigured,
+                    platformBreakdown
                 }
             };
         } catch (err) {

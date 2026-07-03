@@ -93,6 +93,7 @@ import {
     RoleEnum,
     ServiceErrorCode,
     SocialApprovalStatusEnum,
+    SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialRecurrenceTypeEnum
 } from '@repo/schemas';
@@ -2608,6 +2609,84 @@ describe('SocialPostService.getDashboard', () => {
             });
 
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // platformBreakdown (HOS-66 T-006, G-7)
+    // -----------------------------------------------------------------------
+
+    describe('platformBreakdown', () => {
+        it('returns one entry per SocialPlatformEnum value with the correct count', async () => {
+            const { postModel, publishLogModel } = buildDashboardModels();
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockImplementation(async (where: Record<string, unknown>) => {
+                const counts: Record<string, number> = {
+                    [SocialPlatformEnum.INSTAGRAM]: 5,
+                    [SocialPlatformEnum.FACEBOOK]: 3,
+                    [SocialPlatformEnum.X]: 2
+                };
+                return { items: [], total: counts[where.platform as string] ?? 0 };
+            });
+
+            const { service } = buildService({ postModel, postTargetModel, publishLogModel });
+            const result = await service.getDashboard({
+                actor: actorWithViewPerm,
+                makeWebhookConfigured: true
+            });
+
+            expect(result.error).toBeUndefined();
+            const breakdown = result.data?.platformBreakdown ?? [];
+            expect(breakdown).toHaveLength(3);
+            expect(breakdown).toEqual(
+                expect.arrayContaining([
+                    { platform: SocialPlatformEnum.INSTAGRAM, count: 5 },
+                    { platform: SocialPlatformEnum.FACEBOOK, count: 3 },
+                    { platform: SocialPlatformEnum.X, count: 2 }
+                ])
+            );
+        });
+
+        it('returns an empty-count breakdown (not an error) when there are no targets', async () => {
+            const { postModel, postTargetModel, publishLogModel } = buildDashboardModels();
+
+            const { service } = buildService({ postModel, postTargetModel, publishLogModel });
+            const result = await service.getDashboard({
+                actor: actorWithViewPerm,
+                makeWebhookConfigured: true
+            });
+
+            expect(result.error).toBeUndefined();
+            const breakdown = result.data?.platformBreakdown ?? [];
+            expect(breakdown).toHaveLength(3);
+            for (const entry of breakdown) {
+                expect(entry.count).toBe(0);
+            }
+        });
+
+        it('scopes the breakdown to the given date range via additional conditions', async () => {
+            const { postModel, publishLogModel } = buildDashboardModels();
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const { service } = buildService({ postModel, postTargetModel, publishLogModel });
+            await service.getDashboard({
+                actor: actorWithViewPerm,
+                makeWebhookConfigured: true,
+                dateFrom: new Date('2026-06-01T00:00:00Z'),
+                dateTo: new Date('2026-06-30T23:59:59Z')
+            });
+
+            // 3 platform-count calls (plus 1 for recentFailures), each scoped by
+            // the date range (gte + lte) — filter to the platform-count calls
+            // by their distinguishing `where.platform` key.
+            const platformCalls = postTargetModel.findAll.mock.calls.filter(
+                (call) => (call[0] as Record<string, unknown>).platform !== undefined
+            );
+            expect(platformCalls).toHaveLength(3);
+            for (const call of platformCalls) {
+                expect(call[2]).toHaveLength(2);
+            }
         });
     });
 });
