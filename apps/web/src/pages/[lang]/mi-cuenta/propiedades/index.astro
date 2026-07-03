@@ -151,9 +151,9 @@ const isEmpty = properties.length === 0;
     )}
 
     {fetchError ? (
-        <!-- Error state (e.g. API down or permission denied). Showing this
+        /* Error state (e.g. API down or permission denied). Showing this
              distinctly avoids the previous contradictory UI where the empty
-             state and the fetch error were rendered together. -->
+             state and the fetch error were rendered together. */
         <div class="props-page__error" role="alert">
             <p class="props-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
@@ -163,7 +163,7 @@ const isEmpty = properties.length === 0;
             </a>
         </div>
     ) : !isEmpty ? (
-        <!-- Properties grid -->
+        /* Properties grid */
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
@@ -172,8 +172,8 @@ const isEmpty = properties.length === 0;
             ))}
         </div>
     ) : (
-        <!-- Empty state: uses the shared EmptyState component with a @repo/icons icon
-             for visual consistency with the rest of the web app. -->
+        /* Empty state: uses the shared EmptyState component with a @repo/icons icon
+             for visual consistency with the rest of the web app. */
         <EmptyState
             locale={locale}
             variant="empty"

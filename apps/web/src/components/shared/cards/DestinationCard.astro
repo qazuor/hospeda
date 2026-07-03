@@ -117,7 +117,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 			<div class="dest-card__gradient" aria-hidden="true" />
 
 			{variant === 'grid' && (
-				<!-- Wave separator (grid variant only) -->
+				/* Wave separator (grid variant only) */
 				<div class="dest-card__wave" aria-hidden="true">
 					<svg viewBox="0 0 432 40" preserveAspectRatio="none" fill="var(--core-card, white)">
 						<path d="M0 40V22C72 8 144 0 216 6C288 12 360 24 432 22V40H0Z" />
@@ -149,7 +149,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 			</div>
 
 			{variant === 'carousel' && (
-				<!-- Carousel: content overlaid on image -->
+				/* Carousel: content overlaid on image */
 				<div class="dest-card__overlay-content">
 					<h3 class="dest-card__name dest-card__name--overlay">{destination.name}</h3>
 					<p class="dest-card__count dest-card__count--overlay">
@@ -171,7 +171,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		</div>
 
 		{variant === 'grid' && (
-			<!-- CONTENT AREA (grid variant: below the image) -->
+			/* CONTENT AREA (grid variant: below the image) */
 			<div class="dest-card__content">
 				<!-- Accommodation count badge -->
 				<div class="dest-card__count-row">
