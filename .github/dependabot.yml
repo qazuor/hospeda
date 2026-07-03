@@ -93,6 +93,21 @@ updates:
     #     ahead of @tanstack/react-router (pinned above, its own ignore entry)
     #     would also desync them. Dev-only tooling, zero prod risk, but blocks
     #     the whole weekly grouped PR otherwise. Owner: HOS-58.
+    #   - astro: 6.4.7 -> 7.0.3 crashes `astro build` in apps/web on an ESM/CJS
+    #     interop break in js-yaml (no longer exports a `default`), which cascades
+    #     into A11y + E2E P0 failures (they never actually run, the build dies
+    #     first). Owner: HOS-76.
+    #   - recharts: 2.15.4 -> 3.9.0 restructures the public Tooltip/Legend prop
+    #     types, breaking typecheck across 5 files in apps/admin (the shadcn
+    #     chart.tsx wrapper + 4 consumers). Owner: HOS-77.
+    #   - expo / expo-*: Dependabot opens PRs for individual expo-* leaf packages
+    #     (router, constants, linking, secure-store, splash-screen, web-browser)
+    #     bumping 56.x -> 57.0.0, but never proposes bumping the core `expo`
+    #     package (or expo-notifications/expo-network) itself, which stays on
+    #     ~56.0.2 in apps/mobile/package.json. Merging any leaf package alone
+    #     leaves a split-SDK state that Jest unit tests won't catch (they don't
+    #     exercise the native module runtime). Gate the whole scope together,
+    #     same pattern as @better-auth/* and @tiptap/* above. Owner: HOS-78.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
@@ -107,6 +122,10 @@ updates:
       - dependency-name: '@tanstack/react-form'
       - dependency-name: '@tanstack/react-devtools'
       - dependency-name: '@tanstack/react-router-devtools'
+      - dependency-name: 'astro'
+      - dependency-name: 'recharts'
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
