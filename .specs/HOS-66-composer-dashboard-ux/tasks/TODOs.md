@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 4/27 tasks (15%)
+## Progress: 6/27 tasks (22%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -25,11 +25,11 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-001
   - Blocks: T-003, T-004
 
-- [ ] **T-005** (complexity: 3) - Add date-range filtering to dashboard service
+- [x] **T-005** (complexity: 3) - Add date-range filtering to dashboard service
   - Blocked by: none
   - Blocks: T-006, T-007
 
-- [ ] **T-006** (complexity: 3) - Add per-platform breakdown aggregation to dashboard service
+- [x] **T-006** (complexity: 3) - Add per-platform breakdown aggregation to dashboard service
   - Blocked by: T-005
   - Blocks: T-007
 

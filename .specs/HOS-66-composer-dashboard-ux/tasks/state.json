@@ -152,74 +152,74 @@
             "id": "T-005",
             "title": "Add date-range filtering to dashboard service",
             "description": "Extend `GetDashboardInput`/`SocialPostService.getDashboard()` in `packages/service-core/src/services/social/social-post.service.ts` with optional `dateFrom`/`dateTo` fields, filtering the KPI counters, quick-approval queue, and recent-failures queries by that window when provided. No range = current all-time behavior (regression-safe default).\n\nTest requirements:\n- Unit tests: KPI counts change correctly for a bounded range; omitting the range preserves existing unfiltered totals (explicit regression assertion).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Add dateFrom/dateTo to GetDashboardInput",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply range filter to KPI/queue/failures queries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: bounded range",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: no range = unchanged totals",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "backend", "social"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:32:30Z",
+                "completed": "2026-07-03T14:47:41Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add per-platform breakdown aggregation to dashboard service",
             "description": "Add a `platformBreakdown: { platform, count }[]` field to `SocialDashboardData` (`social-post.service.ts`), computed by grouping `social_post_targets` by platform within the (optional) date range from T-005.\n\nTest requirements:\n- Unit tests: breakdown counts sum to the expected total for a fixture set; empty-data case returns an empty array, not an error.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Add platformBreakdown to SocialDashboardData",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement grouped aggregation query",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: breakdown sums correctly",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "backend", "social"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:54:29Z",
+                "completed": "2026-07-03T15:00:43Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 19,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 4,
         "averageComplexity": 2.0
     }
