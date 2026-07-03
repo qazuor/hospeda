@@ -15,6 +15,7 @@ export {
     isNull,
     isNotNull,
     inArray,
+    ne,
     getTableColumns
 } from 'drizzle-orm';
 

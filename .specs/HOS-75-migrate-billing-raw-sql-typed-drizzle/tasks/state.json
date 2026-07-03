@@ -171,7 +171,7 @@
             "id": "T-006",
             "title": "Migrate listPlans.ts getNonAccommodationPlanSlugs()",
             "description": "Replace `sql\\`SELECT name FROM billing_plans WHERE product_domain IS DISTINCT FROM ...\\`` with db.select({ name: billingPlans.name }).from(billingPlans).where(ne(billingPlans.productDomain, ProductDomainEnum.ACCOMMODATION)). Safe because productDomain is notNull() with a default -- no NULL is ever possible, so ne() is exactly equivalent to IS DISTINCT FROM here. Verify listPlans.test.ts / listPlans.partner-domain.test.ts / listPlans.cutover.test.ts still pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -179,14 +179,24 @@
             "tags": ["billing", "product-domain"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:31:03Z",
+                    "details": "16/16 (listPlans.test.ts + listPlans.partner-domain.test.ts + listPlans.cutover.test.ts)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:26:11Z",
+                "completed": "2026-07-03T05:31:03Z"
             }
         },
         {
@@ -736,9 +746,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 1.54
     }
