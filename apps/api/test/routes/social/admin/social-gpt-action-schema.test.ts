@@ -512,6 +512,34 @@ describe('buildGptActionSchema() — unit', () => {
         expect(Array.isArray(required)).toBe(true);
         expect(required).toContain('mode');
     });
+
+    // -----------------------------------------------------------------------
+    // Campaign/batch fuzzy-duplicate + implicit-fallback guidance (HOS-66 T-003)
+    //
+    // These descriptions are the Custom GPT's OWN instructions (pasted
+    // verbatim into its Actions config) — this is the only implementation
+    // surface for G-5's LLM-reasoning requirement (NG-2 forbids backend
+    // heuristic matching).
+    // -----------------------------------------------------------------------
+
+    it('saveSocialDraft description instructs the GPT to check for near-duplicate campaign/batch names before creating', () => {
+        const doc = buildGptActionSchema('https://api.example.com');
+        const paths = doc.paths as Record<string, Record<string, Record<string, unknown>>>;
+        const description = String(paths['/api/v1/ai/social/drafts']?.post?.description ?? '');
+
+        expect(description).toMatch(/near-duplicate/i);
+        expect(description.toLowerCase()).toContain('confirm');
+    });
+
+    it('getSocialCatalog description instructs the GPT to reason over active campaigns/batches for implicit association', () => {
+        const doc = buildGptActionSchema('https://api.example.com');
+        const paths = doc.paths as Record<string, Record<string, Record<string, unknown>>>;
+        const description = String(paths['/api/v1/ai/social/catalog']?.get?.description ?? '');
+
+        expect(description.toLowerCase()).toContain('campaigns');
+        expect(description.toLowerCase()).toContain('batches');
+        expect(description).toMatch(/propose|associat/i);
+    });
 });
 
 // ---------------------------------------------------------------------------

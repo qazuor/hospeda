@@ -108,7 +108,8 @@ export const socialDraftsRoute = createApiKeyRoute({
     path: '/',
     summary: 'GPT social draft submission',
     description:
-        'Ingests a Custom GPT social post draft. Requires both the x-hospeda-ai-key header and a valid operator_pin in the body. Returns 201 with the new post ID on success.',
+        'Ingests a Custom GPT social post draft. Requires both the x-hospeda-ai-key header and a valid operator_pin in the body. Returns 201 with the new post ID on success. ' +
+        'campaignSlug/batchSlug are resolve-or-create: an unknown slug creates a new active campaign/batch. Before submitting a new name, the GPT must check the catalog for a near-duplicate and confirm with the operator (see GET /catalog).',
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
