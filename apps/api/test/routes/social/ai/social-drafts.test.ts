@@ -68,6 +68,19 @@ vi.mock('../../../../src/services/media', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Vault mock — the route now reads the operator PIN from the social
+// credentials vault (HOS-64 T-021) instead of env.HOSPEDA_OPERATOR_PIN.
+// ---------------------------------------------------------------------------
+
+const { mockGetDecryptedSocialCredential } = vi.hoisted(() => ({
+    mockGetDecryptedSocialCredential: vi.fn()
+}));
+
+vi.mock('../../../../src/services/social-credential-vault.service.js', () => ({
+    getDecryptedSocialCredential: mockGetDecryptedSocialCredential
+}));
+
+// ---------------------------------------------------------------------------
 // Route factory mock (capture handler, skip real middleware setup)
 // ---------------------------------------------------------------------------
 
@@ -79,9 +92,8 @@ vi.mock('../../../../src/utils/route-factory-tiered', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Env mock — provide a known plaintext PIN for tests
-// The route now compares env.HOSPEDA_OPERATOR_PIN directly (plaintext, SPEC-254
-// resolved decision #1: PIN stored in env as-is, no hashing needed).
+// Env mock — the x-hospeda-ai-key check still reads env (T-023 migrates that
+// one); the operator PIN no longer does (see the vault mock above).
 // ---------------------------------------------------------------------------
 
 const TEST_PIN = 'test-pin-1234';
@@ -89,8 +101,7 @@ const TEST_AI_KEY = 'test-ai-secret-key';
 
 vi.mock('../../../../src/utils/env', () => ({
     env: {
-        HOSPEDA_AI_SOCIAL_KEY: TEST_AI_KEY,
-        HOSPEDA_OPERATOR_PIN: TEST_PIN
+        HOSPEDA_AI_SOCIAL_KEY: TEST_AI_KEY
     }
 }));
 
@@ -167,6 +178,14 @@ const INTERNAL_ERROR_RESULT = {
     error: { message: 'Unexpected database failure' }
 };
 
+const HASHTAG_LIMIT_EXCEEDED_RESULT = {
+    code: 'HASHTAG_LIMIT_EXCEEDED' as const,
+    error: {
+        message: 'Draft exceeds the configured hashtag limit for one or more target platforms',
+        violations: [{ platform: 'X', count: 6, max: 5, excessBy: 1 }]
+    }
+};
+
 // ---------------------------------------------------------------------------
 // Test setup
 // ---------------------------------------------------------------------------
@@ -180,6 +199,11 @@ beforeEach(async () => {
     // Default: a media provider IS configured, so the route should build and
     // inject a SocialImagePipelineService. Individual tests override as needed.
     mockGetMediaProvider.mockReturnValue({ upload: vi.fn() });
+
+    // Default: the vault has an active operator_pin credential matching TEST_PIN.
+    mockGetDecryptedSocialCredential.mockResolvedValue({
+        data: { key: 'operator_pin', plaintext: TEST_PIN }
+    });
 
     // Trigger module evaluation so createApiKeyRoute is called and captures the handler
     await import('../../../../src/routes/ai/social/drafts');
@@ -322,6 +346,24 @@ describe('POST /api/v1/ai/social/drafts', () => {
             );
             expect(mockIngestDraft).not.toHaveBeenCalled();
         });
+
+        it('should return 403 when no active operator_pin credential exists in the vault (HOS-64 T-021)', async () => {
+            mockGetDecryptedSocialCredential.mockResolvedValue({
+                error: {
+                    code: 'NOT_FOUND',
+                    message: "No active credential found for key 'operator_pin'"
+                }
+            });
+            const ctx = buildCtxMock();
+
+            await draftsHandler!(ctx, {}, VALID_BODY, {});
+
+            expect(ctx._calls[0]?.status).toBe(403);
+            expect((ctx._calls[0]?.body as { error: { code: string } }).error.code).toBe(
+                'FORBIDDEN'
+            );
+            expect(mockIngestDraft).not.toHaveBeenCalled();
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -456,6 +498,32 @@ describe('POST /api/v1/ai/social/drafts', () => {
             expect(body.error.message).toBe('All requested targets are invalid');
             expect(Array.isArray(body.error.details)).toBe(true);
             expect(body.error.details).toHaveLength(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Tests — Hashtag limit exceeded (400) — HOS-64 / SPEC-297a G-1
+    // -------------------------------------------------------------------------
+
+    describe('400 — hashtag limit exceeded', () => {
+        it('should return 400 with per-platform violations when service returns HASHTAG_LIMIT_EXCEEDED', async () => {
+            mockIngestDraft.mockResolvedValue(HASHTAG_LIMIT_EXCEEDED_RESULT);
+            const ctx = buildCtxMock();
+
+            await draftsHandler!(ctx, {}, VALID_BODY, {});
+
+            expect(ctx._calls).toHaveLength(1);
+            expect(ctx._calls[0]?.status).toBe(400);
+            const body = ctx._calls[0]?.body as {
+                success: false;
+                error: { code: string; message: string; details: unknown[] };
+            };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            expect(body.error.message).toBe(
+                'Draft exceeds the configured hashtag limit for one or more target platforms'
+            );
+            expect(body.error.details).toEqual([{ platform: 'X', count: 6, max: 5, excessBy: 1 }]);
         });
     });
 

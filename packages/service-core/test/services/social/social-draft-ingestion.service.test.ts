@@ -137,6 +137,7 @@ function buildService(
         audienceModel?: ReturnType<typeof createModelMock>;
         footerModel?: ReturnType<typeof createModelMock>;
         hashtagSetModel?: ReturnType<typeof createModelMock>;
+        settingModel?: ReturnType<typeof createModelMock>;
         imagePipeline?: SocialImagePipelineService | null;
     } = {}
 ) {
@@ -223,6 +224,17 @@ function buildService(
             return m;
         })();
 
+    const settingModel =
+        overrides.settingModel ??
+        (() => {
+            const m = createModelMock();
+            // Empty by default — the service falls back to the same defaults
+            // catalog.ts advertises to the GPT (30/10/5), so existing fixtures
+            // (1 curated + 1 custom = 2 hashtags) stay well within limits.
+            m.findAll.mockResolvedValue({ items: [] });
+            return m;
+        })();
+
     const imagePipeline =
         overrides.imagePipeline !== undefined
             ? overrides.imagePipeline
@@ -245,7 +257,8 @@ function buildService(
         batchModel as never,
         audienceModel as never,
         footerModel as never,
-        hashtagSetModel as never
+        hashtagSetModel as never,
+        settingModel as never
     );
 }
 
@@ -608,6 +621,148 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             });
 
             expect(postTargetModel.create).toHaveBeenCalledOnce();
+        });
+    });
+
+    // --- Hashtag limit enforcement (HOS-64 / SPEC-297a G-1) ---
+
+    describe('hashtag limit enforcement', () => {
+        function buildSettingModelWithMaxHashtagsX(max: number) {
+            const m = createModelMock();
+            m.findAll.mockResolvedValue({
+                items: [{ key: 'max_hashtags_x', value: String(max) }]
+            });
+            return m;
+        }
+
+        it('REGRESSION (AC-2): rejects a draft whose total hashtag count exceeds the configured max_hashtags_x', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const postTargetModel = createModelMock();
+            postTargetModel.create.mockResolvedValue({ id: 'target-uuid' });
+
+            const service = buildService({ settingModel, postTargetModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 total hashtags (curated + custom) — one over the configured max of 5.
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            // Before the fix this draft was silently ingested (code === 'SUCCESS').
+            expect(postTargetModel.create).not.toHaveBeenCalled();
+        });
+
+        it('accepts a draft exactly at the configured limit', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const service = buildService({ settingModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('SUCCESS');
+        });
+
+        it('rejects when only ONE of several target platforms exceeds its limit', async () => {
+            const settingModel = createModelMock();
+            settingModel.findAll.mockResolvedValue({
+                items: [
+                    { key: 'max_hashtags_x', value: '5' },
+                    { key: 'max_hashtags_instagram', value: '30' }
+                ]
+            });
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(buildPlatformFormatRow());
+
+            const service = buildService({ settingModel, platformFormatModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 hashtags: fine for Instagram (max 30), over the limit for X (max 5).
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+        });
+
+        it('falls back to the catalog.ts defaults (30/10/5) when no setting row exists', async () => {
+            const settingModel = createModelMock();
+            settingModel.findAll.mockResolvedValue({ items: [] });
+
+            const service = buildService({ settingModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco'],
+                    customHashtagSuggestions: ['#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            // Default max_hashtags_x is 5 (catalog.ts) — 6 submitted hashtags exceed it.
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+        });
+
+        it('does not create any DB rows when the hashtag limit is exceeded', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+            const aiRequestModel = createModelMock();
+            aiRequestModel.create.mockResolvedValue({ id: 'ai-req-uuid' });
+
+            const service = buildService({ settingModel, postModel, aiRequestModel });
+            await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(postModel.create).not.toHaveBeenCalled();
+            expect(aiRequestModel.create).not.toHaveBeenCalled();
         });
     });
 });

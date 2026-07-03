@@ -121,10 +121,10 @@ pnpm env:check
 
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
-| `HOSPEDA_AI_SOCIAL_KEY` | string | no | yes | - | Inbound key Custom GPT sends in `x-hospeda-ai-key` (SPEC-254) |
-| `HOSPEDA_OPERATOR_PIN_HASH` | string | no | yes | - | Bcrypt hash of operator PIN for GPT draft authorization (SPEC-254) |
-| `HOSPEDA_MAKE_API_KEY` | string | no | yes | - | Outbound key sent to Make.com in `x-make-apikey` for publish jobs (SPEC-254) |
 | `HOSPEDA_MAKE_INBOUND_KEY` | string | no | yes | - | Inbound key Make.com sends in `x-hospeda-make-key` on callbacks (SPEC-254) |
+| `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` | string | no | yes | - | AES-256-GCM master key (min 32 chars) for the Social Credentials Vault (`social_credentials`/`social_credential_audit` tables, HOS-64 G-4). Encrypts/decrypts the 4 social automation secrets: `make_webhook_url`, `make_api_key`, `ai_social_key`, `operator_pin`. Separate blast radius from `HOSPEDA_AI_VAULT_MASTER_KEY` (SPEC-173) — never reuse one for the other. Must be set in Coolify for `hospeda-api-staging` and `hospeda-api-prod` (`hops env-set <kind> HOSPEDA_SOCIAL_VAULT_MASTER_KEY <value> --secret`) |
+
+> **Removed (HOS-64 G-4, T-042)**: `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`, `HOSPEDA_OPERATOR_PIN_HASH`, and `HOSPEDA_MAKE_API_KEY` (plaintext sources for the GPT inbound key, operator PIN, and Make.com outbound key) were removed from the schema/registry once all runtime read-sites (T-021–T-024) were migrated to the Social Credentials Vault, confirmed by grepping for zero remaining `env.HOSPEDA_*` reads. Note this landed ahead of the staging/prod vault-migration and end-to-end verification steps (T-033/T-034/T-038/T-039) by explicit decision — the actual VPS env vars are unset separately in T-043, only after that verification passes. The vault is now the sole source of truth for these 4 secrets — see `apps/api/src/services/social-credential-vault.service.ts` (`getDecryptedSocialCredential`).
 
 ### Testing / Debugging (HOSPEDA_)
 

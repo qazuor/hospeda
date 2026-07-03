@@ -73,6 +73,13 @@ import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
 import { SocialAuditLogService } from './social-audit-log.service';
 import { SocialAuditEvent } from './social-audit-log.service';
+import {
+    MAKE_WEBHOOK_TIMEOUT_MS_BOUNDS,
+    MAKE_WEBHOOK_TIMEOUT_MS_KEY,
+    MAX_RETRY_COUNT_BOUNDS,
+    MAX_RETRY_COUNT_KEY,
+    resolveBoundedNumericSetting
+} from './social-dispatch-config.util';
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -135,8 +142,8 @@ export interface BuildMakePayloadResult {
  *                           APPROVED for the next cron run.
  * - `exhausted`           — Failure occurred and retryCount was already >= 3 at the time
  *                           of the failure; target set to FAILED; audit event logged.
- * - `skipped_no_webhook`  — `make_webhook_url` setting is empty/missing; no dispatch
- *                           attempted; target status unchanged.
+ * - `skipped_no_webhook`  — the `make_webhook_url` vault credential is empty/missing;
+ *                           no dispatch attempted; target status unchanged.
  * - `skipped_locked`      — Another concurrent cron run already claimed this target
  *                           (optimistic lock detected 0 affected rows); no work done.
  */
@@ -157,16 +164,18 @@ export interface DispatchTargetInput {
     readonly post: Record<string, unknown>;
     /**
      * Make.com API key sent in the `x-make-apikey` header.
-     * Provided by the cron caller (which has env access). NEVER read env inside
-     * service-core.
+     * Provided by the caller (which decrypts it from the social credentials
+     * vault). NEVER read env or the vault inside service-core.
      */
     readonly makeApiKey: string;
     /**
-     * Optional webhook URL override — when set, skips the live settings look-up.
-     * Primarily for testing. In production, pass `undefined` and the method
-     * reads `make_webhook_url` from `social_settings`.
+     * Make.com webhook URL to POST the payload to.
+     * Provided by the caller (which decrypts it from the social credentials
+     * vault, `make_webhook_url` key — HOS-64 T-024). An empty string means
+     * "not configured" and short-circuits to `skipped_no_webhook`. NEVER read
+     * the vault or `social_settings` inside service-core.
      */
-    readonly webhookUrl?: string;
+    readonly webhookUrl: string;
 }
 
 /**
@@ -346,10 +355,18 @@ export interface DispatchPostNowInput {
     readonly postId: string;
     /**
      * Make.com API key sent in the `x-make-apikey` header.
-     * Sourced by the caller from `env.HOSPEDA_MAKE_API_KEY`.
-     * Never read env inside service-core.
+     * Sourced by the caller from the social credentials vault
+     * (`make_api_key` key — HOS-64 T-022). Never read env or the vault
+     * inside service-core.
      */
     readonly makeApiKey: string;
+    /**
+     * Make.com webhook URL to POST the payload to.
+     * Sourced by the caller from the social credentials vault
+     * (`make_webhook_url` key — HOS-64 T-024). Never read the vault or
+     * `social_settings` inside service-core.
+     */
+    readonly webhookUrl: string;
 }
 
 /**
@@ -407,33 +424,33 @@ const CASCADE_TERMINAL_STATUSES = new Set<string>([
 /**
  * Maximum retries before a target is marked FAILED.
  *
+ * Configurable via the `max_retry_count` social setting (HOS-64 G-2), bounds
+ * `[1, 10]`, default 3 — see {@link getMaxRetryCount}. Falling back to the
+ * default keeps the retry-boundary interpretation below intact even if the
+ * stored value is missing or out of range.
+ *
  * Retry boundary interpretation: `retryCount` is the number of PRIOR failures
  * already recorded. When a new failure occurs:
- *  - If retryCount >= 3 at failure time → exhaust (the 4th attempt is the
- *    one that triggers exhaustion, meaning at most 3 actual retries after the
- *    initial dispatch).
- *  - If retryCount < 3 → increment to (retryCount + 1) and reschedule.
+ *  - If retryCount >= maxRetryCount at failure time → exhaust (the next
+ *    attempt is the one that triggers exhaustion, meaning at most
+ *    maxRetryCount actual retries after the initial dispatch).
+ *  - If retryCount < maxRetryCount → increment to (retryCount + 1) and reschedule.
  *
- * This guarantees at most 4 total dispatch attempts (initial + 3 retries)
- * before the target is exhausted, matching the spec literal
- * "retry_count >= 3 when a failure occurs → FAILED".
+ * With the default of 3, this guarantees at most 4 total dispatch attempts
+ * (initial + 3 retries) before the target is exhausted, matching the spec
+ * literal "retry_count >= 3 when a failure occurs → FAILED".
  */
-const MAX_RETRY_COUNT = 3;
 
 /**
  * Timeout in milliseconds for the Make.com webhook HTTP POST.
  *
- * Raised to 40 s to accommodate the synchronous Make.com Webhook Response
- * model: Make must execute its scenario (API call + response assembly) before
- * the HTTP round-trip completes.  The previous 15 s was sized for the
- * async fire-and-forget model.
+ * Configurable via the `make_webhook_timeout_ms` social setting (HOS-64 G-2),
+ * bounds `[5000, 120000]`, default 40 s — see {@link getWebhookTimeoutMs}.
+ * 40 s accommodates the synchronous Make.com Webhook Response model: Make
+ * must execute its scenario (API call + response assembly) before the HTTP
+ * round-trip completes. The prior 15 s was sized for the async
+ * fire-and-forget model.
  */
-const MAKE_WEBHOOK_TIMEOUT_MS = 40_000;
-
-/**
- * `social_settings` key for the Make.com webhook URL.
- */
-const MAKE_WEBHOOK_URL_KEY = 'make_webhook_url';
 
 // ---------------------------------------------------------------------------
 // Service
@@ -493,6 +510,35 @@ export class SocialPublishDispatchService {
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
         this.settingModel = settingModel ?? new SocialSettingModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Settings-driven config (HOS-64 G-2, risk item R-1)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Reads `max_retry_count` from `social_settings`, clamped to `[1, 10]`
+     * with a fallback of 3 when the row is missing or out of bounds.
+     */
+    private async getMaxRetryCount(): Promise<number> {
+        const settingRow = await this.settingModel.findOne({ key: MAX_RETRY_COUNT_KEY });
+        return resolveBoundedNumericSetting({
+            rawValue: settingRow?.value as string | null | undefined,
+            ...MAX_RETRY_COUNT_BOUNDS
+        });
+    }
+
+    /**
+     * Reads `make_webhook_timeout_ms` from `social_settings`, clamped to
+     * `[5000, 120000]` with a fallback of 40000 when the row is missing or
+     * out of bounds.
+     */
+    private async getWebhookTimeoutMs(): Promise<number> {
+        const settingRow = await this.settingModel.findOne({ key: MAKE_WEBHOOK_TIMEOUT_MS_KEY });
+        return resolveBoundedNumericSetting({
+            rawValue: settingRow?.value as string | null | undefined,
+            ...MAKE_WEBHOOK_TIMEOUT_MS_BOUNDS
+        });
     }
 
     // ---------------------------------------------------------------------------
@@ -742,8 +788,8 @@ export class SocialPublishDispatchService {
      * the outcome synchronously from the Webhook Response body.
      *
      * ## Steps (US-11, synchronous model)
-     * 1. **Webhook read** — load `make_webhook_url` from `social_settings` (or
-     *    use `input.webhookUrl` override for tests). If empty/missing → return
+     * 1. **Webhook read** — use `input.webhookUrl` (caller-supplied, vault-decrypted
+     *    `make_webhook_url` — HOS-64 T-024). If empty/missing → return
      *    `{ outcome: 'skipped_no_webhook' }` with a warning log. Target unchanged.
      * 2. **Optimistic lock** — set `target.status = PUBLISHING` before the HTTP
      *    call. If the model supports a guarded update (WHERE status != PUBLISHING),
@@ -793,7 +839,8 @@ export class SocialPublishDispatchService {
      * const result = await service.dispatchTarget({
      *   target: bundle.target,
      *   post: bundle.post,
-     *   makeApiKey: env.MAKE_API_KEY,
+     *   makeApiKey,
+     *   webhookUrl,
      * });
      * if (result.outcome === 'published') {
      *   logger.info('Target published synchronously via Make.com');
@@ -801,7 +848,7 @@ export class SocialPublishDispatchService {
      * ```
      */
     public async dispatchTarget(input: DispatchTargetInput): Promise<DispatchTargetResult> {
-        const { target, post, makeApiKey, webhookUrl: webhookOverride } = input;
+        const { target, post, makeApiKey, webhookUrl: inputWebhookUrl } = input;
 
         const targetId = target.id as string;
         const postId = post.id as string;
@@ -811,25 +858,25 @@ export class SocialPublishDispatchService {
 
         // -------------------------------------------------------------------------
         // Step 1: Resolve webhook URL
-        // Read live from settings unless a test override is provided.
+        // Sourced entirely from the caller (vault-decrypted, HOS-64 T-024) —
+        // this service NEVER reads social_settings or the vault directly.
         // -------------------------------------------------------------------------
-        let webhookUrl: string;
-
-        if (webhookOverride !== undefined && webhookOverride !== '') {
-            webhookUrl = webhookOverride;
-        } else {
-            const settingRow = await this.settingModel.findOne({ key: MAKE_WEBHOOK_URL_KEY });
-            const settingValue = (settingRow?.value as string | null | undefined) ?? '';
-
-            if (!settingValue) {
-                serviceLogger.warn(
-                    { targetId, postId },
-                    `SocialPublishDispatchService.dispatchTarget: '${MAKE_WEBHOOK_URL_KEY}' setting is empty or missing — skipping dispatch`
-                );
-                return { outcome: 'skipped_no_webhook' };
-            }
-            webhookUrl = settingValue;
+        if (!inputWebhookUrl) {
+            serviceLogger.warn(
+                { targetId, postId },
+                "SocialPublishDispatchService.dispatchTarget: 'make_webhook_url' vault credential is empty or missing — skipping dispatch"
+            );
+            return { outcome: 'skipped_no_webhook' };
         }
+        const webhookUrl = inputWebhookUrl;
+
+        // Resolve the settings-driven retry/timeout config for this dispatch
+        // (HOS-64 G-2) — read once up front so both the HTTP timeout and the
+        // failure-path exhaustion check below use the same values.
+        const [maxRetryCount, webhookTimeoutMs] = await Promise.all([
+            this.getMaxRetryCount(),
+            this.getWebhookTimeoutMs()
+        ]);
 
         // -------------------------------------------------------------------------
         // Step 2: Optimistic lock — claim the target by setting status = PUBLISHING
@@ -862,14 +909,15 @@ export class SocialPublishDispatchService {
         // Step 4: HTTP POST to Make.com webhook (synchronous Webhook Response model)
         //
         // Make.com executes its scenario and returns the publish result in the HTTP
-        // body of the same round-trip. Timeout is 40 s to allow scenario execution.
+        // body of the same round-trip. Timeout defaults to 40 s to allow scenario
+        // execution, configurable via `make_webhook_timeout_ms` (HOS-64 G-2).
         // -------------------------------------------------------------------------
         let makeResponse: MakeWebhookResponse | null = null;
         let failureMessage = '';
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), MAKE_WEBHOOK_TIMEOUT_MS);
+            const timeoutId = setTimeout(() => controller.abort(), webhookTimeoutMs);
 
             let response: Response;
             try {
@@ -977,7 +1025,7 @@ export class SocialPublishDispatchService {
         // Step 6: Failure path
         // -------------------------------------------------------------------------
 
-        if (currentRetryCount >= MAX_RETRY_COUNT) {
+        if (currentRetryCount >= maxRetryCount) {
             // Exhaustion: max retries already reached — mark target as permanently FAILED
             await this.targetModel.update(
                 { id: targetId },
@@ -1357,19 +1405,20 @@ export class SocialPublishDispatchService {
      *
      * ## Retry-increment loop-safety
      * On a FAILED callback, `retryCount` is INCREMENTED FIRST, then compared against
-     * `MAX_RETRY_COUNT`.  This prevents the cron ↔ callback retry loop from running
-     * forever:
+     * the configured max retry count (`max_retry_count` social setting, HOS-64 G-2;
+     * default 3, bounds `[1, 10]` — see {@link getMaxRetryCount}). This prevents the
+     * cron ↔ callback retry loop from running forever:
      *
      *  - Without pre-increment: cron dispatches → Make fails → callback resets status
      *    to APPROVED without moving retryCount → cron re-dispatches → repeat.
      *  - With pre-increment (this implementation): each callback failure costs one
-     *    retry credit; at most 3 callback failures (newRetryCount reaching 3) before
-     *    the target is permanently marked FAILED.
+     *    retry credit; at most `maxRetryCount` callback failures (newRetryCount
+     *    reaching that value) before the target is permanently marked FAILED.
      *
-     * Combined retry budget across dispatch and callback:
+     * Combined retry budget across dispatch and callback (using the default of 3):
      *  - `dispatchTarget` increments retryCount when dispatch HTTP POST fails.
      *  - `handleMakeCallbackResult` increments retryCount when Make reports FAILED.
-     *  - Both paths check `>= MAX_RETRY_COUNT` AFTER incrementing.
+     *  - Both paths check `>= maxRetryCount` AFTER incrementing.
      *  - Since `dispatchTarget` exhausts (sets FAILED) when `retryCount >= 3` at
      *    dispatch time, a target that has already burned 3 dispatch retries never
      *    reaches this callback.  A successfully dispatched target (retryCount = 0 or
@@ -1491,8 +1540,9 @@ export class SocialPublishDispatchService {
         const currentRetryCount = (target.retryCount as number | undefined) ?? 0;
         // Increment first — this is what prevents the infinite cron ↔ callback loop
         const newRetryCount = currentRetryCount + 1;
+        const maxRetryCount = await this.getMaxRetryCount();
 
-        if (newRetryCount < MAX_RETRY_COUNT) {
+        if (newRetryCount < maxRetryCount) {
             // --- Retry branch: reset target to APPROVED for next cron cycle ---
             await this.targetModel.update(
                 { id: targetId },
@@ -1534,7 +1584,7 @@ export class SocialPublishDispatchService {
             return { targetId, status: 'APPROVED' };
         }
 
-        // --- Exhaustion branch: newRetryCount >= MAX_RETRY_COUNT → FAILED terminal ---
+        // --- Exhaustion branch: newRetryCount >= maxRetryCount → FAILED terminal ---
         await this.targetModel.update(
             { id: targetId },
             {
@@ -1772,13 +1822,14 @@ export class SocialPublishDispatchService {
      * ```ts
      * const result = await service.dispatchPostNow({
      *   postId: 'abc-123',
-     *   makeApiKey: env.HOSPEDA_MAKE_API_KEY ?? '',
+     *   makeApiKey,
+     *   webhookUrl,
      * });
      * // result.outcomes[0].outcome === 'published' | 'skipped_no_webhook' | ...
      * ```
      */
     public async dispatchPostNow(input: DispatchPostNowInput): Promise<DispatchPostNowResult> {
-        const { postId, makeApiKey } = input;
+        const { postId, makeApiKey, webhookUrl } = input;
 
         // -------------------------------------------------------------------------
         // Guard 1: Post must exist and not be soft-deleted
@@ -1854,7 +1905,7 @@ export class SocialPublishDispatchService {
             const platform = (target.platform as string | undefined) ?? '';
 
             try {
-                const result = await this.dispatchTarget({ target, post, makeApiKey });
+                const result = await this.dispatchTarget({ target, post, makeApiKey, webhookUrl });
                 outcomes.push({ targetId, platform, outcome: result.outcome });
 
                 if (

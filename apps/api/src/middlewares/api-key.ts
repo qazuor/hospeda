@@ -71,11 +71,13 @@ export interface ApiKeyMiddlewareConfig {
      */
     readonly headerName: string;
     /**
-     * Callable that returns the expected key (from env).
-     * Called on every request so env changes are reflected without restart.
-     * Returns undefined/empty when the env var is not configured.
+     * Callable that returns the expected key (from env or, for the vault-backed
+     * keys migrated in HOS-64 T-023, an async vault decrypt). Called on every
+     * request so env/vault changes are reflected without restart. Returns
+     * undefined/empty when the source (env var or vault credential) is not
+     * configured.
      */
-    readonly getExpectedKey: () => string | undefined;
+    readonly getExpectedKey: () => string | undefined | Promise<string | undefined>;
     /** Synthetic actor to inject into context on successful authentication. */
     readonly actor: ApiKeyActorIdentity;
 }
@@ -185,14 +187,15 @@ function buildMachineActor(identity: ApiKeyActorIdentity): Actor {
  * ```typescript
  * const gptAuthMiddleware = apiKeyMiddleware({
  *   headerName: 'x-hospeda-ai-key',
- *   getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+ *   getExpectedKey: async () =>
+ *     (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
  *   actor: { id: 'gpt-action', name: 'Custom GPT Social Action' },
  * });
  * ```
  */
 export const apiKeyMiddleware = (config: ApiKeyMiddlewareConfig): MiddlewareHandler => {
     return async (c, next) => {
-        const expectedKey = config.getExpectedKey();
+        const expectedKey = await config.getExpectedKey();
 
         // Fail-closed: env var not configured
         if (!expectedKey || expectedKey.trim() === '') {

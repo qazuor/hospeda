@@ -6,13 +6,15 @@
  * Authenticated via the inbound `x-hospeda-ai-key` API key PLUS an
  * `operator_pin` in the request body.
  *
- * PIN verification approach (SPEC-254 resolved decision #1):
- *   `HOSPEDA_OPERATOR_PIN_HASH = sha256(pin + secret_salt)` is stored in the
- *   env. The handler hashes the incoming pin the same way and uses
- *   `timingSafeEqual` on the hex digests to prevent timing attacks.
+ * PIN verification approach (HOS-64 / SPEC-297a G-4, T-021):
+ *   The plaintext operator PIN is stored as the `operator_pin` credential in
+ *   the social credentials vault (AES-256-GCM at rest). The handler decrypts
+ *   it via `getDecryptedSocialCredential` and uses `timingSafeEqual` on the
+ *   raw bytes to prevent timing attacks.
  *
  * HTTP mapping:
  *   201 — success
+ *   400 — draft's hashtag count exceeds a configured max_hashtags_<platform>
  *   401 — missing / invalid api-key (handled by middleware)
  *   403 — missing / invalid operator_pin
  *   409 — duplicate draftId
@@ -27,8 +29,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { CreateSocialDraftResponseSchema, CreateSocialDraftSchema } from '@repo/schemas';
 import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/service-core';
 import { getMediaProvider } from '../../../services/media';
+import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -36,27 +38,28 @@ import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 // ---------------------------------------------------------------------------
 
 /**
- * Validates the incoming operator PIN against the plaintext PIN stored in the
- * `HOSPEDA_OPERATOR_PIN` env var, using a constant-time comparison to prevent
- * timing attacks.
+ * Validates the incoming operator PIN against the plaintext PIN stored as the
+ * `operator_pin` credential in the social credentials vault (HOS-64 T-021),
+ * using a constant-time comparison to prevent timing attacks.
  *
- * The PIN is stored in the env var exactly as the operator types it into the
- * Custom GPT — no hashing — so the configured value and the value entered in the
- * GPT are guaranteed to be the same string. (Previously the env held a SHA-256
- * hash, which made it impossible to tell which raw PIN it corresponded to.)
+ * The vault stores the PIN exactly as the operator types it into the Custom
+ * GPT — no hashing — so the decrypted value and the value entered in the GPT
+ * are guaranteed to be the same string.
  *
  * Returns `false` when:
- *  - The `HOSPEDA_OPERATOR_PIN` env var is absent/empty.
+ *  - No active `operator_pin` credential exists in the vault.
  *  - The provided PIN is absent/empty.
  *  - The PINs do not match (length or content).
  *
  * @param providedPin - Raw PIN string from the request body.
  * @returns `true` when the PIN is valid.
  */
-function validateOperatorPin(providedPin: string | undefined): boolean {
-    const expectedPin = env.HOSPEDA_OPERATOR_PIN;
-    if (!expectedPin || expectedPin.trim() === '') return false;
+async function validateOperatorPin(providedPin: string | undefined): Promise<boolean> {
     if (!providedPin || providedPin.trim() === '') return false;
+
+    const vaultResult = await getDecryptedSocialCredential({ key: 'operator_pin' });
+    const expectedPin = vaultResult.data?.plaintext;
+    if (!expectedPin || expectedPin.trim() === '') return false;
 
     const provided = Buffer.from(providedPin, 'utf8');
     const expected = Buffer.from(expectedPin, 'utf8');
@@ -109,7 +112,8 @@ export const socialDraftsRoute = createApiKeyRoute({
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
-        getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+        getExpectedKey: async () =>
+            (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
         actor: { id: 'gpt-action', name: 'Custom GPT Social Action' }
     },
     requestBody: CreateSocialDraftSchema,
@@ -119,7 +123,7 @@ export const socialDraftsRoute = createApiKeyRoute({
         // Step 1: Operator PIN validation (before calling the service)
         // ----------------------------------------------------------------
         const rawPin = typeof body.operatorPin === 'string' ? body.operatorPin : undefined;
-        const pinValid = validateOperatorPin(rawPin);
+        const pinValid = await validateOperatorPin(rawPin);
         if (!pinValid) {
             return ctx.json(buildErrorJson('FORBIDDEN', 'Invalid operator pin'), 403) as never;
         }
@@ -169,6 +173,19 @@ export const socialDraftsRoute = createApiKeyRoute({
                         }
                     },
                     422
+                ) as never;
+
+            case 'HASHTAG_LIMIT_EXCEEDED':
+                return ctx.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'HASHTAG_LIMIT_EXCEEDED',
+                            message: result.error.message,
+                            details: result.error.violations
+                        }
+                    },
+                    400
                 ) as never;
 
             default:

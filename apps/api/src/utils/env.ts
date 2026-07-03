@@ -639,32 +639,15 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_PEXELS_API_KEY: z.string().optional(),
 
     // Social Automation (SPEC-254)
-    // All four vars are optional for now — the GPT/Make routes that consume them
-    // are NOT mounted yet (Phase 2 / Phase 4). Making them required here would
-    // break API boot in every environment before the feature is wired. Flip each
-    // to .min(1) (required) when the consuming route is mounted.
     /**
-     * Inbound API key the Custom GPT sends in `x-hospeda-ai-key`.
-     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     * AES-256-GCM master key for the social credentials vault (HOS-64 G-4).
+     * Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse.
+     * Optional until the vault data migration (T-025/T-033) runs.
      */
-    HOSPEDA_AI_SOCIAL_KEY: z.string().optional(),
-    /**
-     * Bcrypt/argon2 hash of the operator PIN for the GPT drafts endpoint.
-     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
-     */
-    HOSPEDA_OPERATOR_PIN_HASH: z.string().optional(),
-    /**
-     * Plaintext operator PIN for the GPT drafts endpoint, stored exactly as the
-     * operator types it into the Custom GPT. Compared in constant time against
-     * the `operatorPin` in the request body. Supersedes HOSPEDA_OPERATOR_PIN_HASH.
-     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
-     */
-    HOSPEDA_OPERATOR_PIN: z.string().optional(),
-    /**
-     * Outbound key sent in `x-make-apikey` when pushing publish jobs to Make.com.
-     * Required when the Make.com publish route is mounted (SPEC-254 Phase 4).
-     */
-    HOSPEDA_MAKE_API_KEY: z.string().optional(),
+    HOSPEDA_SOCIAL_VAULT_MASTER_KEY: z
+        .string()
+        .min(32, 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY must be at least 32 characters')
+        .optional(),
     /**
      * Inbound key Make.com sends in `x-hospeda-make-key` on claim/result callbacks.
      * Required when the Make.com callback route is mounted (SPEC-254 Phase 4).

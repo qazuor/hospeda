@@ -192,8 +192,7 @@ function buildService(opts: BuildServiceOptions = {}) {
 
     // SocialPostService constructor: config, postModel, postTargetModel,
     // postMediaModel, platformFormatModel, auditLog, hashtagModel,
-    // postHashtagModel, assetModel, publishLogModel, settingModel,
-    // batchModel, campaignModel
+    // postHashtagModel, assetModel, publishLogModel, batchModel, campaignModel
     const postTargetModel = createModelMock();
     postTargetModel.findAll.mockResolvedValue({ items: [], total: 0 });
     const postMediaModel = createModelMock();
@@ -202,7 +201,6 @@ function buildService(opts: BuildServiceOptions = {}) {
     const assetModel = createModelMock();
     const publishLogModel = createModelMock();
     publishLogModel.findAll.mockResolvedValue({ items: [], total: 0 });
-    const settingModel = createModelMock();
 
     const service = new SocialPostService(
         {},
@@ -215,7 +213,6 @@ function buildService(opts: BuildServiceOptions = {}) {
         postHashtagModel as never,
         assetModel as never,
         publishLogModel as never,
-        settingModel as never,
         batchModel as never,
         campaignModel as never
     );

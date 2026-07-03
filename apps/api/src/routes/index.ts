@@ -153,6 +153,7 @@ import {
     adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
     adminSocialCampaignRoutes,
+    adminSocialCredentialRoutes,
     adminSocialDashboardRoutes,
     adminSocialFooterRoutes,
     adminSocialHashtagRoutes,
@@ -616,6 +617,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
         app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
         app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // Social credential vault (HOS-64 G-4, T-026)
+        app.route('/api/v1/admin/social/credentials', adminSocialCredentialRoutes);
 
         // Social post routes (SPEC-254 T-036 transitions + T-037 CRUD)
         // Transition paths: /{id}/approve, /{id}/reject, etc.

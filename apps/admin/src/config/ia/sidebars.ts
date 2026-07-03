@@ -1380,6 +1380,19 @@ const marketingSidebar: SidebarInput = {
                     icon: 'SettingsIcon',
                     route: '/social/settings',
                     permissions: ['SOCIAL_SETTINGS_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'social-credentials',
+                    label: {
+                        es: 'Credenciales',
+                        en: 'Credentials',
+                        pt: 'Credenciais'
+                    },
+                    icon: 'ShieldIcon',
+                    route: '/social/credentials',
+                    permissions: ['SOCIAL_SETTINGS_MANAGE'],
+                    onMissing: 'hide'
                 }
             ]
         },

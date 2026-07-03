@@ -1952,72 +1952,21 @@ export const HOSPEDA_ENV_VARS = [
     // Social Automation (SPEC-254)
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_AI_SOCIAL_KEY',
+        name: 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY',
         description:
-            'Inbound API key the Custom GPT sends in the `x-hospeda-ai-key` header when calling the social-draft endpoints. Validates that requests originate from the authorised Custom GPT and not arbitrary callers.',
+            'AES-256-GCM master key for the social credentials vault (apps/api only). Encrypts/decrypts make_webhook_url, make_api_key, ai_social_key, and operator_pin at rest. Min 32 chars (Zod). Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse. Optional until the social vault data migration (T-025/T-033) runs.',
         descriptionEs:
-            'API key entrante que el Custom GPT envía en el header `x-hospeda-ai-key` al llamar los endpoints de borrador social. Valida que las solicitudes provienen del Custom GPT autorizado y no de callers arbitrarios.',
+            'Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. Opcional hasta que corra la migración de datos del vault social (T-025/T-033).',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 'replace-with-random-32-char-key-for-gpt',
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-yyyyyyyy',
         apps: ['api'],
         category: 'social-automation',
         howToObtain:
-            'Generate a random shared secret: `openssl rand -base64 32`. Set the same value in the Custom GPT action authentication header (`x-hospeda-ai-key`) and here. Rotate by updating both the GPT action config and this env var simultaneously.',
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
         howToObtainEs:
-            'Generá un secreto compartido aleatorio: `openssl rand -base64 32`. Configurá el mismo valor en el header de autenticación de la acción del Custom GPT (`x-hospeda-ai-key`) y acá. Para rotar, actualizá la config de la acción del GPT y esta variable al mismo tiempo.'
-    },
-    {
-        name: 'HOSPEDA_OPERATOR_PIN_HASH',
-        description:
-            'Bcrypt/argon2 hash of the operator PIN used to authorise social-draft submission via the Custom GPT. The raw PIN is never stored — only the hash. Validated on the GPT drafts endpoint when `operator_pin` is submitted.',
-        descriptionEs:
-            'Hash bcrypt/argon2 del PIN del operador usado para autorizar el envío de borradores sociales a través del Custom GPT. El PIN crudo nunca se guarda — solo el hash. Se valida en el endpoint de borradores del GPT cuando se envía `operator_pin`.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: '$2b$12$replace-with-a-real-bcrypt-hash-of-your-pin',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            "Choose a numeric PIN (e.g. 6 digits), then hash it: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('YOUR_PIN',12).then(h=>console.log(h))\"`. Store only the resulting hash here, never the raw PIN. Rotate by generating a new PIN + new hash.",
-        howToObtainEs:
-            "Elegí un PIN numérico (ej: 6 dígitos), luego hashealo: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('TU_PIN',12).then(h=>console.log(h))\"`. Guardá solo el hash resultante acá, nunca el PIN crudo. Para rotar, generá un nuevo PIN y un nuevo hash."
-    },
-    {
-        name: 'HOSPEDA_OPERATOR_PIN',
-        description:
-            'Plaintext operator PIN compared directly against the `operatorPin` submitted to the Custom GPT social-draft endpoint. Supersedes HOSPEDA_OPERATOR_PIN_HASH (the prior unsalted SHA-256 hash was removed). TEMPORARY: restore a hashed comparison (HOSPEDA_OPERATOR_PIN_HASH) before production.',
-        descriptionEs:
-            'PIN del operador en texto plano que se compara directamente contra el `operatorPin` enviado al endpoint de borradores sociales del Custom GPT. Reemplaza a HOSPEDA_OPERATOR_PIN_HASH (el hash SHA-256 sin sal previo fue removido). TEMPORAL: restaurar una comparación hasheada (HOSPEDA_OPERATOR_PIN_HASH) antes de producción.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: '123456',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            'Choose a numeric PIN (e.g. 4-6 digits) and set it here. The same value must be entered as `operatorPin` in the Custom GPT action. NOTE: temporary plaintext setup — restore HOSPEDA_OPERATOR_PIN_HASH (hashed) before production.',
-        howToObtainEs:
-            'Elegí un PIN numérico (ej: 4-6 dígitos) y poné el valor acá. El mismo valor debe ingresarse como `operatorPin` en la acción del Custom GPT. NOTA: setup temporal en texto plano — restaurar HOSPEDA_OPERATOR_PIN_HASH (hasheado) antes de producción.'
-    },
-    {
-        name: 'HOSPEDA_MAKE_API_KEY',
-        description:
-            'Outbound API key our backend sends to Make.com in the `x-make-apikey` header when pushing social-publish jobs. Authenticates the Hospeda API against the Make.com scenario webhook.',
-        descriptionEs:
-            'API key saliente que nuestro backend envía a Make.com en el header `x-make-apikey` al enviar jobs de publicación social. Autentica la API de Hospeda contra el webhook del escenario de Make.com.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'replace-with-your-make-scenario-webhook-api-key',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            'In Make.com, open the scenario webhook trigger → Authentication → add a custom header `x-make-apikey` with a value of your choice (generate with `openssl rand -hex 32`). Set that same value here.',
-        howToObtainEs:
-            'En Make.com, abrí el trigger webhook del escenario → Authentication → agregá un header custom `x-make-apikey` con un valor a tu elección (generalo con `openssl rand -hex 32`). Poné ese mismo valor acá.'
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
     {
         name: 'HOSPEDA_MAKE_INBOUND_KEY',

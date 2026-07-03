@@ -24,7 +24,7 @@
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "clean": "rm -rf node_modules && rm -rf dist"
     },
     "dependencies": {

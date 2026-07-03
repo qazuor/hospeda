@@ -184,3 +184,51 @@ describe('startCronScheduler — soft-failure Sentry capture', () => {
         expect(capturedOpts).toMatchObject({ level: 'error' });
     });
 });
+
+describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_CRON_ADAPTER = 'node-cron';
+        mockRecordCronRun.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('registers with the static schedule when resolveSchedule is absent', async () => {
+        const job = makeJob('dunning', () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+    });
+
+    it('registers with the resolveSchedule output when present', async () => {
+        const job: CronJobDefinition = {
+            ...makeJob('social-publish-dispatch', () => Promise.resolve(makeSuccessResult())),
+            resolveSchedule: vi.fn().mockResolvedValue('*/10 * * * *')
+        };
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        expect(mockSchedule).toHaveBeenCalledWith('*/10 * * * *', expect.any(Function));
+    });
+
+    it('falls back to the static schedule when resolveSchedule throws', async () => {
+        const job: CronJobDefinition = {
+            ...makeJob('social-publish-dispatch', () => Promise.resolve(makeSuccessResult())),
+            resolveSchedule: vi.fn().mockRejectedValue(new Error('settings read failed'))
+        };
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+    });
+});

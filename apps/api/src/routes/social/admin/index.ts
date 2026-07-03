@@ -12,6 +12,8 @@ export { adminSocialHashtagSetRoutes } from './hashtag-sets/index';
 // Config route groups (T-019)
 export { adminSocialPlatformFormatRoutes } from './platform-formats/index';
 export { adminSocialSettingRoutes } from './settings/index';
+// Social credential vault (HOS-64 G-4, T-026)
+export { adminSocialCredentialRoutes } from './credentials/index';
 // GPT Action schema export (T-030)
 export { adminGetGptActionSchemaRoute } from './gpt-action-schema';
 // Social post routes (T-036 transitions + T-037 CRUD)

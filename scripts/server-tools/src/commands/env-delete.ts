@@ -12,7 +12,7 @@
  * sanity-check before confirming.
  */
 
-import { findContainer, getApplicationUuid } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/container-lookup.ts';
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -70,8 +70,10 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
     }
     if (!key) die('Missing <KEY>. Run with --help for usage.');
 
+    const target = getActiveTarget();
     const container = await findContainer(kindRaw);
     const uuid = await getApplicationUuid(container);
+    log.info(`Target  : ${target} (${kindRaw} → container ${container})`);
     const client = createCoolifyClient();
 
     let existing: ReadonlyArray<CoolifyEnvVar>;
@@ -89,20 +91,25 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
     if (onlyProduction) candidates = candidates.filter((v) => !v.is_preview);
 
     if (candidates.length === 0) {
-        const scope = onlyPreview ? ' [preview]' : onlyProduction ? ' [production]' : '';
+        const scope = onlyPreview ? ' [preview]' : onlyProduction ? ' [main]' : '';
         log.warn(`No env var with key '${key}' on ${kindRaw}${scope}.`);
         return;
     }
 
+    // Per-row breakdown reflects Coolify's is_preview slot, NOT our
+    // prod/staging target (already shown above via the "Target :" line —
+    // every row here belongs to that same target/app). Labelled '[main]'
+    // rather than '[production]'/'[prod]' so it can't be misread as the
+    // target.
     log.info(`Found ${candidates.length} entry(ies) on ${kindRaw} for key '${key}':`);
     for (const c of candidates) {
-        const env = c.is_preview ? '[preview]' : '[prod]   ';
+        const env = c.is_preview ? '[preview]' : '[main]   ';
         process.stderr.write(`  ${env}  uuid=${c.uuid}\n`);
     }
 
     if (!skipConfirm) {
         const ok = await confirm(
-            `Delete ${candidates.length} entry(ies) for '${key}' on '${kindRaw}'?`
+            `Delete ${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}?`
         );
         if (!ok) {
             log.warn('Aborted.');
@@ -128,7 +135,7 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
-    log.ok(`Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${kindRaw}.`);
+    log.ok(`Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}.`);
     if (deleted > 0) {
         log.hint(
             'Run `hops redeploy <kind>` or `hops app-restart <kind>` for the change to take effect.'
