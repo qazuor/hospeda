@@ -865,35 +865,36 @@
             "id": "T-025",
             "title": "Write one-time vault data migration script",
             "description": "Write a one-time script (e.g. `packages/db/src/migrations/extras/social-vault-seed.script.ts` or a standalone CLI under `scripts/`) that reads the CURRENT env var values (`HOSPEDA_MAKE_API_KEY`, `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`) and the current `make_webhook_url` `social_settings` row, and calls `createSocialCredential()` (T-017) for each of the 4 keys. Idempotent: skip any key that already exists in `social_credentials`. Integration test with mocked env vars + a real test DB, asserting all 4 credentials are created encrypted and re-running is a no-op.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-024"],
             "blocks": ["T-033"],
             "subtasks": [
                 {
                     "title": "Read current env vars and make_webhook_url setting row",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call createSocialCredential for each of the 4 secrets, idempotently",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test: creates once, no-op on re-run",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["vault", "migration", "social", "data-migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass — apps/api (temporarily added scripts/social-vault-migrate.ts to tsconfig include to verify, then reverted to match the existing scripts/ convention of not being tsc-checked, same as the other apps/api/scripts/*.ts smoke tools)",
+                "tests": "pass — 3/3 new tests in test/integration/social/social-vault-migration.integration.test.ts (full migration + round-trip, idempotent re-run with no duplicate audit rows, partial-source skip), run via `vitest.config.e2e.ts`. Re-ran the existing 16/16 social-credential-vault-roundtrip.test.ts alongside — no regression."
             },
+            "decisionNote": "Split into a pure, directly-testable function — `migrateSocialCredentialsToVault` in `apps/api/src/services/social-vault-migration.service.ts` — that takes an already-resolved `source` object (plaintext strings) and an `actorId`, with all skip/idempotency logic (no-source vs already-exists vs real error) living there. The CLI wrapper (`apps/api/scripts/social-vault-migrate.ts`, run via `pnpm --filter hospeda-api exec tsx scripts/social-vault-migrate.ts`, mirrors the existing `apps/api/scripts/smoke-spec-108-brevo.ts` pattern for env loading + DB init) only does real-world wiring: reads the 3 env vars, reads the live `make_webhook_url` row from `social_settings` (still a real table/column — only its default seed row was removed this session, per T-024), resolves a SUPER_ADMIN actor by DB lookup to attribute audit rows (no fixed/well-known UUID exists across environments), and reports a created/skippedExisting/skippedNoSource/errors summary. Idempotency piggybacks on `createSocialCredential`'s own existing-active-credential guard (VALIDATION_ERROR, matched by message substring) rather than a separate existence pre-check — one fewer DB round-trip per key and no race window between check and create.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T02:08:15Z",
+                "completed": "2026-07-03T02:45:00Z"
             }
         },
         {
