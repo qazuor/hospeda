@@ -641,7 +641,7 @@
             "id": "T-020",
             "title": "Migrate apply-scheduled-plan-changes.ts to use shared discount-state helper",
             "description": "resolveDiscountAwarePlanChangeAmount's SELECT (~lines 94-100) becomes a call to loadSubscriptionDiscountState() from T-002. Verify apply-scheduled-plan-changes.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": ["T-028"],
@@ -649,14 +649,24 @@
             "tags": ["billing", "cron", "dedup"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:40:00Z",
+                    "details": "508/508 test/cron/ full sweep. Removed the now-unused execute() mock, added eq()/extended billingSubscriptions columns so loadSubscriptionDiscountState() resolves via the correct null-row path instead of an accidental exception-based fail-open."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:35:00Z",
+                "completed": "2026-07-03T13:40:00Z"
             }
         },
         {
@@ -866,9 +876,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 1.54
     }
