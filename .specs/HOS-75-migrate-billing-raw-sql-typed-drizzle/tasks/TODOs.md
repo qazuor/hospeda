@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 8/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 9/28
 
 ## Setup
 
@@ -15,7 +15,7 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 8/28
 - [x] T-006: Migrate listPlans.ts getNonAccommodationPlanSlugs() (complexity: 1)
 - [x] T-007: Migrate partners/admin/list-plans.ts + write net-new test (complexity: 3)
 - [x] T-008: Migrate featured-entitlement.resolver.ts product_domain SELECT (complexity: 1) [blocked by T-003]
-- [ ] T-009: Fold product_domain UPDATE into insert (commercePlan.seed.ts + partnerPlan.seed.ts) (complexity: 2)
+- [x] T-009: Fold product_domain UPDATE into insert (commercePlan.seed.ts + partnerPlan.seed.ts) (complexity: 2)
 
 ## Core — Phase B (promo-codes, ~9 files)
 

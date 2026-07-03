@@ -1,5 +1,5 @@
 import { PARTNER_LISTING_PLAN } from '@repo/billing';
-import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb, sql } from '@repo/db';
+import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
@@ -57,6 +57,7 @@ export async function seedPartnerPlan(_context: SeedContext): Promise<void> {
                     displayName: plan.name,
                     monthlyPriceArs: plan.monthlyPriceArs,
                     annualPriceArs: plan.annualPriceArs,
+                    productDomain: ProductDomainEnum.PARTNER,
                     metadata: {
                         slug: plan.slug,
                         displayName: plan.name,
@@ -80,9 +81,11 @@ export async function seedPartnerPlan(_context: SeedContext): Promise<void> {
             planStatus = 'created';
         }
 
-        await db.execute(
-            sql`UPDATE billing_plans SET product_domain = ${ProductDomainEnum.PARTNER} WHERE id = ${planId}`
-        );
+        // Re-stamp product_domain='partner' (idempotent no-op if already set).
+        await db
+            .update(billingPlans)
+            .set({ productDomain: ProductDomainEnum.PARTNER })
+            .where(eq(billingPlans.id, planId));
 
         const existingPrice = await db
             .select({ id: billingPrices.id })
