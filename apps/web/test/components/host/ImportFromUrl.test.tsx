@@ -11,7 +11,10 @@ import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockImportFromUrl } = vi.hoisted(() => ({ mockImportFromUrl: vi.fn() }));
+const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
+    mockImportFromUrl: vi.fn(),
+    mockUseImportStatus: vi.fn()
+}));
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
@@ -22,14 +25,34 @@ vi.mock('@/lib/i18n', () => ({
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationsImportApi: {
         importFromUrl: (...args: unknown[]) => mockImportFromUrl(...args)
-    }
+    },
+    // Mirrors the real structural guard: only the async `202` shape has `runId`.
+    isAsyncImportStart: (data: unknown) =>
+        typeof data === 'object' && data !== null && 'runId' in data
+}));
+
+// HOS-50 T-013: the polling hook is exercised in its own test suite
+// (use-import-status.test.ts) — here it's mocked so ImportFromUrl's tests
+// stay focused on the wiring (dispatch to polling mode, settle handling).
+vi.mock('@/hooks/use-import-status', () => ({
+    useImportStatus: (...args: unknown[]) => mockUseImportStatus(...args)
 }));
 
 import { ImportFromUrl } from '../../../src/components/host/ImportFromUrl.client';
 
+/** Default no-op poll result — used by every test that doesn't reach the async branch. */
+const IDLE_POLL_RESULT = {
+    draft: null,
+    failureCode: null,
+    settled: false,
+    isPolling: false,
+    error: null
+};
+
 describe('ImportFromUrl', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
     });
 
     it('keeps the Importar button disabled until the legal checkbox is ticked', () => {
@@ -139,6 +162,7 @@ describe('ImportFromUrl', () => {
 describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
     });
 
     /** Helper: fill URL, tick legal, click submit, wait for mock to resolve. */
@@ -231,6 +255,7 @@ describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
 describe('R5 manual path invariant (SPEC-277)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
     });
 
     /**
@@ -353,6 +378,181 @@ describe('R5 manual path invariant (SPEC-277)', () => {
         // Cleanup: resolve the promise so the component settles before teardown
         resolveImport({ ok: false });
         await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+    });
+});
+
+describe('HOS-50 T-013: async 202+poll flow', () => {
+    const ASYNC_START = {
+        runId: 'run-abc123',
+        datasetId: 'dataset-xyz789',
+        source: 'airbnb',
+        startedAt: '2026-07-02T09:20:00.000Z',
+        url: 'https://www.airbnb.com/rooms/12345'
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
+    });
+
+    /** Fills the URL, ticks legal, and clicks submit. */
+    async function submitAirbnbUrl() {
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com/rooms/12345' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+    }
+
+    it('regression: a 200 response never switches to polling mode (useImportStatus stays disabled)', async () => {
+        // Arrange
+        mockImportFromUrl.mockResolvedValueOnce({
+            ok: true,
+            data: { draft: {}, source: 'generic', methodsUsed: [], partial: true }
+        });
+        const onImported = vi.fn();
+        render(
+            <ImportFromUrl
+                locale="es"
+                onImported={onImported}
+            />
+        );
+
+        // Act
+        await submitAirbnbUrl();
+
+        // Assert — the hook is always called, but `enabled` (2nd arg) stays
+        // false because a 200 response never sets a run handle.
+        await waitFor(() => expect(onImported).toHaveBeenCalledTimes(1));
+        for (const call of mockUseImportStatus.mock.calls) {
+            expect(call[1]).toBe(false);
+        }
+    });
+
+    it('202 response switches to polling mode and keeps the spinner active', async () => {
+        // Arrange — the run never settles for this test (poll in progress).
+        mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
+        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
+            enabled
+                ? { draft: null, failureCode: null, settled: false, isPolling: true, error: null }
+                : IDLE_POLL_RESULT
+        );
+        render(<ImportFromUrl locale="es" />);
+
+        // Act
+        await submitAirbnbUrl();
+
+        // Assert — the spinner label stays active, button stays disabled, and
+        // the hook was invoked with the run handle from the 202 response.
+        const button = await screen.findByRole('button', { name: /Importando/i });
+        expect(button).toBeDisabled();
+        expect(mockUseImportStatus).toHaveBeenCalledWith(
+            expect.objectContaining({ runId: 'run-abc123' }),
+            true
+        );
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('202 -> poll -> settle-success calls onImported with the finalized draft', async () => {
+        // Arrange — the mocked hook reports "settled" as soon as it's enabled,
+        // simulating the poll having already resolved.
+        mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
+        const finalDraft = {
+            draft: { name: { value: 'Cabaña del Río', source: 'jsonld' } },
+            source: 'airbnb',
+            methodsUsed: ['jsonld'],
+            partial: true
+        };
+        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
+            enabled
+                ? {
+                      draft: finalDraft,
+                      failureCode: null,
+                      settled: true,
+                      isPolling: false,
+                      error: null
+                  }
+                : IDLE_POLL_RESULT
+        );
+        const onImported = vi.fn();
+        render(
+            <ImportFromUrl
+                locale="es"
+                onImported={onImported}
+            />
+        );
+
+        // Act
+        await submitAirbnbUrl();
+
+        // Assert
+        await waitFor(() => expect(onImported).toHaveBeenCalledWith(finalDraft));
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        // Spinner clears once settled.
+        expect(screen.getByRole('button', { name: /Importar/i })).not.toBeDisabled();
+    });
+
+    it('202 -> poll -> settle-failure shows the i18n error banner (not onImported)', async () => {
+        // Arrange
+        mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
+        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
+            enabled
+                ? {
+                      draft: null,
+                      failureCode: 'source_blocked',
+                      settled: true,
+                      isPolling: false,
+                      error: null
+                  }
+                : IDLE_POLL_RESULT
+        );
+        const onImported = vi.fn();
+        const onError = vi.fn();
+        render(
+            <ImportFromUrl
+                locale="es"
+                onImported={onImported}
+                onError={onError}
+            />
+        );
+
+        // Act
+        await submitAirbnbUrl();
+
+        // Assert
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(onImported).not.toHaveBeenCalled();
+        await waitFor(() => expect(onError).toHaveBeenCalledWith('source_blocked'));
+        // Submit re-enabled after the failed settle.
+        expect(screen.getByRole('button', { name: /Importar/i })).not.toBeDisabled();
+    });
+
+    it('unmounting mid-poll does not call onImported and does not throw', async () => {
+        // Arrange — poll never settles (still in flight when unmounted).
+        mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
+        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
+            enabled
+                ? { draft: null, failureCode: null, settled: false, isPolling: true, error: null }
+                : IDLE_POLL_RESULT
+        );
+        const onImported = vi.fn();
+        const { unmount } = render(
+            <ImportFromUrl
+                locale="es"
+                onImported={onImported}
+            />
+        );
+
+        // Act
+        await submitAirbnbUrl();
+        await screen.findByRole('button', { name: /Importando/i });
+
+        expect(() => unmount()).not.toThrow();
+
+        // Assert — never settled, so onImported must never fire.
+        expect(onImported).not.toHaveBeenCalled();
     });
 });
 

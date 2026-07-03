@@ -126,6 +126,10 @@ import {
     makeClaimCallbackRoute,
     makeResultCallbackRoute
 } from './integrations/make/social/jobs/index.js';
+import {
+    mercadoLibreAuthorizeRoute,
+    mercadoLibreCallbackRoute
+} from './integrations/mercadolibre-oauth/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -524,6 +528,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
+
+        // MercadoLibre OAuth integration admin routes (HOS-45 / SPEC-278 T-011, T-012)
+        app.route('/api/v1/admin/mercadolibre-oauth', mercadoLibreAuthorizeRoute);
+        app.route('/api/v1/admin/mercadolibre-oauth', mercadoLibreCallbackRoute);
 
         // Admin app log viewer (SPEC-184)
         app.route('/api/v1/admin/logs', adminAppLogRoutes);

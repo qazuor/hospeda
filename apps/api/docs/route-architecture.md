@@ -747,6 +747,111 @@ to function on staging and production:
 
 ---
 
+## Accommodation Import — Async 202+Poll Path (HOS-50 / SPEC-277 R3)
+
+`POST /api/v1/protected/accommodations/import-from-url` runs a stateless
+scrape-and-map pipeline for external listing URLs. Most sources
+(`mercadolibre`, `google`, `generic`, and Booking's own JSON-LD-first tier)
+resolve inline and the route returns **200** immediately. Airbnb (always) and
+Booking (on its Apify-fallback branch) instead go through Apify's
+`run-sync-get-dataset-items`, which can block the HTTP request for 8–120s.
+For those two sources the route returns **202** with a run handle instead of
+blocking, and the client polls a separate status route until the run settles
+— the same 202+poll primitive introduced by SPEC-250 for external-reputation
+refresh (see "External Reputation Routes" above).
+
+### Why stateless
+
+Nothing about an in-flight run is persisted server-side. The `202` response
+IS the full run handle, and the client must echo it back verbatim on every
+poll — the status route re-derives everything it needs from the query params
+alone. This keeps the pipeline horizontally scalable (any API instance can
+serve any poll) at the cost of the client owning the handle across the async
+window (in-memory/localStorage state in web, TanStack Query cache in admin).
+
+### Start: `POST /api/v1/protected/accommodations/import-from-url`
+
+| Status | Body | When |
+|---|---|---|
+| `200` | `AccommodationImportResponse` (`draft`, `source`, `methodsUsed`, `partial`, optional `failureCode`/`destinationHint`/`resolvedAmenityIds`/`mediaHints`) | Source resolved synchronously (`mercadolibre`, `google`, `generic`, or Booking's JSON-LD tier). |
+| `202` | `AccommodationImportAsyncStartResponse`: `{ runId, datasetId, source, startedAt, url }` | Source dispatched to the async Apify path (`airbnb`, or `booking` on its Apify-fallback branch). |
+
+`runId`/`datasetId` come straight from Apify's `startApifyRun` (SPEC-250).
+`startedAt` is an ISO-8601 timestamp the status route uses to enforce the poll
+ceiling. `url` is echoed back solely so the status route's R2 fallback (below)
+can re-fetch the original page — it is never used to re-detect the source.
+
+### Poll: `GET /api/v1/protected/accommodations/import-from-url/status`
+
+Query params are the `202` body verbatim (`runId`, `datasetId`, `source`,
+`startedAt`, `url`). Response shape (`AccommodationImportStatusResponse`):
+
+| `settled` | Other fields | Meaning |
+|---|---|---|
+| `false` | — | Run is still `READY`/`RUNNING`. Poll again later. |
+| `true` | `draft: AccommodationImportResponse` | Run `SUCCEEDED` with a non-empty dataset; the item was mapped and finalized through the same pipeline as the synchronous `200` branch. |
+| `true` | `failureCode: ImportFailureCode` | Run reached a terminal failure, or `SUCCEEDED` with an empty dataset (`nothing_found`). |
+
+Exactly one of `draft`/`failureCode` is present when `settled: true`; both are
+absent when `settled: false` — enforced by a Zod `superRefine`, not just
+convention (`AccommodationImportStatusResponseSchema` in
+`packages/schemas/src/entities/accommodation/accommodation-import.schema.ts`).
+
+**Poll interval**: both clients poll every **5000ms** while `settled: false`
+(`POLL_INTERVAL_MS` in `apps/web/src/hooks/use-import-status.ts`;
+`computeImportStatusRefetchInterval` in
+`apps/admin/src/features/accommodations/hooks/useAccommodationImportStatusQuery.ts`,
+driving TanStack Query's `refetchInterval`). Both stop polling as soon as
+`settled: true`.
+
+**Poll ceiling**: `HOSPEDA_IMPORT_APIFY_TIMEOUT_MS` (default `120000`, 2 min).
+Once `now - startedAt` exceeds this, the handler returns
+`{ settled: true, failureCode: 'timeout' }` WITHOUT calling Apify at all — a
+stalled run is never polled forever, and no poll call is spent on a run that
+can no longer matter to the client.
+
+### R2 Generic-adapter fallback: diverges from the sync path — do not "fix" this
+
+The synchronous `import-from-url` pipeline only triggers its R2
+(JSON-LD/OpenGraph `GenericAdapter`) fallback on `source_blocked`. The async
+path (`resolveImportRunStatus`, in
+`packages/service-core/src/services/accommodation-import/adapters/resolve-import-run-status.ts`)
+triggers the SAME fallback on **both** `source_blocked` AND `provider_error`.
+
+This is intentional, not a bug: Apify's terminal run states
+(`FAILED`/`TIMED-OUT`/`ABORTED`) have no native "blocked" signal the way an
+HTTP 429 or an anti-bot page does on the synchronous path. A mid-run block on
+Airbnb/Booking surfaces to Apify indistinguishably from any other run
+failure — i.e. as `provider_error` — so the async path widens the fallback
+trigger to catch it. Without this, every real block would fall through as an
+unrecoverable `provider_error` instead of getting the same "try one cheap
+structured re-fetch" chance a sync-path block gets. `timeout` never triggers
+the fallback on either path — a run that legitimately ran out of time is not
+a blocking signal.
+
+The fallback re-fetches the original `url` via `GenericAdapter` and accepts
+the result only if it carries at least one of `name`, `summary`, or a
+non-empty `imageUrls` (the same "useful fallback" rule as
+`AccommodationImportService._runFallbackGenericExtract` on the sync path).
+Otherwise the original failure code is kept.
+
+**Known scope cut**: the status route's fallback does not receive an
+`aiExtract` port, so AI-assisted (Strategy B) extraction is unavailable on
+this branch — only the free structured pass runs. See the module doc on
+`import-from-url-status.ts` for the rationale.
+
+### Env vars
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `HOSPEDA_IMPORT_APIFY_TIMEOUT_MS` | `120000` | Poll ceiling for the async path (shared by the dispatch decision and the status route's timeout check). |
+| `HOSPEDA_IMPORT_FETCH_TIMEOUT_MS` | `8000` | Timeout for the synchronous fetch-based extractors (`google`, `mercadolibre`, `generic`, Booking's JSON-LD tier). Not used on the async Apify path. |
+| `HOSPEDA_IMPORT_FETCH_MAX_BYTES` | `3000000` | Byte cap for synchronous page fetches. |
+| `HOSPEDA_IMPORT_RATE_LIMIT_RPH` | `10` | Per-user sliding-window rate limit on the start route; shared by both the sync and async dispatch branches. |
+| `HOSPEDA_IMPORT_AI_MAX_CHARS` | `12000` | Char cap for AI-assisted (Strategy B) extraction; not available on the async status route's fallback. |
+
+---
+
 ## Anti-Patterns
 
 **Never PUT/POST/DELETE in the public tier.**

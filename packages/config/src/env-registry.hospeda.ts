@@ -520,6 +520,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
+    {
+        name: 'HOSPEDA_OAUTH_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the OAuth credentials vault (apps/api only, HOS-45). Encrypts/decrypts third-party OAuth tokens (currently MercadoLibre) at rest. Deliberately provider-agnostic name (not ML-specific) because the credentials table it protects is designed to extend to future OAuth providers beyond MercadoLibre. Optional until an OAuth-integrated tier is enabled.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales OAuth (solo apps/api, HOS-45). Cifra/descifra tokens OAuth de terceros (actualmente MercadoLibre) en reposo. Nombre deliberadamente agnóstico de proveedor (no específico de ML) porque la tabla de credenciales que protege está diseñada para extenderse a futuros proveedores OAuth más allá de MercadoLibre. Opcional hasta que un tier integrado por OAuth esté habilitado.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted OAuth credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales OAuth cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
+    },
 
     // -------------------------------------------------------------------------
     // Email
@@ -1707,22 +1724,60 @@ export const HOSPEDA_ENV_VARS = [
             'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Luego restringí la key a la "Places API (New)" en "API restrictions". El proyecto debe tener billing habilitado.'
     },
     {
-        name: 'HOSPEDA_MERCADOLIBRE_TOKEN',
+        name: 'HOSPEDA_MERCADOLIBRE_CLIENT_ID',
         description:
-            'MercadoLibre OAuth app access token for reading /items listings. Required because the ML /items endpoint no longer allows anonymous access.',
+            'MercadoLibre OAuth app client ID (HOS-45 OAuth refresh-token flow). Used together with HOSPEDA_MERCADOLIBRE_CLIENT_SECRET to exchange authorization codes and refresh tokens against the ML OAuth API. Optional until the ML import tier is enabled in an environment.',
         descriptionEs:
-            'Token de acceso OAuth de la app de MercadoLibre para leer listings de /items. Necesario porque el endpoint ML /items ya no permite acceso anónimo.',
+            'Client ID de la app OAuth de MercadoLibre (flujo de refresh de OAuth de HOS-45). Se usa junto con HOSPEDA_MERCADOLIBRE_CLIENT_SECRET para intercambiar authorization codes y refresh tokens contra la API OAuth de ML. Opcional hasta que el tier de importación de ML esté habilitado en un entorno.',
         type: 'string',
         required: false,
-        secret: true,
-        exampleValue: 'your-mercadolibre-access-token',
+        secret: false,
+        defaultValue: '',
+        exampleValue: '1234567890123456',
         apps: ['api'],
         category: 'integrations',
         helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
         howToObtain:
-            'MercadoLibre Developers → "Crear aplicación" → complete the form → copy the "Access Token" from the app credentials panel. Tokens expire; use the refresh-token flow to keep them valid.',
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → copy the "Client ID" from the app credentials panel.',
         howToObtainEs:
-            'MercadoLibre Developers → "Crear aplicación" → completá el formulario → copiá el "Access Token" del panel de credenciales de la app. Los tokens expiran; usá el flujo de refresh-token para mantenerlos válidos.'
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → copiá el "Client ID" del panel de credenciales de la app.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_CLIENT_SECRET',
+        description:
+            'MercadoLibre OAuth app client secret (HOS-45 OAuth refresh-token flow). Paired with HOSPEDA_MERCADOLIBRE_CLIENT_ID to authenticate token-exchange and refresh-token requests. Never expose to the client.',
+        descriptionEs:
+            'Client secret de la app OAuth de MercadoLibre (flujo de refresh de OAuth de HOS-45). Se combina con HOSPEDA_MERCADOLIBRE_CLIENT_ID para autenticar los pedidos de intercambio de token y de refresh. Nunca exponer al cliente.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-mercadolibre-oauth-client-secret',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → copy the "Client Secret" from the app credentials panel. Rotate it if it leaks; keep it out of source control.',
+        howToObtainEs:
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → copiá el "Client Secret" del panel de credenciales de la app. Rotalo si se filtra; nunca lo commitees.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_REDIRECT_URI',
+        description:
+            'OAuth redirect URI registered on the MercadoLibre app (HOS-45), used as the callback target after the user authorizes the app. Must exactly match the URI configured in the ML Developers panel for the app.',
+        descriptionEs:
+            'URI de redirect OAuth registrada en la app de MercadoLibre (HOS-45), usada como destino del callback luego de que el usuario autoriza la app. Debe coincidir exactamente con la URI configurada en el panel de MercadoLibre Developers para la app.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue: 'https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → "Redirect URI" field. Must match exactly (protocol, host, path) what is registered there for the app to accept authorization requests. Use the environment-specific API host (staging vs prod).',
+        howToObtainEs:
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → campo "Redirect URI". Tiene que coincidir exactamente (protocolo, host, path) con lo registrado ahí para que la app acepte pedidos de autorización. Usá el host de API específico del entorno (staging vs prod).'
     },
     {
         name: 'HOSPEDA_IMPORT_FETCH_TIMEOUT_MS',

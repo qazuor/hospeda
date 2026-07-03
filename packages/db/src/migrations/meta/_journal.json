@@ -295,6 +295,20 @@
             "when": 1782981049922,
             "tag": "0041_volatile_colossus",
             "breakpoints": true
+        },
+        {
+            "idx": 42,
+            "version": "7",
+            "when": 1783020279603,
+            "tag": "0042_clear_tyrannus",
+            "breakpoints": true
+        },
+        {
+            "idx": 43,
+            "version": "7",
+            "when": 1783031397334,
+            "tag": "0043_colorful_selene",
+            "breakpoints": true
         }
     ]
 }

@@ -18,6 +18,7 @@ export * from './enums.dbschema.ts';
 export * from './event/index.ts';
 export * from './exchange-rate/index.ts';
 export * from './host-trade/index.ts';
+export * from './integration/index.ts';
 export * from './newsletter/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';

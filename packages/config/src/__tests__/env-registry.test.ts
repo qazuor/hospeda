@@ -132,8 +132,19 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * SPEC-286 price-drop alerts). Landed on staging independently off the same
  * 244 (post-landing-removal) base as this branch's collections removal;
  * merged total reflects both (243 + 1 = 244).
+ *
+ * 247 (2026-07-02, HOS-45 T-015): corrects undocumented drift discovered
+ * while removing HOSPEDA_MERCADOLIBRE_TOKEN. Earlier HOS-45 tasks (T-001
+ * through T-014) registered 4 OAuth vars for the MercadoLibre refresh-token
+ * flow without bumping this constant: HOSPEDA_MERCADOLIBRE_CLIENT_ID,
+ * HOSPEDA_MERCADOLIBRE_CLIENT_SECRET, HOSPEDA_MERCADOLIBRE_REDIRECT_URI, and
+ * HOSPEDA_OAUTH_VAULT_MASTER_KEY (all integrations category) — net +4 vs
+ * the recorded 244 (244 + 4 = 248). T-015 then
+ * hard-cut-removes the now-obsolete HOSPEDA_MERCADOLIBRE_TOKEN static
+ * access-token credential (integrations category, -1), since the OAuth
+ * flow fully replaces it with no deprecation period (248 - 1 = 247).
  */
-const EXPECTED_VAR_COUNT = 244;
+const EXPECTED_VAR_COUNT = 247;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
