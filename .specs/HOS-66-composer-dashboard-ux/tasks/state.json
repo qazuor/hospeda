@@ -366,35 +366,35 @@
             "id": "T-011",
             "title": "Add thumbnail column to social posts table",
             "description": "Add a thumbnail column to `apps/admin/src/routes/_authed/social/posts/-components/SocialPostsTable.tsx`, reading `thumbnailUrl` from the list response (T-008). Show a fallback placeholder when null.\n\nTest requirements:\n- Component test: thumbnail renders for a post with media; fallback placeholder renders when `thumbnailUrl` is null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Add thumbnail column to SocialPostsTable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add fallback placeholder for missing thumbnail",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test: both states",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "frontend", "admin", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T21:56:00Z",
+                "completed": "2026-07-03T22:00:51Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 4,
         "averageComplexity": 2.0
     }

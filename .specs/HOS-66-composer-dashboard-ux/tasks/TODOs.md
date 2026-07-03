@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 10/27 tasks (37%)
+## Progress: 11/27 tasks (41%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -63,7 +63,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-007
   - Blocks: T-012
 
-- [ ] **T-011** (complexity: 2) - Add thumbnail column to social posts table
+- [x] **T-011** (complexity: 2) - Add thumbnail column to social posts table
   - Blocked by: T-008
   - Blocks: T-012
 
