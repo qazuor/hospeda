@@ -1,5 +1,5 @@
 import { DEFAULT_PROMO_CODES } from '@repo/billing';
-import { billingPromoCodes, eq, getDb, sql } from '@repo/db';
+import { billingPromoCodes, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -65,8 +65,35 @@ export async function seedBillingPromoCodes(_context: SeedContext): Promise<void
                     durationCycles: promoDef.durationCycles
                 };
 
-                // Insert promo code (legacy columns via Drizzle)
-                const [inserted] = await db
+                // SPEC-262 / HOS-75 T-016: resolve the typed-effect columns
+                // (`effectKind`/`valueKind`/`durationCycles`/`extraDays`) so they
+                // can be set directly at insert time — they're typed Drizzle
+                // columns as of @qazuor/qzpay-drizzle 1.11.0 (HOS-73).
+                const promoType = promoDef.type ?? 'discount';
+                const effectColumns =
+                    promoType === 'comp'
+                        ? {
+                              effectKind: 'comp',
+                              valueKind: null,
+                              durationCycles: null,
+                              extraDays: null
+                          }
+                        : promoType === 'free_trial_extension'
+                          ? {
+                                effectKind: 'trial_extension',
+                                valueKind: null,
+                                durationCycles: null,
+                                extraDays: promoDef.extraTrialDays ?? 0
+                            }
+                          : {
+                                effectKind: 'discount',
+                                valueKind: 'percentage',
+                                durationCycles: promoDef.durationCycles,
+                                extraDays: null
+                            };
+
+                // Insert promo code (legacy columns + typed effect columns).
+                await db
                     .insert(billingPromoCodes)
                     .values({
                         code: promoDef.code,
@@ -79,32 +106,10 @@ export async function seedBillingPromoCodes(_context: SeedContext): Promise<void
                         validPlans: promoDef.restrictedToPlans,
                         newCustomersOnly: promoDef.newUserOnly,
                         config,
-                        livemode: false
+                        livemode: false,
+                        ...effectColumns
                     })
                     .returning({ id: billingPromoCodes.id });
-
-                // SPEC-262: persist the typed-effect columns. `effect_kind`,
-                // `value_kind`, `duration_cycles`, `extra_days` are extras-carril
-                // (added by extras/018) and NOT in the QZPay Drizzle schema, so
-                // Drizzle `.values()` above cannot set them — without this raw
-                // UPDATE the read path falls back to legacy and the typed effect
-                // (comp / trial_extension / multi-cycle discount) is lost.
-                if (inserted?.id) {
-                    const promoType = promoDef.type ?? 'discount';
-                    if (promoType === 'comp') {
-                        await db.execute(
-                            sql`UPDATE billing_promo_codes SET effect_kind = 'comp', value_kind = NULL, duration_cycles = NULL, extra_days = NULL WHERE id = ${inserted.id}`
-                        );
-                    } else if (promoType === 'free_trial_extension') {
-                        await db.execute(
-                            sql`UPDATE billing_promo_codes SET effect_kind = 'trial_extension', value_kind = NULL, duration_cycles = NULL, extra_days = ${promoDef.extraTrialDays ?? 0} WHERE id = ${inserted.id}`
-                        );
-                    } else {
-                        await db.execute(
-                            sql`UPDATE billing_promo_codes SET effect_kind = 'discount', value_kind = 'percentage', duration_cycles = ${promoDef.durationCycles}, extra_days = NULL WHERE id = ${inserted.id}`
-                        );
-                    }
-                }
 
                 logger.info(
                     `${STATUS_ICONS.Success}  Seeded "${promoDef.code}" (${promoDef.type ?? 'discount'})`
