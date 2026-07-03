@@ -308,35 +308,45 @@
             "id": "T-010",
             "title": "Collapse promo-code.crud.ts column projection + fold persistEffectColumns()",
             "description": "Collapse promoCodeColumnsWithEffect() to a plain getTableColumns(billingPromoCodes) call (drop the manual sql<string|null>`effect_kind` etc. projections). Delete persistEffectColumns() entirely -- fold its 3 branches' (comp / trial_extension / discount) effect-column values directly into the corresponding .insert({...}) calls (confirmed safe: none of the 3 branches reference the row's generated id when computing effect-column values). Verify promo-code.crud.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Collapse promoCodeColumnsWithEffect() to getTableColumns()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fold persistEffectColumns()'s 3 branches into .insert({...})",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete persistEffectColumns() function",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "promo-code"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:46:29Z",
+                    "details": "95/95 (promo-code.crud.test.ts + redemption/renewal/trial-extension/validation regression, no test changes needed)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:43:05Z",
+                "completed": "2026-07-03T05:46:29Z"
             }
         },
         {
@@ -766,9 +776,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.54
     }
