@@ -401,31 +401,31 @@
             "id": "T-012",
             "title": "Verify dashboard AC-4 end-to-end",
             "description": "Write an integration-level test verifying AC-4: selecting a date range shows correct KPI numbers for that range and a per-platform breakdown that sums to the range total, exercising the service, route, and rendered UI together.\n\nTest requirements:\n- Cross-layer test (service \u2192 route \u2192 dashboard component) confirming the breakdown-sums-to-total invariant holds for a seeded fixture set across at least two date ranges.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-009", "T-010", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Seed fixture posts/targets across two date windows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert breakdown sums to range total",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "testing", "social"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:02:00Z",
+                "completed": "2026-07-03T22:07:41Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 4,
         "averageComplexity": 2.0
     }
