@@ -1,0 +1,933 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-66",
+    "title": "Social Posts — Composer + Dashboard UX",
+    "created": "2026-07-03T12:51:33.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Implement resolve-or-create for campaign/batch slugs",
+            "description": "In `packages/service-core/src/services/social/social-draft-ingestion.service.ts`, replace the resolve-only `resolveSlugToId` call for `campaignSlug`/`batchSlug` with a resolve-or-create helper: match by slug → associate; no match → create a new `social_campaigns`/`social_content_batches` row (name derived from the slug, `active: true`) and associate to it. Leave `audienceSlug`/`footerSlug`/`baseHashtagSetSlug` on the existing resolve-only path — only campaigns/batches get create semantics (G-4/G-5). Return `{ id, slug, isNew }` per resolved entity so callers can report the outcome.\n\nTest requirements:\n- Unit tests in `social-draft-ingestion.service.test.ts`: existing slug resolves without creating a row; unknown slug creates a new active row and returns `isNew: true`; audience/footer/hashtagSet slugs still fall back to null on miss (regression).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Add resolveOrCreateCampaignOrBatch helper",
+                    "completed": true
+                },
+                {
+                    "title": "Wire campaignSlug/batchSlug through the new helper",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: existing slug resolves, no create",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test: unknown slug creates row with isNew=true",
+                    "completed": true
+                }
+            ],
+            "tags": ["G-4", "G-5", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": "2026-07-03T13:11:28Z",
+                "completed": "2026-07-03T13:16:40Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Echo campaign/batch resolution outcome in draft response",
+            "description": "Extend `CreateSocialDraftResponseSchema` (`packages/schemas/src/entities/social/social-draft.http.schema.ts`, additive-only per the schema-compat policy) with optional `campaignResolution`/`batchResolution: { id, slug, isNew } | null` fields. Wire `SocialDraftIngestionService.ingestDraft` to populate them from T-001's helper output so the GPT/operator can confirm whether a new campaign/batch was created.\n\nTest requirements:\n- Schema unit test: new fields parse as optional, absent = backward compatible with existing historic fixtures.\n- Ingestion service test: response includes correct `isNew` value for both existing-slug and new-slug cases.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Add campaignResolution/batchResolution to response schema",
+                    "completed": false
+                },
+                {
+                    "title": "Populate fields in ingestDraft from T-001 helper",
+                    "completed": false
+                },
+                {
+                    "title": "Schema compat test against historic fixtures",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-4", "G-5", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Update GPT-facing route descriptions for fuzzy-duplicate + implicit fallback",
+            "description": "Update the OpenAPI `description` text on `POST /api/v1/ai/social/drafts` (`apps/api/src/routes/ai/social/drafts.ts`) and `GET /api/v1/ai/social/catalog` (`apps/api/src/routes/ai/social/catalog.ts`) — these descriptions are the Custom GPT's own instructions (NG-2: no backend heuristic matching, so this is the only implementation surface for G-5's LLM-reasoning requirement). Instruct: (1) before submitting a new `campaignSlug`/`batchSlug` name, check the catalog's `campaigns`/`batches` arrays for a near-duplicate name and ask the operator to confirm \"use existing\" vs \"create new\"; (2) when no explicit slug is given, reason over the active campaigns/batches list against the draft content and propose an association when confident.\n\nTest requirements:\n- Update `apps/api/test/routes/social/admin/social-gpt-action-schema.test.ts` (or the drafts/catalog route test) to assert the generated OpenAPI description contains the new guidance text.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Update drafts.ts route description",
+                    "completed": false
+                },
+                {
+                    "title": "Update catalog.ts route description",
+                    "completed": false
+                },
+                {
+                    "title": "Test: OpenAPI schema exposes updated description",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-5", "backend", "gpt", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Integration tests for batch/campaign auto-detection acceptance criteria",
+            "description": "Write integration tests against `POST /api/v1/ai/social/drafts` covering AC-1/AC-2/AC-3: (1) an explicit new campaign name creates a row and associates the draft; (2) an explicit existing slug associates without creating a duplicate; (3) a draft submitted with no explicit campaign/batch reference ships unassociated at the backend level (the implicit-fallback reasoning itself is GPT-side per T-003, so this test only verifies the backend's pass-through behavior when no slug is sent).\n\nTest requirements:\n- Add cases to the existing drafts route test file. Use realistic near-duplicate names (\"Lanzamiento 2026\" vs \"Lanzamiento 26\") as fixture data for AC-2's manual/GPT-side verification note in the test comment.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: explicit new name creates + associates",
+                    "completed": false
+                },
+                {
+                    "title": "Test: explicit existing slug associates only",
+                    "completed": false
+                },
+                {
+                    "title": "Test: no explicit slug ships unassociated",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-4", "G-5", "testing", "social"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add date-range filtering to dashboard service",
+            "description": "Extend `GetDashboardInput`/`SocialPostService.getDashboard()` in `packages/service-core/src/services/social/social-post.service.ts` with optional `dateFrom`/`dateTo` fields, filtering the KPI counters, quick-approval queue, and recent-failures queries by that window when provided. No range = current all-time behavior (regression-safe default).\n\nTest requirements:\n- Unit tests: KPI counts change correctly for a bounded range; omitting the range preserves existing unfiltered totals (explicit regression assertion).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Add dateFrom/dateTo to GetDashboardInput",
+                    "completed": false
+                },
+                {
+                    "title": "Apply range filter to KPI/queue/failures queries",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: bounded range",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: no range = unchanged totals",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add per-platform breakdown aggregation to dashboard service",
+            "description": "Add a `platformBreakdown: { platform, count }[]` field to `SocialDashboardData` (`social-post.service.ts`), computed by grouping `social_post_targets` by platform within the (optional) date range from T-005.\n\nTest requirements:\n- Unit tests: breakdown counts sum to the expected total for a fixture set; empty-data case returns an empty array, not an error.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add platformBreakdown to SocialDashboardData",
+                    "completed": false
+                },
+                {
+                    "title": "Implement grouped aggregation query",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: breakdown sums correctly",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire dashboard route + schema for date range and platform breakdown",
+            "description": "Extend the dashboard's request/response Zod schema (additive) with optional `dateFrom`/`dateTo` query params and the `platformBreakdown` response field. Update `apps/api/src/routes/social/admin/dashboard/get.ts` to parse the query params and pass them to `getDashboard()`.\n\nTest requirements:\n- Route test: query params are parsed and forwarded to the service; response includes `platformBreakdown`; omitted params keep current behavior.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-009", "T-010", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Extend dashboard schema (additive)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire get.ts to parse dateFrom/dateTo query params",
+                    "completed": false
+                },
+                {
+                    "title": "Route test: params forwarded + response shape",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "backend", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Ensure admin posts list response exposes thumbnailUrl",
+            "description": "Verify whether `GET /api/v1/admin/social/posts` (`apps/api/src/routes/social/admin/posts/`) already returns a thumbnail URL per post (`social_post_media`). If missing, add it to the list response schema and query (additive). This is the backend prerequisite for the posts-table thumbnail column (T-011).\n\nTest requirements:\n- Route/unit test asserting each list item includes `thumbnailUrl` (string URL or null when no media exists).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Check current admin posts list response shape",
+                    "completed": false
+                },
+                {
+                    "title": "Add thumbnailUrl to list schema/query if missing",
+                    "completed": false
+                },
+                {
+                    "title": "Test: thumbnailUrl present for posts with/without media",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "backend", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add date-range picker to admin dashboard page",
+            "description": "Add a date-range picker control to `apps/admin/src/routes/_authed/social/index.tsx`, wired to the dashboard data-fetching hook so KPIs, quick-approval queue, and recent failures re-fetch with the selected `dateFrom`/`dateTo` from T-007.\n\nTest requirements:\n- Component/route test in `apps/admin/src/routes/_authed/social/__tests__/dashboard.test.tsx`: changing the date range triggers a refetch with the correct query params; default (no range) still renders current totals.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add date-range picker control",
+                    "completed": false
+                },
+                {
+                    "title": "Wire picker state to dashboard query hook",
+                    "completed": false
+                },
+                {
+                    "title": "Test: range change triggers correct refetch",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "frontend", "admin", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add per-platform breakdown chart to dashboard",
+            "description": "Add a per-platform breakdown chart component to the admin social dashboard, reusing the project's existing charting library per the `dataviz` skill conventions, rendering the `platformBreakdown` array from T-007.\n\nTest requirements:\n- Component test: renders one segment/bar per platform with the correct count; renders an empty state when `platformBreakdown` is empty.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Build PlatformBreakdownChart component",
+                    "completed": false
+                },
+                {
+                    "title": "Wire into dashboard index.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Component test: counts + empty state",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "frontend", "admin", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add thumbnail column to social posts table",
+            "description": "Add a thumbnail column to `apps/admin/src/routes/_authed/social/posts/-components/SocialPostsTable.tsx`, reading `thumbnailUrl` from the list response (T-008). Show a fallback placeholder when null.\n\nTest requirements:\n- Component test: thumbnail renders for a post with media; fallback placeholder renders when `thumbnailUrl` is null.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add thumbnail column to SocialPostsTable",
+                    "completed": false
+                },
+                {
+                    "title": "Add fallback placeholder for missing thumbnail",
+                    "completed": false
+                },
+                {
+                    "title": "Component test: both states",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "frontend", "admin", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Verify dashboard AC-4 end-to-end",
+            "description": "Write an integration-level test verifying AC-4: selecting a date range shows correct KPI numbers for that range and a per-platform breakdown that sums to the range total, exercising the service, route, and rendered UI together.\n\nTest requirements:\n- Cross-layer test (service → route → dashboard component) confirming the breakdown-sums-to-total invariant holds for a seeded fixture set across at least two date ranges.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009", "T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed fixture posts/targets across two date windows",
+                    "completed": false
+                },
+                {
+                    "title": "Assert breakdown sums to range total",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-7", "testing", "social"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Scaffold admin compose-social-post page",
+            "description": "⚠ BLOCKED — depends on HOS-65 (Publishing Engine Extension, currently Backlog) shipping the API-side multi-target fan-out contract. Do not start until HOS-65's target-row creation endpoint exists.\n\nScaffold a new admin route (e.g. `apps/admin/src/routes/_authed/social/compose/index.tsx`) for manually authoring a social post: title, caption, pillar — no platform selection yet (that's T-014). No admin composer UI exists today (verified — the only creation path currently is the Custom GPT); this is genuinely new UI surface.\n\nTest requirements:\n- Route test: page renders, base form fields validate required inputs.",
+            "status": "blocked",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Create compose route + base form shell",
+                    "completed": false
+                },
+                {
+                    "title": "Wire base fields (title/caption/pillar) with Zod validation",
+                    "completed": false
+                },
+                {
+                    "title": "Route test: renders + validates required fields",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-8", "frontend", "admin", "social", "blocked-external:HOS-65"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add platform multi-select creating N target rows",
+            "description": "⚠ BLOCKED — depends on HOS-65's API-side multi-target creation contract.\n\nAdd a platform multi-select control to the compose page (T-013). Selecting N platforms and saving must create exactly N `social_post_targets` rows via HOS-65's fan-out endpoint, sharing the base caption by default.\n\nTest requirements:\n- Component test: selecting 3 platforms and saving results in exactly 3 target-creation calls/rows (AC-5 precursor, full AC-5 verified in T-016).",
+            "status": "blocked",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Build platform multi-select control",
+                    "completed": false
+                },
+                {
+                    "title": "Wire save to HOS-65's fan-out create endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Component test: N platforms → N target calls",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-8", "frontend", "admin", "social", "blocked-external:HOS-65"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add per-platform caption override affordance",
+            "description": "⚠ BLOCKED — depends on T-014 (and transitively HOS-65).\n\nAdd a \"customize for this platform\" expand/collapse affordance per selected platform in the compose page, setting that target's `captionOverride` (schema already supports this per SPEC-254 — zero data-model work).\n\nTest requirements:\n- Component test: toggling the affordance for one platform sets only that target's `captionOverride`, leaving others inheriting the base caption.",
+            "status": "blocked",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add expand/collapse caption-override UI per target",
+                    "completed": false
+                },
+                {
+                    "title": "Wire captionOverride to the per-target PATCH",
+                    "completed": false
+                },
+                {
+                    "title": "Component test: override isolated to one target",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-8", "frontend", "admin", "social", "blocked-external:HOS-65"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Verify AC-5 end-to-end",
+            "description": "⚠ BLOCKED — depends on T-014/T-015.\n\nWrite an end-to-end test verifying AC-5: selecting 3 platforms in the composer and saving creates exactly 3 `social_post_targets` rows in the database.\n\nTest requirements:\n- E2E/integration test against a real (test) DB confirming the row count and that caption overrides (if set) persist correctly per target.",
+            "status": "blocked",
+            "complexity": 2,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "E2E test: 3 platforms → 3 target rows",
+                    "completed": false
+                },
+                {
+                    "title": "Assert caption overrides persist per target",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-8", "testing", "social", "blocked-external:HOS-65"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Audit social admin components for inline SVG / direct phosphor imports",
+            "description": "Grep `apps/admin/src/routes/_authed/social/` for inline `<svg>` elements and direct `phosphor-react`/`@phosphor-icons` imports. Produce an exact file+line inventory to drive T-018/T-019 (no code changes in this task).\n\nTest requirements: none (discovery-only task); the inventory is verified by the fix tasks' own tests and the T-020 guard test.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Grep inline <svg usages under routes/_authed/social/",
+                    "completed": false
+                },
+                {
+                    "title": "Grep phosphor-react/@phosphor-icons imports under the same tree",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-9", "cleanup", "social"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Replace icon imports in social posts subtree",
+            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across `apps/admin/src/routes/_authed/social/posts/` (e.g. `SocialPostPlatformIcons.tsx`, `SocialPostStatusBadge.tsx`, `SocialPostApprovalBadge.tsx`, `SocialPostActionBar.tsx`). Pure consumer change — no `@repo/icons` package changes.\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged (icon swap must not alter rendered test-id/role structure); update snapshots only if the icon swap intentionally changes markup.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Swap icons in SocialPostPlatformIcons.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Swap icons in remaining posts/-components files per inventory",
+                    "completed": false
+                },
+                {
+                    "title": "Run existing posts component tests, fix any breakage",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-9", "cleanup", "frontend", "admin", "social"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Replace icon imports in remaining social subtree",
+            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across the rest of `apps/admin/src/routes/_authed/social/` (batches, footers, credentials, settings, campaigns, hashtags, platform-formats, audiences, catalog, dashboard components, `index.tsx`).\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged; update snapshots only if the icon swap intentionally changes markup.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Swap icons across batches/footers/credentials/settings",
+                    "completed": false
+                },
+                {
+                    "title": "Swap icons across campaigns/hashtags/platform-formats/audiences/catalog",
+                    "completed": false
+                },
+                {
+                    "title": "Swap icons in dashboard components + index.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Run existing component tests, fix any breakage",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-9", "cleanup", "frontend", "admin", "social"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add CI guard against inline SVG / direct phosphor imports in social admin",
+            "description": "Add a grep-based guard test (mirroring existing guard-test patterns in the repo) asserting no inline `<svg` or `phosphor-react`/`@phosphor-icons` imports remain under `apps/admin/src/routes/_authed/social/`. Satisfies AC-6.\n\nTest requirements:\n- New guard test file that fails CI if a future PR reintroduces an inline SVG or direct phosphor import in this tree.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write grep-based guard test",
+                    "completed": false
+                },
+                {
+                    "title": "Verify it currently passes post-cleanup",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-9", "testing", "social"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Define public-data-pull response schema",
+            "description": "Add a new additive schema (`@repo/schemas`) for a draft-enrichment public-data-pull endpoint: an array of `{ entityType, id, title, slug, summary, imageUrl }` items. Scope tightly per R-1 (avoid a general-purpose public API aggregator) — this schema covers ONLY the entity shape needed for draft enrichment, not a general public API response.\n\nTest requirements:\n- Schema unit test validating the shape and that `entityType` is constrained to a small explicit enum (start with `ACCOMMODATION`, `DESTINATION`).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Define enrichment item schema + entityType enum",
+                    "completed": false
+                },
+                {
+                    "title": "Schema unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-10", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Implement public-data aggregation service",
+            "description": "Implement an aggregation method (new or on an existing service) that queries a tightly-scoped set of public entities — start with recently-published/featured accommodations and destinations ONLY (per R-1, do not add more entity types speculatively) — shaped per T-021's schema for draft enrichment. Accept an optional free-text query param to narrow results.\n\nTest requirements:\n- Unit tests: returns accommodations + destinations shaped correctly; free-text query narrows results; empty result set handled gracefully (no error).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-023", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Implement aggregation query for accommodations + destinations",
+                    "completed": false
+                },
+                {
+                    "title": "Support optional free-text narrowing param",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: shape, narrowing, empty state",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-10", "backend", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add public-data-pull API route",
+            "description": "Add a new route (`apps/api/src/routes/ai/social/public-data.ts`, following the `createApiKeyRoute` pattern used by `catalog.ts`/`drafts.ts` since it is GPT-consumed for draft enrichment) wiring T-022's service, authenticated the same way as the other `/api/v1/ai/social/*` routes.\n\nTest requirements:\n- Route test: auth (x-hospeda-ai-key) required; successful call returns the expected shape; free-text query param forwarded correctly.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Create public-data.ts route",
+                    "completed": false
+                },
+                {
+                    "title": "Register route under /api/v1/ai/social",
+                    "completed": false
+                },
+                {
+                    "title": "Route test: auth + shape + query param",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-10", "backend", "social"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Verify public-data-pull scoping and auth end-to-end",
+            "description": "Write an integration test confirming the public-data-pull endpoint stays within its scoped entity set (R-1 anti-scope-creep check) and correctly rejects unauthenticated requests.\n\nTest requirements:\n- Integration test asserting only accommodations/destinations are returned (no unexpected entity types) and a missing/invalid API key yields 401.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: only scoped entity types returned",
+                    "completed": false
+                },
+                {
+                    "title": "Test: missing/invalid api key → 401",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-10", "testing", "social"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create /marketing hub landing page",
+            "description": "Create a new admin index route (`apps/admin/src/routes/_authed/marketing/index.tsx`) linking to `/social` and `/newsletter`, matching existing admin layout patterns (the \"Marketing\" sidebar already groups both sections per SPEC-254 — only the landing page itself is missing).\n\nTest requirements:\n- Route test: page renders both links, matches existing layout conventions (reuse an existing hub/index page as the visual reference if one exists elsewhere in admin).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Create marketing/index.tsx route",
+                    "completed": false
+                },
+                {
+                    "title": "Add links to /social and /newsletter",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-11", "frontend", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Verify AC-7 marketing hub route",
+            "description": "Write a route test verifying AC-7: `/marketing` renders and links correctly to both `/social` and `/newsletter` sections.\n\nTest requirements:\n- Route test asserting both links are present and point to the correct paths.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: /marketing renders with both links",
+                    "completed": false
+                }
+            ],
+            "tags": ["G-11", "testing", "admin"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Document campaign/batch resolve-or-create and public-data-pull scope",
+            "description": "Document (in `apps/api/CLAUDE.md` or a relevant `docs/` guide) the new resolve-or-create behavior for campaign/batch slugs (NG-2: matching stays LLM-side, never add backend keyword/hashtag heuristics) and the intentionally narrow scope of the public-data-pull endpoint (R-1: accommodations + destinations only — extend deliberately, not speculatively).\n\nTest requirements: none (documentation-only task).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002", "T-003", "T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document resolve-or-create behavior + NG-2 rationale",
+                    "completed": false
+                },
+                {
+                    "title": "Document public-data-pull scope + R-1 rationale",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "social"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T12:51:33.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 27,
+        "pending": 22,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 4,
+        "averageComplexity": 2.0
+    }
+}
