@@ -705,7 +705,7 @@
             "id": "T-022",
             "title": "Migrate subscription-promo-effect.ts admin diagnostic JOIN",
             "description": "Replace the raw JOIN SELECT (~lines 90-101, joins billing_subscriptions<->billing_promo_codes selecting promo_effect_remaining_cycles/effect_kind/value_kind/duration_cycles/extra_days) with typed db.select({...}).from(billingSubscriptions).innerJoin(billingPromoCodes, ...). Update the stale extras/018-019 JSDoc tags at ~lines 36-48. Verify subscription-promo-effect.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -713,14 +713,24 @@
             "tags": ["billing", "admin", "promo-code"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T14:00:00Z",
+                    "details": "14/14 subscription-promo-effect.test.ts + 421/421 test/routes/billing/ full sweep. NOTE: used leftJoin (not innerJoin as the task description said) -- the original raw SQL was a LEFT JOIN, required so a subscription with no promo code still returns exactly 1 row (null promo columns) instead of 0 rows, which the handler would otherwise misread as 404. Also found+fixed a real gap in the shared test/helpers/mocks/db-mock.ts (global @repo/db automock): billingPromoCodes was not exported at all, and billingSubscriptions was missing promoCodeId/promoEffectRemainingCycles -- added both (additive, verified no regressions across test/routes/billing/)."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:48:00Z",
+                "completed": "2026-07-03T14:00:00Z"
             }
         },
         {
@@ -886,9 +896,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 1.54
     }
