@@ -703,32 +703,32 @@
         {
             "id": "T-021",
             "title": "Define public-data-pull response schema",
-            "description": "Add a new additive schema (`@repo/schemas`) for a draft-enrichment public-data-pull endpoint: an array of `{ entityType, id, title, slug, summary, imageUrl }` items. Scope tightly per R-1 (avoid a general-purpose public API aggregator) \u2014 this schema covers ONLY the entity shape needed for draft enrichment, not a general public API response.\n\nTest requirements:\n- Schema unit test validating the shape and that `entityType` is constrained to a small explicit enum (start with `ACCOMMODATION`, `DESTINATION`).",
-            "status": "pending",
+            "description": "Add a new additive schema (`@repo/schemas`) for a draft-enrichment public-data-pull endpoint: an array of `{ entityType, id, title, slug, summary, imageUrl }` items. Scope tightly per R-1 (avoid a general-purpose public API aggregator) \u2014 this schema covers ONLY the entity shape needed for draft enrichment, not a general public API response.\n\nTest requirements:\n- Schema unit test validating the shape and that `entityType` is constrained to a small explicit enum (start with `ACCOMMODATION`, `DESTINATION`).\n\nDONE (2026-07-03): created `packages/schemas/src/entities/social/social-public-data.http.schema.ts` exporting `SocialPublicDataEntityTypeEnumSchema` (z.enum ACCOMMODATION|DESTINATION), `SocialPublicDataItemSchema` ({entityType, id: uuid, title, slug, summary: nullable, imageUrl: url nullable}) and `SocialPublicDataResponseDataSchema` ({items: []}, object-wrapped like SocialCatalogResponseDataSchema for additive extensibility). Re-exported from the social entity index. 11 unit tests (enum accept/reject out-of-scope EVENT/POST/etc, item shape, nullables, uuid/url/required-title rejection, response list + empty + out-of-scope rejection). Lint + typecheck clean.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "Define enrichment item schema + entityType enum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schema unit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-10", "backend", "social"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:40:00Z",
+                "completed": "2026-07-03T22:46:00Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 4,
         "averageComplexity": 2.0
     }

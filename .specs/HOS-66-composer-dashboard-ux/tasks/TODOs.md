@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 16/27 tasks (59%)
+## Progress: 17/27 tasks (63%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -33,7 +33,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-005
   - Blocks: T-007
 
-- [ ] **T-021** (complexity: 2) - Define public-data-pull response schema
+- [x] **T-021** (complexity: 2) - Define public-data-pull response schema (`social-public-data.http.schema.ts`, 11 tests)
   - Blocked by: none
   - Blocks: T-022
 
