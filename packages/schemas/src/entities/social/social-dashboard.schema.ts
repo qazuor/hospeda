@@ -76,8 +76,9 @@ export const SocialDashboardResponseSchema = z.object({
      */
     recentFailures: z.array(SocialDashboardFailureItemSchema),
     /**
-     * Whether a Make webhook URL is configured in social_settings.
-     * True when the `make_webhook_url` key has a non-empty string value.
+     * Whether a Make webhook URL is configured in the social credential vault.
+     * True when the `make_webhook_url` vault credential resolves to a
+     * non-empty plaintext value (HOS-64 — getDashboard vault migration).
      */
     makeWebhookConfigured: z.boolean()
 });

@@ -37,13 +37,20 @@ You reach the plans page from the admin sidebar under **Comercial → Planes**.
 | **Entitlements** | The list of features the plan unlocks (checkbox list in the form). | Yes |
 | **Limits** | Numeric caps per feature (e.g. max accommodations), keyed by name. | Yes |
 | **Trial** | Whether the plan offers a trial and for how many days (trials are HOST-only — see ADR-009). | Yes |
-| **Default** | Marks the plan assigned by default for its role tier. Only one default per tier. | Yes |
+| **Default** | Marks the plan assigned by default for its role tier. Only one default per tier. | **No — set at creation only.** Changing which plan is the tier default is a structural/config decision, not an operator edit; it is not exposed on the edit form. |
 | **Sort order** | Controls the order plans appear in on the pricing pages and lists. | Yes |
 | **Active** | Whether the plan is offered. Inactive plans disappear from the public pricing pages but existing subscriptions keep working. | Yes |
 
 > **Money is always integer centavos.** A price of ARS 4 990 is stored as
 > `499000`, never `4990` and never `4990.00`. The form handles the conversion —
 > just be aware of the unit when reading the audit log or the database directly.
+>
+> **Your edits survive the next deploy.** Every field marked "Yes" above is
+> yours to keep changed — a code deploy or a re-seed never reverts it. (There
+> was a brief window, fixed under HOS-39, where **Entitlements**, **Trial**,
+> and **Sort order** looked editable in this panel but were silently reset to
+> the code default on the next deploy. That is fixed: those three fields now
+> behave the same as price and description always did.)
 
 ---
 
@@ -160,3 +167,6 @@ hard-delete is guarded and discouraged.
 - [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md)
 - [Billing Package](../../packages/billing/CLAUDE.md)
 - SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
+- HOS-39: `.specs/HOS-39-plans-limits-entitlements-editable/spec.md` — narrowed
+  the Model C admin-editable field policy (entitlements/trial/sort-order
+  edits now persist; `category`/`isDefault` are not admin-editable)

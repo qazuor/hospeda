@@ -143,8 +143,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * hard-cut-removes the now-obsolete HOSPEDA_MERCADOLIBRE_TOKEN static
  * access-token credential (integrations category, -1), since the OAuth
  * flow fully replaces it with no deprecation period (248 - 1 = 247).
+ *
+ * 248 (2026-07-03, HOS-64 G-4): +1 HOSPEDA_SOCIAL_VAULT_MASTER_KEY
+ * (social-automation category), registered off the same 247 base ahead of
+ * the HOS-45 merge above, for the social credential vault's AES-256-GCM
+ * master key. Surfaced as CI drift only when this long-lived branch merged
+ * staging afterward (247 + 1 = 248).
  */
-const EXPECTED_VAR_COUNT = 247;
+const EXPECTED_VAR_COUNT = 248;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

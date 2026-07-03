@@ -226,6 +226,7 @@ export function PlanDialog({
                                                     value as 'owner' | 'complex' | 'tourist'
                                                 )
                                             }
+                                            disabled={!!plan}
                                         >
                                             <SelectTrigger id="plan-category">
                                                 <SelectValue />
@@ -567,6 +568,7 @@ export function PlanDialog({
                                                 id="plan-is-default"
                                                 checked={field.state.value}
                                                 onCheckedChange={field.handleChange}
+                                                disabled={!!plan}
                                             />
                                         </div>
                                     )}

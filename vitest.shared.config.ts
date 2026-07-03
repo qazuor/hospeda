@@ -16,9 +16,12 @@
  *   Leaves 4 cores for the OS, IDE, and turbo orchestration overhead.
  *
  * On CI (GitHub-hosted ubuntu-latest, one VM per shard) the machine-safety
- * constraint does not apply — each shard runs in isolation. CI sets
- * VITEST_MAX_FORKS=4 to get more throughput per shard without risking any
- * shared machine. See .github/workflows/ci.yml test-unit job env block.
+ * constraint does not apply the same way — each shard runs in isolation —
+ * but a single heavy test file can still exhaust one runner's RAM. CI sets
+ * VITEST_MAX_FORKS=1 (lowered from 2, see .github/workflows/ci.yml test-unit
+ * job env block) after apps/admin's test suite OOM-crashed in native V8
+ * memory (RegExpCompiler Zone allocator) from accumulated native allocations
+ * across many sequential test files reused within the same forked worker.
  *
  * To override locally (e.g. on a beefier machine):
  *   VITEST_MAX_FORKS=6 pnpm test
@@ -80,12 +83,23 @@ export const sharedTestConfig = {
             forks: {
                 /**
                  * Env-driven fork count. Default 3 locally (safe for 16c machine).
-                 * CI overrides to 4 via VITEST_MAX_FORKS env var in ci.yml.
+                 * CI overrides to 1 via VITEST_MAX_FORKS env var in ci.yml (see
+                 * that file's test-unit job comment for the OOM incident history).
                  *
                  * Combined with turbo concurrency 4, local peak = 4 × 3 = 12 forks.
-                 * CI peak per shard = 1 package at a time × 4 forks = 4 forks.
+                 * CI peak per shard = 1 package at a time × 1 fork.
                  */
-                maxForks: resolveMaxForks()
+                maxForks: resolveMaxForks(),
+                /**
+                 * Extra V8 heap headroom per forked worker. Raised after
+                 * apps/admin's test suite OOM-crashed in native V8 memory
+                 * (RegExpCompiler Zone allocator) on CI's default ubuntu-latest
+                 * runner after accumulating ~45 sequential test files reused
+                 * within the same forked process. Node's default old-space size
+                 * on a 7GB CI runner is conservative; this gives more slack
+                 * without changing test behavior.
+                 */
+                execArgv: ['--max-old-space-size=4096']
             }
         }
     }

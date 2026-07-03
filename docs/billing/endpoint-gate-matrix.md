@@ -798,6 +798,11 @@
 | `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/credentials` | `social/admin/credentials/list.ts` | none | - | n/a | Admin-only social credential vault route (HOS-64 G-4); auth + SOCIAL_SETTINGS_MANAGE permission gated, no entitlement gate |
+| `POST /api/v1/admin/social/credentials` | `social/admin/credentials/create.ts` | none | - | n/a | Admin-only social credential vault route (HOS-64 G-4); auth + SOCIAL_SETTINGS_MANAGE permission gated, no entitlement gate |
+| `POST /api/v1/admin/social/credentials/{key}/rotate` | `social/admin/credentials/rotate.ts` | none | - | n/a | Admin-only social credential vault route (HOS-64 G-4); auth + SOCIAL_SETTINGS_MANAGE permission gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/credentials/{key}` | `social/admin/credentials/update.ts` | none | - | n/a | Admin-only social credential vault route (HOS-64 G-4); auth + SOCIAL_SETTINGS_MANAGE permission gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/credentials/{key}` | `social/admin/credentials/delete.ts` | none | - | n/a | Admin-only social credential vault route (HOS-64 G-4); auth + SOCIAL_SETTINGS_MANAGE permission gated, no entitlement gate |
 | `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `GET /api/v1/admin/partners/plans` | `partners/admin/list-plans.ts` | none | - | n/a | Admin plan lookup for partner billing setup; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners` | `partners/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |

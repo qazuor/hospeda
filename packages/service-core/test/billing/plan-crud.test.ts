@@ -83,6 +83,7 @@ vi.mock('../../src/services/billing/plan/plan.audit.js', () => ({
 
 // ─── Imports (after mocks) ─────────────────────────────────────────────────
 
+import { MODEL_C_FIELD_SPLIT } from '@repo/billing';
 import {
     createPlan,
     getPlanById,
@@ -695,6 +696,32 @@ describe('plan.crud', () => {
             expect(mockWithTransaction).not.toHaveBeenCalled();
         });
 
+        it('HOS-39 T-003: writes displayName/monthlyPriceArs/annualPriceArs to the typed columns', async () => {
+            // Arrange
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                    return fn(insertedDb);
+                }
+            );
+
+            // Act
+            await createPlan(baseInput);
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            expect(insertChain?.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    displayName: baseInput.name,
+                    monthlyPriceArs: baseInput.monthlyPriceArs,
+                    annualPriceArs: baseInput.annualPriceArs
+                })
+            );
+        });
+
         it('should return ALREADY_EXISTS when slug is duplicate', async () => {
             // Arrange
             mockWithTransaction.mockImplementation(
@@ -862,6 +889,132 @@ describe('plan.crud', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
+        });
+
+        it('HOS-39 T-004: dual-writes displayName/monthlyPriceArs/annualPriceArs to the typed columns', async () => {
+            // Arrange
+            const existingPlan = makePlanRow();
+            const updatedPlan = makePlanRow();
+            const existingMonthlyPrice = makePriceRow({ id: 'price-monthly-1' });
+            const existingAnnualPrice = makePriceRow({
+                id: 'price-annual-1',
+                billingInterval: 'year'
+            });
+            const priceRow = makePriceRow();
+            let updatedDb: ReturnType<typeof buildMockDb> | undefined;
+
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    updatedDb = buildMockDb(
+                        [
+                            [existingPlan], // getPlanByIdInternal
+                            [existingMonthlyPrice], // monthly price lookup
+                            [existingAnnualPrice], // annual price lookup
+                            [priceRow] // final price fetch
+                        ],
+                        [],
+                        [[updatedPlan], [], []] // plan update / monthly update / annual update
+                    );
+                    return fn(updatedDb);
+                }
+            );
+
+            // Act
+            await updatePlan('plan-uuid-1', {
+                name: 'New Display Name',
+                monthlyPriceArs: 700000,
+                annualPriceArs: 7000000
+            });
+
+            // Assert — the FIRST update() call is the billingPlans row update
+            const planUpdateChain = updatedDb?.update.mock.results[0]?.value;
+            expect(planUpdateChain?.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    displayName: 'New Display Name',
+                    monthlyPriceArs: 700000,
+                    annualPriceArs: 7000000
+                })
+            );
+        });
+
+        // All fields UpdatePlanInput currently maps to are commercial-layer
+        // (post T-024), so there is no REAL capability field left to trigger the
+        // guard through today's classification. These two tests simulate a
+        // future regression by temporarily flipping a mapped field's live
+        // classification (MODEL_C_FIELD_SPLIT is a plain object at runtime, not
+        // frozen) — proving the guard's WIRING works for whatever the
+        // classification says, not just today's values. Always restored in a
+        // `finally` so no other test in this file observes the flip.
+        it('HOS-39 T-027: rejects a mapped field with VALIDATION_ERROR if it were still capability', async () => {
+            const existingPlan = makePlanRow();
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([[existingPlan]]);
+                    return fn(db);
+                }
+            );
+
+            const original = MODEL_C_FIELD_SPLIT.entitlements;
+            (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
+            try {
+                const result = await updatePlan('plan-uuid-1', { entitlements: ['ai_chat'] });
+
+                expect(result.success).toBe(false);
+                if (result.success) return;
+                expect(result.error.code).toBe('VALIDATION_ERROR');
+            } finally {
+                (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = original;
+            }
+        });
+
+        it('HOS-39 T-027: rejects update BEFORE touching the DB when a capability field is present', async () => {
+            // The guard must run before any DB read/write — no partial side effects.
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([]);
+                    return fn(db);
+                }
+            );
+
+            const original = MODEL_C_FIELD_SPLIT.entitlements;
+            (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
+            try {
+                await updatePlan('plan-uuid-1', { entitlements: ['ai_chat'] });
+
+                expect(mockWithTransaction).not.toHaveBeenCalled();
+            } finally {
+                (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = original;
+            }
+        });
+
+        it('HOS-39 T-027: allows all current commercial-layer fields through in one update', async () => {
+            // Every field UpdatePlanInput currently exposes is commercial-layer
+            // post T-024 (entitlements/sortOrder/hasTrial/trialDays reclassified)
+            // — none of them should trip the guard.
+            const existingPlan = makePlanRow();
+            const updatedPlan = makePlanRow();
+            const priceRow = makePriceRow();
+
+            mockWithTransaction.mockImplementation(
+                async (fn: (db: unknown) => Promise<unknown>) => {
+                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan], []]);
+                    return fn(db);
+                }
+            );
+
+            const result = await updatePlan('plan-uuid-1', {
+                name: 'New Display Name',
+                description: 'New description',
+                monthlyPriceArs: 700000,
+                hasTrial: true,
+                trialDays: 7,
+                sortOrder: 5,
+                entitlements: ['ai_chat'],
+                limits: { max_ai_chat_per_month: 30 },
+                isActive: true
+            });
+
+            expect(result.success).toBe(true);
         });
 
         it('should update monthly price when monthlyPriceArs is provided', async () => {

@@ -370,14 +370,16 @@ export interface ApiKeyRouteOptions extends CreateOpenApiRouteInterface {
      * API-key middleware configuration.
      *
      * - headerName: header the caller sends the key in (e.g. 'x-hospeda-ai-key')
-     * - getExpectedKey: function returning the expected key from env (called per request)
+     * - getExpectedKey: function returning the expected key from env or an
+     *   async vault decrypt (called per request; may return a Promise)
      * - actor: stable machine identity to inject into context on auth success
      *
      * @example
      * ```typescript
      * apiKeyConfig: {
      *   headerName: 'x-hospeda-ai-key',
-     *   getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+     *   getExpectedKey: async () =>
+     *     (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
      *   actor: { id: 'gpt-action', name: 'Custom GPT Social Action' },
      * }
      * ```
@@ -424,7 +426,8 @@ export interface ApiKeyListRouteOptions extends CreateOpenApiRouteInterface {
  *   tags: ['AI - Social'],
  *   apiKeyConfig: {
  *     headerName: 'x-hospeda-ai-key',
- *     getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+ *     getExpectedKey: async () =>
+ *       (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
  *     actor: { id: 'gpt-action', name: 'Custom GPT Social Action' },
  *   },
  *   requestBody: DraftPostSchema,

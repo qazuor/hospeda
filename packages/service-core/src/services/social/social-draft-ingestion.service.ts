@@ -45,7 +45,8 @@ import type {
     SocialPostFooterModel,
     SocialPostHashtagModel,
     SocialPostModel,
-    SocialPostTargetModel
+    SocialPostTargetModel,
+    SocialSettingModel
 } from '@repo/db';
 import {
     SocialAiRequestModel as RealSocialAiRequestModel,
@@ -58,16 +59,47 @@ import {
     SocialPostFooterModel as RealSocialPostFooterModel,
     SocialPostHashtagModel as RealSocialPostHashtagModel,
     SocialPostModel as RealSocialPostModel,
-    SocialPostTargetModel as RealSocialPostTargetModel
+    SocialPostTargetModel as RealSocialPostTargetModel,
+    SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
-import { SocialApprovalStatusEnum, SocialPostStatusEnum, SocialSourceEnum } from '@repo/schemas';
+import {
+    SocialApprovalStatusEnum,
+    SocialPlatformEnum,
+    SocialPostStatusEnum,
+    SocialSourceEnum
+} from '@repo/schemas';
 import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ServiceConfig } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
+import type {
+    HashtagCountsByPlatform,
+    HashtagLimitViolation,
+    MaxHashtagsByPlatform
+} from './social-hashtag-limit.util';
+import { checkHashtagLimits } from './social-hashtag-limit.util';
 import type { GptImagePayload } from './social-image-pipeline.service';
 import type { SocialImagePipelineService } from './social-image-pipeline.service';
 import { normalizeHashtag } from './social.helpers';
+
+// ---------------------------------------------------------------------------
+// max_hashtags_<platform> setting keys + fallback defaults.
+// Mirrors the constants in apps/api/src/routes/ai/social/catalog.ts (the GPT
+// is advised these same numbers) — kept in sync manually since the settings
+// table has no schema to enforce it centrally.
+// ---------------------------------------------------------------------------
+
+const HASHTAG_LIMIT_SETTING_KEYS = {
+    [SocialPlatformEnum.INSTAGRAM]: 'max_hashtags_instagram',
+    [SocialPlatformEnum.FACEBOOK]: 'max_hashtags_facebook',
+    [SocialPlatformEnum.X]: 'max_hashtags_x'
+} as const satisfies Record<SocialPlatformEnum, string>;
+
+const DEFAULT_MAX_HASHTAGS: Record<SocialPlatformEnum, number> = {
+    [SocialPlatformEnum.INSTAGRAM]: 30,
+    [SocialPlatformEnum.FACEBOOK]: 10,
+    [SocialPlatformEnum.X]: 5
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +109,12 @@ import { normalizeHashtag } from './social.helpers';
  * Discriminated result codes for the ingestion pipeline.
  * The route maps each to the appropriate HTTP status.
  */
-export type IngestionResultCode = 'SUCCESS' | 'CONFLICT' | 'ZERO_VALID_TARGETS' | 'INTERNAL_ERROR';
+export type IngestionResultCode =
+    | 'SUCCESS'
+    | 'CONFLICT'
+    | 'ZERO_VALID_TARGETS'
+    | 'HASHTAG_LIMIT_EXCEEDED'
+    | 'INTERNAL_ERROR';
 
 /**
  * Successful ingestion data payload.
@@ -114,6 +151,13 @@ export type IngestionResult =
           readonly error: {
               readonly message: string;
               readonly warnings: readonly SocialDraftWarning[];
+          };
+      }
+    | {
+          readonly code: 'HASHTAG_LIMIT_EXCEEDED';
+          readonly error: {
+              readonly message: string;
+              readonly violations: readonly HashtagLimitViolation[];
           };
       }
     | {
@@ -170,6 +214,7 @@ export class SocialDraftIngestionService {
     private readonly audienceModel: SocialAudienceModel;
     private readonly footerModel: SocialPostFooterModel;
     private readonly hashtagSetModel: SocialHashtagSetModel;
+    private readonly settingModel: SocialSettingModel;
     private readonly imagePipeline: SocialImagePipelineService | null;
 
     constructor(
@@ -185,7 +230,8 @@ export class SocialDraftIngestionService {
         batchModel?: SocialContentBatchModel,
         audienceModel?: SocialAudienceModel,
         footerModel?: SocialPostFooterModel,
-        hashtagSetModel?: SocialHashtagSetModel
+        hashtagSetModel?: SocialHashtagSetModel,
+        settingModel?: SocialSettingModel
     ) {
         this.postModel = postModel ?? new RealSocialPostModel();
         this.postTargetModel = postTargetModel ?? new RealSocialPostTargetModel();
@@ -198,6 +244,7 @@ export class SocialDraftIngestionService {
         this.audienceModel = audienceModel ?? new RealSocialAudienceModel();
         this.footerModel = footerModel ?? new RealSocialPostFooterModel();
         this.hashtagSetModel = hashtagSetModel ?? new RealSocialHashtagSetModel();
+        this.settingModel = settingModel ?? new RealSocialSettingModel();
         this.imagePipeline = imagePipeline ?? null;
     }
 
@@ -311,6 +358,57 @@ export class SocialDraftIngestionService {
                     error: {
                         message: 'No valid platform/format targets found in the payload',
                         warnings
+                    }
+                };
+            }
+
+            // ----------------------------------------------------------------
+            // Step 3b: Hashtag limit enforcement (HOS-64 / SPEC-297a G-1)
+            // ----------------------------------------------------------------
+            // The same hashtag set is posted to every target platform, so the
+            // draft's TOTAL hashtag count (curated + custom suggestions — both
+            // represent hashtags the GPT intends to attach, regardless of
+            // whether they matched the curated catalog) is checked against
+            // EACH target platform's configured max. A draft targeting both
+            // Instagram (max 30) and X (max 5) with 10 hashtags is rejected for
+            // exceeding X's limit even though it is fine for Instagram.
+            const totalHashtagCount =
+                (payload.curatedHashtags?.length ?? 0) +
+                (payload.customHashtagSuggestions?.length ?? 0);
+
+            const settingsResult = await this.settingModel.findAll({}, { pageSize: 50 });
+            const settingsMap = new Map<string, string>(
+                settingsResult.items.map((s) => [s.key as string, s.value as string])
+            );
+
+            const maxByPlatform: MaxHashtagsByPlatform = {
+                [SocialPlatformEnum.INSTAGRAM]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.INSTAGRAM]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.INSTAGRAM]
+                ),
+                [SocialPlatformEnum.FACEBOOK]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.FACEBOOK]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.FACEBOOK]
+                ),
+                [SocialPlatformEnum.X]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.X]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.X]
+                )
+            };
+
+            const countsByPlatform: HashtagCountsByPlatform = {};
+            for (const target of validTargets) {
+                countsByPlatform[target.platform as SocialPlatformEnum] = totalHashtagCount;
+            }
+
+            const hashtagLimitCheck = checkHashtagLimits({ countsByPlatform, maxByPlatform });
+            if (!hashtagLimitCheck.ok) {
+                return {
+                    code: 'HASHTAG_LIMIT_EXCEEDED',
+                    error: {
+                        message:
+                            'Draft exceeds the configured hashtag limit for one or more target platforms',
+                        violations: hashtagLimitCheck.violations
                     }
                 };
             }

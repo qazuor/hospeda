@@ -85,11 +85,11 @@ vi.mock('../../../../src/utils/route-factory-tiered', () => ({
     })
 }));
 
-// Needed because catalog.ts imports env
-vi.mock('../../../../src/utils/env', () => ({
-    env: {
-        HOSPEDA_AI_SOCIAL_KEY: 'test-secret-key'
-    }
+// Needed because catalog.ts imports getDecryptedSocialCredential (HOS-64 T-023)
+vi.mock('../../../../src/services/social-credential-vault.service.js', () => ({
+    getDecryptedSocialCredential: vi.fn().mockResolvedValue({
+        data: { key: 'ai_social_key', plaintext: 'test-secret-key' }
+    })
 }));
 
 // ---------------------------------------------------------------------------

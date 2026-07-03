@@ -28,7 +28,7 @@ import {
     socialSettingModel
 } from '@repo/db';
 import { type CatalogDefaults, SocialCatalogResponseDataSchema } from '@repo/schemas';
-import { env } from '../../../utils/env';
+import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,8 @@ export const socialCatalogRoute = createApiKeyRoute({
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
-        getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+        getExpectedKey: async () =>
+            (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
         actor: { id: 'gpt-action', name: 'Custom GPT Social Action' }
     },
     responseSchema: SocialCatalogResponseDataSchema,

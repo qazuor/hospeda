@@ -87,6 +87,18 @@ export default defineConfig({
         port: Number(process.env.PORT) || 4321,
         host: process.env.HOST || undefined
     },
+    build: {
+        // GAP-30-01 root cause: Astro's default 'auto' inlines small
+        // component stylesheets as <style nonce="..."> in the HTML. The
+        // nonce is generated per-request, but `<ClientRouter />` soft
+        // navigation swaps the DOM without a real top-level navigation, so
+        // the browser's already-active CSP (pinned to the nonce from the
+        // ORIGINAL page load) rejects every inlined <style> the swap-in
+        // page carries. Forcing all stylesheets to external hashed files
+        // routes them through `style-src 'self'` instead of the nonce
+        // source, which is unaffected by the frozen-nonce/soft-nav gap.
+        inlineStylesheets: 'never'
+    },
     image: {
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
         // the runtime SSRF guard `isAllowedRemoteHost()` in src/lib/media.ts).

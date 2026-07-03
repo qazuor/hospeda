@@ -293,7 +293,7 @@ jobs:
         run: pnpm typecheck
 
   # ------------------------------------------------------------------
-  # Unit tests with coverage. Sharded 4-way using vitest --shard=N/M.
+  # Unit tests with coverage. Sharded 5-way using vitest --shard=N/M.
   # Each shard runs all packages but processes only its slice of test
   # files, then uploads coverage as a per-shard artifact. The
   # coverage-check job downloads all shards and merges them per package
@@ -301,7 +301,7 @@ jobs:
   # consumes built artifacts. ~5 min per shard (was ~21 min single).
   # ------------------------------------------------------------------
   test-unit:
-    name: Unit Tests (shard ${{ matrix.shard }}/4)
+    name: Unit Tests (shard ${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
     # instead of rebuilding. Originally calibrated at 13-15 min/shard (PR
@@ -316,20 +316,33 @@ jobs:
     # suites) rather than just raising the cap again.
     timeout-minutes: 30
     needs: build
-    # Fork count on CI. The previous value (4) assumed each shard runs in an
-    # isolated VM, but PRs run on the self-hosted `leo-laptop` runner where all
-    # forks share the host's RAM. A memory-heavy test (the 5001-row bulk-import
-    # validation in content-moderation) OOM-killed a fork under 4-way
-    # concurrency, failing shard 1 with no vitest FAIL marker (died ~5 min into
-    # a 30 min cap, so not a timeout). Lowered to 2 to halve peak memory; the
-    # shards finish in ~5-8 min, well under the cap, so the lost parallelism is
-    # safe. See docs/guides/test-performance.md for the full rationale.
+    # Fork count on CI. Repo is public now, so every shard runs on its own
+    # isolated ubuntu-latest VM (no shared-host-RAM concern from the old
+    # self-hosted leo-laptop era, see file-level comment above). Even so,
+    # apps/admin's shard 4/4 (under the previous 4-way split) OOM-crashed 3x
+    # in a row in native V8 memory (RegExpCompiler Zone allocator, NOT the JS
+    # heap — confirmed via --logHeapUsage staying flat at 330-500MB) after
+    # accumulating ~45 sequential test files in the same reused forked
+    # worker process, tipping over on a memory-heavy real-interaction test
+    # (userEvent + Radix Select portal in PromoCodeFormDialog.test.tsx).
+    # Bisected against every dependency bumped in dependabot PR #2019 (react,
+    # radix-ui, tailwind-merge/tailwindcss, sentry, tanstack-table/virtual,
+    # driver.js, posthog-js) with none isolating as the sole cause — this is
+    # a structural test-runner memory ceiling, not a specific package
+    # regression. Splitting 4-way -> 5-way (2026-07-03) lowers the average
+    # files-per-shard so fewer forks accumulate anywhere near the ~45-file
+    # danger zone; VITEST_MAX_FORKS lowered 2 -> 1 removes fork-vs-fork
+    # concurrent memory competition entirely within a shard; execArgv in
+    # vitest.shared.config.ts raises --max-old-space-size for more headroom.
+    # This mitigates likelihood, it does not eliminate the underlying
+    # accumulation — if it resurfaces as the suite grows, rebalance again or
+    # tune worker recycling instead of just adding another shard.
     env:
-      VITEST_MAX_FORKS: 2
+      VITEST_MAX_FORKS: 1
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -349,10 +362,10 @@ jobs:
       # (~4 min per shard). With `VITEST_SHARD` in the key the build
       # warm-up from the previous step stays warm and the test step
       # starts immediately.
-      - name: Run tests with coverage (shard ${{ matrix.shard }}/4)
+      - name: Run tests with coverage (shard ${{ matrix.shard }}/5)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          VITEST_SHARD: ${{ matrix.shard }}/4
+          VITEST_SHARD: ${{ matrix.shard }}/5
         # --passWithNoTests is NOT injected from CI here — every package's
         # `test` / `test:coverage` script in its own package.json already
         # includes it. vitest 3.2.4+ rejects duplicated flags with
@@ -366,22 +379,22 @@ jobs:
         # against the merged coverage from all shards.
         run: |
           pnpm turbo run test:coverage --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/4 \
+            --shard=${{ matrix.shard }}/5 \
             --coverage.thresholds.lines=0 \
             --coverage.thresholds.functions=0 \
             --coverage.thresholds.branches=0 \
             --coverage.thresholds.statements=0
-      - name: Run tests without coverage (shard ${{ matrix.shard }}/4)
+      - name: Run tests without coverage (shard ${{ matrix.shard }}/5)
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         env:
-          VITEST_SHARD: ${{ matrix.shard }}/4
+          VITEST_SHARD: ${{ matrix.shard }}/5
         # Cheaper run for PRs and pushes to staging. No coverage artifact
         # produced, so coverage-check is skipped (and accepted by ci-pass).
         # See coverage variant above for why --passWithNoTests is NOT
         # injected here from CI.
         run: |
           pnpm turbo run test --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/4
+            --shard=${{ matrix.shard }}/5
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v7
