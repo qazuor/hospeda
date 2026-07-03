@@ -47,35 +47,35 @@
             "id": "T-002",
             "title": "Echo campaign/batch resolution outcome in draft response",
             "description": "Extend `CreateSocialDraftResponseSchema` (`packages/schemas/src/entities/social/social-draft.http.schema.ts`, additive-only per the schema-compat policy) with optional `campaignResolution`/`batchResolution: { id, slug, isNew } | null` fields. Wire `SocialDraftIngestionService.ingestDraft` to populate them from T-001's helper output so the GPT/operator can confirm whether a new campaign/batch was created.\n\nTest requirements:\n- Schema unit test: new fields parse as optional, absent = backward compatible with existing historic fixtures.\n- Ingestion service test: response includes correct `isNew` value for both existing-slug and new-slug cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
                 {
                     "title": "Add campaignResolution/batchResolution to response schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Populate fields in ingestDraft from T-001 helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schema compat test against historic fixtures",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-4", "G-5", "backend", "social"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:48:56Z",
+                "completed": "2026-07-03T13:55:10Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 4,
         "averageComplexity": 2.0
     }

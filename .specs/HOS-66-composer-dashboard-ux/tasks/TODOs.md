@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 1/27 tasks (4%)
+## Progress: 2/27 tasks (7%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -21,7 +21,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: none
   - Blocks: T-002, T-004
 
-- [ ] **T-002** (complexity: 2) - Echo campaign/batch resolution outcome in draft response
+- [x] **T-002** (complexity: 2) - Echo campaign/batch resolution outcome in draft response
   - Blocked by: T-001
   - Blocks: T-003, T-004
 
