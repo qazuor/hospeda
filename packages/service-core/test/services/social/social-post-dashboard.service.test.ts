@@ -6,9 +6,9 @@
  * - KPI counts: totalPosts, pendingReview, scheduled, publishedLast30Days (de-duped), failedActionNeeded
  * - quickApprovalQueue: limited to 10, sorted asc, each item has platforms + thumbnailUrl
  * - recentFailures: sourced from social_post_targets with FAILED status; postTitle resolved
- * - makeWebhookConfigured: true when setting value is a non-empty string
- * - makeWebhookConfigured: false when setting is missing
- * - makeWebhookConfigured: false when setting value is empty/whitespace string
+ * - makeWebhookConfigured: passes through the caller-supplied input flag unchanged
+ *   (resolved from the social credential vault by the caller — HOS-64 T-024/T-036;
+ *   service-core no longer reads social_settings for this).
  *
  * SPEC-254 T-037.
  */
@@ -48,6 +48,16 @@ function buildActor(hasView: boolean): Actor {
     };
 }
 
+/**
+ * getDashboard requires `makeWebhookConfigured` as caller-supplied input
+ * (HOS-64 T-024/T-036 — resolved from the vault by the apps/api route, not
+ * read from social_settings here). Tests that don't care about this flag
+ * default to `false`.
+ */
+function buildInput(actor: Actor, makeWebhookConfigured = false) {
+    return { actor, makeWebhookConfigured };
+}
+
 // ---------------------------------------------------------------------------
 // Default empty model responses
 // ---------------------------------------------------------------------------
@@ -63,7 +73,6 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
     let targetModelMock: ReturnType<typeof createModelMock>;
     let mediaModelMock: ReturnType<typeof createModelMock>;
     let publishLogModelMock: ReturnType<typeof createModelMock>;
-    let settingModelMock: ReturnType<typeof createModelMock>;
     let assetModelMock: ReturnType<typeof createModelMock>;
     let auditLogMock: SocialAuditLogService;
     let service: SocialPostService;
@@ -74,7 +83,6 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
         targetModelMock = createModelMock();
         mediaModelMock = createModelMock();
         publishLogModelMock = createModelMock();
-        settingModelMock = createModelMock();
         assetModelMock = createModelMock();
 
         auditLogMock = {
@@ -92,8 +100,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             undefined,
             undefined,
             assetModelMock as never,
-            publishLogModelMock as never,
-            settingModelMock as never
+            publishLogModelMock as never
         );
 
         // Defaults: all model calls return empty lists / null
@@ -102,7 +109,6 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
         targetModelMock.findAll.mockResolvedValue(EMPTY_LIST);
         mediaModelMock.findAll.mockResolvedValue(EMPTY_LIST);
         publishLogModelMock.findAll.mockResolvedValue(EMPTY_LIST);
-        settingModelMock.findOne.mockResolvedValue(null);
         assetModelMock.findOne.mockResolvedValue(null);
     });
 
@@ -116,7 +122,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             const actor = buildActor(false);
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -140,7 +146,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.error).toBeUndefined();
@@ -170,7 +176,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             );
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.pendingReview).toBe(7);
@@ -193,7 +199,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.scheduled).toBe(3);
@@ -217,7 +223,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.publishedLast30Days).toBe(1);
@@ -235,7 +241,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.publishedLast30Days).toBe(2);
@@ -247,7 +253,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             publishLogModelMock.findAll.mockResolvedValue(EMPTY_LIST);
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.publishedLast30Days).toBe(0);
@@ -270,7 +276,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.kpis.failedActionNeeded).toBe(5);
@@ -314,7 +320,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.quickApprovalQueue).toHaveLength(1);
@@ -357,7 +363,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.quickApprovalQueue[0]?.thumbnailUrl).toBe(
@@ -397,7 +403,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             postModelMock.findOne.mockResolvedValue({ id: POST_ID_1, title: 'My Post' });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.recentFailures).toHaveLength(1);
@@ -438,7 +444,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             postModelMock.findOne.mockResolvedValue(null);
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.recentFailures[0]?.postTitle).toBe('Unknown');
@@ -472,7 +478,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             );
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.data?.recentFailures[0]?.lastError).toBeNull();
@@ -484,52 +490,23 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
     // -------------------------------------------------------------------------
 
     describe('makeWebhookConfigured', () => {
-        it('returns true when make_webhook_url has a valid non-empty value', async () => {
+        it('passes through true when the caller resolves the vault credential as configured', async () => {
             // Arrange
             const actor = buildActor(true);
-            settingModelMock.findOne.mockResolvedValue({
-                key: 'make_webhook_url',
-                value: 'https://hook.make.com/xyz'
-            });
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor, true));
 
             // Assert
             expect(result.data?.makeWebhookConfigured).toBe(true);
         });
 
-        it('returns false when make_webhook_url setting row is absent (null)', async () => {
+        it('passes through false when the caller resolves the vault credential as unconfigured', async () => {
             // Arrange
             const actor = buildActor(true);
-            settingModelMock.findOne.mockResolvedValue(null);
 
             // Act
-            const result = await service.getDashboard({ actor });
-
-            // Assert
-            expect(result.data?.makeWebhookConfigured).toBe(false);
-        });
-
-        it('returns false when make_webhook_url value is whitespace-only', async () => {
-            // Arrange
-            const actor = buildActor(true);
-            settingModelMock.findOne.mockResolvedValue({ key: 'make_webhook_url', value: '   ' });
-
-            // Act
-            const result = await service.getDashboard({ actor });
-
-            // Assert
-            expect(result.data?.makeWebhookConfigured).toBe(false);
-        });
-
-        it('returns false when make_webhook_url value is an empty string', async () => {
-            // Arrange
-            const actor = buildActor(true);
-            settingModelMock.findOne.mockResolvedValue({ key: 'make_webhook_url', value: '' });
-
-            // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor, false));
 
             // Assert
             expect(result.data?.makeWebhookConfigured).toBe(false);
@@ -546,7 +523,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             const actor = buildActor(true);
 
             // Act
-            const result = await service.getDashboard({ actor });
+            const result = await service.getDashboard(buildInput(actor));
 
             // Assert
             expect(result.error).toBeUndefined();

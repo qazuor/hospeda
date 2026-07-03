@@ -8,6 +8,7 @@
 import { PermissionEnum, SocialDashboardResponseSchema } from '@repo/schemas';
 import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getDecryptedSocialCredential } from '../../../../services/social-credential-vault.service.js';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
@@ -33,7 +34,11 @@ export const adminGetSocialDashboardRoute = createAdminRoute({
     responseSchema: SocialDashboardResponseSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
-        const result = await postService.getDashboard({ actor });
+        const webhookResult = await getDecryptedSocialCredential({ key: 'make_webhook_url' });
+        const makeWebhookConfigured =
+            typeof webhookResult.data?.plaintext === 'string' &&
+            webhookResult.data.plaintext.trim().length > 0;
+        const result = await postService.getDashboard({ actor, makeWebhookConfigured });
 
         if (result.error) {
             throw new ServiceError(
