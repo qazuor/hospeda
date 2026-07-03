@@ -37,7 +37,7 @@ describe('social automation settings seed (HOS-64 T-003)', () => {
         expect(new Set(keys).size).toBe(keys.length);
     });
 
-    it('should have exactly 12 settings total', () => {
-        expect(SETTINGS).toHaveLength(12);
+    it('should have exactly 11 settings total', () => {
+        expect(SETTINGS).toHaveLength(11);
     });
 });

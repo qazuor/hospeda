@@ -4,7 +4,7 @@
  * Seeds all static catalog data required by the social media publish pipeline:
  *   1. Platforms         — social_platforms (3 rows, unique on platform enum)
  *   2. Platform formats  — social_platform_formats (13 rows, unique on platform+publish_format)
- *   3. Settings          — social_settings (12 rows, unique on key)
+ *   3. Settings          — social_settings (11 rows, unique on key)
  *   4. Campaign          — social_campaigns (1 default row, unique on slug)
  *   5. Content batch     — social_content_batches (1 default row, unique on slug)
  *   6. Footer            — social_post_footers (1 default row, unique on slug)
@@ -339,14 +339,6 @@ export const SETTINGS: InsertSocialSetting[] = [
         type: 'number',
         active: true,
         description: 'Maximum number of hashtags for X (Twitter) posts'
-    },
-    {
-        key: 'make_webhook_url',
-        value: '',
-        type: 'secret',
-        active: true,
-        description:
-            'Make.com webhook URL used by the dispatch cron to push posts. Must be set before publishing.'
     },
     {
         key: 'max_retry_count',
