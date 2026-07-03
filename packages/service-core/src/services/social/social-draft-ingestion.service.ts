@@ -297,13 +297,31 @@ export class SocialDraftIngestionService {
             // ----------------------------------------------------------------
             // Step 2: Slug resolution (all optional, fail-soft)
             // ----------------------------------------------------------------
+            // campaignSlug/batchSlug are resolve-OR-CREATE (G-4/G-5): an unknown
+            // slug creates a new active row rather than dropping the association.
+            // All other slugs stay resolve-only (null on miss) — see the
+            // REGRESSION test locking this down.
             const [campaignId, batchId, audienceId, footerId, baseHashtagSetId] = await Promise.all(
                 [
-                    this.resolveSlugToId(payload.campaignSlug, (slug) =>
-                        this.campaignModel.findOne({ slug })
+                    this.resolveOrCreateCampaignOrBatch(
+                        payload.campaignSlug,
+                        (slug) => this.campaignModel.findOne({ slug }),
+                        (slug) =>
+                            this.campaignModel.create({
+                                slug,
+                                name: this.slugToName(slug),
+                                active: true
+                            })
                     ),
-                    this.resolveSlugToId(payload.batchSlug, (slug) =>
-                        this.batchModel.findOne({ slug })
+                    this.resolveOrCreateCampaignOrBatch(
+                        payload.batchSlug,
+                        (slug) => this.batchModel.findOne({ slug }),
+                        (slug) =>
+                            this.batchModel.create({
+                                slug,
+                                name: this.slugToName(slug),
+                                active: true
+                            })
                     ),
                     this.resolveSlugToId(payload.audienceSlug, (slug) =>
                         this.audienceModel.findOne({ slug })
@@ -641,5 +659,49 @@ export class SocialDraftIngestionService {
         } catch {
             return null;
         }
+    }
+
+    /**
+     * Resolves a campaign/batch slug to its UUID, creating a new active row
+     * when no match exists (G-4/G-5 — explicit-name resolution: match →
+     * associate, no match → create). Unlike {@link resolveSlugToId}, a lookup
+     * or creation failure returns `null` (fail-soft — the draft still ships).
+     *
+     * @param slug - Optional campaign/batch slug from the request payload.
+     * @param finder - Async function that queries the model by slug.
+     * @param creator - Async function that creates a new row for the slug.
+     * @returns The UUID string (existing or newly created) or null.
+     */
+    private async resolveOrCreateCampaignOrBatch(
+        slug: string | undefined,
+        finder: (slug: string) => Promise<{ id: unknown } | null | undefined>,
+        creator: (slug: string) => Promise<{ id: unknown } | null | undefined>
+    ): Promise<string | null> {
+        if (!slug) return null;
+        try {
+            const existing = await finder(slug);
+            if (existing && typeof existing.id === 'string') return existing.id;
+
+            const created = await creator(slug);
+            return created && typeof created.id === 'string' ? created.id : null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Derives a human-readable name from a slug (e.g. "hospeda-launch-2026-06"
+     * → "Hospeda Launch 2026 06") for a newly created campaign/batch row, since
+     * the GPT only supplies a slug, never a display name.
+     *
+     * @param slug - The slug to derive a name from.
+     * @returns Title-cased, space-separated name.
+     */
+    private slugToName(slug: string): string {
+        return slug
+            .split(/[-_]+/)
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     }
 }
