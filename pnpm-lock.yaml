@@ -279,13 +279,13 @@ importers:
         version: 1.131.26(@tanstack/react-router@1.131.26(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(vite@8.1.2(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0))
       '@tiptap/extension-image':
         specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        version: 2.27.2
       '@tiptap/extension-link':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/extension-text-align':
         specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        version: 2.27.2
       '@tiptap/extension-underline':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
@@ -1159,8 +1159,8 @@ importers:
         specifier: ^1.11.0
         version: 1.12.0
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.9.1
-        version: 1.9.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
+        specifier: ^1.11.0
+        version: 1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -4100,8 +4100,8 @@ packages:
     resolution: {integrity: sha512-xELwwEXNhyvo9xGm+l9ELF9njdXW9T0T6gk9GDVZVO3Uu6lOs5fnj4q6M4IyvepVdPsg42PsNzlOWPnbUGPiYQ==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-drizzle@1.9.1':
-    resolution: {integrity: sha512-Zp+bs4xzBu/J9L9eRGG7GYZi0Wqh5qow81iWmepLKCUPDXli6J2SmlS5Y8vPsQsUMPeAxYouThkM/Xwq7fGtSQ==}
+  '@qazuor/qzpay-drizzle@1.11.0':
+    resolution: {integrity: sha512-S6IbrVQwIda2Hbc9BXbU2jl6gfYWMlf0bm5EZyIUB9qQKAkFMLNB//Tz0K2AmINlWAvCByYKI1wwelax6BubWg==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
@@ -15327,9 +15327,9 @@ snapshots:
 
   '@qazuor/qzpay-core@1.6.5': {}
 
-  '@qazuor/qzpay-drizzle@1.9.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
+  '@qazuor/qzpay-drizzle@1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
     dependencies:
-      '@qazuor/qzpay-core': 1.11.0
+      '@qazuor/qzpay-core': 1.12.0
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(zod@4.4.3)
       postgres: 3.4.8
@@ -16120,9 +16120,7 @@ snapshots:
       metro-runtime: 0.84.4
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.85.3': {}
 
@@ -17618,9 +17616,7 @@ snapshots:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
       '@tiptap/pm': 2.27.2
 
-  '@tiptap/extension-image@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
-    dependencies:
-      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
+  '@tiptap/extension-image@2.27.2': {}
 
   '@tiptap/extension-italic@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:
@@ -17648,9 +17644,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
-  '@tiptap/extension-text-align@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
-    dependencies:
-      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
+  '@tiptap/extension-text-align@2.27.2': {}
 
   '@tiptap/extension-text-style@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:
@@ -18034,7 +18028,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@26.0.1)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@26.0.1)(typescript@5.7.2))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@26.0.1)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@26.0.1)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -18102,7 +18096,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.17
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@26.0.1)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@26.0.1)(typescript@5.7.2))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@26.0.1)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@26.0.1)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
 
   '@vitest/utils@3.2.6':
     dependencies:
