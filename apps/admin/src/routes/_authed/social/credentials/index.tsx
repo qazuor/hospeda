@@ -18,6 +18,7 @@ import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { LoaderIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { CreateCredentialDialog } from './-components/CreateCredentialDialog';
 import { CredentialsList } from './-components/CredentialsList';
 
 export const Route = createFileRoute('/_authed/social/credentials/')({
@@ -33,13 +34,16 @@ function SocialCredentialsPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.SOCIAL_SETTINGS_MANAGE]}>
             <div className="space-y-6 p-6">
-                <div>
-                    <h1 className="mb-2 font-bold text-2xl">Credenciales sociales</h1>
-                    <p className="text-muted-foreground">
-                        Gestiona los secretos del pipeline de automatización social (Make.com, IA,
-                        PIN de operador). Los valores se almacenan de forma segura y se muestran
-                        enmascarados.
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="mb-2 font-bold text-2xl">Credenciales sociales</h1>
+                        <p className="text-muted-foreground">
+                            Gestiona los secretos del pipeline de automatización social (Make.com,
+                            IA, PIN de operador). Los valores se almacenan de forma segura y se
+                            muestran enmascarados.
+                        </p>
+                    </div>
+                    <CreateCredentialDialog />
                 </div>
 
                 {isLoading && (

@@ -11,9 +11,20 @@
  */
 
 import type { SocialCredentialMasked } from '@/features/social-credentials';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { CredentialsList } from '../-components/CredentialsList';
+
+vi.mock('@/hooks/use-toast', () => ({
+    useToast: () => ({ addToast: vi.fn() })
+}));
+
+function TestWrapper({ children }: { readonly children: ReactNode }) {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 
 const MASKED_CREDENTIAL: SocialCredentialMasked = {
     id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
@@ -26,7 +37,7 @@ const MASKED_CREDENTIAL: SocialCredentialMasked = {
 
 describe('CredentialsList', () => {
     it('renders no cards for an empty list', () => {
-        render(<CredentialsList credentials={[]} />);
+        render(<CredentialsList credentials={[]} />, { wrapper: TestWrapper });
         expect(screen.queryByTestId(/social-credential-card-/)).not.toBeInTheDocument();
     });
 
@@ -37,7 +48,8 @@ describe('CredentialsList', () => {
                     MASKED_CREDENTIAL,
                     { ...MASKED_CREDENTIAL, id: 'bbbb', key: 'make_api_key', label: 'Prod key' }
                 ]}
-            />
+            />,
+            { wrapper: TestWrapper }
         );
 
         expect(screen.getByTestId('social-credential-card-make_webhook_url')).toBeInTheDocument();
@@ -45,7 +57,7 @@ describe('CredentialsList', () => {
     });
 
     it('shows the key, label, createdAt, and updatedAt for each card', () => {
-        render(<CredentialsList credentials={[MASKED_CREDENTIAL]} />);
+        render(<CredentialsList credentials={[MASKED_CREDENTIAL]} />, { wrapper: TestWrapper });
 
         const card = screen.getByTestId('social-credential-card-make_webhook_url');
         expect(card).toHaveTextContent('Production webhook');
@@ -53,7 +65,9 @@ describe('CredentialsList', () => {
     });
 
     it('never renders ciphertext/iv/authTag/plaintext anywhere in the DOM', () => {
-        const { container } = render(<CredentialsList credentials={[MASKED_CREDENTIAL]} />);
+        const { container } = render(<CredentialsList credentials={[MASKED_CREDENTIAL]} />, {
+            wrapper: TestWrapper
+        });
 
         const html = container.innerHTML;
         expect(html).not.toContain('ciphertext');

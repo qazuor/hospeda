@@ -10,16 +10,23 @@ import {
     type SocialCredentialMasked,
     getSocialCredentialKeyLabel
 } from '@/features/social-credentials';
+import { RotateCredentialDialog } from './RotateCredentialDialog';
 
 /** A single masked social credential card. */
 function CredentialCard({ credential }: { readonly credential: SocialCredentialMasked }) {
     return (
         <Card data-testid={`social-credential-card-${credential.key}`}>
-            <CardHeader>
-                <CardTitle className="text-lg">
-                    {getSocialCredentialKeyLabel(credential.key)}
-                </CardTitle>
-                <CardDescription>{credential.label ?? 'Sin etiqueta'}</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div>
+                    <CardTitle className="text-lg">
+                        {getSocialCredentialKeyLabel(credential.key)}
+                    </CardTitle>
+                    <CardDescription>{credential.label ?? 'Sin etiqueta'}</CardDescription>
+                </div>
+                <RotateCredentialDialog
+                    credentialKey={credential.key}
+                    currentLabel={credential.label}
+                />
             </CardHeader>
             <CardContent>
                 <dl className="grid gap-4 text-sm md:grid-cols-3">
