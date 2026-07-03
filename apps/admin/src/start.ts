@@ -5,29 +5,32 @@
  * `createStart()`. The actual `createStart()` option keys (verified against
  * the installed `@tanstack/start-client-core` 1.170.13 type declarations,
  * `createStart.d.ts`) are:
- *   - `functionMiddleware`: runs on every `createServerFn` invocation
- *     (equivalent to the old `registerGlobalMiddleware` behavior). Accepts
- *     middleware created via `createMiddleware({ type: 'function' })`
- *     (`AnyFunctionMiddleware`), which is what `cspMiddleware` is today.
+ *   - `functionMiddleware`: runs on every `createServerFn` invocation.
+ *     Accepts middleware created via `createMiddleware({ type: 'function' })`
+ *     (`AnyFunctionMiddleware`).
  *   - `requestMiddleware`: runs on every HTTP request handled by the
- *     framework, including the initial SSR page load (HTML document) — this
- *     is what would close the CSP coverage gap (GAP-042-13): today the CSP
- *     header is only set on server function responses, never on the first
- *     HTML response a browser receives. It only accepts middleware created
- *     via `createMiddleware({ type: 'request' })` (`AnyRequestMiddleware`),
- *     a structurally different, non-interchangeable shape (different
- *     `.server()` handler signature — `{ request, pathname, context, next,
- *     handlerType }` vs the function middleware's `{ data, context, next,
- *     method, serverFnMeta, signal }`).
+ *     framework, for BOTH `handlerType: 'router'` (page loads, including the
+ *     initial SSR HTML document) and `handlerType: 'serverFn'` (server
+ *     function calls) — verified by reading `createStartHandler.js`'s
+ *     `startRequestResolver`, which prepends
+ *     `flattenedRequestMiddlewares.map((d) => d.options.server)` onto BOTH
+ *     the server-fn dispatch chain and the router dispatch chain. It only
+ *     accepts middleware created via `createMiddleware({ type: 'request' })`
+ *     (`AnyRequestMiddleware`), a structurally different, non-interchangeable
+ *     shape (different `.server()` handler signature — `{ request, pathname,
+ *     context, next, handlerType }` vs the function middleware's `{ data,
+ *     context, next, method, serverFnMeta, signal }`).
  *
- * NOTE (HOS-33 scope boundary): `cspMiddleware` is currently `type:
- * 'function'`, so it can only be wired into `functionMiddleware` here.
- * Wiring `requestMiddleware` for full SSR-wide CSP coverage (GAP-042-13,
- * GAP-042-21) requires either converting `cspMiddleware` to `type:
- * 'request'` or adding a parallel request-level middleware, plus the
- * `getCspNonce` / `ssr.nonce` plumbing in `router.tsx` (GAP-042-18). That is
- * out of scope for this task (T-005) — left for the follow-up task that
- * owns SSR nonce wiring.
+ * HOS-33 T-006: `cspMiddleware` was converted from `type: 'function'` to
+ * `type: 'request'` (see `middleware.ts`) specifically so ONE middleware can
+ * cover both server functions and SSR page loads via `requestMiddleware` —
+ * closing the SSR CSP coverage gap (GAP-042-13) that `functionMiddleware`
+ * alone could never close (it never ran for the initial HTML response).
+ * `functionMiddleware` is intentionally omitted now: there is no longer a
+ * `type: 'function'` middleware to register, and the key is optional on
+ * `StartInstanceOptions` (verified against `createStart.ts`'s
+ * `StartInstanceOptions` interface — both `requestMiddleware?` and
+ * `functionMiddleware?` are optional).
  *
  * IMPORTANT — `createStart()` takes a THUNK, not a plain object.
  * `createStart({ ... })` (a plain object literal, as shown in some
@@ -40,9 +43,13 @@
  * `entries.startEntry.startInstance.getOptions()` inside
  * `createStartHandler`). The correct form is `createStart(() => ({ ... }))`.
  *
- * This file must be imported early in the application lifecycle (e.g., from
- * the root route or router setup) so the `startInstance` is created before
- * any server functions or requests are handled.
+ * This file is auto-discovered by the TanStack Start Vite plugin via the
+ * virtual `#tanstack-start-entry` import (resolved independently of
+ * `router.tsx` — confirmed by reading `hydrateStart.ts` in
+ * `@tanstack/start-client-core`, which imports `startInstance` from
+ * `#tanstack-start-entry` directly, with no dependency on a side-effect
+ * import from the router entry). No other file needs to import this module
+ * for its `startInstance` export to take effect.
  *
  * IMPORTANT — the export MUST be named `startInstance`, not `start`. The
  * TanStack Start Vite plugin auto-discovers this file as the "start entry"
@@ -62,5 +69,5 @@ import { createStart } from '@tanstack/react-start';
 import { cspMiddleware } from './middleware';
 
 export const startInstance = createStart(() => ({
-    functionMiddleware: [cspMiddleware]
+    requestMiddleware: [cspMiddleware]
 }));

@@ -3,8 +3,11 @@ import { createRouter as createTanstackRouter } from '@tanstack/react-router';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
 
-// Register global CSP middleware (side-effect import - must execute before server functions)
-import './start';
+// HOS-33 T-006 (GAP-042-18): isomorphic CSP nonce reader for `ssr.nonce`
+// below — see src/lib/csp-nonce.ts for the full server/client
+// implementation and rationale (kept in its own module so it stays
+// unit-testable without importing the generated route tree).
+import { getCspNonce } from '@/lib/csp-nonce';
 
 /**
  * Router context interface
@@ -55,6 +58,16 @@ export const getRouter = () => {
         defaultPreload: 'intent', // Prefetch on hover/focus
         defaultPreloadDelay: 100, // Small delay to avoid excessive prefetching
         defaultPendingComponent: RouterPendingComponent,
-        defaultPendingMs: 200 // Only show if navigation takes > 200ms
+        defaultPendingMs: 200, // Only show if navigation takes > 200ms
+        // HOS-33 T-006 (GAP-042-18): per-request CSP nonce, applied by React's
+        // SSR renderer to its own injected scripts AND by `Scripts` /
+        // `HeadContent` / `ScriptOnce` to every router-managed script, style,
+        // and link tag (verified against the installed
+        // `@tanstack/react-router` 1.170.17 source — `Scripts.tsx`,
+        // `ScriptOnce.tsx`, `headContentUtils.tsx` all read
+        // `router.options.ssr?.nonce`, and `renderRouterToStream.tsx` passes
+        // it straight through to `ReactDOMServer.renderToReadableStream` /
+        // `renderToPipeableStream`'s own `nonce` option).
+        ssr: { nonce: getCspNonce() }
     });
 };
