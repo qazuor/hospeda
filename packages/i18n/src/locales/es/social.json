@@ -8,6 +8,11 @@
             "publishedLast30Days": "Publicados (30 días)",
             "failedActionNeeded": "Fallidos"
         },
+        "filters": {
+            "from": "Desde",
+            "to": "Hasta",
+            "reset": "Limpiar"
+        },
         "approvalQueue": {
             "title": "Cola de aprobación",
             "empty": "No hay posts pendientes de aprobación",

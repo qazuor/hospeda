@@ -8,6 +8,11 @@
             "publishedLast30Days": "Publicados (30 dias)",
             "failedActionNeeded": "Falharam"
         },
+        "filters": {
+            "from": "De",
+            "to": "Até",
+            "reset": "Limpar"
+        },
         "approvalQueue": {
             "title": "Fila de aprovação",
             "empty": "Nenhum post aguardando aprovação",

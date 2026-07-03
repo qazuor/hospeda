@@ -118,6 +118,7 @@ vi.mock('@repo/icons', async (importOriginal) => ({
 
 import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-posts';
 import type { SocialDashboardResponse } from '@repo/schemas';
+import { DashboardDateRangeFilter } from '../-components/DashboardDateRangeFilter';
 import { DashboardKpiCards } from '../-components/DashboardKpiCards';
 import { QuickApprovalQueue } from '../-components/QuickApprovalQueue';
 import { RecentFailures } from '../-components/RecentFailures';
@@ -374,6 +375,110 @@ describe('RecentFailures', () => {
         );
 
         expect(screen.getByTestId('recent-failures-empty')).toBeInTheDocument();
+    });
+});
+
+describe('DashboardDateRangeFilter', () => {
+    it('renders from/to date inputs with current values', () => {
+        render(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo="2026-01-31"
+                onChangeDateFrom={vi.fn()}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        expect(screen.getByTestId('dashboard-date-from')).toHaveValue('2026-01-01');
+        expect(screen.getByTestId('dashboard-date-to')).toHaveValue('2026-01-31');
+    });
+
+    it('calls onChangeDateFrom when the from input changes', () => {
+        const onChangeDateFrom = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-from'), {
+            target: { value: '2026-02-01' }
+        });
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith('2026-02-01');
+    });
+
+    it('calls onChangeDateTo when the to input changes', () => {
+        const onChangeDateTo = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={vi.fn()}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-to'), {
+            target: { value: '2026-02-28' }
+        });
+
+        expect(onChangeDateTo).toHaveBeenCalledWith('2026-02-28');
+    });
+
+    it('clearing an input calls onChange with undefined', () => {
+        const onChangeDateFrom = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-from'), {
+            target: { value: '' }
+        });
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith(undefined);
+    });
+
+    it('shows a reset button only when a bound is active, and clears both on click', () => {
+        const onChangeDateFrom = vi.fn();
+        const onChangeDateTo = vi.fn();
+
+        const { rerender } = render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        expect(screen.queryByTestId('dashboard-date-reset')).not.toBeInTheDocument();
+
+        rerender(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        const resetButton = screen.getByTestId('dashboard-date-reset');
+        fireEvent.click(resetButton);
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith(undefined);
+        expect(onChangeDateTo).toHaveBeenCalledWith(undefined);
     });
 });
 
