@@ -1,13 +1,13 @@
 {
     "version": "1.0",
     "specRef": "HOS-66",
-    "title": "Social Posts — Composer + Dashboard UX",
+    "title": "Social Posts \u2014 Composer + Dashboard UX",
     "created": "2026-07-03T12:51:33.000Z",
     "tasks": [
         {
             "id": "T-001",
             "title": "Implement resolve-or-create for campaign/batch slugs",
-            "description": "In `packages/service-core/src/services/social/social-draft-ingestion.service.ts`, replace the resolve-only `resolveSlugToId` call for `campaignSlug`/`batchSlug` with a resolve-or-create helper: match by slug → associate; no match → create a new `social_campaigns`/`social_content_batches` row (name derived from the slug, `active: true`) and associate to it. Leave `audienceSlug`/`footerSlug`/`baseHashtagSetSlug` on the existing resolve-only path — only campaigns/batches get create semantics (G-4/G-5). Return `{ id, slug, isNew }` per resolved entity so callers can report the outcome.\n\nTest requirements:\n- Unit tests in `social-draft-ingestion.service.test.ts`: existing slug resolves without creating a row; unknown slug creates a new active row and returns `isNew: true`; audience/footer/hashtagSet slugs still fall back to null on miss (regression).",
+            "description": "In `packages/service-core/src/services/social/social-draft-ingestion.service.ts`, replace the resolve-only `resolveSlugToId` call for `campaignSlug`/`batchSlug` with a resolve-or-create helper: match by slug \u2192 associate; no match \u2192 create a new `social_campaigns`/`social_content_batches` row (name derived from the slug, `active: true`) and associate to it. Leave `audienceSlug`/`footerSlug`/`baseHashtagSetSlug` on the existing resolve-only path \u2014 only campaigns/batches get create semantics (G-4/G-5). Return `{ id, slug, isNew }` per resolved entity so callers can report the outcome.\n\nTest requirements:\n- Unit tests in `social-draft-ingestion.service.test.ts`: existing slug resolves without creating a row; unknown slug creates a new active row and returns `isNew: true`; audience/footer/hashtagSet slugs still fall back to null on miss (regression).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -81,7 +81,7 @@
         {
             "id": "T-003",
             "title": "Update GPT-facing route descriptions for fuzzy-duplicate + implicit fallback",
-            "description": "Update the OpenAPI `description` text on `POST /api/v1/ai/social/drafts` (`apps/api/src/routes/ai/social/drafts.ts`) and `GET /api/v1/ai/social/catalog` (`apps/api/src/routes/ai/social/catalog.ts`) — these descriptions are the Custom GPT's own instructions (NG-2: no backend heuristic matching, so this is the only implementation surface for G-5's LLM-reasoning requirement). Instruct: (1) before submitting a new `campaignSlug`/`batchSlug` name, check the catalog's `campaigns`/`batches` arrays for a near-duplicate name and ask the operator to confirm \"use existing\" vs \"create new\"; (2) when no explicit slug is given, reason over the active campaigns/batches list against the draft content and propose an association when confident.\n\nTest requirements:\n- Update `apps/api/test/routes/social/admin/social-gpt-action-schema.test.ts` (or the drafts/catalog route test) to assert the generated OpenAPI description contains the new guidance text.",
+            "description": "Update the OpenAPI `description` text on `POST /api/v1/ai/social/drafts` (`apps/api/src/routes/ai/social/drafts.ts`) and `GET /api/v1/ai/social/catalog` (`apps/api/src/routes/ai/social/catalog.ts`) \u2014 these descriptions are the Custom GPT's own instructions (NG-2: no backend heuristic matching, so this is the only implementation surface for G-5's LLM-reasoning requirement). Instruct: (1) before submitting a new `campaignSlug`/`batchSlug` name, check the catalog's `campaigns`/`batches` arrays for a near-duplicate name and ask the operator to confirm \"use existing\" vs \"create new\"; (2) when no explicit slug is given, reason over the active campaigns/batches list against the draft content and propose an association when confident.\n\nTest requirements:\n- Update `apps/api/test/routes/social/admin/social-gpt-action-schema.test.ts` (or the drafts/catalog route test) to assert the generated OpenAPI description contains the new guidance text.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
@@ -296,35 +296,35 @@
             "id": "T-009",
             "title": "Add date-range picker to admin dashboard page",
             "description": "Add a date-range picker control to `apps/admin/src/routes/_authed/social/index.tsx`, wired to the dashboard data-fetching hook so KPIs, quick-approval queue, and recent failures re-fetch with the selected `dateFrom`/`dateTo` from T-007.\n\nTest requirements:\n- Component/route test in `apps/admin/src/routes/_authed/social/__tests__/dashboard.test.tsx`: changing the date range triggers a refetch with the correct query params; default (no range) still renders current totals.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Add date-range picker control",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire picker state to dashboard query hook",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: range change triggers correct refetch",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "frontend", "admin", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T20:38:37Z",
+                "completed": "2026-07-03T21:23:23Z"
             }
         },
         {
@@ -400,7 +400,7 @@
         {
             "id": "T-012",
             "title": "Verify dashboard AC-4 end-to-end",
-            "description": "Write an integration-level test verifying AC-4: selecting a date range shows correct KPI numbers for that range and a per-platform breakdown that sums to the range total, exercising the service, route, and rendered UI together.\n\nTest requirements:\n- Cross-layer test (service → route → dashboard component) confirming the breakdown-sums-to-total invariant holds for a seeded fixture set across at least two date ranges.",
+            "description": "Write an integration-level test verifying AC-4: selecting a date range shows correct KPI numbers for that range and a per-platform breakdown that sums to the range total, exercising the service, route, and rendered UI together.\n\nTest requirements:\n- Cross-layer test (service \u2192 route \u2192 dashboard component) confirming the breakdown-sums-to-total invariant holds for a seeded fixture set across at least two date ranges.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-007", "T-009", "T-010", "T-011"],
@@ -431,7 +431,7 @@
         {
             "id": "T-013",
             "title": "Scaffold admin compose-social-post page",
-            "description": "⚠ BLOCKED — depends on HOS-65 (Publishing Engine Extension, currently Backlog) shipping the API-side multi-target fan-out contract. Do not start until HOS-65's target-row creation endpoint exists.\n\nScaffold a new admin route (e.g. `apps/admin/src/routes/_authed/social/compose/index.tsx`) for manually authoring a social post: title, caption, pillar — no platform selection yet (that's T-014). No admin composer UI exists today (verified — the only creation path currently is the Custom GPT); this is genuinely new UI surface.\n\nTest requirements:\n- Route test: page renders, base form fields validate required inputs.",
+            "description": "\u26a0 BLOCKED \u2014 depends on HOS-65 (Publishing Engine Extension, currently Backlog) shipping the API-side multi-target fan-out contract. Do not start until HOS-65's target-row creation endpoint exists.\n\nScaffold a new admin route (e.g. `apps/admin/src/routes/_authed/social/compose/index.tsx`) for manually authoring a social post: title, caption, pillar \u2014 no platform selection yet (that's T-014). No admin composer UI exists today (verified \u2014 the only creation path currently is the Custom GPT); this is genuinely new UI surface.\n\nTest requirements:\n- Route test: page renders, base form fields validate required inputs.",
             "status": "blocked",
             "complexity": 3,
             "blockedBy": [],
@@ -466,7 +466,7 @@
         {
             "id": "T-014",
             "title": "Add platform multi-select creating N target rows",
-            "description": "⚠ BLOCKED — depends on HOS-65's API-side multi-target creation contract.\n\nAdd a platform multi-select control to the compose page (T-013). Selecting N platforms and saving must create exactly N `social_post_targets` rows via HOS-65's fan-out endpoint, sharing the base caption by default.\n\nTest requirements:\n- Component test: selecting 3 platforms and saving results in exactly 3 target-creation calls/rows (AC-5 precursor, full AC-5 verified in T-016).",
+            "description": "\u26a0 BLOCKED \u2014 depends on HOS-65's API-side multi-target creation contract.\n\nAdd a platform multi-select control to the compose page (T-013). Selecting N platforms and saving must create exactly N `social_post_targets` rows via HOS-65's fan-out endpoint, sharing the base caption by default.\n\nTest requirements:\n- Component test: selecting 3 platforms and saving results in exactly 3 target-creation calls/rows (AC-5 precursor, full AC-5 verified in T-016).",
             "status": "blocked",
             "complexity": 3,
             "blockedBy": ["T-013"],
@@ -481,7 +481,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Component test: N platforms → N target calls",
+                    "title": "Component test: N platforms \u2192 N target calls",
                     "completed": false
                 }
             ],
@@ -501,7 +501,7 @@
         {
             "id": "T-015",
             "title": "Add per-platform caption override affordance",
-            "description": "⚠ BLOCKED — depends on T-014 (and transitively HOS-65).\n\nAdd a \"customize for this platform\" expand/collapse affordance per selected platform in the compose page, setting that target's `captionOverride` (schema already supports this per SPEC-254 — zero data-model work).\n\nTest requirements:\n- Component test: toggling the affordance for one platform sets only that target's `captionOverride`, leaving others inheriting the base caption.",
+            "description": "\u26a0 BLOCKED \u2014 depends on T-014 (and transitively HOS-65).\n\nAdd a \"customize for this platform\" expand/collapse affordance per selected platform in the compose page, setting that target's `captionOverride` (schema already supports this per SPEC-254 \u2014 zero data-model work).\n\nTest requirements:\n- Component test: toggling the affordance for one platform sets only that target's `captionOverride`, leaving others inheriting the base caption.",
             "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-014"],
@@ -536,14 +536,14 @@
         {
             "id": "T-016",
             "title": "Verify AC-5 end-to-end",
-            "description": "⚠ BLOCKED — depends on T-014/T-015.\n\nWrite an end-to-end test verifying AC-5: selecting 3 platforms in the composer and saving creates exactly 3 `social_post_targets` rows in the database.\n\nTest requirements:\n- E2E/integration test against a real (test) DB confirming the row count and that caption overrides (if set) persist correctly per target.",
+            "description": "\u26a0 BLOCKED \u2014 depends on T-014/T-015.\n\nWrite an end-to-end test verifying AC-5: selecting 3 platforms in the composer and saving creates exactly 3 `social_post_targets` rows in the database.\n\nTest requirements:\n- E2E/integration test against a real (test) DB confirming the row count and that caption overrides (if set) persist correctly per target.",
             "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-014", "T-015"],
             "blocks": [],
             "subtasks": [
                 {
-                    "title": "E2E test: 3 platforms → 3 target rows",
+                    "title": "E2E test: 3 platforms \u2192 3 target rows",
                     "completed": false
                 },
                 {
@@ -598,7 +598,7 @@
         {
             "id": "T-018",
             "title": "Replace icon imports in social posts subtree",
-            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across `apps/admin/src/routes/_authed/social/posts/` (e.g. `SocialPostPlatformIcons.tsx`, `SocialPostStatusBadge.tsx`, `SocialPostApprovalBadge.tsx`, `SocialPostActionBar.tsx`). Pure consumer change — no `@repo/icons` package changes.\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged (icon swap must not alter rendered test-id/role structure); update snapshots only if the icon swap intentionally changes markup.",
+            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across `apps/admin/src/routes/_authed/social/posts/` (e.g. `SocialPostPlatformIcons.tsx`, `SocialPostStatusBadge.tsx`, `SocialPostApprovalBadge.tsx`, `SocialPostActionBar.tsx`). Pure consumer change \u2014 no `@repo/icons` package changes.\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged (icon swap must not alter rendered test-id/role structure); update snapshots only if the icon swap intentionally changes markup.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-017"],
@@ -703,7 +703,7 @@
         {
             "id": "T-021",
             "title": "Define public-data-pull response schema",
-            "description": "Add a new additive schema (`@repo/schemas`) for a draft-enrichment public-data-pull endpoint: an array of `{ entityType, id, title, slug, summary, imageUrl }` items. Scope tightly per R-1 (avoid a general-purpose public API aggregator) — this schema covers ONLY the entity shape needed for draft enrichment, not a general public API response.\n\nTest requirements:\n- Schema unit test validating the shape and that `entityType` is constrained to a small explicit enum (start with `ACCOMMODATION`, `DESTINATION`).",
+            "description": "Add a new additive schema (`@repo/schemas`) for a draft-enrichment public-data-pull endpoint: an array of `{ entityType, id, title, slug, summary, imageUrl }` items. Scope tightly per R-1 (avoid a general-purpose public API aggregator) \u2014 this schema covers ONLY the entity shape needed for draft enrichment, not a general public API response.\n\nTest requirements:\n- Schema unit test validating the shape and that `entityType` is constrained to a small explicit enum (start with `ACCOMMODATION`, `DESTINATION`).",
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
@@ -734,7 +734,7 @@
         {
             "id": "T-022",
             "title": "Implement public-data aggregation service",
-            "description": "Implement an aggregation method (new or on an existing service) that queries a tightly-scoped set of public entities — start with recently-published/featured accommodations and destinations ONLY (per R-1, do not add more entity types speculatively) — shaped per T-021's schema for draft enrichment. Accept an optional free-text query param to narrow results.\n\nTest requirements:\n- Unit tests: returns accommodations + destinations shaped correctly; free-text query narrows results; empty result set handled gracefully (no error).",
+            "description": "Implement an aggregation method (new or on an existing service) that queries a tightly-scoped set of public entities \u2014 start with recently-published/featured accommodations and destinations ONLY (per R-1, do not add more entity types speculatively) \u2014 shaped per T-021's schema for draft enrichment. Accept an optional free-text query param to narrow results.\n\nTest requirements:\n- Unit tests: returns accommodations + destinations shaped correctly; free-text query narrows results; empty result set handled gracefully (no error).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-021"],
@@ -815,7 +815,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Test: missing/invalid api key → 401",
+                    "title": "Test: missing/invalid api key \u2192 401",
                     "completed": false
                 }
             ],
@@ -835,7 +835,7 @@
         {
             "id": "T-025",
             "title": "Create /marketing hub landing page",
-            "description": "Create a new admin index route (`apps/admin/src/routes/_authed/marketing/index.tsx`) linking to `/social` and `/newsletter`, matching existing admin layout patterns (the \"Marketing\" sidebar already groups both sections per SPEC-254 — only the landing page itself is missing).\n\nTest requirements:\n- Route test: page renders both links, matches existing layout conventions (reuse an existing hub/index page as the visual reference if one exists elsewhere in admin).",
+            "description": "Create a new admin index route (`apps/admin/src/routes/_authed/marketing/index.tsx`) linking to `/social` and `/newsletter`, matching existing admin layout patterns (the \"Marketing\" sidebar already groups both sections per SPEC-254 \u2014 only the landing page itself is missing).\n\nTest requirements:\n- Route test: page renders both links, matches existing layout conventions (reuse an existing hub/index page as the visual reference if one exists elsewhere in admin).",
             "status": "pending",
             "complexity": 1,
             "blockedBy": [],
@@ -893,7 +893,7 @@
         {
             "id": "T-027",
             "title": "Document campaign/batch resolve-or-create and public-data-pull scope",
-            "description": "Document (in `apps/api/CLAUDE.md` or a relevant `docs/` guide) the new resolve-or-create behavior for campaign/batch slugs (NG-2: matching stays LLM-side, never add backend keyword/hashtag heuristics) and the intentionally narrow scope of the public-data-pull endpoint (R-1: accommodations + destinations only — extend deliberately, not speculatively).\n\nTest requirements: none (documentation-only task).",
+            "description": "Document (in `apps/api/CLAUDE.md` or a relevant `docs/` guide) the new resolve-or-create behavior for campaign/batch slugs (NG-2: matching stays LLM-side, never add backend keyword/hashtag heuristics) and the intentionally narrow scope of the public-data-pull endpoint (R-1: accommodations + destinations only \u2014 extend deliberately, not speculatively).\n\nTest requirements: none (documentation-only task).",
             "status": "pending",
             "complexity": 1,
             "blockedBy": ["T-001", "T-002", "T-003", "T-022"],
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 4,
         "averageComplexity": 2.0
     }

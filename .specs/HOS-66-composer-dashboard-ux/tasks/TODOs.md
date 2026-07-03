@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 8/27 tasks (30%)
+## Progress: 9/27 tasks (33%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -55,7 +55,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: none
   - Blocks: T-011
 
-- [ ] **T-009** (complexity: 3) - Add date-range picker to admin dashboard page
+- [x] **T-009** (complexity: 3) - Add date-range picker to admin dashboard page
   - Blocked by: T-007
   - Blocks: T-012
 
