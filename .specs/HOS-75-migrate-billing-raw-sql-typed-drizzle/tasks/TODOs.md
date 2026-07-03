@@ -1,11 +1,11 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 0/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 2/28
 
 ## Setup
 
-- [ ] T-001: Confirm qzpay-drizzle 1.11.0 in worktree (complexity: 1)
-- [ ] T-002: Add loadSubscriptionDiscountState() shared helper (complexity: 2)
+- [x] T-001: Confirm qzpay-drizzle 1.11.0 in worktree (complexity: 1)
+- [x] T-002: Add loadSubscriptionDiscountState() shared helper (complexity: 2)
 
 ## Core — Phase A (product-domain, ~8 files)
 

@@ -1,10 +1,10 @@
 /**
  * Subscription product-domain isolation utilities (SPEC-239 T-034).
  *
- * `billing_subscriptions.product_domain` is added via the extras carril
- * (a hand-written idempotent ALTER TABLE, NOT in the qzpay-drizzle TS schema).
- * The column defaults to `'accommodation'` and every legacy row predates it,
- * so it will be `null` / `undefined` on many in-flight objects.
+ * `billing_subscriptions.product_domain` is a typed Drizzle column as of
+ * `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73). The column defaults to
+ * `'accommodation'` and every legacy row predates it, so it will be `null` /
+ * `undefined` on many in-flight objects.
  *
  * **Filtering contract (safety invariant)**
  * - `null` / `undefined` / `'accommodation'` → include (accommodation domain).
@@ -19,6 +19,21 @@
  *
  * @module services/billing/subscription/subscription-product-domain
  */
+
+import { billingSubscriptions, eq, getDb } from '@repo/db';
+
+/**
+ * Discount-relevant state for a single subscription, as loaded by
+ * {@link loadSubscriptionDiscountState}.
+ */
+export interface SubscriptionDiscountState {
+    id: string;
+    status: string;
+    planId: string;
+    mpSubscriptionId: string | null;
+    promoCodeId: string | null;
+    promoEffectRemainingCycles: number | null;
+}
 
 /**
  * Returns `true` when the subscription belongs to the accommodation domain.
@@ -72,4 +87,34 @@ export function isAccommodationSubscription(sub: unknown): boolean {
     }
 
     return false;
+}
+
+/**
+ * Loads a subscription's discount-relevant state via a single typed Drizzle
+ * query. Replaces 4 near-identical raw-SQL `SELECT`s that were copy-pasted
+ * across `payment-logic.ts`, `dunning.job.ts`, `apply-scheduled-plan-changes.ts`,
+ * and `promo-code.renewal.ts` (HOS-75) — each caller destructures only the
+ * fields it needs.
+ *
+ * @param input.subscriptionId - The subscription's id.
+ * @returns The subscription's discount state, or `null` when no row matches.
+ */
+export async function loadSubscriptionDiscountState(input: {
+    subscriptionId: string;
+}): Promise<SubscriptionDiscountState | null> {
+    const db = getDb();
+    const [row] = await db
+        .select({
+            id: billingSubscriptions.id,
+            status: billingSubscriptions.status,
+            planId: billingSubscriptions.planId,
+            mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
+            promoCodeId: billingSubscriptions.promoCodeId,
+            promoEffectRemainingCycles: billingSubscriptions.promoEffectRemainingCycles
+        })
+        .from(billingSubscriptions)
+        .where(eq(billingSubscriptions.id, input.subscriptionId))
+        .limit(1);
+
+    return row ?? null;
 }

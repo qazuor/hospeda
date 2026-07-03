@@ -8,29 +8,55 @@
             "id": "T-001",
             "title": "Confirm qzpay-drizzle 1.11.0 in worktree",
             "description": "Sanity check that the worktree's @qazuor/qzpay-drizzle install is 1.11.0 and the 6 target columns are present in packages/db/src/billing/schemas.ts (re-export barrel). No code change expected — just a pre-flight check before Phase A starts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
             "subtasks": [],
             "tags": ["billing", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:03:21Z",
+                "completed": "2026-07-03T05:03:45Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Add loadSubscriptionDiscountState() shared helper",
             "description": "Add a new typed export to packages/service-core/src/services/billing/subscription/subscription-product-domain.ts: loadSubscriptionDiscountState({ subscriptionId }) returning { id, status, planId, mpSubscriptionId, promoCodeId, promoEffectRemainingCycles } via a typed db.select().from(billingSubscriptions).where(eq(...)).limit(1). This is infrastructure Phase C's 3 call sites (payment-logic.ts, dunning.job.ts, apply-scheduled-plan-changes.ts) and Phase B's promo-code.renewal.ts depend on.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012", "T-018", "T-019", "T-020", "T-028"],
             "subtasks": [],
             "tags": ["billing", "drizzle", "setup", "dedup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:07:00Z",
+                    "details": "17/17 (subscription-product-domain.test.ts + spec-239-entitlement-isolation.test.ts regression)"
+                }
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": "2026-07-03T05:03:55Z",
+                "completed": "2026-07-03T05:07:00Z"
+            }
         },
         {
             "id": "T-003",
@@ -43,8 +69,16 @@
             "subtasks": [],
             "tags": ["billing", "product-domain", "cleanup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -57,8 +91,16 @@
             "subtasks": [],
             "tags": ["billing", "product-domain"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -84,8 +126,16 @@
             ],
             "tags": ["billing", "product-domain", "scope-gap"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -98,8 +148,16 @@
             "subtasks": [],
             "tags": ["billing", "product-domain"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -114,12 +172,23 @@
                     "title": "Migrate SELECT + correlated subquery to typed Drizzle",
                     "completed": false
                 },
-                { "title": "Write list-plans.test.ts (net-new file)", "completed": false }
+                {
+                    "title": "Write list-plans.test.ts (net-new file)",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "product-domain", "test-gap"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -132,8 +201,16 @@
             "subtasks": [],
             "tags": ["billing", "product-domain"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -146,8 +223,16 @@
             "subtasks": [],
             "tags": ["billing", "product-domain", "seed", "scope-gap"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -166,12 +251,23 @@
                     "title": "Fold persistEffectColumns()'s 3 branches into .insert({...})",
                     "completed": false
                 },
-                { "title": "Delete persistEffectColumns() function", "completed": false }
+                {
+                    "title": "Delete persistEffectColumns() function",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "promo-code"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -184,8 +280,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -198,8 +302,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code", "dedup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -212,8 +324,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code", "needs-verification"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -226,8 +346,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -240,8 +368,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -254,8 +390,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code", "seed", "scope-gap"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -268,8 +412,16 @@
             "subtasks": [],
             "tags": ["billing", "promo-code", "docs"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -282,8 +434,16 @@
             "subtasks": [],
             "tags": ["billing", "webhooks", "dedup"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -296,8 +456,16 @@
             "subtasks": [],
             "tags": ["billing", "cron", "dedup"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -310,8 +478,16 @@
             "subtasks": [],
             "tags": ["billing", "cron", "dedup"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -324,8 +500,16 @@
             "subtasks": [],
             "tags": ["billing", "cron"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -338,8 +522,16 @@
             "subtasks": [],
             "tags": ["billing", "admin", "promo-code"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -352,8 +544,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -366,8 +566,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -380,8 +588,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -394,8 +610,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -408,8 +632,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-028",
@@ -450,15 +682,23 @@
             "subtasks": [],
             "tags": ["billing", "verification"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-07-03T05:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-03T05:00:00Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 28,
-        "pending": 28,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 1.54
     }
