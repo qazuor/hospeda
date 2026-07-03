@@ -91,14 +91,19 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
     if (onlyProduction) candidates = candidates.filter((v) => !v.is_preview);
 
     if (candidates.length === 0) {
-        const scope = onlyPreview ? ' [preview]' : onlyProduction ? ' [production]' : '';
+        const scope = onlyPreview ? ' [preview]' : onlyProduction ? ' [main]' : '';
         log.warn(`No env var with key '${key}' on ${kindRaw}${scope}.`);
         return;
     }
 
+    // Per-row breakdown reflects Coolify's is_preview slot, NOT our
+    // prod/staging target (already shown above via the "Target :" line —
+    // every row here belongs to that same target/app). Labelled '[main]'
+    // rather than '[production]'/'[prod]' so it can't be misread as the
+    // target.
     log.info(`Found ${candidates.length} entry(ies) on ${kindRaw} for key '${key}':`);
     for (const c of candidates) {
-        const env = c.is_preview ? '[preview]' : '[prod]   ';
+        const env = c.is_preview ? '[preview]' : '[main]   ';
         process.stderr.write(`  ${env}  uuid=${c.uuid}\n`);
     }
 
