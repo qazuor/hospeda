@@ -2688,5 +2688,63 @@ describe('SocialPostService.getDashboard', () => {
                 expect(call[2]).toHaveLength(2);
             }
         });
+
+        // HOS-66 T-012 (AC-4 end-to-end): the actual per-platform partition math
+        // lives at the service layer, so that's where the sum invariant is
+        // verified across two independent date windows. Route pass-through
+        // (platformBreakdown returned unchanged) is covered by
+        // apps/api/test/routes/social/admin/social-dashboard.test.ts and UI
+        // rendering (one item per platform with the correct count) by
+        // apps/admin's dashboard.test.tsx — this test does not duplicate
+        // either of those, only the aggregation invariant itself.
+        it('sums to the range total independently across two distinct date windows (HOS-66 T-012, AC-4)', async () => {
+            const { postModel, publishLogModel } = buildDashboardModels();
+            const postTargetModel = createModelMock();
+            const { service } = buildService({ postModel, postTargetModel, publishLogModel });
+
+            // Window A (June): 4 + 2 + 1 = 7 targets
+            postTargetModel.findAll.mockImplementation(async (where: Record<string, unknown>) => {
+                const counts: Record<string, number> = {
+                    [SocialPlatformEnum.INSTAGRAM]: 4,
+                    [SocialPlatformEnum.FACEBOOK]: 2,
+                    [SocialPlatformEnum.X]: 1
+                };
+                return { items: [], total: counts[where.platform as string] ?? 0 };
+            });
+            const resultA = await service.getDashboard({
+                actor: actorWithViewPerm,
+                makeWebhookConfigured: true,
+                dateFrom: new Date('2026-06-01T00:00:00Z'),
+                dateTo: new Date('2026-06-30T23:59:59Z')
+            });
+            const breakdownA = resultA.data?.platformBreakdown ?? [];
+            expect(breakdownA).toHaveLength(3);
+            const totalA = breakdownA.reduce((sum, entry) => sum + entry.count, 0);
+            expect(totalA).toBe(7);
+
+            // Window B (July): 10 + 0 + 3 = 13 targets — different fixture,
+            // independent of window A's mock/result.
+            postTargetModel.findAll.mockImplementation(async (where: Record<string, unknown>) => {
+                const counts: Record<string, number> = {
+                    [SocialPlatformEnum.INSTAGRAM]: 10,
+                    [SocialPlatformEnum.FACEBOOK]: 0,
+                    [SocialPlatformEnum.X]: 3
+                };
+                return { items: [], total: counts[where.platform as string] ?? 0 };
+            });
+            const resultB = await service.getDashboard({
+                actor: actorWithViewPerm,
+                makeWebhookConfigured: true,
+                dateFrom: new Date('2026-07-01T00:00:00Z'),
+                dateTo: new Date('2026-07-31T23:59:59Z')
+            });
+            const breakdownB = resultB.data?.platformBreakdown ?? [];
+            expect(breakdownB).toHaveLength(3);
+            const totalB = breakdownB.reduce((sum, entry) => sum + entry.count, 0);
+            expect(totalB).toBe(13);
+
+            // Windows are independent — no cross-contamination of totals.
+            expect(totalA).not.toBe(totalB);
+        });
     });
 });
