@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 13/27 tasks (48%)
+## Progress: 16/27 tasks (59%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -93,11 +93,11 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: none
   - Blocks: T-018, T-019
 
-- [ ] **T-018** (complexity: 2) - Replace icon imports in social posts subtree
+- [x] **T-018** (complexity: 2) - Replace icon imports in social posts subtree (CLOSED BY VERIFICATION — nothing to replace, subtree already clean)
   - Blocked by: T-017
   - Blocks: T-020
 
-- [ ] **T-019** (complexity: 2) - Replace icon imports in remaining social subtree
+- [x] **T-019** (complexity: 2) - Replace icon imports in remaining social subtree (CLOSED BY VERIFICATION — nothing to replace, subtree already clean)
   - Blocked by: T-017
   - Blocks: T-020
 
@@ -112,7 +112,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 - [ ] **T-016** (complexity: 2) ⚠ BLOCKED (HOS-65) - Verify AC-5 end-to-end
   - Blocked by: T-014, T-015
 
-- [ ] **T-020** (complexity: 1) - Add CI guard against inline SVG / direct phosphor imports (AC-6)
+- [x] **T-020** (complexity: 1) - Add CI guard against inline SVG / direct phosphor imports (AC-6) — `no-inline-icons.guard.test.ts`, 7/7 green
   - Blocked by: T-018, T-019
 
 - [ ] **T-024** (complexity: 2) - Verify public-data-pull scoping and auth end-to-end

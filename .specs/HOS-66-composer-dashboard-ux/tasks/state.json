@@ -598,106 +598,106 @@
         {
             "id": "T-018",
             "title": "Replace icon imports in social posts subtree",
-            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across `apps/admin/src/routes/_authed/social/posts/` (e.g. `SocialPostPlatformIcons.tsx`, `SocialPostStatusBadge.tsx`, `SocialPostApprovalBadge.tsx`, `SocialPostActionBar.tsx`). Pure consumer change \u2014 no `@repo/icons` package changes.\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged (icon swap must not alter rendered test-id/role structure); update snapshots only if the icon swap intentionally changes markup.",
-            "status": "pending",
+            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across `apps/admin/src/routes/_authed/social/posts/` (e.g. `SocialPostPlatformIcons.tsx`, `SocialPostStatusBadge.tsx`, `SocialPostApprovalBadge.tsx`, `SocialPostActionBar.tsx`). Pure consumer change \u2014 no `@repo/icons` package changes.\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged (icon swap must not alter rendered test-id/role structure); update snapshots only if the icon swap intentionally changes markup.\n\nCLOSED BY VERIFICATION (2026-07-03, no code change needed): T-017's audit found ZERO inline `<svg>` and ZERO phosphor imports in the `posts/` subtree. `SocialPostPlatformIcons.tsx` already imports `{ FacebookIcon, InstagramIcon, XIcon } from '@repo/icons'`; the other named files carry no icons or already use `@repo/icons`. There is nothing to replace. Objectively confirmed by the T-020 guard (`no-inline-icons.guard.test.ts`), which scans this exact subtree and passes green. Same close-by-verification precedent as T-008.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Swap icons in SocialPostPlatformIcons.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swap icons in remaining posts/-components files per inventory",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing posts component tests, fix any breakage",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-9", "cleanup", "frontend", "admin", "social"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:28:00Z",
+                "completed": "2026-07-03T22:30:00Z"
             }
         },
         {
             "id": "T-019",
             "title": "Replace icon imports in remaining social subtree",
-            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across the rest of `apps/admin/src/routes/_authed/social/` (batches, footers, credentials, settings, campaigns, hashtags, platform-formats, audiences, catalog, dashboard components, `index.tsx`).\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged; update snapshots only if the icon swap intentionally changes markup.",
-            "status": "pending",
+            "description": "Using T-017's inventory, replace inline SVG / direct phosphor imports with `@repo/icons` equivalents across the rest of `apps/admin/src/routes/_authed/social/` (batches, footers, credentials, settings, campaigns, hashtags, platform-formats, audiences, catalog, dashboard components, `index.tsx`).\n\nTest requirements:\n- Existing component tests for these files must still pass unchanged; update snapshots only if the icon swap intentionally changes markup.\n\nCLOSED BY VERIFICATION (2026-07-03, no code change needed): T-017's audit found ZERO inline `<svg>` and ZERO phosphor imports across the entire remaining social subtree (batches/footers/credentials/settings/campaigns/hashtags/platform-formats/audiences/catalog/dashboard/index.tsx). No alternative icon libs (lucide/react-icons/heroicons/@radix-ui/react-icons/react-feather) present either. There is nothing to replace. Objectively confirmed by the T-020 guard (`no-inline-icons.guard.test.ts`), which recursively scans the whole subtree and passes green. Same close-by-verification precedent as T-008.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Swap icons across batches/footers/credentials/settings",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swap icons across campaigns/hashtags/platform-formats/audiences/catalog",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swap icons in dashboard components + index.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing component tests, fix any breakage",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-9", "cleanup", "frontend", "admin", "social"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:28:00Z",
+                "completed": "2026-07-03T22:30:00Z"
             }
         },
         {
             "id": "T-020",
             "title": "Add CI guard against inline SVG / direct phosphor imports in social admin",
-            "description": "Add a grep-based guard test (mirroring existing guard-test patterns in the repo) asserting no inline `<svg` or `phosphor-react`/`@phosphor-icons` imports remain under `apps/admin/src/routes/_authed/social/`. Satisfies AC-6.\n\nTest requirements:\n- New guard test file that fails CI if a future PR reintroduces an inline SVG or direct phosphor import in this tree.",
-            "status": "pending",
+            "description": "Add a grep-based guard test (mirroring existing guard-test patterns in the repo) asserting no inline `<svg` or `phosphor-react`/`@phosphor-icons` imports remain under `apps/admin/src/routes/_authed/social/`. Satisfies AC-6.\n\nTest requirements:\n- New guard test file that fails CI if a future PR reintroduces an inline SVG or direct phosphor import in this tree.\n\nDONE (2026-07-03): implemented `apps/admin/src/routes/_authed/social/__tests__/no-inline-icons.guard.test.ts`, mirroring `apps/admin/test/routes/__root.ssr-guard.test.ts`. It recursively walks the social subtree (production `.ts`/`.tsx` only; excludes `*.test.*` and `__tests__/` so the legitimate `vi.mock('@repo/icons')` `<svg>` stubs don't trip it), flags inline `<svg` and phosphor imports, and asserts zero. Includes a walk-not-empty sanity check plus 5 detector self-tests proving it catches inline svg / phosphor-react / @phosphor-icons and does not false-positive on a `.svg` filename or `@repo/icons` imports. 7/7 green; lint + typecheck clean.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-018", "T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write grep-based guard test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify it currently passes post-cleanup",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-9", "testing", "social"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:30:00Z",
+                "completed": "2026-07-03T22:36:40Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 10,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 16,
         "blocked": 4,
         "averageComplexity": 2.0
     }
