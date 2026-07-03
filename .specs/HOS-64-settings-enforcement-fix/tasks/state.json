@@ -1394,62 +1394,64 @@
             "id": "T-040",
             "title": "Document G-1/G-2/G-4 in relevant CLAUDE.md files",
             "description": "Update `packages/service-core/CLAUDE.md` (and `packages/db/CLAUDE.md` if the vault tables warrant a mention) documenting: the hashtag-limit enforcement point (G-1), the 5 new operational `social_settings` keys and settings-driven cron cadence (G-2), and the Social Credentials Vault pattern — table shapes, the shared crypto util, and which 4 secrets it now owns (G-4). Cross-reference the AI Vault docs where the pattern is shared.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008", "T-010", "T-013", "T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document G-1 hashtag enforcement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document G-2 settings keys and cron cadence",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document G-4 vault pattern and shared crypto util",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a — markdown only",
+                "typecheck": "n/a — markdown only",
+                "tests": "n/a — markdown only"
             },
+            "decisionNote": "Added one new section 'Social Automation: Hashtag Limits, Operational Settings, Credential Vault (HOS-64)' to packages/service-core/CLAUDE.md, right before the Related Documentation footer (matches the existing pattern of feature-specific sections like 'Promo Code Effect Engine (SPEC-262)'). Did NOT touch packages/db/CLAUDE.md — checked its precedent first: the AI vault's own tables (ai_provider_credentials/ai_credential_audit) aren't individually documented there either, only referenced generically in the 'Lean append-only tables' gotcha table for a DIFFERENT pattern (high-write telemetry, not audit trails) — social_credential_audit doesn't fit that table's criteria (it has a real actorId FK, unlike the telemetry tables listed). Keeping vault schema documentation centralized in service-core/CLAUDE.md (where the service/pattern lives) mirrors the AI vault's existing precedent exactly.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T11:00:00Z",
+                "completed": "2026-07-03T11:20:00Z"
             }
         },
         {
             "id": "T-041",
             "title": "Document HOSPEDA_SOCIAL_VAULT_MASTER_KEY in env docs",
             "description": "Update `docs/guides/environment-variables.md` to document the new `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` (T-002): purpose, separate blast radius from the AI vault's master key, and that it must be set in Coolify for every environment before the vault code can decrypt anything (R-3).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add HOSPEDA_SOCIAL_VAULT_MASTER_KEY entry to environment-variables.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "env"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "n/a — markdown only",
+                "typecheck": "n/a — markdown only",
+                "tests": "n/a — markdown only"
             },
+            "decisionNote": "Added HOSPEDA_SOCIAL_VAULT_MASTER_KEY as a new row in the existing 'Social Automation (HOSPEDA_)' table in docs/guides/environment-variables.md, alongside the 4 legacy plaintext vars it supersedes. Also annotated those 4 legacy rows ('Legacy plaintext source — being superseded by HOSPEDA_SOCIAL_VAULT_MASTER_KEY... removed once T-042 lands') so the doc reads coherently as a migration-in-progress rather than two unrelated sets of vars. Discovered HOSPEDA_AI_VAULT_MASTER_KEY (the AI vault's own master key, SPEC-173) was NEVER documented in this file at all — a pre-existing gap, not introduced or fixed here since T-041's scope is the social vault key only.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T11:20:00Z",
+                "completed": "2026-07-03T11:30:00Z"
             }
         },
         {
@@ -1529,9 +1531,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 9,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 34,
+        "completed": 36,
         "blocked": 0,
         "averageComplexity": 2.2
     }

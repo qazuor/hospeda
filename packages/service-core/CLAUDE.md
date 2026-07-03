@@ -1159,6 +1159,66 @@ Admin list paths do NOT apply this override — admins need to query all states.
 
 Full reference: [docs/guides/review-moderation.md](../../docs/guides/review-moderation.md)
 
+## Social Automation: Hashtag Limits, Operational Settings, Credential Vault (HOS-64)
+
+Three independent goals from the HOS-64 spec, all under the social automation pipeline.
+
+### G-1 — Hashtag-limit enforcement
+
+`packages/service-core/src/services/social/social-hashtag-limit.util.ts` exports a pure
+function that takes a platform→hashtag-count map and a platform→max-allowed map and returns
+either `{ ok: true }` or a structured validation error naming every platform that exceeded
+its limit. `social-draft-ingestion.service.ts` calls it during GPT draft ingestion, reading
+the per-platform `max_hashtags_instagram/facebook/x` values from `social_settings` (raw
+no-actor-context model read, same pattern as `apps/api/src/routes/ai/social/catalog.ts`).
+`apps/api/src/routes/ai/social/drafts.ts` maps a `VALIDATION_ERROR` result to HTTP 400 with
+the offending platform(s), max allowed, and actual count in the response body.
+
+### G-2 — Operational settings + settings-driven cron cadence
+
+5 new keys in `social_settings` (seeded once, admin-editable thereafter via the existing
+`SOCIAL_SETTINGS_MANAGE`-gated settings routes):
+
+| Key | Consumed by | Replaces |
+|---|---|---|
+| `max_retry_count` | `social-publish-dispatch.service.ts` | hard-coded `MAX_RETRY_COUNT = 3` |
+| `make_webhook_timeout_ms` | `social-publish-dispatch.service.ts` | hard-coded `MAKE_WEBHOOK_TIMEOUT_MS = 40_000` |
+| `download_timeout_ms` / `assets_folder` | media download step of the dispatch pipeline | equivalent hard-coded literals |
+| `dispatch_cron_cadence` | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` | hard-coded `'*/5 * * * *'` schedule literal |
+
+`dispatch_cron_cadence` is read at job registration/startup via a helper that validates it as
+a syntactically valid 5-field cron expression, falling back to the original `*/5 * * * *`
+literal when the setting is missing or invalid — the dispatch cron can never fail to register
+because of a bad admin-entered value.
+
+### G-4 — Social Credentials Vault
+
+Mirrors the AI Credential Vault (SPEC-173) pattern exactly, one vault per domain (separate
+blast radius, separate master key — never share `HOSPEDA_AI_VAULT_MASTER_KEY` and
+`HOSPEDA_SOCIAL_VAULT_MASTER_KEY`).
+
+- **Shared crypto util**: `apps/api/src/utils/secret-vault-crypto.ts` holds
+  `encryptSecret`/`decryptSecret` (AES-256-GCM), extracted verbatim from the AI vault's
+  `ai-vault.ts` and parameterized by the master-key *value* (not hardcoded to one env var),
+  so both `ai-vault.ts` and `social-vault.ts` are now thin wrappers pinning their own env var.
+- **Tables**: `social_credentials` (one active row per key, soft-delete via `deletedAt`) and
+  `social_credential_audit` (append-only — no `deletedAt`, no `updatedAt`; every create /
+  rotate / update / delete writes exactly one row, in the same DB transaction as the
+  mutation). Schema: `packages/db/src/schemas/social/social_credentials.dbschema.ts` and
+  `social_credential_audit.dbschema.ts`.
+- **The 4 secrets it owns**: `make_webhook_url`, `make_api_key`, `ai_social_key`,
+  `operator_pin` — previously plaintext `social_settings` rows / `HOSPEDA_*` env vars, now
+  vault-only reads via `getDecryptedSocialCredential({ key })` (server-side callers only,
+  never exposed over HTTP) and masked listing via `listSocialCredentials()` (`id/key/label/
+  createdAt/updatedAt/deletedAt` — never `ciphertext`/`iv`/`authTag`).
+- **Service**: `apps/api/src/services/social-credential-vault.service.ts` — plain module
+  (does NOT extend `BaseCrudService`), same design rationale as the AI vault: mutations take
+  a plain `actorId` string rather than a full `Actor` object, keeping it decoupled from this
+  package's `Actor` type since the vault route layer is the only caller.
+- **Admin routes**: `apps/api/src/routes/social/admin/credentials/*` (list/create/rotate/
+  update/delete), gated by `SOCIAL_SETTINGS_MANAGE` (reused, not a dedicated permission — same
+  precedent as the AI vault reusing `AI_SETTINGS_MANAGE`).
+
 ## Related Documentation
 
 - [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern, including the service layer
