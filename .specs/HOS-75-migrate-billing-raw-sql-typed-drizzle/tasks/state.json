@@ -577,7 +577,7 @@
             "id": "T-018",
             "title": "Migrate payment-logic.ts to use shared discount-state helper",
             "description": "resolveDiscountAwareUpgradeAmount's SELECT (~lines 353-360) becomes a call to loadSubscriptionDiscountState() from T-002. Verify payment-logic.test.ts and payment-logic.cutover.test.ts still pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": ["T-028"],
@@ -585,14 +585,24 @@
             "tags": ["billing", "webhooks", "dedup"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T13:15:00Z",
+                    "details": "100/100 test/routes/webhooks/ sweep -- added a net-new regression test (discount preservation was previously untestable/untested because db.execute() was unmocked and always fail-open; now genuinely exercised via loadSubscriptionDiscountState()'s typed select). Fixed a getDb()-select-index coupling regression in 'does not double-record...' test (payment-dedupe row moved from subRows to paymentDedupeRows since the discount-state select now consumes select-index 0 first)."
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T13:00:00Z",
+                "completed": "2026-07-03T13:15:00Z"
             }
         },
         {
@@ -846,9 +856,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 1.54
     }

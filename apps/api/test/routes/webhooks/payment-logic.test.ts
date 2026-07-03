@@ -40,6 +40,10 @@ const annualDbState: {
      * Rows for select index 0 within a `getDb()` scope. Used by:
      *   - annual/plan-upgrade flows: `{ id, customerId, status }`
      *   - webhook refund flow (T-008): `{ id, customerId, subscriptionId, amount }`
+     *   - HOS-75 T-018: loadSubscriptionDiscountState() row shape (`{ id,
+     *     status, planId, customerId, mpSubscriptionId, promoCodeId,
+     *     promoEffectRemainingCycles }`) — resolveDiscountAwareUpgradeAmount's
+     *     select is now the first `getDb().select()` in the upgrade flow.
      */
     subRows: Array<{
         id: string;
@@ -47,6 +51,10 @@ const annualDbState: {
         status?: string;
         subscriptionId?: string | null;
         amount?: number;
+        planId?: string;
+        mpSubscriptionId?: string | null;
+        promoCodeId?: string | null;
+        promoEffectRemainingCycles?: number | null;
     }>;
     paymentDedupeRows: Array<{ id: string }>;
     updateCalls: Array<{ table: unknown; values: unknown; whereCond: unknown }>;
@@ -184,12 +192,20 @@ vi.mock('@repo/billing', () => ({
 // are overridden here so the annual-activation and plan-upgrade sync branches
 // don't hit the real DB-backed resolver. Defaulted to a no-featured resolution;
 // individual tests override via mockResolvedValue(Once).
+// HOS-75 T-018: getPromoCodeById + resolveFullPlanPriceCentavos are overridden
+// too, so the discount-aware upgrade-amount test (below) can drive them without
+// touching the still-raw-SQL resolveFullPlanPriceCentavos/getPromoCodeById DB
+// calls (out of scope for this migration). Never called by any other test in
+// this file — every other scenario leaves the subscription row promo-less, so
+// resolveDiscountAwareUpgradeAmount returns early before reaching either.
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
         resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
-        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined),
+        getPromoCodeById: vi.fn(),
+        resolveFullPlanPriceCentavos: vi.fn()
     };
 });
 
@@ -214,6 +230,7 @@ vi.mock('../../../src/services/plan-upgrade-restoration.service', () => ({
 }));
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { PromoEffectKindEnum } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
 import {
     resolveOwnerPlanGrantsFeatured,
@@ -941,6 +958,66 @@ describe('processPaymentUpdated', () => {
             expect(recordArg.providerPaymentId).toBe(MP_PAYMENT_ID);
         });
 
+        // HOS-75 T-018: resolveDiscountAwareUpgradeAmount's SELECT now goes
+        // through the shared loadSubscriptionDiscountState() helper (typed
+        // Drizzle) instead of a raw db.execute(sql`...`) call. Before the
+        // migration db.execute() was never mocked in this suite, so it always
+        // threw and silently fell back to the nominal amount — meaning this
+        // discount-preservation branch was never actually exercised. This
+        // test proves the discounted amount is now genuinely computed and
+        // propagated to MP, not just accidentally matching the nominal one.
+        it('preserves an active promo discount on the new plan price during MP propagation', async () => {
+            approvedUpgradePayment();
+            annualDbState.subRows = [
+                {
+                    id: UPGRADE_SUB_ID,
+                    status: 'active',
+                    planId: NEW_PLAN_ID,
+                    customerId: 'cust-1',
+                    mpSubscriptionId: 'mp-pre-123',
+                    promoCodeId: 'promo-1',
+                    promoEffectRemainingCycles: 2
+                }
+            ];
+            annualDbState.paymentDedupeRows = [];
+            vi.mocked(serviceCore.resolveFullPlanPriceCentavos).mockResolvedValueOnce(10_000);
+            vi.mocked(serviceCore.getPromoCodeById).mockResolvedValueOnce({
+                success: true,
+                data: {
+                    id: 'promo-1',
+                    effect: {
+                        kind: PromoEffectKindEnum.DISCOUNT,
+                        valueKind: 'percentage',
+                        value: 30,
+                        durationCycles: 3
+                    }
+                }
+            } as Awaited<ReturnType<typeof serviceCore.getPromoCodeById>>);
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                },
+                billing
+            });
+
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(serviceCore.getPromoCodeById).toHaveBeenCalledWith('promo-1');
+            expect(billing._paymentAdapterUpdate).toHaveBeenCalledOnce();
+            const mpArgs = billing._paymentAdapterUpdate.mock.calls[0] as [
+                string,
+                Record<string, unknown>
+            ];
+            // 30% off 10 000 centavos = 7 000 centavos finalAmount → 70 major units,
+            // NOT the nominal 2000 from targetTransactionAmountMajor.
+            expect(mpArgs[1]).toMatchObject({
+                planId: NEW_PLAN_ID,
+                transactionAmount: 70
+            });
+        });
+
         it('idempotent skip when sub.planId already equals newPlanId', async () => {
             approvedUpgradePayment();
             const billing = makeUpgradeBilling({
@@ -1062,13 +1139,15 @@ describe('processPaymentUpdated', () => {
 
         it('does not double-record when delta payment was already in billing_payments', async () => {
             approvedUpgradePayment();
-            // Upgrade flow only does ONE getDb().select() (the payment
-            // dedupe — sub lookup goes through billing.subscriptions.get).
-            // So that first select hits `subRows` in our mock.
-            annualDbState.subRows = [
-                { id: 'pre-existing-payment-row', customerId: '', status: '' }
-            ];
-            annualDbState.paymentDedupeRows = [];
+            // HOS-75 T-018: resolveDiscountAwareUpgradeAmount now runs its own
+            // getDb().select() via loadSubscriptionDiscountState() before the
+            // payment-dedupe select below, so the dedupe select is the SECOND
+            // one against the shared selectCount and lands on
+            // `paymentDedupeRows`, not `subRows`. `subRows` here only feeds
+            // the discount-state lookup (kept promo-less, matching "no active
+            // discount" for this test's concern).
+            annualDbState.subRows = [];
+            annualDbState.paymentDedupeRows = [{ id: 'pre-existing-payment-row' }];
             const billing = makeUpgradeBilling();
 
             const result = await processPaymentUpdated({
