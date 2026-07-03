@@ -6,9 +6,10 @@
  * (`https://api.mercadolibre.com/items/{id}`) with a Bearer token from the
  * import context credentials.
  *
- * **Credential degradation (US-11):** when `ctx.credentials.mercadoLibreToken`
- * is absent or empty the adapter returns an empty extraction immediately — it
- * does NOT throw and does NOT call the API.
+ * **Credential degradation (US-11, rewired for HOS-45):** when
+ * `ctx.mercadoLibreTokenProvider` is absent, or is present but its promise
+ * rejects (e.g. a terminal OAuth refresh failure), the adapter returns an
+ * empty extraction immediately — it does NOT throw and does NOT call the API.
  *
  * **Hard rule (SPEC-222):** ratings and review data are never mapped. Only the
  * fields explicitly listed in `mapMlItemToRawExtraction` are extracted.
@@ -284,7 +285,7 @@ function mapMlItemToRawExtraction(item: MlItem): RawExtraction {
  * Handles any country TLD (`.com.ar`, `.com.mx`, `.com.br`, `.com.co`, etc.).
  * Calls the official ML Items REST API with a Bearer token from the import
  * context. Gracefully degrades (returns empty extraction) on:
- *   - missing / empty `mercadoLibreToken` (US-11)
+ *   - missing `mercadoLibreTokenProvider`, or the provider rejecting (US-11)
  *   - unrecognisable item ID in the URL
  *   - non-2xx API response
  *   - network / timeout error
@@ -320,7 +321,8 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
      * the official ML Items API (`https://api.mercadolibre.com/items/{id}`).
      *
      * **Degradation cases** (returns `{ sourcePlatform: 'mercadolibre' }`, no throw):
-     * 1. `ctx.credentials.mercadoLibreToken` is absent or empty (US-11).
+     * 1. `ctx.mercadoLibreTokenProvider` is absent, or present but its
+     *    promise rejects (e.g. a terminal OAuth refresh failure) (US-11).
      * 2. No recognisable ML item ID can be parsed from the URL.
      * 3. The ML API returns a non-2xx status.
      * 4. `fetch` throws (network error, `AbortController` timeout, etc.).
@@ -334,9 +336,22 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
      *   `source: 'official_api'`, or an empty extraction on degradation.
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
-        // 1. Credential degradation (US-11)
-        const token = ctx.credentials.mercadoLibreToken;
-        if (!token) {
+        // 1. Credential degradation (US-11) — via the OAuth token-provider port
+        if (!ctx.mercadoLibreTokenProvider) {
+            return { sourcePlatform: 'mercadolibre', failureCode: 'credentials_missing' };
+        }
+
+        let token: string;
+        try {
+            token = await ctx.mercadoLibreTokenProvider();
+        } catch {
+            // Any thrown error (e.g. a terminal MLTokenRefreshError — the admin alert
+            // for that case already fired inside apps/api's token service, T-010; no
+            // adapter-level alert duplication needed here) degrades the same way as a
+            // missing credential. The SPEC-258 C.1 failure-mode contract stays
+            // unchanged — this is still `credentials_missing`, just reached via a new
+            // path (an OAuth refresh failure) instead of the old missing-static-token
+            // path.
             return { sourcePlatform: 'mercadolibre', failureCode: 'credentials_missing' };
         }
 

@@ -31,13 +31,18 @@ import { AirbnbAdapter } from '../../../../src/services/accommodation-import/ada
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../../src/services/accommodation-import/adapters/apify-client.js', () => ({
-    runApifyActor: vi.fn()
+    runApifyActor: vi.fn(),
+    startApifyRun: vi.fn()
 }));
 
 // Import the mock reference AFTER vi.mock so TypeScript and vitest are aligned
-import { runApifyActor } from '../../../../src/services/accommodation-import/adapters/apify-client.js';
+import {
+    runApifyActor,
+    startApifyRun
+} from '../../../../src/services/accommodation-import/adapters/apify-client.js';
 
 const mockRunApifyActor = vi.mocked(runApifyActor);
+const mockStartApifyRun = vi.mocked(startApifyRun);
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -109,6 +114,7 @@ describe('AirbnbAdapter', () => {
     beforeEach(() => {
         adapter = new AirbnbAdapter();
         mockRunApifyActor.mockReset();
+        mockStartApifyRun.mockReset();
     });
 
     afterEach(() => {
@@ -1245,6 +1251,95 @@ describe('AirbnbAdapter', () => {
             expect(mockRunApifyActor).toHaveBeenCalledWith(
                 expect.objectContaining({ timeoutMs: 15_000 })
             );
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // extractAsync() — HOS-50 T-007
+    // -----------------------------------------------------------------------
+
+    describe('extractAsync()', () => {
+        const url = new URL('https://www.airbnb.com/rooms/99999');
+
+        it('returns credentials_missing without calling startApifyRun when apifyToken is absent', async () => {
+            const ctx = makeCtx({ apifyToken: undefined });
+
+            const result = await adapter.extractAsync?.(url, ctx);
+
+            expect(result).toEqual({ failureCode: 'credentials_missing' });
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+        });
+
+        it('returns credentials_missing without calling startApifyRun when apifyAirbnbActor is absent', async () => {
+            const ctx = makeCtx({ apifyAirbnbActor: undefined });
+
+            const result = await adapter.extractAsync?.(url, ctx);
+
+            expect(result).toEqual({ failureCode: 'credentials_missing' });
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+        });
+
+        it('returns a run handle on success, using the same actor input the sync path builds', async () => {
+            mockStartApifyRun.mockResolvedValue({ runId: 'run-1', defaultDatasetId: 'ds-1' });
+            const ctx = makeCtx();
+
+            const result = await adapter.extractAsync?.(url, ctx);
+
+            expect(result).toEqual({ runId: 'run-1', datasetId: 'ds-1' });
+            expect(mockStartApifyRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    token: 'test-apify-token',
+                    actor: 'apify/airbnb-scraper',
+                    actorInput: expect.objectContaining({
+                        startUrls: [{ url: url.href }],
+                        adults: expect.any(Number),
+                        currency: expect.any(String),
+                        checkIn: expect.any(String),
+                        checkOut: expect.any(String)
+                    })
+                })
+            );
+        });
+
+        it('returns provider_error when startApifyRunWithRetry exhausts all attempts (null)', async () => {
+            mockStartApifyRun.mockResolvedValue(null);
+            const ctx = makeCtx();
+
+            vi.useFakeTimers();
+            const p = adapter.extractAsync?.(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            expect(result).toEqual({ failureCode: 'provider_error' });
+            // Retry cap enforced: exactly 3 calls (1 initial + 2 retries).
+            expect(mockStartApifyRun).toHaveBeenCalledTimes(3);
+        });
+
+        it('succeeds after retrying two null attempts', async () => {
+            mockStartApifyRun
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce({ runId: 'run-2', defaultDatasetId: 'ds-2' });
+            const ctx = makeCtx();
+
+            vi.useFakeTimers();
+            const p = adapter.extractAsync?.(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            expect(result).toEqual({ runId: 'run-2', datasetId: 'ds-2' });
+            expect(mockStartApifyRun).toHaveBeenCalledTimes(3);
+        });
+
+        it('does not call runApifyActor (the sync path) at all', async () => {
+            mockStartApifyRun.mockResolvedValue({ runId: 'run-1', defaultDatasetId: 'ds-1' });
+            const ctx = makeCtx();
+
+            await adapter.extractAsync?.(url, ctx);
+
+            expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
     });
 });

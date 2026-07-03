@@ -126,3 +126,23 @@ Cloudflare's zone-level **Email Address Obfuscation** feature (Scrape Shield), n
 T-017's original scope ("confirm zero net-new violation types beyond the known GAP-046-10 eval-probe") is superseded by the owner's 2026-07-02 decision: additional known-benign gaps are permitted, same precedent as GAP-046-10 itself (which was originally a "dropped→reopened as accepted" gap per SPEC-046 §3.3). With `GAP-30-01` and `GAP-30-02` both explicitly accepted, **all three live violation types on staging are now documented and accounted for**. No violation type is unexplained or unreviewed.
 
 **T-017 passes under the re-scoped criterion: zero *unreviewed* violation types.** T-020 (enforce-mode flip) is cleared to proceed.
+
+## 7. T-020 — Enforce flip merged and deployed (2026-07-02)
+
+PR #2010 merged to `staging`: `apps/web/src/middleware.ts` now sets `Content-Security-Policy` instead of `Content-Security-Policy-Report-Only`. Also fixed a second call site the T-020 task description missed — the `/beta` docs route had its own hardcoded Report-Only header setter, independent of the main pipeline, which would have silently stayed report-only forever. Both call sites now share one `CSP_HEADER_NAME` module constant.
+
+Pre-flip safety check: queried Sentry for all 15 prerendered (SSG) routes over 90d (none were ever crawled by T-002/T-016). Found only the already-accepted `GAP-30-01` violation type — no new types. Concluded safe to enforce.
+
+**Post-deploy verification** (`hospeda-web-staging` redeployed by the user): confirmed via `curl` against live `https://staging.hospeda.com.ar` that SSR routes correctly emit the new header — `/es/` and `/es/alojamientos/` both return `content-security-policy` (not `-report-only`), full policy present.
+
+### 7.1 New finding during post-deploy verification: prerendered routes ship NO CSP header at all — HOS-74
+
+While spot-checking the same 15 prerendered routes live (not just via Sentry), found they return **zero** `content-security-policy` header on direct navigation — confirmed via repeated cache-busted `curl` (`cf-cache-status: DYNAMIC`, ruling out a CDN cache artifact) against `/es/nosotros/`, `/beta/`, `/es/legal/terminos/`, `/es/legal/privacidad/`, `/es/legal/cookies/`, `/es/preguntas-frecuentes/`, `/es/colaborar/`.
+
+**This predates T-020 and is not caused by it** — T-020's diff never touched the `isHtmlPage`/`context.isPrerendered` computation, only the header value inside the existing conditional. In hindsight, the pre-flip Sentry safety check (§6/§7 above) was insufficient: it only showed `GAP-30-01` events for these routes, but those most likely originate from `<ClientRouter />` soft/client-side navigation retaining the *origin* SSR page's policy (HTTP-header CSP doesn't get replaced by a soft navigation), not proof that a direct full-page load to the prerendered route carries any policy. It never did.
+
+Filed as **[HOS-74](https://linear.app/hospeda-beta/issue/HOS-74/csp-header-entirely-missing-on-prerendered-ssg-routes-in-production)** for separate investigation (root cause not yet confirmed — likely `context.isPrerendered` not evaluating truthy for these routes in the deployed build, or the static-file layer bypassing the middleware pipeline for subsequent requests). Owner decision: does not block T-021 — the 48h soak is scoped to the SSR routes that were actually crawled in T-002/T-016 and are correctly enforcing; the prerendered routes are in the same (unprotected) state they've always been in, not worse.
+
+### 7.2 T-021 soak — started 2026-07-02
+
+48h soak clock starts at the deploy-verification timestamp above (~2026-07-02 20:40 UTC), ends ~2026-07-04 20:40 UTC. Monitoring: Sentry CSP block events on the SSR routes, any user/manual reports of broken UX on auth/checkout/owner forms. Requires a follow-up session (or scheduled check) after the 48h window elapses — cannot be completed synchronously.

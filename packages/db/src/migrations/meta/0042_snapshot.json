@@ -1,5 +1,5 @@
 {
-    "id": "62c2d008-191b-420d-8705-4b56fe5b4a8e",
+    "id": "05914ff6-f203-4c4f-90b0-a6faecdddda1",
     "prevId": "168d39ae-8237-4cef-ac16-75cf32298933",
     "version": "7",
     "dialect": "postgresql",
@@ -11489,6 +11489,111 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.external_oauth_credentials": {
+            "name": "external_oauth_credentials",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "provider": {
+                    "name": "provider",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_ciphertext": {
+                    "name": "access_token_ciphertext",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_iv": {
+                    "name": "access_token_iv",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_auth_tag": {
+                    "name": "access_token_auth_tag",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_ciphertext": {
+                    "name": "refresh_token_ciphertext",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_iv": {
+                    "name": "refresh_token_iv",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_auth_tag": {
+                    "name": "refresh_token_auth_tag",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "expires_at": {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "idx_external_oauth_credentials_active_provider": {
+                    "name": "idx_external_oauth_credentials_active_provider",
+                    "columns": [
+                        {
+                            "expression": "provider",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "where": "deleted_at IS NULL",
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.newsletter_campaign_deliveries": {
             "name": "newsletter_campaign_deliveries",
             "schema": "",
@@ -22668,31 +22773,6 @@
                     "notNull": true,
                     "default": "'{}'::jsonb"
                 },
-                "display_name": {
-                    "name": "display_name",
-                    "type": "varchar(255)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "monthly_price_ars": {
-                    "name": "monthly_price_ars",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "annual_price_ars": {
-                    "name": "annual_price_ars",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "product_domain": {
-                    "name": "product_domain",
-                    "type": "varchar(32)",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'accommodation'"
-                },
                 "livemode": {
                     "name": "livemode",
                     "type": "boolean",
@@ -22749,21 +22829,6 @@
                     "columns": [
                         {
                             "expression": "livemode",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "idx_plans_product_domain": {
-                    "name": "idx_plans_product_domain",
-                    "columns": [
-                        {
-                            "expression": "product_domain",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -23226,31 +23291,6 @@
                     "notNull": true,
                     "default": true
                 },
-                "effect_kind": {
-                    "name": "effect_kind",
-                    "type": "varchar(30)",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'discount'"
-                },
-                "value_kind": {
-                    "name": "value_kind",
-                    "type": "varchar(20)",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "duration_cycles": {
-                    "name": "duration_cycles",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "extra_days": {
-                    "name": "extra_days",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false
-                },
                 "created_at": {
                     "name": "created_at",
                     "type": "timestamp with time zone",
@@ -23280,21 +23320,6 @@
                     "columns": [
                         {
                             "expression": "active",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "idx_promo_codes_effect_kind": {
-                    "name": "idx_promo_codes_effect_kind",
-                    "columns": [
-                        {
-                            "expression": "effect_kind",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -23951,22 +23976,9 @@
                     "primaryKey": false,
                     "notNull": false
                 },
-                "product_domain": {
-                    "name": "product_domain",
-                    "type": "varchar(32)",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'accommodation'"
-                },
                 "scheduled_plan_change": {
                     "name": "scheduled_plan_change",
                     "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "promo_effect_remaining_cycles": {
-                    "name": "promo_effect_remaining_cycles",
-                    "type": "integer",
                     "primaryKey": false,
                     "notNull": false
                 },
@@ -24099,21 +24111,6 @@
                     "columns": [
                         {
                             "expression": "current_period_end",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "idx_subscriptions_product_domain": {
-                    "name": "idx_subscriptions_product_domain",
-                    "columns": [
-                        {
-                            "expression": "product_domain",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"

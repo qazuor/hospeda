@@ -12,6 +12,16 @@
  * - Validates with `AccommodationImportRequestSchema` before the network call.
  * - NEVER submits/saves the form.
  *
+ * **HOS-50 / SPEC-277 R3 T-015**: for slow/blocked sources (Airbnb, or
+ * Booking on its Apify-fallback branch) the server responds `202` with a run
+ * handle instead of the finalized draft. This section then switches to
+ * polling mode via `useAccommodationImportStatusQuery` (T-014), keeping the
+ * submit button's spinner active — with a distinct label from the initial
+ * POST — for the entire poll duration. Field prefill is deferred until the
+ * poll settles; the outcome is then handled exactly like the synchronous
+ * `200` branch (success prefills, a classified failure renders the same
+ * error banner).
+ *
  * @module ImportFromUrlSection
  */
 
@@ -19,8 +29,16 @@ import { useEntityFormContext } from '@/components/entity-form/context/EntityFor
 import { useTranslations } from '@/hooks/use-translations';
 import { AlertCircleIcon, ImportIcon, InfoIcon, LoaderIcon } from '@repo/icons';
 import { AccommodationImportRequestSchema } from '@repo/schemas';
-import { useState } from 'react';
-import { useAccommodationImportMutation } from '../hooks/useAccommodationImportMutation';
+import type { AccommodationImportResponse, ImportFailureCode } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    isAsyncImportStart,
+    useAccommodationImportMutation
+} from '../hooks/useAccommodationImportMutation';
+import {
+    type ImportRunHandle,
+    useAccommodationImportStatusQuery
+} from '../hooks/useAccommodationImportStatusQuery';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,56 +113,36 @@ export function ImportFromUrlSection() {
     const [destinationHintText, setDestinationHintText] = useState<string | null>(null);
     /** Machine-readable failure message from a 200 response that carries failureCode (SPEC-258 C.1). */
     const [failureError, setFailureError] = useState<string | null>(null);
+    /** HOS-50 T-015: non-null while an async Apify run is being polled. */
+    const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
+    /**
+     * Guards against re-handling a settle outcome on unrelated re-renders
+     * while `runHandle` is unchanged, and is reset whenever a NEW run starts.
+     */
+    const handledSettleRef = useRef(false);
+
+    const statusQuery = useAccommodationImportStatusQuery(runHandle);
 
     // Derived
-    const isDisabled = !legalChecked || mutation.isPending;
+    const isPolling = runHandle !== null && !(statusQuery.data?.settled ?? false);
+    const isDisabled = !legalChecked || mutation.isPending || isPolling;
 
-    const handleImport = async () => {
-        setValidationError(null);
-        setServerMessage(null);
-        setDestinationHintText(null);
-        setFailureError(null);
+    /** Renders the classified-failure error banner (shared by the sync 200 branch and the async settle branch). */
+    const applyFailure = useCallback(
+        (failureCode: ImportFailureCode) => {
+            const camelKey = failureCode.replace(/_([a-z])/g, (_, letter: string) =>
+                letter.toUpperCase()
+            );
+            setFailureError(
+                t(`host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0])
+            );
+        },
+        [t]
+    );
 
-        const parseResult = AccommodationImportRequestSchema.safeParse({
-            url: url.trim(),
-            legalConfirmed: true as const
-        });
-
-        if (!parseResult.success) {
-            const issue = parseResult.error.issues[0];
-            if (issue?.path[0] === 'url') {
-                const msg =
-                    url.trim() === ''
-                        ? t('host.importFromUrl.errors.urlRequired' as Parameters<typeof t>[0])
-                        : t('host.importFromUrl.errors.urlInvalid' as Parameters<typeof t>[0]);
-                setValidationError(msg);
-            } else {
-                setValidationError(
-                    t('host.importFromUrl.errors.urlInvalid' as Parameters<typeof t>[0])
-                );
-            }
-            return;
-        }
-
-        try {
-            const response = await mutation.mutateAsync({
-                url: parseResult.data.url,
-                legalConfirmed: true
-            });
-
-            // Branch 2: 200 response with a machine-readable failureCode — render as error,
-            // do NOT prefill the form (SPEC-258 C.1).
-            if (response.failureCode) {
-                const camelKey = response.failureCode.replace(/_([a-z])/g, (_, letter: string) =>
-                    letter.toUpperCase()
-                );
-                setFailureError(
-                    t(`host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0])
-                );
-                return;
-            }
-
-            // Prefill form fields from draft
+    /** Prefills the form from a finalized draft (shared by the sync 200 branch and the async settle branch). */
+    const applySuccessfulDraft = useCallback(
+        (response: AccommodationImportResponse) => {
             const newImportedFields: ImportedFieldsMap = {};
 
             if (typeof response.draft.name?.value === 'string') {
@@ -209,10 +207,87 @@ export function ImportFromUrlSection() {
                     setDestinationHintText(parts.join(' '));
                 }
             }
+        },
+        [setFieldValue, t]
+    );
+
+    const handleImport = async () => {
+        setValidationError(null);
+        setServerMessage(null);
+        setDestinationHintText(null);
+        setFailureError(null);
+
+        const parseResult = AccommodationImportRequestSchema.safeParse({
+            url: url.trim(),
+            legalConfirmed: true as const
+        });
+
+        if (!parseResult.success) {
+            const issue = parseResult.error.issues[0];
+            if (issue?.path[0] === 'url') {
+                const msg =
+                    url.trim() === ''
+                        ? t('host.importFromUrl.errors.urlRequired' as Parameters<typeof t>[0])
+                        : t('host.importFromUrl.errors.urlInvalid' as Parameters<typeof t>[0]);
+                setValidationError(msg);
+            } else {
+                setValidationError(
+                    t('host.importFromUrl.errors.urlInvalid' as Parameters<typeof t>[0])
+                );
+            }
+            return;
+        }
+
+        try {
+            const response = await mutation.mutateAsync({
+                url: parseResult.data.url,
+                legalConfirmed: true
+            });
+
+            // HOS-50 T-015: a 202 dispatch for a slow/blocked source — switch to
+            // polling mode via useAccommodationImportStatusQuery and keep the
+            // submit button's spinner active. The outcome is handled by the
+            // settle effect below; prefill/failure rendering is deferred.
+            if (isAsyncImportStart(response)) {
+                handledSettleRef.current = false;
+                setRunHandle(response);
+                return;
+            }
+
+            // Branch 2: 200 response with a machine-readable failureCode — render as error,
+            // do NOT prefill the form (SPEC-258 C.1).
+            if (response.failureCode) {
+                applyFailure(response.failureCode);
+                return;
+            }
+
+            applySuccessfulDraft(response);
         } catch {
             // Error is already surfaced by mutation.error below
         }
     };
+
+    // HOS-50 T-015: handles the outcome once the polled async run settles —
+    // mirrors the synchronous 200 branch above (failureCode -> error banner,
+    // draft -> prefill). `handledSettleRef` prevents re-running this on
+    // unrelated re-renders while `statusQuery.data` keeps reporting the same
+    // settled run.
+    useEffect(() => {
+        if (!runHandle || !statusQuery.data?.settled || handledSettleRef.current) {
+            return;
+        }
+        handledSettleRef.current = true;
+        setRunHandle(null);
+
+        if (statusQuery.data.failureCode) {
+            applyFailure(statusQuery.data.failureCode);
+            return;
+        }
+
+        if (statusQuery.data.draft) {
+            applySuccessfulDraft(statusQuery.data.draft);
+        }
+    }, [runHandle, statusQuery.data, applyFailure, applySuccessfulDraft]);
 
     return (
         <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
@@ -275,12 +350,18 @@ export function ImportFromUrlSection() {
                 onClick={handleImport}
                 disabled={isDisabled}
                 data-testid="import-submit-btn"
+                data-state={mutation.isPending ? 'submitting' : isPolling ? 'polling' : 'idle'}
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {mutation.isPending ? (
                     <>
                         <LoaderIcon className="h-4 w-4 animate-spin" />
                         {t('host.importFromUrl.actions.submitting' as Parameters<typeof t>[0])}
+                    </>
+                ) : isPolling ? (
+                    <>
+                        <LoaderIcon className="h-4 w-4 animate-spin" />
+                        {t('host.importFromUrl.actions.polling' as Parameters<typeof t>[0])}
                     </>
                 ) : (
                     <>
