@@ -567,19 +567,19 @@
         {
             "id": "T-017",
             "title": "Audit social admin components for inline SVG / direct phosphor imports",
-            "description": "Grep `apps/admin/src/routes/_authed/social/` for inline `<svg>` elements and direct `phosphor-react`/`@phosphor-icons` imports. Produce an exact file+line inventory to drive T-018/T-019 (no code changes in this task).\n\nTest requirements: none (discovery-only task); the inventory is verified by the fix tasks' own tests and the T-020 guard test.",
-            "status": "pending",
+            "description": "Grep `apps/admin/src/routes/_authed/social/` for inline `<svg>` elements and direct `phosphor-react`/`@phosphor-icons` imports. Produce an exact file+line inventory to drive T-018/T-019 (no code changes in this task).\n\nTest requirements: none (discovery-only task); the inventory is verified by the fix tasks' own tests and the T-020 guard test.\n\nAUDIT RESULT (2026-07-03): inventory is EMPTY. Zero inline `<svg>` and zero `phosphor-react`/`@phosphor-icons` imports in production code under `apps/admin/src/routes/_authed/social/`. Also checked lucide-react/react-icons/heroicons/@radix-ui/react-icons/react-feather: none present. The only `<svg>` occurrences (dashboard.test.tsx L112/119/126, post-list.test.tsx L57/64/71) are legitimate `vi.mock('@repo/icons', ...)` stubs that RENDER `<svg data-testid=...>` to fake the real icons — evidence that components consume `@repo/icons`, not a violation. SocialPostPlatformIcons.tsx already imports `{ FacebookIcon, InstagramIcon, XIcon } from '@repo/icons'` with an explicit \"Icons come from @repo/icons only.\" comment. Consequence: T-018/T-019 have no replacement work (close by verification, like T-008); T-020's guard is the only real remaining G-9 work and its test already passes against the current tree.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-018", "T-019"],
             "subtasks": [
                 {
                     "title": "Grep inline <svg usages under routes/_authed/social/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Grep phosphor-react/@phosphor-icons imports under the same tree",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-9", "cleanup", "social"],
@@ -591,8 +591,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:25:00Z",
+                "completed": "2026-07-03T22:27:20Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 4,
         "averageComplexity": 2.0
     }

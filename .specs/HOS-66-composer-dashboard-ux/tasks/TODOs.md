@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 12/27 tasks (44%)
+## Progress: 13/27 tasks (48%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -89,7 +89,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 
 ### Cleanup Phase (G-9 icon audit)
 
-- [ ] **T-017** (complexity: 1) - Audit social admin components for inline SVG / direct phosphor imports
+- [x] **T-017** (complexity: 1) - Audit social admin components for inline SVG / direct phosphor imports (RESULT: empty inventory — subtree already clean; see state.json note)
   - Blocked by: none
   - Blocks: T-018, T-019
 
