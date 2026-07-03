@@ -117,35 +117,35 @@
             "id": "T-004",
             "title": "Integration tests for batch/campaign auto-detection acceptance criteria",
             "description": "Write integration tests against `POST /api/v1/ai/social/drafts` covering AC-1/AC-2/AC-3: (1) an explicit new campaign name creates a row and associates the draft; (2) an explicit existing slug associates without creating a duplicate; (3) a draft submitted with no explicit campaign/batch reference ships unassociated at the backend level (the implicit-fallback reasoning itself is GPT-side per T-003, so this test only verifies the backend's pass-through behavior when no slug is sent).\n\nTest requirements:\n- Add cases to the existing drafts route test file. Use realistic near-duplicate names (\"Lanzamiento 2026\" vs \"Lanzamiento 26\") as fixture data for AC-2's manual/GPT-side verification note in the test comment.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002", "T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test: explicit new name creates + associates",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: explicit existing slug associates only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: no explicit slug ships unassociated",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-4", "G-5", "testing", "social"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T14:13:21Z",
+                "completed": "2026-07-03T14:17:24Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 4,
         "averageComplexity": 2.0
     }

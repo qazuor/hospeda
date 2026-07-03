@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 3/27 tasks (11%)
+## Progress: 4/27 tasks (15%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -103,7 +103,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 
 ### Testing Phase
 
-- [ ] **T-004** (complexity: 2) - Integration tests for batch/campaign auto-detection acceptance criteria (AC-1/AC-2/AC-3)
+- [x] **T-004** (complexity: 2) - Integration tests for batch/campaign auto-detection acceptance criteria (AC-1/AC-2/AC-3)
   - Blocked by: T-001, T-002, T-003
 
 - [ ] **T-012** (complexity: 2) - Verify dashboard AC-4 end-to-end
