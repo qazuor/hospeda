@@ -545,7 +545,7 @@
             "id": "T-017",
             "title": "Fix stale extras/018 comment in promo-code.schema.ts",
             "description": "Update the stale 'added via extras/018' JSDoc comment at packages/schemas/src/api/billing/promo-code.schema.ts:291 to reflect that these are now typed Drizzle columns (qzpay-drizzle 1.11.0, HOS-73).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -553,14 +553,24 @@
             "tags": ["billing", "promo-code", "docs"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T12:56:47Z",
+                    "details": "Doc-only change, no tests needed"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T12:55:44Z",
+                "completed": "2026-07-03T12:56:47Z"
             }
         },
         {
@@ -836,9 +846,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 1.54
     }

@@ -287,8 +287,9 @@ export type ApplyPromoCode = z.infer<typeof ApplyPromoCodeSchema>;
  * This is the SINGLE SOURCE OF TRUTH for the create-promo-code request
  * contract. The `effect` field replaces the former flat `discountType` /
  * `discountValue` fields (SPEC-262 T-004) and carries a typed discriminated
- * union that the service persists to the new `effect_kind`, `value_kind`,
- * `duration_cycles`, and `extra_days` columns (added in extras/018).
+ * union that the service persists to the `effectKind`, `valueKind`,
+ * `durationCycles`, and `extraDays` typed Drizzle columns (as of
+ * `@qazuor/qzpay-drizzle` 1.11.0, HOS-73).
  *
  * Dates are coerced from ISO strings so the route handler can forward `Date`
  * instances straight to the service.

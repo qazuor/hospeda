@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 16/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 17/28
 
 ## Setup
 
@@ -26,7 +26,7 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 16/28
 - [x] T-014: Migrate promo-discount-apply.service.ts SELECT + UPDATE (complexity: 2)
 - [x] T-015: Migrate subscription-discount-signup.service.ts UPDATE (complexity: 1)
 - [x] T-016: Fold effect-columns UPDATE into insert (billingPromoCodes.seed.ts) (complexity: 1)
-- [ ] T-017: Fix stale extras/018 comment in promo-code.schema.ts (complexity: 1)
+- [x] T-017: Fix stale extras/018 comment in promo-code.schema.ts (complexity: 1)
 
 ## Integration — Phase C (webhooks/crons, ~5 files)
 
