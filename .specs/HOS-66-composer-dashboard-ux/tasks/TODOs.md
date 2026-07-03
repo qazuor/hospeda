@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 7/27 tasks (26%)
+## Progress: 8/27 tasks (30%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -51,7 +51,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-005, T-006
   - Blocks: T-009, T-010, T-012
 
-- [ ] **T-008** (complexity: 2) - Ensure admin posts list response exposes thumbnailUrl
+- [x] **T-008** (complexity: 2) - Ensure admin posts list response exposes thumbnailUrl (already implemented — closed by verification)
   - Blocked by: none
   - Blocks: T-011
 

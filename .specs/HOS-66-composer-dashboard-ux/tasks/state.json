@@ -260,36 +260,36 @@
         {
             "id": "T-008",
             "title": "Ensure admin posts list response exposes thumbnailUrl",
-            "description": "Verify whether `GET /api/v1/admin/social/posts` (`apps/api/src/routes/social/admin/posts/`) already returns a thumbnail URL per post (`social_post_media`). If missing, add it to the list response schema and query (additive). This is the backend prerequisite for the posts-table thumbnail column (T-011).\n\nTest requirements:\n- Route/unit test asserting each list item includes `thumbnailUrl` (string URL or null when no media exists).",
-            "status": "pending",
+            "description": "Verify whether `GET /api/v1/admin/social/posts` (`apps/api/src/routes/social/admin/posts/`) already returns a thumbnail URL per post (`social_post_media`). If missing, add it to the list response schema and query (additive). This is the backend prerequisite for the posts-table thumbnail column (T-011).\n\nTest requirements:\n- Route/unit test asserting each list item includes `thumbnailUrl` (string URL or null when no media exists).\n\nVERIFIED ALREADY IMPLEMENTED (no code change needed): SocialPostListItemSchema already has thumbnailUrl (packages/schemas/src/entities/social/social-post.schema.ts), SocialPostService.listPosts() already populates it (social-post.service.ts ~L1720-1766), and both service-level (\"item shape\" describe block) and route-level (social-posts-crud.test.ts) tests already cover it. Closed by verification, not implementation.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Check current admin posts list response shape",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add thumbnailUrl to list schema/query if missing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: thumbnailUrl present for posts with/without media",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-7", "backend", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T20:02:13Z",
+                "completed": "2026-07-03T20:03:40Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 4,
         "averageComplexity": 2.0
     }
