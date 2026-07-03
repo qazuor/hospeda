@@ -64,9 +64,16 @@ export default defineConfig({
     site: HOSPEDA_SITE_URL,
     output: 'server',
     trailingSlash: 'always',
+    // Astro 7 changed the default from `true` (HTML-aware compression,
+    // preserves a single space between inline elements) to `'jsx'` (strips
+    // whitespace between inline elements unless explicit). Pinning `true`
+    // keeps the pre-v7 rendering behavior unchanged across the HOS-76
+    // migration instead of risking a silent whitespace regression across
+    // every inline icon+text pairing in the site.
+    compressHTML: true,
     adapter: node({
         mode: 'standalone',
-        // Astro 6 + @astrojs/node 10: serve response headers (including any
+        // Astro 7 + @astrojs/node 11: serve response headers (including any
         // attached by middleware) for prerendered pages too. Pays off once
         // CSP migrates from middleware response.headers.set() to native
         // security.csp (follow-up SPEC).

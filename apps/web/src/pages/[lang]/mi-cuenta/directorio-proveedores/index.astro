@@ -158,7 +158,7 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
     </div>
 
     {accessDenied ? (
-        <!-- Access-denied state (AC-5.3): tourist or non-host user -->
+        /* Access-denied state (AC-5.3): tourist or non-host user */
         <div class="trades-page__access-denied" role="alert">
             <span class="trades-page__access-denied-icon" aria-hidden="true">
                 <LockIcon size={40} weight="duotone" />
@@ -170,7 +170,7 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : fetchError ? (
-        <!-- Generic error state -->
+        /* Generic error state */
         <div class="trades-page__error" role="alert">
             <p class="trades-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
@@ -180,14 +180,14 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </a>
         </div>
     ) : !isEmpty ? (
-        <!-- Trades island — hydrates when browser is idle (content is below the fold) -->
+        /* Trades island — hydrates when browser is idle (content is below the fold) */
         <TradesDirectory
             client:idle
             trades={trades as HostTradePublic[]}
             locale={locale}
         />
     ) : (
-        <!-- Empty state: disambiguated by secondary accommodations fetch -->
+        /* Empty state: disambiguated by secondary accommodations fetch */
         <EmptyState
             locale={locale}
             variant="empty"
