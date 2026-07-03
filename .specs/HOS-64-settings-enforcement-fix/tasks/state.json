@@ -1226,35 +1226,36 @@
             "id": "T-035",
             "title": "Write social credentials vault roundtrip integration test",
             "description": "Create `apps/api/test/integration/social/social-credential-vault-roundtrip.test.ts`, mirroring `apps/api/test/integration/ai/vault-roundtrip.test.ts`: real Postgres via `testDb.setup/clean/teardown`, real HTTP routes (T-026/T-027), mock-actor header auth. Cover create/rotate/update/delete/list for all 4 secret keys, asserting exactly one `social_credential_audit` row per mutation (AC-5) and that no response ever contains ciphertext/iv/authTag (AC-6).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-026", "T-027"],
             "blocks": ["T-038"],
             "subtasks": [
                 {
                     "title": "Set up testDb + real routes + mock-actor auth",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cover create/rotate/update/delete/list for all 4 keys",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert one audit row per mutation and no plaintext leakage",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "vault", "social"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass — 16/16 tests green (`pnpm vitest run --config vitest.config.e2e.ts test/integration/social/social-credential-vault-roundtrip.test.ts`). Covers: anon 400/401, non-admin 403, create (encrypt-at-rest DB assertion, plaintext round-trip via getDecryptedSocialCredential, exactly-one 'created' audit row, 422/400 duplicate-key, all 4 keys parametrized), rotate (new-value round-trip + exactly-one 'rotated' audit row, 404 on non-existent key), update (label-only + secret-unchanged + exactly-one 'updated' audit row), delete (soft-delete + exactly-one 'deleted' audit row + list omits it + 404 on non-existent key), list (masked shape across all 4 keys, no ciphertext/iv/authTag/plaintext anywhere in the response)."
             },
+            "decisionNote": "Root-caused and fixed two pre-existing environment gaps hit while writing this test (both documented in engram discovery/root-cause-of-pre-existing-500s-in-ai-social-vault-roundtrip-integration-tests): (1) apps/api/.env.test was missing HOSPEDA_SOCIAL_VAULT_MASTER_KEY entirely — added a 50-char test-only throwaway value alongside the existing AI vault key. (2) The test DB (localhost:5436/hospeda_test) predated the T-006 migration and had no social_credentials/social_credential_audit tables — ran `pnpm --filter @repo/db db:push` against it once to sync. (3) The actual root cause of every mutation returning 500: social_credential_audit.actor_id is a real FK to users.id, and the naive `crypto.randomUUID()` mock-actor pattern (copied from the AI vault test, which mirrors the SAME pre-existing bug — 5/10 tests failing there per an earlier session's discovery note) has no matching user row, so every audit-row INSERT inside the transaction fails with an FK violation, generically caught and surfaced as an opaque 500. Fixed by seeding real users via createTestUser() from seed-helpers.ts in beforeEach (not beforeAll, since testDb.clean() truncates `users` in afterEach) and using their real `.id` as the mock-actor id. Did NOT fix the twin bug in test/integration/ai/vault-roundtrip.test.ts itself — that's SPEC-173 territory, out of scope for HOS-64; flagged as a follow-up candidate.",
             "timestamps": {
                 "created": "2026-07-02T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T10:10:00Z",
+                "completed": "2026-07-03T10:50:00Z"
             }
         },
         {
@@ -1528,9 +1529,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 33,
+        "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.2
     }
