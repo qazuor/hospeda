@@ -262,19 +262,29 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
                                     />
 
                                     <Tooltip
-                                        formatter={(value: number, name: string) => {
+                                        formatter={(value, name) => {
+                                            const numValue =
+                                                typeof value === 'number'
+                                                    ? value
+                                                    : Number(value ?? 0);
                                             if (name === 'costUsd') {
                                                 return [
-                                                    formatMicroUsd(Math.round(value * 1_000_000)),
+                                                    formatMicroUsd(
+                                                        Math.round(numValue * 1_000_000)
+                                                    ),
                                                     t('admin-pages.ai.usage.daily.legendEstCost')
                                                 ];
                                             }
                                             return [
-                                                value.toLocaleString(),
+                                                numValue.toLocaleString(),
                                                 t('admin-pages.ai.usage.daily.legendCalls')
                                             ];
                                         }}
-                                        labelFormatter={formatXAxisTick}
+                                        labelFormatter={(label) =>
+                                            typeof label === 'string'
+                                                ? formatXAxisTick(label)
+                                                : String(label ?? '')
+                                        }
                                     />
 
                                     <Legend
