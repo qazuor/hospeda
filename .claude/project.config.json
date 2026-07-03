@@ -40,7 +40,8 @@
             "name": "web",
             "defaultPort": 4321,
             "portMethod": "flag",
-            "startCmd": "pnpm --filter hospeda-web exec astro dev --port {port}"
+            "startCmd": "env ASTRO_DEV_BACKGROUND=0 pnpm --filter hospeda-web exec astro dev --port {port}",
+            "$comment": "ASTRO_DEV_BACKGROUND=0 (HOS-76): Astro 7's astro dev auto-detects AI coding agents and forks itself into a detached background process by default, escaping the setsid process group wt-servers.sh relies on for lifecycle tracking/cleanup. Must go through the `env` command, not a bare VAR=value prefix: wt-servers.sh runs this string via `exec $cmd` after unquoted variable expansion, and bash's assignment-prefix syntax only applies to literal parse-time text, not to expanded/word-split variable content — a bare prefix fails with 'exec: ASTRO_DEV_BACKGROUND=0: not found'."
         }
     ],
     "portEnvWrites": [
