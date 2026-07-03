@@ -434,7 +434,8 @@ async function ensurePlan(
             entitlements: plan.entitlements as string[],
             limits: limitsObj,
             livemode,
-            // HOS-39 T-005: dual-write the typed columns (promoted in T-003)
+            // HOS-39 T-005 / HOS-73: dual-write the typed columns (promoted in
+            // T-003, further promoted to qzpay-drizzle 1.11.0 by HOS-73)
             // alongside their metadata.* mirror below, matching what
             // plan.crud.ts's createPlan/updatePlan already do.
             displayName: plan.name,

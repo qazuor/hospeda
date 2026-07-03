@@ -177,8 +177,8 @@ export async function createTestPlan(
             entitlements: [...(overrides.entitlements ?? ['public:read'])],
             limits: { ...(overrides.limits ?? { ads_per_month: 5 }) },
             livemode: overrides.livemode ?? false,
-            // HOS-39 T-003/T-005: dual-write the typed columns alongside their
-            // metadata.* mirror, derived from the merged metadata so callers
+            // HOS-39 T-003/T-005 / HOS-73: dual-write the typed columns alongside
+            // their metadata.* mirror, derived from the merged metadata so callers
             // that pass displayName/monthlyPriceArs/annualPriceArs via
             // `overrides.metadata` (the existing convention) still populate them.
             displayName: typeof metadata.displayName === 'string' ? metadata.displayName : name,

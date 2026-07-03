@@ -453,6 +453,11 @@ export async function createPlan(
                     limits: input.limits,
                     livemode,
                     metadata,
+                    // HOS-73: displayName/monthlyPriceArs/annualPriceArs were promoted
+                    // to typed top-level columns in qzpay-drizzle 1.10.0 (still
+                    // duplicated in metadata above; reads still derive from metadata
+                    // + billing_prices per this file's own mapping doc comment —
+                    // migrating reads to the typed columns is a separate follow-up).
                     displayName: input.name,
                     monthlyPriceArs: input.monthlyPriceArs,
                     annualPriceArs: input.annualPriceArs

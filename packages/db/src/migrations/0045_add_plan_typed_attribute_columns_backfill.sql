@@ -1,6 +1,11 @@
-ALTER TABLE "billing_plans" ADD COLUMN "display_name" varchar(255) NOT NULL DEFAULT '';--> statement-breakpoint
-ALTER TABLE "billing_plans" ADD COLUMN "monthly_price_ars" integer NOT NULL DEFAULT 0;--> statement-breakpoint
-ALTER TABLE "billing_plans" ADD COLUMN "annual_price_ars" integer;--> statement-breakpoint
+-- HOS-39 T-003: backfill display_name/monthly_price_ars/annual_price_ars on
+-- billing_plans from their pre-existing metadata.*/billing_prices sources.
+--
+-- The columns themselves are added by migration 0044 (HOS-73,
+-- qzpay-drizzle 1.11.0 promotion) with blank/zero placeholder defaults
+-- (DEFAULT '' / DEFAULT 0) — that migration does not backfill real values.
+-- This migration runs after it and fixes every existing row to the value
+-- it should actually have, without touching the schema.
 UPDATE "billing_plans" AS p
 SET
     "display_name" = COALESCE(NULLIF(p.metadata->>'displayName', ''), p.name),

@@ -1,16 +1,15 @@
 /**
  * HOS-39 T-003 — Real-DB integration test for the backfill UPDATE in
- * `0044_add_plan_typed_attribute_columns.sql`.
+ * `0045_add_plan_typed_attribute_columns_backfill.sql`.
  *
- * The migration's ADD COLUMN statements already ran once (non-idempotent,
- * applied by global-setup's `drizzle-kit migrate` against an empty table),
- * so `display_name`/`monthly_price_ars`/`annual_price_ars` already exist
- * with DB-level defaults ('' / 0 / null) by the time any test runs. This
- * test exercises the migration file's UPDATE statement in isolation
- * (extracted by splitting on `--> statement-breakpoint`) against fixture
- * rows that simulate the pre-backfill state — a row inserted without the
- * typed columns explicitly set, which lands on the DB defaults exactly as
- * a real pre-migration row would have.
+ * The typed columns (`display_name`/`monthly_price_ars`/`annual_price_ars`)
+ * are added by migration 0044 (HOS-73, qzpay-drizzle 1.11.0 promotion) with
+ * blank/zero placeholder defaults ('' / 0 / null) — that migration does not
+ * backfill real values. This test exercises 0045's UPDATE statement in
+ * isolation (extracted from the migration file, stripping its leading SQL
+ * comment block) against fixture rows that simulate the pre-backfill state
+ * — a row inserted without the typed columns explicitly set, which lands on
+ * the DB defaults exactly as a real pre-migration row would have.
  *
  * Scenarios covered:
  *   - displayName/monthlyPriceArs/annualPriceArs backfilled from metadata
@@ -35,16 +34,18 @@ const __dirname = dirname(__filename);
 
 const MIGRATION_PATH = join(
     __dirname,
-    '../../src/migrations/0044_add_plan_typed_attribute_columns.sql'
+    '../../src/migrations/0045_add_plan_typed_attribute_columns_backfill.sql'
 );
 
 /** Reads the migration file and returns only its backfill UPDATE statement. */
 async function readBackfillStatement(): Promise<string> {
     const content = await readFile(MIGRATION_PATH, 'utf-8');
     const statements = content.split('--> statement-breakpoint');
-    const updateStatement = statements.find((s) => s.trim().toUpperCase().startsWith('UPDATE'));
+    const updateStatement = statements
+        .map((s) => s.replace(/^(\s*--[^\n]*\n)+/, ''))
+        .find((s) => s.trim().toUpperCase().startsWith('UPDATE'));
     if (!updateStatement) {
-        throw new Error('Backfill UPDATE statement not found in migration 0044');
+        throw new Error('Backfill UPDATE statement not found in migration 0045');
     }
     return updateStatement;
 }
@@ -100,7 +101,7 @@ afterAll(async () => {
     await closeTestPool();
 });
 
-describe('HOS-39 T-003 — 0044_add_plan_typed_attribute_columns.sql backfill (real PostgreSQL)', () => {
+describe('HOS-39 T-003 — 0045_add_plan_typed_attribute_columns_backfill.sql backfill (real PostgreSQL)', () => {
     it('migration file exists and contains the expected UPDATE statement', async () => {
         const statement = await readBackfillStatement();
         expect(statement).toMatch(/billing_plans/i);
