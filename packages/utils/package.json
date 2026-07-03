@@ -28,7 +28,7 @@
         "clean": "rm -rf node_modules && rm -rf dist"
     },
     "dependencies": {
-        "date-fns": "4.1.0",
+        "date-fns": "4.4.0",
         "slugify": "1.6.6",
         "undici": ">=7.24.0 <8",
         "@repo/config": "workspace:*",
