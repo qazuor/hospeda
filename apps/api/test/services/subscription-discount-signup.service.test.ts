@@ -16,10 +16,18 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const executeMock = vi.fn();
+const updateSetSpy = vi.fn();
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ execute: executeMock })),
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
+    getDb: vi.fn(() => ({
+        update: vi.fn(() => ({
+            set: (values: unknown) => {
+                updateSetSpy(values);
+                return { where: vi.fn().mockResolvedValue(undefined) };
+            }
+        }))
+    })),
+    billingSubscriptions: { id: 'id' },
+    eq: vi.fn((col: unknown, val: unknown) => ({ col, val }))
 }));
 
 vi.mock('@repo/schemas', () => ({}));
@@ -79,7 +87,6 @@ describe('computeSignupDiscountCycleSeed', () => {
 describe('applySignupDiscountToMonthly', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        executeMock.mockResolvedValue({ rows: [] });
         calculatePromoCodeEffectMock.mockReturnValue({
             type: 'apply-discount',
             discountAmount: 5000,
@@ -101,7 +108,7 @@ describe('applySignupDiscountToMonthly', () => {
         if (result.success) throw new Error('expected failure');
         expect(result.error.code).toBe('MP_DISCOUNT_APPLY_FAILED');
         // No stamp UPDATE, no redemption — fail-closed.
-        expect(executeMock).not.toHaveBeenCalled();
+        expect(updateSetSpy).not.toHaveBeenCalled();
         expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
@@ -118,13 +125,10 @@ describe('applySignupDiscountToMonthly', () => {
         // MP mutation ran BEFORE the stamp (fail-closed ordering).
         expect(applyInitialDiscountMutationMock).toHaveBeenCalledOnce();
         // Stamp UPDATE used N as the counter seed.
-        const updateCall = executeMock.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        const values = (updateCall?.[0] as { values: unknown[] }).values;
-        expect(values).toContain('pc-1');
-        expect(values).toContain(N);
+        expect(updateSetSpy).toHaveBeenCalledWith({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: N
+        });
         // Redemption recorded against the sub.
         expect(redeemAndRecordUsageMock).toHaveBeenCalledOnce();
         const redeemArg = redeemAndRecordUsageMock.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -144,9 +148,8 @@ describe('applySignupDiscountToMonthly', () => {
         expect(result.success).toBe(true);
         if (!result.success) throw new Error('expected success');
         expect(result.data.remainingCyclesSeed).toBeNull();
-        const updateCall = executeMock.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
+        expect(updateSetSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ promoEffectRemainingCycles: null })
         );
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain(null);
     });
 });
