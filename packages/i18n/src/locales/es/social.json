@@ -58,6 +58,7 @@
         },
         "table": {
             "ariaLabel": "Lista de posts sociales",
+            "colThumbnail": "Miniatura",
             "colTitle": "Título",
             "colStatus": "Estado",
             "colApprovalStatus": "Aprobación",

@@ -58,6 +58,7 @@
         },
         "table": {
             "ariaLabel": "Social posts list",
+            "colThumbnail": "Thumbnail",
             "colTitle": "Title",
             "colStatus": "Status",
             "colApprovalStatus": "Approval",
