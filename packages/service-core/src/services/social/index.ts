@@ -97,3 +97,7 @@ export {
     resolveDispatchCronCadence,
     type ResolveDispatchCronCadenceInput
 } from './social-dispatch-cron-config.util';
+export {
+    SocialPublicDataService,
+    type GetPublicDataInput
+} from './social-public-data.service';
