@@ -734,6 +734,94 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(createCall?.batchId).toBe(EXISTING_BATCH_UUID);
         });
 
+        it('echoes campaignResolution/batchResolution with isNew=true on the response when both are newly created (HOS-66 T-002)', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue(null);
+            campaignModel.create.mockResolvedValue({
+                id: NEW_CAMPAIGN_UUID,
+                slug: 'lanzamiento-2026',
+                name: 'Lanzamiento 2026',
+                active: true
+            });
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue(null);
+            batchModel.create.mockResolvedValue({
+                id: NEW_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+
+            const service = buildService({ campaignModel, batchModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    campaignSlug: 'lanzamiento-2026',
+                    batchSlug: 'hospeda-launch-2026-06'
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.campaignResolution).toEqual({
+                id: NEW_CAMPAIGN_UUID,
+                slug: 'lanzamiento-2026',
+                isNew: true
+            });
+            expect(result.data.batchResolution).toEqual({
+                id: NEW_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                isNew: true
+            });
+        });
+
+        it('echoes campaignResolution/batchResolution with isNew=false when both match existing rows (HOS-66 T-002)', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue({
+                id: EXISTING_CAMPAIGN_UUID,
+                slug: 'institucional-hospeda',
+                name: 'Institucional Hospeda',
+                active: true
+            });
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue({
+                id: EXISTING_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+
+            const service = buildService({ campaignModel, batchModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    campaignSlug: 'institucional-hospeda',
+                    batchSlug: 'hospeda-launch-2026-06'
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.data.campaignResolution).toEqual({
+                id: EXISTING_CAMPAIGN_UUID,
+                slug: 'institucional-hospeda',
+                isNew: false
+            });
+            expect(result.data.batchResolution).toEqual({
+                id: EXISTING_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                isNew: false
+            });
+        });
+
+        it('returns null campaignResolution/batchResolution when neither slug was submitted (HOS-66 T-002)', async () => {
+            const service = buildService();
+            const result = (await service.ingestDraft({
+                payload: buildPayload(),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.data.campaignResolution).toBeNull();
+            expect(result.data.batchResolution).toBeNull();
+        });
+
         it('REGRESSION: audienceSlug/footerSlug/baseHashtagSetSlug stay resolve-only (never create)', async () => {
             const audienceModel = createModelMock();
             audienceModel.findOne.mockResolvedValue(null);

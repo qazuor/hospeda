@@ -134,6 +134,22 @@ export interface IngestionSuccessData {
     readonly assetStatus: 'uploaded' | 'pending' | 'none';
     /** Non-fatal warnings accumulated during the pipeline. */
     readonly warnings: readonly SocialDraftWarning[];
+    /**
+     * Campaign-slug resolution outcome (HOS-66 T-002, G-4/G-5). `null` when no
+     * `campaignSlug` was submitted; otherwise tells the GPT/operator whether
+     * the campaign was matched or newly created.
+     */
+    readonly campaignResolution: {
+        readonly id: string;
+        readonly slug: string;
+        readonly isNew: boolean;
+    } | null;
+    /** Same as `campaignResolution`, for `batchSlug`. */
+    readonly batchResolution: {
+        readonly id: string;
+        readonly slug: string;
+        readonly isNew: boolean;
+    } | null;
 }
 
 /**
@@ -301,8 +317,8 @@ export class SocialDraftIngestionService {
             // slug creates a new active row rather than dropping the association.
             // All other slugs stay resolve-only (null on miss) — see the
             // REGRESSION test locking this down.
-            const [campaignId, batchId, audienceId, footerId, baseHashtagSetId] = await Promise.all(
-                [
+            const [campaignResolution, batchResolution, audienceId, footerId, baseHashtagSetId] =
+                await Promise.all([
                     this.resolveOrCreateCampaignOrBatch(
                         payload.campaignSlug,
                         (slug) => this.campaignModel.findOne({ slug }),
@@ -332,8 +348,9 @@ export class SocialDraftIngestionService {
                     this.resolveSlugToId(payload.baseHashtagSetSlug, (slug) =>
                         this.hashtagSetModel.findOne({ slug })
                     )
-                ]
-            );
+                ]);
+            const campaignId = campaignResolution?.id;
+            const batchId = batchResolution?.id;
 
             // ----------------------------------------------------------------
             // Step 3: Target validation
@@ -618,7 +635,9 @@ export class SocialDraftIngestionService {
                     approvalStatus: 'PENDING',
                     targetsCreated: validTargets.length,
                     assetStatus,
-                    warnings
+                    warnings,
+                    campaignResolution,
+                    batchResolution
                 }
             };
         } catch (err) {
@@ -662,28 +681,35 @@ export class SocialDraftIngestionService {
     }
 
     /**
-     * Resolves a campaign/batch slug to its UUID, creating a new active row
+     * Resolves a campaign/batch slug to its row, creating a new active one
      * when no match exists (G-4/G-5 — explicit-name resolution: match →
      * associate, no match → create). Unlike {@link resolveSlugToId}, a lookup
      * or creation failure returns `null` (fail-soft — the draft still ships).
      *
+     * The `isNew` flag on the result lets the caller echo the resolution
+     * outcome back to the GPT/operator (HOS-66 T-002).
+     *
      * @param slug - Optional campaign/batch slug from the request payload.
      * @param finder - Async function that queries the model by slug.
      * @param creator - Async function that creates a new row for the slug.
-     * @returns The UUID string (existing or newly created) or null.
+     * @returns `{ id, slug, isNew }` (existing or newly created) or null.
      */
     private async resolveOrCreateCampaignOrBatch(
         slug: string | undefined,
         finder: (slug: string) => Promise<{ id: unknown } | null | undefined>,
         creator: (slug: string) => Promise<{ id: unknown } | null | undefined>
-    ): Promise<string | null> {
+    ): Promise<{ id: string; slug: string; isNew: boolean } | null> {
         if (!slug) return null;
         try {
             const existing = await finder(slug);
-            if (existing && typeof existing.id === 'string') return existing.id;
+            if (existing && typeof existing.id === 'string') {
+                return { id: existing.id, slug, isNew: false };
+            }
 
             const created = await creator(slug);
-            return created && typeof created.id === 'string' ? created.id : null;
+            return created && typeof created.id === 'string'
+                ? { id: created.id, slug, isNew: true }
+                : null;
         } catch {
             return null;
         }
