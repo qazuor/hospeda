@@ -137,28 +137,28 @@
         {
             "id": "T-006",
             "title": "Wire CSP nonce pipeline in router.tsx",
-            "description": "In apps/admin/src/router.tsx: implement `getCspNonce` via `createIsomorphicFn()` (server side reads the nonce from `getGlobalStartContext()`; client side reads it from `<meta property=\"csp-nonce\" content=\"{nonce}\">`). Pass `ssr: { nonce: getCspNonce() }` to `createRouter()`. Ensure `HeadContent` emits the csp-nonce meta tag so the client can hydrate it. Remove the `import './start'` side-effect import if `createStart()` (T-005) now replaces it; verify the middleware registration path still fires.\n\nTest requirements: new test apps/admin/test/router.csp-nonce.test.ts covering both the server path (mock getGlobalStartContext returning a nonce) and the client path (mock a document meta tag and assert getCspNonce reads it).",
-            "status": "pending",
+            "description": "In apps/admin/src/router.tsx: implement `getCspNonce` via `createIsomorphicFn()` (server side reads the nonce from `getGlobalStartContext()`; client side reads it from `<meta property=\"csp-nonce\" content=\"{nonce}\">`). Pass `ssr: { nonce: getCspNonce() }` to `createRouter()`. Ensure `HeadContent` emits the csp-nonce meta tag so the client can hydrate it. Remove the `import './start'` side-effect import if `createStart()` (T-005) now replaces it; verify the middleware registration path still fires.\n\nTest requirements: new test apps/admin/test/router.csp-nonce.test.ts covering both the server path (mock getGlobalStartContext returning a nonce) and the client path (mock a document meta tag and assert getCspNonce reads it).\n\nDONE NOTES: cspMiddleware converted type:'function' -> type:'request' (src/middleware.ts) so ONE middleware covers both SSR page loads and server-fn calls; wired into start.ts's requestMiddleware (functionMiddleware removed). getCspNonce extracted to new src/lib/csp-nonce.ts for testability. GAP-042-18's manual meta-tag instruction was stale for this version: HeadContent/useTags auto-emit the csp-nonce meta tag whenever ssr.nonce is set, verified against installed @tanstack/react-router 1.170.17 source, so no manual meta tag was added. Dead './start' side-effect import removed from router.tsx. Nonce round-trip (CSP header === meta tag === rendered script/link tag nonce) verified end-to-end against the real compiled build output, not just mocked units. Response header mutation done via response.headers.set() directly (no clone needed - verified fresh Response instances have mutable headers by default). CRITICAL OUT-OF-SCOPE FINDING surfaced during this task: pnpm build no longer produces .output/server/index.mjs (nitropack is no longer a resolved dependency post T-001's version bump) - apps/admin/package.json's start script and apps/admin/Dockerfile both still reference the old Nitro output path and would fail a real deploy today. Real entry now lives at a content-hashed path under apps/admin/dist/server/assets/. Not fixed here (out of scope for T-006) - needs a decision + fix before this branch can go to staging.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
                 {
                     "title": "Implement getCspNonce via createIsomorphicFn (server + client paths)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Pass ssr.nonce to createRouter()", "completed": false },
-                { "title": "Emit csp-nonce meta tag via HeadContent", "completed": false },
-                { "title": "Remove/verify './start' side-effect import", "completed": false },
-                { "title": "Write router.csp-nonce.test.ts", "completed": false }
+                { "title": "Pass ssr.nonce to createRouter()", "completed": true },
+                { "title": "Emit csp-nonce meta tag via HeadContent", "completed": true },
+                { "title": "Remove/verify './start' side-effect import", "completed": true },
+                { "title": "Write router.csp-nonce.test.ts", "completed": true }
             ],
             "tags": ["admin", "csp", "tanstack-router"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-07-03T04:30:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:50:00.000Z",
+                "completed": "2026-07-03T06:35:00.000Z"
             }
         },
         {
@@ -191,24 +191,24 @@
         {
             "id": "T-008",
             "title": "Verify dev server, build, typecheck, and lint after the core rewrite",
-            "description": "After T-002, T-003, T-004, T-005, and T-007 land, run `pnpm dev:admin` (manual smoke, confirm it starts without errors), `pnpm build` (root), `pnpm typecheck`, and `pnpm lint`. Fix any errors surfaced by the version bump or the API rewrites before proceeding to CSP/testing phases.\n\nTest requirements: this is a verification task; no new test files unless a discovered regression needs a dedicated regression test, in which case follow the project's bug-fix testing standard (test reproducing the bug before the fix).",
-            "status": "pending",
+            "description": "After T-002, T-003, T-004, T-005, and T-007 land, run `pnpm dev:admin` (manual smoke, confirm it starts without errors), `pnpm build` (root), `pnpm typecheck`, and `pnpm lint`. Fix any errors surfaced by the version bump or the API rewrites before proceeding to CSP/testing phases.\n\nTest requirements: this is a verification task; no new test files unless a discovered regression needs a dedicated regression test, in which case follow the project's bug-fix testing standard (test reproducing the bug before the fix).\n\nDONE NOTES: all 4 checks green (typecheck/lint/build clean, dev server ready in 1344ms on a scratch port with no errors, only harmless pre-existing route-file warnings). No regressions found needing a fix at this stage (already fixed incrementally during T-002-T-007/T-006).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-007"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "Run pnpm dev:admin smoke check", "completed": false },
-                { "title": "Run pnpm build and fix errors", "completed": false },
-                { "title": "Run pnpm typecheck and fix errors", "completed": false },
-                { "title": "Run pnpm lint and fix errors", "completed": false }
+                { "title": "Run pnpm dev:admin smoke check", "completed": true },
+                { "title": "Run pnpm build and fix errors", "completed": true },
+                { "title": "Run pnpm typecheck and fix errors", "completed": true },
+                { "title": "Run pnpm lint and fix errors", "completed": true }
             ],
             "tags": ["admin", "verification", "ci"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-07-03T04:30:09.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T06:45:00.000Z",
+                "completed": "2026-07-03T06:55:00.000Z"
             }
         },
         {
@@ -325,6 +325,35 @@
             }
         },
         {
+            "id": "T-014",
+            "title": "Fix broken production deploy path after the TanStack Start build output change",
+            "description": "Discovered during T-006: `pnpm build` no longer produces `.output/server/index.mjs` (nitropack is no longer a resolved dependency post-T-001's version bump). The real compiled server entry now lives under a content-hashed path in `apps/admin/dist/server/assets/server-<hash>.js`. `apps/admin/package.json`'s `start` script (`node .output/server/index.mjs`) and `apps/admin/Dockerfile` (`COPY --from=build .../.output` + `CMD [\"node\", \".output/server/index.mjs\"]`) both still target the stale Nitro output path. A real Coolify deploy of this branch would fail to start the container.\n\nInvestigate the new TanStack Start >= 1.132 production build output contract (is there a stable, non-hashed entry alias? a documented recommended start command? check TanStack Start's own official deployment docs/examples for the version we're on), update `apps/admin/package.json`'s `start` script and `apps/admin/Dockerfile` accordingly, and verify the container actually starts and serves traffic (including /healthz) against the new build output.\n\nTest requirements: no unit tests (deploy config). Verify via building the Docker image locally (or at minimum running `pnpm build` followed by the updated `start` script directly) and confirming the server starts and responds on the configured port, plus a /healthz check.\n\nDONE NOTES: root cause was that TanStack Start >= 1.132 stopped bundling Nitro inside tanstackStart() -- it moved to a separate opt-in `nitro/vite` plugin (confirmed via Context7's current TanStack Start docs). Added `nitro()` to vite.config.ts's plugins array and `nitro` (^3.0.260610-beta -- no stable tag exists yet) as an admin devDependency. This restored the ORIGINAL `.output/server/index.mjs` path exactly, so package.json's start script and the Dockerfile needed ZERO changes. Two follow-on blockers surfaced and were fixed along the way: (1) nitro@3-beta requires h3@2.0.1-rc.22 as an exact dependency, but the workspace's blanket `h3: '>=1.15.6'` override was silently substituting the already-resolved h3@2.0.1-rc.20 for nitro too -- fixed with a scoped override `nitro>h3: 2.0.1-rc.22`. (2) Nitro's stricter server-side dependency tracing surfaced a pre-existing, unrelated incompatibility between the transitive `@tanstack/devtools@0.3.0` (via `@tanstack/react-devtools`, owned by HOS-58) and the resolved `solid-js@1.9.9` (missing a `use` export added in a later 1.9.x patch) -- fixed by adding `solid-js@1.9.14` as a direct admin dependency (blanket pnpm.overrides on solid-js did NOT work since every consumer only reaches it via peerDependency resolution, not a real dependency edge; a real direct dependency was needed to force the peer resolution). (3) A THIRD blocker, this one actually inside HOS-33's own T-003 code: the built server returned 500 on every request (`TypeError: ... fetch is not a function`) because Nitro's runtime dispatcher requires the server entry's default export to be an OBJECT with a `fetch(request)` method, not a bare function -- T-003's `createStartHandler(defaultStreamHandler)` pattern was correct for building the handler itself, but the final export shape was wrong (this bug was invisible before because the pre-Nitro plain-Vite build never exercised this exact runtime dispatch path). Fixed apps/admin/src/server.ts to wrap the handler via `createServerEntry({ fetch })` from `@tanstack/react-start/server-entry`, matching the framework's own generated default-entry source exactly (read directly from the installed package to confirm). Verified end-to-end against the real built .output/server/index.mjs: `node .output/server/index.mjs` starts cleanly, GET /healthz returns 200 {\"status\":\"ok\"}, and GET / returns a 307 redirect carrying the Content-Security-Policy-Report-Only header with a nonce (T-006 and T-014 verified working together in a real production build, not just isolated tests).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Investigate the new TanStack Start production build/start contract",
+                    "completed": true
+                },
+                { "title": "Update apps/admin/package.json start script", "completed": true },
+                { "title": "Update apps/admin/Dockerfile COPY + CMD paths", "completed": true },
+                {
+                    "title": "Verify the container/server actually starts and serves /healthz",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "deploy", "docker", "tanstack-start"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-03T06:40:00.000Z",
+                "started": "2026-07-03T09:50:00.000Z",
+                "completed": "2026-07-03T10:50:00.000Z"
+            }
+        },
+        {
             "id": "T-013",
             "title": "Update apps/admin/CLAUDE.md /healthz documentation",
             "description": "Update the /healthz section of apps/admin/CLAUDE.md, which currently states the router is pinned 'until SPEC-045 takes on the upgrade and re-validates /healthz'. Reflect the new TanStack Start version, the T-011 re-validation outcome, and remove the stale SPEC-045/Dependabot-ignore reference now that it's lifted (T-012).\n\nTest requirements: none (docs-only).",
@@ -349,10 +378,10 @@
         }
     ],
     "summary": {
-        "total": 13,
-        "pending": 7,
+        "total": 14,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.8,
         "notes": "Unplanned fixes required by the version bump, not tied to a specific task ID: apps/admin/src/router.tsx export renamed createRouter -> getRouter (auto-discovery by exact name, required for build to pass at all; manual Register type-augmentation block removed since it's now auto-generated by routeTree.gen.ts). 3 call sites of the removed `clientOnly` export renamed to `createClientOnlyFn` (CoordinatesField.tsx, LocationPickerField.tsx, LocationMapView.tsx)."
