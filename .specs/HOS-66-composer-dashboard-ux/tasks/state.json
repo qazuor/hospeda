@@ -734,36 +734,36 @@
         {
             "id": "T-022",
             "title": "Implement public-data aggregation service",
-            "description": "Implement an aggregation method (new or on an existing service) that queries a tightly-scoped set of public entities \u2014 start with recently-published/featured accommodations and destinations ONLY (per R-1, do not add more entity types speculatively) \u2014 shaped per T-021's schema for draft enrichment. Accept an optional free-text query param to narrow results.\n\nTest requirements:\n- Unit tests: returns accommodations + destinations shaped correctly; free-text query narrows results; empty result set handled gracefully (no error).",
-            "status": "pending",
+            "description": "Implement an aggregation method (new or on an existing service) that queries a tightly-scoped set of public entities \u2014 start with recently-published/featured accommodations and destinations ONLY (per R-1, do not add more entity types speculatively) \u2014 shaped per T-021's schema for draft enrichment. Accept an optional free-text query param to narrow results.\n\nTest requirements:\n- Unit tests: returns accommodations + destinations shaped correctly; free-text query narrows results; empty result set handled gracefully (no error).\n\nDONE (2026-07-03): created `packages/service-core/src/services/social/social-public-data.service.ts` (new dedicated `SocialPublicDataService`, does NOT extend BaseCrudService / does NOT touch Accommodation/Destination services \u2014 R-1 scope-tight). Reads only PUBLIC + ACTIVE + non-deleted accommodations and destinations via `model.findAll`, merges + sorts by createdAt desc, bounds to a `limit` (default 20, max 50, total across both types). Optional free-text `query` narrows by name via `safeIlike` (never raw ilike) forwarded as additionalConditions. Maps to SocialPublicDataItem (title\u2190name, imageUrl\u2190media.featuredImage.url, summary nullable). Barrel-exported from social service index. 10 unit tests (shape per type, cross-type recency, null media/summary, safeIlike forward/omit/trim, empty state, INTERNAL_ERROR, limit clamp). Verified by orchestrator: git clean (no stray commit), 10/10 green re-run, lint+tsc clean, imageUrl mapping confirmed non-null-garbage (seed populates media.featuredImage \u2014 hostAccommodation.ts:466). Constructor takes only optional model overrides (no ServiceConfig \u2014 YAGNI, nothing consumes it; flagged + accepted).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-023", "T-027"],
             "subtasks": [
                 {
                     "title": "Implement aggregation query for accommodations + destinations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Support optional free-text narrowing param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: shape, narrowing, empty state",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-10", "backend", "social"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T22:50:00Z",
+                "completed": "2026-07-03T23:10:00Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 4,
         "averageComplexity": 2.0
     }

@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 17/27 tasks (63%)
+## Progress: 18/27 tasks (67%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -37,7 +37,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: none
   - Blocks: T-022
 
-- [ ] **T-022** (complexity: 3) - Implement public-data aggregation service
+- [x] **T-022** (complexity: 3) - Implement public-data aggregation service (`SocialPublicDataService`, 10 tests; delegated + orchestrator-verified)
   - Blocked by: T-021
   - Blocks: T-023, T-027
 
