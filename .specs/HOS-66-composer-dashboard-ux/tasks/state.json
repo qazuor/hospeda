@@ -769,36 +769,36 @@
         {
             "id": "T-023",
             "title": "Add public-data-pull API route",
-            "description": "Add a new route (`apps/api/src/routes/ai/social/public-data.ts`, following the `createApiKeyRoute` pattern used by `catalog.ts`/`drafts.ts` since it is GPT-consumed for draft enrichment) wiring T-022's service, authenticated the same way as the other `/api/v1/ai/social/*` routes.\n\nTest requirements:\n- Route test: auth (x-hospeda-ai-key) required; successful call returns the expected shape; free-text query param forwarded correctly.",
-            "status": "pending",
+            "description": "Add a new route (`apps/api/src/routes/ai/social/public-data.ts`, following the `createApiKeyRoute` pattern used by `catalog.ts`/`drafts.ts` since it is GPT-consumed for draft enrichment) wiring T-022's service, authenticated the same way as the other `/api/v1/ai/social/*` routes.\n\nTest requirements:\n- Route test: auth (x-hospeda-ai-key) required; successful call returns the expected shape; free-text query param forwarded correctly.\n\nDONE (2026-07-03): created `apps/api/src/routes/ai/social/public-data.ts` (GET, createApiKeyRoute, x-hospeda-ai-key via social vault, `requestQuery: { query: z.string().optional() }`, responseSchema SocialPublicDataResponseDataSchema). Unlike catalog.ts (which bypasses services because they're permission-gated), this route USES `SocialPublicDataService` directly — that service is intentionally permission-free, so the empty-permission gpt-action actor can call it. Handler maps service error → 500 envelope, success → `{ items }`. Exported as aiSocialPublicDataRoute from the ai/social barrel; mounted at `/api/v1/ai/social/public-data` in routes/index.ts. 8 route tests (shape, empty, query forward/omit, 500 on service error, 401 missing/wrong key, 200 pass-through). Lint + tsc clean; endpoint-gate-matrix guard still green (1188) — api-key routes correctly excluded.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022"],
             "blocks": ["T-024"],
             "subtasks": [
                 {
                     "title": "Create public-data.ts route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register route under /api/v1/ai/social",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route test: auth + shape + query param",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-10", "backend", "social"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T23:20:00Z",
+                "completed": "2026-07-03T23:34:00Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 4,
         "averageComplexity": 2.0
     }

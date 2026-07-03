@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 18/27 tasks (67%)
+## Progress: 19/27 tasks (70%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -79,7 +79,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-014
   - Blocks: T-016
 
-- [ ] **T-023** (complexity: 2) - Add public-data-pull API route
+- [x] **T-023** (complexity: 2) - Add public-data-pull API route (`public-data.ts`, 8 route tests)
   - Blocked by: T-022
   - Blocks: T-024
 
