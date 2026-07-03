@@ -1,6 +1,6 @@
 import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, type QZPayProviderProps, QZPayThemeProvider } from '@qazuor/qzpay-react';
-import { TanstackDevtools } from '@tanstack/react-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     HeadContent,
@@ -344,7 +344,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         />
                     </FeedbackErrorBoundary>
                 )}
-                {env.NODE_ENV === 'development' && <TanstackDevtools />}
+                {env.NODE_ENV === 'development' && <TanStackDevtools />}
                 <Scripts />
             </body>
         </html>
