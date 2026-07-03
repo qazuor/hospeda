@@ -12,7 +12,7 @@
  * sanity-check before confirming.
  */
 
-import { findContainer, getApplicationUuid } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/container-lookup.ts';
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -70,8 +70,10 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
     }
     if (!key) die('Missing <KEY>. Run with --help for usage.');
 
+    const target = getActiveTarget();
     const container = await findContainer(kindRaw);
     const uuid = await getApplicationUuid(container);
+    log.info(`Target  : ${target} (${kindRaw} → container ${container})`);
     const client = createCoolifyClient();
 
     let existing: ReadonlyArray<CoolifyEnvVar>;
@@ -102,7 +104,7 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
 
     if (!skipConfirm) {
         const ok = await confirm(
-            `Delete ${candidates.length} entry(ies) for '${key}' on '${kindRaw}'?`
+            `Delete ${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}?`
         );
         if (!ok) {
             log.warn('Aborted.');
@@ -128,7 +130,7 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
-    log.ok(`Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${kindRaw}.`);
+    log.ok(`Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}.`);
     if (deleted > 0) {
         log.hint(
             'Run `hops redeploy <kind>` or `hops app-restart <kind>` for the change to take effect.'
