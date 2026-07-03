@@ -110,7 +110,7 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       cloudinary:
-        specifier: ^2.10.0
+        specifier: ^2.9.0
         version: 2.10.0
       dotenv:
         specifier: ^17.2.3
@@ -128,8 +128,8 @@ importers:
         specifier: ^0.22.1
         version: 0.22.1
       sharp:
-        specifier: ^0.35.2
-        version: 0.35.2
+        specifier: ^0.34.5
+        version: 0.34.5
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -1177,7 +1177,7 @@ importers:
         specifier: workspace:*
         version: link:../utils
       bcryptjs:
-        specifier: ^3.0.3
+        specifier: ^3.0.2
         version: 3.0.3
       drizzle-orm:
         specifier: '>=0.45.2'
@@ -1193,7 +1193,7 @@ importers:
         specifier: ^26.0.1
         version: 26.0.1
       '@types/pg':
-        specifier: ^8.20.0
+        specifier: ^8.15.1
         version: 8.20.0
       '@vitest/coverage-v8':
         specifier: 3.2.6
@@ -1211,7 +1211,7 @@ importers:
         specifier: 0.31.10
         version: 0.31.10
       pg:
-        specifier: ^8.22.0
+        specifier: ^8.11.1
         version: 8.22.0
       tsup:
         specifier: ^8.5.1
@@ -2647,9 +2647,6 @@ packages:
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
-
-  '@emnapi/runtime@1.10.0':
-    resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
 
   '@emnapi/runtime@1.11.1':
     resolution: {integrity: sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==}
@@ -13683,11 +13680,6 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@emnapi/runtime@1.10.0':
-    dependencies:
-      tslib: 2.8.1
-    optional: true
-
   '@emnapi/runtime@1.11.1':
     dependencies:
       tslib: 2.8.1
@@ -14660,7 +14652,7 @@ snapshots:
 
   '@img/sharp-wasm32@0.34.5':
     dependencies:
-      '@emnapi/runtime': 1.10.0
+      '@emnapi/runtime': 1.11.1
     optional: true
 
   '@img/sharp-wasm32@0.35.2':
@@ -24393,7 +24385,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   sharp@0.35.2:
     dependencies:
