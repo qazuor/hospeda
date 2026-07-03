@@ -308,8 +308,7 @@ describe('EventSchema', () => {
                 seo: {
                     title: 'Event SEO title thirty chars min',
                     description:
-                        'This is an event SEO description that has at least seventy characters to meet the minimum requirement.',
-                    keywords: ['event', 'culture']
+                        'This is an event SEO description that has at least seventy characters to meet the minimum requirement.'
                 },
                 media: {
                     featuredImage: {

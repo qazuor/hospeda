@@ -1,0 +1,79 @@
+---
+/**
+ * @file RestaurantJsonLd.astro
+ * @description Restaurant JSON-LD component for gastronomy pages.
+ * Generates schema.org Restaurant structured data.
+ *
+ * SPEC-268 F1: new component for gastronomy detail pages.
+ * Maps available gastronomy fields; optional fields are registered as API gaps
+ * when the data is not yet available from the endpoint.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** AggregateRating interface for structured data */
+export interface AggregateRating {
+	readonly ratingValue: number;
+	readonly reviewCount: number;
+	readonly bestRating?: number;
+	readonly worstRating?: number;
+}
+
+interface Props {
+	readonly name: string;
+	readonly description: string;
+	readonly url: string;
+	readonly image?: string;
+	readonly priceRange?: string;
+	readonly servesCuisine?: string;
+	readonly telephone?: string;
+	readonly aggregateRating?: AggregateRating;
+}
+
+const {
+	name,
+	description,
+	url,
+	image,
+	priceRange,
+	servesCuisine,
+	telephone,
+	aggregateRating,
+} = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+	'@context': 'https://schema.org',
+	'@type': 'Restaurant',
+	name,
+	description,
+	url,
+};
+
+if (image) {
+	structuredData.image = image;
+}
+
+if (priceRange) {
+	structuredData.priceRange = priceRange;
+}
+
+if (servesCuisine) {
+	structuredData.servesCuisine = servesCuisine;
+}
+
+if (telephone) {
+	structuredData.telephone = telephone;
+}
+
+if (aggregateRating) {
+	structuredData.aggregateRating = {
+		'@type': 'AggregateRating',
+		ratingValue: aggregateRating.ratingValue,
+		reviewCount: aggregateRating.reviewCount,
+		bestRating: aggregateRating.bestRating ?? 5,
+		worstRating: aggregateRating.worstRating ?? 1,
+	};
+}
+---
+
+<JsonLd data={structuredData} />

@@ -2,6 +2,7 @@ import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { EventQualityScore } from '@/features/events/components/EventQualityScore';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
@@ -61,7 +62,11 @@ function EventEditPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.EVENT_UPDATE]}>
             <div className="space-y-4">
-                <div className="flex justify-end">
+                <div className="flex items-center justify-between gap-4">
+                    <PageTabs
+                        tabs={eventTabs}
+                        basePath={`/events/${id}`}
+                    />
                     <RevalidateEntityButton
                         entityType="event"
                         entityId={id}

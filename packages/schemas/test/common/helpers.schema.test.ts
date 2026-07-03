@@ -219,7 +219,6 @@ describe('Helper Composition Schemas', () => {
                     title: 'This is a valid SEO title with at least 30 characters',
                     description:
                         'This is a valid SEO description that must have at least 70 characters to be considered valid for search engines',
-                    keywords: ['keyword1', 'keyword2'],
                     ogImage: 'https://example.com/image.jpg'
                 }
             };

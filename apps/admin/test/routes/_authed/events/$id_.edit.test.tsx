@@ -89,7 +89,24 @@ vi.mock('@tanstack/react-router', () => ({
         <T extends Record<string, unknown>>(options: T) => ({
             options,
             useParams: () => ({ id: '550e8400-e29b-41d4-a716-446655440000' })
-        })
+        }),
+    useLocation: () => ({ pathname: '/events/550e8400-e29b-41d4-a716-446655440000/edit' }),
+    Link: ({
+        to,
+        children,
+        className,
+        role,
+        ...props
+    }: { to: string; children: React.ReactNode; className?: string; role?: string }) => (
+        <a
+            href={to}
+            className={className}
+            role={role}
+            {...props}
+        >
+            {children}
+        </a>
+    )
 }));
 
 // -- Test -------------------------------------------------------------------
