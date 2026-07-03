@@ -98,7 +98,11 @@ import {
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
-import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
+import {
+    aiSocialCatalogRoute,
+    aiSocialDraftsRoute,
+    aiSocialPublicDataRoute
+} from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
 import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
@@ -591,6 +595,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social draft submission (SPEC-254 T-029): API-key + operator_pin gated.
         // Custom GPT submits a structured social post draft for admin review.
         app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
+
+        // AI social public-data pull (HOS-66 T-023): API-key gated, read-only.
+        // Custom GPT pulls public accommodations/destinations to enrich a draft.
+        app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
 
         // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
         // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
