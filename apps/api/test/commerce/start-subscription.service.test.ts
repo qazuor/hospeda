@@ -2,9 +2,10 @@
  * Unit tests for `initiateCommerceMonthlySubscription` (SPEC-239 T-048).
  *
  * MercadoPago is stubbed at the `billing` boundary; `@repo/db` is stubbed so the
- * raw product_domain UPDATE (D3) and the commerce_listing_subscriptions upsert
- * (D4) are inspectable without a live Postgres. Mirrors start-paid.test.ts mock
- * style (file-local mocks override the global test/setup.ts mocks).
+ * typed product_domain UPDATE (D3, HOS-75 T-004) and the
+ * commerce_listing_subscriptions upsert (D4) are inspectable without a live
+ * Postgres. Mirrors start-paid.test.ts mock style (file-local mocks override
+ * the global test/setup.ts mocks).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,16 +29,20 @@ const dbExecute = vi.fn((_query: unknown) => Promise.resolve(undefined));
 const onConflictDoUpdate = vi.fn((_config: unknown) => Promise.resolve(undefined));
 const insertValues = vi.fn((_values: unknown) => ({ onConflictDoUpdate }));
 const dbInsert = vi.fn((_table: unknown) => ({ values: insertValues }));
+const updateWhere = vi.fn((_cond: unknown) => Promise.resolve(undefined));
+const updateSet = vi.fn((_values: unknown) => ({ where: updateWhere }));
+const dbUpdate = vi.fn((_table: unknown) => ({ set: updateSet }));
 
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ execute: dbExecute, insert: dbInsert })),
+    getDb: vi.fn(() => ({ execute: dbExecute, insert: dbInsert, update: dbUpdate })),
     // D3+D4 run inside withTransaction; the stub runs the callback with a tx that
-    // exposes the same execute/insert spies so the assertions still observe them.
+    // exposes the same execute/insert/update spies so the assertions still observe them.
     withTransaction: vi.fn((cb: (tx: unknown) => Promise<unknown>) =>
-        cb({ execute: dbExecute, insert: dbInsert })
+        cb({ execute: dbExecute, insert: dbInsert, update: dbUpdate })
     ),
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    billingSubscriptions: { __table: 'billing_subscriptions' },
+    eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     commerceListingSubscriptions: {
         entityType: 'entity_type',
         entityId: 'entity_id'
@@ -130,7 +135,7 @@ describe('initiateCommerceMonthlySubscription (SPEC-239 T-048)', () => {
         expect(createArg.metadata.entityId).toBe(ENTITY_ID);
     });
 
-    it('stamps product_domain=commerce via a raw UPDATE (D3)', async () => {
+    it('stamps product_domain=commerce via a typed UPDATE (D3, HOS-75 T-004)', async () => {
         const { billing } = createBillingMock();
 
         await initiateCommerceMonthlySubscription({
@@ -142,11 +147,9 @@ describe('initiateCommerceMonthlySubscription (SPEC-239 T-048)', () => {
             urls: URLS
         });
 
-        expect(dbExecute).toHaveBeenCalledTimes(1);
-        const sqlArg = dbExecute.mock.calls[0]?.[0] as { values: unknown[] };
-        // Interpolated values are [ 'commerce', subscriptionId ].
-        expect(sqlArg.values).toContain(ProductDomainEnum.COMMERCE);
-        expect(sqlArg.values).toContain(SUB_ID);
+        expect(dbExecute).not.toHaveBeenCalled();
+        expect(updateSet).toHaveBeenCalledWith({ productDomain: ProductDomainEnum.COMMERCE });
+        expect(updateWhere).toHaveBeenCalledWith({ op: 'eq', col: 'id', val: SUB_ID });
     });
 
     it('upserts the link row on the (entity_type, entity_id) unique constraint (D4)', async () => {

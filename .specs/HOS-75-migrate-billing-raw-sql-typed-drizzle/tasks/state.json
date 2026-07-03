@@ -94,7 +94,7 @@
             "id": "T-004",
             "title": "Migrate subscription-checkout.service.ts product_domain UPDATEs",
             "description": "Replace the 2 raw `sql\\`UPDATE billing_subscriptions SET product_domain = ...\\`` sites (commerce ~line 722, partner ~line 832) with tx.update(billingSubscriptions).set({ productDomain: ... }).where(eq(billingSubscriptions.id, subscription.id)). Keep inside the existing withTransaction block. Verify subscription-checkout.service.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -102,14 +102,24 @@
             "tags": ["billing", "product-domain"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:22:30Z",
+                    "details": "53/53 (commerce+partner start-subscription.service.test.ts + subscription-checkout.service.test.ts regression)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:17:14Z",
+                "completed": "2026-07-03T05:22:30Z"
             }
         },
         {
@@ -716,9 +726,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.54
     }

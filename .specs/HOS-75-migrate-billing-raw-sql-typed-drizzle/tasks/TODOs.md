@@ -1,6 +1,6 @@
 # TODOs: Migrate billing raw-SQL column access to typed Drizzle
 
-Spec: HOS-75 | Status: In Progress (Linear) | Progress: 4/28
+Spec: HOS-75 | Status: In Progress (Linear) | Progress: 5/28
 
 ## Setup
 
@@ -10,7 +10,7 @@ Spec: HOS-75 | Status: In Progress (Linear) | Progress: 4/28
 ## Core — Phase A (product-domain, ~8 files)
 
 - [x] T-003: Remove dual camelCase/snake_case read in isAccommodationSubscription (complexity: 1)
-- [ ] T-004: Migrate subscription-checkout.service.ts product_domain UPDATEs (complexity: 2)
+- [x] T-004: Migrate subscription-checkout.service.ts product_domain UPDATEs (complexity: 2)
 - [ ] T-005: Migrate subscription-comp-create.service.ts + update test mocks (complexity: 3)
 - [ ] T-006: Migrate listPlans.ts getNonAccommodationPlanSlugs() (complexity: 1)
 - [ ] T-007: Migrate partners/admin/list-plans.ts + write net-new test (complexity: 3)
