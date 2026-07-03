@@ -82,14 +82,6 @@ updates:
     #     mergeAndUpdate/FormGroupApi/uuid. apps/admin forms use
     #     @tanstack/react-form as the mandated pattern (CLAUDE.md) — real prod
     #     surface, not cosmetic. Owner: HOS-57.
-    #   - @tanstack/react-devtools / @tanstack/react-router-devtools: both are
-    #     pre-1.0 or track @tanstack/react-router's version, so a "minor" bump
-    #     landed inside the production-minor-patch group and broke the build
-    #     ([MISSING_EXPORT] "TanstackDevtools" not exported, used in
-    #     apps/admin/src/routes/__root.tsx). react-router-devtools tracking
-    #     ahead of @tanstack/react-router (pinned above, its own ignore entry)
-    #     would also desync them. Dev-only tooling, zero prod risk, but blocks
-    #     the whole weekly grouped PR otherwise. Owner: HOS-58.
     #   - astro: 6.4.7 -> 7.0.3 crashes `astro build` in apps/web on an ESM/CJS
     #     interop break in js-yaml (no longer exports a `default`), which cascades
     #     into A11y + E2E P0 failures (they never actually run, the build dies
@@ -121,8 +113,6 @@ updates:
       - dependency-name: 'jsdom'
       - dependency-name: '@tiptap/*'
       - dependency-name: '@tanstack/react-form'
-      - dependency-name: '@tanstack/react-devtools'
-      - dependency-name: '@tanstack/react-router-devtools'
       - dependency-name: 'astro'
         update-types: ['version-update:semver-major']
       - dependency-name: 'recharts'
