@@ -33,8 +33,7 @@ import type {
     SocialPostMediaModel as SocialPostMediaModelType,
     SocialPostModel as SocialPostModelType,
     SocialPostTargetModel as SocialPostTargetModelType,
-    SocialPublishLogModel as SocialPublishLogModelType,
-    SocialSettingModel as SocialSettingModelType
+    SocialPublishLogModel as SocialPublishLogModelType
 } from '@repo/db';
 import {
     SocialAssetModel,
@@ -47,7 +46,6 @@ import {
     SocialPostModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
-    SocialSettingModel,
     gte,
     lte,
     safeIlike,
@@ -628,7 +626,6 @@ export class SocialPostService {
     private readonly postHashtagModel: SocialPostHashtagModelType;
     private readonly assetModel: SocialAssetModelType;
     private readonly publishLogModel: SocialPublishLogModelType;
-    private readonly settingModel: SocialSettingModelType;
     private readonly batchModel: SocialContentBatchModelType;
     private readonly campaignModel: SocialCampaignModelType;
     private readonly auditLog: SocialAuditLogServiceType;
@@ -644,7 +641,6 @@ export class SocialPostService {
         postHashtagModel?: SocialPostHashtagModelType,
         assetModel?: SocialAssetModelType,
         publishLogModel?: SocialPublishLogModelType,
-        settingModel?: SocialSettingModelType,
         batchModel?: SocialContentBatchModelType,
         campaignModel?: SocialCampaignModelType
     ) {
@@ -656,7 +652,6 @@ export class SocialPostService {
         this.postHashtagModel = postHashtagModel ?? new SocialPostHashtagModel();
         this.assetModel = assetModel ?? new SocialAssetModel();
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
-        this.settingModel = settingModel ?? new SocialSettingModel();
         this.batchModel = batchModel ?? new SocialContentBatchModel();
         this.campaignModel = campaignModel ?? new SocialCampaignModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
