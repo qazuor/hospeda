@@ -3,6 +3,7 @@ import { URL, fileURLToPath } from 'node:url';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
@@ -120,6 +121,19 @@ export default defineConfig({
         // preset override needed (see the Bun-specific example in TanStack
         // Start's hosting docs for how that would differ).
         nitro(),
+        // HOS-33 T-002 correction (found via a real `pnpm dev` smoke test, not
+        // just a production build): removing @vitejs/plugin-react entirely broke
+        // dev-mode Fast Refresh -- `pnpm dev` 500s on every request with
+        // "TanStack Start React dev mode requires the React Refresh runtime,
+        // but /@react-refresh could not be resolved". Production builds worked
+        // fine without it (tanstackStart() covers the JSX transform at build
+        // time), but dev-mode HMR needs the actual React Refresh runtime, which
+        // only @vitejs/plugin-react provides. TanStack Start's own current
+        // hosting docs (fetched via Context7) confirm the recommended pattern is
+        // `[tanstackStart(), nitro(), viteReact()]` -- all three together, no
+        // `customViteReactPlugin` flag needed (that flag was the 1.131.26-era
+        // opt-in mechanism T-002 correctly removed).
+        react(),
         // Fix better-auth esbuild conflict: "entry point cannot be marked as external".
         // crawlFrameworkPkgs marks better-auth as both ssr.noExternal (framework pkg)
         // AND optimizeDeps.exclude, causing esbuild to receive it as both entry point
