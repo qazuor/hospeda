@@ -417,7 +417,7 @@
             "id": "T-013",
             "title": "Migrate promo-code.trial-extension.ts raw-SQL effect-column access",
             "description": "Migrate this file's raw-SQL touch point on the effect columns to typed Drizzle -- update the stale 'added via extras/018' comment at ~line 124. NOTE: exact line range was not pinned during spec research (flagged as an open item in the spec's Internal Review Notes) -- re-confirm the precise site at implementation start before editing. Verify promo-code.trial-extension.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-028"],
@@ -425,14 +425,24 @@
             "tags": ["billing", "promo-code", "needs-verification"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-07-03T05:59:04Z",
+                    "details": "16/16 (promo-code.trial-extension.test.ts, no regressions)"
+                }
             },
             "timestamps": {
                 "created": "2026-07-03T05:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T05:57:28Z",
+                "completed": "2026-07-03T05:59:04Z"
             }
         },
         {
@@ -796,9 +806,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 1.54
     }
