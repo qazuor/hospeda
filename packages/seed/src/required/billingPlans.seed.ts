@@ -431,6 +431,12 @@ async function ensurePlan(
             entitlements: plan.entitlements as string[],
             limits: limitsObj,
             livemode,
+            // HOS-73: displayName/monthlyPriceArs/annualPriceArs are typed
+            // top-level columns as of qzpay-drizzle 1.10.0 (still duplicated
+            // in metadata below for now — reads still derive from metadata).
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
                 slug: plan.slug,
                 displayName: plan.name,
