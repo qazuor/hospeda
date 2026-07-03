@@ -49,6 +49,7 @@ import {
     gte,
     lte,
     safeIlike,
+    socialPostTargets,
     socialPosts,
     socialPublishLogs
 } from '@repo/db';
@@ -521,6 +522,18 @@ export interface GetDashboardInput {
      * service-core cannot read the vault directly (apps/api-only isolation).
      */
     readonly makeWebhookConfigured: boolean;
+    /**
+     * Optional date-range lower bound (HOS-66 T-005, G-7). When provided,
+     * every KPI/queue/failures query is scoped to rows created on/after this
+     * date. Omitted = unfiltered (all-time), preserving prior behavior.
+     */
+    readonly dateFrom?: Date;
+    /**
+     * Optional date-range upper bound (HOS-66 T-005, G-7). When provided
+     * together with `dateFrom`, `publishedLast30Days` uses this explicit
+     * range instead of the hardcoded rolling 30-day window.
+     */
+    readonly dateTo?: Date;
 }
 
 /**
@@ -2028,6 +2041,30 @@ export class SocialPostService {
     }
 
     /**
+     * Builds `gte`/`lte` SQL conditions for a `createdAt`-like column from an
+     * optional date range (HOS-66 T-005, G-7). Returns `undefined` — not an
+     * empty array — when neither bound is given, so callers can pass the
+     * result straight through to `findAll`'s `additionalConditions` param
+     * without changing behavior for the no-range case.
+     *
+     * @param column - The `createdAt` column to filter on.
+     * @param dateFrom - Optional lower bound (inclusive).
+     * @param dateTo - Optional upper bound (inclusive).
+     * @returns SQL conditions array, or undefined when no bound is given.
+     */
+    private buildDateRangeConditions(
+        column: Parameters<typeof gte>[0],
+        dateFrom?: Date,
+        dateTo?: Date
+    ): ReturnType<typeof gte>[] | undefined {
+        if (!dateFrom && !dateTo) return undefined;
+        const conditions: ReturnType<typeof gte>[] = [];
+        if (dateFrom) conditions.push(gte(column, dateFrom));
+        if (dateTo) conditions.push(lte(column, dateTo));
+        return conditions;
+    }
+
+    /**
      * Returns aggregate dashboard data for the social publishing pipeline.
      *
      * Includes:
@@ -2056,36 +2093,67 @@ export class SocialPostService {
     public async getDashboard(
         input: GetDashboardInput
     ): Promise<ServiceOutput<SocialDashboardData>> {
-        const { actor, makeWebhookConfigured } = input;
+        const { actor, makeWebhookConfigured, dateFrom, dateTo } = input;
 
         try {
             // Permission check
             checkCanViewPost(actor);
 
+            // Date-range conditions applied to social_posts.createdAt across every
+            // KPI/queue query below. Undefined (not an empty array) when no range
+            // is given, preserving prior unfiltered behavior exactly.
+            const postDateRangeConditions = this.buildDateRangeConditions(
+                socialPosts.createdAt,
+                dateFrom,
+                dateTo
+            );
+
             // --- KPIs ---
 
             // totalPosts: all non-deleted posts
-            const { total: totalPosts } = await this.postModel.findAll({ deletedAt: null });
+            const { total: totalPosts } = await this.postModel.findAll(
+                { deletedAt: null },
+                undefined,
+                postDateRangeConditions
+            );
 
             // pendingReview: NEEDS_REVIEW status with PENDING approvalStatus
-            const { total: pendingReview } = await this.postModel.findAll({
-                deletedAt: null,
-                status: SocialPostStatusEnum.NEEDS_REVIEW,
-                approvalStatus: SocialApprovalStatusEnum.PENDING
-            });
+            const { total: pendingReview } = await this.postModel.findAll(
+                {
+                    deletedAt: null,
+                    status: SocialPostStatusEnum.NEEDS_REVIEW,
+                    approvalStatus: SocialApprovalStatusEnum.PENDING
+                },
+                undefined,
+                postDateRangeConditions
+            );
 
             // scheduled: posts in SCHEDULED status
-            const { total: scheduled } = await this.postModel.findAll({
-                deletedAt: null,
-                status: SocialPostStatusEnum.SCHEDULED
-            });
+            const { total: scheduled } = await this.postModel.findAll(
+                {
+                    deletedAt: null,
+                    status: SocialPostStatusEnum.SCHEDULED
+                },
+                undefined,
+                postDateRangeConditions
+            );
 
-            // publishedLast30Days: count distinct socialPostIds from SUCCESS publish logs in last 30d
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            // publishedLast30Days: count distinct socialPostIds from SUCCESS publish
+            // logs. Uses the explicit dateFrom/dateTo range when given; otherwise
+            // falls back to the hardcoded rolling 30-day window (prior behavior).
+            const publishLogDateConditions =
+                dateFrom || dateTo
+                    ? this.buildDateRangeConditions(socialPublishLogs.createdAt, dateFrom, dateTo)
+                    : [
+                          gte(
+                              socialPublishLogs.createdAt,
+                              new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                          )
+                      ];
             const { items: recentSuccessLogs } = await this.publishLogModel.findAll(
                 { status: SocialPublishResultStatusEnum.SUCCESS },
                 { page: 1, pageSize: 2000 },
-                [gte(socialPublishLogs.createdAt, thirtyDaysAgo)]
+                publishLogDateConditions
             );
             // De-dup by socialPostId
             const publishedPostIds = new Set(
@@ -2096,10 +2164,14 @@ export class SocialPostService {
             const publishedLast30Days = publishedPostIds.size;
 
             // failedActionNeeded: posts in FAILED status
-            const { total: failedActionNeeded } = await this.postModel.findAll({
-                deletedAt: null,
-                status: SocialPostStatusEnum.FAILED
-            });
+            const { total: failedActionNeeded } = await this.postModel.findAll(
+                {
+                    deletedAt: null,
+                    status: SocialPostStatusEnum.FAILED
+                },
+                undefined,
+                postDateRangeConditions
+            );
 
             // --- Quick approval queue ---
             const { items: reviewPosts } = await this.postModel.findAll(
@@ -2108,7 +2180,8 @@ export class SocialPostService {
                     status: SocialPostStatusEnum.NEEDS_REVIEW,
                     approvalStatus: SocialApprovalStatusEnum.PENDING
                 },
-                { page: 1, pageSize: 10, sortBy: 'createdAt', sortOrder: 'asc' }
+                { page: 1, pageSize: 10, sortBy: 'createdAt', sortOrder: 'asc' },
+                postDateRangeConditions
             );
 
             const quickApprovalQueue: SocialDashboardQueueItem[] = await Promise.all(
@@ -2154,9 +2227,15 @@ export class SocialPostService {
             );
 
             // --- Recent failures from social_post_targets ---
+            const targetDateRangeConditions = this.buildDateRangeConditions(
+                socialPostTargets.createdAt,
+                dateFrom,
+                dateTo
+            );
             const { items: failedTargets } = await this.postTargetModel.findAll(
                 { status: SocialPostStatusEnum.FAILED },
-                { page: 1, pageSize: 10, sortBy: 'updatedAt', sortOrder: 'desc' }
+                { page: 1, pageSize: 10, sortBy: 'updatedAt', sortOrder: 'desc' },
+                targetDateRangeConditions
             );
 
             const recentFailures: SocialDashboardFailureItem[] = await Promise.all(
