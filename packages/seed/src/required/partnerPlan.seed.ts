@@ -51,10 +51,12 @@ export async function seedPartnerPlan(_context: SeedContext): Promise<void> {
                     entitlements: plan.entitlements as string[],
                     limits: limitsObj,
                     livemode: isProduction,
-                    // HOS-73: displayName/monthlyPriceArs are typed top-level columns
-                    // as of qzpay-drizzle 1.10.0 (still duplicated in metadata below).
+                    // HOS-39 T-005 / HOS-73: displayName/monthlyPriceArs/annualPriceArs
+                    // are typed top-level columns as of qzpay-drizzle 1.11.0 (still
+                    // duplicated in metadata below).
                     displayName: plan.name,
                     monthlyPriceArs: plan.monthlyPriceArs,
+                    annualPriceArs: plan.annualPriceArs,
                     metadata: {
                         slug: plan.slug,
                         displayName: plan.name,

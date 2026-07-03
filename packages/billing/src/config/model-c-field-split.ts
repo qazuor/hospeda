@@ -94,10 +94,13 @@ export const MODEL_C_FIELD_SPLIT = {
 
     /**
      * `billing_plans.entitlements` — the set of EntitlementKeys a plan grants.
-     * CAPABILITY: adding or removing an entitlement in config propagates to
-     * all existing subscribers on the next deploy.
+     * COMMERCIAL (reclassified HOS-39, 2026-07-02): the admin `PlanDialog.tsx`
+     * (SPEC-168) already lets operators toggle entitlements per plan. Before
+     * this reclassification, `entitlements` was `'capability'` while the UI
+     * already assumed `'commercial'` — any operator edit was silently
+     * reverted by the next seed sync. DB wins now, matching what the UI does.
      */
-    entitlements: 'capability',
+    entitlements: 'commercial',
 
     /**
      * Logical facet of `billing_plans.limits` (the JSONB object).
@@ -115,15 +118,32 @@ export const MODEL_C_FIELD_SPLIT = {
      */
     limitsValues: 'commercial',
 
-    // ── Nested `billing_plans.metadata` JSONB fields ─────────────────────────
-
     /**
-     * `billing_plans.metadata.displayName` — human-readable name shown in the
-     * admin UI and public-facing plan picker.
+     * `billing_plans.display_name` — human-readable name shown in the admin
+     * UI and public-facing plan picker. Typed column (HOS-39 T-003),
+     * promoted off the `metadata.displayName` jsonb mirror.
      * COMMERCIAL: operators may update display names via the SPEC-168 admin UI
      * without a code deploy (OQ-9).
      */
-    'metadata.displayName': 'commercial',
+    displayName: 'commercial',
+
+    /**
+     * `billing_plans.monthly_price_ars` — ARS monthly price. Typed column
+     * (HOS-39 T-003), promoted off the `metadata.monthlyPriceArs` jsonb
+     * mirror (which itself mirrors `billing_prices.unitAmount`).
+     * COMMERCIAL: price is an operator/commercial decision; DB wins.
+     */
+    monthlyPriceArs: 'commercial',
+
+    /**
+     * `billing_plans.annual_price_ars` — ARS annual price. Typed column
+     * (HOS-39 T-003), promoted off the `metadata.annualPriceArs` jsonb
+     * mirror.
+     * COMMERCIAL: same rationale as `monthlyPriceArs`.
+     */
+    annualPriceArs: 'commercial',
+
+    // ── Nested `billing_plans.metadata` JSONB fields ─────────────────────────
 
     /**
      * `billing_plans.metadata.category` — plan category (`owner` | `complex`
@@ -134,44 +154,35 @@ export const MODEL_C_FIELD_SPLIT = {
     'metadata.category': 'capability',
 
     /**
-     * `billing_plans.metadata.monthlyPriceArs` — ARS monthly price snapshot
-     * in metadata (mirrored from `billing_prices.unitAmount`).
-     * COMMERCIAL: price is an operator/commercial decision; DB wins.
-     */
-    'metadata.monthlyPriceArs': 'commercial',
-
-    /**
-     * `billing_plans.metadata.annualPriceArs` — ARS annual price snapshot
-     * in metadata.
-     * COMMERCIAL: same rationale as `metadata.monthlyPriceArs`.
-     */
-    'metadata.annualPriceArs': 'commercial',
-
-    /**
      * `billing_plans.metadata.isDefault` — whether this is the default plan
      * for its category (used by fallback resolution).
-     * CAPABILITY: defaultness is structural config; config wins.
+     * CAPABILITY: defaultness is structural config; config wins. NOT
+     * reclassified by HOS-39 — never exposed as admin-editable (see
+     * `UpdatePlanInput` in `plan.types.ts`, which excludes it).
      */
     'metadata.isDefault': 'capability',
 
     /**
      * `billing_plans.metadata.sortOrder` — display order in the plan picker.
-     * CAPABILITY: structural/display ordering is config-driven.
+     * COMMERCIAL (reclassified HOS-39, 2026-07-02): same rationale as
+     * `entitlements` above — the admin `PlanDialog.tsx` already lets
+     * operators edit sort order; DB wins now.
      */
-    'metadata.sortOrder': 'capability',
+    'metadata.sortOrder': 'commercial',
 
     /**
      * `billing_plans.metadata.hasTrial` — whether the plan has a trial period.
-     * CAPABILITY: trial availability is a structural plan property, not an
-     * operator runtime decision.
+     * COMMERCIAL (reclassified HOS-39, 2026-07-02): same rationale as
+     * `entitlements` above.
      */
-    'metadata.hasTrial': 'capability',
+    'metadata.hasTrial': 'commercial',
 
     /**
      * `billing_plans.metadata.trialDays` — duration of the trial in days.
-     * CAPABILITY: trial length is structural config; config wins.
+     * COMMERCIAL (reclassified HOS-39, 2026-07-02): same rationale as
+     * `entitlements` above.
      */
-    'metadata.trialDays': 'capability',
+    'metadata.trialDays': 'commercial',
 
     // ── `billing_prices` (sibling table, seed-controlled, documented here) ───
 
