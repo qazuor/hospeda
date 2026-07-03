@@ -10,7 +10,7 @@
  */
 
 import * as p from '@clack/prompts';
-import { findContainer, getApplicationUuid } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/container-lookup.ts';
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -102,8 +102,10 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         value = valueArg;
     }
 
+    const target = getActiveTarget();
     const container = await findContainer(kindRaw);
     const uuid = await getApplicationUuid(container);
+    log.info(`Target  : ${target} (${kindRaw} → container ${container})`);
     const client = createCoolifyClient();
 
     let existing: ReadonlyArray<CoolifyEnvVar>;
@@ -128,10 +130,12 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
           : value;
     const envLabel = targetIsPreview ? 'preview' : 'production';
 
-    log.info(`${action} on ${kindRaw} [${envLabel}]: ${key} = ${valuePreview}`);
+    log.info(`${action} on ${target}/${kindRaw} [${envLabel}]: ${key} = ${valuePreview}`);
 
     if (!skipConfirm) {
-        const ok = await confirm(`${action} env var '${key}' on '${kindRaw}' [${envLabel}]?`);
+        const ok = await confirm(
+            `${action} env var '${key}' on ${target}/${kindRaw} [${envLabel}]?`
+        );
         if (!ok) {
             log.warn('Aborted.');
             return;
@@ -151,7 +155,7 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         throw err;
     }
 
-    log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw} [${envLabel}].`);
+    log.ok(`${key} ${match ? 'updated' : 'created'} on ${target}/${kindRaw} [${envLabel}].`);
     if (!match) {
         log.hint(
             `Coolify mirrors new env vars into BOTH production and preview environments. Use \`hops env-delete ${kindRaw} ${key} --preview\` to drop the preview copy.`
