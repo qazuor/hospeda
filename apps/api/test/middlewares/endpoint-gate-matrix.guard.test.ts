@@ -31,7 +31,7 @@
  *   - Files inside `*\/protected\/*` or `*\/admin\/*` subdirectories
  *   - Specific top-level handler files covered by the matrix (auth/*, billing/*,
  *     app-logs/list.ts, cron-admin/runs.ts, event/comments/public/list.ts,
- *     experience/public/*.ts, etc.)
+ *     experience/public/*.ts, integrations/mercadolibre-oauth/*.ts, etc.)
  *
  * Explicit exclusions (not route handlers):
  *   - index.ts barrel files (router assembly)
@@ -312,7 +312,8 @@ function shouldIncludeRouteFile(relPath: string): boolean {
         'audit-logs/',
         'cron-admin/',
         'event/comments/public/',
-        'experience/public/'
+        'experience/public/',
+        'integrations/mercadolibre-oauth/'
     ];
 
     for (const prefix of TOP_LEVEL_PREFIXES) {

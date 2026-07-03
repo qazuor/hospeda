@@ -23,6 +23,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
+    AsyncExtractionResult,
     ImportContext,
     RawExtraction
 } from '../../../src/services/accommodation-import/adapter.types.js';
@@ -128,6 +129,22 @@ function makeFakeAdapter(
         source,
         supports: vi.fn().mockReturnValue(supportsResult),
         extract: extractImpl ? vi.fn().mockImplementation(extractImpl) : vi.fn()
+    };
+}
+
+/**
+ * Builds a fake adapter instance that ALSO implements `extractAsync` (HOS-50
+ * T-010), so `supportsAsyncExtraction()` narrows it correctly in
+ * {@link AccommodationImportService.dispatchImportFromUrl}.
+ */
+function makeFakeAsyncAdapter(
+    source: string,
+    supportsResult: boolean,
+    extractAsyncImpl: () => Promise<AsyncExtractionResult>
+) {
+    return {
+        ...makeFakeAdapter(source, supportsResult),
+        extractAsync: vi.fn().mockImplementation(extractAsyncImpl)
     };
 }
 
@@ -1012,6 +1029,142 @@ describe('AccommodationImportService', () => {
             // Assert — source_blocked propagated; no fallback for google source.
             expect(result.failureCode).toBe('source_blocked');
             // GenericAdapter extract must not have been called at all.
+            expect(fakeGeneric.extract).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // dispatchImportFromUrl (HOS-50 / SPEC-277 R3 T-010)
+    // -------------------------------------------------------------------------
+    describe('dispatchImportFromUrl', () => {
+        it('should return kind "sync" with the same response as importFromUrl when the matched adapter has no async mode', async () => {
+            // Arrange — GenericAdapter (default match) has no extractAsync.
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'generic',
+                name: { value: 'Hotel Sol', source: 'jsonld' }
+            });
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.dispatchImportFromUrl(
+                { url: 'https://example.com/listing/dispatch-1', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert
+            expect(result.kind).toBe('sync');
+            if (result.kind === 'sync') {
+                expect(result.response.source).toBe('generic');
+                expect(result.response.draft).toMatchObject({
+                    name: expect.objectContaining({ value: 'Hotel Sol' })
+                });
+            }
+        });
+
+        it('should return kind "async" with the run handle when the matched adapter starts an Apify run', async () => {
+            // Arrange — Airbnb adapter with extractAsync returning a run handle.
+            const asyncAirbnb = makeFakeAsyncAdapter('airbnb', true, async () => ({
+                runId: 'run-abc123',
+                datasetId: 'dataset-xyz789'
+            }));
+            mockAirbnbAdapter.mockImplementation(
+                () => asyncAirbnb as unknown as InstanceType<typeof AirbnbAdapter>
+            );
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.dispatchImportFromUrl(
+                { url: 'https://www.airbnb.com.ar/rooms/12345', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert
+            expect(result.kind).toBe('async');
+            if (result.kind === 'async') {
+                expect(result.runId).toBe('run-abc123');
+                expect(result.datasetId).toBe('dataset-xyz789');
+                expect(result.source).toBe('airbnb');
+                expect(result.url).toBe('https://www.airbnb.com.ar/rooms/12345');
+                expect(() => new Date(result.startedAt).toISOString()).not.toThrow();
+            }
+            expect(asyncAirbnb.extract).not.toHaveBeenCalled();
+        });
+
+        it('should return kind "sync" finalized from `raw` when the async-capable adapter resolves immediately (e.g. Booking JSON-LD-sufficient)', async () => {
+            // Arrange — Booking's extractAsync resolves synchronously via its
+            // own JSON-LD-first tier (no Apify run needed).
+            const asyncBooking = makeFakeAsyncAdapter('booking', true, async () => ({
+                raw: {
+                    sourcePlatform: 'booking',
+                    name: { value: 'Hotel Booking JSON-LD', source: 'jsonld' }
+                }
+            }));
+            mockBookingAdapter.mockImplementation(
+                () => asyncBooking as unknown as InstanceType<typeof BookingAdapter>
+            );
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.dispatchImportFromUrl(
+                { url: 'https://www.booking.com/hotel/ar/sol.html', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert
+            expect(result.kind).toBe('sync');
+            if (result.kind === 'sync') {
+                expect(result.response.source).toBe('booking');
+                expect(result.response.draft).toMatchObject({
+                    name: expect.objectContaining({ value: 'Hotel Booking JSON-LD' })
+                });
+            }
+        });
+
+        it('should return kind "sync" finalized with the failureCode when the async-capable adapter cannot even start the run', async () => {
+            // Arrange — Airbnb's extractAsync fails to start (e.g. missing creds).
+            const asyncAirbnb = makeFakeAsyncAdapter('airbnb', true, async () => ({
+                failureCode: 'credentials_missing'
+            }));
+            mockAirbnbAdapter.mockImplementation(
+                () => asyncAirbnb as unknown as InstanceType<typeof AirbnbAdapter>
+            );
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.dispatchImportFromUrl(
+                { url: 'https://www.airbnb.com/rooms/no-creds', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — same degraded shape the sync path would produce.
+            expect(result.kind).toBe('sync');
+            if (result.kind === 'sync') {
+                expect(result.response.failureCode).toBe('credentials_missing');
+                expect(result.response.source).toBe('none');
+                expect(result.response.draft).toEqual({});
+            }
+        });
+
+        it('should return a degraded sync result for an invalid URL, without calling any adapter', async () => {
+            // Arrange
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.dispatchImportFromUrl(
+                { url: 'not-a-url-at-all', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert
+            expect(result.kind).toBe('sync');
+            if (result.kind === 'sync') {
+                expect(result.response.failureCode).toBe('invalid_url');
+                expect(result.response.source).toBe('none');
+            }
             expect(fakeGeneric.extract).not.toHaveBeenCalled();
         });
     });

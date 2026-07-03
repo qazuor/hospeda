@@ -1,5 +1,5 @@
 {
-    "id": "74646b89-1b35-40f0-b1a3-011ec2dfe91d",
+    "id": "05914ff6-f203-4c4f-90b0-a6faecdddda1",
     "prevId": "168d39ae-8237-4cef-ac16-75cf32298933",
     "version": "7",
     "dialect": "postgresql",
@@ -11489,6 +11489,111 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.external_oauth_credentials": {
+            "name": "external_oauth_credentials",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "provider": {
+                    "name": "provider",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_ciphertext": {
+                    "name": "access_token_ciphertext",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_iv": {
+                    "name": "access_token_iv",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "access_token_auth_tag": {
+                    "name": "access_token_auth_tag",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_ciphertext": {
+                    "name": "refresh_token_ciphertext",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_iv": {
+                    "name": "refresh_token_iv",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "refresh_token_auth_tag": {
+                    "name": "refresh_token_auth_tag",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "expires_at": {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "idx_external_oauth_credentials_active_provider": {
+                    "name": "idx_external_oauth_credentials_active_provider",
+                    "columns": [
+                        {
+                            "expression": "provider",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "where": "deleted_at IS NULL",
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.newsletter_campaign_deliveries": {
             "name": "newsletter_campaign_deliveries",
             "schema": "",
@@ -12127,6 +12232,14 @@
                     "notNull": true,
                     "default": false
                 },
+                "tourist_audience": {
+                    "name": "tourist_audience",
+                    "type": "tourist_audience_enum",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'plus'"
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "timestamp with time zone",
@@ -12268,6 +12381,21 @@
                     "columns": [
                         {
                             "expression": "plan_restricted",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "ownerPromotions_touristAudience_idx": {
+                    "name": "ownerPromotions_touristAudience_idx",
+                    "columns": [
+                        {
+                            "expression": "tourist_audience",
                             "isExpression": false,
                             "asc": true,
                             "nulls": "last"
@@ -22645,24 +22773,6 @@
                     "notNull": true,
                     "default": "'{}'::jsonb"
                 },
-                "display_name": {
-                    "name": "display_name",
-                    "type": "varchar(255)",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "monthly_price_ars": {
-                    "name": "monthly_price_ars",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "annual_price_ars": {
-                    "name": "annual_price_ars",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false
-                },
                 "livemode": {
                     "name": "livemode",
                     "type": "boolean",
@@ -26194,6 +26304,11 @@
             "name": "tag_type",
             "schema": "public",
             "values": ["INTERNAL", "SYSTEM", "USER"]
+        },
+        "public.tourist_audience_enum": {
+            "name": "tourist_audience_enum",
+            "schema": "public",
+            "values": ["plus", "vip"]
         },
         "public.visibility_enum": {
             "name": "visibility_enum",

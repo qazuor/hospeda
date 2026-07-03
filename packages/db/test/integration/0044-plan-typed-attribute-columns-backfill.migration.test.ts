@@ -1,6 +1,6 @@
 /**
  * HOS-39 T-003 — Real-DB integration test for the backfill UPDATE in
- * `0042_add_plan_typed_attribute_columns.sql`.
+ * `0044_add_plan_typed_attribute_columns.sql`.
  *
  * The migration's ADD COLUMN statements already ran once (non-idempotent,
  * applied by global-setup's `drizzle-kit migrate` against an empty table),
@@ -35,7 +35,7 @@ const __dirname = dirname(__filename);
 
 const MIGRATION_PATH = join(
     __dirname,
-    '../../src/migrations/0042_add_plan_typed_attribute_columns.sql'
+    '../../src/migrations/0044_add_plan_typed_attribute_columns.sql'
 );
 
 /** Reads the migration file and returns only its backfill UPDATE statement. */
@@ -44,7 +44,7 @@ async function readBackfillStatement(): Promise<string> {
     const statements = content.split('--> statement-breakpoint');
     const updateStatement = statements.find((s) => s.trim().toUpperCase().startsWith('UPDATE'));
     if (!updateStatement) {
-        throw new Error('Backfill UPDATE statement not found in migration 0042');
+        throw new Error('Backfill UPDATE statement not found in migration 0044');
     }
     return updateStatement;
 }
@@ -100,7 +100,7 @@ afterAll(async () => {
     await closeTestPool();
 });
 
-describe('HOS-39 T-003 — 0042_add_plan_typed_attribute_columns.sql backfill (real PostgreSQL)', () => {
+describe('HOS-39 T-003 — 0044_add_plan_typed_attribute_columns.sql backfill (real PostgreSQL)', () => {
     it('migration file exists and contains the expected UPDATE statement', async () => {
         const statement = await readBackfillStatement();
         expect(statement).toMatch(/billing_plans/i);

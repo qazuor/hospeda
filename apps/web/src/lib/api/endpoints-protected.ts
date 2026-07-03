@@ -7,6 +7,7 @@
  */
 import type {
     AccommodationComparisonResponse,
+    AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
@@ -2581,7 +2582,34 @@ export const ownerPromotionApi = {
 
 // --- Accommodation Import from URL (Protected) ---
 
-/** Protected accommodation import-from-URL API endpoint (SPEC-222). */
+/**
+ * Narrows an import-from-URL response to the async `202` dispatch shape
+ * (HOS-50 / SPEC-277 R3 T-013).
+ *
+ * The endpoint is a single route with a dual response shape: `fetch`'s
+ * `response.ok` is `true` for both `200` and `202`, so `apiClient` cannot
+ * distinguish them by status alone — callers narrow structurally instead.
+ * `runId` only ever appears on the async start response, never on the
+ * synchronous {@link AccommodationImportResponse}.
+ *
+ * @param data - The `data` field of a successful `importFromUrl` result.
+ * @returns `true` when `data` is the async run-handle shape.
+ *
+ * @example
+ * ```ts
+ * const result = await accommodationsImportApi.importFromUrl(body);
+ * if (result.ok && isAsyncImportStart(result.data)) {
+ *   // 202 — start polling GET .../import-from-url/status with result.data.
+ * }
+ * ```
+ */
+export function isAsyncImportStart(
+    data: AccommodationImportResponse | AccommodationImportAsyncStartResponse
+): data is AccommodationImportAsyncStartResponse {
+    return 'runId' in data;
+}
+
+/** Protected accommodation import-from-URL API endpoint (SPEC-222 / HOS-50). */
 export const accommodationsImportApi = {
     /**
      * Import accommodation data from an external listing URL.
@@ -2590,9 +2618,17 @@ export const accommodationsImportApi = {
      * host to review before saving. Nothing is persisted. Reviews/ratings are
      * never returned.
      *
+     * **HOS-50 / SPEC-277 R3**: for slow/blocked sources (Airbnb, or Booking on
+     * its Apify-fallback branch), the server may respond `202` with a run
+     * handle instead of resolving inline. Callers MUST check
+     * {@link isAsyncImportStart} on `result.data` before treating it as the
+     * finalized draft — `fetch`'s `response.ok` is `true` for both `200` and
+     * `202`, so `result.ok` alone does not distinguish them.
+     *
      * @param body - The listing URL, optional locale, and the legal confirmation
      *   (must be `true` — the host confirms they have the right to import).
-     * @returns The import response with the draft and hints, or an API error.
+     * @returns Either the finalized import response, or (for async sources) a
+     *   run handle to poll via the status route, or an API error.
      *
      * @example
      * ```ts
@@ -2601,14 +2637,14 @@ export const accommodationsImportApi = {
      *   locale: 'es',
      *   legalConfirmed: true
      * });
-     * if (result.ok) prefillForm(result.data.draft);
+     * if (result.ok && !isAsyncImportStart(result.data)) prefillForm(result.data.draft);
      * ```
      */
     importFromUrl(body: {
         readonly url: string;
         readonly locale?: string;
         readonly legalConfirmed: true;
-    }): Promise<ApiResult<AccommodationImportResponse>> {
+    }): Promise<ApiResult<AccommodationImportResponse | AccommodationImportAsyncStartResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/import-from-url`,
             body
