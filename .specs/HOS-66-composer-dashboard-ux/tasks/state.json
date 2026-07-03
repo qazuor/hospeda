@@ -804,32 +804,32 @@
         {
             "id": "T-024",
             "title": "Verify public-data-pull scoping and auth end-to-end",
-            "description": "Write an integration test confirming the public-data-pull endpoint stays within its scoped entity set (R-1 anti-scope-creep check) and correctly rejects unauthenticated requests.\n\nTest requirements:\n- Integration test asserting only accommodations/destinations are returned (no unexpected entity types) and a missing/invalid API key yields 401.",
-            "status": "pending",
+            "description": "Write an integration test confirming the public-data-pull endpoint stays within its scoped entity set (R-1 anti-scope-creep check) and correctly rejects unauthenticated requests.\n\nTest requirements:\n- Integration test asserting only accommodations/destinations are returned (no unexpected entity types) and a missing/invalid API key yields 401.\n\nDONE (2026-07-03): `apps/api/test/routes/social/ai/social-public-data-scope.test.ts` (6 tests). R-1 scope: asserts `SocialPublicDataEntityTypeEnumSchema.options` is exactly {ACCOMMODATION, DESTINATION} (fails + forces review if widened), response schema accepts the scoped payload and REJECTS out-of-scope types (EVENT/POST/ATTRACTION/USER). Auth: real apiKeyMiddleware mini-app returns 401 on missing key, 401 on wrong key, 200 on correct key. Lint + tsc clean. Completes G-10.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test: only scoped entity types returned",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: missing/invalid api key \u2192 401",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-10", "testing", "social"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T23:35:00Z",
+                "completed": "2026-07-03T23:40:00Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 4,
         "averageComplexity": 2.0
     }

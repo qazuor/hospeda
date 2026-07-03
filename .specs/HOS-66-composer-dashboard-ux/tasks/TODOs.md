@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 19/27 tasks (70%)
+## Progress: 20/27 tasks (74%)
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -115,7 +115,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 - [x] **T-020** (complexity: 1) - Add CI guard against inline SVG / direct phosphor imports (AC-6) — `no-inline-icons.guard.test.ts`, 7/7 green
   - Blocked by: T-018, T-019
 
-- [ ] **T-024** (complexity: 2) - Verify public-data-pull scoping and auth end-to-end
+- [x] **T-024** (complexity: 2) - Verify public-data-pull scoping and auth end-to-end (`social-public-data-scope.test.ts`, 6 tests — R-1 guard)
   - Blocked by: T-023
 
 - [ ] **T-026** (complexity: 1) - Verify AC-7 marketing hub route
