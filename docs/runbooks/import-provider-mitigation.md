@@ -34,8 +34,11 @@ Notes:
 
 - **Only Airbnb and Booking use Apify actors.** Google Places uses an API key
   (`googlePlacesApiKey` / `HOSPEDA_GOOGLE_PLACES_API_KEY`) and MercadoLibre uses
-  an OAuth token (`mercadoLibreToken`) — neither is actor-swappable, so neither
-  appears here. There is intentionally **no** `apifyGooglePlacesActor`.
+  a live OAuth access token resolved per-request via `ImportContext.mercadoLibreTokenProvider`
+  (HOS-45 OAuth refresh-token flow, backed by `HOSPEDA_MERCADOLIBRE_CLIENT_ID` /
+  `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` / `HOSPEDA_MERCADOLIBRE_REDIRECT_URI`) —
+  neither is actor-swappable, so neither appears here. There is intentionally
+  **no** `apifyGooglePlacesActor`.
 - An unset actor var degrades that source gracefully: a missing
   `HOSPEDA_APIFY_AIRBNB_ACTOR` (it has a default, so this only happens if
   explicitly blanked) makes Airbnb return an empty extraction; a missing

@@ -14,6 +14,8 @@ import {
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
+import { TouristAudienceEnumSchema } from '../../enums/tourist-audience.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
@@ -79,7 +81,9 @@ export const OwnerPromotionCreateHttpSchema = z.object({
     validFrom: z.coerce.date(),
     validUntil: z.coerce.date().optional(),
     maxRedemptions: z.coerce.number().int().min(1).optional(),
-    lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE)
+    lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE),
+    // HOS-21 D1/D2: owner self-service VIP-only toggle.
+    touristAudience: TouristAudienceEnumSchema.default(TouristAudienceEnum.PLUS)
 });
 
 export type OwnerPromotionCreateHttp = z.infer<typeof OwnerPromotionCreateHttpSchema>;
@@ -174,7 +178,8 @@ export const httpToDomainOwnerPromotionCreate = (
         validFrom: httpData.validFrom,
         validUntil: httpData.validUntil ?? null,
         maxRedemptions: httpData.maxRedemptions ?? null,
-        lifecycleState: httpData.lifecycleState
+        lifecycleState: httpData.lifecycleState,
+        touristAudience: httpData.touristAudience
     };
 };
 
@@ -200,6 +205,7 @@ export const httpToDomainOwnerPromotionUpdate = (
     if (httpData.maxRedemptions !== undefined)
         result.maxRedemptions = httpData.maxRedemptions ?? null;
     if (httpData.lifecycleState !== undefined) result.lifecycleState = httpData.lifecycleState;
+    if (httpData.touristAudience !== undefined) result.touristAudience = httpData.touristAudience;
 
     return result;
 };

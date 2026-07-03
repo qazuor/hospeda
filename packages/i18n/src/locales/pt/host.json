@@ -7,7 +7,8 @@
         },
         "actions": {
             "submit": "Importar",
-            "submitting": "Importando..."
+            "submitting": "Importando...",
+            "polling": "Aguardando resultado..."
         },
         "errors": {
             "urlRequired": "Informe a URL da acomodação.",
@@ -451,7 +452,9 @@
             "accommodationId": "Imóvel",
             "accommodationIdAll": "Todos os meus imóveis",
             "accommodationIdLoading": "Carregando imóveis...",
-            "accommodationIdHint": "Selecione um imóvel ou deixe 'Todos os meus imóveis' para aplicar a promoção a todos."
+            "accommodationIdHint": "Selecione um imóvel ou deixe 'Todos os meus imóveis' para aplicar a promoção a todos.",
+            "vipOnly": "Exclusiva para plano VIP",
+            "vipOnlyHint": "Se ativada, somente turistas com plano VIP verão esta oferta. Se desativada, turistas Plus e VIP a veem."
         },
         "discountTypes": {
             "percentage": "Porcentagem",

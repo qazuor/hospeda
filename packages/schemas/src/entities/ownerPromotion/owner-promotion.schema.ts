@@ -8,6 +8,8 @@ import {
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
+import { TouristAudienceEnumSchema } from '../../enums/tourist-audience.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
@@ -94,7 +96,15 @@ export const OwnerPromotionSchema = z.object({
      * Server-managed: never set through create/update input (it is omitted from those
      * schemas); only the downgrade-restriction flow mutates it.
      */
-    planRestricted: z.boolean().default(false)
+    planRestricted: z.boolean().default(false),
+
+    /**
+     * Tourist-tier visibility gate (HOS-21 D1). Additive: 'vip' tourists see
+     * 'plus' + 'vip' rows, 'plus' tourists see 'plus' only. Owner self-service
+     * (HOS-21 D2) — set directly through create/update, not server-managed.
+     * Independent from planRestricted (owner-side plan limit).
+     */
+    touristAudience: TouristAudienceEnumSchema.default(TouristAudienceEnum.PLUS)
 });
 export type OwnerPromotion = z.infer<typeof OwnerPromotionSchema>;
 

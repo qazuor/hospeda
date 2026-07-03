@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OwnerPromotionSchema } from '../../../src/entities/ownerPromotion/index.js';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../../src/enums/owner-promotion-discount-type.enum.js';
+import { TouristAudienceEnum } from '../../../src/enums/tourist-audience.enum.js';
 import {
     createFixedPromotion,
     createFreeNightPromotion,
@@ -441,6 +442,53 @@ describe('OwnerPromotionSchema', () => {
         it('should reject invalid accommodationId (not a UUID)', () => {
             // Arrange
             const data = { ...createMinimalOwnerPromotion(), accommodationId: 'invalid' };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('touristAudience field (HOS-21 D1)', () => {
+        it("should default touristAudience to 'plus' when not provided", () => {
+            // Arrange
+            const { touristAudience: _omitted, ...data } =
+                createMinimalOwnerPromotion() as ReturnType<typeof createMinimalOwnerPromotion> & {
+                    touristAudience?: string;
+                };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.touristAudience).toBe(TouristAudienceEnum.PLUS);
+            }
+        });
+
+        it("should accept touristAudience 'vip'", () => {
+            // Arrange
+            const data = {
+                ...createMinimalOwnerPromotion(),
+                touristAudience: TouristAudienceEnum.VIP
+            };
+
+            // Act
+            const result = OwnerPromotionSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.touristAudience).toBe(TouristAudienceEnum.VIP);
+            }
+        });
+
+        it('should reject an invalid touristAudience value', () => {
+            // Arrange
+            const data = { ...createMinimalOwnerPromotion(), touristAudience: 'gold' };
 
             // Act
             const result = OwnerPromotionSchema.safeParse(data);

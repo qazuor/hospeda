@@ -40,6 +40,7 @@
 | `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/import-from-url` | `accommodation/protected/import-from-url.ts` | gate+limit | `ai_accommodation_import`, `max_ai_accommodation_import_per_month` | wired | SPEC-222 T-020. Endpoint access is PermissionEnum OR-gated in the handler (ACCOMMODATION_CREATE \| ACCOMMODATION_UPDATE_OWN \| ACCOMMODATION_UPDATE_ANY), NOT entitlement-gated — any host can import. The AI entitlement + monthly quota apply ONLY to Strategy B (AI-assisted extraction for sparse generic pages), enforced LAZILY inside the injected `aiExtract` port and degrade-clean (structured-only partial + informational notice, never 403) when the plan lacks `ai_accommodation_import` or the monthly quota is spent. Successful AI calls metered via recordAiUsage. Per-user 10/h sliding-window rate limit (HOSPEDA_IMPORT_RATE_LIMIT_RPH) → 429. |
+| `GET /api/v1/protected/accommodations/import-from-url/status` | `accommodation/protected/import-from-url-status.ts` | none | - | n/a | HOS-50 T-011. Auth-only status poll for an in-flight async Apify run started by the 202 branch of the import-from-url POST above; no entitlement/limit gate of its own — the same OR-permission access as the POST route applies to reaching the import feature at all, and this route only reads the run state the client already holds. Not billing-metered (no AI/entitlement spend happens here — Strategy B AI extraction is unavailable on this path, see the route's module doc). |
 | `POST /api/v1/protected/accommodations/compare` | `accommodation/protected/compare.ts` | gate+limit | `can_compare_accommodations`, `max_compare_items` | wired | SPEC-288 T-003. gateComparator() enforces the entitlement, then the per-plan MAX_COMPARE_ITEMS limit; the route's setCompareCount middleware feeds `ids.length` into context before the gate runs. Non-viewable items are silently omitted from the result. |
 | `POST /api/v1/protected/host-onboarding/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | Funnel exception: tourist-free users may enter onboarding without `publish_accommodations`; first-publish starts the owner trial. `enforceAccommodationLimit()` still prevents over-cap hosts from creating extra drafts. |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
@@ -103,6 +104,7 @@
 | `GET /api/v1/protected/recommendations` | `recommendations/protected/get.ts` | gate | `can_view_recommendations` | wired | gateRecommendations() — binary in v1 (OQ-3): every plan carrying the entitlement sees the same feed. RecommendationService.getFeed() also enforces PermissionEnum.RECOMMENDATION_VIEW (role axis, separate from the plan-axis entitlement gate) — SPEC-284 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
+| `GET /api/v1/protected/owner-promotions/exclusive-deals` | `owner-promotion/protected/exclusive-deals.ts` | gate | `exclusive_deals` | wired | HOS-21 T-008/T-009: reuses `findExclusiveDeals` (T-005/T-006). `gateExclusiveDeals()` enforces EXCLUSIVE_DEALS (granted to tourist-plus and tourist-vip); a caller additionally carrying VIP_PROMOTIONS_ACCESS (tourist-vip only) is scoped to plus+vip, everyone else to plus-only. |
 | `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
 | `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) before enforcePromotionLimit() (SPEC-145 T-005) |
 | `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
@@ -603,6 +605,9 @@
 | `POST /api/v1/admin/newsletter/campaigns` | `newsletter/admin/campaigns.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | **CRON — ADMIN** | | | | | |
 | `GET /api/v1/admin/cron/runs` | `cron-admin/runs.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| **MERCADOLIBRE OAUTH — ADMIN (HOS-45)** | | | | | |
+| `GET /api/v1/admin/mercadolibre-oauth/authorize` | `integrations/mercadolibre-oauth/authorize.ts` | none | - | n/a | Admin action (302 redirect to ML's OAuth authorization page); PermissionEnum.INTEGRATION_MERCADOLIBRE_MANAGE gated |
+| `GET /api/v1/admin/mercadolibre-oauth/callback` | `integrations/mercadolibre-oauth/callback.ts` | none | - | n/a | Admin mutation (exchanges OAuth code, persists encrypted credential); PermissionEnum.INTEGRATION_MERCADOLIBRE_MANAGE gated |
 | **APP-LOGS — ADMIN** | | | | | |
 | `GET /api/v1/admin/logs` | `app-logs/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **AUDIT/SECURITY LOGS — ADMIN** | | | | | |
@@ -945,7 +950,7 @@ eventually built, move its entry from this section to the main table.
 | `gateReviewPhotos` | `can_attach_review_photos` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | ~~`gateSearchHistory`~~ | ~~`can_view_search_history`~~ | `middlewares/tourist-entitlements.ts` | SPEC-289 — **promoted to main table** (routes built in SPEC-289 P2; moved out of phantom gates) |
 | ~~`gateRecommendations`~~ | ~~`can_view_recommendations`~~ | `middlewares/tourist-entitlements.ts` | SPEC-284 — **promoted to main table** (route built in SPEC-284 T-008; moved out of phantom gates) |
-| `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
+| ~~`gateExclusiveDeals`~~ | ~~`exclusive_deals`~~ | `middlewares/tourist-entitlements.ts` | HOS-21 T-009 — **promoted to main table** (route built in HOS-21 T-008/T-009; moved out of phantom gates) |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateWhatsAppDisplay` | `can_contact_whatsapp_display` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |

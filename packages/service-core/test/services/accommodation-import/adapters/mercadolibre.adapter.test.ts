@@ -3,7 +3,8 @@
  *
  * Verifies that:
  * - `supports()` returns true only for ML/MLivre hostnames.
- * - Missing / empty token → empty extraction, fetch NOT called (US-11).
+ * - Missing token provider → empty extraction, fetch NOT called (US-11).
+ * - A token provider that rejects → empty extraction, fetch NOT called (HOS-45).
  * - Unparseable item ID → empty extraction, fetch NOT called.
  * - Item ID with dash form (`MLA-1234567890`) is normalised to `MLA1234567890`.
  * - Happy path: all mapped fields appear in the result tagged `source: 'official_api'`.
@@ -27,16 +28,16 @@ import { MercadoLibreAdapter } from '../../../../src/services/accommodation-impo
 
 /**
  * Builds a minimal {@link ImportContext} for tests.
- * Pass `token: undefined` to simulate missing credential (US-11).
+ * Pass `token: undefined` to simulate a missing token provider (US-11).
+ * Pass a string to get a provider that resolves with that token value.
  */
 function makeCtx(token?: string): ImportContext {
     return {
         timeoutMs: 5_000,
         maxBytes: 1_000_000,
         aiMaxChars: 4_000,
-        credentials: {
-            mercadoLibreToken: token
-        }
+        credentials: {},
+        ...(token !== undefined ? { mercadoLibreTokenProvider: async () => token } : {})
     };
 }
 
@@ -181,7 +182,7 @@ describe('MercadoLibreAdapter', () => {
     // -----------------------------------------------------------------------
 
     describe('extract() — missing token', () => {
-        it('should return empty extraction when token is undefined and NOT call fetch', async () => {
+        it('should return empty extraction when mercadoLibreTokenProvider is absent and NOT call fetch', async () => {
             // Arrange
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
@@ -198,14 +199,20 @@ describe('MercadoLibreAdapter', () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it('should return empty extraction when token is an empty string and NOT call fetch', async () => {
+        it('should return empty extraction when mercadoLibreTokenProvider rejects and NOT call fetch', async () => {
             // Arrange
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
             const url = new URL('https://articulo.mercadolibre.com.ar/MLA-1234567890-titulo-_JM');
+            const ctx: ImportContext = {
+                ...makeCtx(undefined),
+                mercadoLibreTokenProvider: vi
+                    .fn()
+                    .mockRejectedValue(new Error('token refresh failed'))
+            };
 
             // Act
-            const result = await adapter.extract(url, makeCtx(''));
+            const result = await adapter.extract(url, ctx);
 
             // Assert
             expect(result).toStrictEqual<RawExtraction>({

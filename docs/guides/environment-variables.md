@@ -110,6 +110,12 @@ pnpm env:check
 | `HOSPEDA_SENTRY_DSN` | url | no | yes | - | Sentry DSN for API error tracking |
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
+| `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
+| `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
+| `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |
+| `HOSPEDA_OAUTH_VAULT_MASTER_KEY` | string | no | yes | - | AES-256-GCM master key encrypting `external_oauth_credentials` rows (provider-agnostic, first consumer is MercadoLibre — HOS-45). Generate with `openssl rand -base64 32` |
+
+> **Removed (HOS-45)**: `HOSPEDA_MERCADOLIBRE_TOKEN` (a static, non-refreshing Bearer token) was removed in favor of the OAuth flow above. The ML import tier now authenticates via `getValidMercadoLibreToken()` (`apps/api/src/services/mercadolibre-oauth/ml-token.service.ts`), which transparently refreshes the access token from the encrypted, rotating refresh token stored in `external_oauth_credentials`. Run the one-time authorization flow at `GET /api/v1/admin/mercadolibre-oauth/authorize` (admin-only) to provision the initial credential.
 
 ### Social Automation (HOSPEDA_)
 

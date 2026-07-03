@@ -59,6 +59,7 @@ type FormFields = {
     minNights: string;
     maxRedemptions: string;
     accommodationId: string;
+    vipOnly: boolean;
 };
 
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
@@ -99,7 +100,8 @@ function buildInitialFields(data?: OwnerPromotionData): FormFields {
         validUntil: toDateInputValue(data?.validUntil),
         minNights: data?.minNights != null ? String(data.minNights) : '',
         maxRedemptions: data?.maxRedemptions != null ? String(data.maxRedemptions) : '',
-        accommodationId: data?.accommodationId ?? ''
+        accommodationId: data?.accommodationId ?? '',
+        vipOnly: data?.touristAudience === 'vip'
     };
 }
 
@@ -148,6 +150,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     const minNightsId = useId();
     const maxRedemptionsId = useId();
     const accommodationIdId = useId();
+    const vipOnlyId = useId();
 
     // Whether we need to fetch the promotion record before the form can render.
     const needsFetch = mode === 'edit' && !initialData && !!promotionId;
@@ -277,6 +280,11 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
         setEntitlementRequired(false);
     }
 
+    function handleVipOnlyChange(e: ChangeEvent<HTMLInputElement>): void {
+        const { checked } = e.currentTarget;
+        setFields((prev) => ({ ...prev, vipOnly: checked }));
+    }
+
     async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         if (isSubmitting) return;
@@ -302,7 +310,8 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             validUntil: fields.validUntil !== '' ? fields.validUntil : undefined,
             minNights: minNightsNum,
             maxRedemptions: maxRedemptionsNum,
-            accommodationId: fields.accommodationId !== '' ? fields.accommodationId : undefined
+            accommodationId: fields.accommodationId !== '' ? fields.accommodationId : undefined,
+            touristAudience: fields.vipOnly ? 'vip' : undefined
         };
 
         // Required-field validation (explicit, since the Zod schema used below
@@ -855,6 +864,33 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                         {errors.accommodationId}
                     </p>
                 )}
+            </div>
+
+            {/* VIP-only toggle (HOS-21 T-013) */}
+            <div className={`form-field ${styles.vipOnlyField}`}>
+                <label
+                    className={styles.vipOnlyLabel}
+                    htmlFor={vipOnlyId}
+                >
+                    <input
+                        id={vipOnlyId}
+                        type="checkbox"
+                        name="vipOnly"
+                        checked={fields.vipOnly}
+                        onChange={handleVipOnlyChange}
+                        aria-describedby={`${vipOnlyId}-hint`}
+                    />
+                    {t('host.promotions.fields.vipOnly', 'Exclusiva para plan VIP')}
+                </label>
+                <p
+                    id={`${vipOnlyId}-hint`}
+                    className="form-hint"
+                >
+                    {t(
+                        'host.promotions.fields.vipOnlyHint',
+                        'Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven turistas Plus y VIP.'
+                    )}
+                </p>
             </div>
 
             {/* Form-level error / LIMIT_REACHED banner */}

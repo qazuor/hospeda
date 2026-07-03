@@ -5,7 +5,6 @@
  * a tourist user's subscription plan entitlements.
  *
  * Features filtered:
- * - Ads (removed if user has AD_FREE entitlement)
  * - Exclusive deals (hidden if user lacks EXCLUSIVE_DEALS entitlement)
  * - Direct contact info (hidden if user lacks direct contact entitlement)
  * - Recommendations (filtered based on entitlement)
@@ -55,8 +54,6 @@ interface _ContentWithAds {
  * Filter options for content filtering
  */
 export interface FilterOptions {
-    /** Remove ads from response if user has AD_FREE entitlement */
-    filterAds?: boolean;
     /** Hide exclusive deals if user lacks EXCLUSIVE_DEALS entitlement */
     filterExclusiveDeals?: boolean;
     /** Hide direct contact info if user lacks direct contact entitlement */
@@ -81,7 +78,6 @@ export interface FilterOptions {
  *   const results = await accommodationService.search(query);
  *
  *   const filtered = filterContentForTourist(c, results, {
- *     filterAds: true,
  *     filterDirectContact: true,
  *     filterExclusiveDeals: true
  *   });
@@ -95,7 +91,7 @@ export function filterContentForTourist<T>(
     content: T,
     options: FilterOptions = {}
 ): T {
-    const { filterAds = true, filterExclusiveDeals = true, filterDirectContact = true } = options;
+    const { filterExclusiveDeals = true, filterDirectContact = true } = options;
 
     // If content is null or undefined, return as-is
     if (content === null || content === undefined) {
@@ -104,11 +100,6 @@ export function filterContentForTourist<T>(
 
     // Clone the content to avoid mutating the original
     let filtered = JSON.parse(JSON.stringify(content)) as T;
-
-    // Filter ads if enabled and user doesn't have AD_FREE entitlement
-    if (filterAds && hasEntitlement(c, EntitlementKey.AD_FREE)) {
-        filtered = removeAds(filtered);
-    }
 
     // Filter exclusive deals if enabled and user lacks EXCLUSIVE_DEALS entitlement
     if (filterExclusiveDeals && !hasEntitlement(c, EntitlementKey.EXCLUSIVE_DEALS)) {
@@ -122,36 +113,6 @@ export function filterContentForTourist<T>(
     }
 
     return filtered;
-}
-
-/**
- * Remove ads from response content
- *
- * Removes ad objects from content responses for users with AD_FREE entitlement.
- *
- * @param content - Content that may contain ads
- * @returns Content with ads removed
- */
-function removeAds<T>(content: T): T {
-    if (typeof content !== 'object' || content === null) {
-        return content;
-    }
-
-    const result = content as Record<string, unknown>;
-
-    // Remove 'ads' array if present
-    if ('ads' in result && Array.isArray(result.ads)) {
-        result.ads = undefined;
-    }
-
-    // Recursively remove ads from nested objects
-    for (const key in result) {
-        if (typeof result[key] === 'object' && result[key] !== null) {
-            result[key] = removeAds(result[key]);
-        }
-    }
-
-    return result as T;
 }
 
 /**
@@ -246,33 +207,6 @@ function hideDirectContactInfo<T>(content: T): T {
     }
 
     return result as T;
-}
-
-/**
- * Check if user should see ads
- *
- * Convenience helper to check if ads should be shown to the user.
- *
- * @param c - Hono context
- * @returns True if user should see ads (doesn't have AD_FREE)
- *
- * @example
- * ```typescript
- * import { shouldShowAds } from '../utils/tourist-entitlement-filter';
- *
- * app.get('/content', async (c) => {
- *   const content = await getContent();
- *
- *   if (shouldShowAds(c)) {
- *     content.ads = await getAds();
- *   }
- *
- *   return c.json(content);
- * });
- * ```
- */
-export function shouldShowAds(c: Context<AppBindings>): boolean {
-    return !hasEntitlement(c, EntitlementKey.AD_FREE);
 }
 
 /**

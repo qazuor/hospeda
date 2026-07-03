@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
+    AccommodationImportAsyncStartResponseSchema,
     AccommodationImportDraftSchema,
     AccommodationImportRequestSchema,
     AccommodationImportResponseSchema,
+    AccommodationImportStatusQuerySchema,
+    AccommodationImportStatusResponseSchema,
     FieldSourceSchema,
     ImportSourceSchema,
     importedField
@@ -448,5 +451,150 @@ describe('AccommodationImportResponseSchema', () => {
             partial: false
         });
         expect(result.success).toBe(false);
+    });
+});
+
+/**
+ * Test suite for the HOS-50 (SPEC-277 R3) async import run schemas.
+ */
+describe('AccommodationImportAsyncStartResponseSchema', () => {
+    const valid = {
+        runId: 'run-abc123',
+        datasetId: 'dataset-xyz789',
+        source: 'airbnb' as const,
+        startedAt: '2026-07-02T09:20:00.000Z',
+        url: 'https://airbnb.com/rooms/123'
+    };
+
+    it('accepts a valid start response', () => {
+        expect(AccommodationImportAsyncStartResponseSchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('rejects a missing runId', () => {
+        const { runId: _runId, ...rest } = valid;
+        expect(AccommodationImportAsyncStartResponseSchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a missing datasetId', () => {
+        const { datasetId: _datasetId, ...rest } = valid;
+        expect(AccommodationImportAsyncStartResponseSchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a missing url (needed by T-006 R2 fallback re-fetch)', () => {
+        const { url: _url, ...rest } = valid;
+        expect(AccommodationImportAsyncStartResponseSchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a malformed url', () => {
+        expect(
+            AccommodationImportAsyncStartResponseSchema.safeParse({
+                ...valid,
+                url: 'not-a-url'
+            }).success
+        ).toBe(false);
+    });
+
+    it('rejects an unknown source enum value', () => {
+        expect(
+            AccommodationImportAsyncStartResponseSchema.safeParse({
+                ...valid,
+                source: 'tripadvisor'
+            }).success
+        ).toBe(false);
+    });
+
+    it('rejects a malformed startedAt (not a datetime string)', () => {
+        expect(
+            AccommodationImportAsyncStartResponseSchema.safeParse({
+                ...valid,
+                startedAt: 'not-a-date'
+            }).success
+        ).toBe(false);
+    });
+});
+
+describe('AccommodationImportStatusQuerySchema', () => {
+    const valid = {
+        runId: 'run-abc123',
+        datasetId: 'dataset-xyz789',
+        source: 'booking' as const,
+        startedAt: '2026-07-02T09:20:00.000Z',
+        url: 'https://booking.com/hotel/ar/sol.html'
+    };
+
+    it('accepts a valid status query (same shape as the start response)', () => {
+        expect(AccommodationImportStatusQuerySchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('rejects a missing startedAt', () => {
+        const { startedAt: _startedAt, ...rest } = valid;
+        expect(AccommodationImportStatusQuerySchema.safeParse(rest).success).toBe(false);
+    });
+
+    it('rejects a missing source', () => {
+        const { source: _source, ...rest } = valid;
+        expect(AccommodationImportStatusQuerySchema.safeParse(rest).success).toBe(false);
+    });
+});
+
+describe('AccommodationImportStatusResponseSchema', () => {
+    it('accepts a not-settled response', () => {
+        expect(AccommodationImportStatusResponseSchema.safeParse({ settled: false }).success).toBe(
+            true
+        );
+    });
+
+    it('rejects a not-settled response carrying a draft', () => {
+        expect(
+            AccommodationImportStatusResponseSchema.safeParse({
+                settled: false,
+                draft: { draft: {}, source: 'airbnb', methodsUsed: [], partial: true }
+            }).success
+        ).toBe(false);
+    });
+
+    it('accepts a settled success response wrapping a full import response', () => {
+        const result = AccommodationImportStatusResponseSchema.safeParse({
+            settled: true,
+            draft: {
+                draft: { name: { value: 'Casa Sol', confidence: 90, source: 'jsonld' } },
+                source: 'airbnb',
+                methodsUsed: ['jsonld'],
+                partial: false
+            }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts a settled failure response with a failureCode', () => {
+        expect(
+            AccommodationImportStatusResponseSchema.safeParse({
+                settled: true,
+                failureCode: 'timeout'
+            }).success
+        ).toBe(true);
+    });
+
+    it('rejects a settled response with neither draft nor failureCode', () => {
+        expect(AccommodationImportStatusResponseSchema.safeParse({ settled: true }).success).toBe(
+            false
+        );
+    });
+
+    it('rejects an invalid failureCode value', () => {
+        expect(
+            AccommodationImportStatusResponseSchema.safeParse({
+                settled: true,
+                failureCode: 'not_a_real_code'
+            }).success
+        ).toBe(false);
+    });
+
+    it('rejects a missing settled field', () => {
+        expect(
+            AccommodationImportStatusResponseSchema.safeParse({
+                draft: { draft: {}, source: 'generic', methodsUsed: [], partial: true }
+            }).success
+        ).toBe(false);
     });
 });

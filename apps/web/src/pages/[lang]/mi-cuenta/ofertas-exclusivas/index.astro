@@ -1,0 +1,63 @@
+---
+/**
+ * @file mi-cuenta/ofertas-exclusivas/index.astro
+ * @description Exclusive-deals listing page (HOS-21 T-011) — shows the
+ * authenticated tourist's plan-scoped owner promotions (plus-tier deals,
+ * additive vip-only deals for tourist-vip).
+ *
+ * Auth protection: middleware redirects unauthenticated visitors. The in-page
+ * guard is a safety net for SSR edge cases (mirrors `alertas/index.astro`).
+ *
+ * The list itself, entitlement upgrade-CTA state, and VIP-only badge are all
+ * owned by the `ExclusiveDealsList` client island — this page is a thin SSR
+ * shell that only resolves the authenticated user and hands off `apiUrl` +
+ * `userId`.
+ *
+ * @route    /[lang]/mi-cuenta/ofertas-exclusivas/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { ExclusiveDealsList } from '@/components/account/ExclusiveDealsList.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard — middleware should have redirected already, this is the safety net.
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.exclusiveDeals.title', 'Ofertas exclusivas');
+const description = t(
+    'account.pages.exclusiveDeals.description',
+    'Descubrí ofertas y descuentos exclusivos para tu plan en Hospeda'
+);
+const apiUrl = getApiUrl();
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="ofertas-exclusivas">
+    <h2 class="account-section__title">{title}</h2>
+
+    <ExclusiveDealsList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+    />
+</AccountLayout>
+
+<style>
+    .account-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

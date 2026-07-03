@@ -138,7 +138,26 @@ describe('PlanComparisonTable.astro', () => {
             .find((line) => line.includes("id: 'collections'"));
         expect(collectionsRowLine).toContain("kind: 'limit'");
         expect(collectionsRowLine).toContain('LimitKey.MAX_COLLECTIONS');
-        expect(collectionsRowLine).not.toContain("kind: 'literals'");
+    });
+
+    // -----------------------------------------------------------------------
+    // Promotions row activation (HOS-16 T-012)
+    // -----------------------------------------------------------------------
+
+    it('should mark the promotions row as available (no upcoming badge)', () => {
+        // owner-promotions is a real, working feature (OwnerPromotionService +
+        // tourist-facing display, PR #1900 merged 2026-06-30) — it was
+        // mislabeled 'upcoming'. HOS-16 also extends it to owner-basico.
+        const promotionsRowLine = src.split('\n').find((line) => line.includes("id: 'promotions'"));
+        expect(promotionsRowLine).toBeDefined();
+        expect(promotionsRowLine).toContain("status: 'available'");
+        expect(promotionsRowLine).not.toContain("status: 'upcoming'");
+    });
+
+    it('should keep a limit-kind cell with LimitKey.MAX_ACTIVE_PROMOTIONS for the promotions row', () => {
+        const promotionsRowLine = src.split('\n').find((line) => line.includes("id: 'promotions'"));
+        expect(promotionsRowLine).toContain("kind: 'limit'");
+        expect(promotionsRowLine).toContain('LimitKey.MAX_ACTIVE_PROMOTIONS');
     });
 
     // -----------------------------------------------------------------------

@@ -323,6 +323,9 @@ export interface AccommodationTranslationData {
 /** Discount type for an owner promotion */
 export type OwnerPromotionDiscountType = 'percentage' | 'fixed' | 'free_night';
 
+/** Tourist-audience tier an owner promotion is scoped to (HOS-21). */
+export type OwnerPromotionTouristAudience = 'plus' | 'vip';
+
 /** Lifecycle state for an owner promotion */
 export type OwnerPromotionLifecycleState = 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | string;
 
@@ -347,6 +350,7 @@ export interface OwnerPromotionData {
     readonly maxRedemptions: number | null;
     readonly currentRedemptions: number;
     readonly lifecycleState: OwnerPromotionLifecycleState;
+    readonly touristAudience: OwnerPromotionTouristAudience;
     readonly createdAt: string;
     readonly updatedAt: string;
 }
@@ -367,6 +371,7 @@ export interface OwnerPromotionCreateInput {
     readonly validFrom: string;
     readonly validUntil?: string | null;
     readonly maxRedemptions?: number | null;
+    readonly touristAudience?: OwnerPromotionTouristAudience;
 }
 
 /**
@@ -384,4 +389,5 @@ export interface OwnerPromotionUpdateInput {
     readonly validFrom?: string;
     readonly validUntil?: string | null;
     readonly maxRedemptions?: number | null;
+    readonly touristAudience?: OwnerPromotionTouristAudience;
 }

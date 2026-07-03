@@ -1105,15 +1105,20 @@ The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.tra
 
 **Outcome A — GO.** The mutation is confirmed viable: Hospeda already performs this exact `PUT /preapproval/{id}` call in production (plan upgrade/downgrade cron). One staging verification remains (that restoring to the original authorized amount never requires payer re-authorization), but the mechanism is proven.
 
-### DB migration files (extras carril)
+### DB migration files
+
+`effect_kind`, `value_kind`, `duration_cycles`, `extra_days` (`billing_promo_codes`) and
+`promo_effect_remaining_cycles` (`billing_subscriptions`) are typed Drizzle columns as of
+`@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — added via the normal Carril 1 migration
+(`packages/db/src/migrations/0042_last_patriot.sql`), not the extras carril. The old
+extras files (`016`-`019`) that originally added these columns before they were
+promoted upstream have been removed.
 
 | File | What it adds |
 |---|---|
-| `packages/db/src/migrations/extras/018-billing-promo-codes-effect-columns.column.sql` | `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` on `billing_promo_codes` |
-| `packages/db/src/migrations/extras/019-billing-subscriptions-promo-effect-columns.column.sql` | `promo_effect_remaining_cycles` on `billing_subscriptions` |
-| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` |
+| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` (still extras — Drizzle can't declare CHECK constraints) |
 
-Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` for these.
+Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` against staging/prod.
 
 ## Review Moderation (SPEC-166)
 
@@ -1218,6 +1223,27 @@ blast radius, separate master key — never share `HOSPEDA_AI_VAULT_MASTER_KEY` 
 - **Admin routes**: `apps/api/src/routes/social/admin/credentials/*` (list/create/rotate/
   update/delete), gated by `SOCIAL_SETTINGS_MANAGE` (reused, not a dedicated permission — same
   precedent as the AI vault reusing `AI_SETTINGS_MANAGE`).
+
+## Decoupled External Ports (ImportContext)
+
+`ImportContext` (in `services/accommodation-import/adapter.types.ts`) carries optional
+**port functions** for capabilities that require credentials or infrastructure this
+package must NOT own directly — `apps/api` builds and injects the implementation,
+`packages/service-core` only calls the function. This keeps service-core decoupled and
+unit-testable without pulling in apps/api's AI engine, vault master keys, or OAuth token
+services.
+
+Two ports exist today, both following the same shape:
+
+| Port | Owner (apps/api) | Purpose |
+|------|-------------------|---------|
+| `aiExtract` | AI engine + entitlement/quota gate | AI-assisted field extraction (SPEC-222 Strategy B) |
+| `mercadoLibreTokenProvider` | OAuth token service + credential vault (HOS-45) | Returns a valid, transparently-refreshed MercadoLibre access token |
+
+When adding a new OAuth-backed or credential-gated provider, add a new port to
+`ImportContext` following this same pattern (an async function with no arguments or a
+small typed input, apps/api wires the real implementation, service-core only calls it
+and degrades gracefully — never throws — when the port is absent).
 
 ## Related Documentation
 

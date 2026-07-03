@@ -2,10 +2,11 @@
  * Subscription Promo Effect API Response Schema
  *
  * Defines the response shape for the admin endpoint that exposes the active
- * promo effect on a billing subscription. Data is sourced from the extras-carril
- * columns added in:
- * - `019-billing-subscriptions-promo-effect-columns.column.sql` (promo_effect_remaining_cycles)
- * - `018-billing-promo-codes-effect-columns.column.sql` (effect_kind, value_kind, value, duration_cycles, extra_days)
+ * promo effect on a billing subscription. Data is sourced from
+ * `promo_effect_remaining_cycles` (billingSubscriptions) and `effect_kind`/
+ * `value_kind`/`value`/`duration_cycles`/`extra_days` (billingPromoCodes) —
+ * first-class Drizzle-declared columns as of `@qazuor/qzpay-drizzle` 1.11.0
+ * (HOS-73; previously extras-carril-only).
  *
  * Plain validators are intentional — this is a RESPONSE schema and must NOT
  * produce zodError.* keys that would require entries in validation.json.

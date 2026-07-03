@@ -583,6 +583,10 @@
             "title": "Price alerts",
             "description": "Manage your price-drop alerts on Hospeda"
         },
+        "exclusiveDeals": {
+            "title": "Exclusive deals",
+            "description": "Discover exclusive offers and discounts for your plan on Hospeda"
+        },
         "recommendations": {
             "title": "For you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
@@ -797,6 +801,23 @@
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts"
+    },
+    "exclusiveDeals": {
+        "loading": "Loading exclusive deals...",
+        "errorFetch": "Could not load your exclusive deals",
+        "empty": {
+            "title": "No active deals right now",
+            "body": "Check back later for new exclusive deals for your plan."
+        },
+        "upgrade": {
+            "title": "Exclusive deals",
+            "message": "Exclusive deals are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "cta": "View plans"
+        },
+        "listLabel": "Your exclusive deals",
+        "item": {
+            "vipBadge": "VIP only"
+        }
     },
     "recommendations": {
         "loading": "Loading recommendations...",

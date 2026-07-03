@@ -76,7 +76,9 @@ export enum PermissionCategoryEnum {
     SOCIAL_PLATFORM = 'SOCIAL_PLATFORM',
     SOCIAL_FOOTER = 'SOCIAL_FOOTER',
     SOCIAL_SETTINGS = 'SOCIAL_SETTINGS',
-    SOCIAL_AUDIT = 'SOCIAL_AUDIT'
+    SOCIAL_AUDIT = 'SOCIAL_AUDIT',
+    /** Third-party integrations (e.g. MercadoLibre OAuth) (HOS-45 / SPEC-278). */
+    INTEGRATION = 'INTEGRATION'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -922,5 +924,8 @@ export enum PermissionEnum {
     SOCIAL_SETTINGS_MANAGE = 'socialSettings.manage', // Allows reading and updating social automation settings (make webhook URL, defaults, etc.); also gates the GPT action schema export endpoint.
     SOCIAL_PUBLISH_LOG_VIEW = 'socialPublishLog.view', // Allows querying the social_publish_logs table (dispatch history, failure details).
     SOCIAL_AUDIT_LOG_VIEW = 'socialAuditLog.view', // Allows querying the social_audit_log table (semantic event trail with actor + old/new values).
-    SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage' // Allows manually triggering or resetting dispatch jobs and managing the Make.com integration state.
+    SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage', // Allows manually triggering or resetting dispatch jobs and managing the Make.com integration state.
+
+    // INTEGRATION: Third-party integration management (HOS-45 / SPEC-278)
+    INTEGRATION_MERCADOLIBRE_MANAGE = 'integration.mercadolibre.manage' // Allows managing the MercadoLibre OAuth integration (authorize, refresh, revoke).
 }
