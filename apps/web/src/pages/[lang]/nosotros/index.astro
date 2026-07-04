@@ -3,7 +3,7 @@
  * @file nosotros/index.astro
  * @description About us page with hero, mission, values, and regional section.
  * @route /{lang}/nosotros/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
@@ -13,16 +13,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { LocationIcon, TreeIcon, UsersIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // Split title to underline the last word with a handwritten accent.

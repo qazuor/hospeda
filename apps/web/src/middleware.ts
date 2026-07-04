@@ -297,10 +297,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // The CSP header is the single source of truth; the body rewrite makes the
     // policy actually enforceable for inline emissions Astro doesn't tag itself.
     //
-    // @astrojs/node with `staticHeaders: true` does NOT forward content-type in
-    // the Response object returned from next() for prerendered pages — MIME type
-    // is set by the file server after the middleware pipeline. Use
-    // context.isPrerendered as a fallback so the CSP header reaches static pages.
+    // NOTE (HOS-74): this middleware runs per-request ONLY for SSR routes. A route
+    // with `export const prerender = true` runs middleware just once — at build
+    // time, to emit its static file; in production @astrojs/node `standalone`
+    // serves that file straight off disk WITHOUT re-invoking middleware, so a
+    // header set here never reaches it. `staticHeaders: true` only forwards the
+    // headers Astro's native `security.csp` build feature registers, NOT this
+    // hand-built header. That is why every content page was moved off `prerender`
+    // onto this SSR path (HOS-74; the home page led the way under HOS-30 2.C). The
+    // ONE deliberate exception is `pages/beta/[...slug].astro` — private, noindex
+    // beta docs kept prerendered for resilience and accepted to ship without CSP
+    // (HOS-74 owner decision). Do NOT re-add `prerender` to any other page that
+    // needs the CSP header — it will silently ship with no policy. The
+    // `context.isPrerendered` term below is unreachable for a served response
+    // (prerendered files bypass this middleware at request time) and kept only as
+    // a defensive guard.
     const contentType = response.headers.get('content-type') ?? '';
     const isHtmlPage = contentType.includes('text/html') || context.isPrerendered;
 
@@ -333,11 +344,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
                 headers: newHeaders
             });
         }
-        // Prerendered pages: skip body rewrite — nonces cannot be embedded at
-        // build time, so any un-nonced inline <style>/<script> on these routes
-        // is dropped under enforce mode (verified via Sentry, HOS-30 T-020: the
-        // 15 SSG routes only ever showed the accepted GAP-30-01 ClientRouter
-        // style, no other type — safe to enforce).
+        // Defensive branch (HOS-74: the only prerendered route left is the beta
+        // docs catch-all, which is served off-disk and never reaches this
+        // middleware at request time — so this is unreachable for a served
+        // response). Historically, prerendered pages skipped the body rewrite
+        // because nonces cannot be embedded at build time — any un-nonced inline
+        // <style>/<script> was dropped under enforce mode. Kept as a guard.
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }
