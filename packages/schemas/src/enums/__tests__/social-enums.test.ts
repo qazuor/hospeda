@@ -29,12 +29,12 @@ import { SocialSourceEnumSchema } from '../social-source.schema.js';
 // ----------------------------------------------------------------------------
 
 describe('SocialPlatformEnum', () => {
-    it('should have exactly 3 values', () => {
+    it('should have exactly 5 values', () => {
         // Arrange / Act
         const values = Object.values(SocialPlatformEnum);
 
         // Assert
-        expect(values).toHaveLength(3);
+        expect(values).toHaveLength(5);
     });
 
     it('should include INSTAGRAM', () => {
@@ -49,17 +49,33 @@ describe('SocialPlatformEnum', () => {
         expect(SocialPlatformEnum.X).toBe('X');
     });
 
+    it('should include LINKEDIN', () => {
+        expect(SocialPlatformEnum.LINKEDIN).toBe('LINKEDIN');
+    });
+
+    it('should include TIKTOK', () => {
+        expect(SocialPlatformEnum.TIKTOK).toBe('TIKTOK');
+    });
+
     describe('SocialPlatformEnumSchema', () => {
-        it('should accept all 3 values', () => {
+        it('should accept all values', () => {
             for (const value of Object.values(SocialPlatformEnum)) {
                 const result = SocialPlatformEnumSchema.safeParse(value);
                 expect(result.success).toBe(true);
             }
         });
 
+        it('should accept LINKEDIN', () => {
+            expect(SocialPlatformEnumSchema.safeParse('LINKEDIN').success).toBe(true);
+        });
+
+        it('should accept TIKTOK', () => {
+            expect(SocialPlatformEnumSchema.safeParse('TIKTOK').success).toBe(true);
+        });
+
         it('should reject an unknown platform', () => {
             // Arrange / Act
-            const result = SocialPlatformEnumSchema.safeParse('TIKTOK');
+            const result = SocialPlatformEnumSchema.safeParse('THREADS');
 
             // Assert
             expect(result.success).toBe(false);
@@ -85,7 +101,7 @@ describe('SocialPlatformEnum', () => {
         });
 
         it('should throw ZodError on parse of an invalid value', () => {
-            expect(() => SocialPlatformEnumSchema.parse('LINKEDIN')).toThrowError(ZodError);
+            expect(() => SocialPlatformEnumSchema.parse('THREADS')).toThrowError(ZodError);
         });
     });
 });
