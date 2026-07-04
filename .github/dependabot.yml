@@ -105,6 +105,21 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'expo-*'
         update-types: ['version-update:semver-major']
+      # @radix-ui/*: the production-minor-patch group's Radix bumps (react-select
+      # 2.2.6 -> 2.3.1, plus dialog/popover/avatar/slot/... minors) collectively
+      # tip apps/admin's unit-test fork worker over its NATIVE V8 memory ceiling
+      # (RegExpCompiler Zone allocator, NOT the JS heap — --logHeapUsage stays flat
+      # at ~330-500MB) when rendering the heavy Radix-portal + cmdk + userEvent
+      # dialog tests (PermissionPicker, *CredentialDialog, PromoCodeFormDialog),
+      # crashing shard 5 with an OOM. Bisected across PRs #2054-2064: there is NO
+      # single culprit package — reverting select/slot/overlays/{select+slot+tabs}
+      # each still OOMs, only reverting ~all 13 clears it, so it's the aggregate
+      # native-memory cost of the group. staging (older Radix) sits just under the
+      # ceiling. The bumps are MINOR/patch, so this can't be scoped to majors like
+      # astro/recharts/expo — the whole scope is gated. Lift when the admin test
+      # native-memory ceiling is fixed (vmForks+vmMemoryLimit or heavy-test
+      # isolation). Owner: HOS-80.
+      - dependency-name: '@radix-ui/*'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
