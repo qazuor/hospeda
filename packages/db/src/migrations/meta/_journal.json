@@ -330,6 +330,13 @@
             "when": 1783052002034,
             "tag": "0046_greedy_northstar",
             "breakpoints": true
+        },
+        {
+            "idx": 47,
+            "version": "7",
+            "when": 1783200993664,
+            "tag": "0047_military_kingpin",
+            "breakpoints": true
         }
     ]
 }
