@@ -26,8 +26,12 @@
         // resolve @repo/* straight from source (fast DX) without tripping rootDir. See HOS-4.
         //
         // TS6 also errors on any deprecated compiler option (TS5101). We removed `baseUrl` from
-        // all of our own tsconfigs, but tsup injects a hardcoded `baseUrl` into its DTS pass;
-        // `ignoreDeprecations` tolerates that tool-injected option until tsup drops it (or TS7).
+        // every tsconfig in the typecheck/build path; the only remaining source is the `baseUrl`
+        // that tsup hardcodes into its DTS pass, which we cannot control. This is inherited by
+        // everything that extends the shared bases, so it globally tolerates all 6.0-era
+        // deprecations (today only tsup's injected baseUrl is present). Scoped to the "6.0"
+        // window, so it does NOT mask options removed later in TS7. Drop it once tsup stops
+        // injecting baseUrl (or at the TS7 migration).
         "ignoreDeprecations": "6.0",
 
         "types": ["node"]

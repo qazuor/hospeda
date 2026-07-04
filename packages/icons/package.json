@@ -20,7 +20,7 @@
     "files": ["dist"],
     "scripts": {
         "build": "tsup",
-        "dev": "tsc --watch",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage --passWithNoTests",
