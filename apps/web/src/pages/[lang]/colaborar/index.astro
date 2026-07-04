@@ -15,7 +15,6 @@ import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);

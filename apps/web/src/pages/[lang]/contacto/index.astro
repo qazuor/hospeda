@@ -26,17 +26,6 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
-import {
-	EmailIcon,
-	PhoneIcon,
-	WhatsappIcon,
-	LocationIcon,
-	ClockIcon,
-	CheckCircleIcon,
-	ArrowRightIcon,
-	InstagramIcon,
-	FacebookIcon
-} from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
