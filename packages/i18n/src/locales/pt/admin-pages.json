@@ -231,6 +231,18 @@
         "unreadBadge": "Não lida",
         "markAsRead": "Marcar como lida"
     },
+    "marketing": {
+        "title": "Marketing",
+        "subtitle": "Acesse as ferramentas de comunicação e divulgação da Hospeda",
+        "social": {
+            "title": "Social",
+            "description": "Publicações, campanhas e audiências nas redes sociais"
+        },
+        "newsletter": {
+            "title": "Newsletter",
+            "description": "Campanhas de email e gestão de assinantes"
+        }
+    },
     "sponsor": {
         "dashboard": {
             "title": "Painel de Patrocínio",

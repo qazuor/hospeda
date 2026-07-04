@@ -231,6 +231,18 @@
         "unreadBadge": "Unread",
         "markAsRead": "Mark as Read"
     },
+    "marketing": {
+        "title": "Marketing",
+        "subtitle": "Access Hospeda's communication and outreach tools",
+        "social": {
+            "title": "Social",
+            "description": "Social media posts, campaigns, and audiences"
+        },
+        "newsletter": {
+            "title": "Newsletter",
+            "description": "Email campaigns and subscriber management"
+        }
+    },
     "sponsor": {
         "dashboard": {
             "title": "Sponsorship Dashboard",
