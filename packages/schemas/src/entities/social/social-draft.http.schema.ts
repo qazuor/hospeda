@@ -153,10 +153,24 @@ export type GptVideoPayloadInput = z.infer<typeof GptVideoPayloadSchema>;
 
 /**
  * A single publish target (platform × format pair) requested by the GPT.
+ *
+ * `assets` (optional) lets a target carry its OWN media, independent of the other
+ * targets on the same post — this is what makes per-target/per-format publishing
+ * possible (HOS-65 G-3). Each entry may hold an image and/or a video payload. When
+ * `assets` is omitted, the target falls back to the post-level root `image` field
+ * (legacy behavior), so existing GPT Action callers keep working unchanged.
  */
 export const SocialDraftTargetSchema = z.object({
     platform: SocialPlatformEnumSchema,
-    publishFormat: SocialPublishFormatEnumSchema
+    publishFormat: SocialPublishFormatEnumSchema,
+    assets: z
+        .array(
+            z.object({
+                image: GptImagePayloadSchema.optional(),
+                video: GptVideoPayloadSchema.optional()
+            })
+        )
+        .optional()
 });
 
 // ---------------------------------------------------------------------------

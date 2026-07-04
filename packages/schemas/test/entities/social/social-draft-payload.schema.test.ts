@@ -7,7 +7,10 @@
  * @see packages/schemas/src/entities/social/social-draft.http.schema.ts
  */
 import { describe, expect, it } from 'vitest';
-import { GptVideoPayloadSchema } from '../../../src/entities/social/social-draft.http.schema.js';
+import {
+    GptVideoPayloadSchema,
+    SocialDraftTargetSchema
+} from '../../../src/entities/social/social-draft.http.schema.js';
 
 describe('GptVideoPayloadSchema', () => {
     it('accepts a valid public_url payload', () => {
@@ -49,5 +52,40 @@ describe('GptVideoPayloadSchema', () => {
         });
 
         expect(result.success).toBe(false);
+    });
+});
+
+describe('SocialDraftTargetSchema per-target assets (HOS-65 T-008)', () => {
+    it('parses a target carrying an image asset and preserves it', () => {
+        const result = SocialDraftTargetSchema.safeParse({
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY',
+            assets: [{ image: { mode: 'public_url', url: 'https://cdn.example.com/pic.jpg' } }]
+        });
+
+        expect(result.success).toBe(true);
+        // Must be PRESERVED, not stripped — proves the field is defined on the schema.
+        expect(result.success && result.data.assets).toHaveLength(1);
+    });
+
+    it('parses a target carrying a video asset and preserves it', () => {
+        const result = SocialDraftTargetSchema.safeParse({
+            platform: 'TIKTOK',
+            publishFormat: 'VIDEO_POST',
+            assets: [{ video: { mode: 'public_url', url: 'https://cdn.example.com/clip.mp4' } }]
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.assets).toHaveLength(1);
+    });
+
+    it('parses a target with no assets field (backward compatible)', () => {
+        const result = SocialDraftTargetSchema.safeParse({
+            platform: 'FACEBOOK',
+            publishFormat: 'FEED_POST'
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.assets).toBeUndefined();
     });
 });
