@@ -2040,5 +2040,59 @@ export const HOSPEDA_ENV_VARS = [
             'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
         howToObtainEs:
             'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
+    },
+    {
+        name: 'HOSPEDA_TAG_USER_QUOTA_PER_USER',
+        description:
+            'Maximum number of tags a single user may create (service-core tag service). Optional — falls back to a built-in default of 50 when unset or not a finite positive integer.',
+        descriptionEs:
+            'Cantidad máxima de tags que puede crear un mismo usuario (tag service de service-core). Opcional — si no se setea o no es un entero positivo finito, cae a un default interno de 50.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '50',
+        exampleValue: '50',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Set only to override the default per-user tag quota of 50. Leave unset to use the default.',
+        howToObtainEs:
+            'Setear solo para sobrescribir el quota por defecto de 50 tags por usuario. Dejar sin setear para usar el default.'
+    },
+    {
+        name: 'HOSPEDA_DEPLOY_ENV',
+        description:
+            'Explicit deploy-environment identifier consumed by @repo/media server-side environment resolution to pick the media provider config. Optional — when unset, the environment is inferred from NODE_ENV (production→prod, test→test, otherwise dev).',
+        descriptionEs:
+            'Identificador explícito del entorno de deploy que usa la resolución de entorno server-side de @repo/media para elegir la config del proveedor de medios. Opcional — si no se setea, el entorno se infiere de NODE_ENV (production→prod, test→test, si no dev).',
+        type: 'enum',
+        required: false,
+        secret: false,
+        enumValues: ['dev', 'test', 'preview', 'prod'],
+        exampleValue: 'dev',
+        apps: ['api'],
+        category: 'core',
+        howToObtain:
+            'Set per deployment target when NODE_ENV alone cannot distinguish the media environment (e.g. a preview build). Valid values: dev, test, preview, prod.',
+        howToObtainEs:
+            'Setear por target de deploy cuando NODE_ENV por sí solo no alcanza para distinguir el entorno de medios (ej. un build de preview). Valores válidos: dev, test, preview, prod.'
+    },
+    {
+        name: 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED',
+        description:
+            'DEV/TEST ONLY. Enables the QZPay test-control gate (deterministic failNext/delayNext injection) used by the e2e billing suite and the worktree dev bootstrap. Production MUST NEVER set this. Optional — treated as disabled unless the value is exactly "true".',
+        descriptionEs:
+            'SOLO DEV/TEST. Habilita el gate de test-control de QZPay (inyección determinística de failNext/delayNext) que usa la suite e2e de billing y el bootstrap de worktree. Producción NUNCA debe setearla. Opcional — se considera deshabilitada salvo que el valor sea exactamente "true".',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'testing',
+        howToObtain:
+            'Set to "true" ONLY on a local/e2e API process to enable deterministic QZPay failure injection. Never set it in staging or production.',
+        howToObtainEs:
+            'Setear en "true" SOLO en un proceso de API local/e2e para habilitar la inyección determinística de fallos de QZPay. Nunca setearla en staging ni producción.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
