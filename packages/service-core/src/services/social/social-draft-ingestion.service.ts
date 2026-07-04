@@ -92,13 +92,17 @@ import { normalizeHashtag } from './social.helpers';
 const HASHTAG_LIMIT_SETTING_KEYS = {
     [SocialPlatformEnum.INSTAGRAM]: 'max_hashtags_instagram',
     [SocialPlatformEnum.FACEBOOK]: 'max_hashtags_facebook',
-    [SocialPlatformEnum.X]: 'max_hashtags_x'
+    [SocialPlatformEnum.X]: 'max_hashtags_x',
+    [SocialPlatformEnum.LINKEDIN]: 'max_hashtags_linkedin',
+    [SocialPlatformEnum.TIKTOK]: 'max_hashtags_tiktok'
 } as const satisfies Record<SocialPlatformEnum, string>;
 
 const DEFAULT_MAX_HASHTAGS: Record<SocialPlatformEnum, number> = {
     [SocialPlatformEnum.INSTAGRAM]: 30,
     [SocialPlatformEnum.FACEBOOK]: 10,
-    [SocialPlatformEnum.X]: 5
+    [SocialPlatformEnum.X]: 5,
+    [SocialPlatformEnum.LINKEDIN]: 5,
+    [SocialPlatformEnum.TIKTOK]: 5
 };
 
 // ---------------------------------------------------------------------------
