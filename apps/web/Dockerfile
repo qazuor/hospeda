@@ -13,7 +13,6 @@ RUN corepack enable
 # copying full trees instead of individual package.json files.
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile

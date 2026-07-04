@@ -32,8 +32,7 @@ build/
 .gitignore
 .markdownlint-cli2.jsonc
 .huskyrc
-# NOTE: do NOT exclude .npmrc or patches/ — pnpm install --frozen-lockfile
-# inside the deps stage needs both (lockfile references patched deps).
+# NOTE: do NOT exclude .npmrc — pnpm install --frozen-lockfile needs it.
 
 # Repo-only documentation and AI scaffolding
 **/*.md
