@@ -19,7 +19,7 @@
  */
 
 import { ChangePasswordInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -98,6 +98,20 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // Holds the pending post-success redirect timer so it can be cancelled if
+    // the component unmounts before it fires. Without this, an orphaned timer
+    // runs `window.location.href` after teardown (crashes jsdom in tests, and
+    // leaks a redirect if the user navigates away in the 1.5 s window).
+    const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (redirectTimerRef.current !== null) {
+                clearTimeout(redirectTimerRef.current);
+            }
+        };
+    }, []);
 
     // Show/hide toggles — one per input field.
     const [showCurrent, setShowCurrent] = useState(false);
@@ -198,7 +212,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
 
             // Show success banner first, then redirect to account page after 1.5 s.
             setIsSuccess(true);
-            setTimeout(() => {
+            redirectTimerRef.current = setTimeout(() => {
                 window.location.href = `/${locale}/mi-cuenta/`;
             }, 1500);
         } catch (err: unknown) {
