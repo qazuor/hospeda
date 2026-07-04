@@ -301,7 +301,7 @@ jobs:
   # consumes built artifacts. ~5 min per shard (was ~21 min single).
   # ------------------------------------------------------------------
   test-unit:
-    name: Unit Tests (shard ${{ matrix.shard }}/5)
+    name: Unit Tests (shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
     # instead of rebuilding. Originally calibrated at 13-15 min/shard (PR
@@ -342,7 +342,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -362,10 +362,10 @@ jobs:
       # (~4 min per shard). With `VITEST_SHARD` in the key the build
       # warm-up from the previous step stays warm and the test step
       # starts immediately.
-      - name: Run tests with coverage (shard ${{ matrix.shard }}/5)
+      - name: Run tests with coverage (shard ${{ matrix.shard }}/8)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          VITEST_SHARD: ${{ matrix.shard }}/5
+          VITEST_SHARD: ${{ matrix.shard }}/8
         # --passWithNoTests is NOT injected from CI here — every package's
         # `test` / `test:coverage` script in its own package.json already
         # includes it. vitest 3.2.4+ rejects duplicated flags with
@@ -379,22 +379,22 @@ jobs:
         # against the merged coverage from all shards.
         run: |
           pnpm turbo run test:coverage --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/5 \
+            --shard=${{ matrix.shard }}/8 \
             --coverage.thresholds.lines=0 \
             --coverage.thresholds.functions=0 \
             --coverage.thresholds.branches=0 \
             --coverage.thresholds.statements=0
-      - name: Run tests without coverage (shard ${{ matrix.shard }}/5)
+      - name: Run tests without coverage (shard ${{ matrix.shard }}/8)
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         env:
-          VITEST_SHARD: ${{ matrix.shard }}/5
+          VITEST_SHARD: ${{ matrix.shard }}/8
         # Cheaper run for PRs and pushes to staging. No coverage artifact
         # produced, so coverage-check is skipped (and accepted by ci-pass).
         # See coverage variant above for why --passWithNoTests is NOT
         # injected here from CI.
         run: |
           pnpm turbo run test --concurrency=4 -- \
-            --shard=${{ matrix.shard }}/5
+            --shard=${{ matrix.shard }}/8
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v7
