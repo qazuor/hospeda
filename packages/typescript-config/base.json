@@ -18,11 +18,17 @@
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
 
-        "baseUrl": ".",
-        "outDir": "dist",
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
+        // No emit-shaping options (declaration, declarationMap, outDir, sourceMap) are set in the
+        // shared bases on purpose. tsup emits the JS bundle + .d.ts per package (with its own
+        // outDir/sourcemap), so tsc is only ever used for `--noEmit` type checking. Any of those
+        // options would make TS6 compute/validate rootDir, which rejects the monorepo's
+        // cross-package `paths` -> sibling `src` mappings (TS6059). Keeping them out lets typecheck
+        // resolve @repo/* straight from source (fast DX) without tripping rootDir. See HOS-4.
+        //
+        // TS6 also errors on any deprecated compiler option (TS5101). We removed `baseUrl` from
+        // all of our own tsconfigs, but tsup injects a hardcoded `baseUrl` into its DTS pass;
+        // `ignoreDeprecations` tolerates that tool-injected option until tsup drops it (or TS7).
+        "ignoreDeprecations": "6.0",
 
         "types": ["node"]
     }

@@ -27,6 +27,14 @@
                     }
                 }
             }
+        },
+        {
+            "include": ["packages/typescript-config/*.json"],
+            "json": {
+                "parser": {
+                    "allowComments": true
+                }
+            }
         }
     ]
 }
