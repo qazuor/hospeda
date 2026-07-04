@@ -20,7 +20,12 @@
  * SPEC-254 T-027.
  */
 
-import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
+import type {
+    SocialAssetModel,
+    SocialPostMediaModel,
+    SocialPostTargetMediaModel,
+    SocialSettingModel
+} from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
@@ -38,6 +43,8 @@ import { createModelMock } from '../../utils/modelMockFactory';
 const MOCK_ASSET_UUID = '00000000-0000-4000-8000-000000000001';
 const MOCK_POST_UUID = '00000000-0000-4000-8000-000000000002';
 const MOCK_ACTOR_UUID = '00000000-0000-4000-8000-000000000003';
+const MOCK_TARGET_UUID = '00000000-0000-4000-8000-000000000004';
+const MOCK_TARGET_MEDIA_UUID = '00000000-0000-4000-8000-000000000005';
 
 const FAKE_IMAGE_URL = 'https://files.oaiusercontent.com/fake-image.jpg';
 const FAKE_CLOUDINARY_URL =
@@ -73,14 +80,27 @@ function buildMockAssetRow(overrides: Record<string, unknown> = {}) {
     };
 }
 
-function buildMockPostMediaRow() {
+function buildMockPostMediaRow(overrides: Record<string, unknown> = {}) {
     return {
         id: '00000000-0000-4000-8000-000000000099',
         socialPostId: MOCK_POST_UUID,
         assetId: MOCK_ASSET_UUID,
         position: 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        ...overrides
+    };
+}
+
+function buildMockTargetMediaRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: MOCK_TARGET_MEDIA_UUID,
+        socialPostTargetId: MOCK_TARGET_UUID,
+        socialPostMediaId: '00000000-0000-4000-8000-000000000099',
+        position: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides
     };
 }
 
@@ -112,6 +132,7 @@ describe('SocialImagePipelineService', () => {
     let assetModelMock: ReturnType<typeof createModelMock>;
     let postMediaModelMock: ReturnType<typeof createModelMock>;
     let settingModelMock: ReturnType<typeof createModelMock>;
+    let postTargetMediaModelMock: ReturnType<typeof createModelMock>;
     let service: SocialImagePipelineService;
 
     beforeEach(() => {
@@ -125,13 +146,15 @@ describe('SocialImagePipelineService', () => {
         assetModelMock = createModelMock();
         postMediaModelMock = createModelMock();
         settingModelMock = createModelMock();
+        postTargetMediaModelMock = createModelMock();
 
         service = new SocialImagePipelineService(
             {},
             mediaProvider as unknown as ImageProvider,
             assetModelMock as unknown as SocialAssetModel,
             postMediaModelMock as unknown as SocialPostMediaModel,
-            settingModelMock as unknown as SocialSettingModel
+            settingModelMock as unknown as SocialSettingModel,
+            postTargetMediaModelMock as unknown as SocialPostTargetMediaModel
         );
 
         // Default: asset create succeeds
@@ -140,6 +163,8 @@ describe('SocialImagePipelineService', () => {
         postMediaModelMock.create.mockResolvedValue(buildMockPostMediaRow());
         // Default: no social_settings rows configured — every getter falls back
         settingModelMock.findOne.mockResolvedValue(undefined);
+        // Default: target-media link create succeeds
+        postTargetMediaModelMock.create.mockResolvedValue(buildMockTargetMediaRow());
     });
 
     afterEach(() => {
@@ -657,6 +682,63 @@ describe('SocialImagePipelineService', () => {
 
             // Assert
             expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // social_post_target_media link row (HOS-65 T-011)
+    // -------------------------------------------------------------------------
+
+    describe('processImage — social_post_target_media link (HOS-65 G-3)', () => {
+        it('should create a social_post_target_media link row when socialPostTargetId is provided', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+
+            // Act
+            await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    socialPostTargetId: MOCK_TARGET_UUID,
+                    socialPostMediaId: 'media-row-uuid',
+                    position: 0
+                })
+            );
+        });
+
+        it('should NOT create a social_post_target_media link row when socialPostTargetId is absent', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, socialPostId: MOCK_POST_UUID });
+
+            // Assert
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('should not attempt the link row when socialPostId is absent even if socialPostTargetId is provided', async () => {
+            // Arrange — no social_post_media row is created without a socialPostId,
+            // so there is no socialPostMediaId to link.
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, socialPostTargetId: MOCK_TARGET_UUID });
+
+            // Assert
+            expect(postMediaModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
         });
     });
 });

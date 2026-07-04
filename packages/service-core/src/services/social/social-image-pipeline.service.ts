@@ -1,7 +1,13 @@
-import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
+import type {
+    SocialAssetModel,
+    SocialPostMediaModel,
+    SocialPostTargetMediaModel,
+    SocialSettingModel
+} from '@repo/db';
 import {
     SocialAssetModel as RealSocialAssetModel,
     SocialPostMediaModel as RealSocialPostMediaModel,
+    SocialPostTargetMediaModel as RealSocialPostTargetMediaModel,
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
@@ -102,6 +108,15 @@ export interface ProcessImageInput {
      * ID of the acting user / system actor. Stored in `social_assets.created_by_id`.
      */
     readonly actorId?: string;
+    /**
+     * ID of the `social_post_targets` row this asset should be scoped to
+     * (HOS-65 G-3 per-target/per-format publishing). When provided (and
+     * `socialPostId` is also provided, so a `social_post_media` row was
+     * actually created), a `social_post_target_media` link row is created
+     * pointing at the newly created media row. When `undefined`, no link row
+     * is created — this keeps pre-HOS-65 G-3 callers backward compatible.
+     */
+    readonly socialPostTargetId?: string;
 }
 
 /**
@@ -151,7 +166,9 @@ const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
  *    timeout (default 15 s, `download_timeout_ms` social setting — HOS-64 G-2).
  * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`.
  * 5. Persist a `social_assets` row with the Cloudinary fields + metadata.
- * 6. Optionally create a `social_post_media` link row at `position = 0`.
+ * 6. Optionally create a `social_post_media` link row at `position = 0`, and
+ *    (HOS-65 G-3) optionally a `social_post_target_media` link row scoping
+ *    that media row to a specific `social_post_targets` row.
  *
  * ## Graceful failure
  * If any step from (3) onward fails (network timeout, non-2xx HTTP response,
@@ -165,6 +182,7 @@ export class SocialImagePipelineService {
     private readonly assetModel: SocialAssetModel;
     private readonly postMediaModel: SocialPostMediaModel;
     private readonly settingModel: SocialSettingModel;
+    private readonly postTargetMediaModel: SocialPostTargetMediaModel;
     private readonly mediaProvider: ImageProvider;
     private readonly logger: ServiceLogger;
 
@@ -173,12 +191,14 @@ export class SocialImagePipelineService {
         mediaProvider: ImageProvider,
         assetModel?: SocialAssetModel,
         postMediaModel?: SocialPostMediaModel,
-        settingModel?: SocialSettingModel
+        settingModel?: SocialSettingModel,
+        postTargetMediaModel?: SocialPostTargetMediaModel
     ) {
         this.mediaProvider = mediaProvider;
         this.assetModel = assetModel ?? new RealSocialAssetModel();
         this.postMediaModel = postMediaModel ?? new RealSocialPostMediaModel();
         this.settingModel = settingModel ?? new RealSocialSettingModel();
+        this.postTargetMediaModel = postTargetMediaModel ?? new RealSocialPostTargetMediaModel();
         this.logger = serviceLogger;
     }
 
@@ -239,7 +259,7 @@ export class SocialImagePipelineService {
      * ```
      */
     public async processImage(input: ProcessImageInput): Promise<ProcessImageResult> {
-        const { image, socialPostId, actorId } = input;
+        const { image, socialPostId, actorId, socialPostTargetId } = input;
 
         // Step 1: Extract the download URL and any metadata from the payload.
         const { downloadUrl, openaiFileRef, mimeType, altText } = this.extractPayloadFields(image);
@@ -303,11 +323,36 @@ export class SocialImagePipelineService {
         // Step 6: Optionally link to the social post.
         if (socialPostId && assetId) {
             try {
-                await this.postMediaModel.create({
+                const postMedia = await this.postMediaModel.create({
                     socialPostId,
                     assetId,
                     position: 0
                 });
+
+                // Step 6b: Optionally link the newly created media row to a
+                // specific target (HOS-65 G-3 per-target/per-format publishing).
+                if (socialPostTargetId) {
+                    try {
+                        await this.postTargetMediaModel.create({
+                            socialPostTargetId,
+                            socialPostMediaId: postMedia.id,
+                            position: 0
+                        });
+                    } catch (err) {
+                        const message = err instanceof Error ? err.message : String(err);
+                        // Target-link failure is non-fatal: the asset and media row
+                        // exist, but the per-target scoping link did not.
+                        this.logger.warn(
+                            {
+                                error: message,
+                                assetId,
+                                socialPostMediaId: postMedia.id,
+                                socialPostTargetId
+                            },
+                            'Failed to create social_post_target_media link'
+                        );
+                    }
+                }
             } catch (err) {
                 const message = err instanceof Error ? err.message : String(err);
                 // Linking failure is non-fatal: the asset exists, but the link did not.
