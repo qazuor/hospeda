@@ -17,11 +17,12 @@ The 14 remaining `export const prerender = true` routes in `apps/web` ship **zer
 hand-built CSP in `apps/web/src/middleware.ts` never reaches them because middleware
 does not run per-request for prerendered pages. This spec applies the **same fix
 already used for the home page under HOS-30 2.C** — remove `prerender = true` so each
-route is served on the SSR path where middleware runs — to the remaining 14 routes,
-plus adds an over-the-wire regression test so the fix cannot silently regress.
+route is served on the SSR path where middleware runs — to **13 of the 14 routes**,
+plus adds an over-the-wire regression test so the fix cannot silently regress. The
+14th route (`beta/[...slug].astro`) stays prerendered as a documented exception (OQ-3).
 
 Fix approach chosen by owner (2026-07-04): **Option B — remove `prerender`** (see §11
-for the A/B/C tradeoff that was decided).
+for the A/B/C tradeoff that was decided, and OQ-3 for the beta exception).
 
 ## 2. Problem
 
@@ -171,8 +172,9 @@ header and a served-from-SSR-instead-of-static origin path.
 
 ## 9. Acceptance criteria
 
-- AC-1: `grep -rl "export const prerender = true" apps/web/src/pages` returns **zero**
-  files (all 14 removed).
+- AC-1: `grep -rl "export const prerender = true" apps/web/src/pages` returns **only**
+  `beta/[...slug].astro` (the 13 content routes removed; beta is the intentional
+  exception per OQ-3).
 - AC-2: For each of the 14 routes, a direct/hard navigation in a production-like build
   returns HTTP 200 **and** a `content-security-policy` header equal to the enforce-mode
   policy emitted by the SSR routes.
@@ -210,8 +212,19 @@ header and a served-from-SSR-instead-of-static origin path.
   Transitions the app uses, large revalidation of every directive; Option C
   (proxy-layer injection) — off-repo CSP duplication + drift. B matches the proven
   home-page precedent and is low-risk on these low-traffic pages.
-- OQ-2: Should the over-the-wire test run in normal CI (adds a build + server-start step)
-  or as a dedicated job? Decide at task-planning time based on CI cost.
+- OQ-2 (RESOLVED 2026-07-04, owner): Dedicated CI job, NOT part of the unit suite.
+  Implemented as `apps/web/scripts/verify-csp-over-the-wire.mjs` (`pnpm --filter=hospeda-web
+  verify:csp`) + a `csp-headers` job in `.github/workflows/ci.yml` that reuses the
+  `build-outputs` artifact and is gated by `ci-pass`. Keeps the fast unit suite fast while
+  still proving the header over the wire.
+- OQ-3 (RESOLVED 2026-07-04, owner): `beta/[...slug].astro` STAYS prerendered — it is
+  private, `noindex/nofollow` beta docs kept prerendered for resilience, accepted to
+  ship WITHOUT CSP. So 13 of the 14 routes are converted; beta is the one documented
+  exception. Rationale: its "available if SSR unhealthy" property is largely moot under
+  `@astrojs/node` `standalone` (a single Node process serves both static files and SSR —
+  if it is down, nothing is served), and the pages are private + noindex, so the XSS-
+  hardening loss is low-stakes. The no-prerender test guard (AC-6 / T-007) allowlists
+  exactly this file.
 
 ## 12. Implementation notes
 
