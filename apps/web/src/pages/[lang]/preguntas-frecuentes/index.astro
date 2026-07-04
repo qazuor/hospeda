@@ -6,7 +6,7 @@
  * category nav (desktop), zero-JS accordions via native <details>/<summary>,
  * and a FAQPage JSON-LD payload aggregating every question.
  * @route /{lang}/preguntas-frecuentes/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
@@ -28,16 +28,8 @@ import {
 	WhatsappIcon,
 	ArrowRightIcon
 } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 /**

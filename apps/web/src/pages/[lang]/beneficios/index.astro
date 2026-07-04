@@ -3,7 +3,7 @@
  * @file beneficios/index.astro
  * @description Benefits page showing tourist and owner benefits.
  * @route /{lang}/beneficios/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -28,16 +28,8 @@ import {
 	StarIcon,
 	StatisticsIcon,
 } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const touristBenefits = [
