@@ -676,6 +676,53 @@ For incident response:
 For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
 [`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
 
+## AI Social routes — Custom GPT integration (`/api/v1/ai/social/*`)
+
+These routes are consumed by the Custom GPT that operators use to draft social
+posts. They are authenticated by the inbound `x-hospeda-ai-key` header only (no
+Better Auth session), via `createApiKeyRoute`. Two behaviors carry non-obvious
+design constraints worth documenting.
+
+### Campaign/batch slugs are resolve-**or-create** (HOS-66 G-4/G-5)
+
+`POST /api/v1/ai/social/drafts` accepts optional `campaignSlug` / `batchSlug`.
+`SocialDraftIngestionService` resolves each: a slug that matches an existing row
+associates the draft to it; a slug with **no** match **creates** a new active
+`social_campaigns` / `social_content_batches` row (name derived from the slug)
+and associates to that. The response echoes `campaignResolution` /
+`batchResolution` (`{ id, slug, isNew }`) so the operator can confirm whether a
+new one was created. `audienceSlug` / `footerSlug` / `baseHashtagSetSlug` stay
+resolve-**only** (null on miss) — only campaigns/batches get create semantics.
+
+**NG-2 — matching stays LLM-side, never a backend heuristic.** The backend does
+NOT fuzzy-match near-duplicate names, infer a campaign from hashtags/keywords, or
+guess an association when no slug is sent. That reasoning lives entirely in the
+Custom GPT's instructions (the OpenAPI `description` text on `/drafts` and
+`/catalog`): before submitting a new name the GPT checks `GET /catalog`'s
+`campaigns` / `batches` arrays for a near-duplicate and asks the operator to
+confirm "use existing" vs "create new"; when no explicit slug is given it reasons
+over the active lists and proposes an association. Do NOT add keyword/hashtag
+heuristics to the ingestion service — a new slug always means "create" at the
+backend layer, by design.
+
+### Public-data-pull is deliberately narrow (HOS-66 G-10, R-1)
+
+`GET /api/v1/ai/social/public-data` (backed by `SocialPublicDataService`) returns
+`{ items }` of public entities shaped for draft enrichment
+(`{ entityType, id, title, slug, summary, imageUrl }`), so the GPT can link a real
+accommodation or reference a real destination instead of inventing one. Optional
+`?query=` narrows by title/name (via `safeIlike`).
+
+**R-1 — this is NOT a general-purpose public API aggregator.** The
+`SocialPublicDataEntityTypeEnumSchema` is intentionally limited to
+`ACCOMMODATION` and `DESTINATION`, and the service only reads PUBLIC/ACTIVE rows
+of those two. Extend it **deliberately, never speculatively**: to add an entity
+type you must (1) add a variant to the enum in `@repo/schemas`, (2) widen
+`SocialPublicDataService`, and (3) update the scope guard in
+`apps/api/test/routes/social/ai/social-public-data-scope.test.ts` (which asserts
+the exact enum option set and fails if it grows). That guard exists precisely to
+turn silent scope creep into a deliberate, reviewed change.
+
 ## Related Documentation
 
 - [Adding API Routes](docs/development/creating-endpoints.md)

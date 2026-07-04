@@ -1,0 +1,453 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-45",
+    "title": "MercadoLibre OAuth refresh-token flow (make the ML import tier production-viable)",
+    "created": "2026-07-02T19:10:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Register MercadoLibre OAuth + vault env vars",
+            "description": "Register 4 new env vars: HOSPEDA_MERCADOLIBRE_CLIENT_ID, HOSPEDA_MERCADOLIBRE_CLIENT_SECRET (secret), HOSPEDA_MERCADOLIBRE_REDIRECT_URI, HOSPEDA_OAUTH_VAULT_MASTER_KEY (secret, provider-agnostic name since the credentials table is designed to extend beyond ML). Add full metadata (description/type/required/secret/defaultValue/exampleValue/apps/category) to packages/config/src/env-registry.hospeda.ts. Add Zod fields to ApiEnvBaseSchema in apps/api/src/utils/env.ts. Add placeholder lines to apps/api/.env.example. Do NOT set real values in Coolify yet.\nTest requirements: extend/create apps/api/src/utils/env.test.ts asserting the 4 vars parse correctly; run `pnpm env:check:registry` to confirm registry/schema stay in sync.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-006", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Add 4 entries to packages/config env-registry.hospeda.ts",
+                    "completed": true
+                },
+                { "title": "Add Zod fields to apps/api/src/utils/env.ts", "completed": true },
+                { "title": "Add placeholder lines to apps/api/.env.example", "completed": true },
+                { "title": "Env parsing unit tests + pnpm env:check:registry", "completed": true }
+            ],
+            "tags": ["env", "config", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:25:00.000Z",
+                "completed": "2026-07-02T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create external_oauth_credentials table + migration",
+            "description": "Add a new Drizzle table external_oauth_credentials under packages/db/src/schemas/integration/, modeled on the encrypted-vault shape of packages/db/src/schemas/ai/ai_provider_credentials.dbschema.ts: id (uuid pk), provider (varchar), accessTokenCiphertext/Iv/AuthTag, refreshTokenCiphertext/Iv/AuthTag, expiresAt (timestamp), createdAt/updatedAt, deletedAt (soft delete). Unique index on provider WHERE deleted_at IS NULL — single active row per provider (no rotation-history needed, unlike the AI vault). Export from packages/db/src/schemas/index.ts. Run `pnpm --filter @repo/db db:generate` and commit the migration.\nTest requirements: if a schema-shape unit test exists for ai_provider_credentials, add the equivalent for this table (columns + unique partial index).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Define table columns", "completed": true },
+                { "title": "Unique partial index on provider", "completed": true },
+                { "title": "Barrel export + db:generate migration", "completed": true },
+                { "title": "Schema shape test (if precedent exists)", "completed": true }
+            ],
+            "tags": ["database", "schema", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:25:00.000Z",
+                "completed": "2026-07-02T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "[CANCELLED] Create ExternalOauthCredentialModel + unit tests",
+            "description": "SUPERSEDED before implementation: read apps/api/src/services/ai-credential-vault.service.ts (the real precedent for encrypted credential vaults in this repo) during T-005 prep and found it does NOT use a packages/db Model/BaseModel layer at all — it's a plain apps/api service module querying the raw Drizzle table (imported from @repo/db) directly via getDb() + drizzle-orm operators (and/eq/isNull), wrapped in withTransaction. Creating a BaseModel-extending Model class here would introduce a layer that contradicts the established pattern. T-005 now queries externalOauthCredentials (from T-002) directly, mirroring ai-credential-vault.service.ts, and depends on T-002 + T-004 only.",
+            "status": "cancelled",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Model class extending BaseModel", "completed": false },
+                { "title": "findActiveByProvider method", "completed": false },
+                { "title": "Barrel export", "completed": false },
+                { "title": "Unit tests", "completed": false }
+            ],
+            "tags": ["database", "model", "cancelled"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement OAuth vault crypto util in apps/api",
+            "description": "Create apps/api/src/utils/oauth-vault.ts mirroring apps/api/src/utils/ai-vault.ts exactly: AES-256-GCM via node:crypto, encryptSecret({plaintext}) / decryptSecret({ciphertext, iv, authTag}), 32-byte key derived as sha256(HOSPEDA_OAUTH_VAULT_MASTER_KEY), explicit authTagLength:16, fresh random 12-byte IV per encryption. Deliberate near-duplicate of ai-vault.ts (not a shared extraction) to keep this vault's blast radius isolated from the AI credential vault.\nTest requirements: apps/api/test/utils/oauth-vault.test.ts mirroring ai-vault.test.ts if present — roundtrip, tampered ciphertext/iv/authTag throws, missing master key throws with a clear message.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "deriveKey from HOSPEDA_OAUTH_VAULT_MASTER_KEY", "completed": true },
+                { "title": "encryptSecret", "completed": true },
+                { "title": "decryptSecret", "completed": true },
+                { "title": "Unit tests: roundtrip, tamper, missing key", "completed": true }
+            ],
+            "tags": ["security", "crypto", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:35:00.000Z",
+                "completed": "2026-07-02T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement ML credential repository (apps/api)",
+            "description": "Create apps/api/src/services/mercadolibre-oauth/ml-credential.repository.ts, mirroring the real precedent apps/api/src/services/ai-credential-vault.service.ts (plain module, NOT a packages/db Model — queries externalOauthCredentials from T-002 directly via getDb() + drizzle-orm and/eq/isNull, wrapped in withTransaction for the write path). getActiveMLCredential() selects the active row (provider='mercadolibre', deletedAt IS NULL), decrypts both secrets via T-004's vault, returns {accessToken, refreshToken, expiresAt} | null. upsertMLCredential({accessToken, refreshToken, expiresAt}) encrypts both secrets and inserts if no active row exists, else updates in place (single active row, no history, no separate audit table — out of scope).\nTest requirements: apps/api/test/services/mercadolibre-oauth/ml-credential.repository.test.ts with getDb mocked (mirror ai-credential-vault.service.test.ts's mocking approach) — get returns null/decrypted correctly; upsert create vs update paths; mock call assertions show ciphertext only, never plaintext.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-008", "T-012"],
+            "subtasks": [
+                { "title": "getActiveMLCredential", "completed": true },
+                { "title": "upsertMLCredential create path", "completed": true },
+                { "title": "upsertMLCredential update path", "completed": true },
+                { "title": "Unit tests", "completed": true }
+            ],
+            "tags": ["security", "database", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:56:00.000Z",
+                "completed": "2026-07-02T20:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement ML OAuth API client (exchange + refresh)",
+            "description": "Create apps/api/src/services/mercadolibre-oauth/ml-oauth-client.ts wrapping POST https://api.mercadolibre.com/oauth/token. Two functions: exchangeAuthorizationCode({code, redirectUri}) (grant_type=authorization_code) and refreshAccessToken({refreshToken}) (grant_type=refresh_token), using client_id/client_secret from env (T-001). Typed response {accessToken, refreshToken, expiresIn, tokenType}. Verify the exact ML OAuth contract against current ML docs at implementation time — do not hardcode field names from memory. Throw a typed error on non-2xx with the ML error body attached; never log the client_secret or any token.\nTest requirements: apps/api/test/services/mercadolibre-oauth/ml-oauth-client.test.ts with fetch mocked — success mapping for both grant types, error-body propagation on 4xx/5xx, no secret in thrown error messages.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009", "T-012"],
+            "subtasks": [
+                { "title": "exchangeAuthorizationCode", "completed": true },
+                { "title": "refreshAccessToken", "completed": true },
+                { "title": "Typed error + response mapping", "completed": true },
+                { "title": "Unit tests", "completed": true }
+            ],
+            "tags": ["integration", "external-api", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:35:00.000Z",
+                "completed": "2026-07-02T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Define MLTokenRefreshError with terminal/transient classification",
+            "description": "Create apps/api/src/services/mercadolibre-oauth/ml-token.errors.ts: MLTokenRefreshError (extends Error) carrying kind: 'terminal' | 'transient'. terminal = ML rejected the refresh_token itself (re-auth required, e.g. invalid_grant) -> triggers the T-010 admin alert. transient = network/5xx/timeout -> caller may retry without alerting. Export classifyMLRefreshFailure(error: unknown): MLTokenRefreshError used by T-009.\nTest requirements: apps/api/test/services/mercadolibre-oauth/ml-token.errors.test.ts covering both classifications from representative ML error shapes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "MLTokenRefreshError class", "completed": true },
+                { "title": "classifyMLRefreshFailure", "completed": true },
+                { "title": "Unit tests", "completed": true }
+            ],
+            "tags": ["error-handling", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:25:00.000Z",
+                "completed": "2026-07-02T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement token read/cache/expiry-check logic",
+            "description": "Create apps/api/src/services/mercadolibre-oauth/ml-token.service.ts with the read path of getValidMercadoLibreToken(): load the active credential via T-005's repository; if absent, throw MLTokenRefreshError(kind='terminal', 'no ML credential configured'); if present and expiresAt is more than a 5-minute margin away, return the cached access token immediately (no HTTP call); otherwise return a sentinel indicating a refresh is needed (the refresh itself lands in T-009, kept separate to bound complexity).\nTest requirements: apps/api/test/services/mercadolibre-oauth/ml-token.service.test.ts — cached-valid-token path, missing-credential throws, near-expiry triggers the refresh-needed branch.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Load active credential", "completed": true },
+                { "title": "Missing-credential error path", "completed": true },
+                { "title": "Expiry-margin check", "completed": true },
+                { "title": "Cached-token return", "completed": true },
+                { "title": "Unit tests", "completed": true }
+            ],
+            "tags": ["core-logic", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:01:00.000Z",
+                "completed": "2026-07-02T20:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement concurrency-safe refresh + atomic persist",
+            "description": "Extend ml-token.service.ts (T-008) so getValidMercadoLibreToken() completes: when a refresh is needed, call T-006's refreshAccessToken, persist the ROTATED refresh_token + new access_token + expiresAt atomically via T-005's upsertMLCredential, and return the new access token. Guard concurrent imports refreshing at once (ML refresh tokens are single-use) with an in-process single-flight promise cache keyed by provider — a second concurrent caller awaits the first's in-flight refresh instead of issuing its own. On refresh failure, classify via T-007 and rethrow.\nTest requirements: successful refresh persists rotated values; two concurrent calls during an in-flight refresh trigger exactly ONE refreshAccessToken call (spy assertion); refresh failure propagates the classified error.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007", "T-008"],
+            "blocks": ["T-010", "T-013", "T-017"],
+            "subtasks": [
+                { "title": "Refresh call + atomic persist", "completed": true },
+                { "title": "Single-flight guard", "completed": true },
+                { "title": "Error classification wiring", "completed": true },
+                { "title": "Concurrency test", "completed": true },
+                { "title": "Success-path test", "completed": true }
+            ],
+            "tags": ["concurrency", "core-logic", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:10:00.000Z",
+                "completed": "2026-07-02T20:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement admin re-auth alert on terminal refresh failure",
+            "description": "In ml-token.service.ts (T-009), when a terminal MLTokenRefreshError is thrown, send an admin-facing notification via the existing packages/notifications pattern (find and follow the closest existing 'system alert to admins' send-notification call as precedent) stating the ML import tier is down and needs re-authorization via the T-011 admin endpoint. Fire-and-forget — a notification failure must not mask the original token error.\nTest requirements: extend ml-token.service.test.ts — terminal failure triggers exactly one notification send with the expected payload; a notification-send throwing internally does not change the rejected error surfaced to the caller.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-014", "T-018"],
+            "subtasks": [
+                { "title": "Locate notifications precedent", "completed": true },
+                { "title": "Wire alert on terminal error", "completed": true },
+                { "title": "Fire-and-forget error isolation", "completed": true },
+                { "title": "Unit test", "completed": true }
+            ],
+            "tags": ["notifications", "apps-api"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:24:00.000Z",
+                "completed": "2026-07-02T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Admin-only OAuth authorization-start endpoint",
+            "description": "DONE. Admin route at GET /api/v1/admin/mercadolibre-oauth/authorize (apps/api/src/routes/integrations/mercadolibre-oauth/authorize.ts), gated by new PermissionEnum.INTEGRATION_MERCADOLIBRE_MANAGE. 302-redirects to MercadoLibre's authorization URL with client_id/redirect_uri/state. In-memory single-use state store with 5min TTL, exported validateAndConsumeState() for T-012. Post-agent fix: returns 503 (HTTPException) instead of a broken redirect when HOSPEDA_MERCADOLIBRE_CLIENT_ID/_REDIRECT_URI are unset — covered by a dedicated authorize.unconfigured.test.ts.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Route + redirect URL construction", "completed": true },
+                { "title": "State generation + storage", "completed": true },
+                { "title": "Permission gate", "completed": true },
+                { "title": "Integration test", "completed": true }
+            ],
+            "tags": ["routes", "admin", "oauth"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T19:35:00.000Z",
+                "completed": "2026-07-02T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "OAuth callback route (exchange code, persist credential)",
+            "description": "Add the paired callback route (?code=&state=) next to T-011: validate state against what T-011 stored (reject 400 on mismatch/expiry), call T-006's exchangeAuthorizationCode, persist via T-005's upsertMLCredential. Admin-only, same permission as T-011. Respond with a simple success page/JSON — never expose the tokens in the response body.\nTest requirements: valid code+state persists a credential row (assert via the repository, not raw ciphertext); invalid/expired state rejected 400; non-admin rejected 403; response body never contains the access/refresh token strings.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006", "T-011"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "State validation", "completed": true },
+                { "title": "Code exchange call", "completed": true },
+                { "title": "Persist via repository", "completed": true },
+                { "title": "Response shape (no token leak)", "completed": true },
+                { "title": "Integration test", "completed": true }
+            ],
+            "tags": ["routes", "admin", "oauth"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:01:00.000Z",
+                "completed": "2026-07-02T20:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add token-provider port to ImportContext + wire injection",
+            "description": "Mirror the existing aiExtract port on ImportContext (packages/service-core/src/services/accommodation-import/adapter.types.ts): add readonly mercadoLibreTokenProvider?: (() => Promise<string>) | undefined, documented the same way (decoupled — apps/api owns the implementation, service-core never imports the vault/token-service directly). In apps/api's import-from-url route, build the context's mercadoLibreTokenProvider as () => getValidMercadoLibreToken() (T-009) instead of the old static credentials.mercadoLibreToken field — stop constructing that field here (full removal happens repo-wide in T-015).\nTest requirements: adapter.types port-shape test if one exists for aiExtract (mirror it); apps/api route test asserting the context includes a working mercadoLibreTokenProvider closure.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "ImportContext port field + JSDoc", "completed": true },
+                { "title": "apps/api wiring in import-from-url.ts", "completed": true },
+                { "title": "Tests", "completed": true }
+            ],
+            "tags": ["integration", "port", "apps-api", "service-core"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:24:00.000Z",
+                "completed": "2026-07-02T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Rewire ML adapter to token-provider port + credentials_missing degradation",
+            "description": "In packages/service-core/.../adapters/mercadolibre.adapter.ts, replace the static ctx.credentials.mercadoLibreToken read (~lines 338, 355-357) with a call to ctx.mercadoLibreTokenProvider?.() (T-013). If the port is absent OR the call throws, return the existing degraded-empty extraction with failureCode: 'credentials_missing' (SPEC-258 C.1 contract — unchanged shape). A terminal MLTokenRefreshError's admin alert already fired inside the token service (T-010); no adapter-level alert duplication needed.\nTest requirements: extend packages/service-core/test/services/accommodation-import/adapters/mercadolibre.adapter.test.ts — successful extraction with a working provider, degraded credentials_missing when absent, degraded credentials_missing when the provider throws.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-013"],
+            "blocks": ["T-015", "T-018"],
+            "subtasks": [
+                { "title": "Replace static credential read", "completed": true },
+                { "title": "Degrade on absent/throwing port", "completed": true },
+                { "title": "Verify C.1 contract shape unchanged", "completed": true },
+                { "title": "Test coverage for all 3 branches", "completed": true }
+            ],
+            "tags": ["adapter", "service-core"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:26:00.000Z",
+                "completed": "2026-07-02T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Remove HOSPEDA_MERCADOLIBRE_TOKEN entirely",
+            "description": "Hard-cut removal (owner-approved, no fallback period): delete HOSPEDA_MERCADOLIBRE_TOKEN from packages/config/src/env-registry.hospeda.ts, the Zod field in apps/api/src/utils/env.ts, the line in apps/api/.env.example, the mercadoLibreToken field from ImportContext['credentials'] (adapter.types.ts), and any remaining static-token branch left in the adapter after T-014.\nTest requirements: run pnpm env:check:registry; grep the repo for HOSPEDA_MERCADOLIBRE_TOKEN and mercadoLibreToken post-removal to confirm zero remaining references; update/remove any test fixtures still setting the old field.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "Remove from env registry + Zod + .env.example", "completed": true },
+                { "title": "Remove ImportContext field", "completed": true },
+                { "title": "Remove dead adapter branch", "completed": true },
+                { "title": "Verify zero references", "completed": true }
+            ],
+            "tags": ["cleanup", "env"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:31:00.000Z",
+                "completed": "2026-07-02T20:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Integration tests: OAuth authorization+callback flow",
+            "description": "Add an end-to-end-style integration test spanning T-011 + T-012: admin hits the authorization-start route, follows the (mocked) ML redirect, hits the callback with a valid code+matching state, and asserts a credential row now exists and is retrievable (decrypted) via the repository. Mock the ML OAuth HTTP call using the repo's existing outbound-fetch mock pattern rather than hitting the real ML sandbox.\nTest file: apps/api/test/routes/mercadolibre-oauth/oauth-flow.integration.test.ts (or the nearest existing integration-test convention for admin routes).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Full happy-path flow test", "completed": true },
+                { "title": "Invalid-state rejection test", "completed": true },
+                { "title": "Non-admin 403 test", "completed": true }
+            ],
+            "tags": ["testing", "integration", "oauth"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:10:00.000Z",
+                "completed": "2026-07-02T20:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Integration tests: token refresh + concurrency race",
+            "description": "Add integration-level tests exercising getValidMercadoLibreToken() end-to-end (real repository + vault, mocked ML HTTP client): transparent refresh when near expiry updates the persisted row; N concurrent calls during an in-flight refresh trigger exactly one real ML refresh call and all callers resolve with the same new access token; a refresh that fails with a terminal error surfaces to every waiting caller and does not corrupt the previously-valid persisted state.\nTest file: apps/api/test/services/mercadolibre-oauth/ml-token.service.integration.test.ts.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Refresh updates persisted row", "completed": true },
+                { "title": "Concurrency single-flight assertion", "completed": true },
+                { "title": "Terminal failure isolation", "completed": true }
+            ],
+            "tags": ["testing", "concurrency", "oauth"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:24:00.000Z",
+                "completed": "2026-07-02T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Integration tests: adapter degradation + alert",
+            "description": "Add integration tests covering the full failure path end-to-end: token service throws a terminal MLTokenRefreshError -> admin notification is sent (T-010) -> the ML adapter's extract() returns the credentials_missing degraded extraction (T-014) -> the import-from-url route surfaces the existing SPEC-258 C.1 response shape unchanged. Confirms no regression to the existing degradation contract now that it's reached via the OAuth path instead of the old missing-static-token path.\nTest file: apps/api/test/routes/accommodation/import-from-url.mercadolibre-degradation.integration.test.ts (or nearest existing import-route integration test file).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-014"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "End-to-end terminal-failure path", "completed": true },
+                { "title": "Notification-sent assertion", "completed": true },
+                { "title": "Response shape unchanged assertion", "completed": true }
+            ],
+            "tags": ["testing", "integration", "degradation"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:31:00.000Z",
+                "completed": "2026-07-02T20:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Update env-var + import docs for ML OAuth",
+            "description": "Update docs/guides/environment-variables.md with the 4 new vars (client_id/secret/redirect_uri/vault master key) and an explicit removal note for HOSPEDA_MERCADOLIBRE_TOKEN (pointing at this spec). Add a short note to packages/service-core/CLAUDE.md documenting the new mercadoLibreTokenProvider port on ImportContext alongside the existing aiExtract port, so future OAuth-backed adapters follow the same decoupling pattern.\nNo test requirements (docs-only task).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "env-var doc entries + removal note", "completed": true },
+                { "title": "service-core CLAUDE.md port note", "completed": true }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-07-02T19:10:00.000Z",
+                "started": "2026-07-02T20:45:00.000Z",
+                "completed": "2026-07-02T20:50:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 18,
+        "cancelled": 1,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

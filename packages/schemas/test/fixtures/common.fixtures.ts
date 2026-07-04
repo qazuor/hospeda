@@ -45,10 +45,8 @@ export const createBaseSeoFields = () => ({
     seo: faker.helpers.maybe(
         () => ({
             title: faker.lorem.words({ min: 8, max: 12 }).padEnd(30, ' ').slice(0, 60), // 30-60 chars
-            description: faker.lorem.paragraph().padEnd(70, ' ').slice(0, 160), // 70-160 chars
-            keywords: faker.helpers.multiple(() => faker.lorem.word(), {
-                count: { min: 3, max: 8 }
-            })
+            description: faker.lorem.paragraph().padEnd(70, ' ').slice(0, 160) // 70-160 chars
+            // keywords removed per SPEC-267
         }),
         { probability: 0.7 }
     )

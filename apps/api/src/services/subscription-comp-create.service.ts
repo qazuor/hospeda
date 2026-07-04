@@ -19,7 +19,14 @@
  * @module services/subscription-comp-create.service
  */
 
-import { type DrizzleClient, billingSubscriptions, getDb, sql, withTransaction } from '@repo/db';
+import {
+    type DrizzleClient,
+    billingPlans,
+    billingSubscriptions,
+    eq,
+    getDb,
+    withTransaction
+} from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { redeemAndRecordUsage } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
@@ -71,33 +78,28 @@ export async function createCompSubscription(input: {
     const { customerId, planId, promoCodeId, code, interval, livemode } = input;
 
     // SPEC-262 M2: assert the plan is accommodation-domain before comping.
-    // `product_domain` is an extras-carril column (not on the Drizzle TS schema),
-    // so we read it via raw SQL. We SELECT from billing_plans to check whether the
-    // plan exists at all and what domain it belongs to. A null/missing row rejects
-    // (plan not found). A non-accommodation domain rejects (wrong product context).
-    // This guard runs BEFORE the transaction so a bad planId fails fast.
+    // SELECT from billing_plans to check whether the plan exists at all and
+    // what domain it belongs to. A null/missing row rejects (plan not found).
+    // A non-accommodation domain rejects (wrong product context). This guard
+    // runs BEFORE the transaction so a bad planId fails fast.
     const db = input.db ?? getDb();
-    const planResult = await db.execute(
-        sql`SELECT product_domain FROM billing_plans WHERE id = ${planId} LIMIT 1`
-    );
-    // TYPE-WORKAROUND: db.execute() returns rows typed as Record<string, unknown>
-    // (extras-carril column not on the Drizzle TS schema), cast via unknown.
-    const planRow = (planResult.rows?.[0] ?? null) as unknown as {
-        product_domain: string | null;
-    } | null;
+    const [planRow] = await db
+        .select({ productDomain: billingPlans.productDomain })
+        .from(billingPlans)
+        .where(eq(billingPlans.id, planId))
+        .limit(1);
     if (!planRow) {
         throw new Error(`createCompSubscription: plan '${planId}' not found`);
     }
-    // product_domain is NULL for plans that pre-date the extras-carril migration OR
-    // for accommodation plans that weren't explicitly stamped (the column was added
-    // later). NULL is treated as accommodation (historical default). Only an
-    // explicit non-accommodation domain is rejected.
+    // productDomain is NULL for plans that pre-date the column (or accommodation
+    // plans that weren't explicitly stamped). NULL is treated as accommodation
+    // (historical default). Only an explicit non-accommodation domain is rejected.
     if (
-        planRow.product_domain !== null &&
-        planRow.product_domain !== ProductDomainEnum.ACCOMMODATION
+        planRow.productDomain !== null &&
+        planRow.productDomain !== ProductDomainEnum.ACCOMMODATION
     ) {
         throw new Error(
-            `createCompSubscription: plan '${planId}' is domain '${planRow.product_domain}' — only accommodation plans can be comped at checkout`
+            `createCompSubscription: plan '${planId}' is domain '${planRow.productDomain}' — only accommodation plans can be comped at checkout`
         );
     }
 
@@ -130,15 +132,16 @@ export async function createCompSubscription(input: {
             }
         });
 
-        // 2. Stamp product_domain + promo_code_id via raw SQL — these columns are
-        //    NOT on the qzpay Drizzle TS schema (extras carril), exactly like the
-        //    commerce flow stamps product_domain in initiateCommerceMonthlySubscription.
-        await tx.execute(
-            sql`UPDATE billing_subscriptions
-                SET product_domain = ${ProductDomainEnum.ACCOMMODATION},
-                    promo_code_id = ${promoCodeId}
-                WHERE id = ${localSubscriptionId}`
-        );
+        // 2. Stamp product_domain + promo_code_id via a typed UPDATE — mirrors
+        //    the commerce flow's product_domain stamp in
+        //    initiateCommerceMonthlySubscription.
+        await tx
+            .update(billingSubscriptions)
+            .set({
+                productDomain: ProductDomainEnum.ACCOMMODATION,
+                promoCodeId
+            })
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
 
         // 3. Record the redemption (usage increment + usage row) against the new
         //    sub, INSIDE the same transaction so the grant is atomic.

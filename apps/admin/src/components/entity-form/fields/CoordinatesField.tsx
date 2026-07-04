@@ -19,17 +19,20 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { DownloadIcon, InfoIcon, LoaderIcon, SearchIcon } from '@repo/icons';
-import { clientOnly } from '@tanstack/react-start';
+import { createClientOnlyFn } from '@tanstack/react-start';
 import * as React from 'react';
 import { geocodeForward, geocodeReverse } from './nominatim-geocoding';
 
 /**
- * The Leaflet view lives in its own module and is loaded via `clientOnly` +
- * `React.lazy` so (a) the `leaflet` runtime never reaches the SSR bundle and
- * (b) the "Map container is already initialized" race observed with
- * react-leaflet 4.x + React 19 StrictMode is sidestepped.
+ * The Leaflet view lives in its own module and is loaded via
+ * `createClientOnlyFn` (HOS-33: renamed from `clientOnly` in TanStack Start
+ * >= 1.132.0 — verified against the installed `@tanstack/react-start`
+ * 1.168.27 exports; `clientOnly` no longer exists) + `React.lazy` so (a) the
+ * `leaflet` runtime never reaches the SSR bundle and (b) the "Map container
+ * is already initialized" race observed with react-leaflet 4.x + React 19
+ * StrictMode is sidestepped.
  *
- * Why `clientOnly` and not just `React.lazy`: the TanStack-Start babel
+ * Why `createClientOnlyFn` and not just `React.lazy`: the TanStack-Start
  * compiler strips the inner `import('./CoordinatesMapView')` from the server
  * build entirely (replaced with a throwing arrow function). `React.lazy`
  * alone still leaves the dynamic-import statement in the SSR bundle, which
@@ -40,7 +43,7 @@ import { geocodeForward, geocodeReverse } from './nominatim-geocoding';
  * which is what the throwing function would otherwise reject.
  */
 const LazyCoordinatesMapView = React.lazy(
-    clientOnly(() =>
+    createClientOnlyFn(() =>
         import('./CoordinatesMapView').then((mod) => ({ default: mod.CoordinatesMapView }))
     )
 );

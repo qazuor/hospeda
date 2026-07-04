@@ -123,19 +123,26 @@ vi.mock('@repo/db', () => {
         return chain;
     }
     return {
-        // execute() is used by resolveDiscountAwarePlanChangeAmount (SPEC-262 S3) to
-        // read promo_code_id. Returning no rows means "no active discount" → nominal amount.
+        // select() also backs resolveDiscountAwarePlanChangeAmount's
+        // loadSubscriptionDiscountState() call (HOS-75 T-020). It shares the
+        // same `dueRowsState.rows` array as the due-scheduled-changes query,
+        // which lacks a `promoCodeId` field, so it naturally resolves to "no
+        // active discount" → nominal amount for every test that doesn't
+        // explicitly set one.
         getDb: vi.fn(() => ({
-            select: vi.fn(() => makeSelectChain()),
-            execute: vi.fn().mockResolvedValue({ rows: [] })
+            select: vi.fn(() => makeSelectChain())
         })),
         billingSubscriptions: {
             id: 'ID',
+            status: 'STATUS',
             customerId: 'CUSTOMER_ID',
             planId: 'PLAN_ID',
             mpSubscriptionId: 'MP_SUB_ID',
+            promoCodeId: 'PROMO_CODE_ID',
+            promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES',
             scheduledPlanChange: 'SCHEDULED_PLAN_CHANGE'
         },
+        eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
             _sql: { strings, values }
         })

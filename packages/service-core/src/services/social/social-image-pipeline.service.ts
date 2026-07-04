@@ -1,7 +1,8 @@
-import type { SocialAssetModel, SocialPostMediaModel } from '@repo/db';
+import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
 import {
     SocialAssetModel as RealSocialAssetModel,
-    SocialPostMediaModel as RealSocialPostMediaModel
+    SocialPostMediaModel as RealSocialPostMediaModel,
+    SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
@@ -9,6 +10,14 @@ import type { ServiceConfig } from '../../types';
 import { isUuid } from '../../utils/identifier';
 import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
+import {
+    DOWNLOAD_TIMEOUT_MS_FALLBACK,
+    DOWNLOAD_TIMEOUT_MS_KEY,
+    SOCIAL_ASSETS_FOLDER_FALLBACK,
+    SOCIAL_ASSETS_FOLDER_KEY,
+    resolveNumericSettingWithFallback,
+    resolveStringSettingWithFallback
+} from './social-image-pipeline-config.util';
 
 // ---------------------------------------------------------------------------
 // Image payload types
@@ -124,12 +133,6 @@ export interface ProcessImageResult {
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Download timeout in milliseconds (15 s, resolved decision #2). */
-const DOWNLOAD_TIMEOUT_MS = 15_000;
-
-/** Cloudinary folder for social media assets. Must start with 'hospeda/'. */
-const SOCIAL_ASSETS_FOLDER = 'hospeda/social/assets';
-
 /** Warning message returned when media download or upload fails. */
 const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
 
@@ -144,7 +147,8 @@ const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
  * 1. Detect the image `mode` from the GPT payload (`public_url` | `openai_file_refs`).
  * 2. Extract the download URL (direct for `public_url`;
  *    `openaiFileIdRefs[0].download_link` for `openai_file_refs`).
- * 3. Download the image bytes with `fetch()` and a 15-second `AbortController` timeout.
+ * 3. Download the image bytes with `fetch()` and a configurable `AbortController`
+ *    timeout (default 15 s, `download_timeout_ms` social setting — HOS-64 G-2).
  * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`.
  * 5. Persist a `social_assets` row with the Cloudinary fields + metadata.
  * 6. Optionally create a `social_post_media` link row at `position = 0`.
@@ -160,6 +164,7 @@ const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
 export class SocialImagePipelineService {
     private readonly assetModel: SocialAssetModel;
     private readonly postMediaModel: SocialPostMediaModel;
+    private readonly settingModel: SocialSettingModel;
     private readonly mediaProvider: ImageProvider;
     private readonly logger: ServiceLogger;
 
@@ -167,12 +172,42 @@ export class SocialImagePipelineService {
         _config: ServiceConfig,
         mediaProvider: ImageProvider,
         assetModel?: SocialAssetModel,
-        postMediaModel?: SocialPostMediaModel
+        postMediaModel?: SocialPostMediaModel,
+        settingModel?: SocialSettingModel
     ) {
         this.mediaProvider = mediaProvider;
         this.assetModel = assetModel ?? new RealSocialAssetModel();
         this.postMediaModel = postMediaModel ?? new RealSocialPostMediaModel();
+        this.settingModel = settingModel ?? new RealSocialSettingModel();
         this.logger = serviceLogger;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Settings-driven config (HOS-64 G-2)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Reads `download_timeout_ms` from `social_settings`, falling back to
+     * 15000 when the row is missing or its value is not a finite number.
+     */
+    private async getDownloadTimeoutMs(): Promise<number> {
+        const settingRow = await this.settingModel.findOne({ key: DOWNLOAD_TIMEOUT_MS_KEY });
+        return resolveNumericSettingWithFallback({
+            rawValue: settingRow?.value as string | null | undefined,
+            fallback: DOWNLOAD_TIMEOUT_MS_FALLBACK
+        });
+    }
+
+    /**
+     * Reads `social_assets_folder` from `social_settings`, falling back to
+     * `hospeda/social/assets` when the row is missing or empty.
+     */
+    private async getAssetsFolder(): Promise<string> {
+        const settingRow = await this.settingModel.findOne({ key: SOCIAL_ASSETS_FOLDER_KEY });
+        return resolveStringSettingWithFallback({
+            rawValue: settingRow?.value as string | null | undefined,
+            fallback: SOCIAL_ASSETS_FOLDER_FALLBACK
+        });
     }
 
     // ---------------------------------------------------------------------------
@@ -336,7 +371,10 @@ export class SocialImagePipelineService {
     }
 
     /**
-     * Downloads image bytes from the given URL with a 15-second timeout.
+     * Downloads image bytes from the given URL with a timeout.
+     *
+     * Timeout defaults to 15 s, configurable via `download_timeout_ms`
+     * (HOS-64 G-2) — see {@link getDownloadTimeoutMs}.
      *
      * @param url - Absolute HTTPS URL to download from.
      * @returns `{ success: true, buffer }` on success or `{ success: false, error }`.
@@ -348,8 +386,9 @@ export class SocialImagePipelineService {
             return { success: false, error: 'No download URL provided' };
         }
 
+        const downloadTimeoutMs = await this.getDownloadTimeoutMs();
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => controller.abort(), downloadTimeoutMs);
 
         try {
             const response = await fetch(url, { signal: controller.signal });
@@ -395,9 +434,10 @@ export class SocialImagePipelineService {
         | { success: false; error: string }
     > {
         try {
+            const assetsFolder = await this.getAssetsFolder();
             const result = await this.mediaProvider.upload({
                 file: buffer,
-                folder: SOCIAL_ASSETS_FOLDER,
+                folder: assetsFolder,
                 tags: ['social', 'gpt-ingestion']
             });
             return {

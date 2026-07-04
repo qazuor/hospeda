@@ -42,13 +42,6 @@ updates:
     #   - zod: 4.4 made `.merge()` throw on object schemas containing refinements
     #     (use `.safeExtend()`), breaking apps/admin env cross-validation and
     #     cascading into E2E. Owner: SPEC-132 (Zod 4 migration).
-    #   - @tanstack/react-router: 1.131 -> 1.170 risks the documented /healthz
-    #     path-intercept behavior (apps/admin/CLAUDE.md). Owner: SPEC-045
-    #     (Vite/TanStack migration).
-    #   - @astrojs/node: 10.1.4 imports `createRequestFromNodeRequest` from astro
-    #     internals, which only exists in astro >= 6.4.0. apps/web pins astro
-    #     ^6.3.3, so the web build fails with [MISSING_EXPORT]. Lift this ignore
-    #     when web is moved to astro >= 6.4. Owner: SPEC-219 (astro 6.4 alignment).
     #   - typescript: the dev group aligns ALL workspaces to a single version,
     #     which DOWNGRADES apps/mobile from its pinned 6.0.3 (required by Expo
     #     SDK 56) down to the group version. Mobile's tsconfig sets
@@ -85,19 +78,22 @@ updates:
     #     mergeAndUpdate/FormGroupApi/uuid. apps/admin forms use
     #     @tanstack/react-form as the mandated pattern (CLAUDE.md) — real prod
     #     surface, not cosmetic. Owner: HOS-57.
-    #   - @tanstack/react-devtools / @tanstack/react-router-devtools: both are
-    #     pre-1.0 or track @tanstack/react-router's version, so a "minor" bump
-    #     landed inside the production-minor-patch group and broke the build
-    #     ([MISSING_EXPORT] "TanstackDevtools" not exported, used in
-    #     apps/admin/src/routes/__root.tsx). react-router-devtools tracking
-    #     ahead of @tanstack/react-router (pinned above, its own ignore entry)
-    #     would also desync them. Dev-only tooling, zero prod risk, but blocks
-    #     the whole weekly grouped PR otherwise. Owner: HOS-58.
+    #   - expo / expo-*: Dependabot opens PRs for individual expo-* leaf packages
+    #     (router, constants, linking, secure-store, splash-screen, web-browser)
+    #     bumping 56.x -> 57.0.0, but never proposes bumping the core `expo`
+    #     package (or expo-notifications/expo-network) itself, which stays on
+    #     ~56.0.2 in apps/mobile/package.json. Merging any leaf package alone
+    #     leaves a split-SDK state that Jest unit tests won't catch (they don't
+    #     exercise the native module runtime). Gate the whole scope together,
+    #     same pattern as @better-auth/* and @tiptap/* above. Owner: HOS-78.
+    #     Unlike the zod/better-auth/etc entries above, expo/expo-* are
+    #     scoped to `update-types: [semver-major]` only — the breaking changes
+    #     found so far are all major-version jumps, so minor/patch (including
+    #     security fixes) for the current major keep flowing through the normal
+    #     grouped PRs instead of being blocked outright.
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
-      - dependency-name: '@tanstack/react-router'
-      - dependency-name: '@astrojs/node'
       - dependency-name: 'typescript'
       - dependency-name: 'better-auth'
       - dependency-name: '@better-auth/*'
@@ -105,8 +101,25 @@ updates:
       - dependency-name: 'jsdom'
       - dependency-name: '@tiptap/*'
       - dependency-name: '@tanstack/react-form'
-      - dependency-name: '@tanstack/react-devtools'
-      - dependency-name: '@tanstack/react-router-devtools'
+      - dependency-name: 'expo'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'expo-*'
+        update-types: ['version-update:semver-major']
+      # @radix-ui/*: the production-minor-patch group's Radix bumps (react-select
+      # 2.2.6 -> 2.3.1, plus dialog/popover/avatar/slot/... minors) collectively
+      # tip apps/admin's unit-test fork worker over its NATIVE V8 memory ceiling
+      # (RegExpCompiler Zone allocator, NOT the JS heap — --logHeapUsage stays flat
+      # at ~330-500MB) when rendering the heavy Radix-portal + cmdk + userEvent
+      # dialog tests (PermissionPicker, *CredentialDialog, PromoCodeFormDialog),
+      # crashing shard 5 with an OOM. Bisected across PRs #2054-2064: there is NO
+      # single culprit package — reverting select/slot/overlays/{select+slot+tabs}
+      # each still OOMs, only reverting ~all 13 clears it, so it's the aggregate
+      # native-memory cost of the group. staging (older Radix) sits just under the
+      # ceiling. The bumps are MINOR/patch, so this can't be scoped to majors like
+      # astro/recharts/expo — the whole scope is gated. Lift when the admin test
+      # native-memory ceiling is fixed (vmForks+vmMemoryLimit or heavy-test
+      # isolation). Owner: HOS-80.
+      - dependency-name: '@radix-ui/*'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).

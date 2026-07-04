@@ -535,3 +535,151 @@ export const AccommodationImportResponseSchema = z.object({
  * ```
  */
 export type AccommodationImportResponse = z.infer<typeof AccommodationImportResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// AccommodationImportAsyncStartResponseSchema (HOS-50 / SPEC-277 R3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for the `202` response returned by
+ * `POST /api/v1/protected/accommodations/import-from-url` when the resolved
+ * source requires the async Apify path (Airbnb, or Booking on its Apify
+ * fallback branch — see SPEC-277 R3).
+ *
+ * The import pipeline is stateless: nothing is persisted server-side. The
+ * client is handed the full run handle and is expected to echo it back
+ * verbatim on every poll against the status route
+ * ({@link AccommodationImportStatusQuerySchema} has the identical shape).
+ *
+ * @example
+ * ```ts
+ * AccommodationImportAsyncStartResponseSchema.parse({
+ *   runId: 'run-abc123',
+ *   datasetId: 'dataset-xyz789',
+ *   source: 'airbnb',
+ *   startedAt: '2026-07-02T09:20:00.000Z',
+ *   url: 'https://airbnb.com/rooms/123',
+ * }); // ok
+ * ```
+ */
+export const AccommodationImportAsyncStartResponseSchema = z.object({
+    /** Apify run id returned by `startApifyRun` (SPEC-250). */
+    runId: z.string().min(1),
+    /** Apify default dataset id for this run, used to fetch items once settled. */
+    datasetId: z.string().min(1),
+    /** Import source that triggered the async path (currently `airbnb` or `booking`). */
+    source: ImportSourceSchema,
+    /** ISO 8601 timestamp when the run was started, used to enforce the poll ceiling. */
+    startedAt: z.string().datetime(),
+    /**
+     * The original listing URL, echoed back on every poll (SPEC-277 R2 via
+     * HOS-50 T-006): the status route's Generic-adapter fallback needs it to
+     * re-fetch JSON-LD/OpenGraph when the Apify run ends blocked or errored.
+     */
+    url: z.string().url().max(2048)
+});
+
+/**
+ * TypeScript type inferred from {@link AccommodationImportAsyncStartResponseSchema}.
+ */
+export type AccommodationImportAsyncStartResponse = z.infer<
+    typeof AccommodationImportAsyncStartResponseSchema
+>;
+
+// ---------------------------------------------------------------------------
+// AccommodationImportStatusQuerySchema
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for the query params of
+ * `GET /api/v1/protected/accommodations/import-from-url/status`.
+ *
+ * Identical shape to {@link AccommodationImportAsyncStartResponseSchema} by
+ * design: the client is expected to echo the exact `202` payload it received
+ * back on every poll, since the import pipeline persists nothing server-side.
+ *
+ * @example
+ * ```ts
+ * AccommodationImportStatusQuerySchema.parse({
+ *   runId: 'run-abc123',
+ *   datasetId: 'dataset-xyz789',
+ *   source: 'booking',
+ *   startedAt: '2026-07-02T09:20:00.000Z',
+ *   url: 'https://booking.com/hotel/ar/sol.html',
+ * }); // ok
+ * ```
+ */
+export const AccommodationImportStatusQuerySchema = AccommodationImportAsyncStartResponseSchema;
+
+/**
+ * TypeScript type inferred from {@link AccommodationImportStatusQuerySchema}.
+ */
+export type AccommodationImportStatusQuery = AccommodationImportAsyncStartResponse;
+
+// ---------------------------------------------------------------------------
+// AccommodationImportStatusResponseSchema
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for the response of
+ * `GET /api/v1/protected/accommodations/import-from-url/status`.
+ *
+ * Shape:
+ * - `settled: false` — the Apify run is still `READY`/`RUNNING`. `draft` and
+ *   `failureCode` must both be absent.
+ * - `settled: true` — the run reached a terminal state. Exactly one of
+ *   `draft` (success, same shape as the synchronous
+ *   {@link AccommodationImportResponseSchema}) or `failureCode` (failure) must
+ *   be present — never both, never neither.
+ *
+ * @example
+ * ```ts
+ * AccommodationImportStatusResponseSchema.parse({ settled: false }); // ok, still running
+ *
+ * AccommodationImportStatusResponseSchema.parse({
+ *   settled: true,
+ *   draft: { draft: {}, source: 'airbnb', methodsUsed: [], partial: true },
+ * }); // ok, resolved successfully
+ *
+ * AccommodationImportStatusResponseSchema.parse({
+ *   settled: true,
+ *   failureCode: 'timeout',
+ * }); // ok, resolved with a failure
+ * ```
+ */
+export const AccommodationImportStatusResponseSchema = z
+    .object({
+        /** Whether the Apify run has reached a terminal state. */
+        settled: z.boolean(),
+        /** Present only when `settled` is `true` and the run succeeded. */
+        draft: AccommodationImportResponseSchema.optional(),
+        /** Present only when `settled` is `true` and the run failed. */
+        failureCode: ImportFailureCodeSchema.optional()
+    })
+    .superRefine((data, ctx) => {
+        if (!data.settled) {
+            if (data.draft !== undefined || data.failureCode !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'draft and failureCode must be absent while settled is false'
+                });
+            }
+            return;
+        }
+
+        const hasDraft = data.draft !== undefined;
+        const hasFailureCode = data.failureCode !== undefined;
+        if (hasDraft === hasFailureCode) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Exactly one of draft or failureCode must be present when settled is true'
+            });
+        }
+    });
+
+/**
+ * TypeScript type inferred from {@link AccommodationImportStatusResponseSchema}.
+ */
+export type AccommodationImportStatusResponse = z.infer<
+    typeof AccommodationImportStatusResponseSchema
+>;

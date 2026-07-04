@@ -7,3 +7,4 @@
  */
 export { socialCatalogRoute as aiSocialCatalogRoute } from './catalog';
 export { socialDraftsRoute as aiSocialDraftsRoute } from './drafts';
+export { socialPublicDataRoute as aiSocialPublicDataRoute } from './public-data';

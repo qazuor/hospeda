@@ -115,8 +115,8 @@
             "ws": ">=8.21.0",
             "form-data": ">=4.0.6",
             "protobufjs": ">=7.6.1",
-            "react": "19.2.3",
-            "react-dom": "19.2.3",
+            "react": "19.2.7",
+            "react-dom": "19.2.7",
             "vitest": "3.2.6",
             "@vitest/coverage-v8": "3.2.6",
             "@vitest/ui": "3.2.6",
@@ -136,12 +136,13 @@
             "mdast-util-to-hast": ">=13.2.1",
             "preact": ">=10.26.10",
             "h3": ">=1.15.6",
+            "nitro>h3": "2.0.1-rc.22",
             "minimatch": ">=9.0.7",
             "lodash": ">=4.17.24",
             "lodash-es": ">=4.17.24",
             "serialize-javascript": ">=7.0.3",
             "prismjs": ">=1.30.0",
-            "js-yaml": ">=4.1.1",
+            "js-yaml@<4.1.1": "^4.1.1",
             "undici": ">=7.28.0 <8",
             "vite@^6.0.0": ">=8.0.16 <9",
             "vite@^7.0.0": ">=8.0.16 <9",
@@ -168,9 +169,6 @@
             "@types/react-dom": "19.1.7",
             "@vitejs/plugin-react": "^4.7.0",
             "turbo-stream": ">=3.0.0"
-        },
-        "patchedDependencies": {
-            "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"
         },
         "publicHoistPattern": ["react", "react-dom", "*react*"],
         "auditConfig": {

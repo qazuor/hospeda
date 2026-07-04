@@ -1,5 +1,5 @@
 import { COMMERCE_LISTING_PLAN } from '@repo/billing';
-import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb, sql } from '@repo/db';
+import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
@@ -10,17 +10,15 @@ import { summaryTracker } from '../utils/summaryTracker.js';
  * Commerce-listing plan seed (SPEC-239 T-049).
  *
  * Seeds the single {@link COMMERCE_LISTING_PLAN} row into `billing_plans` (and
- * its monthly `billing_prices` row), then stamps
- * `billing_plans.product_domain = 'commerce'` on the row via raw SQL.
+ * its monthly `billing_prices` row) with `product_domain = 'commerce'` set
+ * directly at insert time, then re-stamps it via a typed `UPDATE` (idempotent
+ * no-op) so a re-run always self-heals the domain regardless of how the
+ * existing row got there.
  *
  * Why a dedicated seed (NOT the `ALL_PLANS` loop in `billingPlans.seed.ts`):
- * - The commerce plan is intentionally excluded from `ALL_PLANS` so the
- *   accommodation-facing plan list, the grant-matrix snapshot tests, and the
- *   config-drift checks stay accommodation-only.
- * - `product_domain` is NOT in the qzpay-drizzle TS schema (it is added via the
- *   extras carril, migration 017), so it is set with a raw `UPDATE` after insert
- *   — the same pattern the commerce subscription flow uses for
- *   `billing_subscriptions.product_domain`.
+ * The commerce plan is intentionally excluded from `ALL_PLANS` so the
+ * accommodation-facing plan list, the grant-matrix snapshot tests, and the
+ * config-drift checks stay accommodation-only.
  *
  * Idempotent: matches the existing row by `name` (the slug). On a re-run it
  * skips the insert and only re-stamps `product_domain` (a no-op when already
@@ -71,6 +69,13 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
                     entitlements: plan.entitlements as string[],
                     limits: limitsObj,
                     livemode: isProduction,
+                    // HOS-39 T-005 / HOS-73: displayName/monthlyPriceArs/annualPriceArs
+                    // are typed top-level columns as of qzpay-drizzle 1.11.0 (still
+                    // duplicated in metadata below).
+                    displayName: plan.name,
+                    monthlyPriceArs: plan.monthlyPriceArs,
+                    annualPriceArs: plan.annualPriceArs,
+                    productDomain: ProductDomainEnum.COMMERCE,
                     metadata: {
                         slug: plan.slug,
                         displayName: plan.name,
@@ -94,12 +99,11 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
             planStatus = 'created';
         }
 
-        // ── Stamp product_domain='commerce' (extras-carril column) ───────────
-        // product_domain is NOT in the qzpay-drizzle TS schema, so it is set via
-        // raw SQL. Idempotent: a no-op when the row is already 'commerce'.
-        await db.execute(
-            sql`UPDATE billing_plans SET product_domain = ${ProductDomainEnum.COMMERCE} WHERE id = ${planId}`
-        );
+        // ── Re-stamp product_domain='commerce' (idempotent no-op if already set) ──
+        await db
+            .update(billingPlans)
+            .set({ productDomain: ProductDomainEnum.COMMERCE })
+            .where(eq(billingPlans.id, planId));
 
         if (planStatus === 'created') {
             logger.success({

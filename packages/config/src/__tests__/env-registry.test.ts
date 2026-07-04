@@ -132,6 +132,31 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * SPEC-286 price-drop alerts). Landed on staging independently off the same
  * 244 (post-landing-removal) base as this branch's collections removal;
  * merged total reflects both (243 + 1 = 244).
+ *
+ * 247 (2026-07-02, HOS-45 T-015): corrects undocumented drift discovered
+ * while removing HOSPEDA_MERCADOLIBRE_TOKEN. Earlier HOS-45 tasks (T-001
+ * through T-014) registered 4 OAuth vars for the MercadoLibre refresh-token
+ * flow without bumping this constant: HOSPEDA_MERCADOLIBRE_CLIENT_ID,
+ * HOSPEDA_MERCADOLIBRE_CLIENT_SECRET, HOSPEDA_MERCADOLIBRE_REDIRECT_URI, and
+ * HOSPEDA_OAUTH_VAULT_MASTER_KEY (all integrations category) — net +4 vs
+ * the recorded 244 (244 + 4 = 248). T-015 then
+ * hard-cut-removes the now-obsolete HOSPEDA_MERCADOLIBRE_TOKEN static
+ * access-token credential (integrations category, -1), since the OAuth
+ * flow fully replaces it with no deprecation period (248 - 1 = 247).
+ *
+ * 248 (2026-07-03, HOS-64 G-4): +1 HOSPEDA_SOCIAL_VAULT_MASTER_KEY
+ * (social-automation category), registered off the same 247 base ahead of
+ * the HOS-45 merge above, for the social credential vault's AES-256-GCM
+ * master key. Surfaced as CI drift only when this long-lived branch merged
+ * staging afterward (247 + 1 = 248).
+ *
+ * 244 (2026-07-03, HOS-64 T-042): -4 vs 248, hard-cut-removes the legacy
+ * plaintext sources HOSPEDA_AI_SOCIAL_KEY, HOSPEDA_OPERATOR_PIN,
+ * HOSPEDA_OPERATOR_PIN_HASH, and HOSPEDA_MAKE_API_KEY (all
+ * social-automation category) now that every runtime read-site (T-021–T-024)
+ * reads exclusively from the vault. Landed ahead of the staging/prod
+ * migration-and-verify steps (T-033/T-034/T-038/T-039) by explicit decision
+ * — see docs/guides/environment-variables.md (248 - 4 = 244).
  */
 const EXPECTED_VAR_COUNT = 244;
 

@@ -37,17 +37,17 @@ vi.mock('@repo/billing', () => {
     const MODEL_C_FIELD_SPLIT = {
         description: 'commercial',
         active: 'commercial',
-        entitlements: 'capability',
+        entitlements: 'commercial',
         limitsKeysPresent: 'capability',
         limitsValues: 'commercial',
-        'metadata.displayName': 'commercial',
+        displayName: 'commercial',
+        monthlyPriceArs: 'commercial',
+        annualPriceArs: 'commercial',
         'metadata.category': 'capability',
-        'metadata.monthlyPriceArs': 'commercial',
-        'metadata.annualPriceArs': 'commercial',
         'metadata.isDefault': 'capability',
-        'metadata.sortOrder': 'capability',
-        'metadata.hasTrial': 'capability',
-        'metadata.trialDays': 'capability',
+        'metadata.sortOrder': 'commercial',
+        'metadata.hasTrial': 'commercial',
+        'metadata.trialDays': 'commercial',
         'billing_prices.unitAmount': 'commercial'
     } as const;
 
@@ -69,17 +69,17 @@ vi.mock('@repo/billing', () => {
 const MOCK_MODEL_C_FIELD_SPLIT = {
     description: 'commercial',
     active: 'commercial',
-    entitlements: 'capability',
+    entitlements: 'commercial',
     limitsKeysPresent: 'capability',
     limitsValues: 'commercial',
-    'metadata.displayName': 'commercial',
+    displayName: 'commercial',
+    monthlyPriceArs: 'commercial',
+    annualPriceArs: 'commercial',
     'metadata.category': 'capability',
-    'metadata.monthlyPriceArs': 'commercial',
-    'metadata.annualPriceArs': 'commercial',
     'metadata.isDefault': 'capability',
-    'metadata.sortOrder': 'capability',
-    'metadata.hasTrial': 'capability',
-    'metadata.trialDays': 'capability',
+    'metadata.sortOrder': 'commercial',
+    'metadata.hasTrial': 'commercial',
+    'metadata.trialDays': 'commercial',
     'billing_prices.unitAmount': 'commercial'
 } as const;
 
@@ -221,16 +221,16 @@ function makeMatchingDbRow(plan: PlanDefinition, id = 'existing-plan-uuid') {
         active: plan.isActive,
         entitlements: plan.entitlements,
         limits: limitsObj,
+        displayName: plan.name,
+        monthlyPriceArs: plan.monthlyPriceArs,
+        annualPriceArs: plan.annualPriceArs,
         metadata: {
             slug: plan.slug,
-            displayName: plan.name,
             category: plan.category,
             isDefault: plan.isDefault,
             sortOrder: plan.sortOrder,
             trialDays: plan.trialDays,
             hasTrial: plan.hasTrial,
-            monthlyPriceArs: plan.monthlyPriceArs,
-            annualPriceArs: plan.annualPriceArs,
             monthlyPriceUsdRef: plan.monthlyPriceUsdRef
         }
     };
@@ -277,6 +277,11 @@ describe('ensurePlan', () => {
         expect(metadata.displayName).toBe('Brand New');
         expect(metadata.monthlyPriceArs).toBe(1_000_000);
         expect(metadata.annualPriceArs).toBe(10_000_000);
+        // HOS-39 T-005: also dual-writes the typed top-level columns
+        // (promoted in T-003), mirroring what plan.crud.ts's createPlan does.
+        expect(inserted?.displayName).toBe('Brand New');
+        expect(inserted?.monthlyPriceArs).toBe(1_000_000);
+        expect(inserted?.annualPriceArs).toBe(10_000_000);
     });
 
     it('throws when insert returns no row (defensive)', async () => {
@@ -445,15 +450,15 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: limitsObj,
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -469,15 +474,15 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -497,15 +502,15 @@ describe('detectDivergences', () => {
             active: false, // operator deactivated via admin UI
             entitlements: plan.entitlements,
             limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -525,43 +530,43 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: 1_500_000, // price changed via admin UI
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: 1_500_000, // price changed via admin UI
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
         const diffs = _internals.detectDivergences(plan, dbRow);
 
-        const priceDiff = diffs.find((d) => d.field === 'metadata.monthlyPriceArs');
+        const priceDiff = diffs.find((d) => d.field === 'monthlyPriceArs');
         expect(priceDiff).toBeDefined();
         expect(priceDiff?.config).toBe(1_000_000);
         expect(priceDiff?.db).toBe(1_500_000);
         expect(priceDiff?.layer).toBe('commercial');
     });
 
-    it('detects entitlements divergence and classifies it as capability', () => {
+    it('detects entitlements divergence and classifies it as commercial (HOS-39, was capability)', () => {
         const plan = makePlan({ entitlements: ['ai_chat'] as never });
         const dbRow = {
             description: plan.description,
             active: plan.isActive,
             entitlements: [] as never, // DB row lacks the entitlement
             limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -569,7 +574,7 @@ describe('detectDivergences', () => {
 
         const entDiff = diffs.find((d) => d.field === 'entitlements');
         expect(entDiff).toBeDefined();
-        expect(entDiff?.layer).toBe('capability');
+        expect(entDiff?.layer).toBe('commercial');
     });
 
     it('detects limitsKeysPresent divergence (capability) separately from limitsValues (commercial)', () => {
@@ -584,15 +589,15 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: {} as Record<string, number>, // DB has no limit keys at all
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -619,15 +624,15 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: { max_ai_chat_per_month: 50 } as Record<string, number>, // operator edited value
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -650,15 +655,15 @@ describe('detectDivergences', () => {
             active: plan.isActive,
             entitlements: plan.entitlements,
             limits: {},
+            displayName: 'Edited Display Name',
+            monthlyPriceArs: 999_000,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
-                displayName: 'Edited Display Name',
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
-                hasTrial: plan.hasTrial,
-                monthlyPriceArs: 999_000,
-                annualPriceArs: plan.annualPriceArs
+                hasTrial: plan.hasTrial
             }
         };
 
@@ -666,8 +671,8 @@ describe('detectDivergences', () => {
 
         const fields = diffs.map((d) => d.field);
         expect(fields).toContain('description');
-        expect(fields).toContain('metadata.displayName');
-        expect(fields).toContain('metadata.monthlyPriceArs');
+        expect(fields).toContain('displayName');
+        expect(fields).toContain('monthlyPriceArs');
         expect(diffs.length).toBeGreaterThanOrEqual(3);
     });
 });
@@ -694,15 +699,15 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 active: plan.isActive,
                 entitlements: plan.entitlements,
                 limits: {},
+                displayName: plan.name,
+                monthlyPriceArs: 9_999_999, // operator-edited — commercial
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: 9_999_999, // operator-edited — commercial
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -720,9 +725,79 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
         expect(state.updateCalls).toHaveLength(0);
     });
 
-    // Capability sync: config entitlement missing on DB row → synced
-    it('capability sync: syncs entitlements from config to DB when DB row is missing an entitlement', async () => {
-        // Config has 'ai_chat'; DB row has []. This is a capability divergence.
+    // HOS-39 T-024/T-025: entitlements/sortOrder/hasTrial/trialDays are now
+    // commercial (DB wins) — the admin PlanDialog already lets operators edit
+    // them (SPEC-168), so the seed must stop reverting those edits.
+    it('HOS-39: preserves operator-edited entitlements — DB wins, no update issued', async () => {
+        // Config says the plan should NOT have 'ai_chat'; DB row (operator-edited
+        // via admin UI) DOES have it. Before the fix this was a capability
+        // divergence and the seed would strip it back to config. After the fix
+        // it must be commercial — DB value preserved, no update.
+        const plan = makePlan({ entitlements: [] as never });
+        const state = freshState();
+        state.selectQueue.push([
+            {
+                id: 'plan-uuid-ent-commercial',
+                description: plan.description,
+                active: plan.isActive,
+                entitlements: ['ai_chat'] as never, // operator-added via admin UI
+                limits: {},
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
+                metadata: {
+                    category: plan.category,
+                    isDefault: plan.isDefault,
+                    sortOrder: plan.sortOrder,
+                    trialDays: plan.trialDays,
+                    hasTrial: plan.hasTrial
+                }
+            }
+        ]);
+
+        const result = await _internals.ensurePlan(plan, false, makeStubDb(state));
+
+        expect(result.status).toBe('synced');
+        // Must NOT revert the operator's entitlements edit
+        expect(state.updateCalls).toHaveLength(0);
+    });
+
+    it('HOS-39: preserves operator-edited sortOrder/hasTrial/trialDays — DB wins, no update issued', async () => {
+        const plan = makePlan({ sortOrder: 1, hasTrial: false, trialDays: 0 });
+        const state = freshState();
+        state.selectQueue.push([
+            {
+                id: 'plan-uuid-meta-commercial',
+                description: plan.description,
+                active: plan.isActive,
+                entitlements: plan.entitlements,
+                limits: {},
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
+                metadata: {
+                    category: plan.category,
+                    isDefault: plan.isDefault,
+                    sortOrder: 99, // operator-edited via admin UI
+                    trialDays: 30, // operator-edited via admin UI
+                    hasTrial: true // operator-edited via admin UI
+                }
+            }
+        ]);
+
+        const result = await _internals.ensurePlan(plan, false, makeStubDb(state));
+
+        expect(result.status).toBe('synced');
+        // Must NOT revert any of the three operator-edited fields
+        expect(state.updateCalls).toHaveLength(0);
+    });
+
+    // HOS-39 (2026-07-02): entitlements reclassified capability → commercial.
+    // Config having an entitlement the DB lacks must NOT sync anymore — DB wins,
+    // mirroring the "operator removed it via admin UI" case, not "config added it".
+    it('commercial (HOS-39, was capability): does NOT sync entitlements from config when DB row is missing one', async () => {
+        // Config has 'ai_chat'; DB row has []. Before HOS-39 this synced from
+        // config; now the DB's empty set must be preserved (commercial — DB wins).
         const plan = makePlan({ entitlements: ['ai_chat'] as never });
         const state = freshState();
         state.selectQueue.push([
@@ -730,17 +805,17 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 id: 'plan-uuid-cap',
                 description: plan.description,
                 active: plan.isActive,
-                entitlements: [] as never, // DB missing entitlement
+                entitlements: [] as never, // DB row (operator state) lacks the entitlement
                 limits: {},
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -749,12 +824,8 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
 
         expect(result.planId).toBe('plan-uuid-cap');
         expect(result.status).toBe('synced');
-        // One DB update must have been issued for the capability sync
-        expect(state.updateCalls).toHaveLength(1);
-        // The update payload must include the new entitlements
-        const updatePayload = state.updateCalls[0]?.payload;
-        expect(updatePayload?.entitlements).toEqual(['ai_chat']);
-        // No insert
+        // No DB update — commercial divergence, DB wins, config value discarded
+        expect(state.updateCalls).toHaveLength(0);
         expect(state.insertCalls).toHaveLength(0);
     });
 
@@ -789,15 +860,15 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 entitlements: plan.entitlements,
                 // DB only has max_ai_text_improve_per_month, operator set it to 100
                 limits: { max_ai_text_improve_per_month: 100 },
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -827,15 +898,15 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 entitlements: plan.entitlements,
                 // DB still has the old search limit key
                 limits: { max_ai_search_per_month: 200 },
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -869,15 +940,15 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 active: plan.isActive,
                 entitlements: plan.entitlements,
                 limits: { max_ai_chat_per_month: 9999 }, // operator raised value
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -892,11 +963,16 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
     });
 
     // Mixed capability + commercial divergences
+    // NOTE (HOS-39, 2026-07-02): entitlements is no longer a capability
+    // example (reclassified to commercial) — limitsKeysPresent is used here
+    // instead, since it remains the one capability facet of `limits`.
     it('syncs capability fields and preserves commercial fields in one pass (mixed divergence)', async () => {
-        // Capability: entitlements differs (config has ai_chat, DB lacks it)
+        // Capability: limitsKeysPresent differs (config has a key, DB lacks it)
         // Commercial: monthlyPriceArs operator-edited
         const plan = makePlan({
-            entitlements: ['ai_chat'] as never,
+            limits: [
+                { key: 'max_ai_chat_per_month' as never, value: 20, name: '', description: '' }
+            ],
             monthlyPriceArs: 1_000_000
         });
         const state = freshState();
@@ -905,17 +981,17 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 id: 'plan-uuid-mixed',
                 description: plan.description,
                 active: plan.isActive,
-                entitlements: [] as never, // missing capability
-                limits: {},
+                entitlements: plan.entitlements,
+                limits: {}, // missing capability (limit key)
+                displayName: plan.name,
+                monthlyPriceArs: 5_000_000, // operator-edited (commercial)
+                annualPriceArs: plan.annualPriceArs,
                 metadata: {
-                    displayName: plan.name,
                     category: plan.category,
                     isDefault: plan.isDefault,
                     sortOrder: plan.sortOrder,
                     trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: 5_000_000, // operator-edited (commercial)
-                    annualPriceArs: plan.annualPriceArs
+                    hasTrial: plan.hasTrial
                 }
             }
         ]);
@@ -926,8 +1002,9 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
         // Exactly one update for the capability sync
         expect(state.updateCalls).toHaveLength(1);
         const payload = state.updateCalls[0]?.payload;
-        // Entitlements synced from config
-        expect(payload?.entitlements).toEqual(['ai_chat']);
+        // Limit key synced from config
+        const limits = payload?.limits as Record<string, number>;
+        expect(limits.max_ai_chat_per_month).toBe(20);
         // monthlyPriceArs must NOT appear in the update payload (commercial — DB wins)
         const metaPayload = payload?.metadata as Record<string, unknown> | undefined;
         // No metadata update expected (no capability metadata diff)
@@ -968,10 +1045,10 @@ describe('assertAllSeedFieldsClassified (AC-2.3 fail-fast guard)', () => {
             'entitlements',
             'limitsKeysPresent',
             'limitsValues',
-            'metadata.displayName',
+            'displayName',
+            'monthlyPriceArs',
+            'annualPriceArs',
             'metadata.category',
-            'metadata.monthlyPriceArs',
-            'metadata.annualPriceArs',
             'metadata.isDefault',
             'metadata.sortOrder',
             'metadata.hasTrial',

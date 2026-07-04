@@ -671,11 +671,25 @@ export function createDbMock() {
             planId: 'plan_id',
             status: 'status',
             mpSubscriptionId: 'mp_subscription_id',
+            promoCodeId: 'promo_code_id',
+            promoEffectRemainingCycles: 'promo_effect_remaining_cycles',
             cancelAtPeriodEnd: 'cancel_at_period_end',
             canceledAt: 'canceled_at',
             deletedAt: 'deleted_at',
             createdAt: 'created_at',
             updatedAt: 'updated_at'
+        },
+
+        // Promo code effect columns (HOS-75 T-022) — typed Drizzle columns as
+        // of @qazuor/qzpay-drizzle 1.11.0.
+        billingPromoCodes: {
+            id: 'id',
+            code: 'code',
+            effectKind: 'effect_kind',
+            valueKind: 'value_kind',
+            value: 'value',
+            durationCycles: 'duration_cycles',
+            extraDays: 'extra_days'
         },
         billingSubscriptionEvents: {
             id: 'id',

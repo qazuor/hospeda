@@ -137,6 +137,7 @@ function buildService(
         audienceModel?: ReturnType<typeof createModelMock>;
         footerModel?: ReturnType<typeof createModelMock>;
         hashtagSetModel?: ReturnType<typeof createModelMock>;
+        settingModel?: ReturnType<typeof createModelMock>;
         imagePipeline?: SocialImagePipelineService | null;
     } = {}
 ) {
@@ -223,6 +224,17 @@ function buildService(
             return m;
         })();
 
+    const settingModel =
+        overrides.settingModel ??
+        (() => {
+            const m = createModelMock();
+            // Empty by default — the service falls back to the same defaults
+            // catalog.ts advertises to the GPT (30/10/5), so existing fixtures
+            // (1 curated + 1 custom = 2 hashtags) stay well within limits.
+            m.findAll.mockResolvedValue({ items: [] });
+            return m;
+        })();
+
     const imagePipeline =
         overrides.imagePipeline !== undefined
             ? overrides.imagePipeline
@@ -245,7 +257,8 @@ function buildService(
         batchModel as never,
         audienceModel as never,
         footerModel as never,
-        hashtagSetModel as never
+        hashtagSetModel as never,
+        settingModel as never
     );
 }
 
@@ -608,6 +621,383 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             });
 
             expect(postTargetModel.create).toHaveBeenCalledOnce();
+        });
+    });
+
+    // --- Campaign/batch resolve-or-create (HOS-66 T-001, G-4/G-5) ---
+
+    describe('campaign/batch resolve-or-create', () => {
+        const NEW_CAMPAIGN_UUID = '00000000-0000-4000-8000-000000000010';
+        const EXISTING_CAMPAIGN_UUID = '00000000-0000-4000-8000-000000000011';
+        const NEW_BATCH_UUID = '00000000-0000-4000-8000-000000000020';
+        const EXISTING_BATCH_UUID = '00000000-0000-4000-8000-000000000021';
+
+        it('creates a new active campaign when campaignSlug has no match, and associates the post', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue(null);
+            campaignModel.create.mockResolvedValue({
+                id: NEW_CAMPAIGN_UUID,
+                slug: 'lanzamiento-2026',
+                name: 'Lanzamiento 2026',
+                active: true
+            });
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+
+            const service = buildService({ campaignModel, postModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({ campaignSlug: 'lanzamiento-2026' }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('SUCCESS');
+            expect(campaignModel.create).toHaveBeenCalledOnce();
+            expect(campaignModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({ slug: 'lanzamiento-2026', active: true })
+            );
+            const createCall = postModel.create.mock.calls[0]?.[0];
+            expect(createCall?.campaignId).toBe(NEW_CAMPAIGN_UUID);
+        });
+
+        it('does not create a campaign when campaignSlug matches an existing row', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue({
+                id: EXISTING_CAMPAIGN_UUID,
+                slug: 'institucional-hospeda',
+                name: 'Institucional Hospeda',
+                active: true
+            });
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+
+            const service = buildService({ campaignModel, postModel });
+            await service.ingestDraft({
+                payload: buildPayload({ campaignSlug: 'institucional-hospeda' }),
+                actorId: 'actor-id'
+            });
+
+            expect(campaignModel.create).not.toHaveBeenCalled();
+            const createCall = postModel.create.mock.calls[0]?.[0];
+            expect(createCall?.campaignId).toBe(EXISTING_CAMPAIGN_UUID);
+        });
+
+        it('creates a new active batch when batchSlug has no match, and associates the post', async () => {
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue(null);
+            batchModel.create.mockResolvedValue({
+                id: NEW_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+
+            const service = buildService({ batchModel, postModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({ batchSlug: 'hospeda-launch-2026-06' }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('SUCCESS');
+            expect(batchModel.create).toHaveBeenCalledOnce();
+            expect(batchModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({ slug: 'hospeda-launch-2026-06', active: true })
+            );
+            const createCall = postModel.create.mock.calls[0]?.[0];
+            expect(createCall?.batchId).toBe(NEW_BATCH_UUID);
+        });
+
+        it('does not create a batch when batchSlug matches an existing row', async () => {
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue({
+                id: EXISTING_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+
+            const service = buildService({ batchModel, postModel });
+            await service.ingestDraft({
+                payload: buildPayload({ batchSlug: 'hospeda-launch-2026-06' }),
+                actorId: 'actor-id'
+            });
+
+            expect(batchModel.create).not.toHaveBeenCalled();
+            const createCall = postModel.create.mock.calls[0]?.[0];
+            expect(createCall?.batchId).toBe(EXISTING_BATCH_UUID);
+        });
+
+        it('echoes campaignResolution/batchResolution with isNew=true on the response when both are newly created (HOS-66 T-002)', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue(null);
+            campaignModel.create.mockResolvedValue({
+                id: NEW_CAMPAIGN_UUID,
+                slug: 'lanzamiento-2026',
+                name: 'Lanzamiento 2026',
+                active: true
+            });
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue(null);
+            batchModel.create.mockResolvedValue({
+                id: NEW_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+
+            const service = buildService({ campaignModel, batchModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    campaignSlug: 'lanzamiento-2026',
+                    batchSlug: 'hospeda-launch-2026-06'
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.campaignResolution).toEqual({
+                id: NEW_CAMPAIGN_UUID,
+                slug: 'lanzamiento-2026',
+                isNew: true
+            });
+            expect(result.data.batchResolution).toEqual({
+                id: NEW_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                isNew: true
+            });
+        });
+
+        it('echoes campaignResolution/batchResolution with isNew=false when both match existing rows (HOS-66 T-002)', async () => {
+            const campaignModel = createModelMock();
+            campaignModel.findOne.mockResolvedValue({
+                id: EXISTING_CAMPAIGN_UUID,
+                slug: 'institucional-hospeda',
+                name: 'Institucional Hospeda',
+                active: true
+            });
+            const batchModel = createModelMock();
+            batchModel.findOne.mockResolvedValue({
+                id: EXISTING_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                name: 'Hospeda Launch 2026 06',
+                active: true
+            });
+
+            const service = buildService({ campaignModel, batchModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    campaignSlug: 'institucional-hospeda',
+                    batchSlug: 'hospeda-launch-2026-06'
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.data.campaignResolution).toEqual({
+                id: EXISTING_CAMPAIGN_UUID,
+                slug: 'institucional-hospeda',
+                isNew: false
+            });
+            expect(result.data.batchResolution).toEqual({
+                id: EXISTING_BATCH_UUID,
+                slug: 'hospeda-launch-2026-06',
+                isNew: false
+            });
+        });
+
+        it('returns null campaignResolution/batchResolution when neither slug was submitted (HOS-66 T-002)', async () => {
+            const service = buildService();
+            const result = (await service.ingestDraft({
+                payload: buildPayload(),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.data.campaignResolution).toBeNull();
+            expect(result.data.batchResolution).toBeNull();
+        });
+
+        it('REGRESSION: audienceSlug/footerSlug/baseHashtagSetSlug stay resolve-only (never create)', async () => {
+            const audienceModel = createModelMock();
+            audienceModel.findOne.mockResolvedValue(null);
+            const footerModel = createModelMock();
+            footerModel.findOne.mockResolvedValue(null);
+            const hashtagSetModel = createModelMock();
+            hashtagSetModel.findOne.mockResolvedValue(null);
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+
+            const service = buildService({
+                audienceModel,
+                footerModel,
+                hashtagSetModel,
+                postModel
+            });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    audienceSlug: 'unknown-audience',
+                    footerSlug: 'unknown-footer',
+                    baseHashtagSetSlug: 'unknown-set'
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('SUCCESS');
+            expect(audienceModel.create).not.toHaveBeenCalled();
+            expect(footerModel.create).not.toHaveBeenCalled();
+            expect(hashtagSetModel.create).not.toHaveBeenCalled();
+            const createCall = postModel.create.mock.calls[0]?.[0];
+            expect(createCall?.audienceId).toBeUndefined();
+            expect(createCall?.footerId).toBeUndefined();
+            expect(createCall?.baseHashtagSetId).toBeUndefined();
+        });
+    });
+
+    // --- Hashtag limit enforcement (HOS-64 / SPEC-297a G-1) ---
+
+    describe('hashtag limit enforcement', () => {
+        function buildSettingModelWithMaxHashtagsX(max: number) {
+            const m = createModelMock();
+            m.findAll.mockResolvedValue({
+                items: [{ key: 'max_hashtags_x', value: String(max) }]
+            });
+            return m;
+        }
+
+        it('REGRESSION (AC-2): rejects a draft whose total hashtag count exceeds the configured max_hashtags_x', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const postTargetModel = createModelMock();
+            postTargetModel.create.mockResolvedValue({ id: 'target-uuid' });
+
+            const service = buildService({ settingModel, postTargetModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 total hashtags (curated + custom) — one over the configured max of 5.
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            // Before the fix this draft was silently ingested (code === 'SUCCESS').
+            expect(postTargetModel.create).not.toHaveBeenCalled();
+        });
+
+        it('accepts a draft exactly at the configured limit', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const service = buildService({ settingModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('SUCCESS');
+        });
+
+        it('rejects when only ONE of several target platforms exceeds its limit', async () => {
+            const settingModel = createModelMock();
+            settingModel.findAll.mockResolvedValue({
+                items: [
+                    { key: 'max_hashtags_x', value: '5' },
+                    { key: 'max_hashtags_instagram', value: '30' }
+                ]
+            });
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(buildPlatformFormatRow());
+
+            const service = buildService({ settingModel, platformFormatModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 hashtags: fine for Instagram (max 30), over the limit for X (max 5).
+                    curatedHashtags: ['#uno', '#dos', '#tres'],
+                    customHashtagSuggestions: ['#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+        });
+
+        it('falls back to the catalog.ts defaults (30/10/5) when no setting row exists', async () => {
+            const settingModel = createModelMock();
+            settingModel.findAll.mockResolvedValue({ items: [] });
+
+            const service = buildService({ settingModel });
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco'],
+                    customHashtagSuggestions: ['#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            // Default max_hashtags_x is 5 (catalog.ts) — 6 submitted hashtags exceed it.
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+        });
+
+        it('does not create any DB rows when the hashtag limit is exceeded', async () => {
+            const settingModel = buildSettingModelWithMaxHashtagsX(5);
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            postModel.create.mockResolvedValue(buildPostRow());
+            const aiRequestModel = createModelMock();
+            aiRequestModel.create.mockResolvedValue({ id: 'ai-req-uuid' });
+
+            const service = buildService({ settingModel, postModel, aiRequestModel });
+            await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis']
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(postModel.create).not.toHaveBeenCalled();
+            expect(aiRequestModel.create).not.toHaveBeenCalled();
         });
     });
 });

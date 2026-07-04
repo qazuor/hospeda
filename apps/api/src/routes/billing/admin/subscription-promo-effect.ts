@@ -4,11 +4,10 @@
  * Exposes the promo code effect currently active on a subscription so the
  * admin UI can display discount kind, remaining cycles, exhausted state, etc.
  *
- * The extras-carril columns (promo_effect_remaining_cycles on
- * billing_subscriptions; effect_kind, value_kind, value, duration_cycles,
- * extra_days on billing_promo_codes) are NOT visible to Drizzle because those
- * tables are owned by @qazuor/qzpay-drizzle. Raw SQL via the `sql` template is
- * the approved pattern (see payment-logic.ts ~line 320 and dunning.job.ts ~line 62).
+ * `promoEffectRemainingCycles` (billing_subscriptions) and `effectKind` /
+ * `valueKind` / `durationCycles` / `extraDays` (billing_promo_codes) are typed
+ * Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — read via a
+ * typed LEFT JOIN (HOS-75 T-022), not raw SQL.
  *
  * Routes:
  * - GET /api/v1/admin/billing/subscriptions/:id/promo-effect
@@ -16,9 +15,8 @@
  * @module routes/billing/admin/subscription-promo-effect
  */
 
-import { getDb } from '@repo/db';
+import { billingPromoCodes, billingSubscriptions, eq, getDb } from '@repo/db';
 import { PermissionEnum, SubscriptionPromoEffectResponseSchema } from '@repo/schemas';
-import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { SubscriptionPromoEffectParamSchema } from '../../../schemas/subscription-promo-effect.schema.js';
@@ -27,26 +25,25 @@ import { apiLogger } from '../../../utils/logger.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
 
 /**
- * Raw DB row returned by the LEFT JOIN query.
- * Includes extras-carril columns that are not visible to Drizzle.
+ * Row shape returned by the typed LEFT JOIN query.
  */
 interface PromoEffectRow {
     /** billing_subscriptions.promo_code_id — native QZPay column */
-    promo_code_id: string | null;
-    /** billing_subscriptions.promo_effect_remaining_cycles — extras/019 */
-    promo_effect_remaining_cycles: number | null;
+    promoCodeId: string | null;
+    /** billing_subscriptions.promo_effect_remaining_cycles — typed Drizzle column (HOS-73) */
+    promoEffectRemainingCycles: number | null;
     /** billing_promo_codes.code — native QZPay column */
     code: string | null;
-    /** billing_promo_codes.effect_kind — extras/018 */
-    effect_kind: string | null;
-    /** billing_promo_codes.value_kind — extras/018 */
-    value_kind: string | null;
+    /** billing_promo_codes.effect_kind — typed Drizzle column (HOS-73) */
+    effectKind: string | null;
+    /** billing_promo_codes.value_kind — typed Drizzle column (HOS-73) */
+    valueKind: string | null;
     /** billing_promo_codes.value — native QZPay column */
     value: number | null;
-    /** billing_promo_codes.duration_cycles — extras/018 */
-    duration_cycles: number | null;
-    /** billing_promo_codes.extra_days — extras/018 */
-    extra_days: number | null;
+    /** billing_promo_codes.duration_cycles — typed Drizzle column (HOS-73) */
+    durationCycles: number | null;
+    /** billing_promo_codes.extra_days — typed Drizzle column (HOS-73) */
+    extraDays: number | null;
 }
 
 /**
@@ -78,35 +75,31 @@ export const getSubscriptionPromoEffectHandler = async (
     extraDays: number | null;
     exhausted: boolean;
 }> => {
-    // No SubscriptionService method exists that surfaces the extras-carril columns.
-    // This is a read-only admin diagnostic endpoint; direct DB access via raw SQL
-    // is the approved pattern for extras-carril data (same as payment-logic.ts and dunning.job.ts).
+    // No SubscriptionService method exists that surfaces these columns for a
+    // single admin diagnostic read; a direct typed Drizzle query is the
+    // approved pattern here (same shared columns as payment-logic.ts and
+    // dunning.job.ts, via a LEFT JOIN instead of the single-row helper since
+    // this needs the joined promo code's effect columns too).
     const db = getDb();
 
     const { id: subscriptionId } = params as { id: string };
 
     try {
-        const result = await db.execute(
-            sql`SELECT
-                    bs.promo_code_id,
-                    bs.promo_effect_remaining_cycles,
-                    pc.code,
-                    pc.effect_kind,
-                    pc.value_kind,
-                    pc.value,
-                    pc.duration_cycles,
-                    pc.extra_days
-                FROM billing_subscriptions bs
-                LEFT JOIN billing_promo_codes pc
-                    ON pc.id = bs.promo_code_id
-                WHERE bs.id = ${subscriptionId}
-                LIMIT 1`
-        );
-
-        // DRIZZLE-LIMITATION: db.execute(sql`...`).rows is typed as
-        // Record<string, unknown>[] (raw SQL over extras-carril columns not in
-        // the Drizzle schema); narrow it to the known projected row shape.
-        const rows = result.rows as unknown as PromoEffectRow[];
+        const rows: PromoEffectRow[] = await db
+            .select({
+                promoCodeId: billingSubscriptions.promoCodeId,
+                promoEffectRemainingCycles: billingSubscriptions.promoEffectRemainingCycles,
+                code: billingPromoCodes.code,
+                effectKind: billingPromoCodes.effectKind,
+                valueKind: billingPromoCodes.valueKind,
+                value: billingPromoCodes.value,
+                durationCycles: billingPromoCodes.durationCycles,
+                extraDays: billingPromoCodes.extraDays
+            })
+            .from(billingSubscriptions)
+            .leftJoin(billingPromoCodes, eq(billingPromoCodes.id, billingSubscriptions.promoCodeId))
+            .where(eq(billingSubscriptions.id, subscriptionId))
+            .limit(1);
 
         // No rows → subscription does not exist
         if (rows.length === 0) {
@@ -118,7 +111,7 @@ export const getSubscriptionPromoEffectHandler = async (
         // rows.length === 0 is handled above; rows[0] is guaranteed present here
         const row = rows[0] as PromoEffectRow;
 
-        const hasPromo = row.promo_code_id !== null;
+        const hasPromo = row.promoCodeId !== null;
 
         if (!hasPromo) {
             return {
@@ -135,8 +128,8 @@ export const getSubscriptionPromoEffectHandler = async (
             };
         }
 
-        // Coerce effect_kind to the typed enum values
-        const effectKindRaw = row.effect_kind;
+        // Coerce effectKind to the typed enum values
+        const effectKindRaw = row.effectKind;
         const effectKind: 'discount' | 'trial_extension' | 'comp' | null =
             effectKindRaw === 'discount' ||
             effectKindRaw === 'trial_extension' ||
@@ -144,15 +137,13 @@ export const getSubscriptionPromoEffectHandler = async (
                 ? effectKindRaw
                 : null;
 
-        // Coerce value_kind to the typed enum values
-        const valueKindRaw = row.value_kind;
+        // Coerce valueKind to the typed enum values
+        const valueKindRaw = row.valueKind;
         const valueKind: 'percentage' | 'fixed' | null =
             valueKindRaw === 'percentage' || valueKindRaw === 'fixed' ? valueKindRaw : null;
 
         const remainingCycles =
-            row.promo_effect_remaining_cycles !== undefined
-                ? row.promo_effect_remaining_cycles
-                : null;
+            row.promoEffectRemainingCycles !== undefined ? row.promoEffectRemainingCycles : null;
 
         // A discount effect is exhausted when remainingCycles has been counted
         // down to exactly 0 (null means forever — not exhausted).
@@ -161,7 +152,7 @@ export const getSubscriptionPromoEffectHandler = async (
         apiLogger.debug(
             {
                 subscriptionId,
-                promoCodeId: row.promo_code_id,
+                promoCodeId: row.promoCodeId,
                 effectKind,
                 remainingCycles,
                 exhausted
@@ -171,14 +162,14 @@ export const getSubscriptionPromoEffectHandler = async (
 
         return {
             hasPromo: true,
-            promoCodeId: row.promo_code_id,
+            promoCodeId: row.promoCodeId,
             code: row.code ?? null,
             effectKind,
             valueKind,
             value: row.value !== undefined ? row.value : null,
-            durationCycles: row.duration_cycles !== undefined ? row.duration_cycles : null,
+            durationCycles: row.durationCycles !== undefined ? row.durationCycles : null,
             remainingCycles,
-            extraDays: row.extra_days !== undefined ? row.extra_days : null,
+            extraDays: row.extraDays !== undefined ? row.extraDays : null,
             exhausted
         };
     } catch (error) {
@@ -213,7 +204,7 @@ export const subscriptionPromoEffectRoute = createAdminRoute({
     path: '/{id}/promo-effect',
     summary: 'Get active promo effect for a subscription',
     description:
-        'Returns the promo code effect currently applied to a subscription, including effect kind, value, remaining cycles, and exhausted state. Reads extras-carril columns via raw SQL.',
+        'Returns the promo code effect currently applied to a subscription, including effect kind, value, remaining cycles, and exhausted state.',
     tags: ['Billing', 'Subscriptions'],
     requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
     requestParams: SubscriptionPromoEffectParamSchema.shape,

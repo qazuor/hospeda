@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { getDb, sql } from '@repo/db';
+import { and, billingPlans, billingPrices, eq, getDb, inArray } from '@repo/db';
 import { PermissionEnum, ProductDomainEnum } from '@repo/schemas';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -11,6 +11,82 @@ const PartnerAdminPlanSchema = z.object({
     monthlyPriceArs: z.number().nullable()
 });
 
+/**
+ * Handler for listing active partner-domain billing plans (admin).
+ * Extracted for testing purposes (HOS-75 T-007).
+ *
+ * Loads all active plans in the partner product domain, then bulk-loads the
+ * current active monthly ARS price for those plans and picks, per plan, the
+ * most recently created matching price — mirroring the original correlated
+ * subquery's `ORDER BY created_at DESC LIMIT 1`.
+ */
+export async function listPartnerPlansHandler() {
+    const db = getDb();
+
+    const planRows = await db
+        .select({
+            id: billingPlans.id,
+            name: billingPlans.name,
+            description: billingPlans.description,
+            metadata: billingPlans.metadata
+        })
+        .from(billingPlans)
+        .where(
+            and(
+                eq(billingPlans.active, true),
+                eq(billingPlans.productDomain, ProductDomainEnum.PARTNER)
+            )
+        )
+        .orderBy(billingPlans.createdAt);
+
+    if (planRows.length === 0) {
+        return [];
+    }
+
+    const planIds = planRows.map((plan) => plan.id);
+
+    const priceRows = await db
+        .select({
+            planId: billingPrices.planId,
+            unitAmount: billingPrices.unitAmount,
+            createdAt: billingPrices.createdAt
+        })
+        .from(billingPrices)
+        .where(
+            and(
+                inArray(billingPrices.planId, planIds),
+                eq(billingPrices.currency, 'ARS'),
+                eq(billingPrices.billingInterval, 'month'),
+                eq(billingPrices.intervalCount, 1),
+                eq(billingPrices.active, true)
+            )
+        );
+
+    const latestPriceByPlanId = new Map<string, { unitAmount: number; createdAt: Date }>();
+    for (const price of priceRows) {
+        const existing = latestPriceByPlanId.get(price.planId);
+        if (!existing || price.createdAt > existing.createdAt) {
+            latestPriceByPlanId.set(price.planId, {
+                unitAmount: price.unitAmount,
+                createdAt: price.createdAt
+            });
+        }
+    }
+
+    return planRows.map((plan) => {
+        const metadata = plan.metadata as Record<string, unknown> | null;
+        const displayName =
+            typeof metadata?.displayName === 'string' ? metadata.displayName : plan.name;
+        return {
+            id: plan.id,
+            slug: plan.name,
+            name: displayName,
+            description: plan.description,
+            monthlyPriceArs: latestPriceByPlanId.get(plan.id)?.unitAmount ?? null
+        };
+    });
+}
+
 export const adminListPartnerPlansRoute = createAdminRoute({
     method: 'get',
     path: '/plans',
@@ -19,45 +95,5 @@ export const adminListPartnerPlansRoute = createAdminRoute({
     tags: ['Partners', 'Billing'],
     requiredPermissions: [PermissionEnum.PARTNER_MANAGE],
     responseSchema: z.array(PartnerAdminPlanSchema),
-    handler: async () => {
-        const db = getDb();
-        const result = await db.execute(sql`
-            SELECT
-                p.id,
-                p.name AS slug,
-                COALESCE(p.metadata->>'displayName', p.name) AS name,
-                p.description,
-                (
-                    SELECT bp.unit_amount
-                    FROM billing_prices bp
-                    WHERE bp.plan_id = p.id
-                      AND bp.currency = 'ARS'
-                      AND bp.billing_interval = 'month'
-                      AND bp.interval_count = 1
-                      AND bp.active = true
-                    ORDER BY bp.created_at DESC
-                    LIMIT 1
-                ) AS monthly_price_ars
-            FROM billing_plans p
-            WHERE p.active = true
-              AND p.product_domain = ${ProductDomainEnum.PARTNER}
-            ORDER BY p.created_at ASC
-        `);
-
-        const rows = (Array.isArray(result) ? result : (result.rows ?? [])) as Array<{
-            id: string;
-            slug: string;
-            name: string;
-            description: string | null;
-            monthly_price_ars: number | null;
-        }>;
-
-        return rows.map((row) => ({
-            id: row.id,
-            slug: row.slug,
-            name: row.name,
-            description: row.description,
-            monthlyPriceArs: row.monthly_price_ars
-        }));
-    }
+    handler: listPartnerPlansHandler
 });

@@ -48,12 +48,17 @@ const mockSafeExternalFetch = vi.mocked(safeExternalFetch);
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../../src/services/accommodation-import/adapters/apify-client.js', () => ({
-    runApifyActor: vi.fn()
+    runApifyActor: vi.fn(),
+    startApifyRun: vi.fn()
 }));
 
-import { runApifyActor } from '../../../../src/services/accommodation-import/adapters/apify-client.js';
+import {
+    runApifyActor,
+    startApifyRun
+} from '../../../../src/services/accommodation-import/adapters/apify-client.js';
 
 const mockRunApifyActor = vi.mocked(runApifyActor);
+const mockStartApifyRun = vi.mocked(startApifyRun);
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -274,6 +279,7 @@ describe('BookingAdapter', () => {
         adapter = new BookingAdapter();
         mockSafeExternalFetch.mockReset();
         mockRunApifyActor.mockReset();
+        mockStartApifyRun.mockReset();
     });
 
     afterEach(() => {
@@ -977,6 +983,107 @@ describe('BookingAdapter', () => {
 
             // Assert — no price candidate emitted
             expect(result.price).toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // extractAsync() — HOS-50 T-008
+    // -----------------------------------------------------------------------
+
+    describe('extractAsync()', () => {
+        const url = new URL('https://www.booking.com/hotel/ar/x');
+
+        it('JSON-LD sufficient (≥2 useful fields) → resolves synchronously with raw, startApifyRun NOT called', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_JSONLD_HOTEL));
+
+            const result = await adapter.extractAsync?.(url, makeCtx());
+
+            expect(result && 'raw' in result).toBe(true);
+            if (result && 'raw' in result) {
+                expect(result.raw.sourcePlatform).toBe('booking');
+                expect(result.raw.name?.value).toBe('Hotel del Rio Booking');
+            }
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+        });
+
+        it('JSON-LD sparse (blocked fetch) + Apify creds present → starts an async run using the same actor input the sync fallback builds', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockStartApifyRun.mockResolvedValue({ runId: 'run-1', defaultDatasetId: 'ds-1' });
+
+            const result = await adapter.extractAsync?.(url, makeCtx());
+
+            expect(result).toEqual({ runId: 'run-1', datasetId: 'ds-1' });
+            expect(mockStartApifyRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    token: 'test-apify-token',
+                    actor: 'voyager/booking-scraper',
+                    actorInput: expect.objectContaining({
+                        startUrls: [{ url: url.href }],
+                        checkIn: expect.any(String),
+                        checkOut: expect.any(String)
+                    })
+                })
+            );
+        });
+
+        it('JSON-LD sparse (below threshold) + Apify creds present → starts an async run', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_SPARSE_JSONLD));
+            mockStartApifyRun.mockResolvedValue({ runId: 'run-2', defaultDatasetId: 'ds-2' });
+
+            const result = await adapter.extractAsync?.(url, makeCtx());
+
+            expect(result).toEqual({ runId: 'run-2', datasetId: 'ds-2' });
+        });
+
+        it('JSON-LD sparse + Apify creds absent → returns credentials_missing without calling startApifyRun', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+
+            const result = await adapter.extractAsync?.(
+                url,
+                makeCtx({ apifyBookingActor: undefined })
+            );
+
+            expect(result).toEqual({ failureCode: 'credentials_missing' });
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+        });
+
+        it('JSON-LD sparse (below threshold, some data) + Apify creds absent → returns the partial raw instead of failing', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_SPARSE_JSONLD));
+
+            const result = await adapter.extractAsync?.(
+                url,
+                makeCtx({ apifyBookingActor: undefined })
+            );
+
+            expect(result && 'raw' in result).toBe(true);
+            if (result && 'raw' in result) {
+                expect(result.raw.name?.value).toBe('Hotel Sparse');
+            }
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+        });
+
+        it('JSON-LD sparse + retry-exhausted (null) → returns provider_error', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockStartApifyRun.mockResolvedValue(null);
+
+            vi.useFakeTimers();
+            const p = adapter.extractAsync?.(url, makeCtx());
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            expect(result).toEqual({ failureCode: 'provider_error' });
+            // Retry cap enforced: exactly 3 calls (1 initial + 2 retries).
+            expect(mockStartApifyRun).toHaveBeenCalledTimes(3);
+        });
+
+        it('does not call runApifyActor (the sync path) at all', async () => {
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockStartApifyRun.mockResolvedValue({ runId: 'run-1', defaultDatasetId: 'ds-1' });
+
+            await adapter.extractAsync?.(url, makeCtx());
+
+            expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
     });
 });

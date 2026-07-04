@@ -17,6 +17,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 // Query key factory
 // ---------------------------------------------------------------------------
 
+/** Optional date-range filters for the dashboard query (HOS-66 T-009, ISO `YYYY-MM-DD`). */
+export interface SocialDashboardFilters {
+    readonly dateFrom?: string;
+    readonly dateTo?: string;
+}
+
 /**
  * Query key factory for social post queries.
  * All list keys share the same root so `invalidateQueries` on `lists()` busts
@@ -27,7 +33,17 @@ export const socialPostQueryKeys = {
     lists: () => [...socialPostQueryKeys.all, 'list'] as const,
     list: (filters: SocialPostListFilters) => [...socialPostQueryKeys.lists(), filters] as const,
     detail: (id: string) => [...socialPostQueryKeys.all, 'detail', id] as const,
-    dashboard: () => [...socialPostQueryKeys.all, 'dashboard'] as const
+    /**
+     * Base key (no filters) matches the pre-HOS-66 shape exactly, so existing
+     * exact-match cache writes (e.g. QuickApprovalQueue's optimistic approve)
+     * keep targeting the unranged dashboard view unchanged. A ranged call gets
+     * its own cache entry; `invalidateQueries` on the base key still matches it
+     * via prefix, so range views still refresh on invalidation.
+     */
+    dashboard: (filters?: SocialDashboardFilters) =>
+        filters?.dateFrom || filters?.dateTo
+            ? ([...socialPostQueryKeys.all, 'dashboard', filters] as const)
+            : ([...socialPostQueryKeys.all, 'dashboard'] as const)
 };
 
 // ---------------------------------------------------------------------------

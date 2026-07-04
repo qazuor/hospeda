@@ -69,6 +69,12 @@ describe('gastronomia/index.astro', () => {
     });
 
     describe('rendering', () => {
+        it('emits ItemList JSON-LD for the visible page of cards', () => {
+            expect(src).toContain('ItemListJsonLd');
+            expect(src).toContain('slot="head-extra"');
+            expect(src).toContain('items={itemListEntries}');
+        });
+
         it('renders GastronomyCard for each card', () => {
             expect(src).toContain('GastronomyCard');
         });

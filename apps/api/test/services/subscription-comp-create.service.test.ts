@@ -9,7 +9,8 @@
  *  - SPEC-262 M2: throws when the plan belongs to a non-accommodation domain.
  *  - SPEC-262 M2: allows NULL product_domain (legacy plans, treated as accommodation).
  *
- * DB + service-core redemption are fully mocked — no real infra.
+ * DB + service-core redemption are fully mocked — no real infra. Typed Drizzle
+ * queries as of HOS-75 T-005 (previously raw SQL).
  *
  * @module test/services/subscription-comp-create.service
  */
@@ -21,29 +22,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 const insertValuesMock = vi.fn();
-const txExecuteMock = vi.fn();
+const updateWhereMock = vi.fn();
+const updateSetMock = vi.fn(() => ({ where: updateWhereMock }));
+const txUpdateMock = vi.fn(() => ({ set: updateSetMock }));
 
 /** A fake tx object passed to the withTransaction callback. */
 const txStub = {
     insert: vi.fn(() => ({ values: insertValuesMock })),
-    execute: txExecuteMock
+    update: txUpdateMock
 };
 
 const withTransactionMock = vi.fn(
     async (cb: (tx: typeof txStub) => Promise<unknown>, _existing?: unknown) => cb(txStub)
 );
 
-/**
- * dbExecuteMock handles:
- *  1. The plan domain check SELECT (returns a row with product_domain)
- * All other raw SQL calls (inside tx) go to txExecuteMock.
- */
-const dbExecuteMock = vi.fn();
+/** The plan domain check SELECT (returns a row with productDomain, or none). */
+const selectLimitMock = vi.fn();
+const selectWhereMock = vi.fn(() => ({ limit: selectLimitMock }));
+const selectFromMock = vi.fn(() => ({ where: selectWhereMock }));
+const selectMock = vi.fn(() => ({ from: selectFromMock }));
 
 vi.mock('@repo/db', () => ({
-    billingSubscriptions: { __table: 'billing_subscriptions' },
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    getDb: vi.fn(() => ({ execute: dbExecuteMock })),
+    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
+    billingPlans: { id: 'id', productDomain: 'product_domain' },
+    eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    getDb: vi.fn(() => ({ select: selectMock })),
     withTransaction: (...args: unknown[]) =>
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
 }));
@@ -68,11 +71,10 @@ describe('createCompSubscription', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         insertValuesMock.mockResolvedValue(undefined);
-        txExecuteMock.mockResolvedValue(undefined);
+        updateWhereMock.mockResolvedValue(undefined);
         redeemAndRecordUsageMock.mockResolvedValue({ success: true, data: {} });
-        // Default: plan exists with NULL product_domain (accommodation by historical default).
-        // db.execute() returns { rows: [...] } shape in Drizzle.
-        dbExecuteMock.mockResolvedValue({ rows: [{ product_domain: null }] });
+        // Default: plan exists with NULL productDomain (accommodation by historical default).
+        selectLimitMock.mockResolvedValue([{ productDomain: null }]);
     });
 
     it('inserts a comp row (no mp id, far-future period, accommodation domain) + records redemption atomically', async () => {
@@ -104,13 +106,16 @@ describe('createCompSubscription', () => {
             50 * 365 * 24 * 60 * 60 * 1000
         );
 
-        // product_domain + promo_code_id stamped via raw SQL UPDATE.
-        const updateCall = txExecuteMock.mock.calls.find((c) =>
-            (c[0] as { strings: TemplateStringsArray }).strings.join(' ').includes('UPDATE')
-        );
-        expect(updateCall).toBeDefined();
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain('accommodation');
-        expect((updateCall?.[0] as { values: unknown[] }).values).toContain('pc-1');
+        // product_domain + promo_code_id stamped via a typed UPDATE (HOS-75 T-005).
+        expect(updateSetMock).toHaveBeenCalledWith({
+            productDomain: 'accommodation',
+            promoCodeId: 'pc-1'
+        });
+        expect(updateWhereMock).toHaveBeenCalledWith({
+            op: 'eq',
+            col: 'id',
+            val: result.localSubscriptionId
+        });
 
         // Redemption recorded against the NEW sub id, discountAmount 0, inside tx.
         expect(redeemAndRecordUsageMock).toHaveBeenCalledOnce();
@@ -153,7 +158,7 @@ describe('createCompSubscription', () => {
     });
 
     it('SPEC-262 M2: allows NULL product_domain plan (historical accommodation plan, no extras column yet)', async () => {
-        dbExecuteMock.mockResolvedValue({ rows: [{ product_domain: null }] });
+        selectLimitMock.mockResolvedValue([{ productDomain: null }]);
 
         // Should NOT throw — NULL domain treated as accommodation.
         const result = await createCompSubscription({
@@ -169,7 +174,7 @@ describe('createCompSubscription', () => {
     });
 
     it('SPEC-262 M2: throws when plan has product_domain=commerce — cannot comp a commerce plan', async () => {
-        dbExecuteMock.mockResolvedValue({ rows: [{ product_domain: 'commerce' }] });
+        selectLimitMock.mockResolvedValue([{ productDomain: 'commerce' }]);
 
         await expect(
             createCompSubscription({
@@ -187,7 +192,7 @@ describe('createCompSubscription', () => {
     });
 
     it('SPEC-262 M2: throws when plan is not found (missing from billing_plans)', async () => {
-        dbExecuteMock.mockResolvedValue({ rows: [] }); // empty result → plan not found
+        selectLimitMock.mockResolvedValue([]); // empty result → plan not found
 
         await expect(
             createCompSubscription({

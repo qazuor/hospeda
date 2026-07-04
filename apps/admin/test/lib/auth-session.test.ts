@@ -1,17 +1,37 @@
-import { resolveAuthSession } from '@/lib/auth-session';
 /**
  * @file auth-session.test.ts
  * @description Unit tests for `resolveAuthSession` (the testable core of the
- * `fetchAuthSession` server function).
+ * `fetchAuthSession` server function), plus a minimal HOS-33 T-004 regression
+ * test pinning the `getWebRequest()` → `getRequest()` rename (TanStack Start
+ * >= 1.132.0).
  *
  * BETA-71 parallelized the two upstream calls (`get-session` + `/auth/me`).
  * These tests pin the security-critical invariant that survives that change:
  * permissions from the eagerly-started `/auth/me` are consumed ONLY when the
  * session validates, and a failing `/auth/me` is non-fatal.
+ *
+ * `@tanstack/react-start` is mocked so `createServerFn(...).handler(fn)`
+ * resolves to the raw handler function `fn` — this lets `fetchAuthSession`
+ * be invoked directly in a vitest/jsdom environment without booting the
+ * TanStack Start server-function RPC machinery.
  */
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { server } from '../mocks/server';
+
+const getRequestMock = vi.fn();
+
+vi.mock('@tanstack/react-start', () => ({
+    createServerFn: () => ({
+        handler: (fn: (...args: unknown[]) => unknown) => fn
+    })
+}));
+
+vi.mock('@tanstack/react-start/server', () => ({
+    getRequest: getRequestMock
+}));
+
+const { fetchAuthSession, resolveAuthSession } = await import('@/lib/auth-session');
 
 const API = 'http://api.test';
 const SESSION_URL = `${API}/api/auth/get-session`;
@@ -130,5 +150,52 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
 
         expect(result.isAuthenticated).toBe(true);
         expect(result.passwordChangeRequired).toBe(true);
+    });
+});
+
+describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() rename)', () => {
+    // apps/admin/test/setup.tsx sets process.env.HOSPEDA_API_URL to this value.
+    const ADMIN_API_URL = 'http://localhost:3001';
+    const ADMIN_SESSION_URL = `${ADMIN_API_URL}/api/auth/get-session`;
+    const ADMIN_ME_URL = `${ADMIN_API_URL}/api/v1/public/auth/me`;
+
+    beforeEach(() => {
+        getRequestMock.mockReset();
+    });
+
+    it('reads the cookie header via the renamed getRequest() and returns the resolved auth state', async () => {
+        // Arrange
+        getRequestMock.mockReturnValue(
+            new Request('http://localhost/', { headers: { cookie: 'session=valid' } })
+        );
+        server.use(
+            http.get(ADMIN_SESSION_URL, () =>
+                HttpResponse.json({ user: { id: 'u5', role: 'ADMIN', emailVerified: true } })
+            ),
+            http.get(ADMIN_ME_URL, () =>
+                HttpResponse.json({ success: true, data: { actor: { permissions: ['P1'] } } })
+            )
+        );
+
+        // Act
+        const result = await fetchAuthSession();
+
+        // Assert
+        expect(getRequestMock).toHaveBeenCalledTimes(1);
+        expect(result.isAuthenticated).toBe(true);
+        expect(result.userId).toBe('u5');
+        expect(result.permissions).toEqual(['P1']);
+    });
+
+    it('returns the unauthenticated state when getRequest() yields no request', async () => {
+        // Arrange
+        getRequestMock.mockReturnValue(undefined);
+
+        // Act
+        const result = await fetchAuthSession();
+
+        // Assert
+        expect(result.isAuthenticated).toBe(false);
+        expect(result.userId).toBeNull();
     });
 });

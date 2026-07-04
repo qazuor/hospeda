@@ -64,9 +64,16 @@ export default defineConfig({
     site: HOSPEDA_SITE_URL,
     output: 'server',
     trailingSlash: 'always',
+    // Astro 7 changed the default from `true` (HTML-aware compression,
+    // preserves a single space between inline elements) to `'jsx'` (strips
+    // whitespace between inline elements unless explicit). Pinning `true`
+    // keeps the pre-v7 rendering behavior unchanged across the HOS-76
+    // migration instead of risking a silent whitespace regression across
+    // every inline icon+text pairing in the site.
+    compressHTML: true,
     adapter: node({
         mode: 'standalone',
-        // Astro 6 + @astrojs/node 10: serve response headers (including any
+        // Astro 7 + @astrojs/node 11: serve response headers (including any
         // attached by middleware) for prerendered pages too. Pays off once
         // CSP migrates from middleware response.headers.set() to native
         // security.csp (follow-up SPEC).
@@ -86,6 +93,18 @@ export default defineConfig({
     server: {
         port: Number(process.env.PORT) || 4321,
         host: process.env.HOST || undefined
+    },
+    build: {
+        // GAP-30-01 root cause: Astro's default 'auto' inlines small
+        // component stylesheets as <style nonce="..."> in the HTML. The
+        // nonce is generated per-request, but `<ClientRouter />` soft
+        // navigation swaps the DOM without a real top-level navigation, so
+        // the browser's already-active CSP (pinned to the nonce from the
+        // ORIGINAL page load) rejects every inlined <style> the swap-in
+        // page carries. Forcing all stylesheets to external hashed files
+        // routes them through `style-src 'self'` instead of the nonce
+        // source, which is unaffected by the frozen-nonce/soft-nav gap.
+        inlineStylesheets: 'never'
     },
     image: {
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
@@ -143,8 +162,10 @@ export default defineConfig({
                 if (url.pathname.endsWith('.xml')) {
                     return item;
                 }
+                const isHomePage = /^\/(es|en|pt)\/$/.test(url.pathname);
                 return {
                     ...item,
+                    ...(isHomePage ? { priority: 1.0, changefreq: 'daily' } : {}),
                     links: buildSitemapAlternateLinks({
                         pathname: url.pathname,
                         siteUrl: HOSPEDA_SITE_URL

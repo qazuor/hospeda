@@ -31,6 +31,7 @@ import {
 import { ServiceErrorCode } from '@repo/schemas';
 import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
+import { findCapabilityFieldViolation } from './plan.types.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 
 // ---------------------------------------------------------------------------
@@ -451,7 +452,15 @@ export async function createPlan(
                     entitlements: input.entitlements as string[],
                     limits: input.limits,
                     livemode,
-                    metadata
+                    metadata,
+                    // HOS-73: displayName/monthlyPriceArs/annualPriceArs were promoted
+                    // to typed top-level columns in qzpay-drizzle 1.10.0 (still
+                    // duplicated in metadata above; reads still derive from metadata
+                    // + billing_prices per this file's own mapping doc comment —
+                    // migrating reads to the typed columns is a separate follow-up).
+                    displayName: input.name,
+                    monthlyPriceArs: input.monthlyPriceArs,
+                    annualPriceArs: input.annualPriceArs
                 })
                 .returning();
 
@@ -538,6 +547,23 @@ export async function updatePlan(
     ctx?: QueryContext
 ) {
     try {
+        // HOS-39 T-027: reject capability-layer fields before any DB work.
+        // Capability fields are config-driven — the seed sync overwrites them
+        // on every deploy, so allowing an update here would silently repeat
+        // the HOS-39 live bug for any future field. Checked against RUNTIME
+        // keys (not just the TS type) so a caller bypassing UpdatePlanInput
+        // via an unsafe cast is caught too.
+        const capabilityViolation = findCapabilityFieldViolation(input);
+        if (capabilityViolation) {
+            return {
+                success: false as const,
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Cannot update capability-layer field "${capabilityViolation}" — it is config-driven (see MODEL_C_FIELD_SPLIT) and would be silently reverted by the next seed sync`
+                }
+            };
+        }
+
         const actorId = options.actorId ?? null;
 
         const doUpdate = async (db: DrizzleClient) => {
@@ -556,8 +582,9 @@ export async function updatePlan(
                 ...existingMeta
             };
             if (input.name !== undefined) updatedMeta.displayName = input.name;
-            if (input.category !== undefined) updatedMeta.category = input.category;
-            if (input.isDefault !== undefined) updatedMeta.isDefault = input.isDefault;
+            // category/isDefault removed from UpdatePlanInput (HOS-39 T-026) — both
+            // are capability-layer per Model C and were never requested as
+            // admin-editable; only CreatePlanInput sets them, at plan creation.
             if (input.sortOrder !== undefined) updatedMeta.sortOrder = input.sortOrder;
             if (input.trialDays !== undefined) updatedMeta.trialDays = input.trialDays;
             if (input.hasTrial !== undefined) updatedMeta.hasTrial = input.hasTrial;
@@ -576,6 +603,14 @@ export async function updatePlan(
                 planUpdateData.entitlements = input.entitlements as string[];
             if (input.limits !== undefined) planUpdateData.limits = input.limits;
             if (input.isActive !== undefined) planUpdateData.active = input.isActive;
+            // HOS-39 T-004: dual-write the typed columns alongside their
+            // metadata.* mirror above, so the typed columns (promoted in
+            // T-003) never drift from what the admin UI actually saved.
+            if (input.name !== undefined) planUpdateData.displayName = input.name;
+            if (input.monthlyPriceArs !== undefined)
+                planUpdateData.monthlyPriceArs = input.monthlyPriceArs;
+            if (input.annualPriceArs !== undefined)
+                planUpdateData.annualPriceArs = input.annualPriceArs;
 
             const [updatedPlan] = await db
                 .update(billingPlans)

@@ -1105,15 +1105,21 @@ The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.tra
 
 **Outcome A — GO.** The mutation is confirmed viable: Hospeda already performs this exact `PUT /preapproval/{id}` call in production (plan upgrade/downgrade cron). One staging verification remains (that restoring to the original authorized amount never requires payer re-authorization), but the mechanism is proven.
 
-### DB migration files (extras carril)
+### DB migration files
+
+`effect_kind`, `value_kind`, `duration_cycles`, `extra_days` (`billing_promo_codes`) and
+`promo_effect_remaining_cycles` (`billing_subscriptions`) are typed Drizzle columns as of
+`@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — added via the normal Carril 1 migration
+(`packages/db/src/migrations/0044_adorable_longshot.sql`), not the extras carril. The old
+extras files (`016`-`019`) that originally added these columns before they were
+promoted upstream have been removed. HOS-75 replaced the remaining raw-SQL reads/writes
+of these columns across the billing services/routes/crons with typed Drizzle queries.
 
 | File | What it adds |
 |---|---|
-| `packages/db/src/migrations/extras/018-billing-promo-codes-effect-columns.column.sql` | `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` on `billing_promo_codes` |
-| `packages/db/src/migrations/extras/019-billing-subscriptions-promo-effect-columns.column.sql` | `promo_effect_remaining_cycles` on `billing_subscriptions` |
-| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` |
+| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` (still extras — Drizzle can't declare CHECK constraints) |
 
-Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` for these.
+Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` against staging/prod.
 
 ## Review Moderation (SPEC-166)
 
@@ -1158,6 +1164,87 @@ This is applied AFTER the caller's filters so no HTTP query param can override i
 Admin list paths do NOT apply this override — admins need to query all states.
 
 Full reference: [docs/guides/review-moderation.md](../../docs/guides/review-moderation.md)
+
+## Social Automation: Hashtag Limits, Operational Settings, Credential Vault (HOS-64)
+
+Three independent goals from the HOS-64 spec, all under the social automation pipeline.
+
+### G-1 — Hashtag-limit enforcement
+
+`packages/service-core/src/services/social/social-hashtag-limit.util.ts` exports a pure
+function that takes a platform→hashtag-count map and a platform→max-allowed map and returns
+either `{ ok: true }` or a structured validation error naming every platform that exceeded
+its limit. `social-draft-ingestion.service.ts` calls it during GPT draft ingestion, reading
+the per-platform `max_hashtags_instagram/facebook/x` values from `social_settings` (raw
+no-actor-context model read, same pattern as `apps/api/src/routes/ai/social/catalog.ts`).
+`apps/api/src/routes/ai/social/drafts.ts` maps a `VALIDATION_ERROR` result to HTTP 400 with
+the offending platform(s), max allowed, and actual count in the response body.
+
+### G-2 — Operational settings + settings-driven cron cadence
+
+5 new keys in `social_settings` (seeded once, admin-editable thereafter via the existing
+`SOCIAL_SETTINGS_MANAGE`-gated settings routes):
+
+| Key | Consumed by | Replaces |
+|---|---|---|
+| `max_retry_count` | `social-publish-dispatch.service.ts` | hard-coded `MAX_RETRY_COUNT = 3` |
+| `make_webhook_timeout_ms` | `social-publish-dispatch.service.ts` | hard-coded `MAKE_WEBHOOK_TIMEOUT_MS = 40_000` |
+| `download_timeout_ms` / `assets_folder` | media download step of the dispatch pipeline | equivalent hard-coded literals |
+| `dispatch_cron_cadence` | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` | hard-coded `'*/5 * * * *'` schedule literal |
+
+`dispatch_cron_cadence` is read at job registration/startup via a helper that validates it as
+a syntactically valid 5-field cron expression, falling back to the original `*/5 * * * *`
+literal when the setting is missing or invalid — the dispatch cron can never fail to register
+because of a bad admin-entered value.
+
+### G-4 — Social Credentials Vault
+
+Mirrors the AI Credential Vault (SPEC-173) pattern exactly, one vault per domain (separate
+blast radius, separate master key — never share `HOSPEDA_AI_VAULT_MASTER_KEY` and
+`HOSPEDA_SOCIAL_VAULT_MASTER_KEY`).
+
+- **Shared crypto util**: `apps/api/src/utils/secret-vault-crypto.ts` holds
+  `encryptSecret`/`decryptSecret` (AES-256-GCM), extracted verbatim from the AI vault's
+  `ai-vault.ts` and parameterized by the master-key *value* (not hardcoded to one env var),
+  so both `ai-vault.ts` and `social-vault.ts` are now thin wrappers pinning their own env var.
+- **Tables**: `social_credentials` (one active row per key, soft-delete via `deletedAt`) and
+  `social_credential_audit` (append-only — no `deletedAt`, no `updatedAt`; every create /
+  rotate / update / delete writes exactly one row, in the same DB transaction as the
+  mutation). Schema: `packages/db/src/schemas/social/social_credentials.dbschema.ts` and
+  `social_credential_audit.dbschema.ts`.
+- **The 4 secrets it owns**: `make_webhook_url`, `make_api_key`, `ai_social_key`,
+  `operator_pin` — previously plaintext `social_settings` rows / `HOSPEDA_*` env vars, now
+  vault-only reads via `getDecryptedSocialCredential({ key })` (server-side callers only,
+  never exposed over HTTP) and masked listing via `listSocialCredentials()` (`id/key/label/
+  createdAt/updatedAt/deletedAt` — never `ciphertext`/`iv`/`authTag`).
+- **Service**: `apps/api/src/services/social-credential-vault.service.ts` — plain module
+  (does NOT extend `BaseCrudService`), same design rationale as the AI vault: mutations take
+  a plain `actorId` string rather than a full `Actor` object, keeping it decoupled from this
+  package's `Actor` type since the vault route layer is the only caller.
+- **Admin routes**: `apps/api/src/routes/social/admin/credentials/*` (list/create/rotate/
+  update/delete), gated by `SOCIAL_SETTINGS_MANAGE` (reused, not a dedicated permission — same
+  precedent as the AI vault reusing `AI_SETTINGS_MANAGE`).
+
+## Decoupled External Ports (ImportContext)
+
+`ImportContext` (in `services/accommodation-import/adapter.types.ts`) carries optional
+**port functions** for capabilities that require credentials or infrastructure this
+package must NOT own directly — `apps/api` builds and injects the implementation,
+`packages/service-core` only calls the function. This keeps service-core decoupled and
+unit-testable without pulling in apps/api's AI engine, vault master keys, or OAuth token
+services.
+
+Two ports exist today, both following the same shape:
+
+| Port | Owner (apps/api) | Purpose |
+|------|-------------------|---------|
+| `aiExtract` | AI engine + entitlement/quota gate | AI-assisted field extraction (SPEC-222 Strategy B) |
+| `mercadoLibreTokenProvider` | OAuth token service + credential vault (HOS-45) | Returns a valid, transparently-refreshed MercadoLibre access token |
+
+When adding a new OAuth-backed or credential-gated provider, add a new port to
+`ImportContext` following this same pattern (an async function with no arguments or a
+small typed input, apps/api wires the real implementation, service-core only calls it
+and degrades gracefully — never throws — when the port is absent).
 
 ## Related Documentation
 

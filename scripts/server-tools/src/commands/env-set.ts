@@ -10,7 +10,7 @@
  */
 
 import * as p from '@clack/prompts';
-import { findContainer, getApplicationUuid } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/container-lookup.ts';
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -102,8 +102,10 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         value = valueArg;
     }
 
+    const target = getActiveTarget();
     const container = await findContainer(kindRaw);
     const uuid = await getApplicationUuid(container);
+    log.info(`Target  : ${target} (${kindRaw} → container ${container})`);
     const client = createCoolifyClient();
 
     let existing: ReadonlyArray<CoolifyEnvVar>;
@@ -116,9 +118,10 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         throw err;
     }
 
-    // Match against the requested environment (production by default,
-    // preview when --preview was passed). Coolify keeps separate entries
-    // per (key, is_preview) tuple so we have to filter by both.
+    // Match against the requested Coolify environment slot (production by
+    // default, preview when --preview was passed). Coolify keeps separate
+    // entries per (key, is_preview) tuple so we have to filter by both.
+    // This is unrelated to our own prod/staging target — see `envLabel`.
     const match = existing.find((v) => v.key === key && Boolean(v.is_preview) === targetIsPreview);
     const action = match ? 'UPDATE' : 'CREATE';
     const valuePreview = useSecretPrompt
@@ -126,12 +129,18 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         : value.length > 60
           ? `${value.slice(0, 57)}...`
           : value;
-    const envLabel = targetIsPreview ? 'preview' : 'production';
+    // Displayed label reflects our prod/staging target, NOT Coolify's
+    // is_preview flag — the toolkit does not use Coolify preview releases,
+    // so surfacing that flag here only invited confusion with the target.
+    const envLabel = target === 'prod' ? 'production' : 'staging';
+    const previewNote = targetIsPreview ? ' (preview row)' : '';
 
-    log.info(`${action} on ${kindRaw} [${envLabel}]: ${key} = ${valuePreview}`);
+    log.info(`${action} on ${kindRaw} [${envLabel}]${previewNote}: ${key} = ${valuePreview}`);
 
     if (!skipConfirm) {
-        const ok = await confirm(`${action} env var '${key}' on '${kindRaw}' [${envLabel}]?`);
+        const ok = await confirm(
+            `${action} env var '${key}' on ${kindRaw} [${envLabel}]${previewNote}?`
+        );
         if (!ok) {
             log.warn('Aborted.');
             return;
@@ -151,7 +160,7 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
         throw err;
     }
 
-    log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw} [${envLabel}].`);
+    log.ok(`${key} ${match ? 'updated' : 'created'} on ${kindRaw} [${envLabel}]${previewNote}.`);
     if (!match) {
         log.hint(
             `Coolify mirrors new env vars into BOTH production and preview environments. Use \`hops env-delete ${kindRaw} ${key} --preview\` to drop the preview copy.`

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockPlanList, mockCreateSimpleRoute, mockExecute } = vi.hoisted(() => ({
+const { mockPlanList, mockCreateSimpleRoute, mockSelectWhere } = vi.hoisted(() => ({
     mockPlanList: vi.fn(),
     mockCreateSimpleRoute: vi.fn(),
-    mockExecute: vi.fn()
+    mockSelectWhere: vi.fn()
 }));
 
 vi.mock('../../../../src/services/plan.service', () => ({
@@ -21,8 +21,15 @@ vi.mock('../../../../src/utils/logger', () => ({
 }));
 
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ execute: mockExecute })),
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
+    getDb: vi.fn(() => ({
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: mockSelectWhere
+            }))
+        }))
+    })),
+    billingPlans: { name: 'name', productDomain: 'product_domain' },
+    ne: vi.fn((col: unknown, val: unknown) => ({ op: 'ne', col, val }))
 }));
 
 import '../../../../src/routes/billing/public/listPlans';
@@ -57,7 +64,7 @@ const PARTNER_PLAN = {
 describe('publicListPlansRoute partner-domain isolation', () => {
     beforeEach(() => {
         mockPlanList.mockReset();
-        mockExecute.mockReset();
+        mockSelectWhere.mockReset();
     });
 
     it('filters partner plans out of the public plan list', async () => {
@@ -72,7 +79,7 @@ describe('publicListPlansRoute partner-domain isolation', () => {
             }
         });
 
-        mockExecute.mockResolvedValue({ rows: [{ name: 'partner-listing' }] });
+        mockSelectWhere.mockResolvedValue([{ name: 'partner-listing' }]);
 
         const result = await handler();
 

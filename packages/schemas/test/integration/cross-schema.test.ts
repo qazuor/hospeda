@@ -178,8 +178,7 @@ describe('Cross-Schema Integration Tests', () => {
             const seoData = {
                 title: 'SEO title with exactly thirty chars', // 30-60 chars
                 description:
-                    'This is a consistent SEO description that has at least seventy characters to meet the minimum requirement for SEO descriptions.',
-                keywords: ['test', 'seo', 'consistency']
+                    'This is a consistent SEO description that has at least seventy characters to meet the minimum requirement for SEO descriptions.'
             };
 
             const accommodation = { ...createValidAccommodation(), seo: seoData };

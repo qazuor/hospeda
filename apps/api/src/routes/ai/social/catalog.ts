@@ -28,7 +28,7 @@ import {
     socialSettingModel
 } from '@repo/db';
 import { type CatalogDefaults, SocialCatalogResponseDataSchema } from '@repo/schemas';
-import { env } from '../../../utils/env';
+import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -77,11 +77,13 @@ export const socialCatalogRoute = createApiKeyRoute({
     path: '/',
     summary: 'GPT social catalog',
     description:
-        'Returns the full read-only catalog (hashtags, sets, footers, platform formats, campaigns, batches, audiences, defaults) the Custom GPT fetches before drafting a post.',
+        'Returns the full read-only catalog (hashtags, sets, footers, platform formats, campaigns, batches, audiences, defaults) the Custom GPT fetches before drafting a post. ' +
+        'campaigns/batches list every ACTIVE row; when no explicit campaign/batch name is given for a draft, the GPT reasons over these lists to propose an association (see POST /drafts for the near-duplicate confirmation flow).',
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
-        getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+        getExpectedKey: async () =>
+            (await getDecryptedSocialCredential({ key: 'ai_social_key' })).data?.plaintext,
         actor: { id: 'gpt-action', name: 'Custom GPT Social Action' }
     },
     responseSchema: SocialCatalogResponseDataSchema,

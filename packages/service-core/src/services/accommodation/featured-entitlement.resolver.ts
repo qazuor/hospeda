@@ -33,13 +33,14 @@ import {
     billingAddonPurchases,
     billingCustomers,
     billingPlans,
+    billingSubscriptions,
     eq,
     featuredListingAddonGrants,
     getDb,
     gt,
+    inArray,
     isNull,
-    or,
-    sql
+    or
 } from '@repo/db';
 import { isAccommodationSubscription } from '../billing/subscription/subscription-product-domain.js';
 
@@ -49,17 +50,6 @@ import { isAccommodationSubscription } from '../billing/subscription/subscriptio
  * set (SPEC-309 OQ resolution / G-5: `comp` counts, `paused` does not).
  */
 const ACTIVE_PLAN_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'comp'] as const;
-
-/**
- * Raw shape of a `billing_subscriptions` row selected via SQL, including the
- * extras-carril `product_domain` column that is not on the Drizzle TS schema.
- */
-interface RawBillingSubscriptionRow {
-    id: string;
-    plan_id: string;
-    status: string;
-    product_domain: string | null;
-}
 
 // ---------------------------------------------------------------------------
 // resolveOwnerPlanGrantsFeatured
@@ -106,22 +96,21 @@ export async function resolveOwnerPlanGrantsFeatured(
         return false;
     }
 
-    // `product_domain` is an extras-carril column (SPEC-239), not on the
-    // Drizzle TS schema for billing_subscriptions — read via raw SQL, same
-    // pattern as `subscription-comp-create.service.ts`.
-    const statusList = sql.join(
-        ACTIVE_PLAN_SUBSCRIPTION_STATUSES.map((status) => sql`${status}`),
-        sql`, `
-    );
-    const subscriptionsResult = await db.execute(
-        sql`SELECT id, plan_id, status, product_domain FROM billing_subscriptions
-            WHERE customer_id = ${customer.id} AND deleted_at IS NULL
-            AND status IN (${statusList})`
-    );
-    // TYPE-WORKAROUND: db.execute() returns untyped rows for raw SQL; the
-    // shape is guaranteed by the SELECT column list above.
-    const subscriptionRows = (subscriptionsResult.rows ??
-        []) as unknown as RawBillingSubscriptionRow[];
+    const subscriptionRows = await db
+        .select({
+            id: billingSubscriptions.id,
+            planId: billingSubscriptions.planId,
+            status: billingSubscriptions.status,
+            productDomain: billingSubscriptions.productDomain
+        })
+        .from(billingSubscriptions)
+        .where(
+            and(
+                eq(billingSubscriptions.customerId, customer.id),
+                isNull(billingSubscriptions.deletedAt),
+                inArray(billingSubscriptions.status, ACTIVE_PLAN_SUBSCRIPTION_STATUSES)
+            )
+        );
 
     const accommodationSubscription = subscriptionRows.find((row) =>
         isAccommodationSubscription(row)
@@ -136,7 +125,7 @@ export async function resolveOwnerPlanGrantsFeatured(
         .from(billingPlans)
         .where(
             and(
-                eq(billingPlans.id, accommodationSubscription.plan_id),
+                eq(billingPlans.id, accommodationSubscription.planId),
                 isNull(billingPlans.deletedAt)
             )
         )

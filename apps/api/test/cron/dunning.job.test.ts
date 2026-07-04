@@ -43,6 +43,8 @@ const {
     mockCreateSubscriptionLifecycle,
     mockDbInsert,
     mockDbExecute,
+    mockDbSelect,
+    mockSelectLimit,
     mockLoadBillingSettings,
     mockWithTransaction,
     mockClearEntitlementCache,
@@ -51,9 +53,17 @@ const {
 } = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
-    // Default: advisory-lock acquire shape. SPEC-262 guard tests override this
-    // per-test to return a comp / discounted subscription row.
     const dbExecute = vi.fn().mockResolvedValue({ rows: [{ acquired: true }] });
+    // HOS-75 T-019: isCompOrActivelyDiscounted's guard now reads via
+    // loadSubscriptionDiscountState() (typed db.select(...).from(...).where(...)
+    // .limit(1)) instead of a raw db.execute(sql`...`). SPEC-262 guard tests
+    // override this per-test to return a comp / discounted subscription row.
+    const selectLimit = vi.fn().mockResolvedValue([]);
+    const selectChain = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: selectLimit
+    };
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     };
@@ -63,6 +73,8 @@ const {
         mockCreateSubscriptionLifecycle: vi.fn(),
         mockDbInsert: mockInsert,
         mockDbExecute: dbExecute,
+        mockSelectLimit: selectLimit,
+        mockDbSelect: vi.fn().mockReturnValue(selectChain),
         mockLoadBillingSettings: vi.fn().mockResolvedValue({
             gracePeriodDays: 7,
             maxPaymentRetries: 4,
@@ -101,17 +113,34 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// Minimal @repo/db mock: only for the onEvent audit insert callback.
-// The dunning job's onEvent handler writes directly to billingDunningAttempts.
-// sql is required for pg_try_advisory_xact_lock (concurrency guard added in GAP-035).
-// withTransaction is required because the job now wraps all work in a transaction.
+// Minimal @repo/db mock: only for the onEvent audit insert callback and the
+// comp/discount guard. The dunning job's onEvent handler writes directly to
+// billingDunningAttempts. sql is required for pg_try_advisory_xact_lock
+// (concurrency guard added in GAP-035). withTransaction is required because
+// the job now wraps all work in a transaction. select (HOS-75 T-019) backs
+// isCompOrActivelyDiscounted's loadSubscriptionDiscountState() call.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
         insert: mockDbInsert,
-        execute: mockDbExecute
+        execute: mockDbExecute,
+        select: mockDbSelect
     }),
     withTransaction: mockWithTransaction,
     billingDunningAttempts: { _: 'billingDunningAttempts' },
+    // Column-object sentinels for loadSubscriptionDiscountState()'s typed
+    // select({...}) projection + eq() where-clause (HOS-75 T-019). Values are
+    // irrelevant — the mocked select chain ignores them and returns whatever
+    // mockSelectLimit resolves to.
+    billingSubscriptions: {
+        id: 'ID',
+        status: 'STATUS',
+        planId: 'PLAN_ID',
+        customerId: 'CUSTOMER_ID',
+        mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
+        promoCodeId: 'PROMO_CODE_ID',
+        promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES'
+    },
+    eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,
         strings,
@@ -524,15 +553,13 @@ describe('dunningJob', () => {
             const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
 
             // The guard reads billing_subscriptions; return a comp row.
-            mockDbExecute.mockResolvedValueOnce({
-                rows: [
-                    {
-                        status: 'comp',
-                        promo_code_id: 'pc-1',
-                        promo_effect_remaining_cycles: null
-                    }
-                ]
-            });
+            mockSelectLimit.mockResolvedValueOnce([
+                {
+                    status: 'comp',
+                    promoCodeId: 'pc-1',
+                    promoEffectRemainingCycles: null
+                }
+            ]);
             const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
             processSpy.mockClear();
 
@@ -559,15 +586,13 @@ describe('dunningJob', () => {
             await dunningJob.handler(makeCronContext());
             const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
 
-            mockDbExecute.mockResolvedValueOnce({
-                rows: [
-                    {
-                        status: 'active',
-                        promo_code_id: 'pc-1',
-                        promo_effect_remaining_cycles: 2
-                    }
-                ]
-            });
+            mockSelectLimit.mockResolvedValueOnce([
+                {
+                    status: 'active',
+                    promoCodeId: 'pc-1',
+                    promoEffectRemainingCycles: 2
+                }
+            ]);
             const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
             processSpy.mockClear();
 
@@ -594,16 +619,14 @@ describe('dunningJob', () => {
             await dunningJob.handler(makeCronContext());
             const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
 
-            // Forever discount: promo_code_id set, remaining = null (not comp).
-            mockDbExecute.mockResolvedValueOnce({
-                rows: [
-                    {
-                        status: 'active',
-                        promo_code_id: 'pc-forever',
-                        promo_effect_remaining_cycles: null
-                    }
-                ]
-            });
+            // Forever discount: promoCodeId set, remaining = null (not comp).
+            mockSelectLimit.mockResolvedValueOnce([
+                {
+                    status: 'active',
+                    promoCodeId: 'pc-forever',
+                    promoEffectRemainingCycles: null
+                }
+            ]);
             const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
             processSpy.mockClear();
 
@@ -630,15 +653,13 @@ describe('dunningJob', () => {
             const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
 
             // Guard reads a plain active row with no discount → not skipped.
-            mockDbExecute.mockResolvedValueOnce({
-                rows: [
-                    {
-                        status: 'past_due',
-                        promo_code_id: null,
-                        promo_effect_remaining_cycles: null
-                    }
-                ]
-            });
+            mockSelectLimit.mockResolvedValueOnce([
+                {
+                    status: 'past_due',
+                    promoCodeId: null,
+                    promoEffectRemainingCycles: null
+                }
+            ]);
             const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
             processSpy.mockClear();
             processSpy.mockResolvedValue({ id: 'pay-1', status: 'succeeded' });

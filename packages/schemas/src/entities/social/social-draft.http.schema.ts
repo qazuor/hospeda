@@ -295,6 +295,29 @@ export const CreateSocialDraftResponseSchema = z.object({
     /** Number of `social_post_targets` rows successfully created. */
     targetsCreated: z.number().int().min(0),
     /**
+     * Outcome of campaign-slug resolution (HOS-66 T-001/T-002, G-4/G-5):
+     * `null` when no `campaignSlug` was submitted; otherwise the resolved or
+     * newly created campaign, with `isNew` telling the GPT/operator whether
+     * a new campaign was created for the given slug.
+     */
+    campaignResolution: z
+        .object({
+            id: z.string().uuid(),
+            slug: z.string(),
+            isNew: z.boolean()
+        })
+        .nullable()
+        .optional(),
+    /** Same as `campaignResolution`, for `batchSlug`. */
+    batchResolution: z
+        .object({
+            id: z.string().uuid(),
+            slug: z.string(),
+            isNew: z.boolean()
+        })
+        .nullable()
+        .optional(),
+    /**
      * Image pipeline outcome:
      * - `"uploaded"`: Cloudinary URL stored in `social_assets`.
      * - `"pending"`: download/upload failed; `cloudinary_url` is null.

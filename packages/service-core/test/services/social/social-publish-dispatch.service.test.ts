@@ -921,16 +921,17 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
     // -------------------------------------------------------------------------
 
     describe('skipped_no_webhook', () => {
-        it('returns skipped_no_webhook when make_webhook_url setting is missing (returns null)', async () => {
-            // Arrange
-            mocks.settingModel.findOne.mockResolvedValue(null);
+        it('returns skipped_no_webhook when webhookUrl is an empty string (HOS-64 T-024: caller-supplied, vault-sourced)', async () => {
+            // Arrange — the caller (apps/api) found no active make_webhook_url
+            // vault credential and passed '' through.
             const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
             // Act
             const result = await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: ''
             });
 
             // Assert
@@ -938,28 +939,17 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(fetchSpy).not.toHaveBeenCalled();
             // Target status must NOT be changed
             expect(mocks.targetModel.update).not.toHaveBeenCalled();
-        });
-
-        it('returns skipped_no_webhook when make_webhook_url setting value is empty string', async () => {
-            // Arrange
-            mocks.settingModel.findOne.mockResolvedValue(buildWebhookSetting(''));
-            const fetchSpy = vi.spyOn(globalThis, 'fetch');
-
-            // Act
-            const result = await service.dispatchTarget({
-                target: buildTarget(),
-                post: buildPost(),
-                makeApiKey: MAKE_API_KEY
+            // service-core must NEVER read social_settings for the webhook URL
+            expect(mocks.settingModel.findOne).not.toHaveBeenCalledWith({
+                key: 'make_webhook_url'
             });
-
-            // Assert
-            expect(result.outcome).toBe('skipped_no_webhook');
-            expect(fetchSpy).not.toHaveBeenCalled();
-            expect(mocks.targetModel.update).not.toHaveBeenCalled();
         });
 
-        it('uses the webhookUrl override param directly and does NOT query settings', async () => {
-            // Arrange — webhook override provided; no settings query needed.
+        it('dispatches using the caller-supplied webhookUrl (HOS-64 T-024: vault-sourced, not social_settings)', async () => {
+            // Arrange — webhookUrl is always caller-supplied now; service-core
+            // never reads social_settings or the vault for it.
+            // Retry count / timeout are still read from settings regardless
+            // (HOS-64 G-2) — they are independent of which URL is dispatched to.
             // The default buildFetchResponse returns a Make SUCCESS body.
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
             // cascadePostStatus dependencies
@@ -981,9 +971,11 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 webhookUrl: WEBHOOK_URL
             });
 
-            // Assert — published synchronously; settings not queried (override used)
+            // Assert — published synchronously; webhook URL setting never queried
             expect(result.outcome).toBe('published');
-            expect(mocks.settingModel.findOne).not.toHaveBeenCalled();
+            expect(mocks.settingModel.findOne).not.toHaveBeenCalledWith({
+                key: 'make_webhook_url'
+            });
         });
     });
 
@@ -1578,6 +1570,173 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                     socialPostTargetId: TARGET_ID
                 })
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Settings-driven max_retry_count (HOS-64 G-2, risk item R-1)
+    // -------------------------------------------------------------------------
+
+    describe('settings-driven max_retry_count', () => {
+        it('exhausts at a custom lower max_retry_count from settings (2 instead of default 3)', async () => {
+            // Arrange — max_retry_count=2 configured; retryCount already at 2
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '2' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 2 });
+            const post = buildPost();
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [{ ...buildTarget({ retryCount: 2 }), status: SocialPostStatusEnum.FAILED }],
+                total: 1
+            });
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — exhausted at retryCount=2 because the configured max is 2, not the default 3
+            expect(result.outcome).toBe('exhausted');
+        });
+
+        it('does NOT exhaust at retryCount=3 when max_retry_count is raised to 5', async () => {
+            // Arrange — max_retry_count=5 configured; retryCount=3 (would exhaust at the default of 3)
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '5' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 3 });
+            const post = buildPost();
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — still retryable because the configured max (5) is higher than the default (3)
+            expect(result.outcome).toBe('retry_scheduled');
+            expect(result.retryCount).toBe(4);
+        });
+
+        it('falls back to the default of 3 when the stored max_retry_count is out of bounds', async () => {
+            // Arrange — an operator-entered out-of-range value (99) falls back to the default (3)
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(503, false));
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'max_retry_count') {
+                        return { key: 'max_retry_count', value: '99' };
+                    }
+                    return undefined;
+                }
+            );
+            const target = buildTarget({ retryCount: 3 });
+            const post = buildPost();
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [{ ...buildTarget({ retryCount: 3 }), status: SocialPostStatusEnum.FAILED }],
+                total: 1
+            });
+
+            // Act
+            const result = await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — out-of-bounds (99 > max of 10) falls back to the default of 3, so retryCount=3 exhausts
+            expect(result.outcome).toBe('exhausted');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Settings-driven make_webhook_timeout_ms (HOS-64 G-2, risk item R-1)
+    // -------------------------------------------------------------------------
+
+    describe('settings-driven make_webhook_timeout_ms', () => {
+        it('uses a custom make_webhook_timeout_ms from settings for the fetch abort timer', async () => {
+            // Arrange
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'make_webhook_timeout_ms') {
+                        return { key: 'make_webhook_timeout_ms', value: '15000' };
+                    }
+                    return undefined;
+                }
+            );
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.dispatchTarget({
+                target: buildTarget(),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — the configured value (15000ms), not the hard-coded 40000ms default
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 15_000);
+        });
+
+        it('falls back to the default 40000ms timeout when make_webhook_timeout_ms is out of bounds', async () => {
+            // Arrange — an operator-entered out-of-range value (999999) falls back to the default
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+            mocks.settingModel.findOne.mockImplementation(
+                async (query: Record<string, unknown>) => {
+                    if (query.key === 'make_webhook_timeout_ms') {
+                        return { key: 'make_webhook_timeout_ms', value: '999999' };
+                    }
+                    return undefined;
+                }
+            );
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.dispatchTarget({
+                target: buildTarget(),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert
+            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 40_000);
         });
     });
 });
@@ -3039,7 +3198,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'NOT_FOUND' });
         });
@@ -3060,7 +3220,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
         });
@@ -3075,7 +3236,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
         });
@@ -3094,7 +3256,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             await expect(
                 service.dispatchPostNow({
                     postId: POST_ID,
-                    makeApiKey: MAKE_API_KEY
+                    makeApiKey: MAKE_API_KEY,
+                    webhookUrl: WEBHOOK_URL
                 })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NO_MEDIA' });
         });
@@ -3113,7 +3276,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3136,7 +3300,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3153,7 +3318,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3170,7 +3336,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert — retry_scheduled counts as failed in the aggregate
@@ -3202,7 +3369,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert: targetModel.update was first called to reset the terminal target
@@ -3240,7 +3408,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3268,7 +3437,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert
@@ -3293,7 +3463,8 @@ describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now'
             // Act
             const result = await service.dispatchPostNow({
                 postId: POST_ID,
-                makeApiKey: MAKE_API_KEY
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
             });
 
             // Assert — second target still dispatched despite first throwing

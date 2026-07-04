@@ -74,11 +74,13 @@ subscription lapses the reconciler flips `lifecycleState` to `INACTIVE` and
 `visibility` to `PRIVATE`; when it is restored they flip back. Data is never
 deleted.
 
-The `product_domain` columns on `billing_plans` and `billing_subscriptions` are
-added via the **extras carril** (hand-written idempotent SQL in
-`packages/db/src/migrations/extras/017-billing-plans-product-domain.column.sql`)
-because `@qazuor/qzpay-drizzle` owns those tables and they cannot be expressed in
-the Hospeda Drizzle TS schema. See [docs/guides/migrations.md](../guides/migrations.md).
+The `product_domain` columns on `billing_plans` and `billing_subscriptions` were
+originally added via the extras carril (hand-written idempotent SQL), since
+`@qazuor/qzpay-drizzle` owns those tables and the columns could not be expressed
+in the Hospeda Drizzle TS schema at the time. As of `@qazuor/qzpay-drizzle` 1.11.0
+(HOS-73) they are typed Drizzle columns, accessed via normal typed queries
+(HOS-75) — the extras file that originally added them has been deleted. See
+[docs/guides/migrations.md](../guides/migrations.md).
 
 A `commerce_listing_subscriptions` link table (one row per listing, UNIQUE on
 `(entity_type, entity_id)`) ties each active commerce subscription to the
@@ -188,9 +190,11 @@ This section is the acceptance gate for the CORE/GASTRO separation. SPEC-240
   injected ports.
 - (+) `COMMERCE_OWNER` granular permissions give merchants operational autonomy
   without leaking accommodation-scoped permissions.
-- (-) The extras-carril `product_domain` columns are invisible to the Drizzle TS
+- (-) ~~The extras-carril `product_domain` columns are invisible to the Drizzle TS
   schema, meaning column presence cannot be type-checked at compile time. Mitigated
-  by idempotent SQL + the `db:apply-extras` step in `hops db-migrate`.
+  by idempotent SQL + the `db:apply-extras` step in `hops db-migrate`.~~ Resolved by
+  `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) / HOS-75: `product_domain` is now a typed,
+  compile-time-checked Drizzle column on both tables.
 - (-) The admin-sells flow means no self-service merchant onboarding in v1;
   deferred to a future spec when demand justifies it.
 - (~) The `commerce_listing_subscriptions` link table adds a join on listing reads

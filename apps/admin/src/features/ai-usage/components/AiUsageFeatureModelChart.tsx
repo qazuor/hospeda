@@ -287,8 +287,10 @@ export function AiUsageFeatureModelChart({ search }: AiUsageFeatureModelChartPro
                                     width={72}
                                 />
                                 <Tooltip
-                                    formatter={(value: number, name: string) => [
-                                        tooltipFormatter(value),
+                                    formatter={(value, name) => [
+                                        tooltipFormatter(
+                                            typeof value === 'number' ? value : Number(value ?? 0)
+                                        ),
                                         name
                                     ]}
                                     labelStyle={{ fontWeight: 600 }}

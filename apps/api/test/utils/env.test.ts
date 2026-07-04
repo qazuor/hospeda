@@ -1087,6 +1087,73 @@ describe('Environment Configuration', () => {
     });
 
     // ---------------------------------------------------------------------------
+    // HOS-45 — MercadoLibre OAuth refresh env vars (all optional)
+    // ---------------------------------------------------------------------------
+
+    describe('MercadoLibre OAuth refresh env vars (HOS-45)', () => {
+        it('parses all 4 new vars correctly when present', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_MERCADOLIBRE_CLIENT_ID: '1234567890123456',
+                HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: 'ml-client-secret-xyz',
+                HOSPEDA_MERCADOLIBRE_REDIRECT_URI:
+                    'https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback',
+                HOSPEDA_OAUTH_VAULT_MASTER_KEY: 'a'.repeat(32)
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_CLIENT_ID).toBe('1234567890123456');
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_CLIENT_SECRET).toBe('ml-client-secret-xyz');
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_REDIRECT_URI).toBe(
+                'https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback'
+            );
+            expect(envModule.env.HOSPEDA_OAUTH_VAULT_MASTER_KEY).toBe('a'.repeat(32));
+        });
+
+        it('validates fine when all 4 vars are absent (optional)', async () => {
+            // Arrange — minimal env, no ML OAuth vars set at all
+            process.env = createValidTestEnv({
+                HOSPEDA_MERCADOLIBRE_CLIENT_ID: undefined,
+                HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: undefined,
+                HOSPEDA_MERCADOLIBRE_REDIRECT_URI: undefined,
+                HOSPEDA_OAUTH_VAULT_MASTER_KEY: undefined
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert — startup succeeds and the fields are simply undefined
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_CLIENT_ID).toBeUndefined();
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_CLIENT_SECRET).toBeUndefined();
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_REDIRECT_URI).toBeUndefined();
+            expect(envModule.env.HOSPEDA_OAUTH_VAULT_MASTER_KEY).toBeUndefined();
+        });
+
+        it('validates fine in production when all 4 vars are absent (optional, no hard requirement yet)', async () => {
+            // Arrange
+            process.env = createValidProdEnv({
+                HOSPEDA_MERCADOLIBRE_CLIENT_ID: undefined,
+                HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: undefined,
+                HOSPEDA_MERCADOLIBRE_REDIRECT_URI: undefined,
+                HOSPEDA_OAUTH_VAULT_MASTER_KEY: undefined
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_MERCADOLIBRE_CLIENT_ID).toBeUndefined();
+            expect(envModule.env.HOSPEDA_OAUTH_VAULT_MASTER_KEY).toBeUndefined();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
     // SPEC-237 — HOSPEDA_EXTREP_REFRESH_RATE_LIMIT format validation (FIX L2)
     // ---------------------------------------------------------------------------
 

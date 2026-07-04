@@ -24,7 +24,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getDb, sql } from '@repo/db';
+import { billingSubscriptions, eq, getDb } from '@repo/db';
 import type { PromoEffect } from '@repo/schemas';
 import { calculatePromoCodeEffect } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
@@ -149,12 +149,13 @@ export async function applySignupDiscountToMonthly(input: {
         durationCycles === null ? null : computeSignupDiscountCycleSeed(durationCycles);
 
     const db = getDb();
-    await db.execute(
-        sql`UPDATE billing_subscriptions
-            SET promo_code_id = ${promoCodeId},
-                promo_effect_remaining_cycles = ${remainingCyclesSeed}
-            WHERE id = ${subscriptionId}`
-    );
+    await db
+        .update(billingSubscriptions)
+        .set({
+            promoCodeId,
+            promoEffectRemainingCycles: remainingCyclesSeed
+        })
+        .where(eq(billingSubscriptions.id, subscriptionId));
 
     // Record the redemption (usage increment + usage row) against the new sub.
     // Imported lazily to keep the static import list focused on the pure helpers.

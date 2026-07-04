@@ -89,6 +89,8 @@ jobs are OK; failed/cancelled are not).
   |---------|-----------|------------|
   | `zod` | 4.4 made `.merge()` throw on schemas with refinements (use `.safeExtend()`); breaks admin env cross-validation + E2E. | SPEC-132 (Zod 4 migration) |
   | `@tanstack/react-router` | `1.131 → 1.170` risks the documented `/healthz` path-intercept behavior. | SPEC-045 (Vite/TanStack migration) |
+  | `recharts` | `2.15.4 → 3.9.0` restructures Tooltip/Legend prop types, breaking typecheck in 5 apps/admin files. | HOS-77 |
+  | `expo` / `expo-*` | Dependabot bumps individual `expo-*` leaf packages to SDK 57 without ever bumping the core `expo` package, which would leave apps/mobile in a split-SDK state that unit tests can't catch. | HOS-78 |
 
   These are **fully ignored** (including patch) until their migration spec lands.
   **Removing an `ignore` entry is the deliberate trigger** to take on that

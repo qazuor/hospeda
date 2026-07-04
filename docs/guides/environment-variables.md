@@ -110,15 +110,21 @@ pnpm env:check
 | `HOSPEDA_SENTRY_DSN` | url | no | yes | - | Sentry DSN for API error tracking |
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
+| `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
+| `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
+| `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |
+| `HOSPEDA_OAUTH_VAULT_MASTER_KEY` | string | no | yes | - | AES-256-GCM master key encrypting `external_oauth_credentials` rows (provider-agnostic, first consumer is MercadoLibre — HOS-45). Generate with `openssl rand -base64 32` |
+
+> **Removed (HOS-45)**: `HOSPEDA_MERCADOLIBRE_TOKEN` (a static, non-refreshing Bearer token) was removed in favor of the OAuth flow above. The ML import tier now authenticates via `getValidMercadoLibreToken()` (`apps/api/src/services/mercadolibre-oauth/ml-token.service.ts`), which transparently refreshes the access token from the encrypted, rotating refresh token stored in `external_oauth_credentials`. Run the one-time authorization flow at `GET /api/v1/admin/mercadolibre-oauth/authorize` (admin-only) to provision the initial credential.
 
 ### Social Automation (HOSPEDA_)
 
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
-| `HOSPEDA_AI_SOCIAL_KEY` | string | no | yes | - | Inbound key Custom GPT sends in `x-hospeda-ai-key` (SPEC-254) |
-| `HOSPEDA_OPERATOR_PIN_HASH` | string | no | yes | - | Bcrypt hash of operator PIN for GPT draft authorization (SPEC-254) |
-| `HOSPEDA_MAKE_API_KEY` | string | no | yes | - | Outbound key sent to Make.com in `x-make-apikey` for publish jobs (SPEC-254) |
 | `HOSPEDA_MAKE_INBOUND_KEY` | string | no | yes | - | Inbound key Make.com sends in `x-hospeda-make-key` on callbacks (SPEC-254) |
+| `HOSPEDA_SOCIAL_VAULT_MASTER_KEY` | string | no | yes | - | AES-256-GCM master key (min 32 chars) for the Social Credentials Vault (`social_credentials`/`social_credential_audit` tables, HOS-64 G-4). Encrypts/decrypts the 4 social automation secrets: `make_webhook_url`, `make_api_key`, `ai_social_key`, `operator_pin`. Separate blast radius from `HOSPEDA_AI_VAULT_MASTER_KEY` (SPEC-173) — never reuse one for the other. Must be set in Coolify for `hospeda-api-staging` and `hospeda-api-prod` (`hops env-set <kind> HOSPEDA_SOCIAL_VAULT_MASTER_KEY <value> --secret`) |
+
+> **Removed (HOS-64 G-4, T-042)**: `HOSPEDA_AI_SOCIAL_KEY`, `HOSPEDA_OPERATOR_PIN`, `HOSPEDA_OPERATOR_PIN_HASH`, and `HOSPEDA_MAKE_API_KEY` (plaintext sources for the GPT inbound key, operator PIN, and Make.com outbound key) were removed from the schema/registry once all runtime read-sites (T-021–T-024) were migrated to the Social Credentials Vault, confirmed by grepping for zero remaining `env.HOSPEDA_*` reads. Note this landed ahead of the staging/prod vault-migration and end-to-end verification steps (T-033/T-034/T-038/T-039) by explicit decision — the actual VPS env vars are unset separately in T-043, only after that verification passes. The vault is now the sole source of truth for these 4 secrets — see `apps/api/src/services/social-credential-vault.service.ts` (`getDecryptedSocialCredential`).
 
 ### Testing / Debugging (HOSPEDA_)
 

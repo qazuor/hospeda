@@ -98,7 +98,11 @@ import {
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
-import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
+import {
+    aiSocialCatalogRoute,
+    aiSocialDraftsRoute,
+    aiSocialPublicDataRoute
+} from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
 import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
@@ -126,6 +130,10 @@ import {
     makeClaimCallbackRoute,
     makeResultCallbackRoute
 } from './integrations/make/social/jobs/index.js';
+import {
+    mercadoLibreAuthorizeRoute,
+    mercadoLibreCallbackRoute
+} from './integrations/mercadolibre-oauth/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -149,6 +157,7 @@ import {
     adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
     adminSocialCampaignRoutes,
+    adminSocialCredentialRoutes,
     adminSocialDashboardRoutes,
     adminSocialFooterRoutes,
     adminSocialHashtagRoutes,
@@ -525,6 +534,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
 
+        // MercadoLibre OAuth integration admin routes (HOS-45 / SPEC-278 T-011, T-012)
+        app.route('/api/v1/admin/mercadolibre-oauth', mercadoLibreAuthorizeRoute);
+        app.route('/api/v1/admin/mercadolibre-oauth', mercadoLibreCallbackRoute);
+
         // Admin app log viewer (SPEC-184)
         app.route('/api/v1/admin/logs', adminAppLogRoutes);
 
@@ -583,6 +596,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Custom GPT submits a structured social post draft for admin review.
         app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
 
+        // AI social public-data pull (HOS-66 T-023): API-key gated, read-only.
+        // Custom GPT pulls public accommodations/destinations to enrich a draft.
+        app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
+
         // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
         // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
         // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
@@ -608,6 +625,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
         app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
         app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // Social credential vault (HOS-64 G-4, T-026)
+        app.route('/api/v1/admin/social/credentials', adminSocialCredentialRoutes);
 
         // Social post routes (SPEC-254 T-036 transitions + T-037 CRUD)
         // Transition paths: /{id}/approve, /{id}/reject, etc.

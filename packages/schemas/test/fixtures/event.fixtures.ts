@@ -214,8 +214,7 @@ export const createEventEdgeCases = (): any => ({
     },
     seo: {
         title: 'F'.repeat(30), // Minimum SEO title length
-        description: 'G'.repeat(70), // Minimum SEO description length
-        keywords: ['min']
+        description: 'G'.repeat(70) // Minimum SEO description length
     },
     tags: [
         {
@@ -295,7 +294,6 @@ export const createLargeEvent = (): any => ({
     capacity: 50000, // Large capacity
     seo: {
         title: 'H'.repeat(60), // Maximum SEO title
-        description: 'I'.repeat(160), // Maximum SEO description
-        keywords: Array.from({ length: 10 }, () => faker.lorem.word())
+        description: 'I'.repeat(160) // Maximum SEO description
     }
 });

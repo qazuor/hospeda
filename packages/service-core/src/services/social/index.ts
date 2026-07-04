@@ -90,3 +90,14 @@ export {
     type BuildMakePayloadInput,
     type BuildMakePayloadResult
 } from './social-publish-dispatch.service';
+export {
+    DEFAULT_DISPATCH_CRON_CADENCE,
+    DISPATCH_CRON_CADENCE_KEY,
+    isValidCronExpression,
+    resolveDispatchCronCadence,
+    type ResolveDispatchCronCadenceInput
+} from './social-dispatch-cron-config.util';
+export {
+    SocialPublicDataService,
+    type GetPublicDataInput
+} from './social-public-data.service';

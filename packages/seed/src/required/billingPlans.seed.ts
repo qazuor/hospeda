@@ -31,10 +31,10 @@ const SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set<ModelCField>([
     'entitlements',
     'limitsKeysPresent',
     'limitsValues',
-    'metadata.displayName',
+    'displayName',
+    'monthlyPriceArs',
+    'annualPriceArs',
     'metadata.category',
-    'metadata.monthlyPriceArs',
-    'metadata.annualPriceArs',
     'metadata.isDefault',
     'metadata.sortOrder',
     'metadata.hasTrial',
@@ -93,6 +93,12 @@ interface DbRowSnapshot {
     readonly entitlements: unknown;
     readonly limits: unknown;
     readonly metadata: unknown;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.displayName. */
+    readonly displayName: string | null;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.monthlyPriceArs. */
+    readonly monthlyPriceArs: number | null;
+    /** Typed column (HOS-39 T-003/T-005), promoted off metadata.annualPriceArs. */
+    readonly annualPriceArs: number | null;
 }
 
 /**
@@ -174,18 +180,20 @@ function detectDivergences(
         push('limitsValues', configValues, dbValues);
     }
 
-    // ── metadata JSONB ──────────────────────────────────────────────────────
-    if (meta.displayName !== plan.name) {
-        push('metadata.displayName', plan.name, meta.displayName);
+    // ── typed top-level columns (HOS-39 T-003/T-005) ────────────────────────
+    if (dbRow.displayName !== plan.name) {
+        push('displayName', plan.name, dbRow.displayName);
     }
+    if (dbRow.monthlyPriceArs !== plan.monthlyPriceArs) {
+        push('monthlyPriceArs', plan.monthlyPriceArs, dbRow.monthlyPriceArs);
+    }
+    if (dbRow.annualPriceArs !== plan.annualPriceArs) {
+        push('annualPriceArs', plan.annualPriceArs, dbRow.annualPriceArs);
+    }
+
+    // ── metadata JSONB ──────────────────────────────────────────────────────
     if (meta.category !== plan.category) {
         push('metadata.category', plan.category, meta.category);
-    }
-    if (meta.monthlyPriceArs !== plan.monthlyPriceArs) {
-        push('metadata.monthlyPriceArs', plan.monthlyPriceArs, meta.monthlyPriceArs);
-    }
-    if (meta.annualPriceArs !== plan.annualPriceArs) {
-        push('metadata.annualPriceArs', plan.annualPriceArs, meta.annualPriceArs);
     }
     if (meta.isDefault !== plan.isDefault) {
         push('metadata.isDefault', plan.isDefault, meta.isDefault);
@@ -250,9 +258,9 @@ function buildCapabilitySyncPayload(
     const payload: Record<string, unknown> = {};
     const capabilityFields = new Set(capabilityDiffs.map((d) => d.field));
 
-    if (capabilityFields.has('entitlements')) {
-        payload.entitlements = plan.entitlements as string[];
-    }
+    // `entitlements` is COMMERCIAL as of HOS-39 (2026-07-02) — the admin
+    // PlanDialog.tsx already lets operators edit it, so the seed must not
+    // sync it from config. No handling here; DB wins.
 
     if (capabilityFields.has('limitsKeysPresent')) {
         // Merge: start from DB values (preserving commercial values), then
@@ -278,13 +286,13 @@ function buildCapabilitySyncPayload(
     }
 
     // Metadata: only sync the capability sub-fields, leaving commercial ones
-    // (displayName, monthlyPriceArs, annualPriceArs) as-is.
+    // (displayName, monthlyPriceArs, annualPriceArs, sortOrder, hasTrial,
+    // trialDays — the last three reclassified to commercial by HOS-39,
+    // 2026-07-02, since the admin PlanDialog.tsx already lets operators edit
+    // them) as-is.
     const META_CAPABILITY_FIELDS: ReadonlyArray<ModelCField> = [
         'metadata.category',
-        'metadata.isDefault',
-        'metadata.sortOrder',
-        'metadata.hasTrial',
-        'metadata.trialDays'
+        'metadata.isDefault'
     ];
 
     const metaUpdate: Record<string, unknown> = {};
@@ -297,15 +305,6 @@ function buildCapabilitySyncPayload(
                 case 'metadata.isDefault':
                     metaUpdate.isDefault = plan.isDefault;
                     break;
-                case 'metadata.sortOrder':
-                    metaUpdate.sortOrder = plan.sortOrder;
-                    break;
-                case 'metadata.hasTrial':
-                    metaUpdate.hasTrial = plan.hasTrial;
-                    break;
-                case 'metadata.trialDays':
-                    metaUpdate.trialDays = plan.trialDays;
-                    break;
                 // no default: exhaustive over the capability metadata fields above
             }
         }
@@ -313,7 +312,8 @@ function buildCapabilitySyncPayload(
 
     if (Object.keys(metaUpdate).length > 0) {
         // Merge with the existing metadata to preserve commercial sub-fields
-        // (displayName, monthlyPriceArs, annualPriceArs, slug, monthlyPriceUsdRef).
+        // (displayName, monthlyPriceArs, annualPriceArs, sortOrder, hasTrial,
+        // trialDays, slug, monthlyPriceUsdRef).
         const existingMeta = (dbRow.metadata ?? {}) as Record<string, unknown>;
         payload.metadata = { ...existingMeta, ...metaUpdate };
     }
@@ -362,7 +362,10 @@ async function ensurePlan(
             active: billingPlans.active,
             entitlements: billingPlans.entitlements,
             limits: billingPlans.limits,
-            metadata: billingPlans.metadata
+            metadata: billingPlans.metadata,
+            displayName: billingPlans.displayName,
+            monthlyPriceArs: billingPlans.monthlyPriceArs,
+            annualPriceArs: billingPlans.annualPriceArs
         })
         .from(billingPlans)
         .where(eq(billingPlans.name, plan.slug))
@@ -431,6 +434,13 @@ async function ensurePlan(
             entitlements: plan.entitlements as string[],
             limits: limitsObj,
             livemode,
+            // HOS-39 T-005 / HOS-73: dual-write the typed columns (promoted in
+            // T-003, further promoted to qzpay-drizzle 1.11.0 by HOS-73)
+            // alongside their metadata.* mirror below, matching what
+            // plan.crud.ts's createPlan/updatePlan already do.
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
             metadata: {
                 slug: plan.slug,
                 displayName: plan.name,

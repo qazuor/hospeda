@@ -9,9 +9,9 @@
  * **Layer separation (architecture):**
  * - This module DECIDES. It loads the subscription's promo state, applies the
  *   pure effect reducer to the full plan price, persists the decremented cycle
- *   counter (via raw SQL — exactly as `applyPromoCode` writes
- *   `promo_effect_remaining_cycles`), and returns a typed DECISION describing
- *   what the MercadoPago preapproval amount should be set to.
+ *   counter (typed Drizzle UPDATE on `promoEffectRemainingCycles`), and
+ *   returns a typed DECISION describing what the MercadoPago preapproval
+ *   amount should be set to.
  * - It performs NO MercadoPago calls and NO HTTP. The API layer
  *   (`apps/api/src/routes/webhooks/mercadopago/...`) reads the decision and
  *   executes `paymentAdapter.subscriptions.update(...)`.
@@ -44,10 +44,11 @@
  * @module services/billing/promo-code/promo-code.renewal
  */
 
-import { getDb, sql } from '@repo/db';
+import { billingSubscriptions, eq, getDb, sql } from '@repo/db';
 import type { QueryContext } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { PromoEffectKindEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
+import { loadSubscriptionDiscountState } from '../subscription/subscription-product-domain.js';
 
 /**
  * Module logger — used for the defensive-branch inconsistency warning.
@@ -155,24 +156,6 @@ export type ResolveRenewalPromoEffectResult =
 // Internal row shapes
 // ---------------------------------------------------------------------------
 
-/**
- * Minimal subscription row read for the renewal decision.
- *
- * `billing_subscriptions` is owned by `@qazuor/qzpay-drizzle`; the extras-carril
- * columns (`promo_code_id`, `promo_effect_remaining_cycles`) and the QZPay-managed
- * columns are read via raw SQL so we read exactly the snake_case columns we need.
- *
- * @internal
- */
-interface RenewalSubscriptionRow {
-    id: string;
-    status: string;
-    plan_id: string | null;
-    mp_subscription_id: string | null;
-    promo_code_id: string | null;
-    promo_effect_remaining_cycles: number | null;
-}
-
 // ---------------------------------------------------------------------------
 // Main operation
 // ---------------------------------------------------------------------------
@@ -200,8 +183,8 @@ interface RenewalSubscriptionRow {
  *
  * **Persistence (fail-closed for the counter, mirrors `applyPromoCode`):**
  * When `persist` is true (default) the decremented counter is written to
- * `billing_subscriptions.promo_effect_remaining_cycles` via raw SQL inside the
- * provided `ctx.tx` (or the default connection). The caller performs the MP
+ * `billingSubscriptions.promoEffectRemainingCycles` via a typed Drizzle UPDATE
+ * inside the provided `ctx.tx` (or the default connection). The caller performs the MP
  * mutation AFTER this returns; if the MP restore fails the worst case is one
  * extra discounted cycle (recoverable — spike doc §5.6), never a refund.
  *
@@ -226,20 +209,10 @@ export async function resolveRenewalPromoEffect(
 
     try {
         // ------------------------------------------------------------------
-        // Step 1: Load the subscription's promo + plan state (raw SQL — the
-        // extras-carril columns are not in the QZPay Drizzle schema).
+        // Step 1: Load the subscription's promo + plan state via the shared
+        // typed helper (HOS-75 T-012).
         // ------------------------------------------------------------------
-        const subResult = await db.execute(
-            sql`SELECT id, status, plan_id, mp_subscription_id,
-                       promo_code_id, promo_effect_remaining_cycles
-                FROM billing_subscriptions
-                WHERE id = ${subscriptionId}
-                LIMIT 1`
-        );
-        // TYPE-WORKAROUND: db.execute() returns rows typed as Record<string, unknown>
-        // (raw SQL — the extras-carril columns are not on the QZPay Drizzle schema), so a
-        // direct cast to the concrete row shape is rejected (TS2352); go via unknown.
-        const subRow = (subResult.rows?.[0] ?? null) as unknown as RenewalSubscriptionRow | null;
+        const subRow = await loadSubscriptionDiscountState({ subscriptionId, tx: db });
 
         if (!subRow) {
             return {
@@ -266,14 +239,14 @@ export async function resolveRenewalPromoEffect(
         // ------------------------------------------------------------------
         // Step 3: no promo code linked → nothing to reconcile.
         // ------------------------------------------------------------------
-        if (!subRow.promo_code_id) {
+        if (!subRow.promoCodeId) {
             return {
                 success: true,
                 data: { action: 'noop', subscriptionId }
             };
         }
 
-        const promoCodeId = subRow.promo_code_id;
+        const promoCodeId = subRow.promoCodeId;
         const promoResult = await getPromoCodeById(promoCodeId, ctx);
 
         if (!promoResult.success || !promoResult.data) {
@@ -297,7 +270,7 @@ export async function resolveRenewalPromoEffect(
         }
 
         const discountEffect = promoCode.effect;
-        const remaining = subRow.promo_effect_remaining_cycles;
+        const remaining = subRow.promoEffectRemainingCycles;
 
         // ------------------------------------------------------------------
         // Step 7 (early): discount already exhausted. The full price was
@@ -314,13 +287,13 @@ export async function resolveRenewalPromoEffect(
         // Step 4: resolve the full plan price (centavos) — source of truth for
         // both the discounted amount and the restore amount (spike doc §5.1).
         // ------------------------------------------------------------------
-        const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, subRow.plan_id);
+        const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, subRow.planId);
         if (fullPriceCentavos === null) {
             return {
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Could not resolve full plan price for subscription ${subscriptionId} (plan ${subRow.plan_id ?? 'null'})`
+                    message: `Could not resolve full plan price for subscription ${subscriptionId} (plan ${subRow.planId ?? 'null'})`
                 }
             };
         }
@@ -464,7 +437,7 @@ function centavosToMajor(centavos: number): number {
  *
  * @internal
  */
-type RenewalDbClient = Pick<ReturnType<typeof getDb>, 'execute'>;
+type RenewalDbClient = Pick<ReturnType<typeof getDb>, 'execute' | 'update'>;
 
 /**
  * Resolve the full recurring price (integer centavos) for a plan by reading the
@@ -506,11 +479,7 @@ export async function resolveFullPlanPriceCentavos(
 }
 
 /**
- * Persist the decremented `promo_effect_remaining_cycles` on the subscription.
- *
- * Mirrors the raw-SQL UPDATE pattern used by `applyPromoCode`
- * (promo-code.redemption.ts) — the column is an extras-carril addition not in
- * the QZPay Drizzle schema.
+ * Persist the decremented `promoEffectRemainingCycles` on the subscription.
  *
  * @internal
  */
@@ -519,9 +488,8 @@ async function persistRemainingCycles(
     subscriptionId: string,
     remainingCycles: number
 ): Promise<void> {
-    await db.execute(
-        sql`UPDATE billing_subscriptions
-            SET promo_effect_remaining_cycles = ${remainingCycles}
-            WHERE id = ${subscriptionId}`
-    );
+    await db
+        .update(billingSubscriptions)
+        .set({ promoEffectRemainingCycles: remainingCycles })
+        .where(eq(billingSubscriptions.id, subscriptionId));
 }

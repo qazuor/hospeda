@@ -1,20 +1,21 @@
 /**
- * Unit Tests: featured-entitlement resolver helpers (SPEC-309 T-004 / T-021)
+ * Unit Tests: featured-entitlement resolver helpers (SPEC-309 T-004 / T-021,
+ * migrated to typed Drizzle in HOS-75 T-008)
  *
  * Tests `packages/service-core/src/services/accommodation/featured-entitlement.resolver.ts`
  * without a live DB. `getDb()` is mocked to return a stub client exposing
- * `.select()` and `.execute()`; each Drizzle query chain is simulated with a
- * thenable+chainable mock (see `makeChain`) so the same mock works whether
- * the call site chains `.limit(1)` or awaits `.where(...)` directly.
+ * `.select()`; each Drizzle query chain is simulated with a thenable+chainable
+ * mock (see `makeChain`) so the same mock works whether the call site chains
+ * `.limit(1)` or awaits `.where(...)` directly.
  *
  * Coverage:
  * - `resolveOwnerPlanGrantsFeatured`: no customer / no qualifying subscription
- *   (paused/past_due/cancelled are excluded by the SQL `status IN (...)`
- *   filter itself, simulated here as an empty `db.execute` result) / active,
- *   trialing, comp subscriptions on a FEATURED_LISTING plan / plan missing
- *   the entitlement / plan lookup miss / commerce-domain subscription
- *   excluded (SPEC-239 isolation) / the executed query's status list is
- *   exactly the active/trialing/comp set.
+ *   (paused/past_due/cancelled are excluded by the typed `inArray(status, ...)`
+ *   filter itself, simulated here as an empty subscriptions-select result) /
+ *   active, trialing, comp subscriptions on a FEATURED_LISTING plan / plan
+ *   missing the entitlement / plan lookup miss / commerce-domain subscription
+ *   excluded (SPEC-239 isolation) / the subscriptions query filters by
+ *   exactly the active/trialing/comp status set.
  * - `resolveAccommodationHasActiveFeaturedAddon`: grant found vs none, plus
  *   the WHERE construction includes the status='active' and
  *   (no-expiry OR future-expiry) predicates.
@@ -30,9 +31,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Hoist mock functions so they are available inside vi.mock() factories.
 // ---------------------------------------------------------------------------
 
-const { mockSelect, mockExecute, mockGetDb } = vi.hoisted(() => ({
+const { mockSelect, mockGetDb } = vi.hoisted(() => ({
     mockSelect: vi.fn(),
-    mockExecute: vi.fn(),
     mockGetDb: vi.fn()
 }));
 
@@ -41,19 +41,18 @@ const { mockSelect, mockExecute, mockGetDb } = vi.hoisted(() => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => {
-    const sqlTag = vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
-        strings,
-        values
-    }));
-    // sql.join(...) — used to build the `status IN (...)` fragment list.
-    (sqlTag as unknown as { join: ReturnType<typeof vi.fn> }).join = vi.fn(
-        (fragments: unknown[], separator: unknown) => ({ fragments, separator })
-    );
-
     return {
         accommodations: { id: 'id', ownerId: 'owner_id', deletedAt: 'deleted_at' },
         billingCustomers: { id: 'id', externalId: 'external_id', deletedAt: 'deleted_at' },
         billingPlans: { id: 'id', entitlements: 'entitlements', deletedAt: 'deleted_at' },
+        billingSubscriptions: {
+            id: 'id',
+            planId: 'plan_id',
+            status: 'status',
+            productDomain: 'product_domain',
+            customerId: 'customer_id',
+            deletedAt: 'deleted_at'
+        },
         billingAddonPurchases: { id: 'id', status: 'status', expiresAt: 'expires_at' },
         featuredListingAddonGrants: {
             id: 'id',
@@ -65,7 +64,7 @@ vi.mock('@repo/db', () => {
         or: vi.fn((...args: unknown[]) => ({ op: 'or', args })),
         isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
         gt: vi.fn((col: unknown, val: unknown) => ({ op: 'gt', col, val })),
-        sql: sqlTag,
+        inArray: vi.fn((col: unknown, vals: unknown) => ({ op: 'inArray', col, vals })),
         getDb: mockGetDb
     };
 });
@@ -75,7 +74,7 @@ vi.mock('@repo/db', () => {
 // ---------------------------------------------------------------------------
 
 import { EntitlementKey } from '@repo/billing';
-import { and, eq, gt, isNull, or } from '@repo/db';
+import { and, eq, gt, inArray, isNull, or } from '@repo/db';
 import {
     getOwnerAccommodationIdsWithActiveFeaturedAddon,
     resolveAccommodationHasActiveFeaturedAddon,
@@ -122,7 +121,7 @@ function makeChain(result: unknown) {
 describe('resolveOwnerPlanGrantsFeatured', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetDb.mockReturnValue({ select: mockSelect, execute: mockExecute });
+        mockGetDb.mockReturnValue({ select: mockSelect });
     });
 
     it('returns false when the owner has no billing customer', async () => {
@@ -131,14 +130,16 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
         const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
         expect(result).toBe(false);
-        expect(mockExecute).not.toHaveBeenCalled();
+        // Only the customer lookup ran — no subscriptions/plan queries.
+        expect(mockSelect).toHaveBeenCalledTimes(1);
     });
 
     it.each(['paused', 'past_due', 'cancelled'] as const)(
-        'returns false when the customer has no active/trialing/comp subscription (e.g. only a %s one exists, excluded by the SQL status filter)',
+        'returns false when the customer has no active/trialing/comp subscription (e.g. only a %s one exists, excluded by the typed status filter)',
         async (_status) => {
-            mockSelect.mockReturnValueOnce(makeChain([{ id: 'cust-1' }]));
-            mockExecute.mockResolvedValueOnce({ rows: [] });
+            mockSelect
+                .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+                .mockReturnValueOnce(makeChain([]));
 
             const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
@@ -152,18 +153,18 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
             mockSelect
                 .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
                 .mockReturnValueOnce(
+                    makeChain([
+                        {
+                            id: 'sub-1',
+                            planId: 'plan-1',
+                            status,
+                            productDomain: 'accommodation'
+                        }
+                    ])
+                )
+                .mockReturnValueOnce(
                     makeChain([{ entitlements: [EntitlementKey.FEATURED_LISTING] }])
                 );
-            mockExecute.mockResolvedValueOnce({
-                rows: [
-                    {
-                        id: 'sub-1',
-                        plan_id: 'plan-1',
-                        status,
-                        product_domain: 'accommodation'
-                    }
-                ]
-            });
 
             const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
@@ -174,17 +175,17 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
     it('returns false when the plan does not include FEATURED_LISTING', async () => {
         mockSelect
             .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(
+                makeChain([
+                    {
+                        id: 'sub-1',
+                        planId: 'plan-1',
+                        status: 'active',
+                        productDomain: 'accommodation'
+                    }
+                ])
+            )
             .mockReturnValueOnce(makeChain([{ entitlements: ['some_other_entitlement'] }]));
-        mockExecute.mockResolvedValueOnce({
-            rows: [
-                {
-                    id: 'sub-1',
-                    plan_id: 'plan-1',
-                    status: 'active',
-                    product_domain: 'accommodation'
-                }
-            ]
-        });
 
         const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
@@ -194,17 +195,17 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
     it('returns false when the plan lookup finds no matching plan', async () => {
         mockSelect
             .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(
+                makeChain([
+                    {
+                        id: 'sub-1',
+                        planId: 'plan-1',
+                        status: 'active',
+                        productDomain: 'accommodation'
+                    }
+                ])
+            )
             .mockReturnValueOnce(makeChain([]));
-        mockExecute.mockResolvedValueOnce({
-            rows: [
-                {
-                    id: 'sub-1',
-                    plan_id: 'plan-1',
-                    status: 'active',
-                    product_domain: 'accommodation'
-                }
-            ]
-        });
 
         const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
@@ -212,34 +213,30 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
     });
 
     it('excludes a commerce-domain subscription (SPEC-239 isolation) even if returned by the query', async () => {
-        mockSelect.mockReturnValueOnce(makeChain([{ id: 'cust-1' }]));
-        mockExecute.mockResolvedValueOnce({
-            rows: [{ id: 'sub-1', plan_id: 'plan-1', status: 'active', product_domain: 'commerce' }]
-        });
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(
+                makeChain([
+                    { id: 'sub-1', planId: 'plan-1', status: 'active', productDomain: 'commerce' }
+                ])
+            );
 
         const result = await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
         // No accommodation-domain subscription found → returns false before
         // ever reaching the plan lookup.
         expect(result).toBe(false);
-        expect(mockSelect).toHaveBeenCalledTimes(1);
+        expect(mockSelect).toHaveBeenCalledTimes(2);
     });
 
     it('queries billing_subscriptions filtered to exactly the active/trialing/comp statuses', async () => {
-        mockSelect.mockReturnValueOnce(makeChain([{ id: 'cust-1' }]));
-        mockExecute.mockResolvedValueOnce({ rows: [] });
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
+            .mockReturnValueOnce(makeChain([]));
 
         await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
-        expect(mockExecute).toHaveBeenCalledTimes(1);
-        const executedQuery = mockExecute.mock.calls[0]?.[0] as { values: unknown[] };
-        // The status list is built via sql.join(['active','trialing','comp'].map(sql`${s}`), ...)
-        // — the interpolated sql fragments carry the raw status strings as their `values`.
-        const statusFragments = executedQuery.values[1] as {
-            fragments: { values: unknown[] }[];
-        };
-        const statuses = statusFragments.fragments.flatMap((f) => f.values);
-        expect(statuses).toEqual(['active', 'trialing', 'comp']);
+        expect(inArray).toHaveBeenCalledWith('status', ['active', 'trialing', 'comp']);
     });
 });
 
@@ -250,7 +247,7 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
 describe('resolveAccommodationHasActiveFeaturedAddon', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetDb.mockReturnValue({ select: mockSelect, execute: mockExecute });
+        mockGetDb.mockReturnValue({ select: mockSelect });
     });
 
     it('returns true when an active grant row is found', async () => {
@@ -294,7 +291,7 @@ describe('resolveAccommodationHasActiveFeaturedAddon', () => {
 describe('getOwnerAccommodationIdsWithActiveFeaturedAddon', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetDb.mockReturnValue({ select: mockSelect, execute: mockExecute });
+        mockGetDb.mockReturnValue({ select: mockSelect });
     });
 
     it('returns exactly the protected accommodation ids for a mixed portfolio', async () => {

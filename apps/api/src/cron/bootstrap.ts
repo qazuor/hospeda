@@ -111,7 +111,21 @@ export const startCronScheduler = async (): Promise<void> => {
 
     for (const job of enabledJobs) {
         try {
-            nodeCron.schedule(job.schedule, async () => {
+            let scheduleExpression = job.schedule;
+            if (job.resolveSchedule) {
+                try {
+                    scheduleExpression = await job.resolveSchedule();
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    apiLogger.warn({
+                        message: `[cron] resolveSchedule failed for ${job.name} — falling back to default schedule`,
+                        error: errorMessage,
+                        fallbackSchedule: job.schedule
+                    });
+                }
+            }
+
+            nodeCron.schedule(scheduleExpression, async () => {
                 const startTime = Date.now();
                 apiLogger.info({ message: `[cron] tick: ${job.name}` });
                 try {
@@ -157,7 +171,7 @@ export const startCronScheduler = async (): Promise<void> => {
                                 contexts: {
                                     cron: {
                                         jobName: job.name,
-                                        schedule: job.schedule,
+                                        schedule: scheduleExpression,
                                         durationMs: Date.now() - startTime,
                                         errors: result.errors,
                                         processed: result.processed
@@ -193,7 +207,7 @@ export const startCronScheduler = async (): Promise<void> => {
                             contexts: {
                                 cron: {
                                     jobName: job.name,
-                                    schedule: job.schedule,
+                                    schedule: scheduleExpression,
                                     durationMs: Date.now() - startTime
                                 }
                             }
@@ -213,7 +227,7 @@ export const startCronScheduler = async (): Promise<void> => {
             });
 
             apiLogger.info({
-                message: `[cron] schedule registered: ${job.name} @ ${job.schedule}`,
+                message: `[cron] schedule registered: ${job.name} @ ${scheduleExpression}`,
                 description: job.description
             });
         } catch (error) {

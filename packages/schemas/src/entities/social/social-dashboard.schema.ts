@@ -60,6 +60,18 @@ export const SocialDashboardFailureItemSchema = z.object({
 export type SocialDashboardFailureItem = z.infer<typeof SocialDashboardFailureItemSchema>;
 
 /**
+ * Per-platform target count for the social dashboard (HOS-66 T-006/T-007, G-7).
+ */
+export const SocialDashboardPlatformBreakdownItemSchema = z.object({
+    platform: SocialPlatformEnumSchema.or(z.string()),
+    count: z.number().int().nonnegative()
+});
+
+export type SocialDashboardPlatformBreakdownItem = z.infer<
+    typeof SocialDashboardPlatformBreakdownItemSchema
+>;
+
+/**
  * Full response shape for GET /api/v1/admin/social/dashboard.
  */
 export const SocialDashboardResponseSchema = z.object({
@@ -76,10 +88,31 @@ export const SocialDashboardResponseSchema = z.object({
      */
     recentFailures: z.array(SocialDashboardFailureItemSchema),
     /**
-     * Whether a Make webhook URL is configured in social_settings.
-     * True when the `make_webhook_url` key has a non-empty string value.
+     * Whether a Make webhook URL is configured in the social credential vault.
+     * True when the `make_webhook_url` vault credential resolves to a
+     * non-empty plaintext value (HOS-64 — getDashboard vault migration).
      */
-    makeWebhookConfigured: z.boolean()
+    makeWebhookConfigured: z.boolean(),
+    /**
+     * Target count per platform, scoped to the same optional date range as
+     * the KPIs (HOS-66 T-006/T-007, G-7). Always populated by the service —
+     * not optional.
+     */
+    platformBreakdown: z.array(SocialDashboardPlatformBreakdownItemSchema)
 });
 
 export type SocialDashboardResponse = z.infer<typeof SocialDashboardResponseSchema>;
+
+/**
+ * Query params for GET /api/v1/admin/social/dashboard (HOS-66 T-007, G-7).
+ * Both bounds optional — omitting both preserves the pre-existing unfiltered
+ * (all-time) behavior.
+ */
+export const SocialDashboardQuerySchema = z.object({
+    /** Lower bound (inclusive) for the KPI/queue/failures/breakdown queries. */
+    dateFrom: z.coerce.date().optional(),
+    /** Upper bound (inclusive) for the KPI/queue/failures/breakdown queries. */
+    dateTo: z.coerce.date().optional()
+});
+
+export type SocialDashboardQuery = z.infer<typeof SocialDashboardQuerySchema>;

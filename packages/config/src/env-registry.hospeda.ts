@@ -520,6 +520,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
+    {
+        name: 'HOSPEDA_OAUTH_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the OAuth credentials vault (apps/api only, HOS-45). Encrypts/decrypts third-party OAuth tokens (currently MercadoLibre) at rest. Deliberately provider-agnostic name (not ML-specific) because the credentials table it protects is designed to extend to future OAuth providers beyond MercadoLibre. Optional until an OAuth-integrated tier is enabled.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales OAuth (solo apps/api, HOS-45). Cifra/descifra tokens OAuth de terceros (actualmente MercadoLibre) en reposo. Nombre deliberadamente agnóstico de proveedor (no específico de ML) porque la tabla de credenciales que protege está diseñada para extenderse a futuros proveedores OAuth más allá de MercadoLibre. Opcional hasta que un tier integrado por OAuth esté habilitado.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted OAuth credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales OAuth cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
+    },
 
     // -------------------------------------------------------------------------
     // Email
@@ -1707,22 +1724,60 @@ export const HOSPEDA_ENV_VARS = [
             'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Luego restringí la key a la "Places API (New)" en "API restrictions". El proyecto debe tener billing habilitado.'
     },
     {
-        name: 'HOSPEDA_MERCADOLIBRE_TOKEN',
+        name: 'HOSPEDA_MERCADOLIBRE_CLIENT_ID',
         description:
-            'MercadoLibre OAuth app access token for reading /items listings. Required because the ML /items endpoint no longer allows anonymous access.',
+            'MercadoLibre OAuth app client ID (HOS-45 OAuth refresh-token flow). Used together with HOSPEDA_MERCADOLIBRE_CLIENT_SECRET to exchange authorization codes and refresh tokens against the ML OAuth API. Optional until the ML import tier is enabled in an environment.',
         descriptionEs:
-            'Token de acceso OAuth de la app de MercadoLibre para leer listings de /items. Necesario porque el endpoint ML /items ya no permite acceso anónimo.',
+            'Client ID de la app OAuth de MercadoLibre (flujo de refresh de OAuth de HOS-45). Se usa junto con HOSPEDA_MERCADOLIBRE_CLIENT_SECRET para intercambiar authorization codes y refresh tokens contra la API OAuth de ML. Opcional hasta que el tier de importación de ML esté habilitado en un entorno.',
         type: 'string',
         required: false,
-        secret: true,
-        exampleValue: 'your-mercadolibre-access-token',
+        secret: false,
+        defaultValue: '',
+        exampleValue: '1234567890123456',
         apps: ['api'],
         category: 'integrations',
         helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
         howToObtain:
-            'MercadoLibre Developers → "Crear aplicación" → complete the form → copy the "Access Token" from the app credentials panel. Tokens expire; use the refresh-token flow to keep them valid.',
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → copy the "Client ID" from the app credentials panel.',
         howToObtainEs:
-            'MercadoLibre Developers → "Crear aplicación" → completá el formulario → copiá el "Access Token" del panel de credenciales de la app. Los tokens expiran; usá el flujo de refresh-token para mantenerlos válidos.'
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → copiá el "Client ID" del panel de credenciales de la app.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_CLIENT_SECRET',
+        description:
+            'MercadoLibre OAuth app client secret (HOS-45 OAuth refresh-token flow). Paired with HOSPEDA_MERCADOLIBRE_CLIENT_ID to authenticate token-exchange and refresh-token requests. Never expose to the client.',
+        descriptionEs:
+            'Client secret de la app OAuth de MercadoLibre (flujo de refresh de OAuth de HOS-45). Se combina con HOSPEDA_MERCADOLIBRE_CLIENT_ID para autenticar los pedidos de intercambio de token y de refresh. Nunca exponer al cliente.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-mercadolibre-oauth-client-secret',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → copy the "Client Secret" from the app credentials panel. Rotate it if it leaks; keep it out of source control.',
+        howToObtainEs:
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → copiá el "Client Secret" del panel de credenciales de la app. Rotalo si se filtra; nunca lo commitees.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_REDIRECT_URI',
+        description:
+            'OAuth redirect URI registered on the MercadoLibre app (HOS-45), used as the callback target after the user authorizes the app. Must exactly match the URI configured in the ML Developers panel for the app.',
+        descriptionEs:
+            'URI de redirect OAuth registrada en la app de MercadoLibre (HOS-45), usada como destino del callback luego de que el usuario autoriza la app. Debe coincidir exactamente con la URI configurada en el panel de MercadoLibre Developers para la app.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue: 'https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Mis aplicaciones" → select the app → "Redirect URI" field. Must match exactly (protocol, host, path) what is registered there for the app to accept authorization requests. Use the environment-specific API host (staging vs prod).',
+        howToObtainEs:
+            'MercadoLibre Developers → "Mis aplicaciones" → seleccioná la app → campo "Redirect URI". Tiene que coincidir exactamente (protocolo, host, path) con lo registrado ahí para que la app acepte pedidos de autorización. Usá el host de API específico del entorno (staging vs prod).'
     },
     {
         name: 'HOSPEDA_IMPORT_FETCH_TIMEOUT_MS',
@@ -1897,72 +1952,21 @@ export const HOSPEDA_ENV_VARS = [
     // Social Automation (SPEC-254)
     // -------------------------------------------------------------------------
     {
-        name: 'HOSPEDA_AI_SOCIAL_KEY',
+        name: 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY',
         description:
-            'Inbound API key the Custom GPT sends in the `x-hospeda-ai-key` header when calling the social-draft endpoints. Validates that requests originate from the authorised Custom GPT and not arbitrary callers.',
+            'AES-256-GCM master key for the social credentials vault (apps/api only). Encrypts/decrypts make_webhook_url, make_api_key, ai_social_key, and operator_pin at rest. Min 32 chars (Zod). Separate blast radius from HOSPEDA_AI_VAULT_MASTER_KEY — do not reuse. Optional until the social vault data migration (T-025/T-033) runs.',
         descriptionEs:
-            'API key entrante que el Custom GPT envía en el header `x-hospeda-ai-key` al llamar los endpoints de borrador social. Valida que las solicitudes provienen del Custom GPT autorizado y no de callers arbitrarios.',
+            'Clave maestra AES-256-GCM para el vault de credenciales sociales (solo apps/api). Cifra/descifra make_webhook_url, make_api_key, ai_social_key y operator_pin en reposo. Mínimo 32 caracteres (Zod). Radio de impacto separado de HOSPEDA_AI_VAULT_MASTER_KEY — no reutilizar. Opcional hasta que corra la migración de datos del vault social (T-025/T-033).',
         type: 'string',
         required: false,
         secret: true,
-        exampleValue: 'replace-with-random-32-char-key-for-gpt',
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-yyyyyyyy',
         apps: ['api'],
         category: 'social-automation',
         howToObtain:
-            'Generate a random shared secret: `openssl rand -base64 32`. Set the same value in the Custom GPT action authentication header (`x-hospeda-ai-key`) and here. Rotate by updating both the GPT action config and this env var simultaneously.',
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
         howToObtainEs:
-            'Generá un secreto compartido aleatorio: `openssl rand -base64 32`. Configurá el mismo valor en el header de autenticación de la acción del Custom GPT (`x-hospeda-ai-key`) y acá. Para rotar, actualizá la config de la acción del GPT y esta variable al mismo tiempo.'
-    },
-    {
-        name: 'HOSPEDA_OPERATOR_PIN_HASH',
-        description:
-            'Bcrypt/argon2 hash of the operator PIN used to authorise social-draft submission via the Custom GPT. The raw PIN is never stored — only the hash. Validated on the GPT drafts endpoint when `operator_pin` is submitted.',
-        descriptionEs:
-            'Hash bcrypt/argon2 del PIN del operador usado para autorizar el envío de borradores sociales a través del Custom GPT. El PIN crudo nunca se guarda — solo el hash. Se valida en el endpoint de borradores del GPT cuando se envía `operator_pin`.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: '$2b$12$replace-with-a-real-bcrypt-hash-of-your-pin',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            "Choose a numeric PIN (e.g. 6 digits), then hash it: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('YOUR_PIN',12).then(h=>console.log(h))\"`. Store only the resulting hash here, never the raw PIN. Rotate by generating a new PIN + new hash.",
-        howToObtainEs:
-            "Elegí un PIN numérico (ej: 6 dígitos), luego hashealo: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('TU_PIN',12).then(h=>console.log(h))\"`. Guardá solo el hash resultante acá, nunca el PIN crudo. Para rotar, generá un nuevo PIN y un nuevo hash."
-    },
-    {
-        name: 'HOSPEDA_OPERATOR_PIN',
-        description:
-            'Plaintext operator PIN compared directly against the `operatorPin` submitted to the Custom GPT social-draft endpoint. Supersedes HOSPEDA_OPERATOR_PIN_HASH (the prior unsalted SHA-256 hash was removed). TEMPORARY: restore a hashed comparison (HOSPEDA_OPERATOR_PIN_HASH) before production.',
-        descriptionEs:
-            'PIN del operador en texto plano que se compara directamente contra el `operatorPin` enviado al endpoint de borradores sociales del Custom GPT. Reemplaza a HOSPEDA_OPERATOR_PIN_HASH (el hash SHA-256 sin sal previo fue removido). TEMPORAL: restaurar una comparación hasheada (HOSPEDA_OPERATOR_PIN_HASH) antes de producción.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: '123456',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            'Choose a numeric PIN (e.g. 4-6 digits) and set it here. The same value must be entered as `operatorPin` in the Custom GPT action. NOTE: temporary plaintext setup — restore HOSPEDA_OPERATOR_PIN_HASH (hashed) before production.',
-        howToObtainEs:
-            'Elegí un PIN numérico (ej: 4-6 dígitos) y poné el valor acá. El mismo valor debe ingresarse como `operatorPin` en la acción del Custom GPT. NOTA: setup temporal en texto plano — restaurar HOSPEDA_OPERATOR_PIN_HASH (hasheado) antes de producción.'
-    },
-    {
-        name: 'HOSPEDA_MAKE_API_KEY',
-        description:
-            'Outbound API key our backend sends to Make.com in the `x-make-apikey` header when pushing social-publish jobs. Authenticates the Hospeda API against the Make.com scenario webhook.',
-        descriptionEs:
-            'API key saliente que nuestro backend envía a Make.com en el header `x-make-apikey` al enviar jobs de publicación social. Autentica la API de Hospeda contra el webhook del escenario de Make.com.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'replace-with-your-make-scenario-webhook-api-key',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            'In Make.com, open the scenario webhook trigger → Authentication → add a custom header `x-make-apikey` with a value of your choice (generate with `openssl rand -hex 32`). Set that same value here.',
-        howToObtainEs:
-            'En Make.com, abrí el trigger webhook del escenario → Authentication → agregá un header custom `x-make-apikey` con un valor a tu elección (generalo con `openssl rand -hex 32`). Poné ese mismo valor acá.'
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
     {
         name: 'HOSPEDA_MAKE_INBOUND_KEY',

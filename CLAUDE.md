@@ -180,17 +180,18 @@ accommodation entitlement engine:
   `(entity_type, entity_id)`) that ties an active commerce subscription to its
   concrete listing. The commerce-visibility reconciler reads this table to decide
   whether a listing is publicly visible.
-- The `product_domain` columns on `billing_plans` and `billing_subscriptions` ship
-  via the extras carril (`packages/db/src/migrations/extras/017-billing-plans-product-domain.column.sql`),
-  not via a Drizzle-generated migration. Re-applied by `pnpm db:apply-extras`.
+- The `product_domain` columns on `billing_plans` and `billing_subscriptions` are
+  typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
+  normal typed queries (HOS-75), not raw SQL or the extras carril. The old
+  extras/017 column-creation file was deleted once the typed columns landed.
   See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](docs/decisions/ADR-035-commerce-core-gastronomy-separation.md).
 
 #### Promo code effect engine (SPEC-262)
 
-- `billing_promo_codes.effect_kind` (varchar, extras 018) — `'discount' | 'trial_extension' | 'comp'`. All existing rows default to `'discount'` (backward-compat). `value_kind` (`'percentage'|'fixed'`), `duration_cycles` (int, null=forever), and `extra_days` (int) are the companion extras columns on the same table.
-- `billing_subscriptions.promo_effect_remaining_cycles` (integer, extras 019) — multi-cycle discount countdown. `NULL` = forever or no active discount; `N > 0` = N discounted cycles remain; `0` = exhausted (full price already restored). Decremented once per confirmed charge on the `subscription_authorized_payment.created` webhook by `resolveRenewalPromoEffect` in `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts`.
+- `billing_promo_codes.effect_kind` (varchar) — `'discount' | 'trial_extension' | 'comp'`. All existing rows default to `'discount'` (backward-compat). `value_kind` (`'percentage'|'fixed'`), `duration_cycles` (int, null=forever), and `extra_days` (int) are companion columns on the same table. All are typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73), accessed via normal typed queries (HOS-75).
+- `billing_subscriptions.promo_effect_remaining_cycles` (integer) — multi-cycle discount countdown, also a typed Drizzle column (HOS-73). `NULL` = forever or no active discount; `N > 0` = N discounted cycles remain; `0` = exhausted (full price already restored). Decremented once per confirmed charge on the `subscription_authorized_payment.created` webhook by `resolveRenewalPromoEffect` in `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts`.
 - `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
-- These extras columns are applied by `pnpm db:apply-extras` (files 018/019/020 under `packages/db/src/migrations/extras/`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
+- The CHECK constraints enforcing per-`effect_kind` shape invariants (cross-column logic Drizzle cannot express) still live in the extras carril, applied by `pnpm db:apply-extras` (`packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
 
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 

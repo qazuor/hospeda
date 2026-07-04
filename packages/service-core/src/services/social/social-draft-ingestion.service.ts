@@ -45,7 +45,8 @@ import type {
     SocialPostFooterModel,
     SocialPostHashtagModel,
     SocialPostModel,
-    SocialPostTargetModel
+    SocialPostTargetModel,
+    SocialSettingModel
 } from '@repo/db';
 import {
     SocialAiRequestModel as RealSocialAiRequestModel,
@@ -58,16 +59,47 @@ import {
     SocialPostFooterModel as RealSocialPostFooterModel,
     SocialPostHashtagModel as RealSocialPostHashtagModel,
     SocialPostModel as RealSocialPostModel,
-    SocialPostTargetModel as RealSocialPostTargetModel
+    SocialPostTargetModel as RealSocialPostTargetModel,
+    SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
-import { SocialApprovalStatusEnum, SocialPostStatusEnum, SocialSourceEnum } from '@repo/schemas';
+import {
+    SocialApprovalStatusEnum,
+    SocialPlatformEnum,
+    SocialPostStatusEnum,
+    SocialSourceEnum
+} from '@repo/schemas';
 import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ServiceConfig } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
+import type {
+    HashtagCountsByPlatform,
+    HashtagLimitViolation,
+    MaxHashtagsByPlatform
+} from './social-hashtag-limit.util';
+import { checkHashtagLimits } from './social-hashtag-limit.util';
 import type { GptImagePayload } from './social-image-pipeline.service';
 import type { SocialImagePipelineService } from './social-image-pipeline.service';
 import { normalizeHashtag } from './social.helpers';
+
+// ---------------------------------------------------------------------------
+// max_hashtags_<platform> setting keys + fallback defaults.
+// Mirrors the constants in apps/api/src/routes/ai/social/catalog.ts (the GPT
+// is advised these same numbers) — kept in sync manually since the settings
+// table has no schema to enforce it centrally.
+// ---------------------------------------------------------------------------
+
+const HASHTAG_LIMIT_SETTING_KEYS = {
+    [SocialPlatformEnum.INSTAGRAM]: 'max_hashtags_instagram',
+    [SocialPlatformEnum.FACEBOOK]: 'max_hashtags_facebook',
+    [SocialPlatformEnum.X]: 'max_hashtags_x'
+} as const satisfies Record<SocialPlatformEnum, string>;
+
+const DEFAULT_MAX_HASHTAGS: Record<SocialPlatformEnum, number> = {
+    [SocialPlatformEnum.INSTAGRAM]: 30,
+    [SocialPlatformEnum.FACEBOOK]: 10,
+    [SocialPlatformEnum.X]: 5
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +109,12 @@ import { normalizeHashtag } from './social.helpers';
  * Discriminated result codes for the ingestion pipeline.
  * The route maps each to the appropriate HTTP status.
  */
-export type IngestionResultCode = 'SUCCESS' | 'CONFLICT' | 'ZERO_VALID_TARGETS' | 'INTERNAL_ERROR';
+export type IngestionResultCode =
+    | 'SUCCESS'
+    | 'CONFLICT'
+    | 'ZERO_VALID_TARGETS'
+    | 'HASHTAG_LIMIT_EXCEEDED'
+    | 'INTERNAL_ERROR';
 
 /**
  * Successful ingestion data payload.
@@ -97,6 +134,22 @@ export interface IngestionSuccessData {
     readonly assetStatus: 'uploaded' | 'pending' | 'none';
     /** Non-fatal warnings accumulated during the pipeline. */
     readonly warnings: readonly SocialDraftWarning[];
+    /**
+     * Campaign-slug resolution outcome (HOS-66 T-002, G-4/G-5). `null` when no
+     * `campaignSlug` was submitted; otherwise tells the GPT/operator whether
+     * the campaign was matched or newly created.
+     */
+    readonly campaignResolution: {
+        readonly id: string;
+        readonly slug: string;
+        readonly isNew: boolean;
+    } | null;
+    /** Same as `campaignResolution`, for `batchSlug`. */
+    readonly batchResolution: {
+        readonly id: string;
+        readonly slug: string;
+        readonly isNew: boolean;
+    } | null;
 }
 
 /**
@@ -114,6 +167,13 @@ export type IngestionResult =
           readonly error: {
               readonly message: string;
               readonly warnings: readonly SocialDraftWarning[];
+          };
+      }
+    | {
+          readonly code: 'HASHTAG_LIMIT_EXCEEDED';
+          readonly error: {
+              readonly message: string;
+              readonly violations: readonly HashtagLimitViolation[];
           };
       }
     | {
@@ -170,6 +230,7 @@ export class SocialDraftIngestionService {
     private readonly audienceModel: SocialAudienceModel;
     private readonly footerModel: SocialPostFooterModel;
     private readonly hashtagSetModel: SocialHashtagSetModel;
+    private readonly settingModel: SocialSettingModel;
     private readonly imagePipeline: SocialImagePipelineService | null;
 
     constructor(
@@ -185,7 +246,8 @@ export class SocialDraftIngestionService {
         batchModel?: SocialContentBatchModel,
         audienceModel?: SocialAudienceModel,
         footerModel?: SocialPostFooterModel,
-        hashtagSetModel?: SocialHashtagSetModel
+        hashtagSetModel?: SocialHashtagSetModel,
+        settingModel?: SocialSettingModel
     ) {
         this.postModel = postModel ?? new RealSocialPostModel();
         this.postTargetModel = postTargetModel ?? new RealSocialPostTargetModel();
@@ -198,6 +260,7 @@ export class SocialDraftIngestionService {
         this.audienceModel = audienceModel ?? new RealSocialAudienceModel();
         this.footerModel = footerModel ?? new RealSocialPostFooterModel();
         this.hashtagSetModel = hashtagSetModel ?? new RealSocialHashtagSetModel();
+        this.settingModel = settingModel ?? new RealSocialSettingModel();
         this.imagePipeline = imagePipeline ?? null;
     }
 
@@ -250,13 +313,31 @@ export class SocialDraftIngestionService {
             // ----------------------------------------------------------------
             // Step 2: Slug resolution (all optional, fail-soft)
             // ----------------------------------------------------------------
-            const [campaignId, batchId, audienceId, footerId, baseHashtagSetId] = await Promise.all(
-                [
-                    this.resolveSlugToId(payload.campaignSlug, (slug) =>
-                        this.campaignModel.findOne({ slug })
+            // campaignSlug/batchSlug are resolve-OR-CREATE (G-4/G-5): an unknown
+            // slug creates a new active row rather than dropping the association.
+            // All other slugs stay resolve-only (null on miss) — see the
+            // REGRESSION test locking this down.
+            const [campaignResolution, batchResolution, audienceId, footerId, baseHashtagSetId] =
+                await Promise.all([
+                    this.resolveOrCreateCampaignOrBatch(
+                        payload.campaignSlug,
+                        (slug) => this.campaignModel.findOne({ slug }),
+                        (slug) =>
+                            this.campaignModel.create({
+                                slug,
+                                name: this.slugToName(slug),
+                                active: true
+                            })
                     ),
-                    this.resolveSlugToId(payload.batchSlug, (slug) =>
-                        this.batchModel.findOne({ slug })
+                    this.resolveOrCreateCampaignOrBatch(
+                        payload.batchSlug,
+                        (slug) => this.batchModel.findOne({ slug }),
+                        (slug) =>
+                            this.batchModel.create({
+                                slug,
+                                name: this.slugToName(slug),
+                                active: true
+                            })
                     ),
                     this.resolveSlugToId(payload.audienceSlug, (slug) =>
                         this.audienceModel.findOne({ slug })
@@ -267,8 +348,9 @@ export class SocialDraftIngestionService {
                     this.resolveSlugToId(payload.baseHashtagSetSlug, (slug) =>
                         this.hashtagSetModel.findOne({ slug })
                     )
-                ]
-            );
+                ]);
+            const campaignId = campaignResolution?.id;
+            const batchId = batchResolution?.id;
 
             // ----------------------------------------------------------------
             // Step 3: Target validation
@@ -311,6 +393,57 @@ export class SocialDraftIngestionService {
                     error: {
                         message: 'No valid platform/format targets found in the payload',
                         warnings
+                    }
+                };
+            }
+
+            // ----------------------------------------------------------------
+            // Step 3b: Hashtag limit enforcement (HOS-64 / SPEC-297a G-1)
+            // ----------------------------------------------------------------
+            // The same hashtag set is posted to every target platform, so the
+            // draft's TOTAL hashtag count (curated + custom suggestions — both
+            // represent hashtags the GPT intends to attach, regardless of
+            // whether they matched the curated catalog) is checked against
+            // EACH target platform's configured max. A draft targeting both
+            // Instagram (max 30) and X (max 5) with 10 hashtags is rejected for
+            // exceeding X's limit even though it is fine for Instagram.
+            const totalHashtagCount =
+                (payload.curatedHashtags?.length ?? 0) +
+                (payload.customHashtagSuggestions?.length ?? 0);
+
+            const settingsResult = await this.settingModel.findAll({}, { pageSize: 50 });
+            const settingsMap = new Map<string, string>(
+                settingsResult.items.map((s) => [s.key as string, s.value as string])
+            );
+
+            const maxByPlatform: MaxHashtagsByPlatform = {
+                [SocialPlatformEnum.INSTAGRAM]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.INSTAGRAM]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.INSTAGRAM]
+                ),
+                [SocialPlatformEnum.FACEBOOK]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.FACEBOOK]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.FACEBOOK]
+                ),
+                [SocialPlatformEnum.X]: Number(
+                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.X]) ??
+                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.X]
+                )
+            };
+
+            const countsByPlatform: HashtagCountsByPlatform = {};
+            for (const target of validTargets) {
+                countsByPlatform[target.platform as SocialPlatformEnum] = totalHashtagCount;
+            }
+
+            const hashtagLimitCheck = checkHashtagLimits({ countsByPlatform, maxByPlatform });
+            if (!hashtagLimitCheck.ok) {
+                return {
+                    code: 'HASHTAG_LIMIT_EXCEEDED',
+                    error: {
+                        message:
+                            'Draft exceeds the configured hashtag limit for one or more target platforms',
+                        violations: hashtagLimitCheck.violations
                     }
                 };
             }
@@ -502,7 +635,9 @@ export class SocialDraftIngestionService {
                     approvalStatus: 'PENDING',
                     targetsCreated: validTargets.length,
                     assetStatus,
-                    warnings
+                    warnings,
+                    campaignResolution,
+                    batchResolution
                 }
             };
         } catch (err) {
@@ -543,5 +678,56 @@ export class SocialDraftIngestionService {
         } catch {
             return null;
         }
+    }
+
+    /**
+     * Resolves a campaign/batch slug to its row, creating a new active one
+     * when no match exists (G-4/G-5 — explicit-name resolution: match →
+     * associate, no match → create). Unlike {@link resolveSlugToId}, a lookup
+     * or creation failure returns `null` (fail-soft — the draft still ships).
+     *
+     * The `isNew` flag on the result lets the caller echo the resolution
+     * outcome back to the GPT/operator (HOS-66 T-002).
+     *
+     * @param slug - Optional campaign/batch slug from the request payload.
+     * @param finder - Async function that queries the model by slug.
+     * @param creator - Async function that creates a new row for the slug.
+     * @returns `{ id, slug, isNew }` (existing or newly created) or null.
+     */
+    private async resolveOrCreateCampaignOrBatch(
+        slug: string | undefined,
+        finder: (slug: string) => Promise<{ id: unknown } | null | undefined>,
+        creator: (slug: string) => Promise<{ id: unknown } | null | undefined>
+    ): Promise<{ id: string; slug: string; isNew: boolean } | null> {
+        if (!slug) return null;
+        try {
+            const existing = await finder(slug);
+            if (existing && typeof existing.id === 'string') {
+                return { id: existing.id, slug, isNew: false };
+            }
+
+            const created = await creator(slug);
+            return created && typeof created.id === 'string'
+                ? { id: created.id, slug, isNew: true }
+                : null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Derives a human-readable name from a slug (e.g. "hospeda-launch-2026-06"
+     * → "Hospeda Launch 2026 06") for a newly created campaign/batch row, since
+     * the GPT only supplies a slug, never a display name.
+     *
+     * @param slug - The slug to derive a name from.
+     * @returns Title-cased, space-separated name.
+     */
+    private slugToName(slug: string): string {
+        return slug
+            .split(/[-_]+/)
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     }
 }
