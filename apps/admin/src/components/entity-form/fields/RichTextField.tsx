@@ -17,12 +17,51 @@ import {
     QuotesIcon,
     UnderlineIcon
 } from '@repo/icons';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import * as React from 'react';
 import { Markdown } from 'tiptap-markdown';
+
+/**
+ * Reads the Markdown serialization from a TipTap editor.
+ *
+ * `tiptap-markdown@0.9.0` ships no Tiptap v3 `Storage` type augmentation, so
+ * `editor.storage.markdown` is untyped under v3. Narrow it here (once) instead
+ * of casting at every call site. Exported so the compatibility test reads the
+ * value the same way the component does.
+ */
+export function readMarkdown(editor: { storage: unknown }): string {
+    const storage = editor.storage as { markdown?: { getMarkdown?: () => string } };
+    return storage.markdown?.getMarkdown?.() ?? '';
+}
+
+/**
+ * TipTap extension set for the entity-form rich-text field.
+ *
+ * Exported so the v3 compatibility test mounts the exact configuration the
+ * component ships. v3 bundles Link and Underline into StarterKit; the bundled
+ * Link keeps the previous `openOnClick: false` + styling `HTMLAttributes`.
+ */
+export const RICH_TEXT_FIELD_EXTENSIONS = [
+    StarterKit.configure({
+        // Headings exposed via toolbar — limit to h2/h3 to keep the admin's
+        // typographic hierarchy intact (h1 is reserved for the page title in
+        // EntityPageHeader).
+        heading: { levels: [2, 3] },
+        link: {
+            openOnClick: false,
+            HTMLAttributes: {
+                class: 'text-primary underline underline-offset-2 hover:no-underline'
+            }
+        }
+    }),
+    Markdown.configure({
+        html: false, // round-trip strictly via markdown
+        linkify: true,
+        breaks: false,
+        transformPastedText: true
+    })
+];
 
 /**
  * Props for RichTextField component.
@@ -110,27 +149,7 @@ export function RichTextField({
         immediatelyRender: false,
         editable: !disabled,
         content: value,
-        extensions: [
-            StarterKit.configure({
-                // Headings exposed via toolbar — limit to h2/h3 to keep the
-                // admin's typographic hierarchy intact (h1 is reserved for the
-                // page title in EntityPageHeader).
-                heading: { levels: [2, 3] }
-            }),
-            Underline,
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: 'text-primary underline underline-offset-2 hover:no-underline'
-                }
-            }),
-            Markdown.configure({
-                html: false, // round-trip strictly via markdown
-                linkify: true,
-                breaks: false,
-                transformPastedText: true
-            })
-        ],
+        extensions: RICH_TEXT_FIELD_EXTENSIONS,
         editorProps: {
             attributes: {
                 id: fieldId,
@@ -148,7 +167,7 @@ export function RichTextField({
             }
         },
         onUpdate({ editor: ed }) {
-            const md = ed.storage.markdown?.getMarkdown?.() ?? '';
+            const md = readMarkdown(ed);
             onChange?.(md);
         },
         onBlur() {
@@ -164,9 +183,9 @@ export function RichTextField({
     // selection state on every keystroke.
     React.useEffect(() => {
         if (!editor) return;
-        const currentMd: string = editor.storage.markdown?.getMarkdown?.() ?? '';
+        const currentMd: string = readMarkdown(editor);
         if ((value ?? '') !== currentMd) {
-            editor.commands.setContent(value ?? '', false);
+            editor.commands.setContent(value ?? '', { emitUpdate: false });
         }
     }, [editor, value]);
 
