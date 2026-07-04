@@ -66,11 +66,7 @@ export default defineConfig({
             HOSPEDA_ADMIN_URL: 'http://localhost:3000'
         },
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         testTimeout: 15000,
         css: {
             modules: {

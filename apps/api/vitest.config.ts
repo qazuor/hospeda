@@ -14,11 +14,7 @@ export default defineConfig({
         // headroom; the real fix (cutting per-file cold-import cost) is tracked in SPEC-188.
         testTimeout: 30000,
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
         // E2E and integration tests run separately with vitest.config.e2e.ts
         exclude: ['test/e2e/**/*.test.ts', 'test/integration/**/*.test.ts', 'node_modules/**'],

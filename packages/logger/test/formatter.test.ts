@@ -36,6 +36,7 @@ describe('formatter', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
     });
 
     // =========================================================================
@@ -420,9 +421,13 @@ describe('formatter', () => {
         });
 
         it('should zero-pad single-digit date/time components', () => {
-            // Use a date known to have single-digit components
-            const mockDate = new Date('2025-01-05T03:07:09Z');
-            vi.spyOn(global, 'Date').mockImplementation(() => mockDate);
+            // Use a date known to have single-digit components.
+            // Vitest 4 (HOS-28): mocking the Date constructor via
+            // `vi.spyOn(global, 'Date').mockImplementation(() => date)` throws
+            // "is not a constructor" because an arrow function can't back `new`.
+            // Fake timers + setSystemTime is the idiomatic way to pin `new Date()`.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2025-01-05T03:07:09Z'));
 
             const ts = formatTimestamp();
             // The ISO date part is always zero-padded, and toTimeString also zero-pads

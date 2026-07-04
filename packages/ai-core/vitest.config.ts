@@ -13,11 +13,7 @@ export default defineConfig({
         // (SPEC-188 / fix/api-testtimeout-coldimport).
         testTimeout: 30000,
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         include: ['test/**/*.test.ts'],
         coverage: {
             provider: 'v8',
