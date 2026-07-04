@@ -1,6 +1,6 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 21/27 tasks (78%)
+## Progress: 23/27 tasks (85%) — all non-blocked tasks complete; only G-8 (T-013..T-016) remains, blocked on HOS-65
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
@@ -83,7 +83,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-022
   - Blocks: T-024
 
-- [ ] **T-025** (complexity: 1) - Create /marketing hub landing page
+- [x] **T-025** (complexity: 1) - Create /marketing hub landing page (`marketing/index.tsx`; delegated + orchestrator-verified)
   - Blocked by: none
   - Blocks: T-026
 
@@ -118,7 +118,7 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 - [x] **T-024** (complexity: 2) - Verify public-data-pull scoping and auth end-to-end (`social-public-data-scope.test.ts`, 6 tests — R-1 guard)
   - Blocked by: T-023
 
-- [ ] **T-026** (complexity: 1) - Verify AC-7 marketing hub route
+- [x] **T-026** (complexity: 1) - Verify AC-7 marketing hub route (`marketing/index.test.tsx`, 1 test)
   - Blocked by: T-025
 
 ### Docs Phase

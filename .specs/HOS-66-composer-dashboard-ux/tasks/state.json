@@ -835,59 +835,59 @@
         {
             "id": "T-025",
             "title": "Create /marketing hub landing page",
-            "description": "Create a new admin index route (`apps/admin/src/routes/_authed/marketing/index.tsx`) linking to `/social` and `/newsletter`, matching existing admin layout patterns (the \"Marketing\" sidebar already groups both sections per SPEC-254 \u2014 only the landing page itself is missing).\n\nTest requirements:\n- Route test: page renders both links, matches existing layout conventions (reuse an existing hub/index page as the visual reference if one exists elsewhere in admin).",
-            "status": "pending",
+            "description": "Create a new admin index route (`apps/admin/src/routes/_authed/marketing/index.tsx`) linking to `/social` and `/newsletter`, matching existing admin layout patterns (the \"Marketing\" sidebar already groups both sections per SPEC-254 \u2014 only the landing page itself is missing).\n\nTest requirements:\n- Route test: page renders both links, matches existing layout conventions (reuse an existing hub/index page as the visual reference if one exists elsewhere in admin).\n\nDONE (2026-07-03): created `apps/admin/src/routes/_authed/marketing/index.tsx` (createFileRoute('/_authed/marketing/'), SidebarPageLayout + two Card links). Social card \u2192 /social; Newsletter card \u2192 /newsletter/campaigns (NOT /newsletter \u2014 there is no newsletter index route, only campaigns/subscribers). Icons PostIcon + NewsletterIcon from @repo/icons (same names as marketingSidebar). No RoutePermissionGuard, matching the sibling /sponsor landing (pure navigation, each sub-section guards its own routes). i18n: added `admin-pages.marketing.{title,subtitle,social.{title,description},newsletter.{title,description}}` in es/en/pt. Delegated + orchestrator-verified: git clean, i18n + vite(routeTree) builds ran, test 1/1 green re-run, tsc + biome clean.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Create marketing/index.tsx route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add links to /social and /newsletter",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-11", "frontend", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-03T23:55:00Z",
+                "completed": "2026-07-04T00:15:00Z"
             }
         },
         {
             "id": "T-026",
             "title": "Verify AC-7 marketing hub route",
-            "description": "Write a route test verifying AC-7: `/marketing` renders and links correctly to both `/social` and `/newsletter` sections.\n\nTest requirements:\n- Route test asserting both links are present and point to the correct paths.",
-            "status": "pending",
+            "description": "Write a route test verifying AC-7: `/marketing` renders and links correctly to both `/social` and `/newsletter` sections.\n\nTest requirements:\n- Route test asserting both links are present and point to the correct paths.\n\nDONE (2026-07-03): `apps/admin/test/routes/_authed/marketing/index.test.tsx` renders the route component and asserts both cards link to the correct paths (`/social` and `/newsletter/campaigns`) via each link's href. Leans on the global admin test setup (mocked @tanstack/react-router Link → plain <a href>, mocked useTranslations → key verbatim), so no per-test mocking needed. 1/1 green (verified), tsc + biome clean.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-025"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test: /marketing renders with both links",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["G-11", "testing", "admin"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-07-03T12:51:33.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T00:15:00Z",
+                "completed": "2026-07-04T00:18:00Z"
             }
         },
         {
@@ -924,9 +924,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 23,
         "blocked": 4,
         "averageComplexity": 2.0
     }
