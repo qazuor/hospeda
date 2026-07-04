@@ -2094,5 +2094,60 @@ export const HOSPEDA_ENV_VARS = [
             'Set to "true" ONLY on a local/e2e API process to enable deterministic QZPay failure injection. Never set it in staging or production.',
         howToObtainEs:
             'Setear en "true" SOLO en un proceso de API local/e2e para habilitar la inyección determinística de fallos de QZPay. Nunca setearla en staging ni producción.'
+    },
+    {
+        name: 'CLOUDFLARE_ZONE_ID',
+        description:
+            'Cloudflare Zone ID for the hospeda.com.ar zone. Used by the web ISR revalidation endpoint (/api/revalidate) to target the Cloudflare cache-purge API. Required in production for on-demand cache revalidation; unused locally (no Cloudflare cache in front of dev).',
+        descriptionEs:
+            'Zone ID de Cloudflare de la zona hospeda.com.ar. Lo usa el endpoint de revalidación ISR de la web (/api/revalidate) para apuntar a la API de purga de cache de Cloudflare. Requerido en producción para la revalidación on-demand; sin uso en local (no hay cache de Cloudflare delante del dev).',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: 'your-cloudflare-zone-id',
+        apps: ['web'],
+        category: 'integrations',
+        helpUrl: 'https://dash.cloudflare.com/',
+        howToObtain:
+            'Cloudflare Dashboard → select the hospeda.com.ar zone → the Zone ID is shown in the right-hand "API" panel of the Overview page.',
+        howToObtainEs:
+            'Cloudflare Dashboard → elegí la zona hospeda.com.ar → el Zone ID aparece en el panel "API" a la derecha de la página Overview.'
+    },
+    {
+        name: 'CLOUDFLARE_API_TOKEN',
+        description:
+            'Cloudflare API token with cache-purge permission on the hospeda.com.ar zone. Used by the web ISR revalidation endpoint (/api/revalidate) to authenticate cache-purge calls. Required in production for on-demand cache revalidation; unused locally.',
+        descriptionEs:
+            'Token de API de Cloudflare con permiso de purga de cache sobre la zona hospeda.com.ar. Lo usa el endpoint de revalidación ISR de la web (/api/revalidate) para autenticar las llamadas de purga. Requerido en producción para la revalidación on-demand; sin uso en local.',
+        type: 'string',
+        required: false,
+        requiredScope: 'production',
+        secret: true,
+        exampleValue: 'your-cloudflare-api-token',
+        apps: ['web'],
+        category: 'integrations',
+        helpUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+        howToObtain:
+            'Cloudflare Dashboard → My Profile → API Tokens → Create Token → grant "Zone.Cache Purge" on the hospeda.com.ar zone. Set in Coolify for hospeda-web-prod as a secret.',
+        howToObtainEs:
+            'Cloudflare Dashboard → My Profile → API Tokens → Create Token → otorgá "Zone.Cache Purge" sobre la zona hospeda.com.ar. Configurar en Coolify para hospeda-web-prod como secreto.'
+    },
+    {
+        name: 'HOSPEDA_SEED_SUPER_ADMIN_EMAIL',
+        description:
+            'Super admin email for seeding. Overrides the JSON default email of the bootstrapped super-admin user during db:seed. Optional — falls back to the seed JSON default when unset.',
+        descriptionEs:
+            'Email del super admin para el seed. Sobrescribe el email por defecto del JSON para el usuario super-admin que crea db:seed. Opcional — si no se setea, cae al default del JSON de seed.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'admin@hospeda.com.ar',
+        apps: ['seed'],
+        category: 'database',
+        howToObtain:
+            'Set to override the default super-admin email used at db:seed time. Used only at seed time; you can change it later via the admin UI.',
+        howToObtainEs:
+            'Setear para sobrescribir el email por defecto del super-admin que se usa al correr db:seed. Solo se usa al sembrar; después lo podés cambiar desde la UI del admin.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
