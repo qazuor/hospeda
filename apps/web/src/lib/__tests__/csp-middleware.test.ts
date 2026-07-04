@@ -178,10 +178,10 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         expect(scriptSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('frame-src is none (MercadoPago checkout is a redirect, not an embedded Brick — no allowlist needed, see HOS-30 2.B)', () => {
+    it('frame-src allowlists only the Cloudflare Turnstile host (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
-        expect(frameSrc).toBe("frame-src 'none'");
+        expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
     });
 });
 
