@@ -7,11 +7,18 @@
  * adapter with `staticHeaders: true` does NOT set content-type on the
  * Response object returned from `next()` for prerendered pages (the MIME
  * type is set by the file server after the middleware pipeline). The fix
- * introduces `context.isPrerendered` as a fallback signal so the CSP header
- * reaches static pages even when content-type is absent. This fallback is
- * still exercised by the app's other prerendered routes (nosotros, legal/*,
- * faq, contacto, etc.) — see the "index.astro (home)" describe block below
- * for the home-specific fix.
+ * introduced `context.isPrerendered` as a fallback signal so the CSP header
+ * reaches static pages even when content-type is absent.
+ *
+ * HOS-74 (2026-07-04) superseded that approach: `context.isPrerendered` never
+ * actually delivered the header for a SERVED response — @astrojs/node standalone
+ * serves prerendered files off-disk without re-running middleware, so the header
+ * set at build time is discarded. The real fix was to move every content route
+ * OFF `prerender` onto the SSR path (nosotros, legal/*, faq, contacto, colaborar,
+ * beneficios, etc.). The only route left prerendered is `beta/[...slug].astro`
+ * (private noindex docs, OQ-3), which is allowlisted below and accepted to ship
+ * without CSP. The `context.isPrerendered` branch in middleware.ts is now a
+ * vestigial defensive guard; the guard tests below only assert it wasn't deleted.
  *
  * Tests:
  * - Regression guard: middleware source contains the isPrerendered fallback.
@@ -35,13 +42,34 @@
  * the prerendered path.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCspHeader, generateCspNonce } from '../middleware-helpers';
 
 const MIDDLEWARE_SRC = readFileSync(resolve(__dirname, '../../middleware.ts'), 'utf8');
-const HOME_PAGE_SRC = readFileSync(resolve(__dirname, '../../pages/[lang]/index.astro'), 'utf8');
+const PAGES_DIR = resolve(__dirname, '../../pages');
+
+/**
+ * Routes intentionally kept prerendered despite HOS-74 (OQ-3). These ship
+ * WITHOUT the middleware CSP header by design — see each file's JSDoc. Paths are
+ * relative to `src/pages`, forward-slash normalized.
+ */
+const PRERENDER_ALLOWLIST = new Set<string>(['beta/[...slug].astro']);
+
+/** Recursively collect every `.astro` page file under `src/pages`. */
+const collectAstroPages = (dir: string): readonly string[] => {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            out.push(...collectAstroPages(full));
+        } else if (entry.name.endsWith('.astro')) {
+            out.push(full);
+        }
+    }
+    return out;
+};
 
 // ---------------------------------------------------------------------------
 // Regression guard — SPEC-142 T-004 fix must stay in the middleware source
@@ -95,13 +123,28 @@ describe('CSP_HEADER_NAME — enforce mode, not Report-Only (HOS-30 T-020)', () 
 // index.astro (home) — HOS-30 2.C regression guard
 // ---------------------------------------------------------------------------
 
-describe('pages/[lang]/index.astro (home) — stays off the prerendered path (HOS-30 2.C)', () => {
-    it('does not declare prerender = true', () => {
-        expect(HOME_PAGE_SRC).not.toContain('prerender = true');
+describe('apps/web pages — no route re-introduces prerender except the allowlist (HOS-74)', () => {
+    const pages = collectAstroPages(PAGES_DIR);
+
+    it('walks a non-trivial number of page files (walker sanity)', () => {
+        expect(pages.length).toBeGreaterThan(20);
     });
 
-    it('does not declare getStaticPaths (only meaningful for prerendered routes)', () => {
-        expect(HOME_PAGE_SRC).not.toContain('getStaticPaths');
+    it('no page declares `export const prerender = true` except the documented exceptions', () => {
+        const offenders = pages
+            .filter((file) =>
+                /export\s+const\s+prerender\s*=\s*true/.test(readFileSync(file, 'utf8'))
+            )
+            .map((file) => relative(PAGES_DIR, file).split(/[/\\]/).join('/'))
+            .filter((rel) => !PRERENDER_ALLOWLIST.has(rel));
+        // A non-empty list means a route shipped without the middleware CSP header
+        // (prerendered files bypass middleware at runtime — the exact HOS-74 bug).
+        expect(offenders).toEqual([]);
+    });
+
+    it('the beta docs catch-all stays prerendered — allowlist remains meaningful (HOS-74 OQ-3)', () => {
+        const beta = join(PAGES_DIR, 'beta', '[...slug].astro');
+        expect(readFileSync(beta, 'utf8')).toMatch(/export\s+const\s+prerender\s*=\s*true/);
     });
 });
 
