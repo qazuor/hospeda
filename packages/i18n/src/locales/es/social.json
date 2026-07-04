@@ -8,6 +8,15 @@
             "publishedLast30Days": "Publicados (30 días)",
             "failedActionNeeded": "Fallidos"
         },
+        "filters": {
+            "from": "Desde",
+            "to": "Hasta",
+            "reset": "Limpiar"
+        },
+        "platformBreakdown": {
+            "title": "Por plataforma",
+            "empty": "No hay datos de plataforma para este rango"
+        },
         "approvalQueue": {
             "title": "Cola de aprobación",
             "empty": "No hay posts pendientes de aprobación",
@@ -49,6 +58,7 @@
         },
         "table": {
             "ariaLabel": "Lista de posts sociales",
+            "colThumbnail": "Miniatura",
             "colTitle": "Título",
             "colStatus": "Estado",
             "colApprovalStatus": "Aprobación",

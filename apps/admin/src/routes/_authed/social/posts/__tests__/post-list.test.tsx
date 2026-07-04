@@ -290,4 +290,33 @@ describe('SocialPostsTable', () => {
         const btn = screen.getByTestId('approve-btn-p-1');
         expect(btn).not.toBeDisabled();
     });
+
+    // -- Thumbnail column (HOS-66 T-011) -----------------------------------------
+
+    it('renders the thumbnail image when thumbnailUrl is present', () => {
+        const posts = [makePost({ id: 'p-1', thumbnailUrl: 'https://cdn.example.com/thumb.jpg' })];
+
+        render(
+            <TestWrapper>
+                <SocialPostsTable items={posts} />
+            </TestWrapper>
+        );
+
+        const img = screen.getByTestId('post-thumbnail-p-1');
+        expect(img).toBeInTheDocument();
+        expect(img).toHaveAttribute('src', 'https://cdn.example.com/thumb.jpg');
+    });
+
+    it('renders a fallback placeholder when thumbnailUrl is null', () => {
+        const posts = [makePost({ id: 'p-1', thumbnailUrl: null })];
+
+        render(
+            <TestWrapper>
+                <SocialPostsTable items={posts} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('post-thumbnail-placeholder-p-1')).toBeInTheDocument();
+        expect(screen.queryByTestId('post-thumbnail-p-1')).not.toBeInTheDocument();
+    });
 });

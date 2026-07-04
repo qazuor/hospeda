@@ -6,6 +6,9 @@ export * from './social-catalog.http.schema.js';
 // AI draft ingestion HTTP schema (T-028, T-029)
 export * from './social-draft.http.schema.js';
 
+// AI public-data-pull enrichment HTTP schema (HOS-66 T-021, G-10)
+export * from './social-public-data.http.schema.js';
+
 // FULL entities (schema + crud + admin-search)
 export * from './social-campaign.index.js';
 export * from './social-content-batch.index.js';

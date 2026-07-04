@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useApproveSocialPost } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 
+import { ImageIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
 import { Link } from '@tanstack/react-router';
@@ -64,6 +65,9 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
                 <thead className="bg-muted/50 text-left">
                     <tr>
                         <th className="px-4 py-3 font-medium">
+                            {t('social.posts.table.colThumbnail')}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
                             {t('social.posts.table.colTitle')}
                         </th>
                         <th className="px-4 py-3 font-medium">
@@ -90,6 +94,25 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
                             className="border-t hover:bg-muted/20"
                             data-testid={`post-row-${post.id}`}
                         >
+                            {/* Thumbnail */}
+                            <td className="px-4 py-3">
+                                {post.thumbnailUrl ? (
+                                    <img
+                                        src={post.thumbnailUrl}
+                                        alt=""
+                                        data-testid={`post-thumbnail-${post.id}`}
+                                        className="h-10 w-10 rounded object-cover"
+                                    />
+                                ) : (
+                                    <div
+                                        data-testid={`post-thumbnail-placeholder-${post.id}`}
+                                        className="flex h-10 w-10 items-center justify-center rounded bg-muted text-muted-foreground"
+                                    >
+                                        <ImageIcon className="h-4 w-4" />
+                                    </div>
+                                )}
+                            </td>
+
                             {/* Title */}
                             <td className="max-w-xs px-4 py-3 font-medium">
                                 <Link

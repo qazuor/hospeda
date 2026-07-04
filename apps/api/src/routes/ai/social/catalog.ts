@@ -77,7 +77,8 @@ export const socialCatalogRoute = createApiKeyRoute({
     path: '/',
     summary: 'GPT social catalog',
     description:
-        'Returns the full read-only catalog (hashtags, sets, footers, platform formats, campaigns, batches, audiences, defaults) the Custom GPT fetches before drafting a post.',
+        'Returns the full read-only catalog (hashtags, sets, footers, platform formats, campaigns, batches, audiences, defaults) the Custom GPT fetches before drafting a post. ' +
+        'campaigns/batches list every ACTIVE row; when no explicit campaign/batch name is given for a draft, the GPT reasons over these lists to propose an association (see POST /drafts for the near-duplicate confirmation flow).',
     tags: ['AI - Social'],
     apiKeyConfig: {
         headerName: 'x-hospeda-ai-key',
