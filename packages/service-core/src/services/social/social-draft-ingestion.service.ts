@@ -64,6 +64,7 @@ import {
 } from '@repo/db';
 import {
     SocialApprovalStatusEnum,
+    type SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialSourceEnum
@@ -80,6 +81,8 @@ import type {
 import { checkHashtagLimits } from './social-hashtag-limit.util';
 import type { GptImagePayload } from './social-image-pipeline.service';
 import type { SocialImagePipelineService } from './social-image-pipeline.service';
+import type { TargetAsset } from './social-target-assets.util';
+import { resolveTargetAssets } from './social-target-assets.util';
 import { normalizeHashtag } from './social.helpers';
 
 // ---------------------------------------------------------------------------
@@ -364,6 +367,8 @@ export class SocialDraftIngestionService {
                 platform: string;
                 publishFormat: string;
                 mediaType: string;
+                /** The target's OWN media assets (HOS-65 G-3), carried forward for T-018 per-target dispatch. */
+                assets?: TargetAsset[];
             }> = [];
 
             for (let i = 0; i < payload.targets.length; i++) {
@@ -381,7 +386,8 @@ export class SocialDraftIngestionService {
                         platformFormatId: pf.id as string,
                         platform: target.platform,
                         publishFormat: target.publishFormat,
-                        mediaType: pf.mediaType as string
+                        mediaType: pf.mediaType as string,
+                        assets: target.assets
                     });
                 } else {
                     warnings.push({
@@ -540,15 +546,28 @@ export class SocialDraftIngestionService {
 
             const postId = newPost.id as string;
 
-            // Create social_post_targets rows
+            // Create social_post_targets rows, capturing each created row's id
+            // so the media pipeline (Step 8) can scope `social_post_target_media`
+            // link rows to the correct target (HOS-65 T-018).
+            const createdTargets: Array<{
+                id: string;
+                mediaType: string;
+                assets?: TargetAsset[];
+            }> = [];
+
             for (const target of validTargets) {
-                await this.postTargetModel.create({
+                const createdTarget = await this.postTargetModel.create({
                     socialPostId: postId,
                     platformFormatId: target.platformFormatId,
                     platform: target.platform,
                     publishFormat: target.publishFormat,
                     mediaType: target.mediaType,
                     status: SocialPostStatusEnum.NEEDS_REVIEW
+                });
+                createdTargets.push({
+                    id: createdTarget.id as string,
+                    mediaType: target.mediaType,
+                    assets: target.assets
                 });
             }
 
@@ -587,36 +606,99 @@ export class SocialDraftIngestionService {
             }
 
             // ----------------------------------------------------------------
-            // Step 8: Image pipeline
+            // Step 8: Media pipeline — per-target asset dispatch (HOS-65 T-018)
             // ----------------------------------------------------------------
+            // Each target's media is resolved and dispatched independently via
+            // resolveTargetAssets (HOS-65 T-014): a target with its OWN `assets`
+            // uses those; otherwise it falls back to the post-level legacy
+            // `image` field ONLY when its resolved media type is not NONE.
+            // TEXT_POST/NONE targets always resolve to zero assets, so they
+            // never dispatch and never create a social_post_target_media link row.
             let assetStatus: 'uploaded' | 'pending' | 'none' = 'none';
 
-            if (payload.image) {
-                // Thread the root-level `openaiFileIdRefs` (injected by OpenAI
-                // at the request-body root) into the image payload that the
-                // pipeline expects. The Zod schema moved `openaiFileIdRefs` out
-                // of the `image` sub-object to the request root so OpenAI can
-                // auto-populate it; the pipeline's internal `GptImagePayload`
-                // type still carries the field for unified access within the
-                // download logic.
-                const imagePayload: GptImagePayload = {
-                    ...payload.image,
-                    openaiFileIdRefs:
-                        payload.openaiFileIdRefs as GptImagePayload['openaiFileIdRefs']
-                };
+            // Thread the root-level `openaiFileIdRefs` (injected by OpenAI at
+            // the request-body root) into the legacy image payload — this is
+            // the post-level fallback used by targets with no assets of their
+            // own. The Zod schema moved `openaiFileIdRefs` out of the `image`
+            // sub-object to the request root so OpenAI can auto-populate it;
+            // the pipeline's internal `GptImagePayload` type still carries the
+            // field for unified access within the download logic.
+            const legacyImage: GptImagePayload | undefined = payload.image
+                ? {
+                      ...payload.image,
+                      openaiFileIdRefs:
+                          payload.openaiFileIdRefs as GptImagePayload['openaiFileIdRefs']
+                  }
+                : undefined;
 
+            const targetAssetPlans = createdTargets.map((target) => ({
+                target,
+                assets: resolveTargetAssets({
+                    target: { assets: target.assets },
+                    legacyImage,
+                    targetMediaType: target.mediaType as SocialMediaTypeEnum
+                })
+            }));
+
+            const anyAssetsNeeded = targetAssetPlans.some((plan) => plan.assets.length > 0);
+
+            if (anyAssetsNeeded) {
                 if (this.imagePipeline) {
-                    const imageResult = await this.imagePipeline.processImage({
-                        image: imagePayload,
-                        socialPostId: postId,
-                        actorId
-                    });
+                    const pipeline = this.imagePipeline;
+                    let anyUploaded = false;
 
-                    for (const w of imageResult.warnings) {
-                        warnings.push({ field: 'image', message: w });
+                    for (const plan of targetAssetPlans) {
+                        if (plan.assets.length === 0) continue;
+
+                        const imageAssets = plan.assets.flatMap((a) => (a.image ? [a.image] : []));
+                        const videoAssets = plan.assets.flatMap((a) => (a.video ? [a.video] : []));
+
+                        if (imageAssets.length === 1) {
+                            const soleImage = imageAssets[0];
+                            if (soleImage) {
+                                const imageResult = await pipeline.processImage({
+                                    image: soleImage,
+                                    socialPostId: postId,
+                                    socialPostTargetId: plan.target.id,
+                                    actorId
+                                });
+                                for (const w of imageResult.warnings) {
+                                    warnings.push({ field: 'image', message: w });
+                                }
+                                anyUploaded = anyUploaded || !!imageResult.cloudinaryUrl;
+                            }
+                        } else if (imageAssets.length > 1) {
+                            const imageResults = await pipeline.processImages(
+                                imageAssets.map((image) => ({
+                                    image,
+                                    socialPostId: postId,
+                                    socialPostTargetId: plan.target.id,
+                                    actorId
+                                }))
+                            );
+                            for (const imageResult of imageResults) {
+                                for (const w of imageResult.warnings) {
+                                    warnings.push({ field: 'image', message: w });
+                                }
+                                anyUploaded = anyUploaded || !!imageResult.cloudinaryUrl;
+                            }
+                        }
+
+                        for (const video of videoAssets) {
+                            const videoResult = await pipeline.processVideo({
+                                video,
+                                socialPostId: postId,
+                                socialPostTargetId: plan.target.id,
+                                actorId
+                            });
+                            for (const w of videoResult.warnings) {
+                                warnings.push({ field: 'video', message: w });
+                            }
+                            anyUploaded = anyUploaded || !!videoResult.cloudinaryUrl;
+                        }
                     }
 
-                    assetStatus = imageResult.cloudinaryUrl ? 'uploaded' : 'pending';
+                    assetStatus = anyUploaded ? 'uploaded' : 'pending';
                 } else {
                     // No image pipeline configured (e.g. unit tests without media provider)
                     assetStatus = 'pending';

@@ -116,7 +116,12 @@ function buildImagePipelineMock(result: {
     warnings: string[];
 }): SocialImagePipelineService {
     return {
-        processImage: vi.fn().mockResolvedValue(result)
+        processImage: vi.fn().mockResolvedValue(result),
+        // HOS-65 T-018: per-target dispatch also reaches for these two methods.
+        // Stubbed here so existing single-image tests (which never call them)
+        // keep working unmodified, and new per-target tests can override them.
+        processImages: vi.fn().mockResolvedValue([result]),
+        processVideo: vi.fn().mockResolvedValue(result)
     } as unknown as SocialImagePipelineService;
 }
 
@@ -562,6 +567,192 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(
                 (callArg.image.openaiFileIdRefs[0] as { download_link: string }).download_link
             ).toBe('https://files.oaiusercontent.com/fake.jpg');
+        });
+    });
+
+    // --- Per-target media dispatch (HOS-65 T-018) ---
+
+    describe('per-target media dispatch (HOS-65 T-018)', () => {
+        /** Returns a distinct `social_post_targets` row id for each successive call. */
+        function buildSequentialPostTargetModel() {
+            const m = createModelMock();
+            let callCount = 0;
+            m.create.mockImplementation(async () => {
+                callCount += 1;
+                return { id: `target-${callCount}` };
+            });
+            return m;
+        }
+
+        it('scopes each target own assets to its own dispatch — no cross-target leak', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.platform === SocialPlatformEnum.INSTAGRAM) {
+                        return buildPlatformFormatRow({
+                            platform: 'INSTAGRAM',
+                            publishFormat: 'FEED_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    if (where.platform === SocialPlatformEnum.FACEBOOK) {
+                        return buildPlatformFormatRow({
+                            platform: 'FACEBOOK',
+                            publishFormat: 'PHOTO_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    return null;
+                }
+            );
+            const postTargetModel = buildSequentialPostTargetModel();
+            const imagePipeline = buildImagePipelineMock({
+                assetId: 'asset-uuid',
+                cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, postTargetModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST,
+                            assets: [
+                                { image: { mode: 'public_url', url: 'https://example.com/a.jpg' } }
+                            ]
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST,
+                            assets: [
+                                { image: { mode: 'public_url', url: 'https://example.com/b.jpg' } }
+                            ]
+                        }
+                    ]
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            const processImageMock = imagePipeline.processImage as ReturnType<typeof vi.fn>;
+            expect(processImageMock).toHaveBeenCalledTimes(2);
+
+            const callForA = processImageMock.mock.calls.find(
+                (call) =>
+                    (call[0] as { image: { url?: string } }).image.url ===
+                    'https://example.com/a.jpg'
+            );
+            const callForB = processImageMock.mock.calls.find(
+                (call) =>
+                    (call[0] as { image: { url?: string } }).image.url ===
+                    'https://example.com/b.jpg'
+            );
+
+            expect(callForA?.[0]).toMatchObject({ socialPostTargetId: 'target-1' });
+            expect(callForB?.[0]).toMatchObject({ socialPostTargetId: 'target-2' });
+        });
+
+        it('applies the legacy root image fallback to every IMAGE-needing target when none carry their own assets', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.platform === SocialPlatformEnum.INSTAGRAM) {
+                        return buildPlatformFormatRow({
+                            platform: 'INSTAGRAM',
+                            publishFormat: 'FEED_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    if (where.platform === SocialPlatformEnum.FACEBOOK) {
+                        return buildPlatformFormatRow({
+                            platform: 'FACEBOOK',
+                            publishFormat: 'PHOTO_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    return null;
+                }
+            );
+            const postTargetModel = buildSequentialPostTargetModel();
+            const imagePipeline = buildImagePipelineMock({
+                assetId: 'asset-uuid',
+                cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, postTargetModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST
+                        }
+                    ],
+                    image: { mode: 'public_url', url: 'https://example.com/legacy.jpg' }
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            const processImageMock = imagePipeline.processImage as ReturnType<typeof vi.fn>;
+            expect(processImageMock).toHaveBeenCalledTimes(2);
+            expect(processImageMock).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({
+                    image: expect.objectContaining({ url: 'https://example.com/legacy.jpg' }),
+                    socialPostTargetId: 'target-1'
+                })
+            );
+            expect(processImageMock).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({
+                    image: expect.objectContaining({ url: 'https://example.com/legacy.jpg' }),
+                    socialPostTargetId: 'target-2'
+                })
+            );
+        });
+
+        it('dispatches zero media calls for a TEXT_POST/NONE target even with a legacy root image present', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'X',
+                    publishFormat: 'TEXT_POST',
+                    mediaType: 'NONE'
+                })
+            );
+            const imagePipeline = buildImagePipelineMock({
+                assetId: null,
+                cloudinaryUrl: null,
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    image: { mode: 'public_url', url: 'https://example.com/legacy.jpg' }
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.assetStatus).toBe('none');
+            expect(imagePipeline.processImage).not.toHaveBeenCalled();
+            expect(imagePipeline.processImages).not.toHaveBeenCalled();
+            expect(imagePipeline.processVideo).not.toHaveBeenCalled();
         });
     });
 
