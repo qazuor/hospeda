@@ -6,20 +6,19 @@
 
 // Components
 export { CommerceLeadInbox } from './components/CommerceLeadInbox';
-export { CommerceLeadStatusBadge } from './components/CommerceLeadStatusBadge';
 export type { CommerceLeadStatusBadgeProps } from './components/CommerceLeadStatusBadge';
-
-// Hooks
-export {
-    commerceLeadKeys,
-    useCommerceLeadsQuery,
-    useMarkLeadHandledMutation,
-    useProvisionOwnerMutation
-} from './hooks/useCommerceLeads';
+export { CommerceLeadStatusBadge } from './components/CommerceLeadStatusBadge';
 export type {
     CommerceLeadPagination,
     CommerceLeadsPage,
     CommerceLeadsQueryParams,
     MarkLeadHandledPayload,
     ProvisionOwnerResult
+} from './hooks/useCommerceLeads';
+// Hooks
+export {
+    commerceLeadKeys,
+    useCommerceLeadsQuery,
+    useMarkLeadHandledMutation,
+    useProvisionOwnerMutation
 } from './hooks/useCommerceLeads';

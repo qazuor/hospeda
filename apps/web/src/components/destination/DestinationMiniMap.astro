@@ -1,4 +1,5 @@
 ---
+import { LocationIcon } from '@repo/icons';
 /**
  * @file DestinationMiniMap.astro
  * @description Compact map card meant to live in the destination detail
@@ -10,17 +11,16 @@
  * while the user scrolls through accommodations / events / posts.
  */
 import { LocationMap } from '@/components/maps/LocationMap.client';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { LocationIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	readonly lat: number;
-	readonly lng: number;
-	readonly name: string;
-	readonly locale: SupportedLocale;
-	/** Map zoom — defaults to 11 (regional context). */
-	readonly zoom?: number;
+    readonly lat: number;
+    readonly lng: number;
+    readonly name: string;
+    readonly locale: SupportedLocale;
+    /** Map zoom — defaults to 11 (regional context). */
+    readonly zoom?: number;
 }
 
 const { lat, lng, name, locale, zoom = 11 } = Astro.props;

@@ -16,9 +16,9 @@
  * cannot reflect.
  */
 
+import type { APIRoute } from 'astro';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
 import { parseNoindexHosts } from '@/lib/middleware-helpers';
-import type { APIRoute } from 'astro';
 
 export const prerender = false;
 

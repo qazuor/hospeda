@@ -161,6 +161,7 @@ export function BetaSearch({ placeholder = 'Buscar en la documentación…' }: B
 
             {open && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: Escape is handled globally via window keydown; backdrop click is a mouse-only convenience
+                // biome-ignore lint/a11y/noStaticElementInteractions: WAI-ARIA APG modal dialog pattern — this is a decorative backdrop (click-to-close is pointer-only convenience) with the keyboard equivalent (Escape) provided by the global window listener, not by this element
                 <div
                     className={styles.overlay}
                     onClick={onOverlayClick}

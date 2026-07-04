@@ -6,18 +6,18 @@
  * @rendering SSR
  */
 
-import { getApiUrl } from '@/lib/env';
-import AccountLayout from '@/layouts/AccountLayout.astro';
 import { UserReviewsList } from '@/components/account/UserReviewsList.client';
-import { createTranslations } from '@/lib/i18n';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
-	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
 
 const { t } = createTranslations(locale);

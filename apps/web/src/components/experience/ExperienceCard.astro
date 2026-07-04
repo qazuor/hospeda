@@ -8,12 +8,12 @@
  * Hydration: none — fully static Astro component.
  */
 
+import { LocationIcon, StarIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon, LocationIcon } from '@repo/icons';
-import { buildUrl } from '@/lib/urls';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceCardData } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import ExperiencePriceTag from './ExperiencePriceTag.astro';
 
 interface Props {

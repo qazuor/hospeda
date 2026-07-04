@@ -8,10 +8,10 @@
  * only rendered while at least one bound is active.
  */
 
+import { RotateCcwIcon } from '@repo/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
-import { RotateCcwIcon } from '@repo/icons';
 
 /** Props for {@link DashboardDateRangeFilter}. */
 export interface DashboardDateRangeFilterProps {

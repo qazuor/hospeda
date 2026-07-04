@@ -1,4 +1,5 @@
 ---
+import type { GalleryImage } from '@/components/ImageGallery.client';
 /**
  * @file DestinationGallery.astro
  * @description Gallery section for a destination detail page.
@@ -10,28 +11,27 @@
  * non-featured images are available.
  */
 import { ImageGallery } from '@/components/ImageGallery.client';
-import type { GalleryImage } from '@/components/ImageGallery.client';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 const PLACEHOLDER_URL = '/assets/images/placeholder-destination.svg';
 
 interface FeaturedImage {
-	readonly url: string;
-	readonly caption?: string;
+    readonly url: string;
+    readonly caption?: string;
 }
 
 interface GalleryItem {
-	readonly url: string;
-	readonly caption?: string;
-	readonly description?: string;
+    readonly url: string;
+    readonly caption?: string;
+    readonly description?: string;
 }
 
 interface Props {
-	readonly featuredImage: FeaturedImage;
-	readonly gallery: ReadonlyArray<GalleryItem>;
-	readonly destinationName: string;
-	readonly locale: SupportedLocale;
+    readonly featuredImage: FeaturedImage;
+    readonly gallery: ReadonlyArray<GalleryItem>;
+    readonly destinationName: string;
+    readonly locale: SupportedLocale;
 }
 
 const { featuredImage, gallery, destinationName, locale } = Astro.props;
@@ -44,16 +44,16 @@ const seen = new Set<string>();
 if (featuredImage.url) seen.add(featuredImage.url);
 
 function addImage(url: string, alt: string, caption?: string): GalleryImage | null {
-	if (!url || seen.has(url)) return null;
-	seen.add(url);
-	return { url, alt, caption };
+    if (!url || seen.has(url)) return null;
+    seen.add(url);
+    return { url, alt, caption };
 }
 
 const images: GalleryImage[] = [];
 
 for (const item of gallery) {
-	const entry = addImage(item.url, item.caption ?? destinationName, item.caption);
-	if (entry) images.push(entry);
+    const entry = addImage(item.url, item.caption ?? destinationName, item.caption);
+    if (entry) images.push(entry);
 }
 
 // Nothing useful to show: placeholder-only or empty

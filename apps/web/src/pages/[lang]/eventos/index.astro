@@ -28,34 +28,31 @@
  * @rendering SSR + ISR 24h
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import { EventCategoryEnum } from '@repo/schemas';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
+import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
+import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
-import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
-import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import {
-    buildEventListingSummary,
-    DEFAULT_EVENT_CATEGORIES
-} from '@/lib/event-listing-summary';
-import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
+import TagChips from '@/components/TagChips.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
+import { buildEventListingSummary, DEFAULT_EVENT_CATEGORIES } from '@/lib/event-listing-summary';
+import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { buildUrl } from '@/lib/urls';
 import { resolvePromotedFacetCanonical } from '@/lib/seo/promoted-facet-canonical';
-import { EventCategoryEnum } from '@repo/schemas';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -72,14 +69,14 @@ const category = url.searchParams.get('category') ?? undefined;
  * exposing a separate direction toggle.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-    upcoming:    { sortBy: 'startDate',  sortOrder: 'asc'  },
-    farthest:    { sortBy: 'startDate',  sortOrder: 'desc' },
-    nameAsc:     { sortBy: 'name',       sortOrder: 'asc'  },
-    nameDesc:    { sortBy: 'name',       sortOrder: 'desc' },
-    newest:      { sortBy: 'createdAt',  sortOrder: 'desc' },
-    oldest:      { sortBy: 'createdAt',  sortOrder: 'asc'  },
-    featured:    { sortBy: 'isFeatured', sortOrder: 'desc' },
-    mostSaved:   { sortBy: 'mostSaved',  sortOrder: 'desc' },
+    upcoming: { sortBy: 'startDate', sortOrder: 'asc' },
+    farthest: { sortBy: 'startDate', sortOrder: 'desc' },
+    nameAsc: { sortBy: 'name', sortOrder: 'asc' },
+    nameDesc: { sortBy: 'name', sortOrder: 'desc' },
+    newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+    oldest: { sortBy: 'createdAt', sortOrder: 'asc' },
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' }
 };
 /** Default sort key — used when the URL has no `sortBy`. */
 const DEFAULT_SORT_KEY = 'upcoming';
@@ -89,7 +86,13 @@ const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KE
 
 /** Parse the temporal quick-filter from the `when` query param. */
 const rawWhen = url.searchParams.get('when');
-const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
+const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = [
+    'today',
+    'week',
+    'month',
+    'next60',
+    'past'
+];
 const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
     ? (rawWhen as EventDateFilter)
     : 'all';
@@ -99,7 +102,8 @@ const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFil
  * (convention: `min${capitalize(id)}` and `max${capitalize(id)}`).
  */
 const isFreeParam = url.searchParams.get('isFree');
-const isFree: boolean | undefined = isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
+const isFree: boolean | undefined =
+    isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
 const priceMinParam = url.searchParams.get('minPrice');
 const priceMaxParam = url.searchParams.get('maxPrice');
 const priceMin: number | undefined = priceMinParam ? Number(priceMinParam) : undefined;
@@ -110,13 +114,11 @@ const priceMax: number | undefined = priceMaxParam ? Number(priceMaxParam) : und
  * the toggle OFF, otherwise the param is absent.
  */
 const includeUnpricedParam = url.searchParams.get('includeUnpriced');
-const includeUnpriced: boolean | undefined =
-    includeUnpricedParam === 'false' ? false : undefined;
+const includeUnpriced: boolean | undefined = includeUnpricedParam === 'false' ? false : undefined;
 
 /** New filters added in the eventos sidebar refactor. */
 const isFeaturedParam = url.searchParams.get('isFeatured');
-const isFeatured: boolean | undefined =
-    isFeaturedParam === 'true' ? true : undefined;
+const isFeatured: boolean | undefined = isFeaturedParam === 'true' ? true : undefined;
 const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const startDateAfterFilter = url.searchParams.get('startDateAfter') ?? undefined;
 const startDateBeforeFilter = url.searchParams.get('startDateBefore') ?? undefined;
@@ -211,7 +213,7 @@ const result = await eventsApi.list({
     maxPrice: priceMax,
     includeUnpriced: includeUnpriced ?? undefined,
     isFeatured: isFeatured ?? undefined,
-    destinationId,
+    destinationId
 });
 
 const hasError = !result.ok;
@@ -219,7 +221,9 @@ const items = result.ok ? result.data.items : [];
 // PaginatedResponse exposes counters under `pagination`, not at the top level.
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toEventCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 /**
  * Build a human-readable summary like "Mostrando 3 de 4 eventos en Colón..."
@@ -277,11 +281,11 @@ const filterGroups = buildEventsFilterGroups({ t, destinations });
 const sortOptions = [
     { value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
     { value: 'farthest', label: t('events.sort.farthest', 'Última fecha primero') },
-    { value: 'newest',   label: t('events.sort.newest',   'Recién agregados') },
-    { value: 'oldest',   label: t('events.sort.oldest',   'Más antiguos') },
+    { value: 'newest', label: t('events.sort.newest', 'Recién agregados') },
+    { value: 'oldest', label: t('events.sort.oldest', 'Más antiguos') },
     { value: 'featured', label: t('events.sort.featured', 'Destacados primero') },
-    { value: 'nameAsc',  label: t('events.sort.nameAsc',  'Nombre (A-Z)') },
-    { value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') },
+    { value: 'nameAsc', label: t('events.sort.nameAsc', 'Nombre (A-Z)') },
+    { value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') }
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
@@ -310,7 +314,10 @@ const singlePromotedCategory = resolvePromotedFacetCanonical({
     validEnumValues: Object.values(EventCategoryEnum)
 });
 const canonicalBaseUrl = singlePromotedCategory
-    ? buildUrl({ locale, path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}` })
+    ? buildUrl({
+          locale,
+          path: `eventos/categoria/${singlePromotedCategory.toLowerCase().replace(/_/g, '-')}`
+      })
     : baseUrl;
 
 // Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
@@ -340,14 +347,20 @@ if (isAuthenticated && cards.length > 0) {
         if (bulkResult.ok) {
             eventFavoriteChecks = bulkResult.data.checks;
         } else {
-            webLogger.warn('Bulk bookmark check failed on eventos listing; falling back to per-card hydration', {
-                error: bulkResult.error
-            });
+            webLogger.warn(
+                'Bulk bookmark check failed on eventos listing; falling back to per-card hydration',
+                {
+                    error: bulkResult.error
+                }
+            );
         }
     } catch (error) {
-        webLogger.warn('Bulk bookmark check threw on eventos listing; falling back to per-card hydration', {
-            error: error instanceof Error ? error.message : String(error)
-        });
+        webLogger.warn(
+            'Bulk bookmark check threw on eventos listing; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
     }
 }
 
@@ -368,18 +381,18 @@ const resolvedCards = cards.map((card) => {
  * `price` dual-range maps to `priceMin` / `priceMax` via the `id: 'price'` group.
  */
 const sidebarInitialParams: Record<string, string> = {};
-if (q)              sidebarInitialParams['q']        = q;
-if (category)       sidebarInitialParams['category'] = category;
+if (q) sidebarInitialParams['q'] = q;
+if (category) sidebarInitialParams['category'] = category;
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
-if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
-if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
+if (destinationId) sidebarInitialParams['destinationId'] = destinationId;
+if (startDateAfterFilter) sidebarInitialParams['startDateAfter'] = startDateAfterFilter;
 if (startDateBeforeFilter) sidebarInitialParams['startDateBefore'] = startDateBeforeFilter;
 // Composite price filter (id='price') reads `isFree`, `includeUnpriced`,
 // `minPrice`, `maxPrice` from the URL. `includeUnpriced` only appears when
 // the user explicitly turned it OFF; otherwise the server defaults to TRUE.
-if (isFreeParam)    sidebarInitialParams['isFree']   = isFreeParam;
-if (priceMinParam)  sidebarInitialParams['minPrice'] = priceMinParam;
-if (priceMaxParam)  sidebarInitialParams['maxPrice'] = priceMaxParam;
+if (isFreeParam) sidebarInitialParams['isFree'] = isFreeParam;
+if (priceMinParam) sidebarInitialParams['minPrice'] = priceMinParam;
+if (priceMaxParam) sidebarInitialParams['maxPrice'] = priceMaxParam;
 if (includeUnpricedParam === 'false') sidebarInitialParams['includeUnpriced'] = 'false';
 // Hydrate the SortPopover with the active sort key so the user sees their
 // previous selection on reload. `sortOrder` is no longer in the URL — the
@@ -427,8 +440,9 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
 // ItemList JSON-LD entries — the visible page of event cards, routed through
 // the reusable ItemListJsonLd component (SPEC-157 D-1 canonical JSON-LD path).
 const itemListEntries = cards.map((card) => ({
-	url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
-	name: card.name,
+    url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin)
+        .href,
+    name: card.name
 }));
 ---
 

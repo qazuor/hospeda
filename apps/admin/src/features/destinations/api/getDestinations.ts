@@ -1,9 +1,9 @@
-import { fetchApi } from '@/lib/api/client';
 import {
-    DestinationListItemWithStringAttractionsSchema,
-    createPaginatedResponseSchema
+    createPaginatedResponseSchema,
+    DestinationListItemWithStringAttractionsSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
+import { fetchApi } from '@/lib/api/client';
 
 // Use centralized schema from @repo/schemas
 const DestinationListItemClientSchema =

@@ -35,11 +35,11 @@ const statusDetail = Astro.url.searchParams.get('status_detail');
 
 const reasonKey = resolveReasonI18nKey(statusDetail);
 const reasonMessage = t(
-	reasonKey,
-	t(
-		'billing.checkout.failure.genericMessage',
-		'No pudimos procesar tu pago. Revisá los datos e intentá de nuevo.'
-	)
+    reasonKey,
+    t(
+        'billing.checkout.failure.genericMessage',
+        'No pudimos procesar tu pago. Revisá los datos e intentá de nuevo.'
+    )
 );
 
 const planesUrl = buildUrl({ locale, path: 'suscriptores/planes' });

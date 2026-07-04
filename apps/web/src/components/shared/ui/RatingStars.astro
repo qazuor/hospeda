@@ -8,14 +8,14 @@
 import { StarIcon } from '@repo/icons';
 
 interface Props {
-  /** Numeric rating value between 0 and maxStars. */
-  readonly rating: number;
-  /** Maximum number of stars. Defaults to 5. */
-  readonly maxStars?: number;
-  /** Size variant controlling icon dimensions. Defaults to 'md'. */
-  readonly size?: 'sm' | 'md';
-  /** When true, renders the numeric rating value next to the stars. */
-  readonly showValue?: boolean;
+    /** Numeric rating value between 0 and maxStars. */
+    readonly rating: number;
+    /** Maximum number of stars. Defaults to 5. */
+    readonly maxStars?: number;
+    /** Size variant controlling icon dimensions. Defaults to 'md'. */
+    readonly size?: 'sm' | 'md';
+    /** When true, renders the numeric rating value next to the stars. */
+    readonly showValue?: boolean;
 }
 
 const { rating, maxStars = 5, size = 'md', showValue = false } = Astro.props;
@@ -27,9 +27,9 @@ const hasHalf = clampedRating - fullStars >= 0.5;
 const emptyStars = maxStars - fullStars - (hasHalf ? 1 : 0);
 
 const stars: Array<'full' | 'half' | 'empty'> = [
-  ...Array.from<'full'>({ length: fullStars }).fill('full'),
-  ...(hasHalf ? (['half'] as const) : []),
-  ...Array.from<'empty'>({ length: emptyStars }).fill('empty'),
+    ...Array.from<'full'>({ length: fullStars }).fill('full'),
+    ...(hasHalf ? (['half'] as const) : []),
+    ...Array.from<'empty'>({ length: emptyStars }).fill('empty')
 ];
 ---
 

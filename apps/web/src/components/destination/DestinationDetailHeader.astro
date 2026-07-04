@@ -16,53 +16,53 @@
  */
 import { FavoriteIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 /** Minimal attraction shape rendered as a header badge. */
 export interface HeaderAttraction {
-	readonly id: string;
-	readonly name: string;
-	readonly slug?: string;
-	readonly displayWeight?: number;
+    readonly id: string;
+    readonly name: string;
+    readonly slug?: string;
+    readonly displayWeight?: number;
 }
 
 interface Props {
-	readonly destinationId: string;
-	readonly name: string;
-	readonly locale: SupportedLocale;
-	readonly isAuthenticated?: boolean;
-	readonly initialIsFavorited?: boolean;
-	readonly initialBookmarkId?: string | null;
-	readonly bookmarkCount?: number;
-	/** Optional attractions, rendered as badges below the name. */
-	readonly attractions?: ReadonlyArray<HeaderAttraction>;
-	/** Maximum number of attractions to render as badges. Defaults to 6. */
-	readonly maxAttractions?: number;
+    readonly destinationId: string;
+    readonly name: string;
+    readonly locale: SupportedLocale;
+    readonly isAuthenticated?: boolean;
+    readonly initialIsFavorited?: boolean;
+    readonly initialBookmarkId?: string | null;
+    readonly bookmarkCount?: number;
+    /** Optional attractions, rendered as badges below the name. */
+    readonly attractions?: ReadonlyArray<HeaderAttraction>;
+    /** Maximum number of attractions to render as badges. Defaults to 6. */
+    readonly maxAttractions?: number;
 }
 
 const {
-	destinationId,
-	name,
-	locale,
-	isAuthenticated = false,
-	initialIsFavorited,
-	initialBookmarkId = null,
-	bookmarkCount,
-	attractions = [],
-	maxAttractions = 6
+    destinationId,
+    name,
+    locale,
+    isAuthenticated = false,
+    initialIsFavorited,
+    initialBookmarkId = null,
+    bookmarkCount,
+    attractions = [],
+    maxAttractions = 6
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 // Attractions: highest displayWeight first, then alphabetical, capped to maxAttractions.
 const sortedAttractions = [...attractions]
-	.sort((a, b) => {
-		const wA = a.displayWeight ?? 0;
-		const wB = b.displayWeight ?? 0;
-		if (wB !== wA) return wB - wA;
-		return a.name.localeCompare(b.name);
-	})
-	.slice(0, maxAttractions);
+    .sort((a, b) => {
+        const wA = a.displayWeight ?? 0;
+        const wB = b.displayWeight ?? 0;
+        if (wB !== wA) return wB - wA;
+        return a.name.localeCompare(b.name);
+    })
+    .slice(0, maxAttractions);
 const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.length);
 ---
 

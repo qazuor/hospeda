@@ -1,6 +1,6 @@
 import { getModerationEngine, resetModerationEngineForTests } from './engine/index.js';
-import { moderateTextInputSchema } from './types.js';
 import type { ModerateTextInput, ModerationResult } from './types.js';
+import { moderateTextInputSchema } from './types.js';
 
 /**
  * **Test-only escape hatch.** Re-parses the blocklist env vars from

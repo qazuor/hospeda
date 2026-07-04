@@ -1,4 +1,5 @@
 ---
+import { LocationIcon } from '@repo/icons';
 /**
  * @file EventDetailLocationCard.astro
  * @description Sidebar card showing the event venue location on a mini map.
@@ -10,9 +11,8 @@
  * zoom level (14 for venue-level precision).
  */
 import { LocationMap } from '@/components/maps/LocationMap.client';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { LocationIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     /** GPS coordinates of the event venue. */

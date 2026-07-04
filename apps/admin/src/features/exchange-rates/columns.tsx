@@ -1,8 +1,8 @@
+import { defaultIntlLocale, formatDate, formatNumber } from '@repo/i18n';
+import { DeleteIcon } from '@repo/icons';
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { defaultIntlLocale, formatDate, formatNumber } from '@repo/i18n';
-import { DeleteIcon } from '@repo/icons';
 import type { ExchangeRate } from './types';
 
 /**

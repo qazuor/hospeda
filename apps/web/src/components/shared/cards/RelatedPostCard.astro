@@ -7,18 +7,18 @@
 
 import Badge from '@/components/shared/ui/Badge.astro';
 import { getWarmColorScheme } from '@/lib/colors';
-import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
-  readonly id: string;
-  readonly slug: string;
-  readonly title: string;
-  readonly summary: string;
-  readonly featuredImage?: string | null;
-  readonly destinationName?: string | null;
-  readonly publishedAt?: string | null;
-  readonly lang: string;
+    readonly id: string;
+    readonly slug: string;
+    readonly title: string;
+    readonly summary: string;
+    readonly featuredImage?: string | null;
+    readonly destinationName?: string | null;
+    readonly publishedAt?: string | null;
+    readonly lang: string;
 }
 
 const { slug, title, summary, featuredImage, destinationName, publishedAt, lang } = Astro.props;
@@ -26,12 +26,12 @@ const { slug, title, summary, featuredImage, destinationName, publishedAt, lang 
 const detailUrl = buildUrl({ locale: lang as SupportedLocale, path: `publicaciones/${slug}` });
 
 const formattedDate = publishedAt
-  ? new Date(publishedAt).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  : null;
+    ? new Date(publishedAt).toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+      })
+    : null;
 
 const warmColorScheme = getWarmColorScheme();
 ---

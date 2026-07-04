@@ -9,8 +9,9 @@
  * UI-only grouping — the parent keeps the flat 18-dimension rating state and
  * submits it unchanged.
  */
-import { cn } from '@/lib/cn';
+
 import { useCallback, useState } from 'react';
+import { cn } from '@/lib/cn';
 import styles from './DestinationReviewSidebarCard.module.css';
 import {
     DEFAULT_CATEGORY_LABELS,
@@ -72,10 +73,10 @@ function StarRow({ label, value, submitting, onSet }: StarRowProps) {
             aria-label={label}
         >
             {[1, 2, 3, 4, 5].map((star) => (
+                // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern
                 <button
                     key={star}
                     type="button"
-                    // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern
                     role="radio"
                     aria-checked={value === star}
                     aria-label={`${label}: ${star}`}
@@ -127,10 +128,7 @@ export function DestinationReviewRatingFields({
     }, []);
 
     return (
-        <div
-            className={styles.ratingList}
-            aria-label={t('review.form.ratingLabel', 'Calificación')}
-        >
+        <div className={styles.ratingList}>
             <p className={styles.categoryHint}>
                 {t(
                     'review.form.destination.categoryHint',

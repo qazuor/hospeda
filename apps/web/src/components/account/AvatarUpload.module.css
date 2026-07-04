@@ -99,8 +99,9 @@
     border: 1px solid var(--primary, oklch(0.5 0.18 260));
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
     min-height: 40px;
 }
 

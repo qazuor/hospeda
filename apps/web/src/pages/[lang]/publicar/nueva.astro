@@ -18,22 +18,22 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import {
+    AlertCircleIcon,
+    ArrowRightIcon,
+    BuildingsIcon,
+    CheckCircleIcon,
+    FileTextIcon,
+    ImageIcon
+} from '@repo/icons';
+import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
-import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
-import { webLogger as logger } from '@/lib/logger';
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
-import {
-    BuildingsIcon,
-    ImageIcon,
-    FileTextIcon,
-    CheckCircleIcon,
-    AlertCircleIcon,
-    ArrowRightIcon
-} from '@repo/icons';
 
 export const prerender = false;
 
@@ -42,9 +42,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // Auth guard (middleware doesn't cover /publicar/*).
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(
-        buildLoginRedirect({ locale, currentUrl: Astro.url.pathname })
-    );
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
 const t = createT(locale);
@@ -121,10 +119,9 @@ try {
                 maxAllowed = raw;
             }
         } else {
-            logger.warn(
-                'publicar/nueva: entitlements fetch returned non-ok',
-                { status: entitlementsResponse.status }
-            );
+            logger.warn('publicar/nueva: entitlements fetch returned non-ok', {
+                status: entitlementsResponse.status
+            });
         }
 
         if (ownedResponse.ok) {
@@ -138,10 +135,9 @@ try {
                 currentCount = raw;
             }
         } else {
-            logger.warn(
-                'publicar/nueva: owned-accommodations fetch returned non-ok',
-                { status: ownedResponse.status }
-            );
+            logger.warn('publicar/nueva: owned-accommodations fetch returned non-ok', {
+                status: ownedResponse.status
+            });
         }
 
         // Only flip the gate when BOTH values resolved successfully.
@@ -157,7 +153,9 @@ try {
         }
     }
 } catch (error) {
-    logger.warn('publicar/nueva: failed to fetch entitlements or owned count for limit check', { error });
+    logger.warn('publicar/nueva: failed to fetch entitlements or owned count for limit check', {
+        error
+    });
     // Non-fatal: render the form normally on error (let the API reject on submit if needed).
 }
 

@@ -9,10 +9,10 @@
  */
 
 interface Props {
-	/** Sanitized HTML string — must have already been processed by sanitizeHtml(). */
-	readonly safeContentHtml: string;
-	/** Optional lead summary shown above the content body. */
-	readonly summary?: string;
+    /** Sanitized HTML string — must have already been processed by sanitizeHtml(). */
+    readonly safeContentHtml: string;
+    /** Optional lead summary shown above the content body. */
+    readonly summary?: string;
 }
 
 const { safeContentHtml, summary } = Astro.props;

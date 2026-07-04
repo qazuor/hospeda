@@ -10,9 +10,9 @@ import {
     AttractionSearchInputSchema,
     AttractionSearchOutputSchema,
     AttractionStatsOutputSchema,
-    AttractionWithDestinationCountSchema,
     AttractionsByDestinationInputSchema,
     AttractionsByDestinationOutputSchema,
+    AttractionWithDestinationCountSchema,
     DestinationsByAttractionInputSchema
 } from '../../../src/entities/attraction/attraction.query.schema.js';
 import {

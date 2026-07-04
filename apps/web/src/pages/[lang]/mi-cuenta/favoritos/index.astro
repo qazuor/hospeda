@@ -6,21 +6,21 @@
  * @rendering SSR
  */
 
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
 import { CreateCollectionCTA } from '@/components/account/CreateCollectionCTA.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { getApiUrl } from '@/lib/env';
-import { webLogger } from '@/lib/logger';
+import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { BookmarkCollectionUsage } from '@/lib/api';
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
-	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
 
 const { t } = createTranslations(locale);
@@ -36,55 +36,54 @@ const apiUrl = getApiUrl();
 let collectionUsage: BookmarkCollectionUsage | null = null;
 
 try {
-	const cookieHeader = Astro.request.headers.get('cookie');
+    const cookieHeader = Astro.request.headers.get('cookie');
 
-	if (cookieHeader) {
-		const apiBase = getApiUrl();
-		const response = await fetch(
-			`${apiBase}/api/v1/protected/user-bookmark-collections?page=1&pageSize=1`,
-			{
-				headers: {
-					cookie: cookieHeader,
-					Accept: 'application/json'
-				}
-			}
-		);
+    if (cookieHeader) {
+        const apiBase = getApiUrl();
+        const response = await fetch(
+            `${apiBase}/api/v1/protected/user-bookmark-collections?page=1&pageSize=1`,
+            {
+                headers: {
+                    cookie: cookieHeader,
+                    Accept: 'application/json'
+                }
+            }
+        );
 
-		if (response.ok) {
-			const body = (await response.json()) as {
-				data?: { usage?: BookmarkCollectionUsage };
-			};
-			collectionUsage = body.data?.usage ?? null;
-		} else {
-			webLogger.warn('[favoritos] collections usage fetch returned status', response.status);
-		}
-	}
+        if (response.ok) {
+            const body = (await response.json()) as {
+                data?: { usage?: BookmarkCollectionUsage };
+            };
+            collectionUsage = body.data?.usage ?? null;
+        } else {
+            webLogger.warn('[favoritos] collections usage fetch returned status', response.status);
+        }
+    }
 } catch (err) {
-	webLogger.error('[favoritos] failed to fetch collection usage', err);
+    webLogger.error('[favoritos] failed to fetch collection usage', err);
 }
 
-const isAtLimit =
-	collectionUsage !== null && collectionUsage.current >= collectionUsage.max;
+const isAtLimit = collectionUsage !== null && collectionUsage.current >= collectionUsage.max;
 
 const usageLabel =
-	collectionUsage !== null
-		? t('account.favorites.collections.usage', '{{current}} / {{max}}', {
-				current: collectionUsage.current,
-				max: collectionUsage.max
-			})
-		: null;
+    collectionUsage === null
+        ? null
+        : t('account.favorites.collections.usage', '{{current}} / {{max}}', {
+              current: collectionUsage.current,
+              max: collectionUsage.max
+          });
 
 const limitReachedLabel =
-	isAtLimit && collectionUsage
-		? t('account.favorites.collections.limit_reached', 'Límite alcanzado ({{max}})', {
-				max: collectionUsage.max
-			})
-		: null;
+    isAtLimit && collectionUsage
+        ? t('account.favorites.collections.limit_reached', 'Límite alcanzado ({{max}})', {
+              max: collectionUsage.max
+          })
+        : null;
 
 const usageRatio =
-	collectionUsage !== null && collectionUsage.max > 0
-		? Math.min(collectionUsage.current / collectionUsage.max, 1)
-		: 0;
+    collectionUsage !== null && collectionUsage.max > 0
+        ? Math.min(collectionUsage.current / collectionUsage.max, 1)
+        : 0;
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="favoritos">

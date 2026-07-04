@@ -14,8 +14,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { cn } from '../ui/cn.js';
-import { FeedbackForm } from './FeedbackForm.js';
 import type { FeedbackFormProps } from './FeedbackForm.js';
+import { FeedbackForm } from './FeedbackForm.js';
 import './FeedbackModal.css';
 import '../styles/tokens.css';
 

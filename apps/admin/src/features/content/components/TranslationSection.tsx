@@ -8,6 +8,7 @@
  * @module features/content/components/TranslationSection
  */
 
+import { useCallback, useMemo } from 'react';
 import {
     SectionAccordion,
     SectionAccordionItem
@@ -15,7 +16,6 @@ import {
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import { useCallback, useMemo } from 'react';
 import { type TranslationFieldState, TranslationStatus } from './TranslationStatus';
 
 // ---------------------------------------------------------------------------

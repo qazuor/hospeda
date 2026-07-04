@@ -7,7 +7,7 @@
  * @module user-menu
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authLogger } from './logger';
 import type { AuthSession } from './types';
 
@@ -38,6 +38,17 @@ export const UserMenu = ({
     profileUrl = '/profile/'
 }: UserMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
+
+    // Close the dropdown on Escape, regardless of which element currently has
+    // focus (the backdrop itself is not reliably focused).
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsOpen(false);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isOpen]);
 
     if (isPending) {
         return (
@@ -108,12 +119,10 @@ export const UserMenu = ({
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <div
+                    <button
+                        type="button"
                         className="fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
-                        onKeyDown={(e) => e.key === 'Escape' && setIsOpen(false)}
-                        role="button"
-                        tabIndex={0}
                         aria-label="Close menu"
                     />
 

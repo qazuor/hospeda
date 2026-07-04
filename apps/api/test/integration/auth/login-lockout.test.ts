@@ -12,6 +12,7 @@
 
 // Set lockout threshold BEFORE any imports so the lazy config picks it up
 process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
+
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';

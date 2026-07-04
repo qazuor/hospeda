@@ -170,7 +170,7 @@ export function Dialog({
         <div
             className={cn(styles.overlay, overlayClassName)}
             onClick={handleOverlayClick}
-            role="presentation"
+            aria-hidden="true"
         >
             <div
                 ref={panelRef}

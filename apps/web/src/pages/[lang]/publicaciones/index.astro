@@ -28,27 +28,24 @@
  * @route /{lang}/publicaciones/
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import ArticleCardSkeleton from '@/components/shared/cards/ArticleCardSkeleton.astro';
-import PostGridSkeleton from '@/components/skeletons/PostGridSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import TagChips from '@/components/TagChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import {
-    buildPostListingSummary,
-    DEFAULT_POST_CATEGORIES
-} from '@/lib/post-listing-summary';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import PostGridSkeleton from '@/components/skeletons/PostGridSkeleton.astro';
+import TagChips from '@/components/TagChips.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { destinationsApi, postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildPostListingSummary, DEFAULT_POST_CATEGORIES } from '@/lib/post-listing-summary';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -76,12 +73,12 @@ const category = url.searchParams.get('category') ?? undefined;
  * handled by `PostModel.findAll` override (SPEC-098 T-052b).
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-    newest:    { sortBy: 'publishedAt', sortOrder: 'desc' },
-    oldest:    { sortBy: 'publishedAt', sortOrder: 'asc'  },
-    mostSaved: { sortBy: 'mostSaved',   sortOrder: 'desc' },
-    featured:  { sortBy: 'isFeatured',  sortOrder: 'desc' },
-    titleAsc:  { sortBy: 'title',       sortOrder: 'asc'  },
-    titleDesc: { sortBy: 'title',       sortOrder: 'desc' }
+    newest: { sortBy: 'publishedAt', sortOrder: 'desc' },
+    oldest: { sortBy: 'publishedAt', sortOrder: 'asc' },
+    mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' },
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    titleAsc: { sortBy: 'title', sortOrder: 'asc' },
+    titleDesc: { sortBy: 'title', sortOrder: 'desc' }
 };
 /** Default sort key — used when the URL has no `sortBy`. */
 const DEFAULT_SORT_KEY = 'newest';
@@ -91,8 +88,7 @@ const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KE
 
 /** Parse the new sidebar filters from URL. */
 const isFeaturedParam = url.searchParams.get('isFeatured');
-const isFeatured: boolean | undefined =
-    isFeaturedParam === 'true' ? true : undefined;
+const isFeatured: boolean | undefined = isFeaturedParam === 'true' ? true : undefined;
 const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const publishedAfterFilter = url.searchParams.get('publishedAfter') ?? undefined;
 const publishedBeforeFilter = url.searchParams.get('publishedBefore') ?? undefined;
@@ -134,7 +130,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 /**
  * Build a human-readable summary like "Mostrando 3 de 4 publicaciones..." to
@@ -209,24 +207,24 @@ const filterGroups = [
         label: t('blog.filters.category', 'Categoría'),
         type: 'checkbox' as const,
         options: [
-            { value: 'CULTURE',      label: t('blog.categories.culture',      'Cultura') },
-            { value: 'GASTRONOMY',   label: t('blog.categories.gastronomy',   'Gastronomía') },
-            { value: 'NATURE',       label: t('blog.categories.nature',       'Naturaleza') },
-            { value: 'TOURISM',      label: t('blog.categories.tourism',      'Turismo') },
-            { value: 'SPORT',        label: t('blog.categories.sport',        'Deporte') },
-            { value: 'HISTORY',      label: t('blog.categories.history',      'Historia') },
-            { value: 'EVENTS',       label: t('blog.categories.events',       'Eventos') },
-            { value: 'CARNIVAL',     label: t('blog.categories.carnival',     'Carnaval') },
-            { value: 'WELLNESS',     label: t('blog.categories.wellness',     'Bienestar') },
-            { value: 'FAMILY',       label: t('blog.categories.family',       'Familia') },
-            { value: 'TIPS',         label: t('blog.categories.tips',         'Consejos') },
-            { value: 'NIGHTLIFE',    label: t('blog.categories.nightlife',    'Noche') },
-            { value: 'TRADITIONS',   label: t('blog.categories.traditions',   'Tradiciones') },
-            { value: 'ART',          label: t('blog.categories.art',          'Arte') },
-            { value: 'BEACH',        label: t('blog.categories.beach',        'Playa') },
-            { value: 'RURAL',        label: t('blog.categories.rural',        'Rural') },
-            { value: 'FESTIVALS',    label: t('blog.categories.festivals',    'Festivales') },
-            { value: 'GENERAL',      label: t('blog.categories.general',      'General') }
+            { value: 'CULTURE', label: t('blog.categories.culture', 'Cultura') },
+            { value: 'GASTRONOMY', label: t('blog.categories.gastronomy', 'Gastronomía') },
+            { value: 'NATURE', label: t('blog.categories.nature', 'Naturaleza') },
+            { value: 'TOURISM', label: t('blog.categories.tourism', 'Turismo') },
+            { value: 'SPORT', label: t('blog.categories.sport', 'Deporte') },
+            { value: 'HISTORY', label: t('blog.categories.history', 'Historia') },
+            { value: 'EVENTS', label: t('blog.categories.events', 'Eventos') },
+            { value: 'CARNIVAL', label: t('blog.categories.carnival', 'Carnaval') },
+            { value: 'WELLNESS', label: t('blog.categories.wellness', 'Bienestar') },
+            { value: 'FAMILY', label: t('blog.categories.family', 'Familia') },
+            { value: 'TIPS', label: t('blog.categories.tips', 'Consejos') },
+            { value: 'NIGHTLIFE', label: t('blog.categories.nightlife', 'Noche') },
+            { value: 'TRADITIONS', label: t('blog.categories.traditions', 'Tradiciones') },
+            { value: 'ART', label: t('blog.categories.art', 'Arte') },
+            { value: 'BEACH', label: t('blog.categories.beach', 'Playa') },
+            { value: 'RURAL', label: t('blog.categories.rural', 'Rural') },
+            { value: 'FESTIVALS', label: t('blog.categories.festivals', 'Festivales') },
+            { value: 'GENERAL', label: t('blog.categories.general', 'General') }
         ]
     },
     {
@@ -244,18 +242,22 @@ const filterGroups = [
         id: 'destinationId',
         label: t('blog.filters.location', 'Destino'),
         type: 'select-search' as const,
-        options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
+        options: destinations.map((d) => ({
+            value: d.id,
+            label: d.name,
+            featured: Boolean(d.isFeatured)
+        })),
         maxVisible: 8,
         maxSelections: 1
     }
 ] as const;
 
 const sortOptions = [
-    { value: 'newest',    label: t('blog.sort.newest',    'Recién publicadas') },
-    { value: 'oldest',    label: t('blog.sort.oldest',    'Más antiguas') },
+    { value: 'newest', label: t('blog.sort.newest', 'Recién publicadas') },
+    { value: 'oldest', label: t('blog.sort.oldest', 'Más antiguas') },
     { value: 'mostSaved', label: t('blog.sort.mostSaved', 'Más guardadas') },
-    { value: 'featured',  label: t('blog.sort.featured',  'Destacadas primero') },
-    { value: 'titleAsc',  label: t('blog.sort.titleAsc',  'Título (A-Z)') },
+    { value: 'featured', label: t('blog.sort.featured', 'Destacadas primero') },
+    { value: 'titleAsc', label: t('blog.sort.titleAsc', 'Título (A-Z)') },
     { value: 'titleDesc', label: t('blog.sort.titleDesc', 'Título (Z-A)') }
 ] as const;
 
@@ -265,13 +267,13 @@ const sortOptions = [
  * param names emitted by FilterSidebar's reducer.
  */
 const sidebarInitialParams: Record<string, string> = {};
-if (q)                          sidebarInitialParams['q'] = q;
-if (category)                   sidebarInitialParams['category'] = category;
+if (q) sidebarInitialParams['q'] = q;
+if (category) sidebarInitialParams['category'] = category;
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
-if (destinationId)              sidebarInitialParams['destinationId'] = destinationId;
-if (publishedAfterFilter)       sidebarInitialParams['publishedAfter'] = publishedAfterFilter;
-if (publishedBeforeFilter)      sidebarInitialParams['publishedBefore'] = publishedBeforeFilter;
-sidebarInitialParams['sortBy']  = sortKey;
+if (destinationId) sidebarInitialParams['destinationId'] = destinationId;
+if (publishedAfterFilter) sidebarInitialParams['publishedAfter'] = publishedAfterFilter;
+if (publishedBeforeFilter) sidebarInitialParams['publishedBefore'] = publishedBeforeFilter;
+sidebarInitialParams['sortBy'] = sortKey;
 
 /**
  * Build URLSearchParams to pass to Pagination so it preserves all active
@@ -284,21 +286,48 @@ paginationParams.delete('page');
 // exposes `title` (not `name`); route through the reusable ItemListJsonLd
 // component (SPEC-157 D-1 canonical JSON-LD path).
 const itemListEntries = cards.map((card) => ({
-    url: new URL(buildUrl({ locale, path: `publicaciones/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
-    name: card.title,
+    url: new URL(
+        buildUrl({ locale, path: `publicaciones/${card.slug}` }),
+        Astro.site ?? Astro.url.origin
+    ).href,
+    name: card.title
 }));
 
 /** Quick-filter chips: top post categories. Hrefs use lowercase slugs consistent
  * with the [category] route which normalises incoming slugs via resolvePostCategorySlug. */
 const postCategoryChips = [
-    { label: t('blog.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' }) },
-    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' }) },
-    { label: t('blog.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' }) },
-    { label: t('blog.categories.tourism',    'Turismo'),     href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' }) },
-    { label: t('blog.categories.history',    'Historia'),    href: buildUrl({ locale, path: '/publicaciones/categoria/history/' }) },
-    { label: t('blog.categories.events',     'Eventos'),     href: buildUrl({ locale, path: '/publicaciones/categoria/events/' }) },
-    { label: t('blog.categories.carnival',   'Carnaval'),    href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' }) },
-    { label: t('blog.categories.tips',       'Consejos'),    href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' }) }
+    {
+        label: t('blog.categories.culture', 'Cultura'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' })
+    },
+    {
+        label: t('blog.categories.gastronomy', 'Gastronomía'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' })
+    },
+    {
+        label: t('blog.categories.nature', 'Naturaleza'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' })
+    },
+    {
+        label: t('blog.categories.tourism', 'Turismo'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' })
+    },
+    {
+        label: t('blog.categories.history', 'Historia'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/history/' })
+    },
+    {
+        label: t('blog.categories.events', 'Eventos'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/events/' })
+    },
+    {
+        label: t('blog.categories.carnival', 'Carnaval'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' })
+    },
+    {
+        label: t('blog.categories.tips', 'Consejos'),
+        href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' })
+    }
 ] as const;
 ---
 

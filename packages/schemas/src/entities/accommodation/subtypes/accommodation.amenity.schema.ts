@@ -3,9 +3,9 @@ import { BaseAuditFields } from '../../../common/audit.schema.js';
 import { AccommodationIdSchema, AmenityIdSchema } from '../../../common/id.schema.js';
 import { PriceSchema } from '../../../common/price.schema.js';
 
+export type { Amenity } from '../../amenity/amenity.schema.js';
 // Re-export the main AmenitySchema for convenience
 export { AmenitySchema } from '../../amenity/amenity.schema.js';
-export type { Amenity } from '../../amenity/amenity.schema.js';
 
 /**
  * Accommodation-Amenity association schema

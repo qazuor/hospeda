@@ -23,7 +23,7 @@ import {
     signWebhookPayload,
     webhookEventFixtures
 } from '../../helpers/billing-fixtures.js';
-import { MpStubUnconfiguredError, createMpStubAdapter } from '../../helpers/mp-stub.js';
+import { createMpStubAdapter, MpStubUnconfiguredError } from '../../helpers/mp-stub.js';
 import { seedBillingTestPlans } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 

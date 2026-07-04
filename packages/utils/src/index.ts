@@ -3,15 +3,15 @@
  * @module utils
  */
 
-export * from './string';
-export * from './date';
-export * from './object';
 export * from './array';
-export * from './validation';
 export * from './currency';
-export * from './sentry';
+export * from './date';
 export * from './markdown-helpers';
+export * from './object';
+export * from './sentry';
+export * from './string';
 export * from './tiptap-renderer';
+export * from './validation';
 
 // NOTE: `safe-fetch` and `safe-fetch-ip` are intentionally NOT re-exported from
 // this barrel. They are server-only modules (they import `undici` and

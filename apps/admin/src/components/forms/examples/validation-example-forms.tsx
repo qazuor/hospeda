@@ -4,11 +4,12 @@
  * Separated from ValidationExample.tsx to keep file sizes manageable.
  * Each form demonstrates a different validation pattern.
  */
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { COMMON_CROSS_FIELD_RULES } from '@/lib/validation/rules/commonRules';
 import { COMMON_VALIDATORS } from '@/lib/validation/validators/commonValidators';
 import { adminLogger } from '@/utils/logger';
-import { useState } from 'react';
 import { ValidatedForm } from '../ValidatedForm';
 import { VALIDATED_INPUT_PRESETS, ValidatedInput } from '../ValidatedInput';
 

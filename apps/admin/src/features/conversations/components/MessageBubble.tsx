@@ -58,6 +58,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         'rounded border border-border bg-transparent px-2 py-1 text-muted-foreground text-xs italic'
                 )}
             >
+                {/* biome-ignore-start lint/suspicious/noArrayIndexKey: segments are a deterministic, non-reorderable parse of this message's fixed body text; no stable id exists per segment */}
                 {segments.map((seg, idx) =>
                     seg.type === 'link' ? (
                         <a
@@ -75,6 +76,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         </span>
                     )
                 )}
+                {/* biome-ignore-end lint/suspicious/noArrayIndexKey: segments are a deterministic, non-reorderable parse of this message's fixed body text; no stable id exists per segment */}
             </div>
 
             {/* Timestamp and read receipt */}

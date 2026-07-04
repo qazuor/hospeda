@@ -19,20 +19,20 @@
  * @prop intlLocale - BCP-47 locale string for Intl.NumberFormat.
  */
 
+import { LimitKey } from '@repo/billing';
 import { CheckIcon, MinusIcon } from '@repo/icons';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
-import { LimitKey } from '@repo/billing';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
-import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly plans: readonly PublicPlanData[];
-	readonly audience: 'owner' | 'tourist';
-	readonly intlLocale: string;
+    readonly locale: SupportedLocale;
+    readonly plans: readonly PublicPlanData[];
+    readonly audience: 'owner' | 'tourist';
+    readonly intlLocale: string;
 }
 
 const { locale, plans, audience, intlLocale } = Astro.props;
@@ -45,9 +45,7 @@ const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
 
 // Complex plans are included by the /planes/comparar/ page but must NOT appear
 // as columns in this table. Filter them out; we render a teaser below instead.
-const activePlans = audience === 'owner'
-	? plans.filter((p) => p.category === 'owner')
-	: plans;
+const activePlans = audience === 'owner' ? plans.filter((p) => p.category === 'owner') : plans;
 
 // ---------------------------------------------------------------------------
 // Row model types
@@ -56,33 +54,39 @@ const activePlans = audience === 'owner'
 type YesNo = 'yes' | 'no';
 
 interface LimitCell {
-	readonly kind: 'limit';
-	/** Strongly-typed limit key — reads the real value from plan.limits. */
-	readonly key: LimitKey;
+    readonly kind: 'limit';
+    /** Strongly-typed limit key — reads the real value from plan.limits. */
+    readonly key: LimitKey;
 }
 interface LiteralsCell {
-	readonly kind: 'literals';
-	/** One value per plan column (in sort order). */
-	readonly values: readonly YesNo[];
+    readonly kind: 'literals';
+    /** One value per plan column (in sort order). */
+    readonly values: readonly YesNo[];
 }
-interface AllYesCell { readonly kind: 'all-yes' }
-interface AllNoCell { readonly kind: 'all-no' }
-interface AllUnlimitedCell { readonly kind: 'all-unlimited' }
+interface AllYesCell {
+    readonly kind: 'all-yes';
+}
+interface AllNoCell {
+    readonly kind: 'all-no';
+}
+interface AllUnlimitedCell {
+    readonly kind: 'all-unlimited';
+}
 
 type RowCellDef = LimitCell | LiteralsCell | AllYesCell | AllNoCell | AllUnlimitedCell;
 type CellRendered = YesNo | 'unlimited' | number;
 
 interface RowConfig {
-	readonly id: string;
-	readonly labelKey: string;
-	readonly cell: RowCellDef;
-	readonly status: 'available' | 'upcoming';
-	readonly noteKey?: string | undefined;
+    readonly id: string;
+    readonly labelKey: string;
+    readonly cell: RowCellDef;
+    readonly status: 'available' | 'upcoming';
+    readonly noteKey?: string | undefined;
 }
 
 interface GroupConfig {
-	readonly id: string;
-	readonly rows: readonly RowConfig[];
+    readonly id: string;
+    readonly rows: readonly RowConfig[];
 }
 
 // ---------------------------------------------------------------------------
@@ -90,38 +94,95 @@ interface GroupConfig {
 // ---------------------------------------------------------------------------
 
 const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
-	{ id: 'favorites',      labelKey: 'billing.comparison.row.favorites',      cell: { kind: 'limit',    key: LimitKey.MAX_FAVORITES },            status: 'available' },
-	{ id: 'collections',    labelKey: 'billing.comparison.row.collections',    cell: { kind: 'limit',    key: LimitKey.MAX_COLLECTIONS },            status: 'available' },
-	{ id: 'reviews',        labelKey: 'billing.comparison.row.reviews',        cell: { kind: 'all-yes' },                                           status: 'available' },
-	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'available' },
-	{ id: 'compare',        labelKey: 'billing.comparison.row.compare',        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
-	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'limit',    key: LimitKey.MAX_SEARCH_HISTORY_ENTRIES }, status: 'available' },
-	{ id: 'alertsOffers',   labelKey: 'billing.comparison.row.alertsOffers',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
-	{ id: 'whatsappDisplay',labelKey: 'billing.comparison.row.whatsappDisplay',cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
-	{ id: 'whatsappDirect', labelKey: 'billing.comparison.row.whatsappDirect', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },            status: 'available' },
+    {
+        id: 'favorites',
+        labelKey: 'billing.comparison.row.favorites',
+        cell: { kind: 'limit', key: LimitKey.MAX_FAVORITES },
+        status: 'available'
+    },
+    {
+        id: 'collections',
+        labelKey: 'billing.comparison.row.collections',
+        cell: { kind: 'limit', key: LimitKey.MAX_COLLECTIONS },
+        status: 'available'
+    },
+    {
+        id: 'reviews',
+        labelKey: 'billing.comparison.row.reviews',
+        cell: { kind: 'all-yes' },
+        status: 'available'
+    },
+    {
+        id: 'recommendations',
+        labelKey: 'billing.comparison.row.recommendations',
+        cell: { kind: 'all-yes' },
+        status: 'available'
+    },
+    {
+        id: 'compare',
+        labelKey: 'billing.comparison.row.compare',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'searchHistory',
+        labelKey: 'billing.comparison.row.searchHistory',
+        cell: { kind: 'limit', key: LimitKey.MAX_SEARCH_HISTORY_ENTRIES },
+        status: 'available'
+    },
+    {
+        id: 'alertsOffers',
+        labelKey: 'billing.comparison.row.alertsOffers',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'upcoming'
+    },
+    {
+        id: 'whatsappDisplay',
+        labelKey: 'billing.comparison.row.whatsappDisplay',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'whatsappDirect',
+        labelKey: 'billing.comparison.row.whatsappDirect',
+        cell: { kind: 'literals', values: ['no', 'no', 'yes'] },
+        status: 'available'
+    }
 ];
 
 const TOURIST_AI_ROWS: readonly RowConfig[] = [
-	{ id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'limit', key: LimitKey.MAX_AI_SEARCH_PER_MONTH        }, status: 'available', noteKey: 'billing.comparison.note.aiSearch'      },
-	{ id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH }, status: 'available', noteKey: 'billing.comparison.note.aiChatTourist' },
+    {
+        id: 'aiSearch',
+        labelKey: 'billing.comparison.row.aiSearch',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_SEARCH_PER_MONTH },
+        status: 'available',
+        noteKey: 'billing.comparison.note.aiSearch'
+    },
+    {
+        id: 'aiChat',
+        labelKey: 'billing.comparison.row.aiChat',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH },
+        status: 'available',
+        noteKey: 'billing.comparison.note.aiChatTourist'
+    }
 ];
 
 // Convert a tourist cell to its tourist-VIP value for the owner asTourist group.
 function asVipForAll(cell: RowCellDef): RowCellDef {
-	// `limit` cells are passed through unchanged: the owner plan's actual
-	// plan.limits value is used (e.g. MAX_FAVORITES=-1 → "Ilimitado",
-	// MAX_AI_SEARCH_PER_MONTH=200 → 200). Conversion to 'all-unlimited' was
-	// removed in SPEC-283 so graduated AI quotas surface correctly for owners.
-	if (cell.kind === 'literals') {
-		const vipValue = cell.values[cell.values.length - 1];
-		return vipValue === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
-	}
-	return cell;
+    // `limit` cells are passed through unchanged: the owner plan's actual
+    // plan.limits value is used (e.g. MAX_FAVORITES=-1 → "Ilimitado",
+    // MAX_AI_SEARCH_PER_MONTH=200 → 200). Conversion to 'all-unlimited' was
+    // removed in SPEC-283 so graduated AI quotas surface correctly for owners.
+    if (cell.kind === 'literals') {
+        const vipValue = cell.values[cell.values.length - 1];
+        return vipValue === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
+    }
+    return cell;
 }
 
 const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
-	...TOURIST_EXPERIENCE_ROWS,
-	...TOURIST_AI_ROWS,
+    ...TOURIST_EXPERIENCE_ROWS,
+    ...TOURIST_AI_ROWS
 ].map((row) => ({ ...row, cell: asVipForAll(row.cell) }));
 
 // ---------------------------------------------------------------------------
@@ -129,39 +190,136 @@ const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
 // ---------------------------------------------------------------------------
 
 const OWNER_ROWS: readonly RowConfig[] = [
-	{ id: 'publish',           labelKey: 'billing.comparison.row.publish',           cell: { kind: 'limit',    key: LimitKey.MAX_ACCOMMODATIONS },               status: 'available' },
-	{ id: 'photos',            labelKey: 'billing.comparison.row.photos',            cell: { kind: 'limit',    key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION },      status: 'available' },
-	{ id: 'editInfo',          labelKey: 'billing.comparison.row.editInfo',          cell: { kind: 'all-yes' },                                                   status: 'available' },
-	{ id: 'respondReviews',    labelKey: 'billing.comparison.row.respondReviews',    cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
-	{ id: 'basicStats',        labelKey: 'billing.comparison.row.basicStats',        cell: { kind: 'all-yes' },                                                   status: 'available' },
-	{ id: 'advancedStats',     labelKey: 'billing.comparison.row.advancedStats',     cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
-	{ id: 'calendar',          labelKey: 'billing.comparison.row.calendar',          cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
-	{ id: 'richDescription',   labelKey: 'billing.comparison.row.richDescription',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
-	{ id: 'video',             labelKey: 'billing.comparison.row.video',             cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
-	{ id: 'promotions',        labelKey: 'billing.comparison.row.promotions',        cell: { kind: 'limit',    key: LimitKey.MAX_ACTIVE_PROMOTIONS },             status: 'available' },
-	{ id: 'prioritySupport',   labelKey: 'billing.comparison.row.prioritySupport',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
-	{ id: 'featured',          labelKey: 'billing.comparison.row.featured',          cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'upcoming'  },
-	{ id: 'branding',          labelKey: 'billing.comparison.row.branding',          cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
-	{ id: 'verificationBadge', labelKey: 'billing.comparison.row.verificationBadge', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'available'  },
+    {
+        id: 'publish',
+        labelKey: 'billing.comparison.row.publish',
+        cell: { kind: 'limit', key: LimitKey.MAX_ACCOMMODATIONS },
+        status: 'available'
+    },
+    {
+        id: 'photos',
+        labelKey: 'billing.comparison.row.photos',
+        cell: { kind: 'limit', key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION },
+        status: 'available'
+    },
+    {
+        id: 'editInfo',
+        labelKey: 'billing.comparison.row.editInfo',
+        cell: { kind: 'all-yes' },
+        status: 'available'
+    },
+    {
+        id: 'respondReviews',
+        labelKey: 'billing.comparison.row.respondReviews',
+        cell: { kind: 'all-yes' },
+        status: 'upcoming'
+    },
+    {
+        id: 'basicStats',
+        labelKey: 'billing.comparison.row.basicStats',
+        cell: { kind: 'all-yes' },
+        status: 'available'
+    },
+    {
+        id: 'advancedStats',
+        labelKey: 'billing.comparison.row.advancedStats',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'calendar',
+        labelKey: 'billing.comparison.row.calendar',
+        cell: { kind: 'all-yes' },
+        status: 'upcoming'
+    },
+    {
+        id: 'richDescription',
+        labelKey: 'billing.comparison.row.richDescription',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'video',
+        labelKey: 'billing.comparison.row.video',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'promotions',
+        labelKey: 'billing.comparison.row.promotions',
+        cell: { kind: 'limit', key: LimitKey.MAX_ACTIVE_PROMOTIONS },
+        status: 'available'
+    },
+    {
+        id: 'prioritySupport',
+        labelKey: 'billing.comparison.row.prioritySupport',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'available'
+    },
+    {
+        id: 'featured',
+        labelKey: 'billing.comparison.row.featured',
+        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },
+        status: 'upcoming'
+    },
+    {
+        id: 'branding',
+        labelKey: 'billing.comparison.row.branding',
+        cell: { kind: 'literals', values: ['no', 'no', 'yes'] },
+        status: 'upcoming'
+    },
+    {
+        id: 'verificationBadge',
+        labelKey: 'billing.comparison.row.verificationBadge',
+        cell: { kind: 'literals', values: ['no', 'no', 'yes'] },
+        status: 'available'
+    }
 ];
 
 const OWNER_AI_ROWS: readonly RowConfig[] = [
-	{ id: 'aiTextImprove', labelKey: 'billing.comparison.row.aiTextImprove', cell: { kind: 'limit', key: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH },         status: 'available' },
-	{ id: 'aiTranslate',   labelKey: 'billing.comparison.row.aiTranslate',   cell: { kind: 'limit', key: LimitKey.MAX_AI_TRANSLATE_PER_MONTH },            status: 'available' },
-	{ id: 'aiImport',      labelKey: 'billing.comparison.row.aiImport',      cell: { kind: 'limit', key: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH }, status: 'available' },
-	{ id: 'aiChatOwner',   labelKey: 'billing.comparison.row.aiChatOwner',   cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_PER_MONTH },                 status: 'available', noteKey: 'billing.comparison.note.aiChatOwner'   },
-	{ id: 'aiSupport',     labelKey: 'billing.comparison.row.aiSupport',     cell: { kind: 'all-no' },                                                     status: 'upcoming',  noteKey: 'billing.comparison.note.aiSupportAddon' },
+    {
+        id: 'aiTextImprove',
+        labelKey: 'billing.comparison.row.aiTextImprove',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH },
+        status: 'available'
+    },
+    {
+        id: 'aiTranslate',
+        labelKey: 'billing.comparison.row.aiTranslate',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_TRANSLATE_PER_MONTH },
+        status: 'available'
+    },
+    {
+        id: 'aiImport',
+        labelKey: 'billing.comparison.row.aiImport',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH },
+        status: 'available'
+    },
+    {
+        id: 'aiChatOwner',
+        labelKey: 'billing.comparison.row.aiChatOwner',
+        cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_PER_MONTH },
+        status: 'available',
+        noteKey: 'billing.comparison.note.aiChatOwner'
+    },
+    {
+        id: 'aiSupport',
+        labelKey: 'billing.comparison.row.aiSupport',
+        cell: { kind: 'all-no' },
+        status: 'upcoming',
+        noteKey: 'billing.comparison.note.aiSupportAddon'
+    }
 ];
 
 const TOURIST_GROUPS: readonly GroupConfig[] = [
-	{ id: 'experience', rows: TOURIST_EXPERIENCE_ROWS },
-	{ id: 'ai',         rows: TOURIST_AI_ROWS         },
+    { id: 'experience', rows: TOURIST_EXPERIENCE_ROWS },
+    { id: 'ai', rows: TOURIST_AI_ROWS }
 ];
 
 const OWNER_GROUPS: readonly GroupConfig[] = [
-	{ id: 'asTourist',  rows: OWNER_AS_TOURIST_ROWS },
-	{ id: 'asOwner',    rows: OWNER_ROWS            },
-	{ id: 'aiBusiness', rows: OWNER_AI_ROWS         },
+    { id: 'asTourist', rows: OWNER_AS_TOURIST_ROWS },
+    { id: 'asOwner', rows: OWNER_ROWS },
+    { id: 'aiBusiness', rows: OWNER_AI_ROWS }
 ];
 
 const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
@@ -171,36 +329,36 @@ const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
 // ---------------------------------------------------------------------------
 
 function getCellRendered(cell: RowCellDef, plan: PublicPlanData, planIndex: number): CellRendered {
-	switch (cell.kind) {
-		case 'limit': {
-			if (!(cell.key in plan.limits)) return 'no';
-			const val = plan.limits[cell.key];
-			return val === -1 ? 'unlimited' : val;
-		}
-		case 'literals':
-			return cell.values[planIndex] ?? 'no';
-		case 'all-yes':
-			return 'yes';
-		case 'all-no':
-			return 'no';
-		case 'all-unlimited':
-			return 'unlimited';
-	}
+    switch (cell.kind) {
+        case 'limit': {
+            if (!(cell.key in plan.limits)) return 'no';
+            const val = plan.limits[cell.key];
+            return val === -1 ? 'unlimited' : val;
+        }
+        case 'literals':
+            return cell.values[planIndex] ?? 'no';
+        case 'all-yes':
+            return 'yes';
+        case 'all-no':
+            return 'no';
+        case 'all-unlimited':
+            return 'unlimited';
+    }
 }
 
 function formatPriceArs(cents: number): string {
-	if (cents === 0) return t('pricing.free', 'Gratis');
-	const pesos = cents / 100;
-	try {
-		return new Intl.NumberFormat(intlLocale, {
-			style: 'currency',
-			currency: 'ARS',
-			maximumFractionDigits: 0,
-			minimumFractionDigits: 0,
-		}).format(pesos);
-	} catch {
-		return `$${pesos.toLocaleString('es-AR')}`;
-	}
+    if (cents === 0) return t('pricing.free', 'Gratis');
+    const pesos = cents / 100;
+    try {
+        return new Intl.NumberFormat(intlLocale, {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0
+        }).format(pesos);
+    } catch {
+        return `$${pesos.toLocaleString('es-AR')}`;
+    }
 }
 ---
 

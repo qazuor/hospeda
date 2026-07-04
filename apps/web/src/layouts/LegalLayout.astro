@@ -7,29 +7,29 @@
  * Used by: privacy policy, terms and conditions.
  */
 
+import SEOHead from '@/components/seo/SEOHead.astro';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import BaseLayout from './BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
-	readonly lastUpdated?: string;
-	readonly showToc?: boolean;
-	readonly canonicalPath?: string;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
+    readonly lastUpdated?: string;
+    readonly showToc?: boolean;
+    readonly canonicalPath?: string;
 }
 
 const {
-	locale,
-	title,
-	description,
-	lastUpdated,
-	showToc = true,
-	canonicalPath = Astro.url.pathname,
+    locale,
+    title,
+    description,
+    lastUpdated,
+    showToc = true,
+    canonicalPath = Astro.url.pathname
 } = Astro.props;
 
 const { t } = createTranslations(locale);

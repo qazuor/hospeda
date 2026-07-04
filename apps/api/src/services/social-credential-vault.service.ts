@@ -280,7 +280,7 @@ export async function createSocialCredential(
                     ciphertext,
                     iv,
                     authTag,
-                    ...(label !== undefined ? { label } : {})
+                    ...(label === undefined ? {} : { label })
                 })
                 .returning({ id: socialCredentials.id });
 

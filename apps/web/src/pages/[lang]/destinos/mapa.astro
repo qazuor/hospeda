@@ -7,16 +7,16 @@
  * @rendering SSR
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import { ListingMap } from '@/components/maps/ListingMap.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import { ListingMap } from '@/components/maps/ListingMap.client';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { toDestinationCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -26,40 +26,50 @@ const { t, tPlural } = createTranslations(locale);
 // but allow up to 100 to avoid surprises if the catalog grows.
 const MAP_FETCH_CAP = 100;
 
-const result = await destinationsApi.list({ page: 1, pageSize: MAP_FETCH_CAP, destinationType: 'CITY' });
+const result = await destinationsApi.list({
+    page: 1,
+    pageSize: MAP_FETCH_CAP,
+    destinationType: 'CITY'
+});
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
-const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 const mapItems = cards
-	.filter((c) => c.coordinates?.lat && c.coordinates?.long)
-	.map((c) => {
-		const count = c.accommodationsCount;
-		return {
-			id: c.slug,
-			slug: c.slug,
-			name: c.name,
-			thumbnailUrl: c.featuredImage?.url,
-			accommodationsCount: count,
-			accommodationsLabel: typeof count === 'number'
-				? tPlural('destination.card.accommodation', count, { count })
-				: undefined,
-			detailHref: buildUrl({ locale, path: `destinos/${c.slug}` }),
-			coordinates: {
-				lat: Number.parseFloat(c.coordinates!.lat),
-				lng: Number.parseFloat(c.coordinates!.long),
-			},
-		};
-	})
-	.filter((item) => Number.isFinite(item.coordinates.lat) && Number.isFinite(item.coordinates.lng));
+    .filter((c) => c.coordinates?.lat && c.coordinates?.long)
+    .map((c) => {
+        const count = c.accommodationsCount;
+        return {
+            id: c.slug,
+            slug: c.slug,
+            name: c.name,
+            thumbnailUrl: c.featuredImage?.url,
+            accommodationsCount: count,
+            accommodationsLabel:
+                typeof count === 'number'
+                    ? tPlural('destination.card.accommodation', count, { count })
+                    : undefined,
+            detailHref: buildUrl({ locale, path: `destinos/${c.slug}` }),
+            coordinates: {
+                lat: Number.parseFloat(c.coordinates!.lat),
+                lng: Number.parseFloat(c.coordinates!.long)
+            }
+        };
+    })
+    .filter(
+        (item) => Number.isFinite(item.coordinates.lat) && Number.isFinite(item.coordinates.lng)
+    );
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;
-const mapCenter: [number, number] = mapItems.length > 0
-	? [mapItems[0].coordinates.lat, mapItems[0].coordinates.lng]
-	: LITORAL_CENTER;
+const mapCenter: [number, number] =
+    mapItems.length > 0
+        ? [mapItems[0].coordinates.lat, mapItems[0].coordinates.lng]
+        : LITORAL_CENTER;
 
 const listHref = buildUrl({ locale, path: 'destinos' });
 ---

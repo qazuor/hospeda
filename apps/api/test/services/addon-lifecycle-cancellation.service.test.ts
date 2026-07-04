@@ -122,8 +122,8 @@ vi.mock('@sentry/node', () => ({
 
 import * as Sentry from '@sentry/node';
 import * as entitlementMiddleware from '../../src/middlewares/entitlement';
-import { handleSubscriptionCancellationAddons } from '../../src/services/addon-lifecycle-cancellation.service';
 import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon-lifecycle.service';
+import { handleSubscriptionCancellationAddons } from '../../src/services/addon-lifecycle-cancellation.service';
 import { apiLogger } from '../../src/utils/logger';
 import { createMockBilling } from '../helpers/mock-factories';
 

@@ -15,24 +15,24 @@
  * it once per render, so rules of hooks stay satisfied.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { ChevronDownIcon, type IconProps } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import { type ComponentType, useState } from 'react';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
-import type { BadgeColor } from '@/components/table/DataTable';
 import { BadgeCell, getBadgeColorClasses } from '@/components/table/cells/BadgeCell';
-import { useToast } from '@/components/ui/ToastProvider';
+import type { BadgeColor } from '@/components/table/DataTable';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-import type { TranslationKey } from '@repo/i18n';
-import { ChevronDownIcon, type IconProps } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import { type ComponentType, useState } from 'react';
 
 /** Minimal mutation shape required by the cell. */
 export interface InlineUpdateMutationLike<TPatch> {

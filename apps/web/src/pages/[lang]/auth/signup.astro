@@ -12,12 +12,12 @@
  * @rendering SSR (auth state from locals)
  */
 
+import { SparkleIcon, UsersIcon } from '@repo/icons';
+import { SignUp } from '@/components/auth/SignUp.client';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import AuthLayout from '@/layouts/AuthLayout.astro';
-import { SignUp } from '@/components/auth/SignUp.client';
-import { SparkleIcon, UsersIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -42,20 +42,15 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 // Anchor on `Astro.url.origin` (the actual request host) so users
 // signing up from staging.hospeda.com.ar don't get bounced to the
 // canonical apex post-registration.
-const redirectTo = new URL(
-    buildUrl({ locale, path: 'auth/verify-email-sent' }),
-    Astro.url.origin
-).href;
+const redirectTo = new URL(buildUrl({ locale, path: 'auth/verify-email-sent' }), Astro.url.origin)
+    .href;
 
 // OAuth providers (Google, Facebook) verify email themselves, so the
 // user is fully authenticated when the callback returns. Sending them
 // to /auth/verify-email-sent/ would be confusing ("check your inbox"
 // when there's no email to check). Land them on the account dashboard
 // instead.
-const oauthRedirectTo = new URL(
-    buildUrl({ locale, path: 'mi-cuenta' }),
-    Astro.url.origin
-).href;
+const oauthRedirectTo = new URL(buildUrl({ locale, path: 'mi-cuenta' }), Astro.url.origin).href;
 
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');

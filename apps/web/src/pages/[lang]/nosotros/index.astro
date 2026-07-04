@@ -6,19 +6,19 @@
  * @rendering SSG (prerender)
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { LocationIcon, TreeIcon, UsersIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = true;
 
 export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }) satisfies GetStaticPaths;
 
 const { lang } = Astro.params;
@@ -27,9 +27,9 @@ const { t } = createTranslations(locale);
 
 // Split title to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {
-	const words = full.trim().split(/\s+/);
-	const accent = words.pop() ?? full;
-	return { main: words.join(' '), accent };
+    const words = full.trim().split(/\s+/);
+    const accent = words.pop() ?? full;
+    return { main: words.join(' '), accent };
 };
 
 const heroHeading = splitLastWord(t('about.hero.title', 'Conectamos viajeros con el Litoral'));
@@ -38,14 +38,14 @@ const ctaHeading = splitLastWord(t('about.cta.title', 'Descubrí el Litoral'));
 
 const aboutTitle = t('about.title', 'Quiénes somos');
 const aboutDescription = t(
-	'about.description',
-	'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.'
+    'about.description',
+    'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.'
 );
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://hospeda.com.ar').href;
 const inLanguageMap: Record<SupportedLocale, string> = {
-	es: 'es-AR',
-	en: 'en-US',
-	pt: 'pt-BR'
+    es: 'es-AR',
+    en: 'en-US',
+    pt: 'pt-BR'
 };
 ---
 

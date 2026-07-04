@@ -5,7 +5,7 @@
  * Add handlers for each API endpoint that your tests need.
  */
 
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 
 // Base API URL
 const API_BASE = '/api/v1';
@@ -578,4 +578,4 @@ export const mockData = {
 /**
  * Export response factories for custom test scenarios
  */
-export { API_BASE, mockPaginatedResponse, mockSuccessResponse, mockErrorResponse };
+export { API_BASE, mockErrorResponse, mockPaginatedResponse, mockSuccessResponse };

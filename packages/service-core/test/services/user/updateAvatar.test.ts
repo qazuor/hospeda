@@ -13,7 +13,7 @@
  */
 import { UserModel } from '@repo/db';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';

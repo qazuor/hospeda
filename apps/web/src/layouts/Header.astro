@@ -19,9 +19,9 @@
  * users only see the consolidated UserMenu.
  */
 
-import { getImage, Image } from "astro:assets";
-import { BuildingIcon, HamburgerIcon } from "@repo/icons";
-import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
+import { getImage, Image } from 'astro:assets';
+import { BuildingIcon, HamburgerIcon } from '@repo/icons';
+import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
 // Side-effect import of the mobile menu's CSS module. The menu lives inside
 // a server:defer island, and ClientRouter occasionally re-renders the island
 // after a back navigation without re-injecting the module's stylesheet —
@@ -29,18 +29,18 @@ import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.as
 // the module here (a component that ships on every page) forces Astro/Vite
 // to include the CSS in every page's <head>, so the styles are always
 // present regardless of how the island is hydrated.
-import "@/components/shared/navigation/MobileMenu.module.css";
-import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
-import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
-import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitcher.client";
-import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
+import '@/components/shared/navigation/MobileMenu.module.css';
+import logoSrc from '@/assets/images/logo.webp';
+import { SettingsDropdown } from '@/components/shared/navigation/SettingsDropdown.client';
+import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
+import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
+import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import IconButton from '@/components/shared/ui/IconButton.astro';
-import { getAdminUrl } from "@/lib/env";
-import { createTranslations } from "@/lib/i18n";
-import type { SupportedLocale } from "@/lib/i18n";
-import { buildUrl } from "@/lib/urls";
-import logoSrc from "@/assets/images/logo.webp";
+import { getAdminUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -59,13 +59,13 @@ try {
 }
 
 const navLinks = [
-    { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
-    { label: t("nav.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
-    { label: t("nav.events"), href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: t("nav.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
-    { label: t("nav.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
-    { label: t("nav.blog"), href: buildUrl({ locale, path: "/publicaciones/" }) },
-    { label: t("nav.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
+    { label: t('nav.accommodations'), href: buildUrl({ locale, path: '/alojamientos/' }) },
+    { label: t('nav.destinations'), href: buildUrl({ locale, path: '/destinos/' }) },
+    { label: t('nav.events'), href: buildUrl({ locale, path: '/eventos/' }) },
+    { label: t('nav.gastronomy'), href: buildUrl({ locale, path: '/gastronomia/' }) },
+    { label: t('nav.experiences'), href: buildUrl({ locale, path: '/experiencias/' }) },
+    { label: t('nav.blog'), href: buildUrl({ locale, path: '/publicaciones/' }) },
+    { label: t('nav.contact'), href: buildUrl({ locale, path: '/contacto/' }) }
 ] as const;
 
 const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
@@ -118,8 +118,11 @@ const adminPanelUrl = getAdminUrl();
  * parse the session, `serverUser` is null and the CTA is shown — the correct
  * default for guests.
  */
-const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN' ||
-    serverUser?.role === 'CLIENT_MANAGER' || serverUser?.role === 'SUPER_ADMIN';
+const isAlreadyHost =
+    serverUser?.role === 'HOST' ||
+    serverUser?.role === 'ADMIN' ||
+    serverUser?.role === 'CLIENT_MANAGER' ||
+    serverUser?.role === 'SUPER_ADMIN';
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">

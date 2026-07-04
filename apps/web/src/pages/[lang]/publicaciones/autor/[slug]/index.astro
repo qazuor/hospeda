@@ -8,16 +8,16 @@
  * @rendering SSR (no ISR — user profile may change)
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EmptyState from '@/components/EmptyState.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
-import { usersApi, postsApi } from '@/lib/api/endpoints';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import { postsApi, usersApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -35,11 +35,12 @@ const pageSize = 9;
 // Fetch user profile — 404 if not found
 const userResult = await usersApi.getBySlug({ slug });
 if (!userResult.ok) {
-	return new Response(null, { status: 404 });
+    return new Response(null, { status: 404 });
 }
 
 const author = userResult.data;
-const authorName = author.displayName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const authorName =
+    author.displayName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 // Fetch author's posts in parallel (no waterfall)
 const postsResult = await postsApi.list({ authorId: author.id, page, pageSize });
@@ -49,7 +50,7 @@ const totalPages = pagination?.totalPages ?? 1;
 const totalPosts = pagination?.total ?? 0;
 
 const articleCards = rawItems.map((item) =>
-	toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
+    toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
 
 const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;

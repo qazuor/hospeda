@@ -4,10 +4,10 @@
  * selected chips, and "show more/less" collapse for large option sets.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './SelectSearchFilter.module.css';
 
 /** Configuration for a select-search filter group. */
@@ -70,8 +70,10 @@ export function SelectSearchFilter({ config, value, onChange, locale }: SelectSe
     return (
         <div className={styles.selectSearch}>
             {selectedOptions.length > 0 && (
+                // biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; this is a removable-chip button row, not a form control — role="group" is the correct WAI-ARIA labeled-group pattern here.
                 <div
                     className={styles.selectSearchChips}
+                    role="group"
                     aria-label={t('ui.filter.selected', 'seleccionados')}
                 >
                     {selectedOptions.map((opt) => (

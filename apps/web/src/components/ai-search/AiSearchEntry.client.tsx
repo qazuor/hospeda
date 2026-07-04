@@ -17,9 +17,9 @@
  * @module AiSearchEntry
  */
 
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styles from './AiSearchEntry.module.css';
 import { SearchChatPanel } from './SearchChatPanel.client';
 
@@ -36,7 +36,7 @@ const FOCUSABLE_SELECTOR =
  * server-rendered by Astro before hydration, so fall back to `useEffect` on
  * the server where layout effects are a no-op anyway.
  */
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 /**
  * Props for the AiSearchEntry React island.
@@ -212,6 +212,7 @@ export function AiSearchEntry({
                  the global keydown listener above. */}
             {isOpen && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-close is a mouse convenience; keyboard close is via Escape (global listener above)
+                // biome-ignore lint/a11y/noStaticElementInteractions: WAI-ARIA APG modal dialog pattern — the backdrop stays role="presentation" (removed from the a11y tree) and its click-to-close is a pointer-only convenience; the keyboard equivalent (Escape) is provided by the global listener above, not by this element
                 <div
                     className={styles.overlay}
                     onClick={(e) => {

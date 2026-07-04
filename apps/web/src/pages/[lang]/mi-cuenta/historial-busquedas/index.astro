@@ -16,13 +16,13 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { SearchHistoryList } from '@/components/account/SearchHistoryList.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { SearchHistoryList } from '@/components/account/SearchHistoryList.client';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -48,15 +48,12 @@ let initialHistoryEnabled = true;
 try {
     const cookieHeader = Astro.request.headers.get('cookie');
     if (cookieHeader) {
-        const res = await fetch(
-            `${apiUrl}/api/v1/protected/users/${user.id}`,
-            {
-                headers: {
-                    cookie: cookieHeader,
-                    Accept: 'application/json'
-                }
+        const res = await fetch(`${apiUrl}/api/v1/protected/users/${user.id}`, {
+            headers: {
+                cookie: cookieHeader,
+                Accept: 'application/json'
             }
-        );
+        });
         if (res.ok) {
             const body = (await res.json()) as {
                 data?: { settings?: { searchHistoryEnabled?: boolean } | null };

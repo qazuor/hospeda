@@ -17,7 +17,7 @@
  *   <out-dir>/<pkg-path>/coverage/coverage-summary.json
  */
 
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
 const [, , shardsDir, outDir] = process.argv;

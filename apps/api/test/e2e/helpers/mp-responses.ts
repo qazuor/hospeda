@@ -237,8 +237,8 @@ export const providerResponseFixtures = {
             amount: input.amount ?? 1000,
             currency: input.currency ?? 'ARS',
             metadata: input.metadata ?? {},
-            ...(input.clientSecret !== undefined ? { clientSecret: input.clientSecret } : {}),
-            ...(input.nextAction !== undefined ? { nextAction: input.nextAction } : {})
+            ...(input.clientSecret === undefined ? {} : { clientSecret: input.clientSecret }),
+            ...(input.nextAction === undefined ? {} : { nextAction: input.nextAction })
         };
     },
     refund(input: RefundFixtureInput = {}): ProviderRefundResponse {
@@ -263,12 +263,12 @@ export const providerResponseFixtures = {
             trialStart: input.trialStart ?? null,
             trialEnd: input.trialEnd ?? null,
             metadata: input.metadata ?? {},
-            ...(input.initPoint !== undefined
-                ? { initPoint: input.initPoint }
-                : { initPoint: `https://stub.example/preapproval/${id}` }),
-            ...(input.sandboxInitPoint !== undefined
-                ? { sandboxInitPoint: input.sandboxInitPoint }
-                : {})
+            ...(input.initPoint === undefined
+                ? { initPoint: `https://stub.example/preapproval/${id}` }
+                : { initPoint: input.initPoint }),
+            ...(input.sandboxInitPoint === undefined
+                ? {}
+                : { sandboxInitPoint: input.sandboxInitPoint })
         };
     },
     price(input: PriceFixtureInput = {}): ProviderPriceResponse {
@@ -278,9 +278,9 @@ export const providerResponseFixtures = {
             unitAmount: input.unitAmount ?? 100_000,
             currency: input.currency ?? 'ARS',
             recurring:
-                input.recurring !== undefined
-                    ? input.recurring
-                    : { interval: 'month', intervalCount: 1 }
+                input.recurring === undefined
+                    ? { interval: 'month', intervalCount: 1 }
+                    : input.recurring
         };
     },
     webhookEvent(input: WebhookEventFixtureInput = {}): ProviderWebhookEventResponse {

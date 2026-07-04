@@ -1,7 +1,7 @@
-import { fetchApi } from '@/lib/api/client';
 import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Runtime validation schema for payment-history records returned by the
@@ -70,11 +70,7 @@ async function fetchSubscription(id: string) {
  * (cancelAtPeriodEnd: true on the backend). Optional `reason` is logged in
  * the subscription event audit trail.
  */
-async function cancelSubscription(payload: {
-    id: string;
-    immediate?: boolean;
-    reason?: string;
-}) {
+async function cancelSubscription(payload: { id: string; immediate?: boolean; reason?: string }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/billing/subscriptions/${payload.id}/cancel`,
         method: 'POST',

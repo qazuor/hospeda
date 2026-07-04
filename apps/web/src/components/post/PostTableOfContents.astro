@@ -10,14 +10,14 @@
  * which attaches/removes `data-active` on the link elements via IntersectionObserver.
  */
 
-import { PostTocActive } from './PostTocActive.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import type { TocHeading } from '@/lib/extract-toc';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { PostTocActive } from './PostTocActive.client';
 
 interface Props {
-	readonly headings: ReadonlyArray<TocHeading>;
-	readonly locale: SupportedLocale;
+    readonly headings: ReadonlyArray<TocHeading>;
+    readonly locale: SupportedLocale;
 }
 
 const { headings, locale } = Astro.props;

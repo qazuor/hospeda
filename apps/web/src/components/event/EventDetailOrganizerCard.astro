@@ -1,4 +1,17 @@
 ---
+import {
+    EmailIcon,
+    FacebookIcon,
+    GlobeIcon,
+    InstagramIcon,
+    PhoneIcon,
+    TwitterIcon,
+    WebIcon,
+    YoutubeIcon
+} from '@repo/icons';
+import type { EventDetailOrganizer } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 /**
  * @file EventDetailOrganizerCard.astro
  * @description Sidebar card displaying the event organizer details.
@@ -11,19 +24,6 @@
  * no LinkedinIcon exists in the package).
  */
 import { sanitizeHtml } from '@/lib/sanitize-html';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import {
-    EmailIcon,
-    PhoneIcon,
-    GlobeIcon,
-    FacebookIcon,
-    InstagramIcon,
-    TwitterIcon,
-    YoutubeIcon,
-    WebIcon
-} from '@repo/icons';
-import type { EventDetailOrganizer } from '@/data/types';
 
 interface Props {
     readonly organizer: EventDetailOrganizer;
@@ -42,7 +42,8 @@ const safeDescription = organizer.description
 const contact = organizer.contactInfo;
 const social = organizer.socialNetworks;
 
-const hasSocial = social &&
+const hasSocial =
+    social &&
     (social.facebook || social.instagram || social.twitter || social.youtube || social.linkedin);
 ---
 

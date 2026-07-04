@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
 import { ChevronRightIcon } from '@repo/icons';
 import * as React from 'react';
+import { cn } from '@/lib/utils';
 import { useSectionOpenListener } from './section-navigation';
 
 // ---------------------------------------------------------------------------

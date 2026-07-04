@@ -6,29 +6,29 @@
  * a FavoriteButton island, related-entity context chip, and a compact meta row.
  */
 
+import { StarIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import Badge from '@/components/shared/ui/Badge.astro';
 import type { ArticleCardBaseProps } from '@/data/types';
+import {
+    resolveEntityIcon,
+    resolveEntityLink,
+    truncateExcerpt,
+    truncateTags
+} from '@/lib/article-card-utils';
+import {
+    getBadgeStatusColor,
+    getMutedColorScheme,
+    getPostCategoryColor,
+    getPostCategoryEmoji,
+    getPostCategoryLabel
+} from '@/lib/colors';
+import { getExpiryStatus } from '@/lib/format-expires';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import {
-    truncateTags,
-    truncateExcerpt,
-    resolveEntityLink,
-    resolveEntityIcon,
-} from '@/lib/article-card-utils';
-import Badge from '@/components/shared/ui/Badge.astro';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon } from '@repo/icons';
-import {
-    getPostCategoryColor,
-    getPostCategoryLabel,
-    getPostCategoryEmoji,
-    getBadgeStatusColor,
-    getMutedColorScheme,
-} from '@/lib/colors';
 import CardImage from './CardImage.astro';
 import CardMeta from './CardMeta.astro';
-import { getExpiryStatus } from '@/lib/format-expires';
 
 interface Props {
     /** Full article card data. */
@@ -55,7 +55,10 @@ const expiryDays = expiryStatus.daysRemaining ?? 0;
 const expiryLabel =
     expiryDays === 0
         ? t('blog.card.expiresToday', 'Expira hoy')
-        : t('blog.card.expiresIn', `Expira en ${expiryDays} días`).replace('{{count}}', String(expiryDays));
+        : t('blog.card.expiresIn', `Expira en ${expiryDays} días`).replace(
+              '{{count}}',
+              String(expiryDays)
+          );
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });

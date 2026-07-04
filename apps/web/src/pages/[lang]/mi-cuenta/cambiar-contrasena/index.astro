@@ -18,12 +18,12 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
-import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
 
 // Locale is injected and validated by middleware.
 const locale = Astro.locals.locale as SupportedLocale;

@@ -7,49 +7,49 @@
  * @rendering SSR + ISR 24h
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
-import { LocationMap } from '@/components/maps/LocationMap.client';
+import { Image } from 'astro:assets';
+import { AlertTriangleIcon } from '@repo/icons';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
+import DestinationClimateCard from '@/components/destination/DestinationClimateCard.astro';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
+import DestinationFaqAccordion from '@/components/destination/DestinationFaqAccordion.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
-import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
-import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
-import DestinationFaqAccordion from '@/components/destination/DestinationFaqAccordion.astro';
-import DestinationClimateCard from '@/components/destination/DestinationClimateCard.astro';
-import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
-import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
 import DestinationNearbySection from '@/components/destination/DestinationNearbySection.astro';
-import {
-	destinationsApi,
-	accommodationsApi,
-	eventsApi,
-	postsApi,
-	userBookmarksPublicApi
-} from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
 import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
-import { getApiUrl } from '@/lib/env';
+import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
+import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
+import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
+import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import DetailLayout from '@/layouts/DetailLayout.astro';
 import {
-	toAccommodationCardProps,
-	toDestinationFaqs,
-	toEventCardProps
+    accommodationsApi,
+    destinationsApi,
+    eventsApi,
+    postsApi,
+    userBookmarksPublicApi
+} from '@/lib/api/endpoints';
+import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import {
+    toAccommodationCardProps,
+    toDestinationFaqs,
+    toEventCardProps
 } from '@/lib/api/transforms';
-import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { AlertTriangleIcon } from '@repo/icons';
-import { renderContent } from '@/lib/render-content';
 import { getDestinationSameAs } from '@/lib/destination-sameas';
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { Image } from 'astro:assets';
+import { renderContent } from '@/lib/render-content';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
@@ -59,9 +59,10 @@ if (!path) return new Response(null, { status: 404 });
 
 // Single segment = slug lookup, multi-segment = hierarchical path lookup
 const segments = path.split('/').filter(Boolean);
-const result = segments.length === 1
-	? await destinationsApi.getBySlug({ slug: segments[0] })
-	: await destinationsApi.getByPath({ path: `/${path}` });
+const result =
+    segments.length === 1
+        ? await destinationsApi.getBySlug({ slug: segments[0] })
+        : await destinationsApi.getByPath({ path: `/${path}` });
 
 if (!result.ok) return new Response(null, { status: 404 });
 
@@ -73,39 +74,47 @@ const slug = String(dest.slug || '');
 const destId = String(dest.id || '');
 
 type ClimateInputForPage = {
-	readonly bestSeason?: string;
-	readonly bestMonths?: { readonly from?: string; readonly to?: string };
-	readonly seasons?: Record<string, { avgTempMinC?: number; avgTempMaxC?: number; rainfallMm?: number } | undefined>;
-	readonly note?: Record<string, string>;
+    readonly bestSeason?: string;
+    readonly bestMonths?: { readonly from?: string; readonly to?: string };
+    readonly seasons?: Record<
+        string,
+        { avgTempMinC?: number; avgTempMaxC?: number; rainfallMm?: number } | undefined
+    >;
+    readonly note?: Record<string, string>;
 };
 const climate = (dest.climate ?? null) as ClimateInputForPage | null;
 
 // --- Media (featuredImage + gallery) ----------------------------------------
 // The API returns media as an object { featuredImage: { url, caption }, gallery: [...] }.
 // We tolerate either shape (legacy string or new object) so the page never blows up.
-interface MediaImage { readonly url: string; readonly caption?: string; readonly description?: string }
+interface MediaImage {
+    readonly url: string;
+    readonly caption?: string;
+    readonly description?: string;
+}
 const mediaRaw = dest.media as
-	| { featuredImage?: MediaImage; gallery?: ReadonlyArray<MediaImage> }
-	| undefined;
+    | { featuredImage?: MediaImage; gallery?: ReadonlyArray<MediaImage> }
+    | undefined;
 const PLACEHOLDER = '/assets/images/placeholder-destination.svg';
 const featuredImageObj: MediaImage =
-	mediaRaw?.featuredImage && typeof mediaRaw.featuredImage === 'object'
-		? mediaRaw.featuredImage
-		: typeof dest.featuredImage === 'string' && dest.featuredImage
-		  ? { url: dest.featuredImage, caption: name }
-		  : { url: PLACEHOLDER, caption: name };
+    mediaRaw?.featuredImage && typeof mediaRaw.featuredImage === 'object'
+        ? mediaRaw.featuredImage
+        : typeof dest.featuredImage === 'string' && dest.featuredImage
+          ? { url: dest.featuredImage, caption: name }
+          : { url: PLACEHOLDER, caption: name };
 const galleryImages: ReadonlyArray<MediaImage> = mediaRaw?.gallery ?? [];
 
 // --- Domain data passed to the new section components -----------------------
-const attractions = (dest.attractions as ReadonlyArray<{
-	readonly id: string;
-	readonly name: string;
-	readonly slug?: string;
-	readonly description?: string;
-	readonly icon?: string;
-	readonly isFeatured?: boolean;
-	readonly displayWeight?: number;
-}>) ?? [];
+const attractions =
+    (dest.attractions as ReadonlyArray<{
+        readonly id: string;
+        readonly name: string;
+        readonly slug?: string;
+        readonly description?: string;
+        readonly icon?: string;
+        readonly isFeatured?: boolean;
+        readonly displayWeight?: number;
+    }>) ?? [];
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
@@ -121,23 +130,23 @@ let nearbyDestinations: ReadonlyArray<unknown> = [];
 let accCount = 0;
 let eventsCount = 0;
 let stats: {
-	accommodationsCount: number;
-	reviewsCount: number;
-	averageRating: number;
-	attractionsCount: number;
-	eventsCount: number;
+    accommodationsCount: number;
+    reviewsCount: number;
+    averageRating: number;
+    attractionsCount: number;
+    eventsCount: number;
 } = {
-	accommodationsCount: 0,
-	reviewsCount: 0,
-	averageRating: 0,
-	attractionsCount: 0,
-	eventsCount: 0
+    accommodationsCount: 0,
+    reviewsCount: 0,
+    averageRating: 0,
+    attractionsCount: 0,
+    eventsCount: 0
 };
 
 const parentDestinationId =
-	typeof dest.parentDestinationId === 'string' && dest.parentDestinationId
-		? dest.parentDestinationId
-		: null;
+    typeof dest.parentDestinationId === 'string' && dest.parentDestinationId
+        ? dest.parentDestinationId
+        : null;
 
 /**
  * Defensive extraction for paginated / wrapped API results.
@@ -150,19 +159,19 @@ const parentDestinationId =
  * before giving up — keeps the page resilient to future schema renames.
  */
 function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
-	if (settled.status === 'rejected') return [];
-	const val = settled.value as { ok?: boolean; data?: unknown };
-	if (!val?.ok) return [];
-	const d = val.data;
-	if (Array.isArray(d)) return d as Record<string, unknown>[];
-	if (d && typeof d === 'object') {
-		const obj = d as Record<string, unknown>;
-		const wrapperKeys = ['items', 'data', 'accommodations', 'children', 'posts', 'events'];
-		for (const key of wrapperKeys) {
-			if (Array.isArray(obj[key])) return obj[key] as Record<string, unknown>[];
-		}
-	}
-	return [];
+    if (settled.status === 'rejected') return [];
+    const val = settled.value as { ok?: boolean; data?: unknown };
+    if (!val?.ok) return [];
+    const d = val.data;
+    if (Array.isArray(d)) return d as Record<string, unknown>[];
+    if (d && typeof d === 'object') {
+        const obj = d as Record<string, unknown>;
+        const wrapperKeys = ['items', 'data', 'accommodations', 'children', 'posts', 'events'];
+        for (const key of wrapperKeys) {
+            if (Array.isArray(obj[key])) return obj[key] as Record<string, unknown>[];
+        }
+    }
+    return [];
 }
 
 /**
@@ -174,94 +183,89 @@ function extractItems(settled: PromiseSettledResult<unknown>): Record<string, un
  * array we can find — better an honest local count than a silent zero.
  */
 function extractTotal(settled: PromiseSettledResult<unknown>): number {
-	if (settled.status === 'rejected') return 0;
-	const val = settled.value as { ok?: boolean; data?: unknown };
-	if (!val?.ok) return 0;
-	const d = val.data as Record<string, unknown> | undefined;
-	const total = (d?.pagination as { total?: number } | undefined)?.total;
-	if (typeof total === 'number') return total;
-	if (!d) return 0;
-	for (const key of ['items', 'data', 'accommodations', 'children', 'posts', 'events']) {
-		const arr = d[key];
-		if (Array.isArray(arr)) return arr.length;
-	}
-	return 0;
+    if (settled.status === 'rejected') return 0;
+    const val = settled.value as { ok?: boolean; data?: unknown };
+    if (!val?.ok) return 0;
+    const d = val.data as Record<string, unknown> | undefined;
+    const total = (d?.pagination as { total?: number } | undefined)?.total;
+    if (typeof total === 'number') return total;
+    if (!d) return 0;
+    for (const key of ['items', 'data', 'accommodations', 'children', 'posts', 'events']) {
+        const arr = d[key];
+        if (Array.isArray(arr)) return arr.length;
+    }
+    return 0;
 }
 
 try {
-	const [
-		accResult,
-		eventsResult,
-		statsResult,
-		postsResult,
-		siblingsResult
-	] = await Promise.allSettled([
-		// NOTE: getByDestination returns ALL accommodations for the destination in a
-		// single non-paginated payload — pageSize is not accepted. One call serves both
-		// the preview cards (sliced below) and the total count (array length).
-		accommodationsApi.getByDestination({ destinationId: destId }),
-		// NOTE: eventsApi.list with pageSize:3 already carries pagination.total in its
-		// response. We derive eventsCount from that field via extractTotal() — no second
-		// pageSize:1 "count-only" call needed.
-		eventsApi.list({ pageSize: 3, destinationId: destId }),
-		destinationsApi.getStats({ id: destId }),
-		postsApi.getByRelatedDestination({ destinationId: destId }),
-		parentDestinationId
-			? destinationsApi.getChildren({ id: parentDestinationId })
-			: Promise.resolve({ ok: false } as const)
-	]);
+    const [accResult, eventsResult, statsResult, postsResult, siblingsResult] =
+        await Promise.allSettled([
+            // NOTE: getByDestination returns ALL accommodations for the destination in a
+            // single non-paginated payload — pageSize is not accepted. One call serves both
+            // the preview cards (sliced below) and the total count (array length).
+            accommodationsApi.getByDestination({ destinationId: destId }),
+            // NOTE: eventsApi.list with pageSize:3 already carries pagination.total in its
+            // response. We derive eventsCount from that field via extractTotal() — no second
+            // pageSize:1 "count-only" call needed.
+            eventsApi.list({ pageSize: 3, destinationId: destId }),
+            destinationsApi.getStats({ id: destId }),
+            postsApi.getByRelatedDestination({ destinationId: destId }),
+            parentDestinationId
+                ? destinationsApi.getChildren({ id: parentDestinationId })
+                : Promise.resolve({ ok: false } as const)
+        ]);
 
-	accCards = extractItems(accResult)
-		.slice(0, 3)
-		.map((item) => toAccommodationCardProps({ item, locale }));
-	accCount = extractTotal(accResult);
+    accCards = extractItems(accResult)
+        .slice(0, 3)
+        .map((item) => toAccommodationCardProps({ item, locale }));
+    accCount = extractTotal(accResult);
 
-	eventCards = extractItems(eventsResult)
-		.slice(0, 3)
-		.map((item) => toEventCardProps({ item, locale }));
-	eventsCount = extractTotal(eventsResult);
+    eventCards = extractItems(eventsResult)
+        .slice(0, 3)
+        .map((item) => toEventCardProps({ item, locale }));
+    eventsCount = extractTotal(eventsResult);
 
-	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
-		stats = {
-			accommodationsCount: statsResult.value.data.accommodationsCount,
-			reviewsCount: statsResult.value.data.reviewsCount,
-			averageRating: statsResult.value.data.averageRating,
-			attractionsCount: statsResult.value.data.attractionsCount,
-			eventsCount: statsResult.value.data.eventsCount
-		};
-	} else {
-		// Fall back to the locally derived counts so the sidebar still has something useful
-		stats = {
-			accommodationsCount: accCount,
-			reviewsCount: 0,
-			averageRating: 0,
-			attractionsCount: attractions.length,
-			eventsCount
-		};
-	}
+    if (statsResult.status === 'fulfilled' && statsResult.value.ok) {
+        stats = {
+            accommodationsCount: statsResult.value.data.accommodationsCount,
+            reviewsCount: statsResult.value.data.reviewsCount,
+            averageRating: statsResult.value.data.averageRating,
+            attractionsCount: statsResult.value.data.attractionsCount,
+            eventsCount: statsResult.value.data.eventsCount
+        };
+    } else {
+        // Fall back to the locally derived counts so the sidebar still has something useful
+        stats = {
+            accommodationsCount: accCount,
+            reviewsCount: 0,
+            averageRating: 0,
+            attractionsCount: attractions.length,
+            eventsCount
+        };
+    }
 
-	// Ensure stats always reflect what we actually loaded — when the dedicated
-	// stats endpoint returns 0 but our preview lists found items locally, prefer
-	// the local count over the missing aggregate. This keeps the sidebar honest.
-	stats = {
-		...stats,
-		accommodationsCount: Math.max(stats.accommodationsCount, accCount, accCards.length),
-		eventsCount: Math.max(stats.eventsCount, eventsCount, eventCards.length),
-		attractionsCount: Math.max(stats.attractionsCount, attractions.length)
-	};
+    // Ensure stats always reflect what we actually loaded — when the dedicated
+    // stats endpoint returns 0 but our preview lists found items locally, prefer
+    // the local count over the missing aggregate. This keeps the sidebar honest.
+    stats = {
+        ...stats,
+        accommodationsCount: Math.max(stats.accommodationsCount, accCount, accCards.length),
+        eventsCount: Math.max(stats.eventsCount, eventsCount, eventCards.length),
+        attractionsCount: Math.max(stats.attractionsCount, attractions.length)
+    };
 
-	relatedPosts = extractItems(postsResult).slice(0, 4);
+    relatedPosts = extractItems(postsResult).slice(0, 4);
 
-	if (siblingsResult.status === 'fulfilled' && siblingsResult.value.ok) {
-		const siblings = (siblingsResult.value.data.children ?? []) as ReadonlyArray<{
-			id?: string;
-		}>;
-		// Drop the current destination from the siblings list and cap at 8 so
-		// the carousel stays focused. The component will further cap visible cards.
-		nearbyDestinations = siblings.filter((d) => d.id !== destId).slice(0, 8);
-	}
+    if (siblingsResult.status === 'fulfilled' && siblingsResult.value.ok) {
+        const siblings = (siblingsResult.value.data.children ?? []) as ReadonlyArray<{
+            id?: string;
+        }>;
+        // Drop the current destination from the siblings list and cap at 8 so
+        // the carousel stays focused. The component will further cap visible cards.
+        nearbyDestinations = siblings.filter((d) => d.id !== destId).slice(0, 8);
+    }
 } catch (err) {
-	console.error('[destinos/detail] Error fetching previews:', err);
+    console.error('[destinos/detail] Error fetching previews:', err);
 }
 
 // --- Auth -------------------------------------------------------------------
@@ -274,30 +278,30 @@ let initialIsFavorited: boolean | undefined;
 let initialBookmarkId: string | null = null;
 
 try {
-	const countResult = await userBookmarksPublicApi.count({
-		entityType: 'DESTINATION',
-		entityId: destId
-	});
-	if (countResult.ok) {
-		bookmarkCount = countResult.data.count;
-	}
+    const countResult = await userBookmarksPublicApi.count({
+        entityType: 'DESTINATION',
+        entityId: destId
+    });
+    if (countResult.ok) {
+        bookmarkCount = countResult.data.count;
+    }
 } catch {
-	// Graceful degradation: counter not shown if fetch fails
+    // Graceful degradation: counter not shown if fetch fails
 }
 
 if (isAuthenticated) {
-	try {
-		const statusResult = await userBookmarksApi.checkStatus({
-			entityId: destId,
-			entityType: 'DESTINATION'
-		});
-		if (statusResult.ok) {
-			initialIsFavorited = statusResult.data.isFavorited;
-			initialBookmarkId = statusResult.data.bookmarkId;
-		}
-	} catch {
-		// Graceful degradation: FavoriteButton hydrates itself on mount
-	}
+    try {
+        const statusResult = await userBookmarksApi.checkStatus({
+            entityId: destId,
+            entityType: 'DESTINATION'
+        });
+        if (statusResult.ok) {
+            initialIsFavorited = statusResult.data.isFavorited;
+            initialBookmarkId = statusResult.data.bookmarkId;
+        }
+    } catch {
+        // Graceful degradation: FavoriteButton hydrates itself on mount
+    }
 }
 
 // --- Bulk favorite pre-check for event preview cards -------------------------
@@ -306,89 +310,99 @@ if (isAuthenticated) {
 type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
 let eventCardFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
 if (isAuthenticated && eventCards.length > 0) {
-	try {
-		const bulkResult = await userBookmarksApi.checkBulk({
-			entityType: 'EVENT',
-			entityIds: eventCards.map((card) => card.id)
-		});
-		if (bulkResult.ok) {
-			eventCardFavoriteChecks = bulkResult.data.checks;
-		} else {
-			webLogger.warn('Bulk bookmark check failed on destinos/detail event cards; falling back to per-card hydration', {
-				error: bulkResult.error
-			});
-		}
-	} catch (error) {
-		webLogger.warn('Bulk bookmark check threw on destinos/detail event cards; falling back to per-card hydration', {
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'EVENT',
+            entityIds: eventCards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            eventCardFavoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn(
+                'Bulk bookmark check failed on destinos/detail event cards; falling back to per-card hydration',
+                {
+                    error: bulkResult.error
+                }
+            );
+        }
+    } catch (error) {
+        webLogger.warn(
+            'Bulk bookmark check threw on destinos/detail event cards; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
+    }
 }
 const resolvedEventCards = eventCards.map((card) => {
-	const entry = eventCardFavoriteChecks[card.id];
-	if (!entry) return card;
-	return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+    const entry = eventCardFavoriteChecks[card.id];
+    if (!entry) return card;
+    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
 });
 
 // --- Bulk favorite pre-check for nearby destination cards --------------------
 // nearbyDestinations has up to 8 items. One /check-bulk replaces N per-card calls.
 let nearbyDestFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
 if (isAuthenticated && nearbyDestinations.length > 0) {
-	try {
-		const nearbyIds = nearbyDestinations
-			.map((d) => (d as Record<string, unknown>).id)
-			.filter((id): id is string => typeof id === 'string');
-		if (nearbyIds.length > 0) {
-			const bulkResult = await userBookmarksApi.checkBulk({
-				entityType: 'DESTINATION',
-				entityIds: nearbyIds
-			});
-			if (bulkResult.ok) {
-				nearbyDestFavoriteChecks = bulkResult.data.checks;
-			} else {
-				webLogger.warn('Bulk bookmark check failed on destinos/detail nearby cards; falling back to per-card hydration', {
-					error: bulkResult.error
-				});
-			}
-		}
-	} catch (error) {
-		webLogger.warn('Bulk bookmark check threw on destinos/detail nearby cards; falling back to per-card hydration', {
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
+    try {
+        const nearbyIds = nearbyDestinations
+            .map((d) => (d as Record<string, unknown>).id)
+            .filter((id): id is string => typeof id === 'string');
+        if (nearbyIds.length > 0) {
+            const bulkResult = await userBookmarksApi.checkBulk({
+                entityType: 'DESTINATION',
+                entityIds: nearbyIds
+            });
+            if (bulkResult.ok) {
+                nearbyDestFavoriteChecks = bulkResult.data.checks;
+            } else {
+                webLogger.warn(
+                    'Bulk bookmark check failed on destinos/detail nearby cards; falling back to per-card hydration',
+                    {
+                        error: bulkResult.error
+                    }
+                );
+            }
+        }
+    } catch (error) {
+        webLogger.warn(
+            'Bulk bookmark check threw on destinos/detail nearby cards; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
+    }
 }
 
 // --- Breadcrumbs ------------------------------------------------------------
 const pathSegments = path.split('/').filter(Boolean);
 const breadcrumbItems = [
-	{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
-	...pathSegments.map((segment, i) => ({
-		label: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		...(i < pathSegments.length - 1
-			? { path: `destinos/${pathSegments.slice(0, i + 1).join('/')}` }
-			: {})
-	}))
+    { label: t('destinations.title', 'Destinos'), path: 'destinos' },
+    ...pathSegments.map((segment, i) => ({
+        label: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        ...(i < pathSegments.length - 1
+            ? { path: `destinos/${pathSegments.slice(0, i + 1).join('/')}` }
+            : {})
+    }))
 ];
 
 // --- TouristDestination JSON-LD --------------------------------------------
-const destLocation = dest.location as
-	| { coordinates?: { lat?: string; long?: string } }
-	| undefined;
+const destLocation = dest.location as { coordinates?: { lat?: string; long?: string } } | undefined;
 const destCoords = destLocation?.coordinates;
 const destLat = destCoords?.lat ? Number.parseFloat(destCoords.lat) : null;
 const destLng = destCoords?.long ? Number.parseFloat(destCoords.long) : null;
 const hasDestCoords = Number.isFinite(destLat) && Number.isFinite(destLng);
 
 const placeGeo =
-	hasDestCoords && destLat !== null && destLng !== null
-		? { latitude: destLat, longitude: destLng }
-		: undefined;
+    hasDestCoords && destLat !== null && destLng !== null
+        ? { latitude: destLat, longitude: destLng }
+        : undefined;
 
 const placeUrl = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 const placeImage =
-	featuredImageObj.url && !featuredImageObj.url.includes('placeholder')
-		? featuredImageObj.url
-		: undefined;
+    featuredImageObj.url && !featuredImageObj.url.includes('placeholder')
+        ? featuredImageObj.url
+        : undefined;
 
 // Entity disambiguation (schema.org sameAs): interim curated slug→Wikipedia
 // map. Resolves only for the main Entre Ríos destinations; undefined otherwise.
@@ -397,12 +411,12 @@ const placeSameAs = getDestinationSameAs({ slug });
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
 const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbJsonLdItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOriginDest}/${locale}/` },
-	{ name: t('destinations.title', 'Destinos'), url: `${siteOriginDest}/${locale}/destinos/` },
-	...pathSegments.map((segment, i) => ({
-		name: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`
-	}))
+    { name: t('nav.home', 'Inicio'), url: `${siteOriginDest}/${locale}/` },
+    { name: t('destinations.title', 'Destinos'), url: `${siteOriginDest}/${locale}/destinos/` },
+    ...pathSegments.map((segment, i) => ({
+        name: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`
+    }))
 ];
 
 // Description rendering — `dest.contentHtml` (TipTap-rendered HTML, when
@@ -410,12 +424,13 @@ const breadcrumbJsonLdItems = [
 // text. `renderContent` normalizes all three into safe HTML for `set:html`.
 // (Previously the `contentHtml` branch piped raw HTML directly into `set:html`
 // without sanitization — pre-existing XSS hole, fixed here.)
-const rawDescription = typeof dest.contentHtml === 'string' && dest.contentHtml.length > 0
-	? dest.contentHtml
-	: description;
+const rawDescription =
+    typeof dest.contentHtml === 'string' && dest.contentHtml.length > 0
+        ? dest.contentHtml
+        : description;
 const safeDescriptionHtml = renderContent({
-	raw: rawDescription,
-	siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+    raw: rawDescription,
+    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
 });
 ---
 

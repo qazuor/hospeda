@@ -52,8 +52,8 @@ vi.mock('@/components/ui/button', () => ({
     )
 }));
 
-import { useDeleteSocialCredentialMutation } from '@/features/social-credentials';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useDeleteSocialCredentialMutation } from '@/features/social-credentials';
 import { DeleteCredentialDialog } from '../-components/DeleteCredentialDialog';
 
 const mockUseDeleteSocialCredentialMutation = vi.mocked(useDeleteSocialCredentialMutation);

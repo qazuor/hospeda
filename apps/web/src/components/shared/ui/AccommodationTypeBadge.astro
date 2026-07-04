@@ -1,4 +1,5 @@
 ---
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 /**
  * @file AccommodationTypeBadge.astro
  * @description Single source of truth for the accommodation-type pill used
@@ -15,9 +16,8 @@
  * can override the size without `!important`.
  */
 import { getAccommodationTypeLabel } from '@/lib/colors';
-import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     /** Accommodation type from the API (case-insensitive, e.g. `"HOTEL"`). */

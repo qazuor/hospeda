@@ -274,7 +274,7 @@ export const PasswordField = ({
                     onClick={() => setVisible((v) => !v)}
                     disabled={disabled}
                     aria-label={visible ? i18n.hidePassword : i18n.showPassword}
-                    className="-translate-y-1/2 absolute top-1/2 right-3 text-gray-400 transition-colors hover:text-gray-600 disabled:pointer-events-none"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 disabled:pointer-events-none"
                     tabIndex={-1}
                 >
                     {visible ? <EyeSlashIcon /> : <EyeOpenIcon />}
@@ -297,7 +297,6 @@ export const PasswordField = ({
                 <div
                     id={strengthId}
                     aria-live="polite"
-                    aria-label={strengthLabel}
                     className="space-y-1"
                 >
                     <div className="flex gap-1">

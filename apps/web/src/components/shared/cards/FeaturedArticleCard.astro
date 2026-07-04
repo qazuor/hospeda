@@ -7,22 +7,28 @@
  * Used as the top row of the LatestArticlesSection layout.
  */
 
-import type { ArticleCardBaseProps } from '@/data/types';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { formatDate } from '@/lib/format-utils';
-import {
-    truncateTags,
-    truncateExcerpt,
-    resolveEntityLink,
-    resolveEntityIcon,
-    formatReadingTime,
-} from '@/lib/article-card-utils';
 import { Image } from 'astro:assets';
 import { CalendarIcon, ClockIcon, StarIcon, UserIcon } from '@repo/icons';
 import Badge from '@/components/shared/ui/Badge.astro';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
+import type { ArticleCardBaseProps } from '@/data/types';
+import {
+    formatReadingTime,
+    resolveEntityIcon,
+    resolveEntityLink,
+    truncateExcerpt,
+    truncateTags
+} from '@/lib/article-card-utils';
+import {
+    getBadgeStatusColor,
+    getMutedColorScheme,
+    getPostCategoryColor,
+    getPostCategoryEmoji,
+    getPostCategoryLabel
+} from '@/lib/colors';
+import { formatDate } from '@/lib/format-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     /** Full article card data. */
@@ -56,10 +62,10 @@ const entityIcon = data.relatedEntity
 
 const publishedDate = data.publishedAt
     ? formatDate({
-        date: data.publishedAt,
-        locale,
-        options: { day: 'numeric', month: 'short', year: 'numeric' },
-    })
+          date: data.publishedAt,
+          locale,
+          options: { day: 'numeric', month: 'short', year: 'numeric' }
+      })
     : '';
 
 /** Muted color scheme for secondary tag chips. */

@@ -11,8 +11,8 @@
 
 import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import { toDestinationCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
 

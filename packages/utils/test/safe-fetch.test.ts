@@ -58,11 +58,7 @@ interface UndiciResponseLike {
 
 /** Creates a minimal mock undici response. */
 function makeMockUndiciResponse(
-    overrides: {
-        statusCode?: number;
-        headers?: Record<string, string>;
-        body?: string;
-    } = {}
+    overrides: { statusCode?: number; headers?: Record<string, string>; body?: string } = {}
 ): UndiciResponseLike {
     const { statusCode = 200, headers = {}, body = '<html>ok</html>' } = overrides;
     const encoder = new TextEncoder();

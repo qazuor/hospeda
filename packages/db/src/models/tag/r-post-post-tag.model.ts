@@ -15,11 +15,11 @@ import { and, eq } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { withTransaction } from '../../client.ts';
 import { postTags } from '../../schemas/tag/post_tag.dbschema.ts';
-import { rPostPostTag } from '../../schemas/tag/r_post_post_tag.dbschema.ts';
 import type {
     InsertRPostPostTag,
     SelectRPostPostTag
 } from '../../schemas/tag/r_post_post_tag.dbschema.ts';
+import { rPostPostTag } from '../../schemas/tag/r_post_post_tag.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';

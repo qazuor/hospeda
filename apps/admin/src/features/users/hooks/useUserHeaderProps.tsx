@@ -7,12 +7,11 @@
  * (`$id_.activity.tsx`) routes render the same chrome.
  */
 
+import type { RoleEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-
 import type { EntityPageHeaderMedia } from '@/components/entity-header/EntityPageHeader';
 import { Badge } from '@/components/ui/badge';
-import type { RoleEnum } from '@repo/schemas';
 import { getRoleLabel } from '../config/sections/role-permissions.consolidated';
 
 export interface UseUserHeaderPropsArgs {

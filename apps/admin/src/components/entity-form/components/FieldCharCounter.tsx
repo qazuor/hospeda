@@ -42,7 +42,6 @@ export function FieldCharCounter({ current, max, className }: FieldCharCounterPr
                 className
             )}
             aria-live="polite"
-            aria-label={`${current} de ${max} caracteres`}
         >
             {current} / {max}
         </span>

@@ -7,19 +7,15 @@
  */
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = true;
 
 // prerender needs all supported locales
 export function getStaticPaths() {
-    return [
-        { params: { lang: 'es' } },
-        { params: { lang: 'en' } },
-        { params: { lang: 'pt' } }
-    ];
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }
 
 const locale = (Astro.params.lang ?? 'es') as SupportedLocale;

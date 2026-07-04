@@ -11,71 +11,75 @@
  * FavoriteButton island in the top-right corner.
  */
 
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { Image } from 'astro:assets';
 import { StarIcon } from '@repo/icons';
 import DestinationRating from '@/components/shared/cards/DestinationRating.astro';
-import { buildUrl } from '@/lib/urls';
-import { createTranslations } from '@/lib/i18n';
-import { Image } from 'astro:assets';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import type { DestinationCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 /** Visual variant controlling layout and image treatment. */
 export type DestinationCardVariant = 'grid' | 'carousel';
 
 interface Props {
-	/** Destination data produced by toDestinationCardProps() in transforms.ts. */
-	readonly destination: DestinationCardData;
-	/** Active locale used to build destination URL and resolve translations. */
-	readonly locale: SupportedLocale;
-	/**
-	 * Visual variant:
-	 * - `grid` (default): flat card for listing grids with wave separator.
-	 * - `carousel`: full-bleed image with gradient overlay for homepage carousel.
-	 */
-	readonly variant?: DestinationCardVariant;
-	/**
-	 * Whether the current user is authenticated.
-	 * Forwarded to FavoriteButton to decide between toggle-favorite or auth-required popover.
-	 * Defaults to false (guest user).
-	 */
-	readonly isAuthenticated?: boolean;
-	/**
-	 * Pre-resolved favorite state from a bulk-check call on the parent page.
-	 * When provided (including `false`), FavoriteButton skips its own /check request.
-	 * When omitted (undefined), FavoriteButton falls back to its own per-card hydration.
-	 */
-	readonly initialIsFavorited?: boolean;
-	/**
-	 * Bookmark id when the destination is already favorited by the current user.
-	 * Passed alongside `initialIsFavorited` from the parent bulk-check result.
-	 */
-	readonly initialBookmarkId?: string | null;
+    /** Destination data produced by toDestinationCardProps() in transforms.ts. */
+    readonly destination: DestinationCardData;
+    /** Active locale used to build destination URL and resolve translations. */
+    readonly locale: SupportedLocale;
+    /**
+     * Visual variant:
+     * - `grid` (default): flat card for listing grids with wave separator.
+     * - `carousel`: full-bleed image with gradient overlay for homepage carousel.
+     */
+    readonly variant?: DestinationCardVariant;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or auth-required popover.
+     * Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
+    /**
+     * Pre-resolved favorite state from a bulk-check call on the parent page.
+     * When provided (including `false`), FavoriteButton skips its own /check request.
+     * When omitted (undefined), FavoriteButton falls back to its own per-card hydration.
+     */
+    readonly initialIsFavorited?: boolean;
+    /**
+     * Bookmark id when the destination is already favorited by the current user.
+     * Passed alongside `initialIsFavorited` from the parent bulk-check result.
+     */
+    readonly initialBookmarkId?: string | null;
 }
 
 const {
-	destination,
-	locale,
-	variant = 'grid',
-	isAuthenticated = false,
-	initialIsFavorited,
-	initialBookmarkId = null,
+    destination,
+    locale,
+    variant = 'grid',
+    isAuthenticated = false,
+    initialIsFavorited,
+    initialBookmarkId = null
 } = Astro.props;
 
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `destinos/${destination.slug}` });
 
-const accommodationsLabel = destination.accommodationsCount === 1
-	? t('destination.card.accommodation_singular', 'alojamiento')
-	: t('destination.card.accommodation_plural', 'alojamientos');
+const accommodationsLabel =
+    destination.accommodationsCount === 1
+        ? t('destination.card.accommodation_singular', 'alojamiento')
+        : t('destination.card.accommodation_plural', 'alojamientos');
 
 const isExternalImage = destination.featuredImage.url.startsWith('http');
 
 // Top attractions for the card chip row (already sorted desc by displayWeight in transforms).
 const MAX_ATTRACTIONS_ON_CARD = 3;
 const topAttractions = (destination.attractions ?? []).slice(0, MAX_ATTRACTIONS_ON_CARD);
-const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) - topAttractions.length);
+const remainingAttractions = Math.max(
+    0,
+    (destination.attractions?.length ?? 0) - topAttractions.length
+);
 ---
 
 <article class={`dest-card dest-card--${variant}`}>

@@ -111,10 +111,10 @@ const extractErrorParams = (error: ZodIssue): ParamsWithInternal => {
         const sizeIssue = error as ZodSizeIssue;
         if (sizeIssue.type !== undefined) {
             inferredType = sizeIssue.type;
-        } else if (sizeIssue.origin !== undefined) {
-            inferredType = sizeIssue.origin;
-        } else {
+        } else if (sizeIssue.origin === undefined) {
             inferredType = 'string';
+        } else {
+            inferredType = sizeIssue.origin;
         }
     }
 

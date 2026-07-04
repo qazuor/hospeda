@@ -8,17 +8,17 @@
  * RO-RO props — inputs are plain values, outputs are via callbacks.
  */
 
-import { Button } from '@/components/ui-wrapped/Button';
 import {
+    createPartnerSchema,
     LifecycleStatusEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
-    PartnerTypeEnum,
-    createPartnerSchema
+    PartnerTypeEnum
 } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
+import { Button } from '@/components/ui-wrapped/Button';
 import type { PartnerAdminPlanOption } from '../hooks/usePartnerQuery';
 
 // ---------------------------------------------------------------------------
@@ -400,9 +400,9 @@ export function PartnerForm({
                                                     value={plan.id}
                                                 >
                                                     {plan.name}
-                                                    {plan.monthlyPriceArs !== null
-                                                        ? ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`
-                                                        : ''}
+                                                    {plan.monthlyPriceArs === null
+                                                        ? ''
+                                                        : ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`}
                                                 </option>
                                             ))}
                                         </select>
@@ -522,7 +522,7 @@ export function PartnerForm({
                                         }}
                                         className={INPUT_CLASS}
                                         disabled={isSubmitting}
-                                        aria-required="true"
+                                        required
                                     />
                                 </FieldWrapper>
                             )}

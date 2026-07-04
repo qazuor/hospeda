@@ -20,26 +20,26 @@
  * @rendering SSR + ISR 24h
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
+import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
-import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
+import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
@@ -50,15 +50,15 @@ const isAuthenticated = Boolean(Astro.locals.user);
 
 /** Slug → EventCategoryEnum value (preserved from the retired 301 redirect). */
 const VALID_CATEGORIES: Record<string, string> = {
-	music: 'MUSIC',
-	culture: 'CULTURE',
-	sports: 'SPORTS',
-	gastronomy: 'GASTRONOMY',
-	festival: 'FESTIVAL',
-	nature: 'NATURE',
-	theater: 'THEATER',
-	workshop: 'WORKSHOP',
-	other: 'OTHER'
+    music: 'MUSIC',
+    culture: 'CULTURE',
+    sports: 'SPORTS',
+    gastronomy: 'GASTRONOMY',
+    festival: 'FESTIVAL',
+    nature: 'NATURE',
+    theater: 'THEATER',
+    workshop: 'WORKSHOP',
+    other: 'OTHER'
 };
 
 const catEnum = catSlug ? VALID_CATEGORIES[catSlug] : undefined;
@@ -66,7 +66,10 @@ if (!catEnum) return new Response(null, { status: 404 });
 
 const categoryName = t(`events.categoryPage.categories.${catEnum}.name`, catEnum);
 const categoryPageTitle = t(`events.categoryPage.categories.${catEnum}.pageTitle`, categoryName);
-const categoryDescription = t(`events.categoryPage.categories.${catEnum}.description`, categoryName);
+const categoryDescription = t(
+    `events.categoryPage.categories.${catEnum}.description`,
+    categoryName
+);
 
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
@@ -78,14 +81,14 @@ const q = url.searchParams.get('q') ?? undefined;
  * pair. Mirrors `eventos/index.astro` — see that file for the full rationale.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-	upcoming: { sortBy: 'startDate', sortOrder: 'asc' },
-	farthest: { sortBy: 'startDate', sortOrder: 'desc' },
-	nameAsc: { sortBy: 'name', sortOrder: 'asc' },
-	nameDesc: { sortBy: 'name', sortOrder: 'desc' },
-	newest: { sortBy: 'createdAt', sortOrder: 'desc' },
-	oldest: { sortBy: 'createdAt', sortOrder: 'asc' },
-	featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
-	mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' }
+    upcoming: { sortBy: 'startDate', sortOrder: 'asc' },
+    farthest: { sortBy: 'startDate', sortOrder: 'desc' },
+    nameAsc: { sortBy: 'name', sortOrder: 'asc' },
+    nameDesc: { sortBy: 'name', sortOrder: 'desc' },
+    newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+    oldest: { sortBy: 'createdAt', sortOrder: 'asc' },
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' }
 };
 const DEFAULT_SORT_KEY = 'upcoming';
 
@@ -94,14 +97,21 @@ const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KE
 
 /** Parse the temporal quick-filter from the `when` query param. */
 const rawWhen = url.searchParams.get('when');
-const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
+const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = [
+    'today',
+    'week',
+    'month',
+    'next60',
+    'past'
+];
 const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
-	? (rawWhen as EventDateFilter)
-	: 'all';
+    ? (rawWhen as EventDateFilter)
+    : 'all';
 
 /** Parse price and free-toggle params (see events-filter-groups price-composite group). */
 const isFreeParam = url.searchParams.get('isFree');
-const isFree: boolean | undefined = isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
+const isFree: boolean | undefined =
+    isFreeParam === 'true' ? true : isFreeParam === 'false' ? false : undefined;
 const priceMinParam = url.searchParams.get('minPrice');
 const priceMaxParam = url.searchParams.get('maxPrice');
 const priceMin: number | undefined = priceMinParam ? Number(priceMinParam) : undefined;
@@ -124,24 +134,24 @@ const now = new Date();
 
 /** Returns a copy of `now` at 00:00:00.000 local time. */
 function startOfToday(): Date {
-	const d = new Date(now);
-	d.setHours(0, 0, 0, 0);
-	return d;
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    return d;
 }
 
 /** Returns a copy of `now` at 23:59:59.999 local time. */
 function endOfToday(): Date {
-	const d = new Date(now);
-	d.setHours(23, 59, 59, 999);
-	return d;
+    const d = new Date(now);
+    d.setHours(23, 59, 59, 999);
+    return d;
 }
 
 /** Returns a date N days ahead of `startOfToday()` at 23:59:59.999. */
 function daysAhead(n: number): Date {
-	const d = startOfToday();
-	d.setDate(d.getDate() + n);
-	d.setHours(23, 59, 59, 999);
-	return d;
+    const d = startOfToday();
+    d.setDate(d.getDate() + n);
+    d.setHours(23, 59, 59, 999);
+    return d;
 }
 
 let startDateAfter: string | undefined;
@@ -152,31 +162,31 @@ let startDateBefore: string | undefined;
  * type only — listings show events by city, not by country/region/department.
  */
 const destinationsResult = await destinationsApi.list({
-	destinationType: 'CITY',
-	pageSize: 100
+    destinationType: 'CITY',
+    pageSize: 100
 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 switch (when) {
-	case 'today':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = endOfToday().toISOString();
-		break;
-	case 'week':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(7).toISOString();
-		break;
-	case 'month':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(30).toISOString();
-		break;
-	case 'next60':
-		startDateAfter = startOfToday().toISOString();
-		startDateBefore = daysAhead(60).toISOString();
-		break;
-	case 'past':
-		startDateBefore = startOfToday().toISOString();
-		break;
+    case 'today':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = endOfToday().toISOString();
+        break;
+    case 'week':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(7).toISOString();
+        break;
+    case 'month':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(30).toISOString();
+        break;
+    case 'next60':
+        startDateAfter = startOfToday().toISOString();
+        startDateBefore = daysAhead(60).toISOString();
+        break;
+    case 'past':
+        startDateBefore = startOfToday().toISOString();
+        break;
 }
 
 /** Sidebar date-range filter takes precedence over the temporal chips when present. */
@@ -184,27 +194,29 @@ if (startDateAfterFilter) startDateAfter = `${startDateAfterFilter}T00:00:00`;
 if (startDateBeforeFilter) startDateBefore = `${startDateBeforeFilter}T23:59:59`;
 
 const result = await eventsApi.list({
-	page,
-	pageSize,
-	q,
-	category: catEnum,
-	sortBy: sortResolved.sortBy,
-	sortOrder: sortResolved.sortOrder,
-	startDateAfter,
-	startDateBefore,
-	isFree: isFree ?? undefined,
-	minPrice: priceMin,
-	maxPrice: priceMax,
-	includeUnpriced: includeUnpriced ?? undefined,
-	isFeatured: isFeatured ?? undefined,
-	destinationId
+    page,
+    pageSize,
+    q,
+    category: catEnum,
+    sortBy: sortResolved.sortBy,
+    sortOrder: sortResolved.sortOrder,
+    startDateAfter,
+    startDateBefore,
+    isFree: isFree ?? undefined,
+    minPrice: priceMin,
+    maxPrice: priceMax,
+    includeUnpriced: includeUnpriced ?? undefined,
+    isFeatured: isFeatured ?? undefined,
+    destinationId
 });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toEventCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 /**
  * `filterGroups` for FilterSidebar — the same config as `/eventos/`, minus
@@ -213,13 +225,13 @@ const cards = items.map((item) => toEventCardProps({ item: item as unknown as Re
 const filterGroups = buildEventsFilterGroups({ t, destinations, excludeCategory: true });
 
 const sortOptions = [
-	{ value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
-	{ value: 'farthest', label: t('events.sort.farthest', 'Última fecha primero') },
-	{ value: 'newest', label: t('events.sort.newest', 'Recién agregados') },
-	{ value: 'oldest', label: t('events.sort.oldest', 'Más antiguos') },
-	{ value: 'featured', label: t('events.sort.featured', 'Destacados primero') },
-	{ value: 'nameAsc', label: t('events.sort.nameAsc', 'Nombre (A-Z)') },
-	{ value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') }
+    { value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
+    { value: 'farthest', label: t('events.sort.farthest', 'Última fecha primero') },
+    { value: 'newest', label: t('events.sort.newest', 'Recién agregados') },
+    { value: 'oldest', label: t('events.sort.oldest', 'Más antiguos') },
+    { value: 'featured', label: t('events.sort.featured', 'Destacados primero') },
+    { value: 'nameAsc', label: t('events.sort.nameAsc', 'Nombre (A-Z)') },
+    { value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') }
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
@@ -237,29 +249,35 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
 let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
 if (isAuthenticated && cards.length > 0) {
-	try {
-		const bulkResult = await userBookmarksApi.checkBulk({
-			entityType: 'EVENT',
-			entityIds: cards.map((card) => card.id)
-		});
-		if (bulkResult.ok) {
-			eventFavoriteChecks = bulkResult.data.checks;
-		} else {
-			webLogger.warn('Bulk bookmark check failed on event category landing; falling back to per-card hydration', {
-				error: bulkResult.error
-			});
-		}
-	} catch (error) {
-		webLogger.warn('Bulk bookmark check threw on event category landing; falling back to per-card hydration', {
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
+    try {
+        const bulkResult = await userBookmarksApi.checkBulk({
+            entityType: 'EVENT',
+            entityIds: cards.map((card) => card.id)
+        });
+        if (bulkResult.ok) {
+            eventFavoriteChecks = bulkResult.data.checks;
+        } else {
+            webLogger.warn(
+                'Bulk bookmark check failed on event category landing; falling back to per-card hydration',
+                {
+                    error: bulkResult.error
+                }
+            );
+        }
+    } catch (error) {
+        webLogger.warn(
+            'Bulk bookmark check threw on event category landing; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
+    }
 }
 
 const resolvedCards = cards.map((card) => {
-	const entry = eventFavoriteChecks[card.id];
-	if (!entry) return card;
-	return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
+    const entry = eventFavoriteChecks[card.id];
+    if (!entry) return card;
+    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
 });
 
 /**
@@ -288,19 +306,23 @@ paginationParams.delete('page');
 
 // ItemList JSON-LD entries — the visible page of event cards.
 const itemListEntries = cards.map((card) => ({
-	url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
-	name: card.name
+    url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin)
+        .href,
+    name: card.name
 }));
 
 // Breadcrumb JSON-LD — Inicio / Eventos / {category}.
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbJsonLdItems = [
-	{ name: t('events.categoryPage.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{
-		name: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'),
-		url: `${siteOrigin}${buildUrl({ locale, path: 'eventos' })}`
-	},
-	{ name: categoryName, url: `${siteOrigin}${baseUrl}` }
+    {
+        name: t('events.categoryPage.labels.breadcrumbHome', 'Inicio'),
+        url: `${siteOrigin}/${locale}/`
+    },
+    {
+        name: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'),
+        url: `${siteOrigin}${buildUrl({ locale, path: 'eventos' })}`
+    },
+    { name: categoryName, url: `${siteOrigin}${baseUrl}` }
 ];
 
 const collectionPageUrl = `${siteOrigin}${canonicalPath}`;

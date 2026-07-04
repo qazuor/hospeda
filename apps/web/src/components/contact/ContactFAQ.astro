@@ -5,56 +5,56 @@
  * Uses native <details>/<summary> for zero-JS progressive disclosure.
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { ChevronDownIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
+    readonly locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const items = [
-	{
-		key: 'responseTime',
-		question: t('contact.faq.items.responseTime.question', '¿Cuánto tardan en responder?'),
-		answer: t(
-			'contact.faq.items.responseTime.answer',
-			'Respondemos en menos de 24 horas hábiles. En fines de semana puede demorar un poco más.'
-		)
-	},
-	{
-		key: 'accommodationIssue',
-		question: t(
-			'contact.faq.items.accommodationIssue.question',
-			'Tengo un problema con un alojamiento que reservé'
-		),
-		answer: t(
-			'contact.faq.items.accommodationIssue.answer',
-			'Seleccioná "Consulta sobre un alojamiento" en el formulario y agregá el ID del alojamiento.'
-		)
-	},
-	{
-		key: 'ownerInquiry',
-		question: t(
-			'contact.faq.items.ownerInquiry.question',
-			'Quiero publicar mi alojamiento en Hospeda'
-		),
-		answer: t(
-			'contact.faq.items.ownerInquiry.answer',
-			'Visitá la página de propietarios para conocer planes y empezar el alta.'
-		)
-	},
-	{
-		key: 'languages',
-		question: t('contact.faq.items.languages.question', '¿En qué idiomas atienden?'),
-		answer: t(
-			'contact.faq.items.languages.answer',
-			'Atendemos en español, inglés y portugués. Escribinos en el idioma que prefieras.'
-		)
-	}
+    {
+        key: 'responseTime',
+        question: t('contact.faq.items.responseTime.question', '¿Cuánto tardan en responder?'),
+        answer: t(
+            'contact.faq.items.responseTime.answer',
+            'Respondemos en menos de 24 horas hábiles. En fines de semana puede demorar un poco más.'
+        )
+    },
+    {
+        key: 'accommodationIssue',
+        question: t(
+            'contact.faq.items.accommodationIssue.question',
+            'Tengo un problema con un alojamiento que reservé'
+        ),
+        answer: t(
+            'contact.faq.items.accommodationIssue.answer',
+            'Seleccioná "Consulta sobre un alojamiento" en el formulario y agregá el ID del alojamiento.'
+        )
+    },
+    {
+        key: 'ownerInquiry',
+        question: t(
+            'contact.faq.items.ownerInquiry.question',
+            'Quiero publicar mi alojamiento en Hospeda'
+        ),
+        answer: t(
+            'contact.faq.items.ownerInquiry.answer',
+            'Visitá la página de propietarios para conocer planes y empezar el alta.'
+        )
+    },
+    {
+        key: 'languages',
+        question: t('contact.faq.items.languages.question', '¿En qué idiomas atienden?'),
+        answer: t(
+            'contact.faq.items.languages.answer',
+            'Atendemos en español, inglés y portugués. Escribinos en el idioma que prefieras.'
+        )
+    }
 ];
 ---
 

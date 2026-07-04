@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 
 type TimeAgoCellProps = {
     readonly value: unknown;

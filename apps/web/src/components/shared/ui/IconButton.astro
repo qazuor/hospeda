@@ -134,7 +134,7 @@ const {
     id,
     name,
     data,
-    aria,
+    aria
 } = Astro.props;
 
 const classes = [
@@ -142,7 +142,7 @@ const classes = [
     `btn-icon--${variant}`,
     `btn-icon--${size}`,
     shape === 'square' ? 'btn-icon--shape-square' : '',
-    extraClass ?? '',
+    extraClass ?? ''
 ]
     .filter(Boolean)
     .join(' ');

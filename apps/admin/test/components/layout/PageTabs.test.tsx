@@ -9,10 +9,10 @@
  * 5. Accessibility attributes
  */
 
-import type { TabConfig } from '@/lib/sections/types';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TabConfig } from '@/lib/sections/types';
 
 // Track current pathname for tests
 let mockPathname = '/accommodations/123';
@@ -25,7 +25,12 @@ vi.mock('@tanstack/react-router', () => ({
         className,
         role,
         ...props
-    }: { to: string; children: ReactNode; className?: string; role?: string }) => (
+    }: {
+        to: string;
+        children: ReactNode;
+        className?: string;
+        role?: string;
+    }) => (
         <a
             href={to}
             className={className}
@@ -58,10 +63,10 @@ vi.mock('@/hooks/use-translations', () => ({
 
 // Import after mocks
 import {
-    PageTabs,
     accommodationTabs,
     destinationTabs,
     eventTabs,
+    PageTabs,
     postTabs,
     userTabs
 } from '@/components/layout/PageTabs';

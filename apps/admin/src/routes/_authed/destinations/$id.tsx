@@ -1,9 +1,9 @@
+import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
+import { destinationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Destination View Route Configuration

@@ -9,8 +9,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authLogger } from '../src/logger';
-import { SimpleUserMenu } from '../src/simple-user-menu';
 import type { SimpleUserMenuProps } from '../src/simple-user-menu';
+import { SimpleUserMenu } from '../src/simple-user-menu';
 import type { AuthSession, SessionUser } from '../src/types';
 
 // Mock authLogger to avoid console noise and allow assertion

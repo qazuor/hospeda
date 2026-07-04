@@ -7,7 +7,7 @@
  */
 
 import * as Sentry from '@sentry/astro';
-import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
+import { DEFAULT_LOCALE, isValidLocale, type SupportedLocale } from './i18n';
 import { webLogger } from './logger';
 import { ALLOWED_REMOTE_HOSTS } from './media';
 import {

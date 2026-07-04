@@ -128,10 +128,7 @@ const MOCK_BILLING = {
  * Creates a minimal mock Hono context for the cancel handler.
  */
 function createMockContext(
-    options: {
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-    } = {}
+    options: { billingEnabled?: boolean; billingCustomerId?: string | null } = {}
 ) {
     const { billingEnabled = true, billingCustomerId = CUSTOMER_ID } = options;
 

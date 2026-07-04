@@ -10,31 +10,31 @@
  */
 
 import {
-    LocationIcon,
-    ArrowRightIcon,
-    StarIcon,
-    BuildingIcon,
-    BallroomIcon,
-    SportsCenterIcon,
-    CulturalCenterIcon,
-    RestaurantIcon,
-    FestivalPlazaIcon,
-    WellnessCenterIcon,
-    MuseumIcon,
-    UsersIcon,
-    NatureReserveIcon,
     AmphitheaterIcon,
-    WorkshopSpaceIcon,
+    ArrowRightIcon,
+    BallroomIcon,
     BooksAndMagazinesIcon,
+    BuildingIcon,
+    CulturalCenterIcon,
     EventIcon,
-} from "@repo/icons";
-import { FavoriteButton } from "@/components/shared/favorite/FavoriteButton.client";
-import { buildUrl } from "@/lib/urls";
-import { getEventCategoryColor } from "@/lib/colors";
-import { formatEventDate } from "./utils/formatEventDate";
-import { getEventCategoryIconName, getEventCategoryLabel } from "./utils/eventCategoryIcon";
-import type { EventCardData } from "@/data/types";
-import type { SupportedLocale } from "@/lib/i18n";
+    FestivalPlazaIcon,
+    LocationIcon,
+    MuseumIcon,
+    NatureReserveIcon,
+    RestaurantIcon,
+    SportsCenterIcon,
+    StarIcon,
+    UsersIcon,
+    WellnessCenterIcon,
+    WorkshopSpaceIcon
+} from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import type { EventCardData } from '@/data/types';
+import { getEventCategoryColor } from '@/lib/colors';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
+import { formatEventDate } from './utils/formatEventDate';
 
 /**
  * Props for the EventCardHorizontal component.
@@ -63,7 +63,7 @@ const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
 /** Normalize API category to lowercase and handle aliases. */
 const rawCategory = data.category.toLowerCase();
-const CATEGORY_ALIASES: Readonly<Record<string, string>> = { culture: "cultural" };
+const CATEGORY_ALIASES: Readonly<Record<string, string>> = { culture: 'cultural' };
 const normalizedCategory = CATEGORY_ALIASES[rawCategory] ?? rawCategory;
 
 /** Category colors resolved from design tokens. */
@@ -73,16 +73,17 @@ const dateResult = formatEventDate({
     start: data.date.start,
     end: data.date.end,
     locale,
-    mode: "rangeWithTime",
+    mode: 'rangeWithTime'
 });
-const dateLabel = dateResult.mode !== "short" ? dateResult.dateLine : "";
-const timeLabel = dateResult.mode !== "short" ? dateResult.timeLine : null;
-const monthAbbr = dateResult.mode === "rangeWithTime" ? (dateResult.monthAbbr ?? "") : "";
+const dateLabel = dateResult.mode === 'short' ? '' : dateResult.dateLine;
+const timeLabel = dateResult.mode === 'short' ? null : dateResult.timeLine;
+const monthAbbr = dateResult.mode === 'rangeWithTime' ? (dateResult.monthAbbr ?? '') : '';
 
 const categoryIconName = getEventCategoryIconName(normalizedCategory);
 
 /** Whether the URL is a known placeholder or invalid for direct rendering. */
-const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.includes("placeholder");
+const showImage =
+    Boolean(data.featuredImage.url) && !data.featuredImage.url.includes('placeholder');
 
 /** Location label: "Venue Name, City" or just "City" (SPEC-095: prefer flat cityName). */
 const cityLabel = data.cityName ?? data.location?.city ?? '';

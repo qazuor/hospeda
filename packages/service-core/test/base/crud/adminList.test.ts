@@ -15,8 +15,8 @@
  * - _executeAdminSearch delegation (with/without relations)
  */
 import type { BaseModel as BaseModelDB } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
 import type { ListRelationsConfig } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types';

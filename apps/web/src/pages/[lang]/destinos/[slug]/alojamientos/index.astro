@@ -1,4 +1,10 @@
 ---
+import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 /**
  * @file destinos/[slug]/alojamientos/index.astro
  * @description Accommodations within a specific destination.
@@ -6,16 +12,10 @@
  * @rendering SSR + ISR 24h
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { accommodationsApi, destinationsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -33,8 +33,8 @@ const destName = String(dest.name || slug);
 // The city moves into the H1 (and <title>); the decorative tagline reverts to
 // the generic listing tagline so the city is not shown twice.
 const heading = t('accommodations.typeInLocation', '{{type}} en {{location}}', {
-	type: t('accommodations.title', 'Alojamientos'),
-	location: destName
+    type: t('accommodations.title', 'Alojamientos'),
+    location: destName
 });
 
 // Use the paginated `list` endpoint (filtered by destinationId) so the
@@ -49,7 +49,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 ---

@@ -8,15 +8,13 @@
  * @module whats-new
  */
 
-export { WhatsNewAutoTrigger } from './WhatsNewAutoTrigger';
 export type { WhatsNewAutoTriggerProps } from './WhatsNewAutoTrigger';
+export { WhatsNewAutoTrigger } from './WhatsNewAutoTrigger';
 
 export { WhatsNewBadge } from './WhatsNewBadge';
 
 export { WhatsNewDashboardController } from './WhatsNewDashboardController';
-
-export { WhatsNewModal } from './WhatsNewModal';
 export type { WhatsNewModalProps } from './WhatsNewModal';
-
-export { WhatsNewPanel } from './WhatsNewPanel';
+export { WhatsNewModal } from './WhatsNewModal';
 export type { WhatsNewPanelProps } from './WhatsNewPanel';
+export { WhatsNewPanel } from './WhatsNewPanel';

@@ -15,12 +15,12 @@
  * @module EntityViewStatChips
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
 import { type UseEntityViewStatsResult, useEntityViewStats } from '@/hooks/use-entity-view-stats';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import type { ViewsBatchEntityType } from '@/hooks/use-views-batch';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Internal chip primitive
@@ -44,6 +44,7 @@ function Chip({ label, window: win, value, ariaLabel, loading }: ChipProps) {
 
     return (
         <div
+            role="status"
             aria-label={ariaLabel}
             className="flex flex-col items-center rounded-md border bg-muted/40 px-3 py-2 text-sm"
         >

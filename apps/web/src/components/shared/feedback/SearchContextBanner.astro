@@ -10,16 +10,16 @@
  */
 
 import { InfoIcon } from '@repo/icons';
+import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { formatDate } from '@/lib/format-utils';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly checkIn?: string;
-	readonly checkOut?: string;
-	readonly adults?: number;
-	readonly children?: number;
+    readonly locale: SupportedLocale;
+    readonly checkIn?: string;
+    readonly checkOut?: string;
+    readonly adults?: number;
+    readonly children?: number;
 }
 
 const { locale, checkIn, checkOut, adults, children } = Astro.props;
@@ -28,25 +28,31 @@ const t = createT(locale);
 // Show the banner when ANY context is supplied. We treat 0 as "not supplied"
 // for guests because emitting children=0 / adults=0 has no informational value
 // and would otherwise force the banner open with no useful content.
-const hasContext = Boolean(checkIn || checkOut || (adults && adults > 0) || (children && children > 0));
+const hasContext = Boolean(
+    checkIn || checkOut || (adults && adults > 0) || (children && children > 0)
+);
 
 /**
  * Format an ISO `YYYY-MM-DD` (already in local-day terms) without TZ shift.
  * `formatDate` accepts a Date; we pin to noon UTC to dodge DST edge cases.
  */
 function fmt(iso: string): string {
-	const [y, m, d] = iso.split('-').map(Number);
-	if (!y || !m || !d) return iso;
-	return formatDate({ date: new Date(Date.UTC(y, m - 1, d, 12)), locale });
+    const [y, m, d] = iso.split('-').map(Number);
+    if (!y || !m || !d) return iso;
+    return formatDate({ date: new Date(Date.UTC(y, m - 1, d, 12)), locale });
 }
 
-const dateRangeLabel = checkIn && checkOut
-	? t('accommodations.list.searchContext.dateRange', undefined, { from: fmt(checkIn), to: fmt(checkOut) })
-	: checkIn
-		? t('accommodations.list.searchContext.dateFrom', undefined, { from: fmt(checkIn) })
-		: checkOut
-			? t('accommodations.list.searchContext.dateTo', undefined, { to: fmt(checkOut) })
-			: null;
+const dateRangeLabel =
+    checkIn && checkOut
+        ? t('accommodations.list.searchContext.dateRange', undefined, {
+              from: fmt(checkIn),
+              to: fmt(checkOut)
+          })
+        : checkIn
+          ? t('accommodations.list.searchContext.dateFrom', undefined, { from: fmt(checkIn) })
+          : checkOut
+            ? t('accommodations.list.searchContext.dateTo', undefined, { to: fmt(checkOut) })
+            : null;
 
 // Build the guests label only from values the user explicitly provided.
 // We must NOT invent missing pieces (e.g. "0 niños" when children was not in
@@ -55,19 +61,19 @@ const hasAdults = adults !== undefined && Number.isFinite(adults) && adults > 0;
 const hasChildren = children !== undefined && Number.isFinite(children) && children > 0;
 
 const guestsLabel = (() => {
-	if (hasAdults && hasChildren) {
-		return t('accommodations.list.searchContext.guests', undefined, {
-			adults,
-			children,
-		});
-	}
-	if (hasAdults) {
-		return t('accommodations.list.searchContext.guestsAdultsOnly', undefined, { adults });
-	}
-	if (hasChildren) {
-		return t('accommodations.list.searchContext.guestsChildrenOnly', undefined, { children });
-	}
-	return null;
+    if (hasAdults && hasChildren) {
+        return t('accommodations.list.searchContext.guests', undefined, {
+            adults,
+            children
+        });
+    }
+    if (hasAdults) {
+        return t('accommodations.list.searchContext.guestsAdultsOnly', undefined, { adults });
+    }
+    if (hasChildren) {
+        return t('accommodations.list.searchContext.guestsChildrenOnly', undefined, { children });
+    }
+    return null;
 })();
 ---
 

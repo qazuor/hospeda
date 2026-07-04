@@ -31,8 +31,11 @@
     padding: var(--space-3) var(--space-4);
     cursor: pointer;
     text-decoration: none;
-    transition: opacity var(--duration-fast) ease, background-color var(--duration-fast) ease,
-        border-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    transition:
+        opacity var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
 }
 
 /* ─── Create state (primary CTA) ─────────────────────────────────────────── */

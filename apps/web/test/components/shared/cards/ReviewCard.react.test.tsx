@@ -9,10 +9,10 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ReviewCard } from '@/components/shared/cards/ReviewCard';
-import type { ReviewCardData } from '@/data/types';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ReviewCard } from '@/components/shared/cards/ReviewCard';
+import type { ReviewCardData } from '@/data/types';
 
 vi.mock('@/components/shared/cards/ReviewCard.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })

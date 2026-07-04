@@ -6,25 +6,25 @@
  * In development mode, exposes an expandable details section with API error info.
  */
 
-import { RefreshIcon, ChatIcon } from '@repo/icons';
+import { ChatIcon, RefreshIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	/** Custom user-facing error message. Falls back to i18n default. */
-	readonly message?: string;
-	/** The ApiError object from a failed API call, for detailed info. */
-	readonly error?: {
-		readonly status: number;
-		readonly message: string;
-		readonly code?: string;
-		readonly details?: unknown;
-	};
-	/** Human-readable entity name (e.g. "alojamientos", "destinos") for contextual message. */
-	readonly entityName?: string;
-	readonly class?: string;
+    readonly locale: SupportedLocale;
+    /** Custom user-facing error message. Falls back to i18n default. */
+    readonly message?: string;
+    /** The ApiError object from a failed API call, for detailed info. */
+    readonly error?: {
+        readonly status: number;
+        readonly message: string;
+        readonly code?: string;
+        readonly details?: unknown;
+    };
+    /** Human-readable entity name (e.g. "alojamientos", "destinos") for contextual message. */
+    readonly entityName?: string;
+    readonly class?: string;
 }
 
 const { locale, message, error, entityName, class: className } = Astro.props;
@@ -32,22 +32,29 @@ const t = createT(locale);
 
 let resolvedMessage: string;
 if (message) {
-	resolvedMessage = message;
+    resolvedMessage = message;
 } else if (entityName) {
-	const template = t('ui.errorBanner.messageWithEntity', 'No pudimos cargar {entity}. Intentá de nuevo en unos instantes.');
-	resolvedMessage = template.replace('{entity}', entityName);
+    const template = t(
+        'ui.errorBanner.messageWithEntity',
+        'No pudimos cargar {entity}. Intentá de nuevo en unos instantes.'
+    );
+    resolvedMessage = template.replace('{entity}', entityName);
 } else {
-	resolvedMessage = t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
+    resolvedMessage = t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
 }
 
 const retryLabel = t('ui.errorBanner.retry', 'Recargar página');
 const reportLabel = t('ui.errorBanner.report', 'Reportar problema');
-const subtitle = t('ui.errorBanner.subtitle', 'Puede ser un problema temporal. Si el error persiste, ayudanos reportándolo.');
+const subtitle = t(
+    'ui.errorBanner.subtitle',
+    'Puede ser un problema temporal. Si el error persiste, ayudanos reportándolo.'
+);
 
 const showDevDetails = isDevelopment() && error !== undefined;
-const detailsJson = showDevDetails && error?.details !== undefined
-	? JSON.stringify(error.details, null, 2)
-	: undefined;
+const detailsJson =
+    showDevDetails && error?.details !== undefined
+        ? JSON.stringify(error.details, null, 2)
+        : undefined;
 ---
 
 <div

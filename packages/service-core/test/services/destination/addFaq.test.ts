@@ -8,7 +8,7 @@ import type { DestinationModel } from '@repo/db';
 import * as db from '@repo/db';
 import type { DestinationFaqAddInput } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { ServiceError } from '../../../src/types';

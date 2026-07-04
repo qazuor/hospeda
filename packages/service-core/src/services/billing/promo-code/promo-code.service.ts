@@ -22,6 +22,7 @@ import {
     listPromoCodes,
     updatePromoCode
 } from './promo-code.crud.js';
+import type { RecordUsageInput, RedeemAndRecordInput } from './promo-code.redemption.js';
 import {
     applyPromoCode,
     incrementPromoCodeUsage,
@@ -29,7 +30,6 @@ import {
     redeemAndRecordUsage,
     tryRedeemAtomically
 } from './promo-code.redemption.js';
-import type { RecordUsageInput, RedeemAndRecordInput } from './promo-code.redemption.js';
 import { validatePromoCode } from './promo-code.validation.js';
 
 // ---------------------------------------------------------------------------

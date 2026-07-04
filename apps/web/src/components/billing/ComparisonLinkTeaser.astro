@@ -15,9 +15,9 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	/** Destination comparison-page URL (already locale-resolved by the caller). */
-	readonly href: string;
+    readonly locale: SupportedLocale;
+    /** Destination comparison-page URL (already locale-resolved by the caller). */
+    readonly href: string;
 }
 
 const { locale, href } = Astro.props;

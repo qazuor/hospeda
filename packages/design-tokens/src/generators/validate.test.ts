@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildCSS } from './generate-css.ts';
-import { type Seed, formatReport, validate } from './validate.ts';
+import { formatReport, type Seed, validate } from './validate.ts';
 
 const REAL_REPORT = validate();
 

@@ -16,10 +16,10 @@
  * renders the terminal note instead.
  */
 
+import { useCallback, useId, useState } from 'react';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useId, useState } from 'react';
 import styles from './NewsletterContentTypeToggles.module.css';
 
 /**

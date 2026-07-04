@@ -4,9 +4,10 @@
  * Used in the change-password page to provide real-time feedback
  * on password strength and rule compliance.
  */
-import { useTranslations } from '@/hooks/use-translations';
+
 import type { TranslationKey } from '@repo/i18n';
 import { CheckCircleIcon, XCircleIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 
 import type { PasswordRule } from './password-validation';
 import { STRENGTH_LEVELS } from './password-validation';
@@ -14,11 +15,7 @@ import { STRENGTH_LEVELS } from './password-validation';
 /**
  * Password strength indicator bar and label
  */
-export function PasswordStrengthIndicator({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
+export function PasswordStrengthIndicator({ rules }: { readonly rules: readonly PasswordRule[] }) {
     const { t } = useTranslations();
     const passedCount = rules.filter((r) => r.passed).length;
 
@@ -53,11 +50,7 @@ export function PasswordStrengthIndicator({
 /**
  * Password requirements checklist
  */
-export function PasswordRequirements({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
+export function PasswordRequirements({ rules }: { readonly rules: readonly PasswordRule[] }) {
     const { t } = useTranslations();
 
     return (

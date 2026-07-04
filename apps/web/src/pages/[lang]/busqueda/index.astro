@@ -9,13 +9,13 @@
  * @rendering SSR (dynamic — always fresh)
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { SearchResultsLive } from '@/components/search/SearchResultsLive.client';
-import { searchApi } from '@/lib/api/endpoints';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { PublicSearchResponse } from '@/lib/api/endpoints';
+import { searchApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -25,10 +25,10 @@ const hasQuery = q.length >= 2;
 // Fetch search results server-side when q is long enough
 let initialResults: PublicSearchResponse | null = null;
 if (hasQuery) {
-	const result = await searchApi.search({ q, limit: 5 });
-	if (result.ok) {
-		initialResults = result.data;
-	}
+    const result = await searchApi.search({ q, limit: 5 });
+    if (result.ok) {
+        initialResults = result.data;
+    }
 }
 
 const popularTags = ['Cabañas', 'Colón', 'Termas', 'Carnaval', 'Eventos', 'Entre Ríos'] as const;

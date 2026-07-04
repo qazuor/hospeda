@@ -34,16 +34,16 @@
  * @module services/ai-service.factory
  */
 
+import type { AiService } from '@repo/ai-core';
 import {
     AiProviderUnconfiguredError,
     AnthropicAdapter,
-    OpenAiAdapter,
-    StubProvider,
     checkCostCeiling,
     createAiService,
-    resolveConfig
+    OpenAiAdapter,
+    resolveConfig,
+    StubProvider
 } from '@repo/ai-core';
-import type { AiService } from '@repo/ai-core';
 import { aiProviderCredentials, getDb } from '@repo/db';
 import type { AiProviderId } from '@repo/schemas';
 import { isNull } from 'drizzle-orm';
@@ -174,17 +174,17 @@ export async function createConfiguredAiService(): Promise<AiService> {
 
     for (const { providerId, metadata } of allProviders) {
         const result = await getDecryptedAiProviderCredential({ providerId });
-        if (result.data !== undefined) {
+        if (result.data === undefined) {
+            apiLogger.debug(
+                { providerId },
+                'ai-service.factory: no active credential for provider (provider unavailable)'
+            );
+        } else {
             keyMap.set(providerId, result.data.plaintextKey);
             if (metadata && typeof metadata === 'object') {
                 metadataMap.set(providerId, metadata as Record<string, unknown>);
             }
             apiLogger.debug({ providerId }, 'ai-service.factory: credential loaded for provider');
-        } else {
-            apiLogger.debug(
-                { providerId },
-                'ai-service.factory: no active credential for provider (provider unavailable)'
-            );
         }
     }
 

@@ -13,17 +13,17 @@
  * @rendering SSR
  */
 
-import { getApiUrl } from '@/lib/env';
-import AccountLayout from '@/layouts/AccountLayout.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
 import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
-import { EditableNote } from '@/components/account/EditableNote';
 import { ICON_OPTIONS } from '@/components/account/collection-picker-config';
+import { EditableNote } from '@/components/account/EditableNote';
+import AccountLayout from '@/layouts/AccountLayout.astro';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
-import { createTranslations } from '@/lib/i18n';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 
 // ---------------------------------------------------------------------------
 // Route params & auth
@@ -33,16 +33,16 @@ const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
-	const returnUrl = Astro.url.pathname;
-	return Astro.redirect(
-		buildUrl({ locale, path: `auth/signin` }) + `?returnUrl=${encodeURIComponent(returnUrl)}`
-	);
+    const returnUrl = Astro.url.pathname;
+    return Astro.redirect(
+        buildUrl({ locale, path: `auth/signin` }) + `?returnUrl=${encodeURIComponent(returnUrl)}`
+    );
 }
 
 const { id } = Astro.params;
 
 if (!id) {
-	return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
 }
 
 // ---------------------------------------------------------------------------
@@ -57,12 +57,12 @@ const VALID_ENTITY_TYPES = ['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT
 type ValidEntityType = (typeof VALID_ENTITY_TYPES)[number];
 
 function isValidEntityType(val: string | null): val is ValidEntityType {
-	return VALID_ENTITY_TYPES.includes(val as ValidEntityType);
+    return VALID_ENTITY_TYPES.includes(val as ValidEntityType);
 }
 
 const activeEntityType: ValidEntityType | undefined = isValidEntityType(rawEntityType)
-	? rawEntityType
-	: undefined;
+    ? rawEntityType
+    : undefined;
 
 const currentPage = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, parseInt(rawPage, 10)) : 1;
 
@@ -84,11 +84,11 @@ const { t, tPlural } = createTranslations(locale);
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 const result = await userBookmarkCollectionsApi.getById({
-	id,
-	bookmarksPage: currentPage,
-	bookmarksPageSize: PAGE_SIZE,
-	entityType: activeEntityType,
-	cookieHeader
+    id,
+    bookmarksPage: currentPage,
+    bookmarksPageSize: PAGE_SIZE,
+    entityType: activeEntityType,
+    cookieHeader
 });
 
 // Treat 404 (collection doesn't exist), 400 (id is not a valid UUID, i.e.
@@ -98,12 +98,12 @@ const result = await userBookmarkCollectionsApi.getById({
 // guessed another user's collection id. We only render the error state below
 // for 5xx or other unexpected failures the user can actually retry.
 if (!result.ok) {
-	const status = result.error.status;
-	if (status === 404 || status === 400 || status === 403) {
-		webLogger.warn('[coleccion-detail] collection unavailable, redirecting', { id, status });
-		return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
-	}
-	webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
+    const status = result.error.status;
+    if (status === 404 || status === 400 || status === 403) {
+        webLogger.warn('[coleccion-detail] collection unavailable, redirecting', { id, status });
+        return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
+    }
+    webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
 }
 
 // The API inlines collection fields at the top level (no `collection` wrapper)
@@ -121,29 +121,29 @@ const totalPages = bookmarksData?.pagination.totalPages ?? 0;
  * Build a URL for a specific page preserving the active entityType filter.
  */
 function buildPageUrl(page: number): string {
-	const params: Record<string, string> = { bookmarksPage: String(page) };
-	if (activeEntityType) {
-		params.entityType = activeEntityType;
-	}
-	return buildUrlWithParams({
-		locale,
-		path: `mi-cuenta/favoritos/colecciones/${id}`,
-		params
-	});
+    const params: Record<string, string> = { bookmarksPage: String(page) };
+    if (activeEntityType) {
+        params.entityType = activeEntityType;
+    }
+    return buildUrlWithParams({
+        locale,
+        path: `mi-cuenta/favoritos/colecciones/${id}`,
+        params
+    });
 }
 
 /**
  * Build a URL for a specific entity type filter, resetting page to 1.
  */
 function buildFilterUrl(entityTypeKey: string): string {
-	if (entityTypeKey === 'ALL') {
-		return buildUrl({ locale, path: `mi-cuenta/favoritos/colecciones/${id}` });
-	}
-	return buildUrlWithParams({
-		locale,
-		path: `mi-cuenta/favoritos/colecciones/${id}`,
-		params: { entityType: entityTypeKey }
-	});
+    if (entityTypeKey === 'ALL') {
+        return buildUrl({ locale, path: `mi-cuenta/favoritos/colecciones/${id}` });
+    }
+    return buildUrlWithParams({
+        locale,
+        path: `mi-cuenta/favoritos/colecciones/${id}`,
+        params: { entityType: entityTypeKey }
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -151,60 +151,59 @@ function buildFilterUrl(entityTypeKey: string): string {
 // ---------------------------------------------------------------------------
 
 const pageTitle = collection
-	? t('account.favorites.collections.title', 'Colección') + ' · ' + collection.name
-	: t('account.favorites.collections.title', 'Colección');
+    ? t('account.favorites.collections.title', 'Colección') + ' · ' + collection.name
+    : t('account.favorites.collections.title', 'Colección');
 
 // Resolve the stored icon key (e.g. "star") back to its Phosphor component so
 // we render an SVG instead of the raw key text. Falls back to null when the
 // collection has no icon or the key is not in the curated set.
 const HeaderIcon = collection?.icon
-	? (ICON_OPTIONS.find((opt) => opt.key === collection.icon)?.Component ?? null)
-	: null;
+    ? (ICON_OPTIONS.find((opt) => opt.key === collection.icon)?.Component ?? null)
+    : null;
 
 // The endpoint returns `bookmarkCount` only when `includeBookmarkCount` is set,
 // but it always returns `bookmarks.pagination.total` when we pass `includeBookmarks: true`.
-const totalBookmarks =
-	bookmarksData?.pagination.total ?? collection?.bookmarkCount ?? 0;
+const totalBookmarks = bookmarksData?.pagination.total ?? collection?.bookmarkCount ?? 0;
 const bookmarkCountLabel = collection
-	? tPlural('account.favorites.bookmarks.count', totalBookmarks, {
-			count: totalBookmarks
-		})
-	: null;
+    ? tPlural('account.favorites.bookmarks.count', totalBookmarks, {
+          count: totalBookmarks
+      })
+    : null;
 
 // ---------------------------------------------------------------------------
 // Entity type tab config
 // ---------------------------------------------------------------------------
 
 interface EntityTypeTab {
-	readonly key: string;
-	readonly label: string;
+    readonly key: string;
+    readonly label: string;
 }
 
 const entityTypeTabs: readonly EntityTypeTab[] = [
-	{ key: 'ALL', label: t('account.favorites.filter.all', 'Todos') },
-	{
-		key: 'ACCOMMODATION',
-		label: t('account.favorites.filter.accommodations', 'Alojamientos')
-	},
-	{ key: 'DESTINATION', label: t('account.favorites.filter.destinations', 'Destinos') },
-	{ key: 'EVENT', label: t('account.favorites.filter.events', 'Eventos') },
-	{ key: 'POST', label: t('account.favorites.filter.posts', 'Posts') }
+    { key: 'ALL', label: t('account.favorites.filter.all', 'Todos') },
+    {
+        key: 'ACCOMMODATION',
+        label: t('account.favorites.filter.accommodations', 'Alojamientos')
+    },
+    { key: 'DESTINATION', label: t('account.favorites.filter.destinations', 'Destinos') },
+    { key: 'EVENT', label: t('account.favorites.filter.events', 'Eventos') },
+    { key: 'POST', label: t('account.favorites.filter.posts', 'Posts') }
 ];
 
 /**
  * Path segment used to build entity URLs per type.
  */
 const ENTITY_PATH_SEGMENTS: Readonly<Record<string, string>> = {
-	ACCOMMODATION: 'alojamientos',
-	DESTINATION: 'destinos',
-	EVENT: 'eventos',
-	POST: 'publicaciones',
-	ATTRACTION: 'atracciones'
+    ACCOMMODATION: 'alojamientos',
+    DESTINATION: 'destinos',
+    EVENT: 'eventos',
+    POST: 'publicaciones',
+    ATTRACTION: 'atracciones'
 };
 
 function resolveEntityHref(entityType: string, entityId: string): string {
-	const segment = ENTITY_PATH_SEGMENTS[entityType] ?? entityType.toLowerCase();
-	return buildUrl({ locale, path: `${segment}/${entityId}` });
+    const segment = ENTITY_PATH_SEGMENTS[entityType] ?? entityType.toLowerCase();
+    return buildUrl({ locale, path: `${segment}/${entityId}` });
 }
 
 // API base URL for the remove-bookmark island

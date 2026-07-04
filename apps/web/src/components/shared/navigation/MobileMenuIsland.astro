@@ -8,11 +8,11 @@
  */
 
 import { getImage } from 'astro:assets';
-import { MobileMenu } from './MobileMenu.client';
 import { getAdminUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { MobileMenu } from './MobileMenu.client';
 
 interface Props {
     /** Current locale for i18n. */
@@ -34,7 +34,12 @@ const serverUser = Astro.locals.user;
 
 /** Pre-optimized avatar image URL for MobileMenu (64px @ 2x for retina). */
 let optimizedUserImage: string | undefined;
-if (serverUser && 'image' in serverUser && typeof serverUser.image === 'string' && serverUser.image) {
+if (
+    serverUser &&
+    'image' in serverUser &&
+    typeof serverUser.image === 'string' &&
+    serverUser.image
+) {
     const raw = serverUser.image;
     if (!raw.includes('placeholder') && !raw.endsWith('.svg')) {
         try {
@@ -49,7 +54,11 @@ if (serverUser && 'image' in serverUser && typeof serverUser.image === 'string' 
 }
 
 const user = serverUser
-    ? { name: serverUser.name || 'Usuario', email: serverUser.email || '', image: optimizedUserImage }
+    ? {
+          name: serverUser.name || 'Usuario',
+          email: serverUser.email || '',
+          image: optimizedUserImage
+      }
     : null;
 
 /**
@@ -63,7 +72,6 @@ const adminUrl = getAdminUrl();
 const isHostMode = serverUser?.role === 'HOST' && Boolean(adminUrl);
 const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
 const ctaHref = isHostMode ? (adminUrl as string) : buildUrl({ locale, path: '/publicar/' });
-
 ---
 
 <MobileMenu

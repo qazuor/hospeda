@@ -8,26 +8,29 @@
  * @rendering SSR
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import { AccommodationTypeEnum } from '@repo/schemas';
 import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
-import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
+import {
+    buildAccommodationListingSummary,
+    DEFAULT_TYPE_GRAMMAR
+} from '@/lib/accommodation-listing-summary';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
-import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
-import { AccommodationTypeEnum } from '@repo/schemas';
-import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
@@ -48,8 +51,12 @@ const url = Astro.url;
 const q = url.searchParams.get('q') ?? undefined;
 const types = url.searchParams.get('types') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
-const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
-const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const minPrice = url.searchParams.get('minPrice')
+    ? Number(url.searchParams.get('minPrice'))
+    : undefined;
+const maxPrice = url.searchParams.get('maxPrice')
+    ? Number(url.searchParams.get('maxPrice'))
+    : undefined;
 const sortBy = url.searchParams.get('sortBy') ?? undefined;
 // SPEC-098 T-052 — `mostSaved` defaults to descending so the most-bookmarked
 // accommodations appear first.
@@ -60,19 +67,23 @@ const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefi
 // `minGuests` is now derived from adults + children (see further down). The
 // raw URL param is no longer surfaced as its own filter to keep the UI in
 // sync with the list view.
-const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
+const minBedrooms = url.searchParams.get('minBedrooms')
+    ? Number(url.searchParams.get('minBedrooms'))
+    : undefined;
+const minBathrooms = url.searchParams.get('minBathrooms')
+    ? Number(url.searchParams.get('minBathrooms'))
+    : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
 // Same default-ON semantics as the list view: absent param = checked. Only
 // forward the explicit-OFF case to the API (the listing endpoint rejects an
 // unknown `?includeNoPrice=true` with INVALID_PAGINATION_PARAMS, so we keep
 // the param absent when the toggle is at its default-on state).
-const includeNoPrice =
-    url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
-const includeNoReviews =
-    url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
+const includeNoPrice = url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
+const includeNoReviews = url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
 // Trip-context (forwarded to detail link, not filtered server-side).
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
@@ -91,196 +102,270 @@ const destinationsResult = await destinationsApi.list({ destinationType: 'CITY',
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenitiesResult = await amenitiesApi.list({
+    pageSize: 100,
+    isActive: true,
+    sortBy: 'name',
+    sortOrder: 'asc'
+});
 const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
 
 // Fetch features for filter chips
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
+const featuresResult = await featuresApi.list({
+    pageSize: 100,
+    sortBy: 'displayWeight',
+    sortOrder: 'desc'
+});
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
 // Fetch up to MAP_FETCH_CAP accommodations for the initial map view.
 // Subsequent panning will refetch via useViewportSearch with bbox params.
 const result = await accommodationsApi.list({
-	page: 1,
-	pageSize: MAP_FETCH_CAP,
-	q,
-	types,
-	destinationIds,
-	minPrice,
-	maxPrice,
-	sortBy,
-	sortOrder,
-	isFeatured,
-	minGuests,
-	minBedrooms,
-	minBathrooms,
-	minRating,
-	amenities: amenitiesParam,
-	features: featuresParam,
-	includeAmenities: true,
-	includeNoPrice,
-	includeNoReviews,
+    page: 1,
+    pageSize: MAP_FETCH_CAP,
+    q,
+    types,
+    destinationIds,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortOrder,
+    isFeatured,
+    minGuests,
+    minBedrooms,
+    minBathrooms,
+    minRating,
+    amenities: amenitiesParam,
+    features: featuresParam,
+    includeAmenities: true,
+    includeNoPrice,
+    includeNoReviews
 });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;
 const firstWithCoords = cards.find((c) => c.approximateLocation);
 const mapCenter: [number, number] = firstWithCoords?.approximateLocation
-	? [firstWithCoords.approximateLocation.lat, firstWithCoords.approximateLocation.lng]
-	: LITORAL_CENTER;
+    ? [firstWithCoords.approximateLocation.lat, firstWithCoords.approximateLocation.lng]
+    : LITORAL_CENTER;
 const mapHasItems = cards.some((c) => c.approximateLocation);
 
 // Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
-const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: resolveI18nText(d.name, 'es'), en: resolveI18nText(d.name, 'en') } }));
+const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
+    key: d.id,
+    label: { es: resolveI18nText(d.name, 'es'), en: resolveI18nText(d.name, 'en') }
+}));
 // SPEC-266: `name` was dropped from the amenities/features catalog. `slug` is
 // now the canonical identifier and is also the i18n key segment.
 // slug is nullish per schema; coerce null→undefined to satisfy the t() signature.
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined) } }));
-const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined) } }));
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
+    key: a.id,
+    label: {
+        es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
+        en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined)
+    }
+}));
+const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
+    key: f.id,
+    label: {
+        es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
+        en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined)
+    }
+}));
 
 const typesArray = types?.split(',').filter(Boolean) ?? [];
 const filterSummary = buildAccommodationListingSummary({
-	locale: summaryLocale,
-	filters: {
-		types: typesArray.length > 0 ? typesArray : undefined,
-		text: q,
-		price: (minPrice !== undefined || maxPrice !== undefined || includeNoPrice)
-			? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
-			: undefined,
-		destinations: destinationIds?.split(',').filter(Boolean),
-		guests: minGuests,
-		amenities: amenitiesParam?.split(',').filter(Boolean),
-		services: featuresParam?.split(',').filter(Boolean),
-		minRating,
-		includeWithoutRating: includeNoReviews,
-		bedrooms: minBedrooms,
-		bathrooms: minBathrooms,
-		featured: isFeatured ?? null,
-	},
-	counts: {
-		shown: cards.length,
-		globalTotal: total,
-		subjectTotal: typesArray.length > 0 ? total : undefined,
-	},
-	sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
-	catalogs: {
-		types: DEFAULT_TYPE_GRAMMAR,
-		destinations: destinationCatalog,
-		amenities: amenityCatalog,
-		services: featureCatalog,
-	},
+    locale: summaryLocale,
+    filters: {
+        types: typesArray.length > 0 ? typesArray : undefined,
+        text: q,
+        price:
+            minPrice !== undefined || maxPrice !== undefined || includeNoPrice
+                ? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
+                : undefined,
+        destinations: destinationIds?.split(',').filter(Boolean),
+        guests: minGuests,
+        amenities: amenitiesParam?.split(',').filter(Boolean),
+        services: featuresParam?.split(',').filter(Boolean),
+        minRating,
+        includeWithoutRating: includeNoReviews,
+        bedrooms: minBedrooms,
+        bathrooms: minBathrooms,
+        featured: isFeatured ?? null
+    },
+    counts: {
+        shown: cards.length,
+        globalTotal: total,
+        subjectTotal: typesArray.length > 0 ? total : undefined
+    },
+    sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
+    catalogs: {
+        types: DEFAULT_TYPE_GRAMMAR,
+        destinations: destinationCatalog,
+        amenities: amenityCatalog,
+        services: featureCatalog
+    }
 });
 
 // Filter sidebar config (same as list view)
 const filterGroups: FilterGroup[] = [
-	{ id: 'q', label: t('accommodations.sidebar.search', 'Búsqueda por texto'), type: 'search', placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...') },
-	{ id: 'isFeatured', label: t('accommodations.sidebar.featured', 'Solo destacados'), type: 'toggle' },
-	{
-		id: 'types',
-		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
-		type: 'checkbox',
-		options: [
-			{ value: 'APARTMENT', label: getAccommodationTypeLabel({ type: 'APARTMENT', t }) },
-			{ value: 'HOUSE', label: getAccommodationTypeLabel({ type: 'HOUSE', t }) },
-			{ value: 'COUNTRY_HOUSE', label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }) },
-			{ value: 'CABIN', label: getAccommodationTypeLabel({ type: 'CABIN', t }) },
-			{ value: 'HOTEL', label: getAccommodationTypeLabel({ type: 'HOTEL', t }) },
-			{ value: 'HOSTEL', label: getAccommodationTypeLabel({ type: 'HOSTEL', t }) },
-			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
-			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
-			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
-			{ value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
-			{ value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
-			{ value: 'BED_AND_BREAKFAST', label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t }) },
-		],
-	},
-	{
-		id: 'destinationIds',
-		label: t('accommodations.sidebar.destination', 'Destino'),
-		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
-		maxVisible: 8,
-	},
-	{
-		id: 'amenities',
-		label: t('accommodations.sidebar.amenities', 'Comodidades'),
-		type: 'icon-chips',
-		// SPEC-266: `name` dropped; use `slug` as the i18n key segment.
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), icon: a.icon ?? undefined })),
-		maxVisible: 10,
-	},
-	{
-		id: 'features',
-		label: t('accommodations.sidebar.features', 'Características'),
-		type: 'icon-chips',
-		// SPEC-266: `name` dropped; resolve label from i18n by slug.
-		options: features.map((f) => ({ value: f.id, label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), icon: f.icon ?? undefined })),
-		maxVisible: 10,
-	},
-	{
-		id: 'dates',
-		label: t('accommodations.sidebar.dates', 'Llegada y salida'),
-		type: 'date-range',
-		mode: 'bounds',
-		checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
-		checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
-		description: t(
-			'accommodations.sidebar.dates.helper',
-			'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
-		),
-	},
-	{
-		id: 'adults',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
-		type: 'stepper',
-		min: 1,
-		max: 10,
-		defaultValue: 2,
-		emitWhenAtDefault: true,
-	},
-	{
-		id: 'children',
-		label: t('accommodations.sidebar.children', 'Niños'),
-		type: 'stepper',
-		min: 0,
-		max: 6,
-		defaultValue: 0,
-		emitWhenAtDefault: true,
-		description: t('accommodations.sidebar.children.helper', '(menores de 5 años)'),
-	},
-	{ id: 'minBedrooms', label: t('accommodations.sidebar.bedrooms', 'Dormitorios'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
-	{ id: 'minBathrooms', label: t('accommodations.sidebar.bathrooms', 'Baños'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
-	{
-		id: 'price',
-		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
-		type: 'dual-range',
-		min: 5000,
-		max: 150000,
-		step: 1000,
-		format: 'currency',
-		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
-		includeNullParam: 'includeNoPrice',
-		defaultIncludeNull: true,
-	},
-	{ id: 'minRating', label: t('accommodations.sidebar.rating', 'Calificación'), type: 'stars', includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'), includeNullParam: 'includeNoReviews', defaultIncludeNull: true },
+    {
+        id: 'q',
+        label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
+        type: 'search',
+        placeholder: t(
+            'accommodations.sidebar.searchPlaceholder',
+            'Buscar por nombre o descripción...'
+        )
+    },
+    {
+        id: 'isFeatured',
+        label: t('accommodations.sidebar.featured', 'Solo destacados'),
+        type: 'toggle'
+    },
+    {
+        id: 'types',
+        label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
+        type: 'checkbox',
+        options: [
+            { value: 'APARTMENT', label: getAccommodationTypeLabel({ type: 'APARTMENT', t }) },
+            { value: 'HOUSE', label: getAccommodationTypeLabel({ type: 'HOUSE', t }) },
+            {
+                value: 'COUNTRY_HOUSE',
+                label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t })
+            },
+            { value: 'CABIN', label: getAccommodationTypeLabel({ type: 'CABIN', t }) },
+            { value: 'HOTEL', label: getAccommodationTypeLabel({ type: 'HOTEL', t }) },
+            { value: 'HOSTEL', label: getAccommodationTypeLabel({ type: 'HOSTEL', t }) },
+            { value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
+            { value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
+            { value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
+            { value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
+            { value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
+            {
+                value: 'BED_AND_BREAKFAST',
+                label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t })
+            }
+        ]
+    },
+    {
+        id: 'destinationIds',
+        label: t('accommodations.sidebar.destination', 'Destino'),
+        type: 'select-search',
+        options: destinations.map((d) => ({ value: d.id, label: d.name })),
+        maxVisible: 8
+    },
+    {
+        id: 'amenities',
+        label: t('accommodations.sidebar.amenities', 'Comodidades'),
+        type: 'icon-chips',
+        // SPEC-266: `name` dropped; use `slug` as the i18n key segment.
+        options: amenities.map((a) => ({
+            value: a.id,
+            label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
+            icon: a.icon ?? undefined
+        })),
+        maxVisible: 10
+    },
+    {
+        id: 'features',
+        label: t('accommodations.sidebar.features', 'Características'),
+        type: 'icon-chips',
+        // SPEC-266: `name` dropped; resolve label from i18n by slug.
+        options: features.map((f) => ({
+            value: f.id,
+            label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
+            icon: f.icon ?? undefined
+        })),
+        maxVisible: 10
+    },
+    {
+        id: 'dates',
+        label: t('accommodations.sidebar.dates', 'Llegada y salida'),
+        type: 'date-range',
+        mode: 'bounds',
+        checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
+        checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
+        description: t(
+            'accommodations.sidebar.dates.helper',
+            'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
+        )
+    },
+    {
+        id: 'adults',
+        label: t('accommodations.sidebar.adults', 'Adultos'),
+        type: 'stepper',
+        min: 1,
+        max: 10,
+        defaultValue: 2,
+        emitWhenAtDefault: true
+    },
+    {
+        id: 'children',
+        label: t('accommodations.sidebar.children', 'Niños'),
+        type: 'stepper',
+        min: 0,
+        max: 6,
+        defaultValue: 0,
+        emitWhenAtDefault: true,
+        description: t('accommodations.sidebar.children.helper', '(menores de 5 años)')
+    },
+    {
+        id: 'minBedrooms',
+        label: t('accommodations.sidebar.bedrooms', 'Dormitorios'),
+        type: 'stepper',
+        min: 0,
+        max: 10,
+        defaultValue: 0
+    },
+    {
+        id: 'minBathrooms',
+        label: t('accommodations.sidebar.bathrooms', 'Baños'),
+        type: 'stepper',
+        min: 0,
+        max: 10,
+        defaultValue: 0
+    },
+    {
+        id: 'price',
+        label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
+        type: 'dual-range',
+        min: 5000,
+        max: 150000,
+        step: 1000,
+        format: 'currency',
+        includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
+        includeNullParam: 'includeNoPrice',
+        defaultIncludeNull: true
+    },
+    {
+        id: 'minRating',
+        label: t('accommodations.sidebar.rating', 'Calificación'),
+        type: 'stars',
+        includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
+        includeNullParam: 'includeNoReviews',
+        defaultIncludeNull: true
+    }
 ];
 
 const sortOptions = [
-	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
-	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
-	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
-	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
-	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
-	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
-	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
-	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
+    { value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
+    { value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
+    { value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
+    { value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
+    { value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
+    // SPEC-098 T-052 — orders by total active bookmarks (descending) via the
+    // `mostSaved` synthetic sort field on the public accommodation list endpoint.
+    { value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') }
 ];
 
 // Build initial filter params for the sidebar
@@ -308,10 +393,10 @@ initialParams.children = String(childrenContext ?? 0);
 
 // Build the URL pointing back to the list view, preserving every active filter.
 const listHref = (() => {
-	const sp = new URLSearchParams(url.searchParams);
-	const qs = sp.toString();
-	const base = buildUrl({ locale, path: 'alojamientos' });
-	return qs ? `${base}?${qs}` : base;
+    const sp = new URLSearchParams(url.searchParams);
+    const qs = sp.toString();
+    const base = buildUrl({ locale, path: 'alojamientos' });
+    return qs ? `${base}?${qs}` : base;
 })();
 
 // Build per-id maps for popup enrichment. Resolved on the page so the island
@@ -321,27 +406,30 @@ const listHref = (() => {
 // and motel, which the previous hardcoded list omitted (Bug B10 fix).
 const typeLabels: Record<string, string> = {};
 for (const key of Object.values(AccommodationTypeEnum)) {
-	typeLabels[key] = getAccommodationTypeLabel({ type: key, t });
+    typeLabels[key] = getAccommodationTypeLabel({ type: key, t });
 }
 const detailHrefById: Record<string, string> = {};
 const reviewsLabelById: Record<string, string> = {};
 const photosLabelById: Record<string, string> = {};
 const priceLabelById: Record<string, string> = {};
 for (const card of cards) {
-	detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
-	if (card.reviewsCount > 0) {
-		reviewsLabelById[card.id] = `(${tPlural('review.list.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
-	}
-	if ((card.photoCount ?? 0) > 0) {
-		photosLabelById[card.id] = tPlural('common.photos', card.photoCount ?? 0, { count: card.photoCount ?? 0 });
-	}
-	if (card.price?.amount != null && card.price?.currency) {
-		priceLabelById[card.id] = formatPrice({
-			amount: card.price.amount,
-			currency: card.price.currency,
-			locale,
-		});
-	}
+    detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
+    if (card.reviewsCount > 0) {
+        reviewsLabelById[card.id] =
+            `(${tPlural('review.list.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+    }
+    if ((card.photoCount ?? 0) > 0) {
+        photosLabelById[card.id] = tPlural('common.photos', card.photoCount ?? 0, {
+            count: card.photoCount ?? 0
+        });
+    }
+    if (card.price?.amount != null && card.price?.currency) {
+        priceLabelById[card.id] = formatPrice({
+            amount: card.price.amount,
+            currency: card.price.currency,
+            locale
+        });
+    }
 }
 
 // Sidebar cards (mobile bottom sheet / desktop pane) mirror AccommodationCard

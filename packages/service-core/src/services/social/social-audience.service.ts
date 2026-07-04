@@ -11,10 +11,10 @@ import type {
     SocialAudienceUpdate
 } from '@repo/schemas';
 import {
+    parseAdminSort,
     SocialAudienceAdminSearchSchema,
     SocialAudienceCreateSchema,
-    SocialAudienceUpdateSchema,
-    parseAdminSort
+    SocialAudienceUpdateSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';

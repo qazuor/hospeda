@@ -16,8 +16,8 @@
  * ```
  */
 
-import { adminLogger } from '@/utils/logger';
 import { defaultLocale, trans } from '@repo/i18n';
+import { adminLogger } from '@/utils/logger';
 import {
     type ApiError,
     isAbortError,

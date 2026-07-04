@@ -15,11 +15,11 @@
  * Escape-to-close, and overlay backdrop come for free.
  */
 
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './ReviewSidebarCard.module.css';
 
 const RATING_KEYS = [
@@ -359,10 +359,7 @@ export function ReviewSidebarCard({
                                 onSubmit={handleSubmit}
                                 noValidate
                             >
-                                <div
-                                    className={styles.ratingList}
-                                    aria-label={t('review.form.ratingLabel', 'Calificación')}
-                                >
+                                <div className={styles.ratingList}>
                                     {RATING_KEYS.map((key) => {
                                         const value = ratings[key];
                                         const label = t(
@@ -381,10 +378,10 @@ export function ReviewSidebarCard({
                                                     aria-label={label}
                                                 >
                                                     {[1, 2, 3, 4, 5].map((star) => (
+                                                        // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings; <input type=radio> can't host the star glyph.
                                                         <button
                                                             key={star}
                                                             type="button"
-                                                            // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings; <input type=radio> can't host the star glyph.
                                                             role="radio"
                                                             aria-checked={value === star}
                                                             aria-label={`${label}: ${star}`}

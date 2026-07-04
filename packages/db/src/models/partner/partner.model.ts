@@ -1,5 +1,4 @@
-import type { Partner } from '@repo/schemas';
-import type { LifecycleStatusEnum, PartnerSubscriptionStatusEnum } from '@repo/schemas';
+import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
 import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';

@@ -1,8 +1,8 @@
+import type { useTranslations } from '@repo/i18n';
+import { createElement } from 'react';
 import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
-import type { useTranslations } from '@repo/i18n';
-import { createElement } from 'react';
 import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig

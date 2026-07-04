@@ -10,31 +10,40 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	/** Decorative tagline rendered in Caveat font (e.g., "Encontra tu lugar ideal"). */
-	readonly tagline?: string;
-	/** Main page title (e.g., "Alojamientos"). */
-	readonly title: string;
-	/** Optional subtitle below the title. */
-	readonly subtitle?: string;
-	/** Total result count displayed to the right. */
-	readonly totalCount?: number;
-	/**
-	 * Natural-language description of applied filters and current results.
-	 * When provided, replaces the generic "N resultados encontrados" text.
-	 * Example: "Mostrando 5 de 8 casas quintas en Concepción del Uruguay"
-	 */
-	readonly filterSummary?: string;
-	readonly class?: string;
+    readonly locale: SupportedLocale;
+    /** Decorative tagline rendered in Caveat font (e.g., "Encontra tu lugar ideal"). */
+    readonly tagline?: string;
+    /** Main page title (e.g., "Alojamientos"). */
+    readonly title: string;
+    /** Optional subtitle below the title. */
+    readonly subtitle?: string;
+    /** Total result count displayed to the right. */
+    readonly totalCount?: number;
+    /**
+     * Natural-language description of applied filters and current results.
+     * When provided, replaces the generic "N resultados encontrados" text.
+     * Example: "Mostrando 5 de 8 casas quintas en Concepción del Uruguay"
+     */
+    readonly filterSummary?: string;
+    readonly class?: string;
 }
 
-const { locale, tagline, title, subtitle, totalCount, filterSummary, class: className } = Astro.props;
+const {
+    locale,
+    tagline,
+    title,
+    subtitle,
+    totalCount,
+    filterSummary,
+    class: className
+} = Astro.props;
 const t = createT(locale);
 
-const countLabel = filterSummary
-	?? (totalCount !== undefined
-		? `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`
-		: undefined);
+const countLabel =
+    filterSummary ??
+    (totalCount === undefined
+        ? undefined
+        : `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`);
 ---
 
 <div class:list={['listing-page-header', className]}>

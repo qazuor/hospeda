@@ -9,11 +9,11 @@
  * message when reviewsCount === 0.
  */
 
-import { DestinationReviewsModal } from './DestinationReviewsModal.client';
-import DestinationRatingBreakdown from './DestinationRatingBreakdown.astro';
 import { StarIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import DestinationRatingBreakdown from './DestinationRatingBreakdown.astro';
+import { DestinationReviewsModal } from './DestinationReviewsModal.client';
 
 interface Props {
     readonly destinationId: string;

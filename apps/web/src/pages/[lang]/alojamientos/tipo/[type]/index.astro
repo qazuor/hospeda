@@ -20,26 +20,26 @@
  * @rendering SSR + ISR 24h
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import { AccommodationTypeEnum } from '@repo/schemas';
+import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
-import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
-import { AccommodationTypeEnum } from '@repo/schemas';
+import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -49,15 +49,15 @@ const isAuthenticated = Boolean(Astro.locals.user);
 // Derived from the canonical enum so any new type added to AccommodationTypeEnum
 // is automatically accepted here without code changes (Bug B10 fix).
 const VALID_TYPES: Record<string, string> = Object.fromEntries(
-	Object.values(AccommodationTypeEnum).map((v) => [
-		String(v).toLowerCase().replace(/_/g, '-'),
-		String(v)
-	])
+    Object.values(AccommodationTypeEnum).map((v) => [
+        String(v).toLowerCase().replace(/_/g, '-'),
+        String(v)
+    ])
 );
 
 const typeEnum = typeSlug ? VALID_TYPES[typeSlug] : undefined;
 if (!typeEnum) {
-	return new Response(null, { status: 404 });
+    return new Response(null, { status: 404 });
 }
 
 // Keys authored under `accommodations.byType.types.{ENUM}` (SPEC-306): `name`
@@ -78,16 +78,16 @@ const pageSize = 9;
  * rationale and the `ALLOWED_SORT_FIELDS` whitelist note.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-	featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
-	mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' },
-	ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
-	mostReviewed: { sortBy: 'reviewsCount', sortOrder: 'desc' },
-	newest: { sortBy: 'createdAt', sortOrder: 'desc' },
-	nameAsc: { sortBy: 'name', sortOrder: 'asc' },
-	nameDesc: { sortBy: 'name', sortOrder: 'desc' },
-	priceAsc: { sortBy: 'price', sortOrder: 'asc' },
-	priceDesc: { sortBy: 'price', sortOrder: 'desc' },
-	distance: { sortBy: 'distance', sortOrder: 'asc' }
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' },
+    ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
+    mostReviewed: { sortBy: 'reviewsCount', sortOrder: 'desc' },
+    newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+    nameAsc: { sortBy: 'name', sortOrder: 'asc' },
+    nameDesc: { sortBy: 'name', sortOrder: 'desc' },
+    priceAsc: { sortBy: 'price', sortOrder: 'asc' },
+    priceDesc: { sortBy: 'price', sortOrder: 'desc' },
+    distance: { sortBy: 'distance', sortOrder: 'asc' }
 };
 const DEFAULT_SORT_KEY = 'featured';
 const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
@@ -96,16 +96,26 @@ const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 // the URL path here). See that page for the full rationale per filter. ---
 const q = url.searchParams.get('q') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
-const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
-const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const minPrice = url.searchParams.get('minPrice')
+    ? Number(url.searchParams.get('minPrice'))
+    : undefined;
+const maxPrice = url.searchParams.get('maxPrice')
+    ? Number(url.searchParams.get('maxPrice'))
+    : undefined;
 const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
 const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
 const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
 const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
+const minBedrooms = url.searchParams.get('minBedrooms')
+    ? Number(url.searchParams.get('minBedrooms'))
+    : undefined;
+const minBathrooms = url.searchParams.get('minBathrooms')
+    ? Number(url.searchParams.get('minBathrooms'))
+    : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
 const includeNoPrice = url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
@@ -116,10 +126,11 @@ const includeNoReviews = url.searchParams.get('includeNoReviews') === 'false' ? 
 const latitudeRaw = url.searchParams.get('latitude');
 const longitudeRaw = url.searchParams.get('longitude');
 const radiusRaw = url.searchParams.get('radius');
-const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
-const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
-const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
-const hasGeoRadius = Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+const latitude = latitudeRaw === null ? Number.NaN : Number.parseFloat(latitudeRaw);
+const longitude = longitudeRaw === null ? Number.NaN : Number.parseFloat(longitudeRaw);
+const radius = radiusRaw === null ? Number.NaN : Number.parseFloat(radiusRaw);
+const hasGeoRadius =
+    Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
 
 // `distance` is only meaningful when the geo filter is active; degrade to the
 // default otherwise (the backend would silently drop it too).
@@ -142,45 +153,56 @@ const destinationsResult = await destinationsApi.list({ destinationType: 'CITY',
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities/features for the "Tipo y características" section.
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenitiesResult = await amenitiesApi.list({
+    pageSize: 100,
+    isActive: true,
+    sortBy: 'name',
+    sortOrder: 'asc'
+});
 const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
+const featuresResult = await featuresApi.list({
+    pageSize: 100,
+    sortBy: 'displayWeight',
+    sortOrder: 'desc'
+});
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
 const result = await accommodationsApi.list({
-	page,
-	pageSize,
-	type: typeEnum,
-	q,
-	destinationIds,
-	minPrice,
-	maxPrice,
-	sortBy: sortResolved.sortBy,
-	sortOrder: sortResolved.sortOrder,
-	isFeatured,
-	minGuests,
-	minBedrooms,
-	minBathrooms,
-	minRating,
-	amenities: amenitiesParam,
-	features: featuresParam,
-	includeAmenities: true,
-	includeNoPrice,
-	includeNoReviews,
-	hasWifi,
-	hasPool,
-	hasParking,
-	allowsPets,
-	latitude: hasGeoRadius ? latitude : undefined,
-	longitude: hasGeoRadius ? longitude : undefined,
-	radius: hasGeoRadius ? radius : undefined
+    page,
+    pageSize,
+    type: typeEnum,
+    q,
+    destinationIds,
+    minPrice,
+    maxPrice,
+    sortBy: sortResolved.sortBy,
+    sortOrder: sortResolved.sortOrder,
+    isFeatured,
+    minGuests,
+    minBedrooms,
+    minBathrooms,
+    minRating,
+    amenities: amenitiesParam,
+    features: featuresParam,
+    includeAmenities: true,
+    includeNoPrice,
+    includeNoReviews,
+    hasWifi,
+    hasPool,
+    hasParking,
+    allowsPets,
+    latitude: hasGeoRadius ? latitude : undefined,
+    longitude: hasGeoRadius ? longitude : undefined,
+    radius: hasGeoRadius ? radius : undefined
 });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 /**
  * `filterGroups` for FilterSidebar — the same config as `/alojamientos/`,
@@ -188,19 +210,27 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
  * "Tipo y características" section (`isFeatured`, `amenities`, `features`)
  * stays, since those are unrelated to the type facet.
  */
-const filterGroups = buildAccommodationsFilterGroups({ t, destinations, amenities, features, excludeType: true });
+const filterGroups = buildAccommodationsFilterGroups({
+    t,
+    destinations,
+    amenities,
+    features,
+    excludeType: true
+});
 
 const sortOptions = [
-	{ value: 'featured', label: t('accommodations.sort.featured', 'Destacados primero') },
-	{ value: 'mostSaved', label: t('accommodations.sort.mostSaved', 'Más guardados') },
-	{ value: 'ratingDesc', label: t('accommodations.sort.ratingDesc', 'Mejor valorados') },
-	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
-	{ value: 'newest', label: t('accommodations.sort.newest', 'Recién agregados') },
-	{ value: 'nameAsc', label: t('accommodations.sort.nameAsc', 'Nombre (A-Z)') },
-	{ value: 'nameDesc', label: t('accommodations.sort.nameDesc', 'Nombre (Z-A)') },
-	{ value: 'priceAsc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
-	{ value: 'priceDesc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
-	...(hasGeoRadius ? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }] : [])
+    { value: 'featured', label: t('accommodations.sort.featured', 'Destacados primero') },
+    { value: 'mostSaved', label: t('accommodations.sort.mostSaved', 'Más guardados') },
+    { value: 'ratingDesc', label: t('accommodations.sort.ratingDesc', 'Mejor valorados') },
+    { value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
+    { value: 'newest', label: t('accommodations.sort.newest', 'Recién agregados') },
+    { value: 'nameAsc', label: t('accommodations.sort.nameAsc', 'Nombre (A-Z)') },
+    { value: 'nameDesc', label: t('accommodations.sort.nameDesc', 'Nombre (Z-A)') },
+    { value: 'priceAsc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
+    { value: 'priceDesc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
+    ...(hasGeoRadius
+        ? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }]
+        : [])
 ];
 
 const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
@@ -237,9 +267,9 @@ if (hasPool) initialParams.hasPool = 'true';
 if (hasParking) initialParams.hasParking = 'true';
 if (allowsPets) initialParams.allowsPets = 'true';
 if (hasGeoRadius) {
-	initialParams.latitude = String(latitude);
-	initialParams.longitude = String(longitude);
-	initialParams.radius = String(radius);
+    initialParams.latitude = String(latitude);
+    initialParams.longitude = String(longitude);
+    initialParams.radius = String(radius);
 }
 
 /** Forwarded to Pagination so page links preserve every active filter. */
@@ -254,107 +284,113 @@ const activeFilterChips: { label: string; removeUrl: string }[] = [];
 
 /** Build a URL identical to the current one minus the given keys. */
 const urlWithoutKeys = (keys: readonly string[]): string => {
-	const sp = new URLSearchParams(url.searchParams);
-	for (const k of keys) sp.delete(k);
-	sp.delete('page');
-	const qs = sp.toString();
-	return qs ? `${baseUrl}?${qs}` : baseUrl;
+    const sp = new URLSearchParams(url.searchParams);
+    for (const k of keys) sp.delete(k);
+    sp.delete('page');
+    const qs = sp.toString();
+    return qs ? `${baseUrl}?${qs}` : baseUrl;
 };
 
 /** Build a URL with a single value removed from a comma-separated list param. */
 const urlWithoutListValue = (key: string, value: string): string => {
-	const sp = new URLSearchParams(url.searchParams);
-	const current = (sp.get(key) ?? '').split(',').filter(Boolean);
-	const next = current.filter((v) => v !== value);
-	if (next.length > 0) sp.set(key, next.join(','));
-	else sp.delete(key);
-	sp.delete('page');
-	const qs = sp.toString();
-	return qs ? `${baseUrl}?${qs}` : baseUrl;
+    const sp = new URLSearchParams(url.searchParams);
+    const current = (sp.get(key) ?? '').split(',').filter(Boolean);
+    const next = current.filter((v) => v !== value);
+    if (next.length > 0) sp.set(key, next.join(','));
+    else sp.delete(key);
+    sp.delete('page');
+    const qs = sp.toString();
+    return qs ? `${baseUrl}?${qs}` : baseUrl;
 };
 
 if (q) {
-	activeFilterChips.push({ label: `"${q}"`, removeUrl: urlWithoutKeys(['q']) });
+    activeFilterChips.push({ label: `"${q}"`, removeUrl: urlWithoutKeys(['q']) });
 }
 if (destinationIds) {
-	for (const id of destinationIds.split(',').filter(Boolean)) {
-		const dest = destinations.find((d) => d.id === id);
-		if (dest) {
-			activeFilterChips.push({
-				label: dest.name,
-				removeUrl: urlWithoutListValue('destinationIds', id)
-			});
-		}
-	}
+    for (const id of destinationIds.split(',').filter(Boolean)) {
+        const dest = destinations.find((d) => d.id === id);
+        if (dest) {
+            activeFilterChips.push({
+                label: dest.name,
+                removeUrl: urlWithoutListValue('destinationIds', id)
+            });
+        }
+    }
 }
 if (amenitiesParam) {
-	for (const id of amenitiesParam.split(',').filter(Boolean)) {
-		const a = amenities.find((x) => x.id === id);
-		if (a) {
-			activeFilterChips.push({
-				label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
-				removeUrl: urlWithoutListValue('amenities', id)
-			});
-		}
-	}
+    for (const id of amenitiesParam.split(',').filter(Boolean)) {
+        const a = amenities.find((x) => x.id === id);
+        if (a) {
+            activeFilterChips.push({
+                label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
+                removeUrl: urlWithoutListValue('amenities', id)
+            });
+        }
+    }
 }
 if (featuresParam) {
-	for (const id of featuresParam.split(',').filter(Boolean)) {
-		const f = features.find((x) => x.id === id);
-		if (f) {
-			activeFilterChips.push({
-				label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
-				removeUrl: urlWithoutListValue('features', id)
-			});
-		}
-	}
+    for (const id of featuresParam.split(',').filter(Boolean)) {
+        const f = features.find((x) => x.id === id);
+        if (f) {
+            activeFilterChips.push({
+                label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
+                removeUrl: urlWithoutListValue('features', id)
+            });
+        }
+    }
 }
 if (minPrice !== undefined || maxPrice !== undefined) {
-	activeFilterChips.push({
-		label: t('accommodations.emptyChip.price', 'Precio'),
-		removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice'])
-	});
+    activeFilterChips.push({
+        label: t('accommodations.emptyChip.price', 'Precio'),
+        removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice'])
+    });
 }
 if (isFeatured) {
-	activeFilterChips.push({
-		label: t('accommodations.emptyChip.featured', 'Solo destacados'),
-		removeUrl: urlWithoutKeys(['isFeatured'])
-	});
+    activeFilterChips.push({
+        label: t('accommodations.emptyChip.featured', 'Solo destacados'),
+        removeUrl: urlWithoutKeys(['isFeatured'])
+    });
 }
 if (minRating !== undefined) {
-	activeFilterChips.push({
-		label: `${minRating}+ ★`,
-		removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews'])
-	});
+    activeFilterChips.push({
+        label: `${minRating}+ ★`,
+        removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews'])
+    });
 }
 if (minBedrooms !== undefined && minBedrooms > 0) {
-	activeFilterChips.push({
-		label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
-		removeUrl: urlWithoutKeys(['minBedrooms'])
-	});
+    activeFilterChips.push({
+        label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
+        removeUrl: urlWithoutKeys(['minBedrooms'])
+    });
 }
 if (minBathrooms !== undefined && minBathrooms > 0) {
-	activeFilterChips.push({
-		label: `${minBathrooms}+ ${t('accommodations.sidebar.bathrooms', 'Baños')}`,
-		removeUrl: urlWithoutKeys(['minBathrooms'])
-	});
+    activeFilterChips.push({
+        label: `${minBathrooms}+ ${t('accommodations.sidebar.bathrooms', 'Baños')}`,
+        removeUrl: urlWithoutKeys(['minBathrooms'])
+    });
 }
 
 // ItemList JSON-LD — the visible page of accommodation cards.
 const itemListEntries = cards.map((card) => ({
-	url: new URL(buildUrl({ locale, path: `alojamientos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
-	name: card.name
+    url: new URL(
+        buildUrl({ locale, path: `alojamientos/${card.slug}` }),
+        Astro.site ?? Astro.url.origin
+    ).href,
+    name: card.name
 }));
 
 // Breadcrumb JSON-LD — Inicio / Alojamientos / {type}.
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbJsonLdItems = [
-	{ name: t('accommodations.byType.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{
-		name: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'),
-		url: `${siteOrigin}${buildUrl({ locale, path: 'alojamientos' })}`
-	},
-	{ name: typeName, url: `${siteOrigin}${baseUrl}` }
+    {
+        name: t('accommodations.byType.labels.breadcrumbHome', 'Inicio'),
+        url: `${siteOrigin}/${locale}/`
+    },
+    {
+        name: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'),
+        url: `${siteOrigin}${buildUrl({ locale, path: 'alojamientos' })}`
+    },
+    { name: typeName, url: `${siteOrigin}${baseUrl}` }
 ];
 
 const collectionPageUrl = `${siteOrigin}${canonicalPath}`;

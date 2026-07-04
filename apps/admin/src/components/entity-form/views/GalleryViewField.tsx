@@ -1,3 +1,6 @@
+import { DownloadIcon, ExternalLinkIcon, ImageIcon, ZoomInIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type {
@@ -8,10 +11,6 @@ import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-
-import { DownloadIcon, ExternalLinkIcon, ImageIcon, ZoomInIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
-import * as React from 'react';
 
 /**
  * Props for GalleryViewField component
@@ -291,9 +290,9 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                                 className="text-xs"
                             >
                                 {value.length}{' '}
-                                {value.length !== 1
-                                    ? t('admin-entities.viewFields.gallery.imagesPlural')
-                                    : t('admin-entities.viewFields.gallery.imageSingular')}
+                                {value.length === 1
+                                    ? t('admin-entities.viewFields.gallery.imageSingular')
+                                    : t('admin-entities.viewFields.gallery.imagesPlural')}
                             </Badge>
                         )}
                     </div>

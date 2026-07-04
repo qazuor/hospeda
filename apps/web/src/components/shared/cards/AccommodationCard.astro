@@ -6,47 +6,41 @@
  * favorite + photo count, category pill, location bar, amenities, stars, price + CTA.
  */
 
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { CompareButton } from '@/components/shared/compare/CompareButton.client';
-import {
-	AskToAiIcon,
-	CheckCircleIcon,
-	GalleryIcon,
-	LocationIcon,
-	StarIcon,
-} from '@repo/icons';
-import { resolveAmenityIcon } from './accommodation-card-icons';
-import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
-import { formatPrice } from '@/lib/format-utils';
-import { buildUrl } from '@/lib/urls';
-import { createTranslations } from '@/lib/i18n';
 import { Image } from 'astro:assets';
+import { AskToAiIcon, CheckCircleIcon, GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
+import { CompareButton } from '@/components/shared/compare/CompareButton.client';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import type { AccommodationCardData } from '@/data/types';
+import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { resolveAmenityIcon } from './accommodation-card-icons';
 
 interface Props {
-	readonly data: AccommodationCardData;
-	readonly locale: SupportedLocale;
-	/**
-	 * Whether the current user is authenticated.
-	 * Forwarded to FavoriteButton to decide between toggle-favorite or
-	 * auth-required popover. Defaults to false (guest user).
-	 */
-	readonly isAuthenticated?: boolean;
-	/**
-	 * Optional URL search string (without leading `?`) appended to the detail
-	 * link. Used to forward search context (checkIn, checkOut, adults,
-	 * children) from the listing into the detail page so the contact form can
-	 * pre-fill the message.
-	 */
-	readonly linkQuery?: string;
-	/**
-	 * When true, the card image renders with `loading="eager"` and
-	 * `fetchpriority="high"` so the browser treats it as an LCP candidate.
-	 * Set this on cards in the first visible row of a listing or featured grid.
-	 * Defaults to false (lazy loading).
-	 */
-	readonly eager?: boolean;
+    readonly data: AccommodationCardData;
+    readonly locale: SupportedLocale;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or
+     * auth-required popover. Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
+    /**
+     * Optional URL search string (without leading `?`) appended to the detail
+     * link. Used to forward search context (checkIn, checkOut, adults,
+     * children) from the listing into the detail page so the contact form can
+     * pre-fill the message.
+     */
+    readonly linkQuery?: string;
+    /**
+     * When true, the card image renders with `loading="eager"` and
+     * `fetchpriority="high"` so the browser treats it as an LCP candidate.
+     * Set this on cards in the first visible row of a listing or featured grid.
+     * Defaults to false (lazy loading).
+     */
+    readonly eager?: boolean;
 }
 
 const { data, locale, isAuthenticated = false, linkQuery, eager = false } = Astro.props;
@@ -56,8 +50,8 @@ const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
 const detailUrl = linkQuery ? `${baseDetailUrl}?${linkQuery}` : baseDetailUrl;
 
 const formattedPrice = data.price
-	? formatPrice({ amount: data.price.amount, currency: data.price.currency, locale })
-	: null;
+    ? formatPrice({ amount: data.price.amount, currency: data.price.currency, locale })
+    : null;
 
 /** Maximum number of amenity icons shown in the card row. */
 const MAX_AMENITIES = 4;
@@ -69,9 +63,8 @@ const hasHalfStar = data.averageRating - fullStars >= 0.5;
 /** Accommodation is "new" if created less than 30 days ago. */
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = data.createdAt
-	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
-	: false;
-
+    ? Date.now() - new Date(data.createdAt).getTime() < THIRTY_DAYS_MS
+    : false;
 ---
 
 <article class="acc-card">

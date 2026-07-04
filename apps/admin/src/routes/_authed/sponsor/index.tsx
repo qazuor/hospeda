@@ -3,11 +3,7 @@
  *
  * Main dashboard for sponsors to view their sponsorships and analytics
  */
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSponsorSummaryQuery } from '@/features/sponsor-dashboard/hooks';
-import { useTranslations } from '@/hooks/use-translations';
+
 import { formatCurrency, formatNumber } from '@repo/i18n';
 import {
     ActivityIcon,
@@ -16,7 +12,12 @@ import {
     PackageIcon,
     TrendingUpIcon
 } from '@repo/icons';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSponsorSummaryQuery } from '@/features/sponsor-dashboard/hooks';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/sponsor/')({
     component: SponsorDashboardPage

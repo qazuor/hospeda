@@ -11,8 +11,9 @@
  * 5. DeferredWidget shows the widget label as title forwarded from DashboardRenderer.
  * 6. The `data-testid="deferred-widget"` is present so consumers can assert the
  *    deferred slot was rendered.
- * 7. The `aria-label` on the DeferredWidget contains both title and phaseSpec so
- *    screen readers can identify the slot.
+ * 7. The DeferredWidget shows both title and phaseSpec as visible text so
+ *    screen readers can identify the slot from its content (no redundant
+ *    aria-label duplicating that same text).
  * 8. The real DeferredWidget component renders correctly with all prop combinations.
  *
  * Strategy:
@@ -22,19 +23,19 @@
  * - Mock DeferredWidget to expose phaseSpec and title as data attributes — this
  *   lets us assert dispatcher output without depending on i18n/icons/styling.
  * - Mock DashboardResolverProvider as a transparent passthrough.
- * - For the real DeferredWidget unit assertions (badge, title, aria-label), render
- *   the component directly in a separate describe block.
+ * - For the real DeferredWidget unit assertions (badge, title, visible text),
+ *   render the component directly in a separate describe block.
  *
  * @see apps/admin/src/components/dashboards/widgets/DeferredWidget.tsx — SUT
  * @see apps/admin/src/components/dashboards/DashboardRenderer.tsx — dispatcher
  * @see SPEC-155 T-041, AC-T-041
  */
 
-import type { Dashboard, Widget } from '@/config/ia/schema';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Dashboard, Widget } from '@/config/ia/schema';
 import { DashboardRenderer } from '../DashboardRenderer';
 import { DeferredWidget } from '../widgets/DeferredWidget';
 
@@ -99,18 +100,11 @@ vi.mock('../widgets', () => ({
      * DeferredWidget stub — exposes phaseSpec and title as data attributes
      * so assertions remain independent of i18n output and icon rendering.
      */
-    DeferredWidget: ({
-        phaseSpec,
-        title
-    }: {
-        phaseSpec: string;
-        title?: string;
-    }) => (
+    DeferredWidget: ({ phaseSpec, title }: { phaseSpec: string; title?: string }) => (
         <div
             data-testid="deferred-widget"
             data-phase-spec={phaseSpec}
             data-title={title ?? ''}
-            aria-label={`${title ?? 'Próximamente'} — ${phaseSpec}`}
         />
     )
 }));
@@ -587,16 +581,19 @@ describe('T-041 DeferredWidget component — real component unit assertions', ()
         expect(screen.getByText('Available after SPEC-162 ships.')).toBeInTheDocument();
     });
 
-    it('has an accessible aria-label containing both title and phaseSpec', () => {
+    it('renders both title and phaseSpec as visible text (no redundant aria-label)', () => {
         render(
             <DeferredWidget
                 phaseSpec="SPEC-165"
                 title="Comentarios"
             />
         );
+        // The container has no aria-label since its own children (title + badge)
+        // already convey the same information visibly and to screen readers.
         const widget = screen.getByTestId('deferred-widget');
-        expect(widget.getAttribute('aria-label')).toContain('SPEC-165');
-        expect(widget.getAttribute('aria-label')).toContain('Comentarios');
+        expect(widget).not.toHaveAttribute('aria-label');
+        expect(screen.getByText('Comentarios')).toBeInTheDocument();
+        expect(screen.getByText('SPEC-165')).toBeInTheDocument();
     });
 
     it('renders the default coming-soon title key when title is omitted', () => {

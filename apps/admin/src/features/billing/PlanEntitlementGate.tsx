@@ -12,10 +12,11 @@
  *
  * @module features/billing/PlanEntitlementGate
  */
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useTranslations } from '@/hooks/use-translations';
+
 import { EntitlementKey } from '@repo/billing';
 import type * as React from 'react';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanEntitlementGateProps {
     /** The entitlement flag that must be present to render `children`. */

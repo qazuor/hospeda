@@ -8,10 +8,10 @@
  * Used in entity list filter bars for temporal fields such as createdAt and event dates.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
 import type { DateRangeFilterConfig } from './filter-types';
 
 /**

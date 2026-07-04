@@ -1,4 +1,10 @@
 ---
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 /**
  * @file destinos/[slug]/eventos/index.astro
  * @description Events within a destination, filtered via event_locations.destination_id.
@@ -6,17 +12,11 @@
  * @rendering SSR + ISR 24h
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
@@ -40,7 +40,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toEventCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 
 // --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
 type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
@@ -54,14 +56,20 @@ if (isAuthenticated && cards.length > 0) {
         if (bulkResult.ok) {
             eventFavoriteChecks = bulkResult.data.checks;
         } else {
-            webLogger.warn('Bulk bookmark check failed on destination events listing; falling back to per-card hydration', {
-                error: bulkResult.error
-            });
+            webLogger.warn(
+                'Bulk bookmark check failed on destination events listing; falling back to per-card hydration',
+                {
+                    error: bulkResult.error
+                }
+            );
         }
     } catch (error) {
-        webLogger.warn('Bulk bookmark check threw on destination events listing; falling back to per-card hydration', {
-            error: error instanceof Error ? error.message : String(error)
-        });
+        webLogger.warn(
+            'Bulk bookmark check threw on destination events listing; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
     }
 }
 const resolvedCards = cards.map((card) => {
@@ -76,8 +84,8 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 // city moves into the H1 (and <title>); the decorative tagline reverts to the
 // generic listing tagline so the city is not shown twice.
 const heading = t('events.typeInLocation', '{{type}} en {{location}}', {
-	type: t('events.title', 'Eventos'),
-	location: destName
+    type: t('events.title', 'Eventos'),
+    location: destName
 });
 ---
 

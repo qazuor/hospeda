@@ -13,15 +13,17 @@
  * (`EntityCreatePageBase`).
  */
 
+import type { useTranslations } from '@repo/i18n';
+import { ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/consolidated-config.types';
-import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
+import type {
+    ConsolidatedEntityConfig,
+    ConsolidatedSectionConfig
+} from '@/features/accommodations/types/consolidated-config.types';
 import {
     createCommerceIdentitySection,
     createCommerceOperationalSection
 } from '@/features/commerce';
-import type { useTranslations } from '@repo/i18n';
-import { ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Experience-specific field options

@@ -9,15 +9,15 @@
  * re-renders with the new state. No optimistic updates: permission changes are
  * security-sensitive, so the UI waits for server confirmation.
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { fetchApi } from '@/lib/api/client';
-import { adminLogger } from '@/utils/logger';
 import type {
     AssignUserPermissionOverrideBody,
     PermissionEnum,
     UserPermissionOverridesResponse
 } from '@repo/schemas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+import { adminLogger } from '@/utils/logger';
 
 const API_PATH = '/api/v1/admin/users';
 

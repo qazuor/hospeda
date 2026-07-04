@@ -17,9 +17,9 @@
  * @see SPEC-174 §7.2, D14
  */
 
-import type { Tour } from '@/config/ia/tour.schema';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Tour } from '@/config/ia/tour.schema';
 
 // ---------------------------------------------------------------------------
 // vi.mock for validatedConfig — inlined fixtures (hoisting safe)
@@ -142,7 +142,7 @@ type TestSection = {
     icon: string;
 };
 
-let mockActiveSection: TestSection | undefined = undefined;
+let mockActiveSection: TestSection | undefined;
 
 vi.mock('@/hooks/use-current-section', () => ({
     useCurrentSection: () => mockActiveSection

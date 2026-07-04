@@ -6,9 +6,9 @@
  * Re-exported from use-social-posts.ts for a consistent import surface.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { SocialDashboardResponse } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { SocialDashboardFilters } from './use-social-posts';
 import { socialPostQueryKeys } from './use-social-posts';
 

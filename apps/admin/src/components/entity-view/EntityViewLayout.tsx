@@ -1,6 +1,3 @@
-import { Button } from '@/components/ui-wrapped';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import {
     DownloadIcon,
     EditIcon,
@@ -15,6 +12,9 @@ import {
     SettingsIcon
 } from '@repo/icons';
 import * as React from 'react';
+import { Button } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import { EntityViewSection } from '../entity-form/EntityViewSection';
 import { TabsLayout } from '../entity-form/layouts';
 import type { ViewDisplayMode } from './context/EntityViewContext';

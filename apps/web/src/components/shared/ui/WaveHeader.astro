@@ -20,15 +20,15 @@
  */
 
 interface Props {
-  /**
-   * Semantic padding-top preset for the expanded header.
-   * `listing` = 3rem, `detail` = 2rem. Drives the data-wave-padding map in
-   * css-var-themes.css instead of inline `style="--wave-header-padding-top"`
-   * (SPEC-046 GAP-046-09a).
-   */
-  readonly paddingTop?: 'listing' | 'detail';
-  /** Extra CSS classes on the root element. */
-  readonly class?: string;
+    /**
+     * Semantic padding-top preset for the expanded header.
+     * `listing` = 3rem, `detail` = 2rem. Drives the data-wave-padding map in
+     * css-var-themes.css instead of inline `style="--wave-header-padding-top"`
+     * (SPEC-046 GAP-046-09a).
+     */
+    readonly paddingTop?: 'listing' | 'detail';
+    /** Extra CSS classes on the root element. */
+    readonly class?: string;
 }
 
 const { paddingTop = 'listing', class: className } = Astro.props;

@@ -1,10 +1,10 @@
+import { FeatureUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useFeaturePage } from '@/features/features/hooks/useFeaturePage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { FeatureUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Feature Edit Route Configuration

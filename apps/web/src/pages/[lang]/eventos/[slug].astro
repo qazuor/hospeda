@@ -6,29 +6,29 @@
  * @rendering SSR + ISR 24h
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import EventJsonLd from '@/components/seo/EventJsonLd.astro';
-import type { EventOffer } from '@/components/seo/EventJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import { ShareButtons } from '@/components/ShareButtons.client';
+import { Image } from 'astro:assets';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
-import { ImageGallery } from '@/components/ImageGallery.client';
-import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
-import EventDetailPricingCard from '@/components/event/EventDetailPricingCard.astro';
 import CommentThread from '@/components/comments/CommentThread.astro';
+import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
 import EventDetailLocationCard from '@/components/event/EventDetailLocationCard.astro';
 import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCard.astro';
+import EventDetailPricingCard from '@/components/event/EventDetailPricingCard.astro';
 import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import { ShareButtons } from '@/components/ShareButtons.client';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import type { EventOffer } from '@/components/seo/EventJsonLd.astro';
+import EventJsonLd from '@/components/seo/EventJsonLd.astro';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import DetailLayout from '@/layouts/DetailLayout.astro';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventDetailProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { pickLocalizedSeo } from '@/lib/seo';
-import { Image } from 'astro:assets';
+import { createTranslations } from '@/lib/i18n';
 import { renderContent } from '@/lib/render-content';
+import { pickLocalizedSeo } from '@/lib/seo';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -42,24 +42,24 @@ if (!result.ok) return new Response(null, { status: 404 });
 const event = toEventDetailProps({ item: result.data as Record<string, unknown>, locale });
 
 const {
-	id: eventId,
-	name,
-	summary,
-	contentHtml,
-	description,
-	category,
-	startDate,
-	endDate,
-	featuredImage,
-	gallery,
-	location,
-	pricing,
-	organizer,
-	tags,
-	seo,
-	isCancelled,
-	isPast,
-	eventStatus,
+    id: eventId,
+    name,
+    summary,
+    contentHtml,
+    description,
+    category,
+    startDate,
+    endDate,
+    featuredImage,
+    gallery,
+    location,
+    pricing,
+    organizer,
+    tags,
+    seo,
+    isCancelled,
+    isPast,
+    eventStatus
 } = event;
 
 // Stored seo.* overrides are authored in the source locale (es); on en/pt
@@ -77,32 +77,32 @@ let initialIsFavorited: boolean | undefined;
 let initialBookmarkId: string | null = null;
 
 if (eventId) {
-	try {
-		const countResult = await userBookmarksPublicApi.count({
-			entityType: 'EVENT',
-			entityId: eventId
-		});
-		if (countResult.ok) {
-			bookmarkCount = countResult.data.count;
-		}
-	} catch {
-		// Graceful degradation: counter not shown if fetch fails
-	}
+    try {
+        const countResult = await userBookmarksPublicApi.count({
+            entityType: 'EVENT',
+            entityId: eventId
+        });
+        if (countResult.ok) {
+            bookmarkCount = countResult.data.count;
+        }
+    } catch {
+        // Graceful degradation: counter not shown if fetch fails
+    }
 
-	if (isAuthenticated) {
-		try {
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: eventId,
-				entityType: 'EVENT'
-			});
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch {
-			// Graceful degradation: FavoriteButton hydrates itself on mount
-		}
-	}
+    if (isAuthenticated) {
+        try {
+            const statusResult = await userBookmarksApi.checkStatus({
+                entityId: eventId,
+                entityType: 'EVENT'
+            });
+            if (statusResult.ok) {
+                initialIsFavorited = statusResult.data.isFavorited;
+                initialBookmarkId = statusResult.data.bookmarkId;
+            }
+        } catch {
+            // Graceful degradation: FavoriteButton hydrates itself on mount
+        }
+    }
 }
 
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -110,35 +110,35 @@ const canonical = `${siteOrigin}${Astro.url.pathname}`;
 
 // --- Description rendering (markdown / HTML / plain text → sanitized HTML) ---
 const safeDescriptionHtml = renderContent({
-	raw: contentHtml || description || summary,
-	siteOrigin,
+    raw: contentHtml || description || summary,
+    siteOrigin
 });
 
 // --- JSON-LD (Event schema.org) ---
 // Build offers block from pricing data.
 const eventOffersBlock: EventOffer | undefined =
-	!pricing.isFree && pricing.price != null
-		? {
-				type: 'Offer',
-				priceCurrency: pricing.currency ?? 'ARS',
-				price: pricing.price,
-				...(pricing.priceFrom != null ? { lowPrice: pricing.priceFrom } : {}),
-				...(pricing.priceTo != null ? { highPrice: pricing.priceTo } : {}),
-		  }
-		: pricing.priceFrom != null && pricing.priceTo != null
-		  ? {
-					type: 'AggregateOffer',
-					priceCurrency: pricing.currency ?? 'ARS',
-					lowPrice: pricing.priceFrom,
-					highPrice: pricing.priceTo,
-		    }
-		  : undefined;
+    !pricing.isFree && pricing.price != null
+        ? {
+              type: 'Offer',
+              priceCurrency: pricing.currency ?? 'ARS',
+              price: pricing.price,
+              ...(pricing.priceFrom == null ? {} : { lowPrice: pricing.priceFrom }),
+              ...(pricing.priceTo == null ? {} : { highPrice: pricing.priceTo })
+          }
+        : pricing.priceFrom != null && pricing.priceTo != null
+          ? {
+                type: 'AggregateOffer',
+                priceCurrency: pricing.currency ?? 'ARS',
+                lowPrice: pricing.priceFrom,
+                highPrice: pricing.priceTo
+            }
+          : undefined;
 
 // --- Breadcrumb JSON-LD ---
 const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
-	{ name, url: canonical },
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    { name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
+    { name, url: canonical }
 ];
 
 // --- Gallery display logic ---

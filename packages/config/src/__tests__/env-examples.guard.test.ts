@@ -17,8 +17,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AppId, EnvVarDefinition } from '../env-registry-types.js';
 import { ENV_REGISTRY } from '../env-registry.js';
+import type { AppId, EnvVarDefinition } from '../env-registry-types.js';
 
 // ---------------------------------------------------------------------------
 // Constants — must match scripts/generate-env-examples.ts
@@ -45,7 +45,7 @@ function getVarsForApp(appId: AppId): readonly EnvVarDefinition[] {
     return ENV_REGISTRY.filter((entry) => (entry.apps as readonly string[]).includes(appId)).sort(
         (a, b) => {
             const catCmp = a.category.localeCompare(b.category);
-            return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+            return catCmp === 0 ? a.name.localeCompare(b.name) : catCmp;
         }
     );
 }

@@ -1,4 +1,4 @@
-import { type TiptapDocument, renderTiptapContent } from '@repo/utils';
+import { renderTiptapContent, type TiptapDocument } from '@repo/utils';
 import sanitizeHtml from 'sanitize-html';
 
 /**

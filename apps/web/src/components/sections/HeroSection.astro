@@ -10,9 +10,9 @@ import { Image } from 'astro:assets';
 import heroBlobAccent from '@/assets/images/shapes/hero-blob-accent.png';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
 import {
-	HERO_IMAGE_SIZES,
-	HERO_RAW_SLIDES,
-	buildHeroVariants,
+    buildHeroVariants,
+    HERO_IMAGE_SIZES,
+    HERO_RAW_SLIDES
 } from '@/components/sections/hero-images';
 import { SearchBar } from '@/components/sections/SearchBar.client';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
@@ -21,29 +21,34 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 interface SocialProofData {
-	/** Traveler count displayed in the badge (e.g. "500+"). */
-	readonly count: string;
-	/** Average rating displayed (e.g. "4.8/5"). */
-	readonly rating: string;
-	/** Total rating context shown next to the score (e.g. "de 500+"). */
-	readonly ratingOf: string;
-	/**
-	 * Real reviewer avatar URLs. Up to 4 are rendered as overlapping circles.
-	 * When fewer than 4 URLs are provided, the remaining slots fall back to
-	 * the original gradient placeholders so the row keeps its visual weight.
-	 */
-	readonly avatars?: readonly string[];
+    /** Traveler count displayed in the badge (e.g. "500+"). */
+    readonly count: string;
+    /** Average rating displayed (e.g. "4.8/5"). */
+    readonly rating: string;
+    /** Total rating context shown next to the score (e.g. "de 500+"). */
+    readonly ratingOf: string;
+    /**
+     * Real reviewer avatar URLs. Up to 4 are rendered as overlapping circles.
+     * When fewer than 4 URLs are provided, the remaining slots fall back to
+     * the original gradient placeholders so the row keeps its visual weight.
+     */
+    readonly avatars?: readonly string[];
 }
 
 interface Props {
-	readonly locale: SupportedLocale;
-	/**
-	 * Real social proof data from the API. When not provided, the social proof
-	 * block is not rendered (avoids showing fake numbers).
-	 */
-	readonly socialProof?: SocialProofData;
-	/** Pre-fetched city destinations for the search bar dropdown. */
-	readonly destinations?: readonly { id: string; slug: string; name: string; isFeatured?: boolean }[];
+    readonly locale: SupportedLocale;
+    /**
+     * Real social proof data from the API. When not provided, the social proof
+     * block is not rendered (avoids showing fake numbers).
+     */
+    readonly socialProof?: SocialProofData;
+    /** Pre-fetched city destinations for the search bar dropdown. */
+    readonly destinations?: readonly {
+        id: string;
+        slug: string;
+        name: string;
+        isFeatured?: boolean;
+    }[];
 }
 
 const { locale, socialProof, destinations } = Astro.props;
@@ -57,15 +62,15 @@ const { t } = createTranslations(locale);
  */
 const SOCIAL_PROOF_AVATAR_SLOTS = 4;
 const avatarSlots = Array.from({ length: SOCIAL_PROOF_AVATAR_SLOTS }, (_, index) => {
-	const url = socialProof?.avatars?.[index];
-	return url ? { kind: 'image' as const, url } : { kind: 'placeholder' as const, index };
+    const url = socialProof?.avatars?.[index];
+    return url ? { kind: 'image' as const, url } : { kind: 'placeholder' as const, index };
 });
 
 // Process hero images through Astro's optimization pipeline. Widths, sizes and
 // slide order live in `hero-images.ts` so the home `<head>` preload hint and
 // this rotator always reference the exact same optimized resources.
 const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
-	HERO_RAW_SLIDES.map((rawImage) => buildHeroVariants({ rawImage })),
+    HERO_RAW_SLIDES.map((rawImage) => buildHeroVariants({ rawImage }))
 );
 ---
 

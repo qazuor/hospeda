@@ -6,30 +6,30 @@
  * Does NOT extend BaseLayout to avoid complex component trees that could fail.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
-import Logo from '@/components/shared/navigation/Logo.astro';
+import { ClientRouter } from 'astro:transitions';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
+import Logo from '@/components/shared/navigation/Logo.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
-import { ClientRouter } from 'astro:transitions';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import '@/styles/global.css';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
-	/** Adds noindex robots meta tag. Defaults to true for all error pages. */
-	readonly noindex?: boolean;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
+    /** Adds noindex robots meta tag. Defaults to true for all error pages. */
+    readonly noindex?: boolean;
 }
 
 const {
-	locale,
-	title = 'Error',
-	description = 'Ha ocurrido un error',
-	noindex = true,
+    locale,
+    title = 'Error',
+    description = 'Ha ocurrido un error',
+    noindex = true
 } = Astro.props;
 
 const { t } = createTranslations(locale);

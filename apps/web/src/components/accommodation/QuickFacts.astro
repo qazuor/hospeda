@@ -1,17 +1,17 @@
 ---
+import { BathroomsIcon, BedLinensIcon, BedroomsIcon, GuestsIcon, MoonIcon } from '@repo/icons';
 /**
  * @file QuickFacts.astro
  * @description Horizontal row of icon+value pills showing accommodation quick facts.
  * Only renders pills for non-null fields. Hidden if extraInfo is null.
  */
 import type { AccommodationDetailData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { GuestsIcon, BedroomsIcon, BedLinensIcon, BathroomsIcon, MoonIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly extraInfo: AccommodationDetailData['extraInfo'];
-  readonly lang: string;
+    readonly extraInfo: AccommodationDetailData['extraInfo'];
+    readonly lang: string;
 }
 
 const { extraInfo, lang } = Astro.props;

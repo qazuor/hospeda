@@ -11,15 +11,15 @@
  * the situation in product copy).
  */
 import { AlertTriangleIcon, BedroomsIcon, CalendarIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 interface Props {
-	readonly slug: string;
-	readonly accommodationsCount: number;
-	readonly eventsCount: number;
-	readonly locale: SupportedLocale;
+    readonly slug: string;
+    readonly accommodationsCount: number;
+    readonly eventsCount: number;
+    readonly locale: SupportedLocale;
 }
 
 const { slug, accommodationsCount, eventsCount, locale } = Astro.props;

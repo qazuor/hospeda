@@ -11,15 +11,21 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import {
+    transformAccommodationEdit,
+    transformAccommodationMedia,
+    transformAccommodationTranslations,
+    transformAmenityList,
+    transformDestinationList
+} from '@/lib/api/transforms';
+import type { AccommodationTranslationData, MediaImage } from '@/lib/api/types';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import type { AccommodationTranslationData, MediaImage } from '@/lib/api/types';
-import { transformAccommodationEdit, transformAccommodationMedia, transformAccommodationTranslations, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 export const prerender = false;
 
@@ -74,21 +80,35 @@ try {
         // Parallel fetch: accommodation detail + amenities + features + destinations
         // SPEC-266: filter catalog endpoints to the accommodation vertical so only
         // accommodation-scoped amenities/features appear in the editor checkboxes.
-        const [accomResponse, amenitiesResponse, featuresResponse, destinationsResponse] = await Promise.all([
-            fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=accommodation`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=accommodation`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers })
-        ]);
+        const [accomResponse, amenitiesResponse, featuresResponse, destinationsResponse] =
+            await Promise.all([
+                fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
+                fetch(
+                    `${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=accommodation`,
+                    { headers }
+                ),
+                fetch(
+                    `${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=accommodation`,
+                    { headers }
+                ),
+                fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers })
+            ]);
 
         if (accomResponse.ok) {
             const body = (await accomResponse.json()) as { data?: Record<string, unknown> };
-            const rawAccom: Record<string, unknown> = body.data ?? (body as Record<string, unknown>);
-            accommodationData = transformAccommodationEdit({ item: rawAccom as Record<string, unknown> });
+            const rawAccom: Record<string, unknown> =
+                body.data ?? (body as Record<string, unknown>);
+            accommodationData = transformAccommodationEdit({
+                item: rawAccom as Record<string, unknown>
+            });
             // SPEC-212: extract translation status data for the TranslationPanel
-            translationData = transformAccommodationTranslations({ item: rawAccom as Record<string, unknown> });
+            translationData = transformAccommodationTranslations({
+                item: rawAccom as Record<string, unknown>
+            });
             // SPEC-208: extract media for the photo section (never pass raw API data)
-            const mediaResult = transformAccommodationMedia({ item: rawAccom as Record<string, unknown> });
+            const mediaResult = transformAccommodationMedia({
+                item: rawAccom as Record<string, unknown>
+            });
             initialFeaturedImage = mediaResult.featuredImage;
             initialGallery = mediaResult.gallery;
 

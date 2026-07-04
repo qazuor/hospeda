@@ -8,28 +8,28 @@
  * Used by: homepage, destinations listing, search, contact, about, feedback.
  */
 
+import SEOHead from '@/components/seo/SEOHead.astro';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
-	readonly canonicalPath?: string;
-	readonly noindex?: boolean;
-	/** Caveat tagline for the generated OG BRAND card. */
-	readonly ogTagline?: string;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
+    readonly canonicalPath?: string;
+    readonly noindex?: boolean;
+    /** Caveat tagline for the generated OG BRAND card. */
+    readonly ogTagline?: string;
 }
 
 const {
-	locale,
-	title,
-	description,
-	canonicalPath = Astro.url.pathname,
-	noindex = false,
-	ogTagline,
+    locale,
+    title,
+    description,
+    canonicalPath = Astro.url.pathname,
+    noindex = false,
+    ogTagline
 } = Astro.props;
 
 const siteBase = getSiteUrl();

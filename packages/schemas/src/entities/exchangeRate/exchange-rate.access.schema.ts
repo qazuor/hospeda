@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import { ExchangeRateConfigSchema } from './exchange-rate-config.schema.js';
 import { ExchangeRateSchema } from './exchange-rate.schema.js';
+import { ExchangeRateConfigSchema } from './exchange-rate-config.schema.js';
 
 // ============================================================================
 // EXCHANGE RATE ACCESS SCHEMAS

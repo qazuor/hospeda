@@ -137,10 +137,10 @@ function extractAggregateValues(raw: JsonLdAggregateRating): {
     reviewsCount: number | null;
 } {
     const ratingRaw = raw.ratingValue;
-    const rating = ratingRaw !== undefined ? Number.parseFloat(String(ratingRaw)) : null;
+    const rating = ratingRaw === undefined ? null : Number.parseFloat(String(ratingRaw));
 
     const countRaw = raw.reviewCount ?? raw.ratingCount;
-    const reviewsCount = countRaw !== undefined ? Number.parseInt(String(countRaw), 10) : null;
+    const reviewsCount = countRaw === undefined ? null : Number.parseInt(String(countRaw), 10);
 
     return {
         rating: rating !== null && Number.isFinite(rating) ? rating : null,

@@ -10,11 +10,6 @@
  * service-side check at the API).
  */
 
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { Button } from '@/components/ui/button';
-import { useNewsletterSubscribers } from '@/hooks/newsletter';
-import { useTranslations } from '@/hooks/use-translations';
-import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { EmailIcon } from '@repo/icons';
 import {
     type NewsletterSubscriber,
@@ -23,6 +18,11 @@ import {
 } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { Button } from '@/components/ui/button';
+import { useNewsletterSubscribers } from '@/hooks/newsletter';
+import { useTranslations } from '@/hooks/use-translations';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { SubscriberFilters, type SubscriberFiltersValue } from './-components/SubscriberFilters';
 import { SubscriberStatsBar } from './-components/SubscriberStatsBar';
 

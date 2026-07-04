@@ -2,30 +2,27 @@ import { useTranslations } from '@repo/i18n';
 
 /**
  * Hook for auth-ui components to use translations with fallbacks
- * Provides a safe way to access translations even if i18n is not available
+ *
+ * `useTranslations` from `@repo/i18n` has no Context/Provider dependency (it
+ * reads from static config via `useMemo`), so it cannot throw — the hook call
+ * is unconditional at the top level (Rules of Hooks). The inner `t` call is
+ * still guarded so a missing/unknown key falls back to the hardcoded Spanish
+ * copy below instead of surfacing `[MISSING: ...]` in the auth UI.
  */
 export const useAuthTranslations = () => {
-    try {
-        const { t } = useTranslations();
-        return {
-            t: (key: string, params?: Record<string, string | number>) => {
-                try {
-                    // biome-ignore lint/suspicious/noExplicitAny: i18n type compatibility
-                    return t(key as any, params);
-                } catch {
-                    return getFallbackText(key, params);
-                }
-            },
-            isI18nAvailable: true
-        };
-    } catch {
-        // Fallback when i18n is not available
-        return {
-            t: (key: string, params?: Record<string, string | number>) =>
-                getFallbackText(key, params),
-            isI18nAvailable: false
-        };
-    }
+    const { t } = useTranslations();
+
+    return {
+        t: (key: string, params?: Record<string, string | number>) => {
+            try {
+                // biome-ignore lint/suspicious/noExplicitAny: i18n type compatibility
+                return t(key as any, params);
+            } catch {
+                return getFallbackText(key, params);
+            }
+        },
+        isI18nAvailable: true
+    };
 };
 
 /**

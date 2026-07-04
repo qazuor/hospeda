@@ -15,8 +15,8 @@
 import { CheckIcon, SparkleIcon, StarIcon } from '@repo/icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import type { PricingAudience } from '@/lib/billing-i18n';
+import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -28,50 +28,50 @@ import { createTranslations } from '@/lib/i18n';
  * component does not render limits — only entitlements are shown as feature bullets.
  */
 export interface PricingPlan {
-	readonly slug: string;
-	readonly name: string;
-	readonly description: string;
-	readonly monthlyPriceArs: number;
-	readonly annualPriceArs: number | null;
-	readonly hasTrial: boolean;
-	readonly trialDays: number;
-	readonly sortOrder: number;
-	readonly isActive: boolean;
-	/** Entitlement keys (string values matching EntitlementKey). */
-	readonly entitlements: readonly string[];
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+    readonly monthlyPriceArs: number;
+    readonly annualPriceArs: number | null;
+    readonly hasTrial: boolean;
+    readonly trialDays: number;
+    readonly sortOrder: number;
+    readonly isActive: boolean;
+    /** Entitlement keys (string values matching EntitlementKey). */
+    readonly entitlements: readonly string[];
 }
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly plans: ReadonlyArray<PricingPlan>;
-	readonly highlightedSlug: string;
-	readonly intlLocale: string;
-	/** Audience of the page — owner cards collapse the inherited tourist tier
+    readonly locale: SupportedLocale;
+    readonly plans: ReadonlyArray<PricingPlan>;
+    readonly highlightedSlug: string;
+    readonly intlLocale: string;
+    /** Audience of the page — owner cards collapse the inherited tourist tier
 	    and the AI entitlements into grouped bullets to keep the list short. */
-	readonly audience: PricingAudience;
-	/** Section heading text (rendered sr-only as h2 for accessibility). */
-	readonly sectionHeading: string;
-	/** Aria label for the section. */
-	readonly sectionAriaLabel?: string;
-	/** Message rendered inside EmptyState when `plans` is empty. */
-	readonly emptyMessage: string;
-	readonly emptyActionUrl: string;
-	readonly emptyActionLabel: string;
-	/** CTA button text on each card. */
-	readonly ctaText: string;
+    readonly audience: PricingAudience;
+    /** Section heading text (rendered sr-only as h2 for accessibility). */
+    readonly sectionHeading: string;
+    /** Aria label for the section. */
+    readonly sectionAriaLabel?: string;
+    /** Message rendered inside EmptyState when `plans` is empty. */
+    readonly emptyMessage: string;
+    readonly emptyActionUrl: string;
+    readonly emptyActionLabel: string;
+    /** CTA button text on each card. */
+    readonly ctaText: string;
 }
 
 const {
-	locale,
-	plans,
-	highlightedSlug,
-	intlLocale,
-	audience,
-	sectionHeading,
-	emptyMessage,
-	emptyActionUrl,
-	emptyActionLabel,
-	ctaText,
+    locale,
+    plans,
+    highlightedSlug,
+    intlLocale,
+    audience,
+    sectionHeading,
+    emptyMessage,
+    emptyActionUrl,
+    emptyActionLabel,
+    ctaText
 } = Astro.props;
 
 const { t } = createTranslations(locale);
@@ -81,31 +81,25 @@ const hasPlans = plans.length > 0;
 // an annual price configured. If every plan is monthly-only, the toggle is
 // a no-op surface that just adds clutter.
 const hasAnyAnnualPrice = plans.some(
-	(plan) => plan.annualPriceArs !== null && plan.annualPriceArs > 0
+    (plan) => plan.annualPriceArs !== null && plan.annualPriceArs > 0
 );
 
 const recommendedLabel = t('pricing.recommended', 'Recomendado');
 const featuresLabel = t('pricing.features.label', 'Incluye');
 const trialFallback = t('pricing.trial', '{days} días gratis');
-const includesEverythingTemplate = t(
-	'pricing.includesEverything',
-	'Todo lo del plan {plan}, más:'
-);
+const includesEverythingTemplate = t('pricing.includesEverything', 'Todo lo del plan {plan}, más:');
 const inheritedSummaryTemplate = t(
-	'pricing.inheritedSummary',
-	'+{count} funciones del plan {plan}'
+    'pricing.inheritedSummary',
+    '+{count} funciones del plan {plan}'
 );
 const baseHighlightTitle = t('pricing.baseHighlightTitle', 'Ideal para empezar');
 const baseHighlightText = t(
-	'pricing.baseHighlightText',
-	'Todo lo esencial para arrancar, sin compromiso.'
+    'pricing.baseHighlightText',
+    'Todo lo esencial para arrancar, sin compromiso.'
 );
 const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
 const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
-const toggleAriaLabel = t(
-	'pricing.toggle.ariaLabel',
-	'Elegí la frecuencia de facturación'
-);
+const toggleAriaLabel = t('pricing.toggle.ariaLabel', 'Elegí la frecuencia de facturación');
 const annualSavingTemplate = t('pricing.toggle.annualSaving', 'Ahorrá {percent}%');
 const periodMonthLabel = t('pricing.period.month', '/mes');
 const periodYearLabel = t('pricing.period.year', '/año');
@@ -118,12 +112,12 @@ const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
  * negative — bad config, hide the label).
  */
 function computeAnnualSavingPercent(plan: PricingPlan): number | null {
-	if (plan.annualPriceArs === null || plan.annualPriceArs <= 0) return null;
-	if (plan.monthlyPriceArs <= 0) return null;
-	const yearAtMonthly = plan.monthlyPriceArs * 12;
-	if (plan.annualPriceArs >= yearAtMonthly) return null;
-	const saving = (yearAtMonthly - plan.annualPriceArs) / yearAtMonthly;
-	return Math.round(saving * 100);
+    if (plan.annualPriceArs === null || plan.annualPriceArs <= 0) return null;
+    if (plan.monthlyPriceArs <= 0) return null;
+    const yearAtMonthly = plan.monthlyPriceArs * 12;
+    if (plan.annualPriceArs >= yearAtMonthly) return null;
+    const saving = (yearAtMonthly - plan.annualPriceArs) / yearAtMonthly;
+    return Math.round(saving * 100);
 }
 
 /**
@@ -134,16 +128,16 @@ function computeAnnualSavingPercent(plan: PricingPlan): number | null {
  * with 4) without losing information — users can still see the upgrade story.
  */
 function computeAddedEntitlements(input: {
-	plan: PricingPlan;
-	previous: PricingPlan | undefined;
+    plan: PricingPlan;
+    previous: PricingPlan | undefined;
 }): ReadonlyArray<string> {
-	const { plan, previous } = input;
-	if (!previous) return plan.entitlements;
-	const previousSet = new Set<string>(previous.entitlements as ReadonlyArray<string>);
-	const added = plan.entitlements.filter((e) => !previousSet.has(e as string));
-	// Defensive fallback: if the upper plan introduces nothing on top of the
-	// previous one (config error), show its full list instead of an empty bullets.
-	return added.length > 0 ? added : plan.entitlements;
+    const { plan, previous } = input;
+    if (!previous) return plan.entitlements;
+    const previousSet = new Set<string>(previous.entitlements as ReadonlyArray<string>);
+    const added = plan.entitlements.filter((e) => !previousSet.has(e as string));
+    // Defensive fallback: if the upper plan introduces nothing on top of the
+    // previous one (config error), show its full list instead of an empty bullets.
+    return added.length > 0 ? added : plan.entitlements;
 }
 
 /**
@@ -152,17 +146,17 @@ function computeAddedEntitlements(input: {
  * share the same formatting logic.
  */
 function formatPriceArs(cents: number): string {
-	const pesos = cents / 100;
-	try {
-		return new Intl.NumberFormat(intlLocale, {
-			style: 'currency',
-			currency: 'ARS',
-			maximumFractionDigits: 0,
-			minimumFractionDigits: 0,
-		}).format(pesos);
-	} catch {
-		return `$${pesos.toLocaleString('es-AR')}`;
-	}
+    const pesos = cents / 100;
+    try {
+        return new Intl.NumberFormat(intlLocale, {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0
+        }).format(pesos);
+    } catch {
+        return `$${pesos.toLocaleString('es-AR')}`;
+    }
 }
 ---
 

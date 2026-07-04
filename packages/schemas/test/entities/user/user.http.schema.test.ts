@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    UserSearchHttpSchema,
     httpToDomainUserCreate,
     httpToDomainUserSearch,
-    httpToDomainUserUpdate
+    httpToDomainUserUpdate,
+    UserSearchHttpSchema
 } from '../../../src/entities/user/user.http.schema.js';
 import { RoleEnum } from '../../../src/enums/index.js';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';

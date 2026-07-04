@@ -6,7 +6,7 @@
  * Values are updated client-side via DOM id references from the parent page script.
  */
 
-import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon } from '@repo/icons';
+import { BuildingIcon, ChatIcon, CreditCardIcon, FavoriteIcon, StarIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -25,15 +25,24 @@ const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
 const statFavoritesLabel = t('account.pages.dashboard.stats.favorites', 'Favoritos');
 const statReviewsLabel = t('account.pages.dashboard.stats.reviews', 'Reseñas');
 const statSubscriptionLabel = t('account.pages.dashboard.stats.subscription', 'Suscripción');
-const statFavoritesDesc = t('account.pages.dashboard.stats.favoritesDesc', 'Alojamientos guardados');
+const statFavoritesDesc = t(
+    'account.pages.dashboard.stats.favoritesDesc',
+    'Alojamientos guardados'
+);
 const statReviewsDesc = t('account.pages.dashboard.stats.reviewsDesc', 'Reseñas escritas');
 const statSubscriptionDesc = t('account.pages.dashboard.stats.subscriptionDesc', 'Plan actual');
-const statSubscriptionStatus = t('account.pages.dashboard.stats.subscriptionStatus', 'Estado de la suscripción');
+const statSubscriptionStatus = t(
+    'account.pages.dashboard.stats.subscriptionStatus',
+    'Estado de la suscripción'
+);
 const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
 const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
 const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
 const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis propiedades');
-const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
+const statPropertiesDesc = t(
+    'account.pages.dashboard.stats.propertiesDesc',
+    'Alojamientos publicados'
+);
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
 const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consultas de huéspedes');
 ---

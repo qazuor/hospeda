@@ -22,15 +22,6 @@
  * and visual interaction stays consistent.
  */
 
-import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
-import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
-import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
-import { signOut } from '@/lib/auth-client';
-import { getInitials } from '@/lib/avatar-utils';
-import { cn } from '@/lib/cn';
-import { getApiUrl } from '@/lib/env';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import {
     BuildingIcon,
     ChatIcon,
@@ -48,6 +39,15 @@ import {
 } from '@repo/icons';
 import type { ComponentType, JSX } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
+import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
+import { signOut } from '@/lib/auth-client';
+import { getInitials } from '@/lib/avatar-utils';
+import { cn } from '@/lib/cn';
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
 
 // ---------------------------------------------------------------------------
@@ -187,6 +187,7 @@ const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;
  * The canonical declaration lives in the shared module — see the JSDoc there.
  */
 export { AUTH_ME_CACHE_KEY };
+
 const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
 
 interface AuthMeSnapshot {

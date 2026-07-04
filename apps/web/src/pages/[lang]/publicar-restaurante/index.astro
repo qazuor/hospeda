@@ -13,16 +13,13 @@
  * @rendering SSR (on-demand, no prerender)
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import BaseLayout from '@/layouts/BaseLayout.astro';
+import { CommerceLead, type DestinationOption } from '@/components/gastronomy/CommerceLead.client';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
-import {
-    CommerceLead,
-    type DestinationOption
-} from '@/components/gastronomy/CommerceLead.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);

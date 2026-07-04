@@ -9,11 +9,11 @@
  * in the DOM — place it as the very first child of `<body>`.
  */
 
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
+    readonly locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;

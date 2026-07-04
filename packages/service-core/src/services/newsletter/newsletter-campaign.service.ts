@@ -27,16 +27,15 @@
  * @see {@link NewsletterSubscriberService}
  */
 
-import { getDb } from '@repo/db';
 import type { InsertNewsletterCampaignDelivery, SelectNewsletterCampaign } from '@repo/db';
-import { newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
+import { getDb, newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
+import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/schemas';
 import {
     NewsletterCampaignStatusEnum,
     NewsletterContentTypeEnum,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/schemas';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';

@@ -6,11 +6,11 @@
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
  */
 
+import { LocationIcon, StarIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon, LocationIcon } from '@repo/icons';
 import type { GastronomyDetailData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     readonly gastronomy: GastronomyDetailData;
@@ -31,7 +31,7 @@ const {
     isAuthenticated = false,
     initialIsFavorited,
     initialBookmarkId = null,
-    bookmarkCount,
+    bookmarkCount
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 

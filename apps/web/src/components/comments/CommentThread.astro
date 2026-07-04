@@ -17,8 +17,8 @@
 
 import { commentsApi } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
-import { CommentThreadIsland } from './CommentThreadIsland.client';
 import type { CommentItem } from './CommentThreadIsland.client';
+import { CommentThreadIsland } from './CommentThreadIsland.client';
 
 interface Props {
     /** Entity kind — drives the correct API endpoint inside the island. */
@@ -35,14 +35,7 @@ interface Props {
     readonly currentUserName?: string | null;
 }
 
-const {
-    entityType,
-    entityId,
-    locale,
-    isAuthenticated,
-    currentUrl,
-    currentUserName,
-} = Astro.props;
+const { entityType, entityId, locale, isAuthenticated, currentUrl, currentUserName } = Astro.props;
 
 // Build sign-in URL with returnUrl so unauthenticated users land back here after login.
 const signinUrl = `/${locale}/auth/signin/?returnUrl=${encodeURIComponent(currentUrl)}`;
@@ -52,7 +45,7 @@ let initialComments: readonly CommentItem[] = [];
 try {
     const result = await commentsApi.listByEntity({
         entityType,
-        entityId,
+        entityId
     });
     if (result.ok) {
         initialComments = (result.data.items ?? []).map((c) => ({
@@ -60,7 +53,7 @@ try {
             authorName: c.authorName,
             content: c.content,
             // createdAt: already a string (ISO 8601) from the API — pass through directly.
-            createdAt: String(c.createdAt),
+            createdAt: String(c.createdAt)
         }));
     }
 } catch {

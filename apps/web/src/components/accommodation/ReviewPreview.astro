@@ -1,4 +1,5 @@
 ---
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 /**
  * @file ReviewPreview.astro
  * @description Review summary: average score + per-category breakdown + a
@@ -7,21 +8,20 @@
  * space on the detail page; the modal owns that view.
  */
 import type { AccommodationDetailData } from '@/data/types';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import RatingBreakdown from './RatingBreakdown.astro';
 
 interface Props {
-  readonly accommodation: AccommodationDetailData;
-  readonly lang: string;
-  /**
-   * Optional pre-computed average per rating category
-   * (`cleanliness`, `hospitality`, `services`, `accuracy`,
-   * `communication`, `location`). When provided, RatingBreakdown
-   * renders the per-category bars below the overall score.
-   */
-  readonly ratingBreakdown?: Readonly<Record<string, number>>;
+    readonly accommodation: AccommodationDetailData;
+    readonly lang: string;
+    /**
+     * Optional pre-computed average per rating category
+     * (`cleanliness`, `hospitality`, `services`, `accuracy`,
+     * `communication`, `location`). When provided, RatingBreakdown
+     * renders the per-category bars below the overall score.
+     */
+    readonly ratingBreakdown?: Readonly<Record<string, number>>;
 }
 
 const { accommodation, lang, ratingBreakdown } = Astro.props;

@@ -9,14 +9,14 @@
  * @rendering SSR (on-demand)
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { getMediaUrl } from '@repo/media';
 import JsonLd from '@/components/seo/JsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import DetailLayout from '@/layouts/DetailLayout.astro';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { getMediaUrl } from '@repo/media';
+import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
@@ -79,9 +79,10 @@ if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeh
 
 // Gallery images (skip duplicate of featured). Prefer galleryItems so captions
 // survive (GAP-078-136); fall back to the URL list for legacy payloads.
-const galleryEntries = accommodation.media.galleryItems.length > 0
-    ? accommodation.media.galleryItems
-    : accommodation.media.images.map((url) => ({ url }));
+const galleryEntries =
+    accommodation.media.galleryItems.length > 0
+        ? accommodation.media.galleryItems
+        : accommodation.media.images.map((url) => ({ url }));
 for (const entry of galleryEntries) {
     if (entry.url !== accommodation.featuredImage) {
         const caption = 'caption' in entry ? entry.caption : undefined;

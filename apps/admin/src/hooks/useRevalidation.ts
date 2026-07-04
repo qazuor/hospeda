@@ -8,6 +8,14 @@
  * @module hooks/useRevalidation
  */
 
+import type {
+    ManualRevalidateRequest,
+    RevalidateTypeRequest,
+    RevalidationLogFilter,
+    UpdateRevalidationConfigInput
+} from '@repo/schemas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { RevalidationLogPage } from '@/lib/revalidation-http-adapter';
 import {
     getRevalidationConfigs,
     getRevalidationLogs,
@@ -17,14 +25,6 @@ import {
     revalidateEntity,
     updateRevalidationConfig
 } from '@/lib/revalidation-http-adapter';
-import type { RevalidationLogPage } from '@/lib/revalidation-http-adapter';
-import type {
-    ManualRevalidateRequest,
-    RevalidateTypeRequest,
-    RevalidationLogFilter,
-    UpdateRevalidationConfigInput
-} from '@repo/schemas';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /**
  * Stable query key constants for all revalidation-related queries.

@@ -6,13 +6,16 @@
  * Mirrors GastronomyDescription + OpeningHoursSection pattern.
  */
 
+import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+import type {
+    ExperienceDetailData,
+    ExperienceOpeningHoursEntry,
+    GastronomyOpeningHoursEntry
+} from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { renderContent } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
-import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
-import type { GastronomyOpeningHoursEntry } from '@/data/types';
 
 interface Props {
     readonly experience: ExperienceDetailData;

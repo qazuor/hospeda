@@ -19,14 +19,14 @@
  * @rendering SSG (prerender)
  */
 
-import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
-import { ContributionForm } from '@/components/contributions/ContributionForm.client';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
+import { ContributionForm } from '@/components/contributions/ContributionForm.client';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 export const prerender = true;
 
@@ -41,18 +41,12 @@ const { t } = createTranslations(locale);
 // Delivery mechanics (FR-4): the page must close the expectation loop for a
 // textual form — how do the photos actually reach the team.
 const howSteps = [
-    t(
-        'contributions.photos.how.step1',
-        'Contanos de qué destino son tus fotos y qué muestran.'
-    ),
+    t('contributions.photos.how.step1', 'Contanos de qué destino son tus fotos y qué muestran.'),
     t(
         'contributions.photos.how.step2',
         'Si ya las tenés online (Drive, Dropbox, etc.), pegá los links en el mensaje.'
     ),
-    t(
-        'contributions.photos.how.step3',
-        'Si no, te respondemos por email para coordinar el envío.'
-    )
+    t('contributions.photos.how.step3', 'Si no, te respondemos por email para coordinar el envío.')
 ];
 
 // Usage/license terms (D-9): placeholder copy pending owner/legal sign-off.

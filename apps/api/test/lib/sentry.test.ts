@@ -56,8 +56,8 @@ vi.mock('@sentry/profiling-node', () => ({
     nodeProfilingIntegration: vi.fn(() => ({}))
 }));
 
-import { BEFORE_SEND_NOISE_PATTERNS, applyBeforeSend } from '../../src/lib/sentry';
 import * as SentryModule from '../../src/lib/sentry';
+import { applyBeforeSend, BEFORE_SEND_NOISE_PATTERNS } from '../../src/lib/sentry';
 
 describe('Sentry Configuration', () => {
     let originalSentryDsn: string | undefined;

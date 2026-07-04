@@ -18,26 +18,26 @@
  * is not viable because `Astro.url.searchParams` is unavailable at build time.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import {
+    AlertCircleIcon,
+    BuildingsIcon,
+    ChatIcon,
+    EyeIcon,
+    InfoIcon,
+    ReceiptIcon,
+    SettingsIcon,
+    StarIcon,
+    TrendingUpIcon
+} from '@repo/icons';
 import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
 import JsonLd from '@/components/seo/JsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { getAdminUrl, getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
-import {
-	InfoIcon,
-	BuildingsIcon,
-	TrendingUpIcon,
-	ChatIcon,
-	StarIcon,
-	EyeIcon,
-	SettingsIcon,
-	ReceiptIcon,
-	AlertCircleIcon
-} from '@repo/icons';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -58,31 +58,31 @@ const isAuthenticated = Boolean(Astro.locals.user);
 // (The actual creation FORM at /publicar/nueva/ must NOT redirect, or the
 // "Publicar otra" button from /mi-cuenta/propiedades/ would loop.)
 if (isAuthenticated) {
-	try {
-		const cookieHeader = Astro.request.headers.get('cookie');
-		if (cookieHeader) {
-			const ownedResponse = await fetch(
-				`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`,
-				{ headers: { cookie: cookieHeader } }
-			);
-			if (ownedResponse.ok) {
-				const ownedJson = (await ownedResponse.json()) as {
-					data?: { pagination?: { total?: number } };
-				};
-				const total = ownedJson.data?.pagination?.total;
-				if (typeof total === 'number' && total > 0) {
-					return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }));
-				}
-			} else {
-				logger.warn('publicar/index: owned-accommodations fetch returned non-ok', {
-					status: ownedResponse.status
-				});
-			}
-		}
-	} catch (error) {
-		logger.warn('publicar/index: failed to fetch owned count for host redirect', { error });
-		// Non-fatal: render the landing normally on error.
-	}
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie');
+        if (cookieHeader) {
+            const ownedResponse = await fetch(
+                `${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`,
+                { headers: { cookie: cookieHeader } }
+            );
+            if (ownedResponse.ok) {
+                const ownedJson = (await ownedResponse.json()) as {
+                    data?: { pagination?: { total?: number } };
+                };
+                const total = ownedJson.data?.pagination?.total;
+                if (typeof total === 'number' && total > 0) {
+                    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }));
+                }
+            } else {
+                logger.warn('publicar/index: owned-accommodations fetch returned non-ok', {
+                    status: ownedResponse.status
+                });
+            }
+        }
+    } catch (error) {
+        logger.warn('publicar/index: failed to fetch owned count for host redirect', { error });
+        // Non-fatal: render the landing normally on error.
+    }
 }
 
 // F1-UI: For authenticated HOST users, check trial status.
@@ -121,9 +121,7 @@ if (isAuthenticated) {
 const isTrialExpired = trialStatus?.isExpired === true;
 
 // Format expiresAt as a readable date string (YYYY-MM-DD substring is sufficient).
-const expiredAtDisplay = trialStatus?.expiresAt
-    ? trialStatus.expiresAt.substring(0, 10)
-    : '';
+const expiredAtDisplay = trialStatus?.expiresAt ? trialStatus.expiresAt.substring(0, 10) : '';
 const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
 // ---------------------------------------------------------------------------
@@ -131,36 +129,98 @@ const expiredPlanSlug = trialStatus?.planSlug ?? '';
 // ---------------------------------------------------------------------------
 
 const benefits = [
-	{ Icon: EyeIcon, titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
-	{ Icon: SettingsIcon, titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
-	{ Icon: ReceiptIcon, titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
+    {
+        Icon: EyeIcon,
+        titleKey: 'owners.benefits.1.title',
+        titleFb: 'Visibilidad regional',
+        descKey: 'owners.benefits.1.desc',
+        descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.'
+    },
+    {
+        Icon: SettingsIcon,
+        titleKey: 'owners.benefits.2.title',
+        titleFb: 'Gestión simple',
+        descKey: 'owners.benefits.2.desc',
+        descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.'
+    },
+    {
+        Icon: ReceiptIcon,
+        titleKey: 'owners.benefits.3.title',
+        titleFb: 'Sin comisiones ocultas',
+        descKey: 'owners.benefits.3.desc',
+        descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.'
+    }
 ] as const;
 
 const steps = [
-	{ num: '01', titleKey: 'owners.steps.1.title', titleFb: 'Registrate', descKey: 'owners.steps.1.desc', descFb: 'Creá tu cuenta de propietario en menos de 2 minutos. Solo necesitás un email.' },
-	{ num: '02', titleKey: 'owners.steps.2.title', titleFb: 'Publicá', descKey: 'owners.steps.2.desc', descFb: 'Cargá fotos, descripción, servicios y precios de tu alojamiento.' },
-	{ num: '03', titleKey: 'owners.steps.3.title', titleFb: 'Recibí consultas', descKey: 'owners.steps.3.desc', descFb: 'Los viajeros te contactan directamente. Vos manejás las reservas.' },
-	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
+    {
+        num: '01',
+        titleKey: 'owners.steps.1.title',
+        titleFb: 'Registrate',
+        descKey: 'owners.steps.1.desc',
+        descFb: 'Creá tu cuenta de propietario en menos de 2 minutos. Solo necesitás un email.'
+    },
+    {
+        num: '02',
+        titleKey: 'owners.steps.2.title',
+        titleFb: 'Publicá',
+        descKey: 'owners.steps.2.desc',
+        descFb: 'Cargá fotos, descripción, servicios y precios de tu alojamiento.'
+    },
+    {
+        num: '03',
+        titleKey: 'owners.steps.3.title',
+        titleFb: 'Recibí consultas',
+        descKey: 'owners.steps.3.desc',
+        descFb: 'Los viajeros te contactan directamente. Vos manejás las reservas.'
+    },
+    {
+        num: '04',
+        titleKey: 'owners.steps.4.title',
+        titleFb: 'Crecé',
+        descKey: 'owners.steps.4.desc',
+        descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.'
+    }
 ] as const;
 
 const faqs = [
-	{ qKey: 'owners.faq.1.q', qFb: '¿Cuánto cuesta publicar mi alojamiento?', aKey: 'owners.faq.1.a', aFb: 'Ofrecemos planes desde gratuitos hasta premium. El plan básico te permite publicar sin costo.' },
-	{ qKey: 'owners.faq.2.q', qFb: '¿Cómo recibo las reservas?', aKey: 'owners.faq.2.a', aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.' },
-	{ qKey: 'owners.faq.3.q', qFb: '¿Puedo publicar más de una propiedad?', aKey: 'owners.faq.3.a', aFb: 'Sí, podés publicar todas las propiedades que quieras desde una misma cuenta.' },
-	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
+    {
+        qKey: 'owners.faq.1.q',
+        qFb: '¿Cuánto cuesta publicar mi alojamiento?',
+        aKey: 'owners.faq.1.a',
+        aFb: 'Ofrecemos planes desde gratuitos hasta premium. El plan básico te permite publicar sin costo.'
+    },
+    {
+        qKey: 'owners.faq.2.q',
+        qFb: '¿Cómo recibo las reservas?',
+        aKey: 'owners.faq.2.a',
+        aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.'
+    },
+    {
+        qKey: 'owners.faq.3.q',
+        qFb: '¿Puedo publicar más de una propiedad?',
+        aKey: 'owners.faq.3.a',
+        aFb: 'Sí, podés publicar todas las propiedades que quieras desde una misma cuenta.'
+    },
+    {
+        qKey: 'owners.faq.4.q',
+        qFb: '¿Qué tipo de alojamientos puedo publicar?',
+        aKey: 'owners.faq.4.a',
+        aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.'
+    }
 ] as const;
 
 const faqJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	mainEntity: faqs.map((faq) => ({
-		'@type': 'Question',
-		name: t(faq.qKey, faq.qFb),
-		acceptedAnswer: {
-			'@type': 'Answer',
-			text: t(faq.aKey, faq.aFb),
-		},
-	})),
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: t(faq.qKey, faq.qFb),
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: t(faq.aKey, faq.aFb)
+        }
+    }))
 };
 ---
 

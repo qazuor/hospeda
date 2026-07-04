@@ -11,6 +11,10 @@
  * (accommodations, destinations).
  */
 
+import { defaultIntlLocale, formatDate } from '@repo/i18n';
+import { StarIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -20,10 +24,6 @@ import {
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import { defaultIntlLocale, formatDate } from '@repo/i18n';
-import { StarIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 
 /** Minimal review shape the cell renders. Both AccommodationReviewAdmin and
  * DestinationReviewAdmin satisfy this structurally. */

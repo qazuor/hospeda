@@ -1,9 +1,9 @@
 export { useHostTradePage } from './useHostTradePage';
 export {
     hostTradeQueryKeys,
-    useHostTradeQuery,
     useCreateHostTradeMutation,
-    useUpdateHostTradeMutation,
     useDeleteHostTradeMutation,
-    useRestoreHostTradeMutation
+    useHostTradeQuery,
+    useRestoreHostTradeMutation,
+    useUpdateHostTradeMutation
 } from './useHostTradeQuery';

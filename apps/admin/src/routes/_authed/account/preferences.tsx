@@ -8,6 +8,11 @@
  * save does not clobber unrelated state.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { GlobeIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon } from '@repo/icons';
+import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +24,6 @@ import {
     useUpdateUserSettings,
     useUserProfile
 } from '@/hooks/use-user-profile';
-import type { TranslationKey } from '@repo/i18n';
-import { GlobeIcon, MonitorIcon, MoonIcon, PaletteIcon, SunIcon } from '@repo/icons';
-import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, unknown>) => string;
 
@@ -276,11 +276,15 @@ interface ThemePickerProps {
 function ThemePicker({ label, value, onChange, disabled, idPrefix, t }: ThemePickerProps) {
     return (
         <div>
-            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+            <span
+                id={`${idPrefix}-label`}
+                className="mb-2 block font-medium text-muted-foreground text-xs uppercase"
+            >
                 {label}
             </span>
             <div
                 className="flex flex-wrap gap-3"
+                role="radiogroup"
                 aria-labelledby={`${idPrefix}-label`}
             >
                 <ThemeButton
@@ -321,11 +325,15 @@ interface LanguagePickerProps {
 function LanguagePicker({ label, value, onChange, disabled, idPrefix, t }: LanguagePickerProps) {
     return (
         <div>
-            <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
+            <span
+                id={`${idPrefix}-label`}
+                className="mb-2 block font-medium text-muted-foreground text-xs uppercase"
+            >
                 {label}
             </span>
             <div
                 className="flex flex-wrap gap-3"
+                role="radiogroup"
                 aria-labelledby={`${idPrefix}-label`}
             >
                 <LanguageButton

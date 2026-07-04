@@ -1,12 +1,12 @@
+import { FeatureCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import { createFeatureConsolidatedConfig } from '@/features/features/config';
 import { useCreateFeatureMutation } from '@/features/features/hooks/useFeatureQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { FeatureCreateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/accommodation-features/new')({
     component: FeatureCreatePage,

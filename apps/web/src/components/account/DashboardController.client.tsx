@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { TourController } from '@/components/account/TourController.client';
 import { WhatsNewModal } from '@/components/account/WhatsNewModal.client';
 import { getWelcomeTourForRole } from '@/config/tours';
@@ -5,7 +6,6 @@ import { useTourState } from '@/hooks/use-tour-state';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
-import { useEffect, useMemo, useState } from 'react';
 
 interface DashboardControllerProps {
     readonly locale: SupportedLocale;

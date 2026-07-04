@@ -8,11 +8,11 @@
  * Tasks: T-072
  */
 
+import { toBcp47Locale } from '@repo/i18n/web';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveStatsIcon } from '@/lib/stats-icons';
-import { toBcp47Locale } from '@repo/i18n/web';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
 /** Easing function: easeOutQuart. */
@@ -158,6 +158,7 @@ export function AnimatedCounter({
             <div
                 ref={containerRef}
                 className={styles.badge}
+                role="img"
                 aria-label={ariaLabel}
             >
                 <span className={styles.badgeValue}>
@@ -177,6 +178,7 @@ export function AnimatedCounter({
         <div
             ref={containerRef}
             className={styles.counter}
+            role="img"
             aria-label={ariaLabel}
         >
             {/* Icon circle */}

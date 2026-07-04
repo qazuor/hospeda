@@ -1,7 +1,9 @@
 {
     "name": "@repo/utils",
     "version": "0.0.0",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "private": true,
     "type": "module",
     "main": "dist/index.js",

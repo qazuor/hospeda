@@ -130,7 +130,7 @@ export function SocialPostPreviewCard({
 
             {/* Thumbnail gallery (additional media) */}
             {extraItems.length > 0 && (
-                <div
+                <section
                     className="flex gap-2 overflow-x-auto p-3"
                     aria-label="Additional media"
                 >
@@ -155,7 +155,7 @@ export function SocialPostPreviewCard({
                             </div>
                         );
                     })}
-                </div>
+                </section>
             )}
 
             {/* Caption + hashtags */}

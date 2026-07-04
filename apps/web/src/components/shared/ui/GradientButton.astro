@@ -21,72 +21,72 @@
 import { ArrowRightIcon } from '@repo/icons';
 
 interface Props {
-  readonly label: string;
-  readonly href?: string;
-  readonly as?: 'a' | 'button';
-  readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
-  readonly size?: 'sm' | 'md' | 'lg';
-  readonly shape?: 'pill' | 'rounded';
-  readonly icon?: string;
-  readonly class?: string;
-  readonly id?: string;
-  readonly type?: 'button' | 'submit' | 'reset';
-  readonly name?: string;
-  readonly data?: Record<string, string | number>;
-  /**
-   * Arbitrary `aria-*` attributes as a plain record.
-   * Keys are used without the `aria-` prefix; it is added automatically.
-   * Boolean values are stringified to `'true'` or `'false'` because HTML
-   * ARIA boolean attributes are enumerated strings, not real booleans.
-   *
-   * **Collision rule**: if `'label'` is included here it is silently dropped —
-   * the button label is visible text rendered via the `label` prop.
-   *
-   * @example { busy: isLoading }
-   */
-  readonly aria?: Record<string, string | boolean>;
+    readonly label: string;
+    readonly href?: string;
+    readonly as?: 'a' | 'button';
+    readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
+    readonly size?: 'sm' | 'md' | 'lg';
+    readonly shape?: 'pill' | 'rounded';
+    readonly icon?: string;
+    readonly class?: string;
+    readonly id?: string;
+    readonly type?: 'button' | 'submit' | 'reset';
+    readonly name?: string;
+    readonly data?: Record<string, string | number>;
+    /**
+     * Arbitrary `aria-*` attributes as a plain record.
+     * Keys are used without the `aria-` prefix; it is added automatically.
+     * Boolean values are stringified to `'true'` or `'false'` because HTML
+     * ARIA boolean attributes are enumerated strings, not real booleans.
+     *
+     * **Collision rule**: if `'label'` is included here it is silently dropped —
+     * the button label is visible text rendered via the `label` prop.
+     *
+     * @example { busy: isLoading }
+     */
+    readonly aria?: Record<string, string | boolean>;
 }
 
 const {
-  label,
-  href,
-  as: element = 'a',
-  variant = 'accent',
-  size = 'md',
-  shape = 'pill',
-  icon,
-  class: extraClass,
-  id,
-  type = 'button',
-  name,
-  data,
-  aria,
+    label,
+    href,
+    as: element = 'a',
+    variant = 'accent',
+    size = 'md',
+    shape = 'pill',
+    icon,
+    class: extraClass,
+    id,
+    type = 'button',
+    name,
+    data,
+    aria
 } = Astro.props;
 
 const classes = [
-  'btn-gradient',
-  `btn-gradient--${variant}`,
-  `btn-gradient--${size}`,
-  shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
-  extraClass ?? '',
+    'btn-gradient',
+    `btn-gradient--${variant}`,
+    `btn-gradient--${size}`,
+    shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
+    extraClass ?? ''
 ]
-  .filter(Boolean)
-  .join(' ');
+    .filter(Boolean)
+    .join(' ');
 
 const dataAttrs: Record<string, string | number> = {};
 if (data) {
-  for (const [key, value] of Object.entries<string | number>(data)) {
-    dataAttrs[`data-${key}`] = value;
-  }
+    for (const [key, value] of Object.entries<string | number>(data)) {
+        dataAttrs[`data-${key}`] = value;
+    }
 }
 
 // Build aria-* attrs. The 'label' key is dropped — label prop renders visible text.
 const ariaAttrs: Record<string, string> = {};
 if (aria) {
-  for (const [key, value] of Object.entries(aria)) {
-    if (key === 'label') continue;
-    ariaAttrs[`aria-${key}`] = String(value);
-  }
+    for (const [key, value] of Object.entries(aria)) {
+        if (key === 'label') continue;
+        ariaAttrs[`aria-${key}`] = String(value);
+    }
 }
 
 const hasLeadingSlot = Astro.slots.has('leading');

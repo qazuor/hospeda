@@ -23,17 +23,16 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import type { HostTradePublic } from '@repo/schemas';
-import type { Accommodation } from '@repo/schemas';
+import { BuildingIcon, LockIcon } from '@repo/icons';
+import type { Accommodation, HostTradePublic } from '@repo/schemas';
+import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
-import { BuildingIcon, LockIcon } from '@repo/icons';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 export const prerender = false;
 
@@ -87,10 +86,15 @@ try {
             trades = body.data ?? [];
         } else if (tradesResponse.status === 403) {
             accessDenied = true;
-            logger.warn('[directorio-proveedores] Trades API returned 403 — user lacks host entitlement');
+            logger.warn(
+                '[directorio-proveedores] Trades API returned 403 — user lacks host entitlement'
+            );
         } else {
             fetchError = true;
-            logger.error('[directorio-proveedores] Trades API responded with status', tradesResponse.status);
+            logger.error(
+                '[directorio-proveedores] Trades API responded with status',
+                tradesResponse.status
+            );
         }
 
         // Secondary fetch (AC-3.1/3.2): only when trades is empty (and no access issue),
@@ -134,12 +138,21 @@ try {
 const { t } = createTranslations(locale);
 
 const title = t('host-trades.page.title', 'Directorio de proveedores');
-const subtitle = t('host-trades.page.subtitle', 'Proveedores locales de confianza para tu alojamiento');
+const subtitle = t(
+    'host-trades.page.subtitle',
+    'Proveedores locales de confianza para tu alojamiento'
+);
 
 const isEmpty = trades.length === 0;
 
-const accessDeniedTitle = t('host-trades.accessDenied.title', 'Esta sección es exclusiva para anfitriones');
-const accessDeniedMessage = t('host-trades.accessDenied.message', 'Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.');
+const accessDeniedTitle = t(
+    'host-trades.accessDenied.title',
+    'Esta sección es exclusiva para anfitriones'
+);
+const accessDeniedMessage = t(
+    'host-trades.accessDenied.message',
+    'Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.'
+);
 const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscripción');
 ---
 

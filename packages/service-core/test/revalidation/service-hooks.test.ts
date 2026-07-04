@@ -20,8 +20,8 @@
  *     method resolves even when `scheduleRevalidation` is a no-op async function).
  */
 
-import { EventModel, REntityTagModel, TagModel } from '@repo/db';
 import type { AccommodationModel, DestinationModel } from '@repo/db';
+import { EventModel, REntityTagModel, TagModel } from '@repo/db';
 import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as accommodationHelpers from '../../src/services/accommodation/accommodation.helpers';

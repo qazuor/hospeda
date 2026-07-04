@@ -16,15 +16,15 @@
  * - clicking a card → no-op (the link inside the card handles navigation)
  * - hovering a marker → highlights the matching card (`hoveredItemId` prop)
  */
+
+import type { IconProps } from '@repo/icons';
+import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
-
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { IconProps } from '@repo/icons';
-import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import sidebarStyles from './MapCardsSidebar.module.css';
 
 export interface MapSidebarAmenity {
@@ -302,6 +302,7 @@ export function MapCardsSidebar({
                                     {/* biome-ignore lint/a11y/useKeyWithClickEvents: this wrapper only stops mouse propagation so clicks on the inner FavoriteButton/photo count don't trigger the card's navigation; it isn't itself focusable or actionable */}
                                     <div
                                         className={sidebarStyles.cardActions}
+                                        role="toolbar"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseDown={(e) => e.stopPropagation()}
                                     >
@@ -383,6 +384,7 @@ export function MapCardsSidebar({
                                     {item.amenities && item.amenities.length > 0 ? (
                                         <div
                                             className={sidebarStyles.cardAmenities}
+                                            role="img"
                                             aria-label={item.amenitiesLabel}
                                         >
                                             {item.amenities.map((amenity) => {

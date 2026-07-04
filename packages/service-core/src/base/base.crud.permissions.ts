@@ -1,6 +1,5 @@
 import { PermissionEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
-import type { ZodObject, ZodRawShape } from 'zod';
-import type { z } from 'zod';
+import type { ZodObject, ZodRawShape, z } from 'zod';
 import {
     type Actor,
     type BaseModel,

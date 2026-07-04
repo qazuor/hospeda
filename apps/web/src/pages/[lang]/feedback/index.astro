@@ -9,12 +9,12 @@
  * @rendering SSR (no ISR, no caching)
  */
 
+import type { ReportTypeId } from '@repo/feedback';
+import { FeedbackForm, parseFeedbackParams } from '@repo/feedback';
+import { getApiUrl, getSiteUrl, getTurnstileSiteKey } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { getApiUrl, getSiteUrl, getTurnstileSiteKey } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
-import { FeedbackForm, parseFeedbackParams } from '@repo/feedback';
-import type { ReportTypeId } from '@repo/feedback';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const t = createT(locale);
@@ -28,12 +28,12 @@ const user = Astro.locals.user as { id?: string; email?: string; name?: string }
 // Parse error context from query params (passed by ErrorBanner)
 const queryParams = parseFeedbackParams(Astro.url.search);
 const prefillData = {
-	type: (queryParams.type ?? 'bug-js') as ReportTypeId,
-	title: queryParams.title ?? '',
-	description: queryParams.description ?? '',
-	errorInfo: queryParams.error
-		? { message: queryParams.error, stack: queryParams.stack }
-		: undefined,
+    type: (queryParams.type ?? 'bug-js') as ReportTypeId,
+    title: queryParams.title ?? '',
+    description: queryParams.description ?? '',
+    errorInfo: queryParams.error
+        ? { message: queryParams.error, stack: queryParams.stack }
+        : undefined
 };
 const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 ---

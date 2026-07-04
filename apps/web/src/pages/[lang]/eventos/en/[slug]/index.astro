@@ -1,4 +1,10 @@
 ---
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 /**
  * @file eventos/en/[slug]/index.astro
  * @description Events at a specific venue/location.
@@ -6,16 +12,10 @@
  * @rendering SSR + ISR 24h
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { eventsApi, eventLocationsApi } from '@/lib/api/endpoints';
+import { eventLocationsApi, eventsApi } from '@/lib/api/endpoints';
 import { toEventCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -41,13 +41,15 @@ const locationName = String(locData.name || slug);
 const locationDestinationId = locData.destinationId ? String(locData.destinationId) : undefined;
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const result = locationDestinationId
-	? await eventsApi.list({ destinationId: locationDestinationId, page, pageSize: 9 })
-	: null;
+    ? await eventsApi.list({ destinationId: locationDestinationId, page, pageSize: 9 })
+    : null;
 const hasError = result !== null && !result.ok;
 const items = result?.ok ? result.data.items : [];
 const total = result?.ok ? result.data.pagination.total : 0;
 const totalPages = result?.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item: (typeof items)[number]) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item: (typeof items)[number]) =>
+    toEventCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 const baseUrl = buildUrl({ locale, path: `eventos/en/${slug}` });
 ---
 

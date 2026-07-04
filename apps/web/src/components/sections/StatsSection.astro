@@ -11,20 +11,20 @@
 
 import { Image } from 'astro:assets';
 import statsTraveler from '@/assets/images/resources/stats-traveler.png';
-import { createT } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { AnimatedCounter } from '@/components/sections/AnimatedCounter.client';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { StatItemData } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
-  /** Active locale used to resolve translations. */
-  readonly locale: SupportedLocale;
-  /** Stat items to display. When empty, the section does not render. */
-  readonly stats?: readonly StatItemData[];
-  /** Per-stat suffixes (e.g. "+"). Must match the length of stats array. */
-  readonly suffixes?: readonly (string | undefined)[];
+    /** Active locale used to resolve translations. */
+    readonly locale: SupportedLocale;
+    /** Stat items to display. When empty, the section does not render. */
+    readonly stats?: readonly StatItemData[];
+    /** Per-stat suffixes (e.g. "+"). Must match the length of stats array. */
+    readonly suffixes?: readonly (string | undefined)[];
 }
 
 const { locale, stats = [], suffixes = [] } = Astro.props;

@@ -10,11 +10,11 @@ import { createRouter } from './create-app';
 import { createOpenAPISchema } from './openapi-schema';
 import { ResponseFactory } from './response-factory';
 import {
-    type PaginatedResult,
     assertConcretePublicSchema,
     createPaginatedResponse,
     createResponse,
-    handleRouteError
+    handleRouteError,
+    type PaginatedResult
 } from './response-helpers';
 
 /**
@@ -563,29 +563,29 @@ export const createListRoute = (
 
     return app;
 };
-// Three-Tier Authorization Route Factories (re-exported from route-factory-tiered.ts)
-export {
-    createPublicRoute,
-    createProtectedRoute,
-    createAdminRoute,
-    createPublicListRoute,
-    createProtectedListRoute,
-    createAdminListRoute,
-    // Streaming SSE factories
-    createStreamingRoute,
-    createProtectedStreamingRoute
-} from './route-factory-tiered';
 export type {
-    PublicRouteOptions,
-    ProtectedRouteOptions,
-    AdminRouteOptions,
-    PublicListRouteOptions,
-    ProtectedListRouteOptions,
     AdminListRouteOptions,
-    // Streaming SSE types
-    StreamingRouteOptions,
+    AdminRouteOptions,
+    ProtectedListRouteOptions,
+    ProtectedRouteOptions,
     ProtectedStreamingRouteOptions,
+    PublicListRouteOptions,
+    PublicRouteOptions,
     StreamHandlerContext,
     StreamHandlerResult,
+    // Streaming SSE types
+    StreamingRouteOptions,
     StreamTextChunk
+} from './route-factory-tiered';
+// Three-Tier Authorization Route Factories (re-exported from route-factory-tiered.ts)
+export {
+    createAdminListRoute,
+    createAdminRoute,
+    createProtectedListRoute,
+    createProtectedRoute,
+    createProtectedStreamingRoute,
+    createPublicListRoute,
+    createPublicRoute,
+    // Streaming SSE factories
+    createStreamingRoute
 } from './route-factory-tiered';

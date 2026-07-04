@@ -11,12 +11,12 @@
  * - Focus restoration on close
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { CloseIcon } from '@repo/icons';
 import { Link } from '@tanstack/react-router';
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 
 interface MobileNavItem {
     id: string;
@@ -95,14 +95,15 @@ export function MobileMenu({ isOpen, onClose, items }: MobileMenuProps) {
     return (
         <>
             {/* Backdrop */}
-            <div
+            <button
+                type="button"
                 className={cn(
                     'fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 md:hidden',
                     isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
                 )}
                 onClick={onClose}
-                onKeyDown={(e) => e.key === 'Enter' && onClose()}
-                role="presentation"
+                aria-label={t('admin-common.aria.closeMenu')}
+                tabIndex={isOpen ? 0 : -1}
             />
 
             {/* Drawer */}

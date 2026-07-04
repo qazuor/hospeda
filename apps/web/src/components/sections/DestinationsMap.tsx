@@ -10,9 +10,9 @@
  * inside the DestinationsIsland which is already a React island).
  */
 
+import { BridgeIcon } from '@repo/icons';
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
-import { BridgeIcon } from '@repo/icons';
 import styles from './DestinationsMap.module.css';
 
 // ---------------------------------------------------------------------------

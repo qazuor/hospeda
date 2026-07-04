@@ -17,7 +17,9 @@
             "require": "./dist/resolver.cjs"
         }
     },
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsup",
         "dev": "tsc --watch",

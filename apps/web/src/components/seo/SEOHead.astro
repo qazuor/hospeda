@@ -5,9 +5,9 @@
  * Renders essential meta tags, Open Graph tags, Twitter Card tags, and hreflang links.
  */
 
+import { BRAND_NAME, TITLE_SEPARATOR, TWITTER_SITE_HANDLE } from '@/lib/constants';
 import { getSiteUrl } from '@/lib/env';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
-import { BRAND_NAME, TITLE_SEPARATOR, TWITTER_SITE_HANDLE } from '@/lib/constants';
 import { buildOgImagePath } from '@/lib/og-template';
 
 export interface Props {
@@ -63,7 +63,7 @@ const {
     ogImage,
     ogSubtitle,
     ogRating,
-    ogTagline,
+    ogTagline
 } = Astro.props;
 
 const fullTitle = title === BRAND_NAME ? BRAND_NAME : `${title}${TITLE_SEPARATOR}${BRAND_NAME}`;
@@ -72,7 +72,10 @@ const generateAlternateUrl = (targetLocale: string): string => {
     const url = new URL(canonical);
     const pathParts = url.pathname.split('/').filter(Boolean);
 
-    if (pathParts.length > 0 && SUPPORTED_LOCALES.includes(pathParts[0] as (typeof SUPPORTED_LOCALES)[number])) {
+    if (
+        pathParts.length > 0 &&
+        SUPPORTED_LOCALES.includes(pathParts[0] as (typeof SUPPORTED_LOCALES)[number])
+    ) {
         pathParts[0] = targetLocale;
     } else {
         pathParts.unshift(targetLocale);
@@ -112,7 +115,7 @@ const generatedOgPath = buildOgImagePath({
     image: ogImage,
     subtitle: ogSubtitle,
     rating: ogRating,
-    tagline: ogTagline,
+    tagline: ogTagline
 });
 const ogImageUrl = new URL(image ?? generatedOgPath, siteBase).href;
 ---

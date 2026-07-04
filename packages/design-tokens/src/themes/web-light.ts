@@ -35,7 +35,6 @@ import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
 import { amenityTypeTokens } from '../tokens/amenity-types.js';
 import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
-    type OKLCH,
     accent,
     avatarGradients,
     brandSecondary,
@@ -45,6 +44,7 @@ import {
     danger,
     forest,
     info,
+    type OKLCH,
     ratingStar,
     river,
     sand,

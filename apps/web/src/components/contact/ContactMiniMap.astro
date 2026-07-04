@@ -6,17 +6,17 @@
  * in by the parent so the page can localize the address label.
  */
 
-import { LocationMap } from '@/components/maps/LocationMap.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { LocationIcon } from '@repo/icons';
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly lat: number;
-	readonly lng: number;
-	readonly label: string;
-	readonly zoom?: number;
+    readonly locale: SupportedLocale;
+    readonly lat: number;
+    readonly lng: number;
+    readonly label: string;
+    readonly zoom?: number;
 }
 
 const { locale, lat, lng, label, zoom = 13 } = Astro.props;

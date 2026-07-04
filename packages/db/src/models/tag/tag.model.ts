@@ -14,7 +14,7 @@
  */
 import type { Tag } from '@repo/schemas';
 import { TagTypeEnum } from '@repo/schemas';
-import { type SQL, and, count, eq, isNull, or } from 'drizzle-orm';
+import { and, count, eq, isNull, or, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { tags } from '../../schemas/tag/tag.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';

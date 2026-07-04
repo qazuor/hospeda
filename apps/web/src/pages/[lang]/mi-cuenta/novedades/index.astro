@@ -8,12 +8,14 @@
  * @route /[lang]/mi-cuenta/novedades/
  */
 
-import AccountLayout from '@/layouts/AccountLayout.astro';
 import { WhatsNewPageList } from '@/components/account/WhatsNewPageList.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
-const locale = (Astro.locals.locale ?? (Astro.params.lang as SupportedLocale | undefined) ?? 'es') as SupportedLocale;
+const locale = (Astro.locals.locale ??
+    (Astro.params.lang as SupportedLocale | undefined) ??
+    'es') as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
@@ -23,7 +25,10 @@ if (!user) {
 const { t } = createTranslations(locale);
 
 const title = t('account.pages.whatsNew.title', 'Novedades');
-const description = t('account.pages.whatsNew.desc', 'Novedades y actualizaciones de la plataforma');
+const description = t(
+    'account.pages.whatsNew.desc',
+    'Novedades y actualizaciones de la plataforma'
+);
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="novedades">

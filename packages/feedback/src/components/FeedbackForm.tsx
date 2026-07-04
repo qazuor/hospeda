@@ -1,6 +1,6 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '@repo/schemas';
-import { REPORT_TYPE_IDS, feedbackFormSchema } from '@repo/schemas';
+import { feedbackFormSchema, REPORT_TYPE_IDS } from '@repo/schemas';
 /**
  * @repo/feedback - FeedbackForm component
  *
@@ -18,10 +18,10 @@ import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import { Button } from '../ui/Button.js';
 import './FeedbackForm.css';
 import { SuccessScreen } from './SuccessScreen.js';
-import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
-import { StepDetails } from './steps/StepDetails.js';
+import { StepBasic } from './steps/StepBasic.js';
 import type { StepDetailsData } from './steps/StepDetails.js';
+import { StepDetails } from './steps/StepDetails.js';
 import '../styles/tokens.css';
 
 /** ID of the collapsible details panel, used for aria-controls linkage */
@@ -305,7 +305,7 @@ export function FeedbackForm({
             ...detailsData,
             attachments: attachments.length > 0 ? attachments : undefined,
             environment,
-            ...(turnstileToken != null ? { cfTurnstileToken: turnstileToken } : {})
+            ...(turnstileToken == null ? {} : { cfTurnstileToken: turnstileToken })
         };
 
         const parsed = feedbackFormSchema.parse(combined);

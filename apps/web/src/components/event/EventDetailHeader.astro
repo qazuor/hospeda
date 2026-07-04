@@ -12,12 +12,12 @@
  * collapses to a single row, fonts shrink, and meta + bookmark count are hidden.
  */
 
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
-import { formatDate } from '@/lib/format-utils';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { getBadgeStatusColor, getEventCategoryColor } from '@/lib/colors';
+import { formatDate } from '@/lib/format-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     readonly eventId: string;
@@ -50,7 +50,7 @@ const {
     locale,
     isAuthenticated,
     initialIsFavorited,
-    initialBookmarkId = null,
+    initialBookmarkId = null
 } = Astro.props;
 
 const { t, tPlural } = createTranslations(locale);

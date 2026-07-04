@@ -14,9 +14,9 @@
  */
 
 import type Redis from 'ioredis';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { NOTIFICATION_CONSTANTS } from '../../src/constants/notification.constants.js';
-import { RetryService, type RetryableNotification } from '../../src/services/retry.service.js';
+import { type RetryableNotification, RetryService } from '../../src/services/retry.service.js';
 
 describe('RetryService — extended coverage', () => {
     let mockRedis: Redis;

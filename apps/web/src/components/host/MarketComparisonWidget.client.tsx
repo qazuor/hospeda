@@ -9,10 +9,10 @@
  * ```
  */
 
+import type { JSX } from 'react';
 import type { MarketComparisonData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { JSX } from 'react';
 import styles from './MarketComparisonWidget.module.css';
 
 // ---------------------------------------------------------------------------
@@ -115,10 +115,10 @@ export function MarketComparisonWidget({
     }
 
     const formatRating = (rating: number | null): string =>
-        rating != null ? rating.toFixed(1) : 'N/A';
+        rating == null ? 'N/A' : rating.toFixed(1);
 
     const formatPrice = (price: number | null): string =>
-        price != null ? `$${price.toLocaleString('es-AR')}` : 'N/A';
+        price == null ? 'N/A' : `$${price.toLocaleString('es-AR')}`;
 
     const getComparisonClass = (
         value: number | null,

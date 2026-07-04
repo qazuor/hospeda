@@ -1,3 +1,4 @@
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
@@ -15,7 +16,6 @@ import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
  */
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './LocationPicker.module.css';
 
 // ---------------------------------------------------------------------------
@@ -237,8 +237,8 @@ export function LocationPicker({
                         ref={suggestionsRef}
                         className={styles.suggestionsList}
                     >
-                        {suggestions.map((s, i) => (
-                            <li key={`${s.lat}-${s.lng}-${i}`}>
+                        {suggestions.map((s) => (
+                            <li key={`${s.lat}-${s.lng}`}>
                                 <button
                                     type="button"
                                     className={styles.suggestionItem}

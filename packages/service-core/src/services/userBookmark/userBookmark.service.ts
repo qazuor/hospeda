@@ -24,8 +24,8 @@ import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import {
-    type UserBookmarkWithEntityInfo,
-    enrichBookmarksWithEntityInfo
+    enrichBookmarksWithEntityInfo,
+    type UserBookmarkWithEntityInfo
 } from './userBookmark.enrichment';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import {
@@ -443,12 +443,12 @@ export class UserBookmarkService extends BaseCrudService<
                 const updated = await this.model.update(
                     { id: validated.bookmarkId },
                     {
-                        ...(validated.input.name !== undefined
-                            ? { name: validated.input.name }
-                            : {}),
-                        ...(validated.input.description !== undefined
-                            ? { description: validated.input.description }
-                            : {}),
+                        ...(validated.input.name === undefined
+                            ? {}
+                            : { name: validated.input.name }),
+                        ...(validated.input.description === undefined
+                            ? {}
+                            : { description: validated.input.description }),
                         updatedById: actor.id
                     },
                     ctx?.tx

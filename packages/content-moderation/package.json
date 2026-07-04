@@ -10,7 +10,9 @@
             "import": "./dist/index.js"
         }
     },
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsup",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",

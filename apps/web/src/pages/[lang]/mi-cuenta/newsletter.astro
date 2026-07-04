@@ -12,10 +12,10 @@
  * side, hidden when PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL is unset).
  */
 
-import { getApiUrl } from '@/lib/env';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
 import { NewsletterPreferences } from '@/components/newsletter/NewsletterPreferences.client';
+import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -26,7 +26,9 @@ const locals = Astro.locals as {
     user?: { id: string; email: string } | null;
     locale?: SupportedLocale;
 };
-const locale = (locals.locale ?? (Astro.params.lang as SupportedLocale | undefined) ?? 'es') as SupportedLocale;
+const locale = (locals.locale ??
+    (Astro.params.lang as SupportedLocale | undefined) ??
+    'es') as SupportedLocale;
 const user = locals.user;
 
 if (!user) {

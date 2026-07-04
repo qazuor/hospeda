@@ -7,30 +7,30 @@
  * and the average rating. Rows with a zero count are omitted. Renders nothing
  * if every stat is zero.
  */
-import { BedroomsIcon, CalendarIcon, LocationIcon, StarIcon, ChatIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
+import { BedroomsIcon, CalendarIcon, ChatIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface DestinationStats {
-	readonly accommodationsCount: number;
-	readonly reviewsCount: number;
-	readonly averageRating: number;
-	readonly attractionsCount: number;
-	readonly eventsCount: number;
+    readonly accommodationsCount: number;
+    readonly reviewsCount: number;
+    readonly averageRating: number;
+    readonly attractionsCount: number;
+    readonly eventsCount: number;
 }
 
 interface Props {
-	readonly stats: DestinationStats;
-	readonly locale: SupportedLocale;
+    readonly stats: DestinationStats;
+    readonly locale: SupportedLocale;
 }
 
 const { stats, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 interface StatRow {
-	value: string;
-	label: string;
-	icon: 'bed' | 'calendar' | 'location' | 'star' | 'chat';
+    value: string;
+    label: string;
+    icon: 'bed' | 'calendar' | 'location' | 'star' | 'chat';
 }
 
 const rows: StatRow[] = [];
@@ -39,33 +39,33 @@ const rows: StatRow[] = [];
 // so the sidebar is never silently empty. Reviews and rating only appear
 // when there is something meaningful to show (rating=0 means no scores yet).
 rows.push({
-	value: String(stats.accommodationsCount),
-	label: t('destination.detail.stats.accommodations', 'alojamientos'),
-	icon: 'bed'
+    value: String(stats.accommodationsCount),
+    label: t('destination.detail.stats.accommodations', 'alojamientos'),
+    icon: 'bed'
 });
 rows.push({
-	value: String(stats.eventsCount),
-	label: t('destination.detail.stats.events', 'eventos'),
-	icon: 'calendar'
+    value: String(stats.eventsCount),
+    label: t('destination.detail.stats.events', 'eventos'),
+    icon: 'calendar'
 });
 rows.push({
-	value: String(stats.attractionsCount),
-	label: t('destination.detail.stats.attractions', 'atracciones'),
-	icon: 'location'
+    value: String(stats.attractionsCount),
+    label: t('destination.detail.stats.attractions', 'atracciones'),
+    icon: 'location'
 });
 if (stats.averageRating > 0) {
-	rows.push({
-		value: stats.averageRating.toFixed(1),
-		label: t('destination.detail.stats.rating', 'puntuación'),
-		icon: 'star'
-	});
+    rows.push({
+        value: stats.averageRating.toFixed(1),
+        label: t('destination.detail.stats.rating', 'puntuación'),
+        icon: 'star'
+    });
 }
 if (stats.reviewsCount > 0) {
-	rows.push({
-		value: String(stats.reviewsCount),
-		label: t('destination.detail.stats.reviews', 'reseñas'),
-		icon: 'chat'
-	});
+    rows.push({
+        value: String(stats.reviewsCount),
+        label: t('destination.detail.stats.reviews', 'reseñas'),
+        icon: 'chat'
+    });
 }
 ---
 

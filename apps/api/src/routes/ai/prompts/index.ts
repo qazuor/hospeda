@@ -21,6 +21,7 @@ import {
     createPromptVersion,
     listPromptVersionsByFeature
 } from '@repo/ai-core';
+import type { AiFeature } from '@repo/schemas';
 import {
     AiFeatureSchema,
     AiPromptVersionSchema,
@@ -28,7 +29,6 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AiFeature } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';

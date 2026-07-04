@@ -19,28 +19,28 @@
  */
 
 import {
-  LocationIcon,
-  ArrowRightIcon,
-  BallroomIcon,
-  SportsCenterIcon,
-  CulturalCenterIcon,
-  RestaurantIcon,
-  FestivalPlazaIcon,
-  WellnessCenterIcon,
-  MuseumIcon,
-  UsersIcon,
-  NatureReserveIcon,
-  AmphitheaterIcon,
-  WorkshopSpaceIcon,
-  BooksAndMagazinesIcon,
-  EventIcon,
+    AmphitheaterIcon,
+    ArrowRightIcon,
+    BallroomIcon,
+    BooksAndMagazinesIcon,
+    CulturalCenterIcon,
+    EventIcon,
+    FestivalPlazaIcon,
+    LocationIcon,
+    MuseumIcon,
+    NatureReserveIcon,
+    RestaurantIcon,
+    SportsCenterIcon,
+    UsersIcon,
+    WellnessCenterIcon,
+    WorkshopSpaceIcon
 } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { buildUrl } from '@/lib/urls';
-import { formatEventDate } from './utils/formatEventDate';
-import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
 import type { EventCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
+import { formatEventDate } from './utils/formatEventDate';
 
 /**
  * Props for the EventCardFeatured component.
@@ -51,16 +51,16 @@ import type { SupportedLocale } from '@/lib/i18n';
  * ```
  */
 interface Props {
-  /** Event data produced by toEventCardProps(). */
-  readonly data: EventCardData;
-  /** Active locale used to build the detail page URL and format date values. */
-  readonly locale: SupportedLocale;
-  /**
-   * Whether the current user is authenticated.
-   * Forwarded to FavoriteButton to decide between toggle-favorite or
-   * auth-required popover. Defaults to false (guest user).
-   */
-  readonly isAuthenticated?: boolean;
+    /** Event data produced by toEventCardProps(). */
+    readonly data: EventCardData;
+    /** Active locale used to build the detail page URL and format date values. */
+    readonly locale: SupportedLocale;
+    /**
+     * Whether the current user is authenticated.
+     * Forwarded to FavoriteButton to decide between toggle-favorite or
+     * auth-required popover. Defaults to false (guest user).
+     */
+    readonly isAuthenticated?: boolean;
 }
 
 const { data, locale, isAuthenticated = false } = Astro.props;
@@ -68,13 +68,13 @@ const { data, locale, isAuthenticated = false } = Astro.props;
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
 const dateResult = formatEventDate({
-  start: data.date.start,
-  end: data.date.end,
-  locale,
-  mode: 'compact',
+    start: data.date.start,
+    end: data.date.end,
+    locale,
+    mode: 'compact'
 });
-const dateLine = dateResult.mode !== 'short' ? dateResult.dateLine : '';
-const timeLine = dateResult.mode !== 'short' ? dateResult.timeLine : null;
+const dateLine = dateResult.mode === 'short' ? '' : dateResult.dateLine;
+const timeLine = dateResult.mode === 'short' ? null : dateResult.timeLine;
 
 const categoryIconName = getEventCategoryIconName(data.category);
 
@@ -84,9 +84,7 @@ const categoryIconName = getEventCategoryIconName(data.category);
  * SVG placeholder path.
  */
 const hasRealImage =
-  Boolean(data.featuredImage.url) &&
-  !data.featuredImage.url.includes('placeholder');
-
+    Boolean(data.featuredImage.url) && !data.featuredImage.url.includes('placeholder');
 ---
 
 <article class="event-card-featured" data-event-category={data.category.toLowerCase()}>

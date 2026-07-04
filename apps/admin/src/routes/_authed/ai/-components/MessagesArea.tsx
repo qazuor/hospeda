@@ -1,8 +1,8 @@
+import { ArrowRightIcon, ChevronDownIcon, ChevronRightIcon, DebugIcon } from '@repo/icons';
+import { type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRightIcon, ChevronDownIcon, ChevronRightIcon, DebugIcon } from '@repo/icons';
-import { type RefObject, useState } from 'react';
 
 /** Debug metadata attached to each assistant message. */
 interface DebugInfo {
@@ -105,7 +105,7 @@ export function MessagesArea(props: {
 
                         return (
                             <div
-                                key={`${msg.timestamp}-${i}`}
+                                key={msg.timestamp}
                                 className={`flex flex-col ${
                                     msg.role === 'user' ? 'items-end' : 'items-start'
                                 }`}
@@ -260,8 +260,8 @@ export function MessagesArea(props: {
                                                                 (no messages — first exchange)
                                                             </div>
                                                         ) : (
-                                                            messagesSent.map((m, j) => (
-                                                                <div key={`${m.timestamp}-${j}`}>
+                                                            messagesSent.map((m) => (
+                                                                <div key={m.timestamp}>
                                                                     <span className="text-muted-foreground">
                                                                         [{m.role}]{' '}
                                                                     </span>

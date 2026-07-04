@@ -37,6 +37,7 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { apiLogger } from '../../src/utils/logger';
+
 const mockLogger = vi.mocked(apiLogger);
 
 // ---------------------------------------------------------------------------

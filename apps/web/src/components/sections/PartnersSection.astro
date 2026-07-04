@@ -9,15 +9,15 @@
  * Task: T-058, T-080
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import type { PartnerData } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  /** Active locale used to resolve translations. */
-  readonly locale: SupportedLocale;
-  /** Partner logo items to display. When empty, the section does not render. */
-  readonly partners?: readonly PartnerData[];
+    /** Active locale used to resolve translations. */
+    readonly locale: SupportedLocale;
+    /** Partner logo items to display. When empty, the section does not render. */
+    readonly partners?: readonly PartnerData[];
 }
 
 const { locale, partners = [] } = Astro.props;

@@ -9,8 +9,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authLogger } from '../src/logger';
-import { SignOutButton } from '../src/sign-out-button';
 import type { SignOutButtonProps } from '../src/sign-out-button';
+import { SignOutButton } from '../src/sign-out-button';
 
 // Mock authLogger to avoid console noise and allow assertion
 vi.mock('../src/logger', () => ({

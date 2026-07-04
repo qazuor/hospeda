@@ -1,4 +1,5 @@
 ---
+import type { SupportedLocale } from '@/lib/i18n';
 /**
  * @file DestinationReviewSignInCta.astro
  * @description Static (zero-JS) sidebar card shown to logged-out visitors on
@@ -12,7 +13,6 @@
  * the pattern used in `apps/web/src/lib/middleware-helpers.ts` (line ~286).
  */
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 interface Props {

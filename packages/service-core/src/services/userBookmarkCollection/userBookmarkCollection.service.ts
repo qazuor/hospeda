@@ -1,11 +1,11 @@
 import {
-    UserBookmarkCollectionModel,
-    UserBookmarkModel,
     and,
     count,
     eq,
     getDb,
     isNull,
+    UserBookmarkCollectionModel,
+    UserBookmarkModel,
     userBookmarks
 } from '@repo/db';
 import type { UserBookmark, UserBookmarkCollection } from '@repo/schemas';
@@ -25,8 +25,8 @@ import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../
 import { ServiceError } from '../../types';
 import { withServiceTransaction } from '../../utils/transaction';
 import {
-    type UserBookmarkWithEntityInfo,
-    enrichBookmarksWithEntityInfo
+    enrichBookmarksWithEntityInfo,
+    type UserBookmarkWithEntityInfo
 } from '../userBookmark/userBookmark.enrichment';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmarkCollection.normalizers';
 import {

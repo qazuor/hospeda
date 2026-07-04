@@ -26,13 +26,13 @@
  * @module SearchChatPanel
  */
 
+import type { AccommodationPublic } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { AccommodationPublic } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import styles from './SearchChatPanel.module.css';
 import { useSearchChat } from './useSearchChat';
@@ -155,13 +155,13 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
 
     const priceValue = item.price?.price;
     const formattedPrice =
-        priceValue != null
-            ? formatPrice({
+        priceValue == null
+            ? null
+            : formatPrice({
                   amount: priceValue,
                   currency: item.price?.currency ?? 'ARS',
                   locale
-              })
-            : null;
+              });
 
     const rating = item.averageRating;
     const hasRating = typeof rating === 'number' && rating > 0;
@@ -197,10 +197,7 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
                 </div>
 
                 {hasRating && (
-                    <div
-                        className={styles.resultCardRating}
-                        aria-label={`${rating?.toFixed(1)} stars`}
-                    >
+                    <div className={styles.resultCardRating}>
                         {'★'.repeat(Math.floor(rating ?? 0))}
                         <span>{rating?.toFixed(1)}</span>
                         {item.reviewsCount ? <span>({item.reviewsCount})</span> : null}
@@ -430,10 +427,6 @@ export function SearchChatPanel({
                     className={styles.messages}
                     aria-live="polite"
                     aria-atomic="false"
-                    aria-label={t(
-                        'aiSearch.chat.panelLabel',
-                        'Panel de búsqueda conversacional con IA'
-                    )}
                 >
                     {/* Empty state — before first turn, with example query chips (SPEC-265 B1a) */}
                     {!hasMessages && !chat.isStreaming && (

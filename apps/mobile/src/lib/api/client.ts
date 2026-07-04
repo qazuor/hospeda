@@ -240,7 +240,7 @@ export const apiFetch = async <S extends ZodTypeAny>({
     const response = await fetch(url, {
         method,
         headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: body === undefined ? undefined : JSON.stringify(body),
         signal
     });
 

@@ -12,31 +12,31 @@ import { buildUrl } from '@/lib/urls';
 type EntityType = 'destination' | 'accommodation' | 'event';
 
 interface RelatedEntity {
-	readonly id: string;
-	readonly name: string;
-	readonly slug: string;
-	readonly summary?: string | null;
-	readonly image?: string | null;
-	readonly type: EntityType;
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly summary?: string | null;
+    readonly image?: string | null;
+    readonly type: EntityType;
 }
 
 interface Props {
-	readonly entity: RelatedEntity;
-	readonly locale: SupportedLocale;
+    readonly entity: RelatedEntity;
+    readonly locale: SupportedLocale;
 }
 
 const { entity, locale } = Astro.props;
 
 const pathByType: Record<EntityType, string> = {
-	destination: `destinos/${entity.slug}`,
-	accommodation: `alojamientos/${entity.slug}`,
-	event: `eventos/${entity.slug}`,
+    destination: `destinos/${entity.slug}`,
+    accommodation: `alojamientos/${entity.slug}`,
+    event: `eventos/${entity.slug}`
 };
 
 const labelByType: Record<EntityType, string> = {
-	destination: 'Destino',
-	accommodation: 'Alojamiento',
-	event: 'Evento',
+    destination: 'Destino',
+    accommodation: 'Alojamiento',
+    event: 'Evento'
 };
 
 const href = buildUrl({ locale, path: pathByType[entity.type] });

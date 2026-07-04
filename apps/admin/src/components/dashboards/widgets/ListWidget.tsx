@@ -48,13 +48,13 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
+import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
+import { Fragment, type ReactNode, useState } from 'react';
 import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useWidgetActionHandlers } from '@/contexts/widget-action-handlers-context';
 import { cn } from '@/lib/utils';
-import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
-import { Fragment, type ReactNode, useState } from 'react';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -371,11 +371,15 @@ function coerceRating(value: unknown): number | null {
 function StarRating({
     rating,
     ariaLabel
-}: { readonly rating: number; readonly ariaLabel: string }) {
+}: {
+    readonly rating: number;
+    readonly ariaLabel: string;
+}) {
     const pct = Math.round((rating / 5) * 100);
     return (
         <span
             className="relative inline-flex shrink-0 select-none text-amber-500 leading-none"
+            role="img"
             aria-label={ariaLabel}
             data-testid="list-item-stars"
         >
@@ -772,6 +776,7 @@ function CollapsibleGroupList({
                                 <span
                                     className="ml-auto inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-semibold text-[0.65rem] text-destructive tabular-nums ring-1 ring-destructive/20 ring-inset"
                                     data-testid="list-group-failure-badge"
+                                    role="status"
                                     aria-label={`${failureCount} con fallas`}
                                 >
                                     <AlertTriangleIcon
@@ -939,7 +944,7 @@ export function ListWidget({ widget }: ListWidgetProps) {
     // -- 8. Data — narrow to ListItem[] shape --------------------------------
     const rawItems = data as ListItem[];
     const slicedItems =
-        config.maxItems !== undefined ? rawItems.slice(0, config.maxItems) : rawItems;
+        config.maxItems === undefined ? rawItems : rawItems.slice(0, config.maxItems);
 
     const actionCfg = config.actionPerItem;
     const variant = config.variant ?? 'default';

@@ -40,7 +40,7 @@
  * @module middlewares/idempotency-key
  */
 
-import { type DrizzleClient, billingIdempotencyKeys, eq, getDb, sql } from '@repo/db';
+import { billingIdempotencyKeys, type DrizzleClient, eq, getDb, sql } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { getActorFromContext } from '../utils/actor';

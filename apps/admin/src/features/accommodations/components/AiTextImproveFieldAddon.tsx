@@ -17,9 +17,10 @@
  * This component does NOT modify BaseCrudService or forward `_aiMeta` to the
  * update API (AC-12 SHOULD-only: client-side audit hint via `onAiAssisted`).
  */
-import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
+
 import type { AiTextImproveFieldType } from '@repo/schemas';
 import { useCallback } from 'react';
+import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { AiTextImprovePanel } from './AiTextImprovePanel';
 
 // ---------------------------------------------------------------------------

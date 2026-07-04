@@ -83,10 +83,7 @@ export function formatConvertedAmount(input: {
  * isRateStale({ fetchedAt: twoHoursAgo, maxAgeMinutes: 60 }) // true
  * ```
  */
-export function isRateStale(input: {
-    fetchedAt: Date;
-    maxAgeMinutes: number;
-}): boolean {
+export function isRateStale(input: { fetchedAt: Date; maxAgeMinutes: number }): boolean {
     const ageMs = Date.now() - input.fetchedAt.getTime();
     const maxAgeMs = input.maxAgeMinutes * 60 * 1000;
     return ageMs > maxAgeMs;
@@ -116,11 +113,7 @@ export function isRateStale(input: {
  * // }
  * ```
  */
-export function getRateDisplayInfo(input: {
-    rate: number;
-    source: string;
-    fetchedAt: Date;
-}): {
+export function getRateDisplayInfo(input: { rate: number; source: string; fetchedAt: Date }): {
     formattedRate: string;
     source: string;
     isStale: boolean;

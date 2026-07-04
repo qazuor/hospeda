@@ -13,23 +13,23 @@
  * @rendering SSR (on-demand)
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import { ImageGallery } from '@/components/ImageGallery.client';
-import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
-import ExperienceHero from '@/components/experience/ExperienceHero.astro';
-import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
+import ExperienceHero from '@/components/experience/ExperienceHero.astro';
+import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import type { DetailFaq } from '@/data/types';
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq } from '@/data/types';
 
 export const prerender = false;
 
@@ -64,15 +64,15 @@ const [reviewsSettled, faqsSettled] = await Promise.allSettled([
     experiencesApi.getFaqs({ id: experience.id })
 ]);
 
-const reviewsResult =
-    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
-const faqsResult =
-    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+const reviewsResult = reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
+const faqsResult = faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
 
-const reviews: readonly ExperienceReviewPublicItem[] =
-    reviewsResult?.ok ? reviewsResult.data.items : [];
-const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : experience.reviewsCount;
+const reviews: readonly ExperienceReviewPublicItem[] = reviewsResult?.ok
+    ? reviewsResult.data.items
+    : [];
+const totalReviews: number = reviewsResult?.ok
+    ? reviewsResult.data.pagination.total
+    : experience.reviewsCount;
 
 // FAQs: prefer inline entity FAQs, fall back to standalone endpoint
 const faqs: readonly DetailFaq[] =
@@ -102,10 +102,7 @@ const galleryImages = (() => {
                 caption: g.caption
             }));
     }
-    if (
-        experience.featuredImage.url &&
-        !experience.featuredImage.url.includes('placeholder')
-    ) {
+    if (experience.featuredImage.url && !experience.featuredImage.url.includes('placeholder')) {
         return [
             {
                 url: experience.featuredImage.url,

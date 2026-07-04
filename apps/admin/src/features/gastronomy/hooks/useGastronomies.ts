@@ -10,6 +10,7 @@
  * import from `useGastronomies` get a stable public surface.
  */
 
+export { useGastronomyPage } from './useGastronomyPage';
 export {
     gastronomyHooks,
     useAssignGastronomyOwnerMutation,
@@ -21,5 +22,3 @@ export {
     useRestoreGastronomyMutation,
     useUpdateGastronomyMutation
 } from './useGastronomyQuery';
-
-export { useGastronomyPage } from './useGastronomyPage';

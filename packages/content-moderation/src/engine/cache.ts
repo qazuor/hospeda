@@ -129,7 +129,7 @@ class ModerationCache {
  * produce distinct keys and prevent cross-context cache poisoning.
  */
 export function createModerationCacheKey(text: string, context?: string): string {
-    const raw = context !== undefined ? `${text}\0${context}` : text;
+    const raw = context === undefined ? text : `${text}\0${context}`;
     return createHash('sha256').update(raw).digest('hex').slice(0, 16);
 }
 

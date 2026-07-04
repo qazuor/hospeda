@@ -57,6 +57,7 @@
 
 import type {
     AiFeature,
+    AiFeatureConfig,
     AiIntent,
     AiProviderId,
     ExtractIntentRequest,
@@ -68,7 +69,6 @@ import type {
     ModerateResponse,
     StreamTextRequest
 } from '@repo/schemas';
-import type { AiFeatureConfig } from '@repo/schemas';
 import type { ZodType } from 'zod';
 import { composeSystemPrompt, resolveSystemPrompt } from '../config/prompt-resolver.js';
 import {
@@ -78,19 +78,19 @@ import {
     resolveFeatureConfig
 } from '../config/resolver.js';
 import type { AiProvider, StreamTextResult } from '../providers/ai-provider.interface.js';
+import type { ProviderAttempt } from './errors.js';
 import {
     AiEngineExhaustedError,
     AiFeatureDisabledError,
     AiNoEnabledProviderError
 } from './errors.js';
-import type { ProviderAttempt } from './errors.js';
 import {
     buildInputModerationText,
     runModerationPass,
     wrapStreamWithOutputModeration
 } from './moderation-pass.js';
 import { injectSystemPrompt } from './prompt-injection.js';
-import { MAX_ATTEMPTS_PER_PROVIDER, isRetryableError, withRetry } from './retry.js';
+import { isRetryableError, MAX_ATTEMPTS_PER_PROVIDER, withRetry } from './retry.js';
 
 // ---------------------------------------------------------------------------
 // Engine event types (emitted via the injected recordEvent sink)

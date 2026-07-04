@@ -13,14 +13,14 @@
  * Rendered inside a modal overlay by `SubscriptionDashboard` (T-009).
  */
 
+import type { DowngradePreview, KeepSelections, PlanChangeResponse } from '@repo/schemas';
+import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { DowngradePreview, KeepSelections, PlanChangeResponse } from '@repo/schemas';
-import { useEffect, useRef, useState } from 'react';
 import { DowngradePreviewPanel } from './DowngradePreviewPanel.client';
 import styles from './PlanChangeFlow.module.css';
 import { PlanPicker } from './PlanPicker.client';
@@ -322,6 +322,7 @@ export function PlanChangeFlow({
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: Escape key handler covers keyboard users
+        // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-dismiss is a mouse-only convenience; the document-level Escape handler above is the keyboard-equivalent, and the actual dialog content is a sibling <dialog> that must stay in the accessibility tree
         <div
             ref={backdropRef}
             className={styles.backdrop}
@@ -337,6 +338,7 @@ export function PlanChangeFlow({
                 {isLoading && (
                     <div
                         className={styles.loadingOverlay}
+                        role="status"
                         aria-live="polite"
                         aria-label={t('common.loading', 'Cargando...')}
                     >

@@ -7,62 +7,62 @@
  * Used by: accommodation detail, destination detail, event detail, post detail, attraction detail.
  */
 
+import SEOHead from '@/components/seo/SEOHead.astro';
+import WaveHeader from '@/components/shared/ui/WaveHeader.astro';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
-import WaveHeader from '@/components/shared/ui/WaveHeader.astro';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
-	readonly canonicalPath?: string;
-	readonly showBreadcrumbs?: boolean;
-	readonly showSidebar?: boolean;
-	/**
-	 * Entity featured image URL. Forwarded to SEOHead as `ogImage`, which makes
-	 * the generated `/api/og` card render in PHOTO mode (full-bleed image +
-	 * type badge + rating). Omit it (or pass a placeholder) for a brand card.
-	 */
-	readonly ogImage?: string;
-	/** OG photo-card type badge (Alojamiento/Destino/Evento/Guía). */
-	readonly ogType?: string;
-	/** OG photo-card subtitle line (locality/region). */
-	readonly ogSubtitle?: string;
-	/** OG photo-card rating value (e.g. "4.8"). */
-	readonly ogRating?: string;
-	/**
-	 * Open Graph object type. Article detail pages (blog posts) pass 'article';
-	 * everything else falls back to the SEOHead default ('website').
-	 */
-	readonly ogMetaType?: 'website' | 'article';
-	/**
-	 * When true, emits a `noindex` robots meta tag (via SEOHead, which renders
-	 * `noindex,follow`). Used by sub-pages like photo galleries.
-	 */
-	readonly noindex?: boolean;
-	/** ISO published date — forwarded as article:published_time for articles. */
-	readonly articlePublishedTime?: string;
-	/** ISO modified date — forwarded as article:modified_time for articles. */
-	readonly articleModifiedTime?: string;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
+    readonly canonicalPath?: string;
+    readonly showBreadcrumbs?: boolean;
+    readonly showSidebar?: boolean;
+    /**
+     * Entity featured image URL. Forwarded to SEOHead as `ogImage`, which makes
+     * the generated `/api/og` card render in PHOTO mode (full-bleed image +
+     * type badge + rating). Omit it (or pass a placeholder) for a brand card.
+     */
+    readonly ogImage?: string;
+    /** OG photo-card type badge (Alojamiento/Destino/Evento/Guía). */
+    readonly ogType?: string;
+    /** OG photo-card subtitle line (locality/region). */
+    readonly ogSubtitle?: string;
+    /** OG photo-card rating value (e.g. "4.8"). */
+    readonly ogRating?: string;
+    /**
+     * Open Graph object type. Article detail pages (blog posts) pass 'article';
+     * everything else falls back to the SEOHead default ('website').
+     */
+    readonly ogMetaType?: 'website' | 'article';
+    /**
+     * When true, emits a `noindex` robots meta tag (via SEOHead, which renders
+     * `noindex,follow`). Used by sub-pages like photo galleries.
+     */
+    readonly noindex?: boolean;
+    /** ISO published date — forwarded as article:published_time for articles. */
+    readonly articlePublishedTime?: string;
+    /** ISO modified date — forwarded as article:modified_time for articles. */
+    readonly articleModifiedTime?: string;
 }
 
 const {
-	locale,
-	title,
-	description,
-	canonicalPath = Astro.url.pathname,
-	showBreadcrumbs = true,
-	showSidebar = true,
-	ogImage,
-	ogType,
-	ogSubtitle,
-	ogRating,
-	ogMetaType,
-	noindex = false,
-	articlePublishedTime,
-	articleModifiedTime,
+    locale,
+    title,
+    description,
+    canonicalPath = Astro.url.pathname,
+    showBreadcrumbs = true,
+    showSidebar = true,
+    ogImage,
+    ogType,
+    ogSubtitle,
+    ogRating,
+    ogMetaType,
+    noindex = false,
+    articlePublishedTime,
+    articleModifiedTime
 } = Astro.props;
 
 const siteBase = getSiteUrl();

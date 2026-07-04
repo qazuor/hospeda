@@ -39,7 +39,7 @@
 import type { AiEngineEvent } from '@repo/ai-core';
 import { scrubPii } from '@repo/ai-core';
 import { getPostHogClient } from '../lib/posthog.js';
-import { Sentry, isSentryEnabled } from '../lib/sentry.js';
+import { isSentryEnabled, Sentry } from '../lib/sentry.js';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------

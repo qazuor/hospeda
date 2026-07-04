@@ -25,7 +25,7 @@ import {
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3';
-import { type Target, getR2Config } from './target.ts';
+import { getR2Config, type Target } from './target.ts';
 
 /** Single object record returned by {@link R2Client.list}. */
 export interface R2Object {

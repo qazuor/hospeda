@@ -6,12 +6,12 @@
  * FaqAccordion (SPEC-158).
  */
 import type { DetailFaq } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly faqs: readonly DetailFaq[];
-  readonly lang: string;
+    readonly faqs: readonly DetailFaq[];
+    readonly lang: string;
 }
 
 const { faqs, lang } = Astro.props;
@@ -24,17 +24,17 @@ const generalLabel = t('destination.detail.faq.generalCategory', 'General');
 const groups = new Map<string, DetailFaq[]>();
 
 for (const faq of faqs) {
-  const cat = faq.category ?? generalLabel;
-  const arr = groups.get(cat) ?? [];
-  arr.push(faq);
-  groups.set(cat, arr);
+    const cat = faq.category ?? generalLabel;
+    const arr = groups.get(cat) ?? [];
+    arr.push(faq);
+    groups.set(cat, arr);
 }
 
 // Move "General" to the end
 const sortedGroups = [...groups.entries()].sort((a, b) => {
-  if (a[0] === generalLabel) return 1;
-  if (b[0] === generalLabel) return -1;
-  return a[0].localeCompare(b[0]);
+    if (a[0] === generalLabel) return 1;
+    if (b[0] === generalLabel) return -1;
+    return a[0].localeCompare(b[0]);
 });
 ---
 

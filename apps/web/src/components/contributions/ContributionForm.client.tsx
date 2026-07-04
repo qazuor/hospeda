@@ -21,14 +21,14 @@
  * Hydration: client:visible (below-the-fold interactive form).
  */
 
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from '../ContactForm.module.css';
 
 // API base URL — must be absolute because the web app and the API live on
@@ -297,6 +297,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                         {t('contributions.form.firstName', 'Nombre')}
                         <span
                             className={styles.required}
+                            role="img"
                             aria-label={t('ui.required', 'requerido')}
                         >
                             *
@@ -333,6 +334,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                         {t('contributions.form.lastName', 'Apellido')}
                         <span
                             className={styles.required}
+                            role="img"
                             aria-label={t('ui.required', 'requerido')}
                         >
                             *
@@ -371,6 +373,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                     {t('contributions.form.email', 'Email')}
                     <span
                         className={styles.required}
+                        role="img"
                         aria-label={t('ui.required', 'requerido')}
                     >
                         *
@@ -408,6 +411,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                     {t('contributions.form.message', 'Mensaje')}
                     <span
                         className={styles.required}
+                        role="img"
                         aria-label={t('ui.required', 'requerido')}
                     >
                         *

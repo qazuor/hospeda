@@ -1,19 +1,19 @@
 ---
+import { getMediaUrl } from '@repo/media';
 /**
  * @file OwnerCard.astro
  * @description Owner card with avatar, name, member since, and contact island.
  */
 import type { AccommodationOwnerData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { getInitialsFromName } from '@/lib/avatar-utils';
-import { getMediaUrl } from '@repo/media';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly owner: AccommodationOwnerData;
-  readonly accommodationId: string;
-  readonly userId: string | null;
-  readonly lang: string;
+    readonly owner: AccommodationOwnerData;
+    readonly accommodationId: string;
+    readonly userId: string | null;
+    readonly lang: string;
 }
 
 const { owner, accommodationId: _accommodationId, userId: _userId, lang } = Astro.props;
@@ -21,12 +21,10 @@ const { t } = createTranslations(lang as SupportedLocale);
 
 const initials = getInitialsFromName(owner.name);
 const memberDate = new Date(owner.createdAt).toLocaleDateString(
-  lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
-  { year: 'numeric', month: 'long' }
+    lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
+    { year: 'numeric', month: 'long' }
 );
-const ownerAvatarUrl = owner.image
-  ? getMediaUrl(owner.image, { preset: 'avatar' })
-  : null;
+const ownerAvatarUrl = owner.image ? getMediaUrl(owner.image, { preset: 'avatar' }) : null;
 ---
 
 <div class="owner-card">

@@ -1,6 +1,7 @@
 // fuse.js uses default export - documented exception to named-exports-only policy
-import Fuse from 'fuse.js';
+
 import type { IFuseOptions } from 'fuse.js';
+import Fuse from 'fuse.js';
 
 import type { CliCommand } from './types.js';
 
@@ -41,7 +42,9 @@ export const FUSE_OPTIONS: IFuseOptions<CliCommand> = {
  */
 export function createSearchIndex({
     commands
-}: { commands: readonly CliCommand[] }): Fuse<CliCommand> {
+}: {
+    commands: readonly CliCommand[];
+}): Fuse<CliCommand> {
     return new Fuse(commands as CliCommand[], FUSE_OPTIONS);
 }
 

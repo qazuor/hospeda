@@ -1,3 +1,5 @@
+import { defaultIntlLocale } from '@repo/i18n';
+import { EyeIcon, MoreHorizontalIcon, PowerIcon, PowerOffIcon } from '@repo/icons';
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,8 +10,6 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { formatCentsToArs, formatDateWithTime } from '@/lib/format-helpers';
-import { defaultIntlLocale } from '@repo/i18n';
-import { EyeIcon, MoreHorizontalIcon, PowerIcon, PowerOffIcon } from '@repo/icons';
 import type { PurchasedAddon } from './types';
 
 /**
@@ -122,7 +122,7 @@ export function getPurchasedAddonColumns({
             enableSorting: true,
             cell: ({ row }) => (
                 <span className="font-medium">
-                    {row.priceArs != null ? formatCentsToArs({ cents: row.priceArs, locale }) : '—'}
+                    {row.priceArs == null ? '—' : formatCentsToArs({ cents: row.priceArs, locale })}
                 </span>
             )
         },

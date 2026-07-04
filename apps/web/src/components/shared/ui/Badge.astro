@@ -25,11 +25,7 @@
 import { resolveIcon } from '@repo/icons/resolver';
 import { webLogger } from '@/lib/logger';
 import type { BadgeColorScheme, BadgeSize, BadgeVariant } from './badge.types';
-import {
-    buildBadgeClassName,
-    buildBadgeInlineStyle,
-    getBadgeIconSize
-} from './badge.utils';
+import { buildBadgeClassName, buildBadgeInlineStyle, getBadgeIconSize } from './badge.utils';
 
 /**
  * Re-export `BadgeColorScheme` from `./badge.types` so existing consumers that
@@ -79,9 +75,7 @@ const inlineStyle = buildBadgeInlineStyle({ variant, colorScheme, size, hasHref 
 
 const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
 if (icon && !IconComponent && import.meta.env.DEV) {
-    webLogger.warn(
-        `Badge: icon "${icon}" could not be resolved via @repo/icons`
-    );
+    webLogger.warn(`Badge: icon "${icon}" could not be resolved via @repo/icons`);
 }
 const iconPixelSize = getBadgeIconSize({ size });
 ---

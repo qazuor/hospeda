@@ -1,9 +1,9 @@
 export {
+    type CreateModeActions,
+    type EditModeActions,
     EntityPageHeader,
+    type EntityPageHeaderMedia,
     type EntityPageHeaderProps,
     type EntityPageMode,
-    type EntityPageHeaderMedia,
-    type ViewModeActions,
-    type EditModeActions,
-    type CreateModeActions
+    type ViewModeActions
 } from './EntityPageHeader';

@@ -5,9 +5,9 @@
  * accommodation name so the operator never lands on an anonymous page.
  */
 
-import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 
 vi.mock('@/components/layout/Breadcrumbs', () => ({
     Breadcrumbs: ({ entityContext }: { entityContext?: { name?: string; type?: string } }) => (

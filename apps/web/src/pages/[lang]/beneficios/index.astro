@@ -6,34 +6,34 @@
  * @rendering SSG (prerender)
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import {
-	BuildingsIcon,
-	ChatIcon,
-	EyeIcon,
-	FavoriteIcon,
-	HomeIcon,
-	MapIcon,
-	PhoneIcon,
-	PriceIcon,
-	ReceiptIcon,
-	SettingsIcon,
-	SparkleIcon,
-	StarIcon,
-	StatisticsIcon,
+    BuildingsIcon,
+    ChatIcon,
+    EyeIcon,
+    FavoriteIcon,
+    HomeIcon,
+    MapIcon,
+    PhoneIcon,
+    PriceIcon,
+    ReceiptIcon,
+    SettingsIcon,
+    SparkleIcon,
+    StarIcon,
+    StatisticsIcon
 } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = true;
 
 export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }) satisfies GetStaticPaths;
 
 const { lang } = Astro.params;
@@ -41,26 +41,86 @@ const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const touristBenefits = [
-	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },
-	{ Icon: PriceIcon, titleKey: 'benefits.tourist.2.title', titleFb: 'Precios transparentes', descKey: 'benefits.tourist.2.desc', descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.' },
-	{ Icon: StarIcon, titleKey: 'benefits.tourist.3.title', titleFb: 'Reseñas verificadas', descKey: 'benefits.tourist.3.desc', descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.' },
-	{ Icon: MapIcon, titleKey: 'benefits.tourist.4.title', titleFb: 'Información local', descKey: 'benefits.tourist.4.desc', descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.' },
-	{ Icon: ChatIcon, titleKey: 'benefits.tourist.5.title', titleFb: 'Contacto directo', descKey: 'benefits.tourist.5.desc', descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.' },
+    {
+        Icon: BuildingsIcon,
+        titleKey: 'benefits.tourist.1.title',
+        titleFb: 'Variedad de opciones',
+        descKey: 'benefits.tourist.1.desc',
+        descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.'
+    },
+    {
+        Icon: PriceIcon,
+        titleKey: 'benefits.tourist.2.title',
+        titleFb: 'Precios transparentes',
+        descKey: 'benefits.tourist.2.desc',
+        descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.'
+    },
+    {
+        Icon: StarIcon,
+        titleKey: 'benefits.tourist.3.title',
+        titleFb: 'Reseñas verificadas',
+        descKey: 'benefits.tourist.3.desc',
+        descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.'
+    },
+    {
+        Icon: MapIcon,
+        titleKey: 'benefits.tourist.4.title',
+        titleFb: 'Información local',
+        descKey: 'benefits.tourist.4.desc',
+        descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.'
+    },
+    {
+        Icon: ChatIcon,
+        titleKey: 'benefits.tourist.5.title',
+        titleFb: 'Contacto directo',
+        descKey: 'benefits.tourist.5.desc',
+        descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.'
+    }
 ] as const;
 
 const ownerBenefits = [
-	{ Icon: EyeIcon, titleKey: 'benefits.owner.1.title', titleFb: 'Visibilidad regional', descKey: 'benefits.owner.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.' },
-	{ Icon: SettingsIcon, titleKey: 'benefits.owner.2.title', titleFb: 'Gestión simple', descKey: 'benefits.owner.2.desc', descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.' },
-	{ Icon: ReceiptIcon, titleKey: 'benefits.owner.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'benefits.owner.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.' },
-	{ Icon: StatisticsIcon, titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
-	{ Icon: PhoneIcon, titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
+    {
+        Icon: EyeIcon,
+        titleKey: 'benefits.owner.1.title',
+        titleFb: 'Visibilidad regional',
+        descKey: 'benefits.owner.1.desc',
+        descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.'
+    },
+    {
+        Icon: SettingsIcon,
+        titleKey: 'benefits.owner.2.title',
+        titleFb: 'Gestión simple',
+        descKey: 'benefits.owner.2.desc',
+        descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.'
+    },
+    {
+        Icon: ReceiptIcon,
+        titleKey: 'benefits.owner.3.title',
+        titleFb: 'Sin comisiones ocultas',
+        descKey: 'benefits.owner.3.desc',
+        descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.'
+    },
+    {
+        Icon: StatisticsIcon,
+        titleKey: 'benefits.owner.4.title',
+        titleFb: 'Estadísticas detalladas',
+        descKey: 'benefits.owner.4.desc',
+        descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.'
+    },
+    {
+        Icon: PhoneIcon,
+        titleKey: 'benefits.owner.5.title',
+        titleFb: 'Soporte dedicado',
+        descKey: 'benefits.owner.5.desc',
+        descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.'
+    }
 ] as const;
 
 // Split titles to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {
-	const words = full.trim().split(/\s+/);
-	const accent = words.pop() ?? full;
-	return { main: words.join(' '), accent };
+    const words = full.trim().split(/\s+/);
+    const accent = words.pop() ?? full;
+    return { main: words.join(' '), accent };
 };
 
 const touristHeading = splitLastWord(t('benefits.tourist.title', 'Beneficios para turistas'));
@@ -68,14 +128,14 @@ const ownerHeading = splitLastWord(t('benefits.owner.title', 'Beneficios para pr
 
 const benefitsTitle = t('benefits.title', 'Beneficios');
 const benefitsDescription = t(
-	'benefits.description',
-	'Descubrí los beneficios de usar Hospeda como viajero o propietario.'
+    'benefits.description',
+    'Descubrí los beneficios de usar Hospeda como viajero o propietario.'
 );
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://hospeda.com.ar').href;
 const inLanguageMap: Record<SupportedLocale, string> = {
-	es: 'es-AR',
-	en: 'en-US',
-	pt: 'pt-BR'
+    es: 'es-AR',
+    en: 'en-US',
+    pt: 'pt-BR'
 };
 ---
 

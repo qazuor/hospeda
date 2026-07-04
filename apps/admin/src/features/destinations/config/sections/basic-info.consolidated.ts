@@ -1,9 +1,9 @@
+import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
-import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**

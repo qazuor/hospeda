@@ -9,94 +9,94 @@
  * can emit BlogPosting, NewsArticle, etc. instead of the generic Article type.
  */
 
-import JsonLd from './JsonLd.astro';
 import { getSiteUrl } from '@/lib/env';
+import JsonLd from './JsonLd.astro';
 
 /** Article author interface */
 export interface ArticleAuthor {
-	/** Author name */
-	readonly name: string;
-	/** Author profile URL */
-	readonly url?: string;
+    /** Author name */
+    readonly name: string;
+    /** Author profile URL */
+    readonly url?: string;
 }
 
 /** Props interface for ArticleJsonLd component. */
 interface Props {
-	/** Article headline/title */
-	readonly headline: string;
-	/** Article description */
-	readonly description: string;
-	/** URL of the article page */
-	readonly url: string;
-	/** Image URL for the article */
-	readonly image?: string;
-	/** Publication date in ISO 8601 format */
-	readonly datePublished: string;
-	/** Last modification date in ISO 8601 format */
-	readonly dateModified?: string;
-	/** Article author information */
-	readonly author: ArticleAuthor;
-	/**
-	 * Schema.org Article subtype.
-	 * Defaults to 'Article'. Use 'BlogPosting', 'NewsArticle', etc.
-	 * when the entity matches a more specific type.
-	 */
-	readonly articleType?: string;
-	/**
-	 * CSS selectors of the page elements that are most relevant for
-	 * text-to-speech / voice assistants (AEO). When present and non-empty,
-	 * a schema.org SpeakableSpecification block is emitted. Typically the
-	 * article headline and lead/summary selectors.
-	 */
-	readonly speakableCssSelectors?: ReadonlyArray<string>;
+    /** Article headline/title */
+    readonly headline: string;
+    /** Article description */
+    readonly description: string;
+    /** URL of the article page */
+    readonly url: string;
+    /** Image URL for the article */
+    readonly image?: string;
+    /** Publication date in ISO 8601 format */
+    readonly datePublished: string;
+    /** Last modification date in ISO 8601 format */
+    readonly dateModified?: string;
+    /** Article author information */
+    readonly author: ArticleAuthor;
+    /**
+     * Schema.org Article subtype.
+     * Defaults to 'Article'. Use 'BlogPosting', 'NewsArticle', etc.
+     * when the entity matches a more specific type.
+     */
+    readonly articleType?: string;
+    /**
+     * CSS selectors of the page elements that are most relevant for
+     * text-to-speech / voice assistants (AEO). When present and non-empty,
+     * a schema.org SpeakableSpecification block is emitted. Typically the
+     * article headline and lead/summary selectors.
+     */
+    readonly speakableCssSelectors?: ReadonlyArray<string>;
 }
 
 const {
-	headline,
-	description,
-	url,
-	image,
-	datePublished,
-	dateModified,
-	author,
-	articleType = 'Article',
-	speakableCssSelectors,
+    headline,
+    description,
+    url,
+    image,
+    datePublished,
+    dateModified,
+    author,
+    articleType = 'Article',
+    speakableCssSelectors
 } = Astro.props;
 
 const siteUrl = getSiteUrl().replace(/\/$/, '');
 
 const structuredData: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': articleType,
-	headline,
-	description,
-	url,
-	datePublished,
-	author: {
-		'@type': 'Person',
-		name: author.name,
-		...(author.url && { url: author.url }),
-	},
-	publisher: {
-		'@type': 'Organization',
-		name: 'Hospeda',
-		url: siteUrl,
-	},
+    '@context': 'https://schema.org',
+    '@type': articleType,
+    headline,
+    description,
+    url,
+    datePublished,
+    author: {
+        '@type': 'Person',
+        name: author.name,
+        ...(author.url && { url: author.url })
+    },
+    publisher: {
+        '@type': 'Organization',
+        name: 'Hospeda',
+        url: siteUrl
+    }
 };
 
 if (image) {
-	structuredData.image = image;
+    structuredData.image = image;
 }
 
 if (dateModified) {
-	structuredData.dateModified = dateModified;
+    structuredData.dateModified = dateModified;
 }
 
 if (speakableCssSelectors && speakableCssSelectors.length > 0) {
-	structuredData.speakable = {
-		'@type': 'SpeakableSpecification',
-		cssSelector: [...speakableCssSelectors],
-	};
+    structuredData.speakable = {
+        '@type': 'SpeakableSpecification',
+        cssSelector: [...speakableCssSelectors]
+    };
 }
 ---
 

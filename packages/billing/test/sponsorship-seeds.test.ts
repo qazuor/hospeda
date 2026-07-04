@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -30,53 +30,48 @@ describe('Sponsorship Level Seeds', () => {
         expect(levels).toHaveLength(5);
     });
 
-    it.each(levels.map((l) => [l.filename, l.data]))(
-        '%s should parse as valid JSON',
-        (_filename, data) => {
-            expect(data).toBeDefined();
-            expect(typeof data).toBe('object');
-        }
-    );
+    it.each(
+        levels.map((l) => [l.filename, l.data])
+    )('%s should parse as valid JSON', (_filename, data) => {
+        expect(data).toBeDefined();
+        expect(typeof data).toBe('object');
+    });
 
-    it.each(levels.map((l) => [l.filename, l.data]))(
-        '%s should have required fields',
-        (_filename, data) => {
-            expect(data).toHaveProperty('id');
-            expect(data).toHaveProperty('slug');
-            expect(data).toHaveProperty('name');
-            expect(data).toHaveProperty('targetType');
-            expect(data).toHaveProperty('tier');
-            expect(data).toHaveProperty('priceAmount');
-            expect(data).toHaveProperty('priceCurrency');
-            expect(data).toHaveProperty('benefits');
-            expect(data).toHaveProperty('sortOrder');
-            expect(data).toHaveProperty('isActive');
-        }
-    );
+    it.each(
+        levels.map((l) => [l.filename, l.data])
+    )('%s should have required fields', (_filename, data) => {
+        expect(data).toHaveProperty('id');
+        expect(data).toHaveProperty('slug');
+        expect(data).toHaveProperty('name');
+        expect(data).toHaveProperty('targetType');
+        expect(data).toHaveProperty('tier');
+        expect(data).toHaveProperty('priceAmount');
+        expect(data).toHaveProperty('priceCurrency');
+        expect(data).toHaveProperty('benefits');
+        expect(data).toHaveProperty('sortOrder');
+        expect(data).toHaveProperty('isActive');
+    });
 
-    it.each(levels.map((l) => [l.filename, l.data]))(
-        '%s should have priceAmount as a positive integer in centavos',
-        (_filename, data) => {
-            const price = data.priceAmount as number;
-            expect(price).toBeGreaterThan(0);
-            expect(Number.isInteger(price)).toBe(true);
-        }
-    );
+    it.each(
+        levels.map((l) => [l.filename, l.data])
+    )('%s should have priceAmount as a positive integer in centavos', (_filename, data) => {
+        const price = data.priceAmount as number;
+        expect(price).toBeGreaterThan(0);
+        expect(Number.isInteger(price)).toBe(true);
+    });
 
-    it.each(levels.map((l) => [l.filename, l.data]))(
-        '%s should have isActive as a boolean',
-        (_filename, data) => {
-            expect(typeof data.isActive).toBe('boolean');
-        }
-    );
+    it.each(
+        levels.map((l) => [l.filename, l.data])
+    )('%s should have isActive as a boolean', (_filename, data) => {
+        expect(typeof data.isActive).toBe('boolean');
+    });
 
-    it.each(levels.map((l) => [l.filename, l.data]))(
-        '%s should have benefits as a non-empty array',
-        (_filename, data) => {
-            expect(Array.isArray(data.benefits)).toBe(true);
-            expect((data.benefits as string[]).length).toBeGreaterThan(0);
-        }
-    );
+    it.each(
+        levels.map((l) => [l.filename, l.data])
+    )('%s should have benefits as a non-empty array', (_filename, data) => {
+        expect(Array.isArray(data.benefits)).toBe(true);
+        expect((data.benefits as string[]).length).toBeGreaterThan(0);
+    });
 
     it('should have unique sortOrder values', () => {
         const sortOrders = levels.map((l) => l.data.sortOrder);
@@ -116,52 +111,47 @@ describe('Sponsorship Package Seeds', () => {
         expect(packages).toHaveLength(3);
     });
 
-    it.each(packages.map((p) => [p.filename, p.data]))(
-        '%s should parse as valid JSON',
-        (_filename, data) => {
-            expect(data).toBeDefined();
-            expect(typeof data).toBe('object');
-        }
-    );
+    it.each(
+        packages.map((p) => [p.filename, p.data])
+    )('%s should parse as valid JSON', (_filename, data) => {
+        expect(data).toBeDefined();
+        expect(typeof data).toBe('object');
+    });
 
-    it.each(packages.map((p) => [p.filename, p.data]))(
-        '%s should have required fields',
-        (_filename, data) => {
-            expect(data).toHaveProperty('id');
-            expect(data).toHaveProperty('slug');
-            expect(data).toHaveProperty('name');
-            expect(data).toHaveProperty('priceAmount');
-            expect(data).toHaveProperty('priceCurrency');
-            expect(data).toHaveProperty('includedPosts');
-            expect(data).toHaveProperty('includedEvents');
-            expect(data).toHaveProperty('sortOrder');
-            expect(data).toHaveProperty('isActive');
-        }
-    );
+    it.each(
+        packages.map((p) => [p.filename, p.data])
+    )('%s should have required fields', (_filename, data) => {
+        expect(data).toHaveProperty('id');
+        expect(data).toHaveProperty('slug');
+        expect(data).toHaveProperty('name');
+        expect(data).toHaveProperty('priceAmount');
+        expect(data).toHaveProperty('priceCurrency');
+        expect(data).toHaveProperty('includedPosts');
+        expect(data).toHaveProperty('includedEvents');
+        expect(data).toHaveProperty('sortOrder');
+        expect(data).toHaveProperty('isActive');
+    });
 
-    it.each(packages.map((p) => [p.filename, p.data]))(
-        '%s should have priceAmount as a positive integer in centavos',
-        (_filename, data) => {
-            const price = data.priceAmount as number;
-            expect(price).toBeGreaterThan(0);
-            expect(Number.isInteger(price)).toBe(true);
-        }
-    );
+    it.each(
+        packages.map((p) => [p.filename, p.data])
+    )('%s should have priceAmount as a positive integer in centavos', (_filename, data) => {
+        const price = data.priceAmount as number;
+        expect(price).toBeGreaterThan(0);
+        expect(Number.isInteger(price)).toBe(true);
+    });
 
-    it.each(packages.map((p) => [p.filename, p.data]))(
-        '%s should have isActive as a boolean',
-        (_filename, data) => {
-            expect(typeof data.isActive).toBe('boolean');
-        }
-    );
+    it.each(
+        packages.map((p) => [p.filename, p.data])
+    )('%s should have isActive as a boolean', (_filename, data) => {
+        expect(typeof data.isActive).toBe('boolean');
+    });
 
-    it.each(packages.map((p) => [p.filename, p.data]))(
-        '%s should have non-negative includedPosts and includedEvents',
-        (_filename, data) => {
-            expect(data.includedPosts as number).toBeGreaterThanOrEqual(0);
-            expect(data.includedEvents as number).toBeGreaterThanOrEqual(0);
-        }
-    );
+    it.each(
+        packages.map((p) => [p.filename, p.data])
+    )('%s should have non-negative includedPosts and includedEvents', (_filename, data) => {
+        expect(data.includedPosts as number).toBeGreaterThanOrEqual(0);
+        expect(data.includedEvents as number).toBeGreaterThanOrEqual(0);
+    });
 
     it('should have unique sortOrder values', () => {
         const sortOrders = packages.map((p) => p.data.sortOrder);

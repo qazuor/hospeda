@@ -1,7 +1,7 @@
-import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 import { useForm, useStore } from '@tanstack/react-form';
 import * as React from 'react';
+import { adminLogger } from '@/utils/logger';
 import { validateFieldWithZod, validateFormWithZod } from '../../../lib/validation/validate-form';
 import {
     EntityFormContext,
@@ -104,63 +104,27 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     // local state too. Normal typing in create does NOT pass through here (the
     // input's onChange calls the section's `onFieldChange` directly), so there
     // is no double-fire.
-    const setFieldValue = React.useCallback(
-        (fieldId: string, value: unknown) => {
-            form.setFieldValue(fieldId, value);
-
-            // Mark field as dirty
-            setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
-
-            // Notify external callback (e.g. create page's local-state sync)
-            onFieldChange?.(fieldId, value);
-
-            // Handle autosave
-            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
-                if (autosaveTimerRef.current) {
-                    clearTimeout(autosaveTimerRef.current);
-                }
-                autosaveTimerRef.current = setTimeout(() => {
-                    handleSave();
-                }, autosave.interval);
+    // NOTE: validateField, validateForm, and handleSave are declared here —
+    // ahead of setFieldValue/handleFieldBlur — specifically so those two
+    // callbacks can list them as dependencies (useExhaustiveDependencies)
+    // without hitting a temporal-dead-zone ReferenceError. Keep this order.
+    const validateField = React.useCallback(
+        async (fieldId: string): Promise<string | undefined> => {
+            try {
+                const values = form.state.values as Record<string, unknown>;
+                const error = zodSchema
+                    ? validateFieldWithZod({ schema: zodSchema, data: values, fieldId, t: tAny })
+                    : undefined;
+                setErrors((prev) => ({ ...prev, [fieldId]: error }));
+                return error;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Validation error';
+                setErrors((prev) => ({ ...prev, [fieldId]: errorMessage }));
+                return errorMessage;
             }
         },
-        [form, onFieldChange, autosave]
+        [form.state.values, zodSchema, tAny]
     );
-
-    const handleFieldBlur = React.useCallback(
-        (fieldId: string) => {
-            // Validate field on blur
-            validateField(fieldId);
-
-            // Call external callback
-            onFieldBlur?.(fieldId);
-
-            // Handle autosave
-            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
-                handleSave();
-            }
-        },
-        [onFieldBlur, autosave]
-    );
-
-    const handleFieldFocus = React.useCallback(
-        (fieldId: string) => {
-            // Clear field error on focus
-            setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
-
-            // Call external callback
-            onFieldFocus?.(fieldId);
-        },
-        [onFieldFocus]
-    );
-
-    const setMode = React.useCallback((newMode: FormModeEnum) => {
-        setFormMode(newMode);
-    }, []);
-
-    const setActiveSection = React.useCallback((sectionId: string) => {
-        setActiveSectionId(sectionId);
-    }, []);
 
     const validateForm = React.useCallback(async (): Promise<
         Record<string, string | undefined>
@@ -220,6 +184,64 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         }
     }, [form, onSave, validateForm, t]);
 
+    const setFieldValue = React.useCallback(
+        (fieldId: string, value: unknown) => {
+            form.setFieldValue(fieldId, value);
+
+            // Mark field as dirty
+            setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
+
+            // Notify external callback (e.g. create page's local-state sync)
+            onFieldChange?.(fieldId, value);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                if (autosaveTimerRef.current) {
+                    clearTimeout(autosaveTimerRef.current);
+                }
+                autosaveTimerRef.current = setTimeout(() => {
+                    handleSave();
+                }, autosave.interval);
+            }
+        },
+        [form, onFieldChange, autosave, handleSave]
+    );
+
+    const handleFieldBlur = React.useCallback(
+        (fieldId: string) => {
+            // Validate field on blur
+            validateField(fieldId);
+
+            // Call external callback
+            onFieldBlur?.(fieldId);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                handleSave();
+            }
+        },
+        [onFieldBlur, autosave, handleSave, validateField]
+    );
+
+    const handleFieldFocus = React.useCallback(
+        (fieldId: string) => {
+            // Clear field error on focus
+            setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
+
+            // Call external callback
+            onFieldFocus?.(fieldId);
+        },
+        [onFieldFocus]
+    );
+
+    const setMode = React.useCallback((newMode: FormModeEnum) => {
+        setFormMode(newMode);
+    }, []);
+
+    const setActiveSection = React.useCallback((sectionId: string) => {
+        setActiveSectionId(sectionId);
+    }, []);
+
     const handleSaveAndPublish = React.useCallback(async () => {
         setIsSaving(true);
         try {
@@ -258,24 +280,6 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         setDirtyFields({});
         setErrors({});
     }, [form]);
-
-    const validateField = React.useCallback(
-        async (fieldId: string): Promise<string | undefined> => {
-            try {
-                const values = form.state.values as Record<string, unknown>;
-                const error = zodSchema
-                    ? validateFieldWithZod({ schema: zodSchema, data: values, fieldId, t: tAny })
-                    : undefined;
-                setErrors((prev) => ({ ...prev, [fieldId]: error }));
-                return error;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Validation error';
-                setErrors((prev) => ({ ...prev, [fieldId]: errorMessage }));
-                return errorMessage;
-            }
-        },
-        [form.state.values, zodSchema, tAny]
-    );
 
     const isFieldDirty = React.useCallback(
         (fieldId: string): boolean => {

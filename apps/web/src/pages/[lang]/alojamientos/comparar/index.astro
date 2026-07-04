@@ -11,10 +11,10 @@
  *   the selection lives in localStorage; the page is noindex (transient view).
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { ComparisonMatrix } from '@/components/shared/compare/ComparisonMatrix.client';
-import { createTranslations } from '@/lib/i18n';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
@@ -23,8 +23,8 @@ const { t } = createTranslations(locale);
 
 const title = t('accommodations.comparison.page.metaTitle', 'Comparar alojamientos');
 const description = t(
-	'accommodations.comparison.page.metaDescription',
-	'Compará alojamientos lado a lado: precio, ubicación, calificación y más.'
+    'accommodations.comparison.page.metaDescription',
+    'Compará alojamientos lado a lado: precio, ubicación, calificación y más.'
 );
 const heading = t('accommodations.comparison.page.heading', 'Comparación de alojamientos');
 const backLabel = t('accommodations.comparison.page.backToListing', 'Volver a alojamientos');

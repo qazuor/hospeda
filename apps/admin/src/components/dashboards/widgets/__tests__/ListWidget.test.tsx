@@ -25,11 +25,11 @@
  * References: SPEC-155 T-024
  */
 
-import type { Widget } from '@/config/ia/schema';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Widget } from '@/config/ia/schema';
 import { ListWidget } from '../ListWidget';
 
 // ---------------------------------------------------------------------------

@@ -23,8 +23,8 @@
  * @module cron/jobs/poll-apify-reputation-runs
  */
 
-import { AccommodationExternalReputationModel } from '@repo/db';
 import type { InsertAccommodationExternalReputation, PendingRunRow } from '@repo/db';
+import { AccommodationExternalReputationModel } from '@repo/db';
 import type { ExternalPlatformEnum } from '@repo/schemas';
 import {
     emptyReputationResult,

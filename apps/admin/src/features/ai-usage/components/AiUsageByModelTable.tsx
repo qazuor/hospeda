@@ -17,12 +17,12 @@
  * @module features/ai-usage/components/AiUsageByModelTable
  */
 
+import { formatMicroUsd } from '@repo/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatMicroUsd } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -184,7 +184,7 @@ export function AiUsageByModelTable({ search }: AiUsageByModelTableProps) {
                                                 {formatMicroUsd(row.costMicroUsd)}
                                             </td>
                                             <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                                                {perK !== null ? formatMicroUsd(perK) : '—'}
+                                                {perK === null ? '—' : formatMicroUsd(perK)}
                                             </td>
                                         </tr>
                                     );

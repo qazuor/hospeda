@@ -21,8 +21,8 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import {
     type CreateSocialCredentialInput,
-    type SocialCredentialKey,
-    createSocialCredential
+    createSocialCredential,
+    type SocialCredentialKey
 } from './social-credential-vault.service.js';
 
 // ---------------------------------------------------------------------------

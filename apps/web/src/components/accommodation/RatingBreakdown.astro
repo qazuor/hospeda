@@ -1,18 +1,18 @@
 ---
+import RatingStars from '@/components/shared/ui/RatingStars.astro';
+import type { SupportedLocale } from '@/lib/i18n';
 /**
  * @file RatingBreakdown.astro
  * @description Rating summary with average score, stars, and 6 category progress bars.
  * Hidden if reviewsCount === 0.
  */
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import RatingStars from '@/components/shared/ui/RatingStars.astro';
 
 interface Props {
-  readonly averageRating: number;
-  readonly reviewsCount: number;
-  readonly ratingBreakdown?: Record<string, number>;
-  readonly lang: string;
+    readonly averageRating: number;
+    readonly reviewsCount: number;
+    readonly ratingBreakdown?: Record<string, number>;
+    readonly lang: string;
 }
 
 const { averageRating, reviewsCount, ratingBreakdown, lang } = Astro.props;
@@ -20,7 +20,14 @@ const { t } = createTranslations(lang as SupportedLocale);
 
 if (reviewsCount === 0) return;
 
-const categories = ['cleanliness', 'hospitality', 'services', 'accuracy', 'communication', 'location'] as const;
+const categories = [
+    'cleanliness',
+    'hospitality',
+    'services',
+    'accuracy',
+    'communication',
+    'location'
+] as const;
 ---
 
 <div class="rating-breakdown">

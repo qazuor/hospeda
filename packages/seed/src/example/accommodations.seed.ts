@@ -3,8 +3,8 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
 import {
-    type FixtureMediaBlock,
-    buildAccommodationMediaRows
+    buildAccommodationMediaRows,
+    type FixtureMediaBlock
 } from '../utils/accommodation-media-builder.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';

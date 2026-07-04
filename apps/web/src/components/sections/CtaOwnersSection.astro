@@ -8,13 +8,13 @@
  */
 
 import { Image } from 'astro:assets';
+import { SearchIcon, ShieldIcon, SparkleIcon } from '@repo/icons';
 import feature31 from '@/assets/images/resources/feature-3-1.png';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { ctaFeatures } from "@/data/homepage-features";
-import type { SupportedLocale } from "@/lib/i18n";
-import { createTranslations } from "@/lib/i18n";
-import { buildUrl } from "@/lib/urls";
-import { SearchIcon, ShieldIcon, SparkleIcon } from "@repo/icons";
+import { ctaFeatures } from '@/data/homepage-features';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -27,7 +27,7 @@ const { t } = createTranslations(locale);
 const iconMap: Record<string, typeof SparkleIcon> = {
     SparkleIcon,
     SearchIcon,
-    ShieldIcon,
+    ShieldIcon
 };
 ---
 

@@ -16,13 +16,13 @@
 import { cn } from '@/lib/utils';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import iconUrl from 'leaflet/dist/images/marker-icon.png?url';
 // `?url` forces Vite to return the asset URL string regardless of the
 // default behaviour for the importer's file type. Without it the import
 // could resolve to an ImageMetadata-like object (Astro) or a string (Vite)
 // depending on the bundler, and the marker icon ends up broken because
 // Leaflet receives an object where it expects a string URL.
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png?url';
-import iconUrl from 'leaflet/dist/images/marker-icon.png?url';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png?url';
 import * as React from 'react';
 

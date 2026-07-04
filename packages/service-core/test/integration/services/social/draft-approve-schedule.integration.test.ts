@@ -24,8 +24,9 @@
  * @see SPEC-254 T-038
  */
 
-import { setDb, sql, users } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { setDb, sql, users } from '@repo/db';
+import type { CreateSocialDraft } from '@repo/schemas';
 import {
     PermissionEnum,
     RoleEnum,
@@ -34,10 +35,11 @@ import {
     SocialPostStatusEnum,
     SocialPublishFormatEnum
 } from '@repo/schemas';
-import type { CreateSocialDraft } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SocialAuditEvent } from '../../../../src/services/social/social-audit-log.service';
-import { SocialAuditLogService } from '../../../../src/services/social/social-audit-log.service';
+import {
+    SocialAuditEvent,
+    SocialAuditLogService
+} from '../../../../src/services/social/social-audit-log.service';
 import { SocialDraftIngestionService } from '../../../../src/services/social/social-draft-ingestion.service';
 import { SocialPostService } from '../../../../src/services/social/social-post.service';
 import type { Actor } from '../../../../src/types';

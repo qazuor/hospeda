@@ -8,9 +8,9 @@
  * - Responsive design
  */
 
+import type { ReactNode } from 'react';
 import { RouteErrorBoundary } from '@/components/error-boundaries';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import type { ReactNode } from 'react';
 
 /**
  * Base Layout Props
@@ -71,7 +71,7 @@ export const BaseLayout = ({
                             <ol className="flex items-center space-x-2 text-muted-foreground text-sm">
                                 {breadcrumbs.map((crumb, index) => (
                                     <li
-                                        key={`${crumb.label}-${index}`}
+                                        key={crumb.href ?? crumb.label}
                                         className="flex items-center"
                                     >
                                         {index > 0 && <span className="mx-2 text-border">/</span>}

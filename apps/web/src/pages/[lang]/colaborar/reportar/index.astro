@@ -10,13 +10,13 @@
  * @rendering SSG (prerender)
  */
 
+import type { GetStaticPaths } from 'astro';
 import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
 import { ContributionForm } from '@/components/contributions/ContributionForm.client';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
 

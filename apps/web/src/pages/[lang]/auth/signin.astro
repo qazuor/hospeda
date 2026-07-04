@@ -16,14 +16,14 @@
  * @rendering SSR (reads `returnUrl`/`redirect` from query params; reads auth state from locals)
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { HomeIcon, LocationIcon } from '@repo/icons';
+import { SignIn } from '@/components/auth/SignIn.client';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import { validateCallbackUrl } from '@/lib/auth-callback';
 import { getAdminUrl, getSiteUrl, isProduction } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import AuthLayout from '@/layouts/AuthLayout.astro';
-import { SignIn } from '@/components/auth/SignIn.client';
-import { HomeIcon, LocationIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -47,13 +47,9 @@ const locale = Astro.locals.locale as SupportedLocale;
 // `//evil.com`, no scheme prefix). Fall back to the account dashboard
 // when the input looks suspicious.
 const rawReturn =
-    Astro.url.searchParams.get('returnUrl') ??
-    Astro.url.searchParams.get('redirect') ??
-    '';
+    Astro.url.searchParams.get('returnUrl') ?? Astro.url.searchParams.get('redirect') ?? '';
 const isSafeRelativePath =
-    rawReturn.startsWith('/') &&
-    !rawReturn.startsWith('//') &&
-    !rawReturn.startsWith('/\\');
+    rawReturn.startsWith('/') && !rawReturn.startsWith('//') && !rawReturn.startsWith('/\\');
 const returnPath = isSafeRelativePath ? rawReturn : buildUrl({ locale, path: 'mi-cuenta' });
 
 // SPEC-182: cross-app `callbackUrl` support. The admin panel redirects
@@ -87,10 +83,7 @@ if (Astro.locals.user) {
 const t = createT(locale);
 
 const title = t('auth-ui.pages.signin.title', 'Iniciar sesión');
-const description = t(
-    'auth-ui.pages.signin.description',
-    'Iniciá sesión en tu cuenta de Hospeda'
-);
+const description = t('auth-ui.pages.signin.description', 'Iniciá sesión en tu cuenta de Hospeda');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -118,13 +111,10 @@ const oauthErrorCode = rawErrorCode
     : undefined;
 
 const rawErrorDescription = Astro.url.searchParams.get('error_description');
-const oauthErrorDescription = rawErrorDescription
-    ? rawErrorDescription.slice(0, 200)
-    : undefined;
+const oauthErrorDescription = rawErrorDescription ? rawErrorDescription.slice(0, 200) : undefined;
 
 const rawProvider = Astro.url.searchParams.get('provider');
-const oauthProvider =
-    rawProvider && /^[a-z]{1,32}$/.test(rawProvider) ? rawProvider : undefined;
+const oauthProvider = rawProvider && /^[a-z]{1,32}$/.test(rawProvider) ? rawProvider : undefined;
 
 const initialOAuthError = oauthErrorCode
     ? {

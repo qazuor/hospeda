@@ -1,4 +1,5 @@
 ---
+import type { SupportedLocale } from '@/lib/i18n';
 /**
  * @file DestinationRatingBreakdown.astro
  * @description Per-dimension rating breakdown for destinations.
@@ -8,57 +9,56 @@
  * object is null/undefined. Uses a 2-column layout on desktop.
  */
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 
 /** All recognised destination rating dimension keys. */
 const DIMENSION_KEYS = [
-	'landscape',
-	'attractions',
-	'accessibility',
-	'safety',
-	'cleanliness',
-	'hospitality',
-	'culturalOffer',
-	'gastronomy',
-	'affordability',
-	'nightlife',
-	'infrastructure',
-	'environmentalCare',
-	'wifiAvailability',
-	'shopping',
-	'beaches',
-	'greenSpaces',
-	'localEvents',
-	'weatherSatisfaction',
+    'landscape',
+    'attractions',
+    'accessibility',
+    'safety',
+    'cleanliness',
+    'hospitality',
+    'culturalOffer',
+    'gastronomy',
+    'affordability',
+    'nightlife',
+    'infrastructure',
+    'environmentalCare',
+    'wifiAvailability',
+    'shopping',
+    'beaches',
+    'greenSpaces',
+    'localEvents',
+    'weatherSatisfaction'
 ] as const;
 
 type DimensionKey = (typeof DIMENSION_KEYS)[number];
 
 /** Map of dimension key → Spanish fallback label. */
 const DIMENSION_LABELS: Record<DimensionKey, string> = {
-	landscape: 'Paisaje',
-	attractions: 'Atracciones',
-	accessibility: 'Accesibilidad',
-	safety: 'Seguridad',
-	cleanliness: 'Limpieza',
-	hospitality: 'Hospitalidad',
-	culturalOffer: 'Oferta cultural',
-	gastronomy: 'Gastronomía',
-	affordability: 'Relación precio-calidad',
-	nightlife: 'Vida nocturna',
-	infrastructure: 'Infraestructura',
-	environmentalCare: 'Cuidado del entorno',
-	wifiAvailability: 'Conectividad wifi',
-	shopping: 'Compras',
-	beaches: 'Playas',
-	greenSpaces: 'Espacios verdes',
-	localEvents: 'Eventos locales',
-	weatherSatisfaction: 'Satisfacción climática',
+    landscape: 'Paisaje',
+    attractions: 'Atracciones',
+    accessibility: 'Accesibilidad',
+    safety: 'Seguridad',
+    cleanliness: 'Limpieza',
+    hospitality: 'Hospitalidad',
+    culturalOffer: 'Oferta cultural',
+    gastronomy: 'Gastronomía',
+    affordability: 'Relación precio-calidad',
+    nightlife: 'Vida nocturna',
+    infrastructure: 'Infraestructura',
+    environmentalCare: 'Cuidado del entorno',
+    wifiAvailability: 'Conectividad wifi',
+    shopping: 'Compras',
+    beaches: 'Playas',
+    greenSpaces: 'Espacios verdes',
+    localEvents: 'Eventos locales',
+    weatherSatisfaction: 'Satisfacción climática'
 };
 
 interface Props {
-	readonly rating: Record<string, number | undefined> | null | undefined;
-	readonly locale: SupportedLocale;
+    readonly rating: Record<string, number | undefined> | null | undefined;
+    readonly locale: SupportedLocale;
 }
 
 const { rating, locale } = Astro.props;
@@ -67,8 +67,8 @@ const { t } = createTranslations(locale);
 if (!rating) return;
 
 const activeDimensions = DIMENSION_KEYS.filter((key) => {
-	const val = rating[key];
-	return typeof val === 'number' && val > 0;
+    const val = rating[key];
+    return typeof val === 'number' && val > 0;
 });
 
 if (activeDimensions.length === 0) return;

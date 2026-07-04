@@ -1,12 +1,12 @@
 export {
-    useModerationTermsList,
-    useModerationTermDetail,
     useCreateModerationTerm,
-    useUpdateModerationTerm,
-    useDeleteModerationTerm
+    useDeleteModerationTerm,
+    useModerationTermDetail,
+    useModerationTermsList,
+    useUpdateModerationTerm
 } from './useModerationTermQuery';
 export {
-    useModerationThresholdsList,
     useModerationThresholdDetail,
+    useModerationThresholdsList,
     useUpdateModerationThreshold
 } from './useModerationThresholdQuery';

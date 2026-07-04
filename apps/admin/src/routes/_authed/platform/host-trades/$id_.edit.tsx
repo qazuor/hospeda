@@ -1,10 +1,10 @@
+import { PermissionEnum, UpdateHostTradeSchema } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useHostTradePage } from '@/features/host-trades/hooks/useHostTradePage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, UpdateHostTradeSchema } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Host-Trade Edit Route Configuration

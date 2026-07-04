@@ -1,3 +1,7 @@
+import type { ContentModerationTerm } from '@repo/schemas';
+import { PermissionEnum, updateContentModerationTermSchema } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +19,6 @@ import {
 } from '@/features/content-moderation/hooks/useModerationTermQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { ContentModerationTerm } from '@repo/schemas';
-import { PermissionEnum, updateContentModerationTermSchema } from '@repo/schemas';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/moderation-terms/$id_/edit')({
     component: ModerationTermEditPage,

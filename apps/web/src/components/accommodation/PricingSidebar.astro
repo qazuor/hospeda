@@ -1,4 +1,6 @@
 ---
+import { CalendarIcon, ChevronDownIcon, MoonIcon, UsersIcon } from '@repo/icons';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 /**
  * @file PricingSidebar.astro
  * @description Pricing sidebar with price, optional fee/discount breakdown,
@@ -6,15 +8,13 @@
  * when there is no price.
  */
 import type { AccommodationDetailData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly price: AccommodationDetailData['price'];
-  readonly extraInfo?: AccommodationDetailData['extraInfo'];
-  readonly lang: string;
+    readonly price: AccommodationDetailData['price'];
+    readonly extraInfo?: AccommodationDetailData['extraInfo'];
+    readonly lang: string;
 }
 
 const { price, extraInfo, lang } = Astro.props;
@@ -24,12 +24,12 @@ const hasPrice = price?.price != null && price.price > 0;
 const currency = price?.currency ?? 'ARS';
 
 function formatPrice(amount: number): string {
-  return new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
+    return new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
 }
 
 const fees = price?.additionalFees as Record<string, unknown> | null | undefined;
@@ -47,62 +47,67 @@ const maxNights = typeof extraInfo?.maxNights === 'number' ? extraInfo.maxNights
 // each entry has { price, currency, isPercent?, isPerStay?, isPerNight?, ... } and the
 // container map also carries an optional `others: Array<{name, ...}>` for custom entries.
 interface FeeEntry {
-  readonly key: string;
-  readonly amount: number;
-  readonly isPercent: boolean;
-  readonly customName?: string;
+    readonly key: string;
+    readonly amount: number;
+    readonly isPercent: boolean;
+    readonly customName?: string;
 }
 interface DiscountEntry {
-  readonly key: string;
-  readonly pct: number;
-  readonly customName?: string;
+    readonly key: string;
+    readonly pct: number;
+    readonly customName?: string;
 }
 
 const isFeeRecord = (v: unknown): v is Record<string, unknown> =>
-  v !== null && typeof v === 'object';
+    v !== null && typeof v === 'object';
 
 const feeEntries: FeeEntry[] = [];
 if (fees) {
-  for (const [key, val] of Object.entries(fees)) {
-    if (key === 'others') {
-      if (Array.isArray(val)) {
-        for (const other of val) {
-          if (!isFeeRecord(other)) continue;
-          const amount = typeof other.price === 'number' ? other.price : undefined;
-          const name = typeof other.name === 'string' ? other.name : undefined;
-          if (amount && name) {
-            feeEntries.push({ key: name, amount, isPercent: other.isPercent === true, customName: name });
-          }
+    for (const [key, val] of Object.entries(fees)) {
+        if (key === 'others') {
+            if (Array.isArray(val)) {
+                for (const other of val) {
+                    if (!isFeeRecord(other)) continue;
+                    const amount = typeof other.price === 'number' ? other.price : undefined;
+                    const name = typeof other.name === 'string' ? other.name : undefined;
+                    if (amount && name) {
+                        feeEntries.push({
+                            key: name,
+                            amount,
+                            isPercent: other.isPercent === true,
+                            customName: name
+                        });
+                    }
+                }
+            }
+            continue;
         }
-      }
-      continue;
+        if (!isFeeRecord(val)) continue;
+        const amount = typeof val.price === 'number' ? val.price : undefined;
+        if (amount) feeEntries.push({ key, amount, isPercent: val.isPercent === true });
     }
-    if (!isFeeRecord(val)) continue;
-    const amount = typeof val.price === 'number' ? val.price : undefined;
-    if (amount) feeEntries.push({ key, amount, isPercent: val.isPercent === true });
-  }
 }
 
 const discountEntries: DiscountEntry[] = [];
 if (discounts) {
-  for (const [key, val] of Object.entries(discounts)) {
-    if (key === 'others') {
-      if (Array.isArray(val)) {
-        for (const other of val) {
-          if (!isFeeRecord(other)) continue;
-          const pct = typeof other.price === 'number' ? other.price : undefined;
-          const name = typeof other.name === 'string' ? other.name : undefined;
-          if (typeof pct === 'number' && pct > 0 && name) {
-            discountEntries.push({ key: name, pct, customName: name });
-          }
+    for (const [key, val] of Object.entries(discounts)) {
+        if (key === 'others') {
+            if (Array.isArray(val)) {
+                for (const other of val) {
+                    if (!isFeeRecord(other)) continue;
+                    const pct = typeof other.price === 'number' ? other.price : undefined;
+                    const name = typeof other.name === 'string' ? other.name : undefined;
+                    if (typeof pct === 'number' && pct > 0 && name) {
+                        discountEntries.push({ key: name, pct, customName: name });
+                    }
+                }
+            }
+            continue;
         }
-      }
-      continue;
+        if (!isFeeRecord(val)) continue;
+        const pct = typeof val.price === 'number' ? val.price : undefined;
+        if (typeof pct === 'number' && pct > 0) discountEntries.push({ key, pct });
     }
-    if (!isFeeRecord(val)) continue;
-    const pct = typeof val.price === 'number' ? val.price : undefined;
-    if (typeof pct === 'number' && pct > 0) discountEntries.push({ key, pct });
-  }
 }
 
 const hasFees = feeEntries.length > 0;

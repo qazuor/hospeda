@@ -1,4 +1,8 @@
 ---
+import { CheckCircleIcon, StarIcon } from '@repo/icons';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
+import RatingStars from '@/components/shared/ui/RatingStars.astro';
 /**
  * @file DetailHeader.astro
  * @description Accommodation detail page header with name, type badge,
@@ -15,51 +19,46 @@
  * win over any external override.
  */
 import type { AccommodationDetailData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { getBadgeStatusColor } from '@/lib/colors';
-import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
-import RatingStars from '@/components/shared/ui/RatingStars.astro';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { CheckCircleIcon, StarIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly accommodation: AccommodationDetailData;
-  readonly lang: string;
-  /** Whether the current user is authenticated. Defaults to false. */
-  readonly isAuthenticated?: boolean;
-  /** UUID of the accommodation — used by FavoriteButton. */
-  readonly accommodationId: string;
-  /** Pre-hydrated favorite state from a server-side check. */
-  readonly initialIsFavorited?: boolean;
-  /** Bookmark ID when the entity is already favorited on page load. */
-  readonly initialBookmarkId?: string | null;
-  /**
-   * Pre-fetched public bookmark count.
-   * When undefined the counter is not rendered (parent opted out of pre-fetch).
-   */
-  readonly bookmarkCount?: number;
+    readonly accommodation: AccommodationDetailData;
+    readonly lang: string;
+    /** Whether the current user is authenticated. Defaults to false. */
+    readonly isAuthenticated?: boolean;
+    /** UUID of the accommodation — used by FavoriteButton. */
+    readonly accommodationId: string;
+    /** Pre-hydrated favorite state from a server-side check. */
+    readonly initialIsFavorited?: boolean;
+    /** Bookmark ID when the entity is already favorited on page load. */
+    readonly initialBookmarkId?: string | null;
+    /**
+     * Pre-fetched public bookmark count.
+     * When undefined the counter is not rendered (parent opted out of pre-fetch).
+     */
+    readonly bookmarkCount?: number;
 }
 
 const {
-  accommodation,
-  lang,
-  isAuthenticated = false,
-  accommodationId,
-  initialIsFavorited,
-  initialBookmarkId = null,
-  bookmarkCount
+    accommodation,
+    lang,
+    isAuthenticated = false,
+    accommodationId,
+    initialIsFavorited,
+    initialBookmarkId = null,
+    bookmarkCount
 } = Astro.props;
 const locale = lang as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRTY_DAYS_MS;
+const isNew = Date.now() - new Date(accommodation.createdAt).getTime() < THIRTY_DAYS_MS;
 
 const newColors = getBadgeStatusColor({ status: 'new' });
 
-const newStyle =
-  `background-color: ${newColors.bg}; color: ${newColors.onFill}; border-color: ${newColors.border};`;
+const newStyle = `background-color: ${newColors.bg}; color: ${newColors.onFill}; border-color: ${newColors.border};`;
 ---
 
 <header class="detail-header">

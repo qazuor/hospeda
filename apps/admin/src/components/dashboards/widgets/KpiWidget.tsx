@@ -30,11 +30,11 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
+import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
 import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
 import { accentVars, resolveDashboardIcon } from '../dashboard-accents';
 import {
     WidgetCard,
@@ -247,6 +247,7 @@ function DeltaBadge({ delta }: DeltaBadgeProps) {
                 pillClass
             )}
             data-testid="kpi-delta"
+            role="status"
             aria-label={`${isPositive ? 'Up' : isNegative ? 'Down' : 'No change'} ${absValue}%`}
         >
             {isPositive && (
@@ -345,7 +346,7 @@ function KpiGridTile({ item }: KpiGridTileProps) {
     return item.href ? (
         <a
             href={item.href}
-            className="hover:-translate-y-0.5 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40 transition-all duration-200 hover:shadow-sm hover:ring-border/60"
+            className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:ring-border/60"
             data-testid="kpi-grid-item"
             aria-label={`${itemLabel}: ${itemValue}`}
             title={itemLabel}
@@ -383,6 +384,7 @@ function DeferredKpiTile({ phaseSpec, label, description }: DeferredKpiTileProps
         <div
             className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 ring-1 ring-border/20"
             data-testid="kpi-grid-deferred-tile"
+            role="status"
             aria-label={`${label ?? 'Próximamente'} (${phaseSpec})`}
             title={description ?? label ?? `Disponible en ${phaseSpec}`}
         >

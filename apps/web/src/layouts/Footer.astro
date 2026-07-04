@@ -20,21 +20,16 @@
  * reopen handler).
  */
 
-import { Image } from "astro:assets";
-import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
-import SocialLinks from "@/components/shared/SocialLinks.astro";
-import { statsApi } from "@/lib/api/endpoints";
-import { getApiUrl } from "@/lib/env";
-import type { SupportedLocale } from "@/lib/i18n";
-import { createTranslations } from "@/lib/i18n";
-import { buildUrl } from "@/lib/urls";
-import {
-    AmericanExpressIcon,
-    MasterCardIcon,
-    MercadoPagoIcon,
-    VisaIcon,
-} from "@repo/icons";
-import logoSrc from "@/assets/images/logo.webp";
+import { Image } from 'astro:assets';
+import { AmericanExpressIcon, MasterCardIcon, MercadoPagoIcon, VisaIcon } from '@repo/icons';
+import logoSrc from '@/assets/images/logo.webp';
+import { NewsletterForm } from '@/components/newsletter/NewsletterForm.client';
+import SocialLinks from '@/components/shared/SocialLinks.astro';
+import { statsApi } from '@/lib/api/endpoints';
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -72,7 +67,7 @@ function roundDown(n: number): number {
 const STATS_FALLBACK = {
     accommodations: 100,
     destinations: 20,
-    averageRating: 4.5,
+    averageRating: 4.5
 } as const;
 
 let statsAccommodations: number = STATS_FALLBACK.accommodations;
@@ -81,71 +76,90 @@ let statsAverageRating: number = STATS_FALLBACK.averageRating;
 try {
     const result = await statsApi.getPlatformStats();
     if (result.ok) {
-        statsAccommodations = roundDown(result.data.accommodations) || STATS_FALLBACK.accommodations;
-        statsAverageRating = result.data.averageRating > 0
-            ? result.data.averageRating
-            : STATS_FALLBACK.averageRating;
+        statsAccommodations =
+            roundDown(result.data.accommodations) || STATS_FALLBACK.accommodations;
+        statsAverageRating =
+            result.data.averageRating > 0
+                ? result.data.averageRating
+                : STATS_FALLBACK.averageRating;
     }
 } catch {
     // Silently fall through to defaults. Footer must never break the page.
 }
 
-const formattedCount = new Intl.NumberFormat(locale === "es" ? "es-AR" : locale).format(statsAccommodations);
-const formattedRating = statsAverageRating.toFixed(1).replace(".", ",");
+const formattedCount = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : locale).format(
+    statsAccommodations
+);
+const formattedRating = statsAverageRating.toFixed(1).replace('.', ',');
 
 /** EXPLORAR column — top-level sections + search */
 const exploreLinks = [
-    { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
-    { label: t("footer.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
-    { label: t("footer.events"), href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: t("footer.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
-    { label: t("footer.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
-    { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
-    { label: t("footer.search", "Buscar"), href: buildUrl({ locale, path: "/busqueda/" }) },
+    { label: t('footer.accommodations'), href: buildUrl({ locale, path: '/alojamientos/' }) },
+    { label: t('footer.destinations'), href: buildUrl({ locale, path: '/destinos/' }) },
+    { label: t('footer.events'), href: buildUrl({ locale, path: '/eventos/' }) },
+    { label: t('footer.gastronomy'), href: buildUrl({ locale, path: '/gastronomia/' }) },
+    { label: t('footer.experiences'), href: buildUrl({ locale, path: '/experiencias/' }) },
+    { label: t('footer.publications'), href: buildUrl({ locale, path: '/publicaciones/' }) },
+    { label: t('footer.search', 'Buscar'), href: buildUrl({ locale, path: '/busqueda/' }) }
 ] as const;
 
 /** PARA VOS column — owner + tourist value props */
 const forYouLinks = [
-    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
-    { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
-    { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
-    { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },
+    {
+        label: t('footer.listProperty'),
+        href: buildUrl({ locale, path: '/suscriptores/propietarios/' })
+    },
+    { label: t('footer.ownerPlans'), href: buildUrl({ locale, path: '/suscriptores/planes/' }) },
+    {
+        label: t('footer.touristPlans'),
+        href: buildUrl({ locale, path: '/suscriptores/turistas/' })
+    },
+    { label: t('footer.benefits'), href: buildUrl({ locale, path: '/beneficios/' }) }
 ] as const;
 
 /** HOSPEDA column — corporate */
 const companyLinks = [
-    { label: t("footer.aboutUs"), href: buildUrl({ locale, path: "/nosotros/" }) },
-    { label: t("footer.faq", "Preguntas frecuentes"), href: buildUrl({ locale, path: "/preguntas-frecuentes/" }) },
-    { label: t("footer.collaborate", "Colaborá"), href: buildUrl({ locale, path: "/colaborar/" }) },
-    { label: t("footer.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
-    { label: t("footer.reportProblem"), href: buildUrl({ locale, path: "/feedback/" }) },
+    { label: t('footer.aboutUs'), href: buildUrl({ locale, path: '/nosotros/' }) },
+    {
+        label: t('footer.faq', 'Preguntas frecuentes'),
+        href: buildUrl({ locale, path: '/preguntas-frecuentes/' })
+    },
+    { label: t('footer.collaborate', 'Colaborá'), href: buildUrl({ locale, path: '/colaborar/' }) },
+    { label: t('footer.contact'), href: buildUrl({ locale, path: '/contacto/' }) },
+    { label: t('footer.reportProblem'), href: buildUrl({ locale, path: '/feedback/' }) }
 ] as const;
 
 /** Legal links — collapsed into a single inline row in the bottom bar. */
 const legalLinks = [
-    { label: t("footer.terms"), href: buildUrl({ locale, path: "/legal/terminos/" }) },
-    { label: t("footer.privacy"), href: buildUrl({ locale, path: "/legal/privacidad/" }) },
-    { label: t("footer.cookies"), href: buildUrl({ locale, path: "/legal/cookies/" }) },
+    { label: t('footer.terms'), href: buildUrl({ locale, path: '/legal/terminos/' }) },
+    { label: t('footer.privacy'), href: buildUrl({ locale, path: '/legal/privacidad/' }) },
+    { label: t('footer.cookies'), href: buildUrl({ locale, path: '/legal/cookies/' }) }
 ] as const;
 
-const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Preferencias de cookies");
-const trustLabel = t("footer.trustSignals.label", "Por qué elegirnos");
-const paymentsLabel = t("footer.payments.label", "Métodos de pago");
-const accommodationsCountLabel = t("footer.trustSignals.accommodationsCount", "+{{count}} alojamientos").replace("{{count}}", formattedCount);
+const cookiePreferencesLabel = t('cookieConsent.footer.preferencesLink', 'Preferencias de cookies');
+const trustLabel = t('footer.trustSignals.label', 'Por qué elegirnos');
+const paymentsLabel = t('footer.payments.label', 'Métodos de pago');
+const accommodationsCountLabel = t(
+    'footer.trustSignals.accommodationsCount',
+    '+{{count}} alojamientos'
+).replace('{{count}}', formattedCount);
 
 /** Payment method logos rendered as inline SVG from `@repo/icons` (single-
  *  color brand marks). Naranja X is intentionally omitted — no mark
  *  available yet. */
 const paymentMethods = [
-    { Icon: MercadoPagoIcon, label: "Mercado Pago" },
-    { Icon: VisaIcon, label: "Visa" },
-    { Icon: MasterCardIcon, label: "Mastercard" },
-    { Icon: AmericanExpressIcon, label: "American Express" },
+    { Icon: MercadoPagoIcon, label: 'Mercado Pago' },
+    { Icon: VisaIcon, label: 'Visa' },
+    { Icon: MasterCardIcon, label: 'Mastercard' },
+    { Icon: AmericanExpressIcon, label: 'American Express' }
 ] as const;
-const averageRatingLabel = t("footer.trustSignals.averageRating", "{{rating}} de promedio").replace("{{rating}}", formattedRating);
-const localSupportLabel = t("footer.trustSignals.localSupport", "Soporte local en español");
-const securePaymentsLabel = t("footer.trustSignals.securePayments", "Pagos seguros");
-const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisiones ocultas");
+const averageRatingLabel = t('footer.trustSignals.averageRating', '{{rating}} de promedio').replace(
+    '{{rating}}',
+    formattedRating
+);
+const localSupportLabel = t('footer.trustSignals.localSupport', 'Soporte local en español');
+const securePaymentsLabel = t('footer.trustSignals.securePayments', 'Pagos seguros');
+const noCommissionsLabel = t('footer.trustSignals.noCommissions', 'Sin comisiones ocultas');
 ---
 
 <footer class="footer" role="contentinfo">

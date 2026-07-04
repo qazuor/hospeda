@@ -8,19 +8,19 @@
 
 import { getImage } from 'astro:assets';
 import { PostIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
+import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
 import { revealStagger } from '@/lib/reveal-stagger';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -39,7 +39,9 @@ let posts: ArticleCardData[] = [];
 try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
-        const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown>, locale }));
+        const rawPosts = result.data.items.map((raw) =>
+            toArticleCardProps({ item: raw as Record<string, unknown>, locale })
+        );
         // SSRF guard (SPEC-099 S-1): only call getImage() when the avatar
         // hostname is in the allowlist. Untrusted URLs pass through unchanged.
         posts = await Promise.all(
@@ -63,7 +65,7 @@ try {
 } catch (err) {
     webLogger.error('API fetch failed', {
         endpoint: 'posts',
-        error: err instanceof Error ? err.message : err,
+        error: err instanceof Error ? err.message : err
     });
 }
 

@@ -7,46 +7,60 @@
  * @rendering SSR (on-demand)
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import Description from '@/components/accommodation/Description.astro';
+import DetailHeader from '@/components/accommodation/DetailHeader.astro';
+import ExternalReputation from '@/components/accommodation/ExternalReputation.astro';
+import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import LocationSection from '@/components/accommodation/LocationSection.astro';
+import OwnerCard from '@/components/accommodation/OwnerCard.astro';
+import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
+import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
+import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
+import QuickFacts from '@/components/accommodation/QuickFacts.astro';
+import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
+import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
+import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
+import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
+import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
+import { ImageGallery } from '@/components/ImageGallery.client';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
-import { ImageGallery } from '@/components/ImageGallery.client';
-import DetailHeader from '@/components/accommodation/DetailHeader.astro';
-import QuickFacts from '@/components/accommodation/QuickFacts.astro';
-import Description from '@/components/accommodation/Description.astro';
-import { renderContent as renderRich } from '@/lib/render-content';
-import { renderPlain } from '@/lib/render-plain';
-import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
-import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
-import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
-import ExternalReputation from '@/components/accommodation/ExternalReputation.astro';
-import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
-import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
-import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
-import LocationSection from '@/components/accommodation/LocationSection.astro';
-import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
-import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
-import OwnerCard from '@/components/accommodation/OwnerCard.astro';
-import { ContactHost } from '@/components/accommodation/ContactHost.client';
-import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
-import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
-import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
-import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
-import { getApiUrl } from '@/lib/env';
+import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
-import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import DetailLayout from '@/layouts/DetailLayout.astro';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
-import { billingApi, priceAlertsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
+import {
+    accommodationsApi,
+    eventsApi,
+    ownerPromotionsApi,
+    postsApi,
+    userBookmarksPublicApi
+} from '@/lib/api/endpoints';
+import {
+    billingApi,
+    priceAlertsApi,
+    protectedConversationsApi,
+    userBookmarksApi
+} from '@/lib/api/endpoints-protected';
+import {
+    toAccommodationCardProps,
+    toAccommodationDetailPageProps,
+    toEventCardProps
+} from '@/lib/api/transforms';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { resolvePriceAlertGateState } from '@/lib/price-alert-gate';
+import { renderContent as renderRich } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
 import { pickLocalizedSeo } from '@/lib/seo';
 
 export const prerender = false;
@@ -69,67 +83,76 @@ const ctxChildren = ctxChildrenRaw ? Number(ctxChildrenRaw) : undefined;
 
 /** Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift. */
 function fmtIsoDay(iso: string): string {
-	const [y, m, d] = iso.split('-').map(Number);
-	if (!y || !m || !d) return iso;
-	return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR', {
-		day: '2-digit',
-		month: 'long',
-		year: 'numeric',
-		timeZone: 'UTC',
-	}).format(new Date(Date.UTC(y, m - 1, d, 12)));
+    const [y, m, d] = iso.split('-').map(Number);
+    if (!y || !m || !d) return iso;
+    return new Intl.DateTimeFormat(
+        locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR',
+        {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC'
+        }
+    ).format(new Date(Date.UTC(y, m - 1, d, 12)));
 }
 
 const hasCtxDates = Boolean(ctxCheckIn || ctxCheckOut);
 const hasCtxGuests =
-	(ctxAdults !== undefined && !Number.isNaN(ctxAdults) && ctxAdults > 0) ||
-	(ctxChildren !== undefined && !Number.isNaN(ctxChildren) && ctxChildren > 0);
+    (ctxAdults !== undefined && !Number.isNaN(ctxAdults) && ctxAdults > 0) ||
+    (ctxChildren !== undefined && !Number.isNaN(ctxChildren) && ctxChildren > 0);
 
 let prefilledMessage: string | undefined;
 if (hasCtxDates || hasCtxGuests) {
-	const parts: string[] = [t('conversations.form.prefill.intro', 'Hola, me interesa este alojamiento.')];
+    const parts: string[] = [
+        t('conversations.form.prefill.intro', 'Hola, me interesa este alojamiento.')
+    ];
 
-	if (ctxCheckIn && ctxCheckOut) {
-		parts.push(
-			t('conversations.form.prefill.dateRange', 'Estoy mirando del {from} al {to}.', {
-				from: fmtIsoDay(ctxCheckIn),
-				to: fmtIsoDay(ctxCheckOut),
-			})
-		);
-	} else if (ctxCheckIn) {
-		parts.push(
-			t('conversations.form.prefill.dateFrom', 'Estoy mirando a partir del {from}.', {
-				from: fmtIsoDay(ctxCheckIn),
-			})
-		);
-	} else if (ctxCheckOut) {
-		parts.push(
-			t('conversations.form.prefill.dateTo', 'Estoy mirando hasta el {to}.', {
-				to: fmtIsoDay(ctxCheckOut),
-			})
-		);
-	}
+    if (ctxCheckIn && ctxCheckOut) {
+        parts.push(
+            t('conversations.form.prefill.dateRange', 'Estoy mirando del {from} al {to}.', {
+                from: fmtIsoDay(ctxCheckIn),
+                to: fmtIsoDay(ctxCheckOut)
+            })
+        );
+    } else if (ctxCheckIn) {
+        parts.push(
+            t('conversations.form.prefill.dateFrom', 'Estoy mirando a partir del {from}.', {
+                from: fmtIsoDay(ctxCheckIn)
+            })
+        );
+    } else if (ctxCheckOut) {
+        parts.push(
+            t('conversations.form.prefill.dateTo', 'Estoy mirando hasta el {to}.', {
+                to: fmtIsoDay(ctxCheckOut)
+            })
+        );
+    }
 
-	if (hasCtxGuests) {
-		const a = ctxAdults && !Number.isNaN(ctxAdults) ? ctxAdults : 0;
-		const c = ctxChildren && !Number.isNaN(ctxChildren) ? ctxChildren : 0;
-		if (c > 0) {
-			parts.push(
-				t('conversations.form.prefill.guests', 'Somos {adults} adultos y {children} niños.', {
-					adults: a,
-					children: c,
-				})
-			);
-		} else if (a > 0) {
-			parts.push(
-				t('conversations.form.prefill.guestsAdultsOnly', 'Somos {adults} adultos.', {
-					adults: a,
-				})
-			);
-		}
-	}
+    if (hasCtxGuests) {
+        const a = ctxAdults && !Number.isNaN(ctxAdults) ? ctxAdults : 0;
+        const c = ctxChildren && !Number.isNaN(ctxChildren) ? ctxChildren : 0;
+        if (c > 0) {
+            parts.push(
+                t(
+                    'conversations.form.prefill.guests',
+                    'Somos {adults} adultos y {children} niños.',
+                    {
+                        adults: a,
+                        children: c
+                    }
+                )
+            );
+        } else if (a > 0) {
+            parts.push(
+                t('conversations.form.prefill.guestsAdultsOnly', 'Somos {adults} adultos.', {
+                    adults: a
+                })
+            );
+        }
+    }
 
-	parts.push(t('conversations.form.prefill.outro', '¿Me podrías confirmar disponibilidad?'));
-	prefilledMessage = parts.join(' ');
+    parts.push(t('conversations.form.prefill.outro', '¿Me podrías confirmar disponibilidad?'));
+    prefilledMessage = parts.join(' ');
 }
 
 // --- Primary fetch ---
@@ -146,16 +169,23 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
     : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
-const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult, externalReputationResult, promotionsResult] =
-    await Promise.allSettled([
-        accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
-        accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
-        postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
-        eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 6 }),
-        accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
-        accommodationsApi.getExternalReputation({ id: accommodation.id }),
-        ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id })
-    ]);
+const [
+    similarResult,
+    ownerPropsResult,
+    postsResult,
+    eventsResult,
+    reviewsResult,
+    externalReputationResult,
+    promotionsResult
+] = await Promise.allSettled([
+    accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
+    accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
+    postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
+    eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 6 }),
+    accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
+    accommodationsApi.getExternalReputation({ id: accommodation.id }),
+    ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id })
+]);
 
 /** Safely extract array from a settled API result. */
 function extractItems(settled: PromiseSettledResult<unknown>): Record<string, unknown>[] {
@@ -337,7 +367,10 @@ if (isAuthenticated) {
         }
 
         if (entitlementsResult.status === 'fulfilled') {
-            const gateState = resolvePriceAlertGateState(entitlementsResult.value, existingAlertsCount);
+            const gateState = resolvePriceAlertGateState(
+                entitlementsResult.value,
+                existingAlertsCount
+            );
             canCreateAlerts = gateState.canCreateAlerts;
             maxReached = gateState.maxReached;
         }
@@ -395,7 +428,8 @@ const ogFeaturedImage =
     accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')
         ? accommodation.featuredImage
         : undefined;
-const ogRating = accommodation.averageRating > 0 ? accommodation.averageRating.toFixed(1) : undefined;
+const ogRating =
+    accommodation.averageRating > 0 ? accommodation.averageRating.toFixed(1) : undefined;
 const ogSubtitle = accommodation.destination?.name || undefined;
 
 // --- Description rendering ---
@@ -416,7 +450,11 @@ const safeRichDescriptionHtml = accommodation.richDescription
 
 // --- JSON-LD (LodgingBusiness) ---
 const ACCOMMODATION_TYPE_MAP: Readonly<Record<string, string>> = {
-    HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
+    HOTEL: 'Hotel',
+    HOSTEL: 'Hostel',
+    MOTEL: 'Motel',
+    RESORT: 'Resort',
+    CAMPING: 'Campground'
 };
 const lodgingAccommodationType =
     ACCOMMODATION_TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
@@ -432,17 +470,15 @@ const lodgingAggregateRating =
               ratingValue: accommodation.averageRating,
               reviewCount: accommodation.reviewsCount,
               bestRating: 5,
-              worstRating: 1,
+              worstRating: 1
           }
         : undefined;
 
 const lodgingNumberOfRooms =
-    accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
+    accommodation.extraInfo?.bedrooms == null ? undefined : accommodation.extraInfo.bedrooms;
 
 const lodgingAmenities =
-    accommodation.amenities.length > 0
-        ? accommodation.amenities.map((a) => a.name)
-        : undefined;
+    accommodation.amenities.length > 0 ? accommodation.amenities.map((a) => a.name) : undefined;
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;

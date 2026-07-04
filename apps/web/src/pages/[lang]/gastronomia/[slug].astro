@@ -13,27 +13,27 @@
  * @rendering SSR (on-demand)
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
+import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
+import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
+import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
-import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
-import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
-import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
-import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
-import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
-import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import type { DetailFaq, GastronomyOpeningHoursEntry } from '@/data/types';
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
-import { getApiUrl } from '@/lib/env';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
-import { createTranslations } from '@/lib/i18n';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
 import { renderPlain } from '@/lib/render-plain';
-import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq, GastronomyOpeningHoursEntry } from '@/data/types';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
@@ -68,15 +68,15 @@ const [reviewsSettled, faqsSettled] = await Promise.allSettled([
     gastronomyApi.getFaqs({ id: gastronomy.id })
 ]);
 
-const reviewsResult =
-    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
-const faqsResult =
-    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+const reviewsResult = reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
+const faqsResult = faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
 
-const reviews: readonly GastronomyReviewPublicItem[] =
-    reviewsResult?.ok ? reviewsResult.data.items : [];
-const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : gastronomy.reviewsCount;
+const reviews: readonly GastronomyReviewPublicItem[] = reviewsResult?.ok
+    ? reviewsResult.data.items
+    : [];
+const totalReviews: number = reviewsResult?.ok
+    ? reviewsResult.data.pagination.total
+    : gastronomy.reviewsCount;
 
 // FAQs: prefer inline entity FAQs, fall back to standalone endpoint
 const faqs: readonly DetailFaq[] =
@@ -165,7 +165,9 @@ const priceRangeMap: Record<string, string> = {
     HIGH: '$$$',
     PREMIUM: '$$$$'
 };
-const jsonLdPriceRange = gastronomy.priceRange ? priceRangeMap[gastronomy.priceRange] ?? undefined : undefined;
+const jsonLdPriceRange = gastronomy.priceRange
+    ? (priceRangeMap[gastronomy.priceRange] ?? undefined)
+    : undefined;
 
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the

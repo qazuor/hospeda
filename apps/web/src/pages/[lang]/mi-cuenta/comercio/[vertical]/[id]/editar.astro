@@ -1,4 +1,5 @@
 ---
+import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 /**
  * @file mi-cuenta/comercio/[vertical]/[id]/editar.astro
  * @description Operational editor for one commerce listing owned by the
@@ -9,15 +10,11 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
-import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { transformAmenityList } from '@/lib/api/transforms';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
-import {
-    type CommerceVertical,
-    fetchOwnerListingDetail
-} from '@/lib/commerce/owner-listings';
+import { transformAmenityList } from '@/lib/api/transforms';
+import { type CommerceVertical, fetchOwnerListingDetail } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -71,7 +68,9 @@ try {
         fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=${vertical}`)
     ]);
     if (amenitiesRes.ok) {
-        const body = (await amenitiesRes.json()) as { data?: { items?: Record<string, unknown>[] } };
+        const body = (await amenitiesRes.json()) as {
+            data?: { items?: Record<string, unknown>[] };
+        };
         amenities = transformAmenityList({ items: body.data?.items ?? [] });
     }
     if (featuresRes.ok) {

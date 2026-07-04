@@ -7,11 +7,12 @@
  * @module AiChatWidget
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import type { ChatMessage } from '@/hooks/useAccommodationChat';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { AiChatFab } from './AiChatFab';
 import styles from './AiChatWidget.module.css';
 
@@ -45,6 +46,24 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
      *  the focus-return effect from stealing focus on the initial render when
      *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
     const hasBeenOpenedRef = useRef(false);
+    /**
+     * `ChatMessage` has no `id` field and the hook's state updates never clone
+     * or reorder existing entries (each update is `[...prev.messages, next]`),
+     * so an existing message object keeps the same reference for its whole
+     * lifetime. This WeakMap assigns each message a stable synthetic id the
+     * first time it's rendered, giving React a real stable `key` instead of
+     * the array index.
+     */
+    const messageKeysRef = useRef(new WeakMap<ChatMessage, string>());
+    const nextMessageKeyRef = useRef(0);
+    const getMessageKey = useCallback((message: ChatMessage): string => {
+        const existing = messageKeysRef.current.get(message);
+        if (existing) return existing;
+        const key = `msg-${nextMessageKeyRef.current}`;
+        nextMessageKeyRef.current += 1;
+        messageKeysRef.current.set(message, key);
+        return key;
+    }, []);
 
     // Focus trap + ESC close
     useEffect(() => {
@@ -168,9 +187,9 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         aria-live="polite"
                         aria-atomic="false"
                     >
-                        {chat.state.messages.map((m, i) => (
+                        {chat.state.messages.map((m) => (
                             <div
-                                key={`${m.role}-${i}`}
+                                key={getMessageKey(m)}
                                 className={`${styles.bubble} ${m.role === 'user' ? styles.userBubble : styles.assistantBubble}`}
                             >
                                 {m.content}

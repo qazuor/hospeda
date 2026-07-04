@@ -1,6 +1,6 @@
+import { ClientTypeEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { ClientTypeEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * Basic Info section configuration for Sponsor entity

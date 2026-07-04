@@ -122,7 +122,9 @@
     color: var(--brand-primary);
     text-decoration: none;
     margin-top: auto;
-    transition: color 0.2s ease, text-decoration 0.2s ease;
+    transition:
+        color 0.2s ease,
+        text-decoration 0.2s ease;
     align-self: flex-start;
 }
 

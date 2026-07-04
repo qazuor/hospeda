@@ -6,8 +6,8 @@
  * if climate is null, renders only the weather island.
  */
 import { DropIcon, ThermometerIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { DestinationWeatherIsland } from './DestinationWeatherIsland.client';
 
 interface SeasonData {
@@ -44,17 +44,14 @@ const { t } = createTranslations(locale);
 type SeasonKey = 'spring' | 'summer' | 'autumn' | 'winter';
 const seasonKeys: ReadonlyArray<SeasonKey> = ['spring', 'summer', 'autumn', 'winter'];
 
-const presentSeasons: ReadonlyArray<{ key: SeasonKey; data: SeasonData }> =
-    climate?.seasons
-        ? seasonKeys.flatMap((key) => {
-              const data = climate.seasons?.[key];
-              return data ? [{ key, data }] : [];
-          })
-        : [];
+const presentSeasons: ReadonlyArray<{ key: SeasonKey; data: SeasonData }> = climate?.seasons
+    ? seasonKeys.flatMap((key) => {
+          const data = climate.seasons?.[key];
+          return data ? [{ key, data }] : [];
+      })
+    : [];
 
-const note = climate?.note
-    ? (climate.note[locale] ?? climate.note['es'] ?? null)
-    : null;
+const note = climate?.note ? (climate.note[locale] ?? climate.note['es'] ?? null) : null;
 
 const bestMonthsLabel =
     climate?.bestMonths?.from && climate?.bestMonths?.to

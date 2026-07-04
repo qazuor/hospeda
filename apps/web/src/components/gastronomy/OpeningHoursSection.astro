@@ -13,10 +13,10 @@
  * logic (single source of truth).
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import type { GastronomyOpeningHoursEntry } from '@/data/types';
 import { getTodayIndex, ORDERED_DAY_KEYS } from '@/lib/gastronomy-hours';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     /** Opening hours map keyed by lower-cased English day names. */

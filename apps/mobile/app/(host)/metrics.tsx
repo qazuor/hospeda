@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { ListRenderItemInfo } from 'react-native';
 import {
     ActivityIndicator,
     FlatList,
@@ -7,13 +8,12 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import type { ListRenderItemInfo } from 'react-native';
 import { theme } from '../../src/design';
-import { useAccommodationViewStats } from '../../src/lib/api/hooks/use-accommodation-view-stats';
 import type {
     AccommodationViewStat,
     ViewWindow
 } from '../../src/lib/api/hooks/use-accommodation-view-stats';
+import { useAccommodationViewStats } from '../../src/lib/api/hooks/use-accommodation-view-stats';
 import { useOwnAccommodations } from '../../src/lib/api/hooks/use-own-accommodations';
 import { getTranslation } from '../../src/lib/i18n';
 import { useLocale } from '../../src/lib/locale-context';

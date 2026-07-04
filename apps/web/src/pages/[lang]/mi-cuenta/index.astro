@@ -14,22 +14,22 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import {
+    BuildingIcon,
+    ChatIcon,
+    DashboardIcon,
+    NewsletterIcon,
+    SettingsIcon,
+    UserIcon
+} from '@repo/icons';
+import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
+import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
+import { DashboardController } from '@/components/account/DashboardController.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { isHostRole } from '@/lib/account-roles';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { isHostRole } from '@/lib/account-roles';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
-import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
-import { DashboardController } from '@/components/account/DashboardController.client';
-import {
-    UserIcon,
-    SettingsIcon,
-    ChatIcon,
-    NewsletterIcon,
-    BuildingIcon,
-    DashboardIcon,
-} from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -77,7 +77,7 @@ const navItems = [
                       'account.pages.dashboard.nav.myPropertiesDesc',
                       'Gestioná tus alojamientos publicados'
                   ),
-                  Icon: BuildingIcon,
+                  Icon: BuildingIcon
               },
               {
                   label: t('account.pages.dashboard.nav.hostDashboard', 'Panel del anfitrión'),
@@ -86,8 +86,8 @@ const navItems = [
                       'account.pages.dashboard.nav.hostDashboardDesc',
                       'Resumen de tu actividad como anfitrión'
                   ),
-                  Icon: DashboardIcon,
-              },
+                  Icon: DashboardIcon
+              }
           ]
         : []),
     {
@@ -97,7 +97,7 @@ const navItems = [
             'account.pages.dashboard.nav.editProfileDesc',
             'Actualizá tu información personal y foto de perfil'
         ),
-        Icon: UserIcon,
+        Icon: UserIcon
     },
     {
         label: t('account.pages.dashboard.nav.myMessages', 'Mis consultas'),
@@ -106,7 +106,7 @@ const navItems = [
             'account.pages.dashboard.nav.myMessagesDesc',
             'Conversaciones con anfitriones'
         ),
-        Icon: ChatIcon,
+        Icon: ChatIcon
     },
     {
         label: t('account.pages.dashboard.nav.preferences', 'Preferencias'),
@@ -115,7 +115,7 @@ const navItems = [
             'account.pages.dashboard.nav.preferencesDesc',
             'Configurá notificaciones, idioma y privacidad'
         ),
-        Icon: SettingsIcon,
+        Icon: SettingsIcon
     },
     {
         label: t('account.pages.dashboard.nav.newsletter', 'Boletín de novedades'),
@@ -124,8 +124,8 @@ const navItems = [
             'account.pages.dashboard.nav.newsletterDesc',
             'Gestioná tu suscripción al boletín'
         ),
-        Icon: NewsletterIcon,
-    },
+        Icon: NewsletterIcon
+    }
 ];
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;

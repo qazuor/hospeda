@@ -25,23 +25,23 @@
 import type { EmailIcon } from '@repo/icons';
 
 interface Props {
-	/** Color palette and semantic role. Drives blob, dots, icon-wrap, and underline colors. */
-	readonly variant: 'success' | 'error' | 'warning' | 'info' | 'not-found';
-	/**
-	 * Duotone icon component to render inside the standard 120px icon-wrap.
-	 * Skip if you pass a custom illustration via the `illustration` slot.
-	 */
-	readonly Icon?: typeof EmailIcon | undefined;
-	/** Page title. The last word is automatically highlighted with a handwritten underline. */
-	readonly title: string;
-	/** Optional description paragraph rendered below the title. */
-	readonly description?: string | undefined;
-	/**
-	 * Hide the radial blob behind the content. Dots and underline still
-	 * show. Use when the surrounding layout already supplies a background
-	 * treatment, or when the page should feel quieter.
-	 */
-	readonly hideBlob?: boolean | undefined;
+    /** Color palette and semantic role. Drives blob, dots, icon-wrap, and underline colors. */
+    readonly variant: 'success' | 'error' | 'warning' | 'info' | 'not-found';
+    /**
+     * Duotone icon component to render inside the standard 120px icon-wrap.
+     * Skip if you pass a custom illustration via the `illustration` slot.
+     */
+    readonly Icon?: typeof EmailIcon | undefined;
+    /** Page title. The last word is automatically highlighted with a handwritten underline. */
+    readonly title: string;
+    /** Optional description paragraph rendered below the title. */
+    readonly description?: string | undefined;
+    /**
+     * Hide the radial blob behind the content. Dots and underline still
+     * show. Use when the surrounding layout already supplies a background
+     * treatment, or when the page should feel quieter.
+     */
+    readonly hideBlob?: boolean | undefined;
 }
 
 const { variant, Icon, title, description, hideBlob = false } = Astro.props;

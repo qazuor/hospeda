@@ -13,31 +13,31 @@ import JsonLd from './JsonLd.astro';
 
 /** Props interface for AboutPageJsonLd component. */
 interface Props {
-  /** Page title (matches the `<h1>` and HTML `<title>`). */
-  readonly title: string;
-  /** Short description summarising the page content. */
-  readonly description: string;
-  /** Canonical URL of the page (absolute). */
-  readonly url: string;
-  /** BCP47 language tag of the page content (e.g., `es-AR`, `en-US`). */
-  readonly inLanguage: string;
-  /** Optional representative image URL. */
-  readonly image?: string;
+    /** Page title (matches the `<h1>` and HTML `<title>`). */
+    readonly title: string;
+    /** Short description summarising the page content. */
+    readonly description: string;
+    /** Canonical URL of the page (absolute). */
+    readonly url: string;
+    /** BCP47 language tag of the page content (e.g., `es-AR`, `en-US`). */
+    readonly inLanguage: string;
+    /** Optional representative image URL. */
+    readonly image?: string;
 }
 
 const { title, description, url, inLanguage, image } = Astro.props;
 
 const structuredData: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'AboutPage',
-  name: title,
-  description,
-  url,
-  inLanguage
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: title,
+    description,
+    url,
+    inLanguage
 };
 
 if (image) {
-  structuredData.image = image;
+    structuredData.image = image;
 }
 ---
 

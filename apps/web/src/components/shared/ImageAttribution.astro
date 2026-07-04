@@ -30,7 +30,6 @@ const { attribution, locale, variant = 'inline' } = Astro.props;
 const { t } = createTranslations(locale);
 
 const providerName = attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels';
-
 ---
 
 {attribution && (

@@ -14,9 +14,9 @@
  * Rendering: Static (no client JavaScript).
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 /** Valid temporal filter values for the `when` query param. */
 export type EventDateFilter = 'all' | 'today' | 'week' | 'month' | 'next60' | 'past';
@@ -41,23 +41,18 @@ interface Props {
     readonly searchParams: URLSearchParams;
 }
 
-const {
-    locale,
-    current = 'all',
-    baseUrl,
-    searchParams,
-} = Astro.props;
+const { locale, current = 'all', baseUrl, searchParams } = Astro.props;
 
 const { t } = createTranslations(locale);
 
 /** Ordered list of temporal filter options. */
 const DATE_FILTERS: ReadonlyArray<{ readonly value: EventDateFilter; readonly label: string }> = [
-    { value: 'all',    label: t('events.dateFilters.all',    'Todos') },
-    { value: 'today',  label: t('events.dateFilters.today',  'Hoy') },
-    { value: 'week',   label: t('events.dateFilters.week',   'Esta semana') },
-    { value: 'month',  label: t('events.dateFilters.month',  'Este mes') },
+    { value: 'all', label: t('events.dateFilters.all', 'Todos') },
+    { value: 'today', label: t('events.dateFilters.today', 'Hoy') },
+    { value: 'week', label: t('events.dateFilters.week', 'Esta semana') },
+    { value: 'month', label: t('events.dateFilters.month', 'Este mes') },
     { value: 'next60', label: t('events.dateFilters.next60', 'Próximos 60 días') },
-    { value: 'past',   label: t('events.dateFilters.past',   'Pasados') },
+    { value: 'past', label: t('events.dateFilters.past', 'Pasados') }
 ] as const;
 
 /**

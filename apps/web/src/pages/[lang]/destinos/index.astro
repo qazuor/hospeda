@@ -22,23 +22,22 @@
  * @rendering SSR + ISR 24h
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import { CloseIcon, getAttractionIcon } from '@repo/icons';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
-import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toDestinationCardProps } from '@/lib/api/transforms';
-import { webLogger } from '@/lib/logger';
-import { getAttractionIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
-import { CloseIcon } from '@repo/icons';
 
 /**
  * How many attraction chips render in the first row before the "Ver más"
@@ -96,14 +95,20 @@ if (isAuthenticated && sortedCards.length > 0) {
         if (bulkResult.ok) {
             favoriteChecks = bulkResult.data.checks;
         } else {
-            webLogger.warn('Bulk bookmark check failed on destinos listing; falling back to per-card hydration', {
-                error: bulkResult.error
-            });
+            webLogger.warn(
+                'Bulk bookmark check failed on destinos listing; falling back to per-card hydration',
+                {
+                    error: bulkResult.error
+                }
+            );
         }
     } catch (error) {
-        webLogger.warn('Bulk bookmark check threw on destinos listing; falling back to per-card hydration', {
-            error: error instanceof Error ? error.message : String(error)
-        });
+        webLogger.warn(
+            'Bulk bookmark check threw on destinos listing; falling back to per-card hydration',
+            {
+                error: error instanceof Error ? error.message : String(error)
+            }
+        );
     }
 }
 
@@ -185,10 +190,7 @@ function cardMatchesFilter(card: (typeof sortedCards)[number]): boolean {
     return true;
 }
 
-const visibleCardCount = sortedCards.reduce(
-    (acc, c) => acc + (cardMatchesFilter(c) ? 1 : 0),
-    0
-);
+const visibleCardCount = sortedCards.reduce((acc, c) => acc + (cardMatchesFilter(c) ? 1 : 0), 0);
 const showEmptyBanner = isFilterActive && visibleCardCount === 0;
 
 // Anchor appended to every filter href so that no-JS navigations land users
@@ -225,8 +227,11 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 // JSON-LD path). Destinos has no pagination, so startPosition stays at the
 // default 1 and numberOfItems mirrors the rendered set.
 const itemListEntries = sortedCards.map((card) => ({
-	url: new URL(buildUrl({ locale, path: `destinos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
-	name: card.name,
+    url: new URL(
+        buildUrl({ locale, path: `destinos/${card.slug}` }),
+        Astro.site ?? Astro.url.origin
+    ).href,
+    name: card.name
 }));
 
 const cspNonce = Astro.locals.cspNonce ?? '';

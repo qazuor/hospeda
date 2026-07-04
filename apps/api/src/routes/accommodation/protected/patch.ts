@@ -3,14 +3,14 @@
  * Requires authentication and ownership
  */
 import { EntitlementKey } from '@repo/billing';
+import type { AccommodationUpdateHttp, AccommodationUpdateInput } from '@repo/schemas';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
-    PermissionEnum,
-    httpToDomainAccommodationUpdate
+    httpToDomainAccommodationUpdate,
+    PermissionEnum
 } from '@repo/schemas';
-import type { AccommodationUpdateHttp, AccommodationUpdateInput } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import {

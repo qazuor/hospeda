@@ -25,14 +25,14 @@
  * Hydration: client:load (form is the primary interactive element on the page).
  */
 
+import { OwnerPromotionDiscountTypeEnum, OwnerPromotionUpdateInputSchema } from '@repo/schemas';
+import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 'react';
 import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotion } from '@/lib/api/transforms';
 import type { OwnerPromotionData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { OwnerPromotionDiscountTypeEnum, OwnerPromotionUpdateInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 'react';
 import styles from './PromotionForm.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -95,11 +95,11 @@ function buildInitialFields(data?: OwnerPromotionData): FormFields {
         title: data?.title ?? '',
         description: data?.description ?? '',
         discountType: data?.discountType ?? '',
-        discountValue: data?.discountValue != null ? String(data.discountValue) : '',
+        discountValue: data?.discountValue == null ? '' : String(data.discountValue),
         validFrom: toDateInputValue(data?.validFrom),
         validUntil: toDateInputValue(data?.validUntil),
-        minNights: data?.minNights != null ? String(data.minNights) : '',
-        maxRedemptions: data?.maxRedemptions != null ? String(data.maxRedemptions) : '',
+        minNights: data?.minNights == null ? '' : String(data.minNights),
+        maxRedemptions: data?.maxRedemptions == null ? '' : String(data.maxRedemptions),
         accommodationId: data?.accommodationId ?? '',
         vipOnly: data?.touristAudience === 'vip'
     };
@@ -303,14 +303,14 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
 
         const payload: Record<string, unknown> = {
             title: fields.title,
-            description: fields.description !== '' ? fields.description : undefined,
-            discountType: fields.discountType !== '' ? fields.discountType : undefined,
+            description: fields.description === '' ? undefined : fields.description,
+            discountType: fields.discountType === '' ? undefined : fields.discountType,
             discountValue: discountValueNum,
-            validFrom: fields.validFrom !== '' ? fields.validFrom : undefined,
-            validUntil: fields.validUntil !== '' ? fields.validUntil : undefined,
+            validFrom: fields.validFrom === '' ? undefined : fields.validFrom,
+            validUntil: fields.validUntil === '' ? undefined : fields.validUntil,
             minNights: minNightsNum,
             maxRedemptions: maxRedemptionsNum,
-            accommodationId: fields.accommodationId !== '' ? fields.accommodationId : undefined,
+            accommodationId: fields.accommodationId === '' ? undefined : fields.accommodationId,
             touristAudience: fields.vipOnly ? 'vip' : undefined
         };
 
@@ -382,16 +382,12 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 mode === 'create'
                     ? await ownerPromotionApi.create({
                           // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local create input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
-                          body: parsed.data as unknown as import(
-                              '@/lib/api/types'
-                          ).OwnerPromotionCreateInput
+                          body: parsed.data as unknown as import('@/lib/api/types').OwnerPromotionCreateInput
                       })
                     : await ownerPromotionApi.update({
                           id: promotionId ?? '',
                           // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local update input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
-                          body: parsed.data as unknown as import(
-                              '@/lib/api/types'
-                          ).OwnerPromotionUpdateInput
+                          body: parsed.data as unknown as import('@/lib/api/types').OwnerPromotionUpdateInput
                       });
 
             if (!result.ok) {
@@ -454,7 +450,6 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             <div
                 className={styles.promotionForm}
                 aria-busy="true"
-                aria-label={t('host.promotions.loading', 'Cargando promoción...')}
             >
                 <p className={styles.loadingText}>
                     {t('host.promotions.loading', 'Cargando promoción...')}

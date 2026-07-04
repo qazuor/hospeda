@@ -63,6 +63,7 @@ function maskId(id: string): string {
     if (id.length <= 4) return '****';
     return `***...${id.slice(-4)}`;
 }
+
 import {
     sendSubscriptionCancelledNotification,
     sendSubscriptionPausedNotification,
@@ -616,7 +617,7 @@ export async function processSubscriptionUpdated({
                 metadata: {
                     qzpayStatus,
                     mpPreapprovalId,
-                    ...(cancellationReason !== undefined ? { cancellationReason } : {})
+                    ...(cancellationReason === undefined ? {} : { cancellationReason })
                 }
             });
         } catch (auditError) {

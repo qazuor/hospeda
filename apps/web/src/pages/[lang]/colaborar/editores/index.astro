@@ -8,14 +8,14 @@
  * @rendering SSG (prerender)
  */
 
-import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
-import { ContributionForm } from '@/components/contributions/ContributionForm.client';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
+import { ContributionForm } from '@/components/contributions/ContributionForm.client';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 export const prerender = true;
 
@@ -37,10 +37,7 @@ const roleItems = [
         'contributions.editors.role.item2',
         'Cargar y curar eventos de la agenda: fechas, lugares, descripciones.'
     ),
-    t(
-        'contributions.editors.role.item3',
-        'Proponer temas y ayudar a mantener el contenido al día.'
-    )
+    t('contributions.editors.role.item3', 'Proponer temas y ayudar a mantener el contenido al día.')
 ];
 ---
 

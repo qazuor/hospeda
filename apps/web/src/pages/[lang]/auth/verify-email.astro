@@ -11,11 +11,11 @@
  * @rendering SSR (reads `token` from query params)
  */
 
+import { VerifyEmail } from '@/components/auth/VerifyEmail.client';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import AuthLayout from '@/layouts/AuthLayout.astro';
-import { VerifyEmail } from '@/components/auth/VerifyEmail.client';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;

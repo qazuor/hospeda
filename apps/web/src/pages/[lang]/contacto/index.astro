@@ -6,32 +6,32 @@
  * @rendering SSG (prerender)
  */
 
-import { getSiteUrl } from '@/lib/env';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import {
+    ArrowRightIcon,
+    CheckCircleIcon,
+    ClockIcon,
+    EmailIcon,
+    FacebookIcon,
+    InstagramIcon,
+    LocationIcon,
+    PhoneIcon,
+    WhatsappIcon
+} from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
 import { ContactForm } from '@/components/ContactForm.client';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import ContactFAQ from '@/components/contact/ContactFAQ.astro';
 import ContactMiniMap from '@/components/contact/ContactMiniMap.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
-import {
-	EmailIcon,
-	PhoneIcon,
-	WhatsappIcon,
-	LocationIcon,
-	ClockIcon,
-	CheckCircleIcon,
-	ArrowRightIcon,
-	InstagramIcon,
-	FacebookIcon
-} from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
+import { createTranslations } from '@/lib/i18n';
 
 export const prerender = true;
 
 export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }) satisfies GetStaticPaths;
 
 const { lang } = Astro.params;
@@ -51,103 +51,115 @@ const officeLat = -32.4847;
 const officeLng = -58.2329;
 
 const trustSignals = [
-	t('contact.trust.responseTime', 'Respondemos en menos de 24 hs'),
-	t('contact.trust.secure', 'Tus datos están protegidos'),
-	t('contact.trust.humans', 'Te atiende una persona, no un bot')
+    t('contact.trust.responseTime', 'Respondemos en menos de 24 hs'),
+    t('contact.trust.secure', 'Tus datos están protegidos'),
+    t('contact.trust.humans', 'Te atiende una persona, no un bot')
 ];
 
 const channels = [
-	{
-		key: 'email',
-		title: t('contact.channels.email.title', 'Email'),
-		description: t(
-			'contact.channels.email.description',
-			'Para consultas detalladas y formales.'
-		),
-		value: emailValue,
-		cta: t('contact.channels.email.cta', 'Escribinos un mail'),
-		href: `mailto:${emailValue}`,
-		external: false
-	},
-	{
-		key: 'phone',
-		title: t('contact.channels.phone.title', 'Teléfono'),
-		description: t(
-			'contact.channels.phone.description',
-			'Lunes a viernes, 9 a 18 hs (UTC-3).'
-		),
-		value: phoneRaw,
-		cta: t('contact.channels.phone.cta', 'Llamanos'),
-		href: `tel:${phoneHref}`,
-		external: false
-	},
-	{
-		key: 'whatsapp',
-		title: t('contact.channels.whatsapp.title', 'WhatsApp'),
-		description: t(
-			'contact.channels.whatsapp.description',
-			'Respuesta rápida en horario de oficina.'
-		),
-		value: whatsappRaw,
-		cta: t('contact.channels.whatsapp.cta', 'Chatear por WhatsApp'),
-		href: `https://wa.me/${whatsappHref}`,
-		external: true
-	}
+    {
+        key: 'email',
+        title: t('contact.channels.email.title', 'Email'),
+        description: t(
+            'contact.channels.email.description',
+            'Para consultas detalladas y formales.'
+        ),
+        value: emailValue,
+        cta: t('contact.channels.email.cta', 'Escribinos un mail'),
+        href: `mailto:${emailValue}`,
+        external: false
+    },
+    {
+        key: 'phone',
+        title: t('contact.channels.phone.title', 'Teléfono'),
+        description: t('contact.channels.phone.description', 'Lunes a viernes, 9 a 18 hs (UTC-3).'),
+        value: phoneRaw,
+        cta: t('contact.channels.phone.cta', 'Llamanos'),
+        href: `tel:${phoneHref}`,
+        external: false
+    },
+    {
+        key: 'whatsapp',
+        title: t('contact.channels.whatsapp.title', 'WhatsApp'),
+        description: t(
+            'contact.channels.whatsapp.description',
+            'Respuesta rápida en horario de oficina.'
+        ),
+        value: whatsappRaw,
+        cta: t('contact.channels.whatsapp.cta', 'Chatear por WhatsApp'),
+        href: `https://wa.me/${whatsappHref}`,
+        external: true
+    }
 ];
 
 const hours = [
-	{
-		label: t('contact.hours.weekdays', 'Lunes a viernes'),
-		value: t('contact.hours.weekdaysValue', '9:00 a 18:00')
-	},
-	{
-		label: t('contact.hours.saturday', 'Sábados'),
-		value: t('contact.hours.saturdayValue', '10:00 a 13:00')
-	},
-	{
-		label: t('contact.hours.sunday', 'Domingos y feriados'),
-		value: t('contact.hours.sundayValue', 'Cerrado')
-	}
+    {
+        label: t('contact.hours.weekdays', 'Lunes a viernes'),
+        value: t('contact.hours.weekdaysValue', '9:00 a 18:00')
+    },
+    {
+        label: t('contact.hours.saturday', 'Sábados'),
+        value: t('contact.hours.saturdayValue', '10:00 a 13:00')
+    },
+    {
+        label: t('contact.hours.sunday', 'Domingos y feriados'),
+        value: t('contact.hours.sundayValue', 'Cerrado')
+    }
 ];
 
 const socialLinks = [
-	{ key: 'instagram', label: 'Instagram', href: 'https://instagram.com/hospeda', Icon: InstagramIcon },
-	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
-	{ key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/${whatsappHref}`, Icon: WhatsappIcon }
+    {
+        key: 'instagram',
+        label: 'Instagram',
+        href: 'https://instagram.com/hospeda',
+        Icon: InstagramIcon
+    },
+    {
+        key: 'facebook',
+        label: 'Facebook',
+        href: 'https://facebook.com/hospeda',
+        Icon: FacebookIcon
+    },
+    {
+        key: 'whatsapp',
+        label: 'WhatsApp',
+        href: `https://wa.me/${whatsappHref}`,
+        Icon: WhatsappIcon
+    }
 ];
 
 // ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────
 const siteBase = getSiteUrl();
 const contactPageJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'ContactPage',
-	name: t('contact.title', 'Contacto - Hospeda'),
-	description: t('contact.description', 'Contactate con el equipo de Hospeda.'),
-	url: new URL(Astro.url.pathname, siteBase).href,
-	inLanguage: locale,
-	mainEntity: {
-		'@type': 'Organization',
-		name: 'Hospeda',
-		url: siteBase,
-		email: emailValue,
-		telephone: phoneRaw,
-		address: {
-			'@type': 'PostalAddress',
-			addressLocality: 'Concepción del Uruguay',
-			addressRegion: 'Entre Ríos',
-			addressCountry: 'AR'
-		},
-		contactPoint: [
-			{
-				'@type': 'ContactPoint',
-				contactType: 'customer support',
-				email: emailValue,
-				telephone: phoneRaw,
-				availableLanguage: ['Spanish', 'English', 'Portuguese'],
-				areaServed: 'AR'
-			}
-		]
-	}
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: t('contact.title', 'Contacto - Hospeda'),
+    description: t('contact.description', 'Contactate con el equipo de Hospeda.'),
+    url: new URL(Astro.url.pathname, siteBase).href,
+    inLanguage: locale,
+    mainEntity: {
+        '@type': 'Organization',
+        name: 'Hospeda',
+        url: siteBase,
+        email: emailValue,
+        telephone: phoneRaw,
+        address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Concepción del Uruguay',
+            addressRegion: 'Entre Ríos',
+            addressCountry: 'AR'
+        },
+        contactPoint: [
+            {
+                '@type': 'ContactPoint',
+                contactType: 'customer support',
+                email: emailValue,
+                telephone: phoneRaw,
+                availableLanguage: ['Spanish', 'English', 'Portuguese'],
+                areaServed: 'AR'
+            }
+        ]
+    }
 };
 ---
 

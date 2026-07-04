@@ -1,4 +1,5 @@
 ---
+import { resolveIcon } from '@repo/icons/resolver';
 /**
  * @file AmenitiesGrid.astro
  * @description Amenities grid with icons, expandable overflow, and i18n names.
@@ -10,13 +11,12 @@
  * flip the CSS state, while `aria-expanded` lives on the controlling button.
  */
 import type { AccommodationAmenityItem } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons/resolver';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly amenities: readonly AccommodationAmenityItem[];
-  readonly lang: string;
+    readonly amenities: readonly AccommodationAmenityItem[];
+    readonly lang: string;
 }
 
 const { amenities, lang } = Astro.props;
@@ -28,25 +28,25 @@ const VISIBLE_COUNT = 8;
 
 /** Translate amenity name via i18n, falling back to humanized raw name. */
 function translateAmenity(name: string): string {
-  const key = `accommodations.amenityNames.${name}`;
-  const translated = t(key);
-  if (translated.startsWith('[MISSING:')) {
-    return name
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-  return translated;
+    const key = `accommodations.amenityNames.${name}`;
+    const translated = t(key);
+    if (translated.startsWith('[MISSING:')) {
+        return name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return translated;
 }
 
 /** Resolve icon component from icon name. Returns null if not found. */
 function getIcon(iconName: string | null) {
-  if (!iconName) return null;
-  return resolveIcon({ iconName });
+    if (!iconName) return null;
+    return resolveIcon({ iconName });
 }
 
 const hasOverflow = amenities.length > VISIBLE_COUNT;
 const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalCost');
-const viewAllLabel = t('accommodations.detail.amenitiesDetail.viewAll', undefined, { n: amenities.length });
+const viewAllLabel = t('accommodations.detail.amenitiesDetail.viewAll', undefined, {
+    n: amenities.length
+});
 const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver menos');
 ---
 

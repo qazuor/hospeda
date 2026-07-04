@@ -12,6 +12,10 @@
  *   GET  /api/v1/admin/ai/settings — read AI settings (params display)
  *   PUT  /api/v1/admin/ai/settings — save playground config as settings
  */
+
+import { AlertCircleIcon, DeleteIcon, SaveIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,9 +39,6 @@ import {
     useUpdateAiSettingsMutation
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircleIcon, DeleteIcon, SaveIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccommodationCombobox } from './-components/AccommodationCombobox';
 import { AdvancedSettingsPanel } from './-components/AdvancedSettingsPanel';
 import { MessagesArea } from './-components/MessagesArea';

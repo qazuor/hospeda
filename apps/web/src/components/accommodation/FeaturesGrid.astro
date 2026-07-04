@@ -1,19 +1,19 @@
 ---
+import { SmokingAllowedIcon } from '@repo/icons';
+import { resolveIcon } from '@repo/icons/resolver';
 /**
  * @file FeaturesGrid.astro
  * @description Features grid with icons and optional smoking allowed synthetic item.
  * Hidden if empty and no smoking.
  */
 import type { AccommodationFeatureItem } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { SmokingAllowedIcon } from '@repo/icons';
-import { resolveIcon } from '@repo/icons/resolver';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly features: readonly AccommodationFeatureItem[];
-  readonly smokingAllowed: boolean | null;
-  readonly lang: string;
+    readonly features: readonly AccommodationFeatureItem[];
+    readonly smokingAllowed: boolean | null;
+    readonly lang: string;
 }
 
 const { features, smokingAllowed, lang } = Astro.props;
@@ -27,20 +27,18 @@ if (features.length === 0 && !hasSmoking) return;
  * SPEC-266: `name` was dropped from the catalog; `feature.name` now holds the slug.
  */
 function translateFeature(slug: string): string {
-  const key = `accommodations.featureNames.${slug}`;
-  const translated = t(key);
-  if (translated.startsWith('[MISSING:')) {
-    return slug
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-  return translated;
+    const key = `accommodations.featureNames.${slug}`;
+    const translated = t(key);
+    if (translated.startsWith('[MISSING:')) {
+        return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return translated;
 }
 
 /** Resolve icon component from icon name. Returns null if not found. */
 function getIcon(iconName: string | null) {
-  if (!iconName) return null;
-  return resolveIcon({ iconName });
+    if (!iconName) return null;
+    return resolveIcon({ iconName });
 }
 ---
 

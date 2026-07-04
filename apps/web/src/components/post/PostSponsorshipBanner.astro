@@ -6,23 +6,23 @@
  * link to the sponsor website. Accessible: marked with aria-label and rel="sponsored".
  */
 
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface SponsorshipData {
-	/** Optional custom message from the sponsor. */
-	readonly message?: string | null;
-	/** Sponsor website URL. */
-	readonly websiteUrl?: string | null;
-	/** Sponsor display name. */
-	readonly sponsorName?: string | null;
-	/** Sponsor logo image URL. */
-	readonly logoUrl?: string | null;
+    /** Optional custom message from the sponsor. */
+    readonly message?: string | null;
+    /** Sponsor website URL. */
+    readonly websiteUrl?: string | null;
+    /** Sponsor display name. */
+    readonly sponsorName?: string | null;
+    /** Sponsor logo image URL. */
+    readonly logoUrl?: string | null;
 }
 
 interface Props {
-	readonly sponsorship: SponsorshipData;
-	readonly locale: SupportedLocale;
+    readonly sponsorship: SponsorshipData;
+    readonly locale: SupportedLocale;
 }
 
 const { sponsorship, locale } = Astro.props;

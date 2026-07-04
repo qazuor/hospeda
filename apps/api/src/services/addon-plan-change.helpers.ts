@@ -7,8 +7,8 @@
 export type { PlanChangeDirection } from '@repo/service-core';
 
 export {
+    computeDirection,
     hashCustomerId,
     resolvePlanBaseLimit,
-    computeDirection,
     sumIncrements
 } from '@repo/service-core';

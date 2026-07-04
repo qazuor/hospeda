@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    UserBookmarkSearchHttpSchema,
     httpToDomainUserBookmarkCreate,
     httpToDomainUserBookmarkSearch,
-    httpToDomainUserBookmarkUpdate
+    httpToDomainUserBookmarkUpdate,
+    UserBookmarkSearchHttpSchema
 } from '../../../src/entities/userBookmark/userBookmark.http.schema.js';
 import { EntityTypeEnum } from '../../../src/enums/entity-type.enum.js';
 

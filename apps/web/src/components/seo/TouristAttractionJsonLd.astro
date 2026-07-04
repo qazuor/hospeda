@@ -10,38 +10,32 @@
 import JsonLd from './JsonLd.astro';
 
 interface Props {
-	readonly name: string;
-	readonly description?: string;
-	readonly url: string;
-	readonly image?: string;
-	readonly telephone?: string;
+    readonly name: string;
+    readonly description?: string;
+    readonly url: string;
+    readonly image?: string;
+    readonly telephone?: string;
 }
 
-const {
-	name,
-	description,
-	url,
-	image,
-	telephone,
-} = Astro.props;
+const { name, description, url, image, telephone } = Astro.props;
 
 const structuredData: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': 'TouristAttraction',
-	name,
-	url,
+    '@context': 'https://schema.org',
+    '@type': 'TouristAttraction',
+    name,
+    url
 };
 
 if (description) {
-	structuredData.description = description;
+    structuredData.description = description;
 }
 
 if (image) {
-	structuredData.image = image;
+    structuredData.image = image;
 }
 
 if (telephone) {
-	structuredData.telephone = telephone;
+    structuredData.telephone = telephone;
 }
 ---
 

@@ -22,11 +22,11 @@
  */
 
 import { ExternalLinkIcon, StarIcon } from '@repo/icons';
-import { ExternalReviews } from './ExternalReviews.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './ExternalReputation.module.css';
+import { ExternalReviews } from './ExternalReviews.client';
 
 interface Props {
     /**

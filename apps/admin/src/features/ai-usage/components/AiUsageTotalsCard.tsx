@@ -16,13 +16,13 @@
  * @module features/ai-usage/components/AiUsageTotalsCard
  */
 
+import type { AiUsageByModelRow } from '@repo/schemas';
+import { formatMicroUsd } from '@repo/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import type { AiUsageByModelRow } from '@repo/schemas';
-import { formatMicroUsd } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
 // Props

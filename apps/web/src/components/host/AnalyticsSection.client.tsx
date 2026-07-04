@@ -16,6 +16,7 @@
  * ```
  */
 
+import { type JSX, useCallback, useEffect, useState } from 'react';
 import { billingApi, hostAnalyticsApi } from '@/lib/api/endpoints-protected';
 import {
     transformAccommodationViews,
@@ -35,7 +36,6 @@ import type {
 } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type JSX, useCallback, useEffect, useState } from 'react';
 import styles from './AnalyticsSection.module.css';
 import { FavoritesWidget } from './FavoritesWidget.client';
 import { InquiryTrendWidget } from './InquiryTrendWidget.client';

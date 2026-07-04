@@ -20,10 +20,10 @@ import { describe, expect, it } from 'vitest';
 import type { GastronomyOpeningHoursEntry } from '../../src/data/types';
 import { toGastronomyCardProps } from '../../src/lib/api/transforms';
 import {
-    ORDERED_DAY_KEYS,
     computeOpenNowStatus,
     getDayKey,
     getTodayIndex,
+    ORDERED_DAY_KEYS,
     parseTimeToMinutes
 } from '../../src/lib/gastronomy-hours';
 

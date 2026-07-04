@@ -1,4 +1,6 @@
 ---
+import { getMutedColorScheme } from '@/lib/colors';
+import type { SupportedLocale } from '@/lib/i18n';
 /**
  * @file EventDetailTagsRow.astro
  * @description Horizontal row of tag pills for the event detail page.
@@ -8,8 +10,6 @@
  * renders, using the same muted-color approach as Post tags.
  */
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getMutedColorScheme } from '@/lib/colors';
 
 interface Props {
     readonly tags: readonly string[];

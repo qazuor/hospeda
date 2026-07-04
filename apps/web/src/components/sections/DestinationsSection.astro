@@ -15,10 +15,10 @@
 
 import { getImage } from 'astro:assets';
 import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { destinationsApi, toDestinationCardProps } from '@/lib/api';
 import type { DestinationCardData } from '@/lib/api/transforms';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
 
@@ -41,10 +41,15 @@ let destinations: DestinationCardData[] = [];
 try {
     const result = await destinationsApi.list({ destinationType: 'CITY', pageSize: 50 });
     if (result.ok) {
-        destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown>, locale }));
+        destinations = result.data.items.map((raw) =>
+            toDestinationCardProps({ item: raw as Record<string, unknown>, locale })
+        );
     }
 } catch (err) {
-    webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });
+    webLogger.error('API fetch failed', {
+        endpoint: 'destinations',
+        error: err instanceof Error ? err.message : err
+    });
 }
 
 // Pre-optimize destination images before passing to the React island.
@@ -63,7 +68,10 @@ const optimizedDestinations = await Promise.all(
         }
         try {
             const optimized = await getImage({ src: img, width: 300, format: 'webp' });
-            return { ...dest, featuredImage: { url: optimized.src, caption: dest.featuredImage.caption } };
+            return {
+                ...dest,
+                featuredImage: { url: optimized.src, caption: dest.featuredImage.caption }
+            };
         } catch {
             return dest;
         }

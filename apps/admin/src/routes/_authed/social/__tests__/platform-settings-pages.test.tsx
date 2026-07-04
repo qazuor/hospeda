@@ -203,16 +203,16 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 import {
-    useUpdatePlatformFormat,
-    useUpdateSocialSetting
-} from '@/hooks/use-social-platform-settings';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
-import {
     PermissionEnum,
     SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPublishFormatEnum
 } from '@repo/schemas';
+import {
+    useUpdatePlatformFormat,
+    useUpdateSocialSetting
+} from '@/hooks/use-social-platform-settings';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { PlatformFormatFormModal } from '../platform-formats/-components/PlatformFormatFormModal';
 import { PlatformFormatsTable } from '../platform-formats/-components/PlatformFormatsTable';
 import { SettingEditModal } from '../settings/-components/SettingEditModal';

@@ -4,12 +4,12 @@
  * @module services/moderation
  */
 export { ModerationAggregationService } from './moderation.aggregation.service';
-export {
-    resolveInitialModerationState,
-    MODERATION_PENDING_THRESHOLD
-} from './review-moderation.helpers';
 export type {
+    ResolveInitialModerationStateInput,
     ReviewEntityType,
-    ReviewVerificationLevel,
-    ResolveInitialModerationStateInput
+    ReviewVerificationLevel
+} from './review-moderation.helpers';
+export {
+    MODERATION_PENDING_THRESHOLD,
+    resolveInitialModerationState
 } from './review-moderation.helpers';

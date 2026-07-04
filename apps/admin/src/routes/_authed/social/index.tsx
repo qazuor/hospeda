@@ -12,14 +12,13 @@
  * Permission guard: SOCIAL_POST_VIEW (enforced server-side and via RoutePermissionGuard).
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { useSocialDashboard } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
 import { DashboardDateRangeFilter } from './-components/DashboardDateRangeFilter';
 import { DashboardKpiCards } from './-components/DashboardKpiCards';
 import { PlatformBreakdownChart } from './-components/PlatformBreakdownChart';

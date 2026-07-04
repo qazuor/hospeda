@@ -7,10 +7,10 @@
 
 export const prerender = false;
 
-import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import { ChatIcon, RefreshIcon } from '@repo/icons';
 import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { RefreshIcon, ChatIcon } from '@repo/icons';
+import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -22,11 +22,11 @@ const homeUrl = buildUrl({ locale, path: '/' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
 
 const feedbackParams = new URLSearchParams({
-	type: 'bug-js',
-	source: 'error-500',
-	url: Astro.url.href,
-	title: 'Error 500 en la página',
-	description: `Página: ${Astro.url.pathname}\nError: Se produjo un error interno del servidor.`,
+    type: 'bug-js',
+    source: 'error-500',
+    url: Astro.url.href,
+    title: 'Error 500 en la página',
+    description: `Página: ${Astro.url.pathname}\nError: Se produjo un error interno del servidor.`
 });
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 

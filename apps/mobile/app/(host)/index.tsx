@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { ChartBarIcon } from '../../src/components/icons';
 import { theme } from '../../src/design';
-import { useHostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
 import type { HostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
+import { useHostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
 import { getTranslation } from '../../src/lib/i18n';
 import { useLocale } from '../../src/lib/locale-context';
 import { logger } from '../../src/lib/logger';

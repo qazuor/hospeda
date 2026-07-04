@@ -5,13 +5,11 @@
  * This component provides a searchable dropdown for selecting entities from an API.
  */
 
+import { useTranslations } from '@repo/i18n';
 import { CheckIcon, ChevronsUpDownIcon, CloseIcon, LoaderIcon } from '@repo/icons';
 import * as React from 'react';
-
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { EntitySelectFieldConfig } from '@/components/entity-form/types/field-config.types';
-import { Label } from '@/components/ui-wrapped';
-import { useToast } from '@/components/ui/ToastProvider';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -22,8 +20,9 @@ import {
     CommandList
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/components/ui/ToastProvider';
+import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useTranslations } from '@repo/i18n';
 
 import type { FieldConfig, SelectOption } from '../types/field-config.types';
 

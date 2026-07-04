@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { getSponsorTypeColorScheme, getSponsorTypeIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 import type { Sponsor } from '../schemas/sponsors.schemas';
 
 /**

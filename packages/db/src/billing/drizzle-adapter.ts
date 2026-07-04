@@ -19,7 +19,7 @@
  */
 
 import type { QZPayStorageAdapter } from '@qazuor/qzpay-core';
-import { type QZPayDrizzleStorageAdapter, createQZPayDrizzleAdapter } from '@qazuor/qzpay-drizzle';
+import { createQZPayDrizzleAdapter, type QZPayDrizzleStorageAdapter } from '@qazuor/qzpay-drizzle';
 import type { DrizzleClient } from '../types.ts';
 
 /**
@@ -116,13 +116,12 @@ export function createBillingAdapter(
 }
 
 /**
+ * Re-export QZPay storage adapter interface for convenience
+ */
+export type { QZPayStorageAdapter } from '@qazuor/qzpay-core';
+/**
  * Type alias for the QZPay Drizzle storage adapter
  *
  * Exported for type checking and dependency injection scenarios
  */
 export type { QZPayDrizzleStorageAdapter };
-
-/**
- * Re-export QZPay storage adapter interface for convenience
- */
-export type { QZPayStorageAdapter } from '@qazuor/qzpay-core';

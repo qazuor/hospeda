@@ -12,7 +12,7 @@
  * The "all 22 cities have FAQs" completeness gate lives in the final-validation
  * task (T-041), not here, so this suite never blocks the branch mid-content.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

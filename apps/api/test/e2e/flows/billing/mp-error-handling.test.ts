@@ -334,35 +334,29 @@ describe('SPEC-149 T-010 — MercadoPago error handling (post provider-error pro
     // -----------------------------------------------------------------------
 
     describe('monthly flow — subscriptions.create re-throws raw error, still surfaces as 500', () => {
-        it.each(HTTP_ERROR_MODES)(
-            'returns 500 when MP returns %s %s (raw re-throw, no QZPayProviderSyncError wrapping)',
-            async (status, code) => {
-                mpStub.config.setError(
-                    'subscriptions.create',
-                    status,
-                    `Stub error ${status}`,
-                    code
-                );
+        it.each(
+            HTTP_ERROR_MODES
+        )('returns 500 when MP returns %s %s (raw re-throw, no QZPayProviderSyncError wrapping)', async (status, code) => {
+            mpStub.config.setError('subscriptions.create', status, `Stub error ${status}`, code);
 
-                const response = await client.post(
-                    '/api/v1/protected/billing/subscriptions/start-paid',
-                    {
-                        planSlug: cheapPlanName,
-                        billingInterval: 'monthly'
-                    }
-                );
+            const response = await client.post(
+                '/api/v1/protected/billing/subscriptions/start-paid',
+                {
+                    planSlug: cheapPlanName,
+                    billingInterval: 'monthly'
+                }
+            );
 
-                // qzpay-core subscriptions.create path re-throws the raw adapter
-                // error on the `throw` strategy. isBillingProviderError() checks
-                // for QZPayProviderSyncError — returns false for raw re-throws.
-                // The code falls through to the generic 500 handler.
-                expect(response.status).toBe(500);
+            // qzpay-core subscriptions.create path re-throws the raw adapter
+            // error on the `throw` strategy. isBillingProviderError() checks
+            // for QZPayProviderSyncError — returns false for raw re-throws.
+            // The code falls through to the generic 500 handler.
+            expect(response.status).toBe(500);
 
-                await assertMonthlyProviderFailureInvariants({
-                    expectedOutcome: 'error'
-                });
-            }
-        );
+            await assertMonthlyProviderFailureInvariants({
+                expectedOutcome: 'error'
+            });
+        });
 
         it('returns 500 when the adapter times out (408 from mp-stub setTimeout)', async () => {
             mpStub.config.setTimeout('subscriptions.create', 50);

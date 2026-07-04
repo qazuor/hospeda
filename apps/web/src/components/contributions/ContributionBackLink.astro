@@ -1,4 +1,5 @@
 ---
+import { ArrowLeftIcon } from '@repo/icons';
 /**
  * @file ContributionBackLink.astro
  * @description Smart back link for the /colaborar subpages (SPEC-191).
@@ -18,7 +19,6 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { ArrowLeftIcon } from '@repo/icons';
 
 interface Props {
     /** Locale to resolve the label and the hub fallback URL in. */

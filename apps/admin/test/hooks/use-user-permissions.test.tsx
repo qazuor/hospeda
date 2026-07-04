@@ -17,6 +17,7 @@ vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: vi.fn()
 }));
 
+import { PermissionEnum } from '@repo/schemas';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import {
     useHasAllPermissions,
@@ -24,7 +25,6 @@ import {
     useHasPermission,
     useUserPermissions
 } from '@/hooks/use-user-permissions';
-import { PermissionEnum } from '@repo/schemas';
 
 const mockUseAuthContext = vi.mocked(useAuthContext);
 

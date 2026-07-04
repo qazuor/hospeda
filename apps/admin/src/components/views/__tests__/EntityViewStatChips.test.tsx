@@ -10,13 +10,13 @@
  * - Aria-labels present on chips when loaded.
  */
 
-import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
-import { fetchApi } from '@/lib/api/client';
 import type { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Module mocks

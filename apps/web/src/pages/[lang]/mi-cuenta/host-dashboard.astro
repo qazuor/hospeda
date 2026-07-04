@@ -14,11 +14,11 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { HostDashboard } from '@/components/host/HostDashboard.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { HostDashboard } from '@/components/host/HostDashboard.client';
 
 export const prerender = false;
 

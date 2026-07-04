@@ -15,12 +15,12 @@
  * Marked noindex — post-action landing, no SEO value.
  */
 
+import { EmailIcon } from '@repo/icons';
 import { NewsletterResendButton } from '@/components/newsletter/NewsletterResendButton.client';
 import StatusPage from '@/components/shared/StatusPage.astro';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { EmailIcon } from '@repo/icons';
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(lang);

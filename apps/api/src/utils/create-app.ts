@@ -1,6 +1,5 @@
-import type { Context, MiddlewareHandler, Schema } from 'hono';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Context, MiddlewareHandler, Schema } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';

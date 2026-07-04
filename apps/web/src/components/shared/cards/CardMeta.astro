@@ -49,16 +49,14 @@ const isEmpty = !hasAuthor && !hasDate && !hasReadingTime;
 // every byline still gets a circular badge of the same shape and size.
 const authorAvatarUrl = author?.avatarUrl;
 const hasAuthorAvatar = Boolean(
-    authorAvatarUrl
-        && !authorAvatarUrl.includes('placeholder')
-        && !authorAvatarUrl.endsWith('.svg')
+    authorAvatarUrl && !authorAvatarUrl.includes('placeholder') && !authorAvatarUrl.endsWith('.svg')
 );
 
 const formattedDate = hasDate
     ? formatDate({
           date: date!,
           locale,
-          options: { day: 'numeric', month: 'short', year: 'numeric' },
+          options: { day: 'numeric', month: 'short', year: 'numeric' }
       })
     : '';
 ---

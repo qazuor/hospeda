@@ -15,18 +15,18 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useCallback, useEffect, useState } from 'react';
 import {
     Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
-import { translateApiError } from '@/lib/api-errors';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useEffect, useState } from 'react';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 import styles from './MoveToCollectionModal.module.css';
 
@@ -387,6 +387,7 @@ export function MoveToCollectionModal({
                                             {collection.bookmarkCount !== undefined && (
                                                 <span
                                                     className={styles.countBadge}
+                                                    role="img"
                                                     aria-label={t(
                                                         'account.favorites.collections.bookmark_count',
                                                         '{{count}} alojamientos',

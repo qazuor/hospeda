@@ -17,12 +17,12 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { ExclusiveDealsList } from '@/components/account/ExclusiveDealsList.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getApiUrl } from '@/lib/env';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import { ExclusiveDealsList } from '@/components/account/ExclusiveDealsList.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;

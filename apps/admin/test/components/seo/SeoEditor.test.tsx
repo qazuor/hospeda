@@ -1,6 +1,6 @@
-import { SeoEditor } from '@/components/seo/SeoEditor';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { SeoEditor } from '@/components/seo/SeoEditor';
 
 const addToast = vi.fn();
 

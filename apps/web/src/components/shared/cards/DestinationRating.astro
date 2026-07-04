@@ -11,24 +11,24 @@
  */
 
 import { StarIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-	/** Average rating value, 0–5. */
-	readonly averageRating: number;
-	/** Total number of reviews aggregated into the rating. */
-	readonly reviewsCount: number;
-	/** Active locale used to resolve aria-label translations. */
-	readonly locale: SupportedLocale;
-	/**
-	 * Whether the rating renders over a dark/photographic surface.
-	 * Adjusts empty-star and value colors for legibility.
-	 * Defaults to false (light surface).
-	 */
-	readonly onDark?: boolean;
-	/** Star icon size in px. Defaults to 14. */
-	readonly size?: number;
+    /** Average rating value, 0–5. */
+    readonly averageRating: number;
+    /** Total number of reviews aggregated into the rating. */
+    readonly reviewsCount: number;
+    /** Active locale used to resolve aria-label translations. */
+    readonly locale: SupportedLocale;
+    /**
+     * Whether the rating renders over a dark/photographic surface.
+     * Adjusts empty-star and value colors for legibility.
+     * Defaults to false (light surface).
+     */
+    readonly onDark?: boolean;
+    /** Star icon size in px. Defaults to 14. */
+    readonly size?: number;
 }
 
 const { averageRating, reviewsCount, locale, onDark = false, size = 14 } = Astro.props;

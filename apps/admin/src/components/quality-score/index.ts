@@ -1,6 +1,6 @@
 export { computeScore } from './compute-score';
-export { QualityScore } from './QualityScore';
 export type { QualityScoreProps } from './QualityScore';
+export { QualityScore } from './QualityScore';
 export type {
     EvaluatedSignal,
     ScoreResult,

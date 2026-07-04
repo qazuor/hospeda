@@ -71,7 +71,7 @@ import { apiLogger } from '../../utils/logger.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import { getActiveMLCredential, upsertMLCredential } from './ml-credential.repository.js';
 import { refreshAccessToken } from './ml-oauth-client.js';
-import { MLTokenRefreshError, classifyMLRefreshFailure } from './ml-token.errors.js';
+import { classifyMLRefreshFailure, MLTokenRefreshError } from './ml-token.errors.js';
 
 /**
  * Path to the admin OAuth endpoint operators must call to re-authorize the

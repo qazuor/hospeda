@@ -5,7 +5,7 @@
  */
 
 export { Header } from './Header';
-export { HeaderNavItem, useIsHeaderItemActive } from './HeaderNavItem';
 export type { HeaderNavItemProps } from './HeaderNavItem';
-export { MobileMenu } from './MobileMenu';
+export { HeaderNavItem, useIsHeaderItemActive } from './HeaderNavItem';
 export type { MobileMenuProps } from './MobileMenu';
+export { MobileMenu } from './MobileMenu';

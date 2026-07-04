@@ -16,18 +16,18 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { BuildingIcon } from '@repo/icons';
 import type { Accommodation } from '@repo/schemas';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { getApiUrl } from '@/lib/env';
-import { webLogger as logger } from '@/lib/logger';
-import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
-import AccountLayout from '@/layouts/AccountLayout.astro';
 import PropertyCard from '@/components/host/PropertyCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { BuildingIcon } from '@repo/icons';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { getApiUrl } from '@/lib/env';
+import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
@@ -75,10 +75,9 @@ try {
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetch(
-                `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
-                { headers }
-            )
+            fetch(`${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`, {
+                headers
+            })
         ]);
 
         if (accomResponse.ok) {
@@ -98,7 +97,10 @@ try {
     }
 } catch (err) {
     fetchError = true;
-    logger.error('[propiedades] Failed to fetch properties', err instanceof Error ? err.message : String(err));
+    logger.error(
+        '[propiedades] Failed to fetch properties',
+        err instanceof Error ? err.message : String(err)
+    );
 }
 
 // ---------------------------------------------------------------------------

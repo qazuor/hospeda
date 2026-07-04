@@ -12,15 +12,15 @@ import JsonLd from './JsonLd.astro';
 
 /** Props interface for WebSiteJsonLd component. */
 interface Props {
-	/** Site/brand name (e.g. "Hospeda"). */
-	readonly name: string;
-	/** Canonical absolute URL of the site root (e.g. "https://hospeda.com.ar"). */
-	readonly url: string;
-	/**
-	 * BCP47 locale tag for the search target path (e.g. "es").
-	 * Used to build the SearchAction target URL with the correct locale prefix.
-	 */
-	readonly locale: string;
+    /** Site/brand name (e.g. "Hospeda"). */
+    readonly name: string;
+    /** Canonical absolute URL of the site root (e.g. "https://hospeda.com.ar"). */
+    readonly url: string;
+    /**
+     * BCP47 locale tag for the search target path (e.g. "es").
+     * Used to build the SearchAction target URL with the correct locale prefix.
+     */
+    readonly locale: string;
 }
 
 const { name, url, locale } = Astro.props;
@@ -33,18 +33,18 @@ const { name, url, locale } = Astro.props;
 const searchTarget = `${url}/${locale}/busqueda/?q={search_term_string}`;
 
 const structuredData: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': 'WebSite',
-	name,
-	url,
-	potentialAction: {
-		'@type': 'SearchAction',
-		target: {
-			'@type': 'EntryPoint',
-			urlTemplate: searchTarget,
-		},
-		'query-input': 'required name=search_term_string',
-	},
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name,
+    url,
+    potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+            '@type': 'EntryPoint',
+            urlTemplate: searchTarget
+        },
+        'query-input': 'required name=search_term_string'
+    }
 };
 ---
 

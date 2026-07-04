@@ -1,4 +1,8 @@
 ---
+import { getMediaUrl } from '@repo/media';
+import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 /**
  * @file destinos/atraccion/[slug]/index.astro
  * @description Attraction detail page.
@@ -6,14 +10,10 @@
  * @rendering SSR + ISR 24h
  */
 import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import { attractionsApi } from '@/lib/api/endpoints';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getMediaUrl } from '@repo/media';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -25,7 +25,9 @@ if (!result.ok) return new Response(null, { status: 404 });
 const attraction = result.data as Record<string, unknown>;
 const name = String(attraction.name || '');
 const description = String(attraction.description || '');
-const rawFeaturedImage = String(attraction.featuredImage || '/assets/images/placeholder-destination.svg');
+const rawFeaturedImage = String(
+    attraction.featuredImage || '/assets/images/placeholder-destination.svg'
+);
 const featuredImage = getMediaUrl(rawFeaturedImage, { preset: 'hero' });
 const destObj = attraction.destination as Record<string, unknown> | undefined;
 const destName = String(destObj?.name || '');

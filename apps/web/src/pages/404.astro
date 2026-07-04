@@ -7,10 +7,10 @@
 
 export const prerender = false;
 
-import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import { ChatIcon, SearchIcon } from '@repo/icons';
 import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { SearchIcon, ChatIcon } from '@repo/icons';
+import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -22,11 +22,11 @@ const searchUrl = buildUrl({ locale, path: 'busqueda' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
 
 const feedbackParams = new URLSearchParams({
-	type: 'bug-ui-ux',
-	source: 'error-404',
-	url: Astro.url.href,
-	title: 'Página no encontrada (404)',
-	description: `URL: ${Astro.url.pathname}\nEsta página no existe o el enlace está roto.`,
+    type: 'bug-ui-ux',
+    source: 'error-404',
+    url: Astro.url.href,
+    title: 'Página no encontrada (404)',
+    description: `URL: ${Astro.url.pathname}\nEsta página no existe o el enlace está roto.`
 });
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---

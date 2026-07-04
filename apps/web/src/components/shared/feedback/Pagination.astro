@@ -65,7 +65,7 @@ const {
     baseUrl,
     locale = 'es',
     searchParams,
-    class: className,
+    class: className
 } = Astro.props;
 
 const t = createT(locale);
@@ -73,9 +73,9 @@ const t = createT(locale);
 /** Resolved i18n labels for pagination controls. */
 const labels = {
     previous: t('ui.pagination.previous', 'Anterior'),
-    next:     t('ui.pagination.next',     'Siguiente'),
-    page:     t('ui.pagination.page',     'Página'),
-    of:       t('ui.pagination.of',       'de'),
+    next: t('ui.pagination.next', 'Siguiente'),
+    page: t('ui.pagination.page', 'Página'),
+    of: t('ui.pagination.of', 'de')
 } as const;
 
 /**
@@ -148,7 +148,7 @@ function getPageNumbers(current: number, total: number): readonly number[] {
 
 const pageNumbers = getPageNumbers(currentPage, totalPages);
 const hasPrevious = currentPage > 1;
-const hasNext     = currentPage < totalPages;
+const hasNext = currentPage < totalPages;
 ---
 
 {totalPages > 1 && (

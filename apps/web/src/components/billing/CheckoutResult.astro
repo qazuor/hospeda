@@ -13,16 +13,16 @@
  */
 
 interface CtaProps {
-	readonly href: string;
-	readonly label: string;
+    readonly href: string;
+    readonly label: string;
 }
 
 interface Props {
-	readonly variant: 'success' | 'failure' | 'pending';
-	readonly title: string;
-	readonly body: string;
-	readonly primaryCta: CtaProps;
-	readonly secondaryCta?: CtaProps;
+    readonly variant: 'success' | 'failure' | 'pending';
+    readonly title: string;
+    readonly body: string;
+    readonly primaryCta: CtaProps;
+    readonly secondaryCta?: CtaProps;
 }
 
 const { variant, title, body, primaryCta, secondaryCta } = Astro.props;

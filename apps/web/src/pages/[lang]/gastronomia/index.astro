@@ -10,21 +10,21 @@
  * @rendering SSR (on-demand)
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import GastronomyCard from '@/components/gastronomy/GastronomyCard.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
-import { gastronomyApi, destinationsApi } from '@/lib/api/endpoints';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import { destinationsApi, gastronomyApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toGastronomyCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -120,10 +120,7 @@ const filterGroups: FilterGroup[] = [
         id: 'q',
         label: t('gastronomy.listing.search', 'Búsqueda por texto'),
         type: 'search',
-        placeholder: t(
-            'gastronomy.listing.searchPlaceholder',
-            'Buscar por nombre o descripción...'
-        )
+        placeholder: t('gastronomy.listing.searchPlaceholder', 'Buscar por nombre o descripción...')
     },
     {
         id: 'destinationId',
@@ -190,9 +187,11 @@ const baseUrl = buildUrl({ locale, path: 'gastronomia' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
 const itemListEntries = cards.map((card) => ({
-    url: new URL(buildUrl({ locale, path: `gastronomia/${card.slug}` }), Astro.site ?? Astro.url.origin)
-        .href,
-    name: card.name,
+    url: new URL(
+        buildUrl({ locale, path: `gastronomia/${card.slug}` }),
+        Astro.site ?? Astro.url.origin
+    ).href,
+    name: card.name
 }));
 ---
 

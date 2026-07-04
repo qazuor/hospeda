@@ -54,8 +54,8 @@ const jsonLd = {
         '@type': 'ListItem',
         position: index + 1,
         name: item.label,
-        item: item.href ? `${siteUrl}${item.href}` : undefined,
-    })),
+        item: item.href ? `${siteUrl}${item.href}` : undefined
+    }))
 };
 
 const hasMany = items.length > 3;

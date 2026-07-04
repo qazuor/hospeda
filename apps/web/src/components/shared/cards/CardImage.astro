@@ -29,7 +29,7 @@ const {
     loading = 'lazy',
     width = 400,
     height,
-    placeholderContent,
+    placeholderContent
 } = Astro.props;
 
 const hasImage = Boolean(src);
@@ -37,7 +37,7 @@ const hasImage = Boolean(src);
 const RATIO_MAP: Record<string, number> = {
     '16:9': 9 / 16,
     '4:3': 3 / 4,
-    '1:1': 1,
+    '1:1': 1
 };
 
 const resolvedHeight = height ?? Math.round(width * RATIO_MAP[aspectRatio]);
@@ -45,7 +45,7 @@ const resolvedHeight = height ?? Math.round(width * RATIO_MAP[aspectRatio]);
 const RATIO_CLASS: Record<string, string> = {
     '16:9': 'card-image--ratio-16-9',
     '4:3': 'card-image--ratio-4-3',
-    '1:1': 'card-image--ratio-1-1',
+    '1:1': 'card-image--ratio-1-1'
 };
 ---
 

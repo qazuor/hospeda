@@ -5,41 +5,39 @@
  * and links to their author profile and post listing.
  */
 
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 interface AuthorShape {
-	readonly id: string;
-	readonly displayName?: string | null;
-	readonly firstName?: string | null;
-	readonly lastName?: string | null;
-	readonly profilePicture?: string | null;
-	readonly bio?: string | null;
-	readonly slug?: string | null;
+    readonly id: string;
+    readonly displayName?: string | null;
+    readonly firstName?: string | null;
+    readonly lastName?: string | null;
+    readonly profilePicture?: string | null;
+    readonly bio?: string | null;
+    readonly slug?: string | null;
 }
 
 interface Props {
-	readonly author: AuthorShape;
-	readonly locale: SupportedLocale;
+    readonly author: AuthorShape;
+    readonly locale: SupportedLocale;
 }
 
 const { author, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const name =
-	author.displayName ||
-	[author.firstName, author.lastName].filter(Boolean).join(' ') ||
-	'';
+    author.displayName || [author.firstName, author.lastName].filter(Boolean).join(' ') || '';
 const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', 'Sobre el autor');
 
 const profileUrl = author.slug
-	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
-	: null;
+    ? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
+    : null;
 
 const morePostsUrl = buildUrl({
-	locale,
-	path: `publicaciones`,
+    locale,
+    path: `publicaciones`
 });
 ---
 

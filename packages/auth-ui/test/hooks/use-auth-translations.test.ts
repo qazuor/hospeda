@@ -1,6 +1,18 @@
 /**
  * Test suite for useAuthTranslations hook.
- * Covers i18n available/unavailable scenarios, fallback behavior, and parameter replacement.
+ * Covers delegation to `@repo/i18n`, fallback behavior when the inner `t()`
+ * call throws (e.g. an unresolvable/missing key), and parameter replacement.
+ *
+ * NOTE: `useTranslations` from `@repo/i18n` has no Context/Provider
+ * dependency (it derives everything from static config via `useMemo`), so it
+ * cannot throw — the hook is called unconditionally at the top level of
+ * `useAuthTranslations` (Rules of Hooks forbid calling a hook inside
+ * try/catch). This suite therefore no longer simulates "the outer
+ * `useTranslations` hook itself throws" — that scenario is not something the
+ * real dependency can produce, and reintroducing it would require wrapping
+ * the hook call in try/catch again. The fallback-text coverage below is
+ * exercised instead via the (still-supported) inner `t()`-throws path, which
+ * covers the exact same `getFallbackText` behavior.
  *
  * @module use-auth-translations.test
  */
@@ -9,38 +21,29 @@ import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthTranslations } from '../../src/hooks/use-auth-translations';
 
-// We need to control the mock behavior per test group,
-// so we define the mock at module level and change its behavior via a variable.
-let mockUseTranslationsThrows = false;
 let mockTranslateFn: ((key: string, params?: Record<string, string | number>) => string) | null =
     null;
 
 vi.mock('@repo/i18n', () => ({
-    useTranslations: () => {
-        if (mockUseTranslationsThrows) {
-            throw new Error('i18n not available');
-        }
-        return {
-            t: (key: string, params?: Record<string, string | number>) => {
-                if (mockTranslateFn) {
-                    return mockTranslateFn(key, params);
-                }
-                // Default: return key with params replaced
-                let result = `translated:${key}`;
-                if (params) {
-                    for (const [paramKey, value] of Object.entries(params)) {
-                        result = result.replace(`{${paramKey}}`, String(value));
-                    }
-                }
-                return result;
+    useTranslations: () => ({
+        t: (key: string, params?: Record<string, string | number>) => {
+            if (mockTranslateFn) {
+                return mockTranslateFn(key, params);
             }
-        };
-    }
+            // Default: return key with params replaced
+            let result = `translated:${key}`;
+            if (params) {
+                for (const [paramKey, value] of Object.entries(params)) {
+                    result = result.replace(`{${paramKey}}`, String(value));
+                }
+            }
+            return result;
+        }
+    })
 }));
 
 describe('useAuthTranslations', () => {
     beforeEach(() => {
-        mockUseTranslationsThrows = false;
         mockTranslateFn = null;
     });
 
@@ -86,20 +89,11 @@ describe('useAuthTranslations', () => {
         });
     });
 
-    describe('when i18n is NOT available', () => {
+    describe('fallback text coverage (when the underlying t() throws)', () => {
         beforeEach(() => {
-            mockUseTranslationsThrows = true;
-        });
-
-        it('returns t function and isI18nAvailable=false', async () => {
-            // Arrange
-
-            // Act
-            const { result } = renderHook(() => useAuthTranslations());
-
-            // Assert
-            expect(result.current.isI18nAvailable).toBe(false);
-            expect(typeof result.current.t).toBe('function');
+            mockTranslateFn = () => {
+                throw new Error('translation key not found');
+            };
         });
 
         it('returns Spanish fallback text for known keys', async () => {
@@ -167,12 +161,14 @@ describe('useAuthTranslations', () => {
          * - 'auth-ui.signUp.emailPlaceholder'
          * - 'auth-ui.signUp.passwordPlaceholder'
          *
-         * When i18n is not available, these keys will return the key string itself
+         * When the underlying t() throws, these keys will return the key string itself
          * instead of a Spanish fallback. This is a gap in the fallback coverage.
          */
         it('signUp form keys without fallbacks return the key itself', async () => {
             // Arrange
-            mockUseTranslationsThrows = true;
+            mockTranslateFn = () => {
+                throw new Error('translation key not found');
+            };
 
             // Act
             const { result } = renderHook(() => useAuthTranslations());

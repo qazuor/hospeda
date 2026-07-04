@@ -17,19 +17,6 @@
  *   readers reliably announce new toasts.
  */
 
-import { cn } from '@/lib/cn';
-import { type SupportedLocale, createTranslations } from '@/lib/i18n';
-import * as toastStore from '@/store/toast-store';
-import {
-    type Toast,
-    type ToastAction,
-    drainPendingToast,
-    getToasts,
-    pauseToast,
-    removeToast,
-    resumeToast,
-    subscribe
-} from '@/store/toast-store';
 import {
     AlertTriangleIcon,
     CheckCircleIcon,
@@ -48,6 +35,19 @@ import {
     useState,
     useSyncExternalStore
 } from 'react';
+import { cn } from '@/lib/cn';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import * as toastStore from '@/store/toast-store';
+import {
+    drainPendingToast,
+    getToasts,
+    pauseToast,
+    removeToast,
+    resumeToast,
+    subscribe,
+    type Toast,
+    type ToastAction
+} from '@/store/toast-store';
 import styles from './ToastViewport.module.css';
 
 /**
@@ -235,23 +235,8 @@ function ToastItem({ toast, closeLabel }: ToastItemProps) {
         style.opacity = Math.max(0.2, 1 - swipeOffset / 200);
     }
 
-    return (
-        <div
-            // `role=alert` interrupts; reserve for errors. Everything else uses
-            // `status` so it joins the polite announcement queue.
-            role={toast.type === 'error' ? 'alert' : 'status'}
-            className={cn(styles.toast, isExiting && styles.exiting)}
-            data-toast-type={toast.type}
-            style={style}
-            onPointerEnter={handlePointerEnter}
-            onPointerLeave={handlePointerLeave}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={endSwipe}
-            onPointerCancel={endSwipe}
-        >
+    const toastContent = (
+        <>
             <span
                 className={cn(styles.icon, isLoading && styles.iconSpinning)}
                 aria-hidden="true"
@@ -326,6 +311,51 @@ function ToastItem({ toast, closeLabel }: ToastItemProps) {
                     />
                 </button>
             </div>
+        </>
+    );
+
+    // `role` must be a literal string per branch (a computed/ternary value is
+    // not statically analyzable, so lint/a11y/noStaticElementInteractions
+    // cannot confirm the element carries a valid role). `alert` interrupts
+    // and is reserved for errors; everything else uses `status` so it joins
+    // the polite announcement queue.
+    if (toast.type === 'error') {
+        return (
+            <div
+                role="alert"
+                className={cn(styles.toast, isExiting && styles.exiting)}
+                data-toast-type={toast.type}
+                style={style}
+                onPointerEnter={handlePointerEnter}
+                onPointerLeave={handlePointerLeave}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={endSwipe}
+                onPointerCancel={endSwipe}
+            >
+                {toastContent}
+            </div>
+        );
+    }
+
+    return (
+        <div
+            role="status"
+            className={cn(styles.toast, isExiting && styles.exiting)}
+            data-toast-type={toast.type}
+            style={style}
+            onPointerEnter={handlePointerEnter}
+            onPointerLeave={handlePointerLeave}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endSwipe}
+            onPointerCancel={endSwipe}
+        >
+            {toastContent}
         </div>
     );
 }

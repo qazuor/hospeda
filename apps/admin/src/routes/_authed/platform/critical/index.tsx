@@ -1,3 +1,6 @@
+import { type AnnouncementsValue, type MaintenanceModeValue, PermissionEnum } from '@repo/schemas';
+import { useMutation } from '@tanstack/react-query';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,9 +13,6 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import type { AuthState } from '@/lib/auth-session';
-import { type AnnouncementsValue, type MaintenanceModeValue, PermissionEnum } from '@repo/schemas';
-import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/critical/')({
     beforeLoad: ({ context }) => {

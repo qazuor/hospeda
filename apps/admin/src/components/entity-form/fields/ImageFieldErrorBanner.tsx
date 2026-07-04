@@ -10,10 +10,10 @@
  * the dismissed state and clears it via `onDismiss`.
  */
 
-import { Button } from '@/components/ui-wrapped';
-import { cn } from '@/lib/utils';
 import { CloseIcon } from '@repo/icons';
 import type * as React from 'react';
+import { Button } from '@/components/ui-wrapped';
+import { cn } from '@/lib/utils';
 
 /**
  * Props for {@link ImageFieldErrorBanner}. RO-RO pattern.

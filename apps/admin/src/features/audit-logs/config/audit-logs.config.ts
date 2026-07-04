@@ -9,11 +9,12 @@
  * whitelisted by the API routes. Search is disabled (entries are not
  * text-searchable via the API). Grid view is disabled (dense tabular data).
  */
+
+import { AuditLogEntrySchema } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import { AuditLogEntrySchema } from '@repo/schemas';
-import type { z } from 'zod';
 import { createAuditLogsColumns } from './audit-logs.columns';
 
 /** Inferred item type from the canonical schema. */

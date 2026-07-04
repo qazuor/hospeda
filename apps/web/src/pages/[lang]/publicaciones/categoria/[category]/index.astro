@@ -6,17 +6,17 @@
  * @rendering SSR + ISR 24h
  */
 
-import ListingLayout from '@/layouts/ListingLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import { postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { resolvePostCategorySlug } from '@/lib/post-category';
 import { buildUrl } from '@/lib/urls';
 
@@ -39,7 +39,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const cards = items.map((item) =>
+    toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
 const catLabel = t(`blog.categories.${catSlugLower}`, catSlugLower);
 const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlugLower}` });
 ---

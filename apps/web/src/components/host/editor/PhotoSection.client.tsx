@@ -24,14 +24,14 @@
  * Cloudinary once multiple rows exist in the relational table.
  */
 
+import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type AccommodationMediaRow, accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
-import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './PhotoSection.module.css';
 
 // Re-export types for consumers that import from this module

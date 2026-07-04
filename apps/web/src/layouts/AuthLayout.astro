@@ -6,35 +6,35 @@
  * and a minimal copyright footer.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
-import Logo from '@/components/shared/navigation/Logo.astro';
+import { ClientRouter } from 'astro:transitions';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
+import Logo from '@/components/shared/navigation/Logo.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
-import { ClientRouter } from 'astro:transitions';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import '@/styles/global.css';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
-	/**
-	 * When true the slot is rendered directly inside .auth-content,
-	 * skipping the centered .auth-card wrapper. Use for pages that bring
-	 * their own full layout (status pages, etc.) and want to manage their
-	 * own card-or-not styling.
-	 */
-	readonly bareSlot?: boolean;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
+    /**
+     * When true the slot is rendered directly inside .auth-content,
+     * skipping the centered .auth-card wrapper. Use for pages that bring
+     * their own full layout (status pages, etc.) and want to manage their
+     * own card-or-not styling.
+     */
+    readonly bareSlot?: boolean;
 }
 
 const {
-	locale,
-	title = 'Hospeda',
-	description = 'Ingresá a tu cuenta',
-	bareSlot = false,
+    locale,
+    title = 'Hospeda',
+    description = 'Ingresá a tu cuenta',
+    bareSlot = false
 } = Astro.props;
 
 const { t } = createTranslations(locale);

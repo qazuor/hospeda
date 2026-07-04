@@ -17,22 +17,22 @@
  *   time; Cache-Control: s-maxage=300, stale-while-revalidate=60.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
-import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
+import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
 import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
-import { createTranslations } from '@/lib/i18n';
+import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import {
+    fetchPublicPlans,
+    filterPlansByCategory,
+    PRICING_CACHE_MAX_AGE_SECONDS,
+    PRICING_CACHE_SWR_SECONDS
+} from '@/lib/billing/fetch-plans';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import {
-	fetchPublicPlans,
-	filterPlansByCategory,
-	PRICING_CACHE_MAX_AGE_SECONDS,
-	PRICING_CACHE_SWR_SECONDS,
-} from '@/lib/billing/fetch-plans';
-import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -44,15 +44,13 @@ const { t } = createTranslations(locale);
 // stale-while-revalidate=60: revalidate in the background while serving stale.
 // T-017 adds a targeted purge on plan save for immediate invalidation.
 Astro.response.headers.set(
-	'Cache-Control',
-	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
+    'Cache-Control',
+    `s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
 );
 
 // Fetch active plans from the public API endpoint at runtime.
 const fetchResult = await fetchPublicPlans();
-const ownerPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'owner')
-	: [];
+const ownerPlans = fetchResult.ok ? filterPlansByCategory(fetchResult.plans, 'owner') : [];
 
 const intlLocale = getIntlLocale(locale);
 const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
@@ -63,12 +61,12 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes' })}`;
 
 const jsonLdPlans = ownerPlans.map((plan) => ({
-	name: plan.name,
-	description: plan.description,
-	priceCurrency: 'ARS',
-	// schema.org `price` expects major currency units (pesos), not cents.
-	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl,
+    name: plan.name,
+    description: plan.description,
+    priceCurrency: 'ARS',
+    // schema.org `price` expects major currency units (pesos), not cents.
+    price: plan.monthlyPriceArs / 100,
+    url: planPageUrl
 }));
 
 // Split heading to underline the last word with a handwritten accent.

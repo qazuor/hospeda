@@ -4,15 +4,15 @@
  * Displays and manages sponsorship settings for a specific post.
  */
 
+import { formatDate } from '@repo/i18n';
+import { InfoIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageTabs, postTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePostQuery } from '@/features/posts/hooks/usePostQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatDate } from '@repo/i18n';
-import { InfoIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/posts/$id_/sponsorship')({
     component: PostSponsorshipPage

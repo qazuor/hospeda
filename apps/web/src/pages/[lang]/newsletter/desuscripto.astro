@@ -13,11 +13,11 @@
  * Server-rendered, no JavaScript, noindex.
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import StatusPage from '@/components/shared/StatusPage.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { MailIcon } from '@repo/icons';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(lang);

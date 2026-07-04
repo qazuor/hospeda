@@ -2,11 +2,11 @@ import type { HostConversationResponseRate } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import type {
     InsertConversation,
     SelectConversation
 } from '../../schemas/conversation/conversations.dbschema.ts';
+import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';

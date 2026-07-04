@@ -6,25 +6,25 @@
  * Each card shows an icon, attraction name, and optional 2-line description.
  */
 import { LocationIcon } from '@repo/icons';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 /** A single attraction belonging to a destination. */
 export interface AttractionItem {
-	readonly id: string;
-	readonly name: string;
-	readonly slug?: string;
-	readonly description?: string;
-	readonly icon?: string;
-	readonly isFeatured?: boolean;
-	readonly displayWeight?: number;
+    readonly id: string;
+    readonly name: string;
+    readonly slug?: string;
+    readonly description?: string;
+    readonly icon?: string;
+    readonly isFeatured?: boolean;
+    readonly displayWeight?: number;
 }
 
 interface Props {
-	readonly attractions: ReadonlyArray<AttractionItem>;
-	readonly locale: SupportedLocale;
-	/** Maximum number of attraction cards to display. Defaults to 8. */
-	readonly maxItems?: number;
+    readonly attractions: ReadonlyArray<AttractionItem>;
+    readonly locale: SupportedLocale;
+    /** Maximum number of attraction cards to display. Defaults to 8. */
+    readonly maxItems?: number;
 }
 
 const { attractions, locale, maxItems = 8 } = Astro.props;
@@ -33,13 +33,13 @@ const { t } = createTranslations(locale);
 if (!attractions || attractions.length === 0) return;
 
 const sorted = [...attractions]
-	.sort((a, b) => {
-		const wA = a.displayWeight ?? 0;
-		const wB = b.displayWeight ?? 0;
-		if (wB !== wA) return wB - wA;
-		return a.name.localeCompare(b.name);
-	})
-	.slice(0, maxItems);
+    .sort((a, b) => {
+        const wA = a.displayWeight ?? 0;
+        const wB = b.displayWeight ?? 0;
+        if (wB !== wA) return wB - wA;
+        return a.name.localeCompare(b.name);
+    })
+    .slice(0, maxItems);
 ---
 
 <section class="attractions-grid" aria-labelledby="attractions-title">

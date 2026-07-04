@@ -4,8 +4,8 @@
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { PlanService, RoleEnum } from '@repo/service-core';
-import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     gateCalendarAccess,
@@ -643,9 +643,7 @@ describe('entitlementMiddleware', () => {
                 c.set('billingCustomerId', hostCustomerId);
                 c.set(
                     'actor',
-                    hostActor as unknown as import(
-                        '../../src/types'
-                    ).AppBindings['Variables']['actor']
+                    hostActor as unknown as import('../../src/types').AppBindings['Variables']['actor']
                 );
                 return next();
             });

@@ -35,7 +35,7 @@ import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { setOwnerServiceSuspension } from '../../services/subscription-pause.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
-import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
+import { createSimpleRoute, type SimpleRouteInterface } from '../../utils/route-factory';
 
 /**
  * Resolve the billing instance + the caller's billing customer, throwing the

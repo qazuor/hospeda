@@ -9,8 +9,8 @@
  * Badge.astro — see that file for the complete spec.
  */
 
-import { resolveWebIcon } from '@/lib/icon-map';
 import type { ReactElement } from 'react';
+import { resolveWebIcon } from '@/lib/icon-map';
 import styles from './Badge.module.css';
 import type { BadgeBaseProps } from './badge.types';
 import type { BadgeStylesMap } from './badge.utils';
@@ -98,11 +98,30 @@ export function Badge({
         );
     }
 
+    // `role` must be a literal string (a computed value is not statically
+    // analyzable, so lint/a11y/useAriaPropsSupportedByRole cannot confirm the
+    // element carries a role that supports `aria-label`). Only apply
+    // `role="img"` when `ariaLabel` is actually provided — otherwise the
+    // visible label span already conveys the accessible name and forcing
+    // `role="img"` would suppress it (an `img` without a name is silent to
+    // assistive tech).
+    if (ariaLabel) {
+        return (
+            <span
+                className={classList}
+                style={styleObject}
+                role="img"
+                aria-label={ariaLabel}
+            >
+                {content}
+            </span>
+        );
+    }
+
     return (
         <span
             className={classList}
             style={styleObject}
-            aria-label={ariaLabel}
         >
             {content}
         </span>

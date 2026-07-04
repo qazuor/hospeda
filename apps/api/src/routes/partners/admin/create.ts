@@ -2,7 +2,7 @@
  * Admin create partner endpoint
  * Creates a new partner
  */
-import { PermissionEnum, createPartnerSchema, partnerSchema } from '@repo/schemas';
+import { createPartnerSchema, PermissionEnum, partnerSchema } from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';

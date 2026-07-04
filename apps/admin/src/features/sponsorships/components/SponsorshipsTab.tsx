@@ -3,8 +3,17 @@
  *
  * Displays and manages sponsorships in a data table with filtering.
  */
-import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
-import { DataTable } from '@/components/table/DataTable';
+
+import type { ApiErrorShape } from '@repo/i18n';
+import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
+import { LifecycleStatusEnum, SponsorshipStatusEnum } from '@repo/schemas';
+import { useState } from 'react';
+import {
+    BadgeColor,
+    ColumnType,
+    DataTable,
+    type DataTableColumn
+} from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreateSponsorshipDialog } from '@/features/sponsorships/components/CreateSponsorshipDialog';
@@ -15,10 +24,6 @@ import {
 import type { Sponsorship } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
-import type { ApiErrorShape } from '@repo/i18n';
-import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
-import { LifecycleStatusEnum, SponsorshipStatusEnum } from '@repo/schemas';
-import { useState } from 'react';
 
 /**
  * Sponsorships Tab

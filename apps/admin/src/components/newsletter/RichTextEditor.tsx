@@ -11,16 +11,16 @@
  * @module RichTextEditor
  */
 
-import { cn } from '@/lib/utils';
 import type { TiptapDocument } from '@repo/utils';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
-import { EditorContent, useEditor } from '@tiptap/react';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 // Re-export so pages can `import { type TiptapDocument } from '@/components/newsletter/RichTextEditor'`
 export type { TiptapDocument };

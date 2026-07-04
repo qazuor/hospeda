@@ -9,10 +9,10 @@
  * lifted to the reducer immediately on success.
  */
 
-import type { SupportedLocale as _SupportedLocale } from '@/lib/i18n';
 import { useState } from 'react';
-import styles from './GeoRadiusFilter.module.css';
+import type { SupportedLocale as _SupportedLocale } from '@/lib/i18n';
 import type { GeoRadiusFilterConfig, GeoRadiusState } from './filter.types';
+import styles from './GeoRadiusFilter.module.css';
 
 const DEFAULT_RADIUS_PRESETS = [5, 10, 25, 50, 100] as const;
 
@@ -191,8 +191,10 @@ export function GeoRadiusFilter({
                 </div>
             )}
 
+            {/* biome-ignore lint/a11y/useSemanticElements: <fieldset> is only for form-control groups; this is a chip toggle-button row, not a form control — role="group" is the correct WAI-ARIA labeled-group pattern here. */}
             <div
                 className={styles.presetRow}
+                role="group"
                 aria-label={config.label}
             >
                 {presets.map((radius) => {

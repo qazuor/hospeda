@@ -230,7 +230,6 @@ export function PasswordField({
                     id={strengthId}
                     className={styles.strengthRow}
                     aria-live="polite"
-                    aria-label={strengthLabel}
                 >
                     {([1, 2, 3] as const).map((lvl) => (
                         <div

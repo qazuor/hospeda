@@ -4,9 +4,9 @@
  * static '...' text and the "load more" button stays mounted while loading.
  */
 
-import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -52,14 +52,20 @@ vi.mock('@/components/shared/ui/Dialog.client', () => ({
     Dialog: ({
         isOpen,
         children
-    }: { isOpen: boolean; children: React.ReactNode; onClose: () => void }) =>
-        isOpen ? <dialog open>{children}</dialog> : null,
+    }: {
+        isOpen: boolean;
+        children: React.ReactNode;
+        onClose: () => void;
+    }) => (isOpen ? <dialog open>{children}</dialog> : null),
     DialogHeader: ({
         children,
         titleId
-    }: { children: React.ReactNode; titleId: string; onClose: () => void; closeLabel: string }) => (
-        <div id={titleId}>{children}</div>
-    ),
+    }: {
+        children: React.ReactNode;
+        titleId: string;
+        onClose: () => void;
+        closeLabel: string;
+    }) => <div id={titleId}>{children}</div>,
     DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
 
@@ -68,7 +74,12 @@ vi.mock('@/components/ui/GradientButtonReact', () => ({
         label,
         onClick,
         disabled
-    }: { label: string; onClick?: () => void; disabled?: boolean; [key: string]: unknown }) => (
+    }: {
+        label: string;
+        onClick?: () => void;
+        disabled?: boolean;
+        [key: string]: unknown;
+    }) => (
         <button
             type="button"
             onClick={onClick}

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { errorHistory } from '../../src/utils/errorHistory.js';
 import type { SeedError } from '../../src/utils/errorHistory.js';
+import { errorHistory } from '../../src/utils/errorHistory.js';
 import { logger } from '../../src/utils/logger.js';
 
 // ---------------------------------------------------------------------------

@@ -16,14 +16,14 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { ProfileCompletion } from '@/components/account/ProfileCompletion.client';
+import { splitFullName } from '@/components/account/ProfileCompletion.helpers';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
-import { ProfileCompletion } from '@/components/account/ProfileCompletion.client';
-import { splitFullName } from '@/components/account/ProfileCompletion.helpers';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;

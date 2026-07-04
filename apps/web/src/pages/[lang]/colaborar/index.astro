@@ -8,13 +8,13 @@
  * @rendering SSG (prerender)
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
 

@@ -1,4 +1,5 @@
 ---
+import { LocationIcon } from '@repo/icons';
 /**
  * @file LocationSection.astro
  * @description Location section for accommodation detail. Renders an
@@ -8,15 +9,14 @@
  */
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import type { AccommodationDetailData } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { LocationIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
-  readonly destination: AccommodationDetailData['destination'];
-  readonly approximateLocation: AccommodationDetailData['approximateLocation'];
-  readonly accommodationName: string;
-  readonly lang: string;
+    readonly destination: AccommodationDetailData['destination'];
+    readonly approximateLocation: AccommodationDetailData['approximateLocation'];
+    readonly accommodationName: string;
+    readonly lang: string;
 }
 
 const { destination, approximateLocation, accommodationName, lang } = Astro.props;
@@ -24,9 +24,9 @@ const locale = (lang as SupportedLocale) ?? 'es';
 const { t } = createTranslations(locale);
 
 const mapStrings = {
-  attribution: t('maps.attribution'),
-  approximateDisclaimer: t('maps.approximateDisclaimer'),
-  markerLabel: accommodationName ?? t('maps.markerLabel'),
+    attribution: t('maps.attribution'),
+    approximateDisclaimer: t('maps.approximateDisclaimer'),
+    markerLabel: accommodationName ?? t('maps.markerLabel')
 };
 ---
 

@@ -6,35 +6,35 @@
  * @rendering SSR + ISR 24h
  */
 
-import DetailLayout from '@/layouts/DetailLayout.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import ArticleJsonLd from '@/components/seo/ArticleJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import { ShareButtons } from '@/components/ShareButtons.client';
-import PostDetailHeader from '@/components/post/PostDetailHeader.astro';
-import PostContent from '@/components/post/PostContent.astro';
-import PostTableOfContents from '@/components/post/PostTableOfContents.astro';
+import { getMediaUrl } from '@repo/media';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import CommentThread from '@/components/comments/CommentThread.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
 import PostAuthorCard from '@/components/post/PostAuthorCard.astro';
+import PostContent from '@/components/post/PostContent.astro';
+import PostDetailHeader from '@/components/post/PostDetailHeader.astro';
 import PostRelatedEntityCard from '@/components/post/PostRelatedEntityCard.astro';
 import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro';
-import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
-import TagChips from '@/components/TagChips.astro';
-import { ImageGallery } from '@/components/ImageGallery.client';
-import CommentThread from '@/components/comments/CommentThread.astro';
+import PostTableOfContents from '@/components/post/PostTableOfContents.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
-import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { ShareButtons } from '@/components/ShareButtons.client';
+import ArticleJsonLd from '@/components/seo/ArticleJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
-import { buildUrl } from '@/lib/urls';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import TagChips from '@/components/TagChips.astro';
+import DetailLayout from '@/layouts/DetailLayout.astro';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { pickLocalizedSeo } from '@/lib/seo';
 import { getPostCategoryColor } from '@/lib/colors';
-import { getExpiryStatus } from '@/lib/format-expires';
-import { getMediaUrl } from '@repo/media';
-import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
+import { getExpiryStatus } from '@/lib/format-expires';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { renderContent } from '@/lib/render-content';
+import { pickLocalizedSeo } from '@/lib/seo';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -61,57 +61,65 @@ const categoryColors = getPostCategoryColor({ category: category.toLowerCase() }
 // `media.videos[].url`. An older implementation read the cover as a top-level flat string,
 // which never existed on the schema — hence the placeholder always won.
 interface RawMediaImage {
-	url?: string;
-	caption?: string;
-	attribution?: {
-		photographer: string;
-		sourceUrl: string;
-		license: string;
-		provider: 'unsplash' | 'pexels';
-	};
+    url?: string;
+    caption?: string;
+    attribution?: {
+        photographer: string;
+        sourceUrl: string;
+        license: string;
+        provider: 'unsplash' | 'pexels';
+    };
 }
 interface RawMediaVideo {
-	url?: string;
-	caption?: string;
-	description?: string;
+    url?: string;
+    caption?: string;
+    description?: string;
 }
 interface RawMedia {
-	featuredImage?: RawMediaImage | null;
-	gallery?: ReadonlyArray<RawMediaImage> | null;
-	videos?: ReadonlyArray<RawMediaVideo> | null;
+    featuredImage?: RawMediaImage | null;
+    gallery?: ReadonlyArray<RawMediaImage> | null;
+    videos?: ReadonlyArray<RawMediaVideo> | null;
 }
 const mediaObj = (post.media ?? null) as RawMedia | null;
 const featuredImage = mediaObj?.featuredImage?.url || '/assets/images/placeholder-blog.svg';
 const hasRealFeatured = Boolean(mediaObj?.featuredImage?.url);
 
-const galleryImages: ReadonlyArray<{ readonly url: string; readonly alt: string; readonly caption?: string }> = (() => {
-	const items: Array<{ url: string; alt: string; caption?: string }> = [];
-	if (mediaObj?.featuredImage?.url) {
-		items.push({
-			url: mediaObj.featuredImage.url,
-			alt: mediaObj.featuredImage.caption ?? title,
-			caption: mediaObj.featuredImage.caption,
-		});
-	}
-	if (Array.isArray(mediaObj?.gallery)) {
-		for (const img of mediaObj.gallery as ReadonlyArray<RawMediaImage>) {
-			if (img?.url) {
-				items.push({
-					url: img.url,
-					alt: img.caption ?? title,
-					caption: img.caption,
-				});
-			}
-		}
-	}
-	return items;
+const galleryImages: ReadonlyArray<{
+    readonly url: string;
+    readonly alt: string;
+    readonly caption?: string;
+}> = (() => {
+    const items: Array<{ url: string; alt: string; caption?: string }> = [];
+    if (mediaObj?.featuredImage?.url) {
+        items.push({
+            url: mediaObj.featuredImage.url,
+            alt: mediaObj.featuredImage.caption ?? title,
+            caption: mediaObj.featuredImage.caption
+        });
+    }
+    if (Array.isArray(mediaObj?.gallery)) {
+        for (const img of mediaObj.gallery as ReadonlyArray<RawMediaImage>) {
+            if (img?.url) {
+                items.push({
+                    url: img.url,
+                    alt: img.caption ?? title,
+                    caption: img.caption
+                });
+            }
+        }
+    }
+    return items;
 })();
 
-const postVideos: ReadonlyArray<{ readonly url: string; readonly caption?: string; readonly description?: string }> = (() => {
-	if (!Array.isArray(mediaObj?.videos)) return [];
-	return (mediaObj?.videos as ReadonlyArray<RawMediaVideo>)
-		.filter((v): v is RawMediaVideo & { url: string } => Boolean(v?.url))
-		.map((v) => ({ url: v.url, caption: v.caption, description: v.description }));
+const postVideos: ReadonlyArray<{
+    readonly url: string;
+    readonly caption?: string;
+    readonly description?: string;
+}> = (() => {
+    if (!Array.isArray(mediaObj?.videos)) return [];
+    return (mediaObj?.videos as ReadonlyArray<RawMediaVideo>)
+        .filter((v): v is RawMediaVideo & { url: string } => Boolean(v?.url))
+        .map((v) => ({ url: v.url, caption: v.caption, description: v.description }));
 })();
 
 // SPEC-086 D-024: user-tags (`post.tags`) are an internal subsystem with no
@@ -120,29 +128,32 @@ const postVideos: ReadonlyArray<{ readonly url: string; readonly caption?: strin
 // below the article body, linking to `/{lang}/publicaciones/etiqueta/{slug}/`.
 // SPEC-086 D-002: tags without a slug cannot be rendered as filter links — skip them defensively.
 const rawPostTags = Array.isArray(post.postTags) ? post.postTags : [];
-const postTags: readonly { readonly id: string; readonly name: string; readonly slug: string }[] = rawPostTags
-    .filter((tag): tag is Record<string, unknown> => tag !== null && typeof tag === 'object')
-    .map((tag) => ({
-        id: String(tag.id ?? ''),
-        name: String(tag.name ?? ''),
-        slug: String(tag.slug ?? ''),
-    }))
-    .filter((tag) => tag.slug && tag.name);
+const postTags: readonly { readonly id: string; readonly name: string; readonly slug: string }[] =
+    rawPostTags
+        .filter((tag): tag is Record<string, unknown> => tag !== null && typeof tag === 'object')
+        .map((tag) => ({
+            id: String(tag.id ?? ''),
+            name: String(tag.name ?? ''),
+            slug: String(tag.slug ?? '')
+        }))
+        .filter((tag) => tag.slug && tag.name);
 
-const rawAuthorAvatar = String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || '');
+const rawAuthorAvatar = String(
+    authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || ''
+);
 const authorAvatar = rawAuthorAvatar ? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' }) : '';
 
 const authorForCard = authorObj
-	? {
-			id: String(authorObj.id || ''),
-			displayName: authorObj.displayName ? String(authorObj.displayName) : null,
-			firstName: authorObj.firstName ? String(authorObj.firstName) : null,
-			lastName: authorObj.lastName ? String(authorObj.lastName) : null,
-			profilePicture: authorAvatar || null,
-			bio: authorObj.bio ? String(authorObj.bio) : null,
-			slug: authorObj.slug ? String(authorObj.slug) : null,
-	  }
-	: null;
+    ? {
+          id: String(authorObj.id || ''),
+          displayName: authorObj.displayName ? String(authorObj.displayName) : null,
+          firstName: authorObj.firstName ? String(authorObj.firstName) : null,
+          lastName: authorObj.lastName ? String(authorObj.lastName) : null,
+          profilePicture: authorAvatar || null,
+          bio: authorObj.bio ? String(authorObj.bio) : null,
+          slug: authorObj.slug ? String(authorObj.slug) : null
+      }
+    : null;
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -154,28 +165,43 @@ let initialIsFavorited: boolean | undefined;
 let initialBookmarkId: string | null = null;
 
 if (postId) {
-	try {
-		const countResult = await userBookmarksPublicApi.count({ entityType: 'POST', entityId: postId });
-		if (countResult.ok) bookmarkCount = countResult.data.count;
-	} catch { /* graceful */ }
+    try {
+        const countResult = await userBookmarksPublicApi.count({
+            entityType: 'POST',
+            entityId: postId
+        });
+        if (countResult.ok) bookmarkCount = countResult.data.count;
+    } catch {
+        /* graceful */
+    }
 
-	if (isAuthenticated) {
-		try {
-			const statusResult = await userBookmarksApi.checkStatus({ entityId: postId, entityType: 'POST' });
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch { /* graceful */ }
-	}
+    if (isAuthenticated) {
+        try {
+            const statusResult = await userBookmarksApi.checkStatus({
+                entityId: postId,
+                entityType: 'POST'
+            });
+            if (statusResult.ok) {
+                initialIsFavorited = statusResult.data.isFavorited;
+                initialBookmarkId = statusResult.data.bookmarkId;
+            }
+        } catch {
+            /* graceful */
+        }
+    }
 }
 
 // --- Expiry ---
 const postExpiresAt = post.expiresAt ? String(post.expiresAt) : undefined;
 const expiryStatus = getExpiryStatus({ expiresAt: postExpiresAt });
-const showExpiryBanner = expiryStatus.status === 'expiring-soon' || expiryStatus.status === 'expired';
+const showExpiryBanner =
+    expiryStatus.status === 'expiring-soon' || expiryStatus.status === 'expired';
 const expiryDateLabel = postExpiresAt
-    ? new Date(postExpiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
+    ? new Date(postExpiresAt).toLocaleDateString(locale, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+      })
     : '';
 
 // --- Render content (markdown → HTML, then sanitize) ---
@@ -183,8 +209,8 @@ const expiryDateLabel = postExpiresAt
 // or plain text. `renderContent` handles all three through a single pipeline.
 const siteOrigin = Astro.site?.href ?? Astro.url.origin;
 const safeContentHtml = renderContent({
-	raw: String(post.contentHtml || post.content || summary),
-	siteOrigin,
+    raw: String(post.contentHtml || post.content || summary),
+    siteOrigin
 });
 
 // --- TOC headings extracted from sanitized HTML ---
@@ -210,15 +236,19 @@ let relatedPosts: ReadonlyArray<Record<string, unknown>> = [];
 const relatedDestinationId = post.relatedDestinationId ? String(post.relatedDestinationId) : null;
 
 try {
-	const relResult = relatedDestinationId
-		? await postsApi.list({ destinationId: relatedDestinationId, pageSize: 4 })
-		: await postsApi.list({ category, pageSize: 4 });
+    const relResult = relatedDestinationId
+        ? await postsApi.list({ destinationId: relatedDestinationId, pageSize: 4 })
+        : await postsApi.list({ category, pageSize: 4 });
 
-	if (relResult.ok) {
-		const items: unknown[] = relResult.data.items as unknown[];
-		relatedPosts = (items as Record<string, unknown>[]).filter((p) => p.id !== postId).slice(0, 4);
-	}
-} catch { /* graceful */ }
+    if (relResult.ok) {
+        const items: unknown[] = relResult.data.items as unknown[];
+        relatedPosts = (items as Record<string, unknown>[])
+            .filter((p) => p.id !== postId)
+            .slice(0, 4);
+    }
+} catch {
+    /* graceful */
+}
 
 // --- Related entity for sidebar ---
 const relatedDestRaw = post.relatedDestination as Record<string, unknown> | undefined;
@@ -228,34 +258,34 @@ const relatedEventRaw = post.relatedEvent as Record<string, unknown> | undefined
 type EntityType = 'destination' | 'accommodation' | 'event';
 
 interface RelatedEntity {
-	readonly id: string;
-	readonly name: string;
-	readonly slug: string;
-	readonly summary?: string | null;
-	readonly image?: string | null;
-	readonly type: EntityType;
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly summary?: string | null;
+    readonly image?: string | null;
+    readonly type: EntityType;
 }
 
 function toRelatedEntity(raw: Record<string, unknown>, type: EntityType): RelatedEntity | null {
-	const id = raw.id ? String(raw.id) : '';
-	const name = raw.name ? String(raw.name) : '';
-	const entitySlug = raw.slug ? String(raw.slug) : '';
-	if (!id || !name || !entitySlug) return null;
-	return {
-		id,
-		name,
-		slug: entitySlug,
-		summary: raw.summary ? String(raw.summary) : null,
-		image: raw.featuredImage ? String(raw.featuredImage) : null,
-		type,
-	};
+    const id = raw.id ? String(raw.id) : '';
+    const name = raw.name ? String(raw.name) : '';
+    const entitySlug = raw.slug ? String(raw.slug) : '';
+    if (!id || !name || !entitySlug) return null;
+    return {
+        id,
+        name,
+        slug: entitySlug,
+        summary: raw.summary ? String(raw.summary) : null,
+        image: raw.featuredImage ? String(raw.featuredImage) : null,
+        type
+    };
 }
 
 const relatedEntity: RelatedEntity | null =
-	(relatedDestRaw && toRelatedEntity(relatedDestRaw, 'destination')) ||
-	(relatedAccRaw && toRelatedEntity(relatedAccRaw, 'accommodation')) ||
-	(relatedEventRaw && toRelatedEntity(relatedEventRaw, 'event')) ||
-	null;
+    (relatedDestRaw && toRelatedEntity(relatedDestRaw, 'destination')) ||
+    (relatedAccRaw && toRelatedEntity(relatedAccRaw, 'accommodation')) ||
+    (relatedEventRaw && toRelatedEntity(relatedEventRaw, 'event')) ||
+    null;
 
 // --- Sponsorship ---
 const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
@@ -263,9 +293,9 @@ const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
 // --- JSON-LD ---
 const siteBase = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const articleAuthorName =
-	authorForCard?.displayName ||
-	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
-	'';
+    authorForCard?.displayName ||
+    [authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
+    '';
 
 // Speakable selectors (AEO / voice): the article headline and lead/summary
 // rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
@@ -273,15 +303,15 @@ const articleAuthorName =
 // The summary element is only rendered when a summary exists, so include it
 // conditionally to avoid pointing voice assistants at a missing node.
 const speakableSelectors: ReadonlyArray<string> = [
-	'.post-header__title',
-	...(summary ? ['.post-header__summary'] : []),
+    '.post-header__title',
+    ...(summary ? ['.post-header__summary'] : [])
 ];
 
 const siteOriginClean = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOriginClean}/${locale}/` },
-	{ name: t('blog.title', 'Publicaciones'), url: `${siteOriginClean}/${locale}/publicaciones/` },
-	{ name: title, url: `${siteOriginClean}${Astro.url.pathname}` },
+    { name: t('nav.home', 'Inicio'), url: `${siteOriginClean}/${locale}/` },
+    { name: t('blog.title', 'Publicaciones'), url: `${siteOriginClean}/${locale}/publicaciones/` },
+    { name: title, url: `${siteOriginClean}${Astro.url.pathname}` }
 ];
 ---
 

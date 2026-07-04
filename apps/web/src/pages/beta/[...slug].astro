@@ -11,11 +11,11 @@
  * if the SSR server is unhealthy.
  */
 
+import { getCollection, render } from 'astro:content';
 import BetaPrevNext from '@/components/beta/BetaPrevNext.astro';
 import BetaToc from '@/components/beta/BetaToc.astro';
 import BetaDocLayout from '@/layouts/BetaDocLayout.astro';
 import { buildBetaNav, findNeighbours, flattenBetaNav } from '@/lib/beta-nav';
-import { getCollection, render } from 'astro:content';
 
 export const prerender = true;
 

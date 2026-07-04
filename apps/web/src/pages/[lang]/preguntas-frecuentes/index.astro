@@ -9,31 +9,31 @@
  * @rendering SSG (prerender)
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import {
-	ChevronDownIcon,
-	InfoIcon,
-	UsersIcon,
-	HomeIcon,
-	PostIcon,
-	PromotionsIcon,
-	UserIcon,
-	ChatIcon,
-	EmailIcon,
-	WhatsappIcon,
-	ArrowRightIcon
+    ArrowRightIcon,
+    ChatIcon,
+    ChevronDownIcon,
+    EmailIcon,
+    HomeIcon,
+    InfoIcon,
+    PostIcon,
+    PromotionsIcon,
+    UserIcon,
+    UsersIcon,
+    WhatsappIcon
 } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = true;
 
 export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
 }) satisfies GetStaticPaths;
 
 const { lang } = Astro.params;
@@ -45,104 +45,104 @@ const { t } = createTranslations(locale);
  * Keep ordering tight here so the nav, the sections, and the JSON-LD agree.
  */
 const categories = [
-	{
-		key: 'about',
-		Icon: InfoIcon,
-		items: ['what', 'coverage', 'cost', 'languages', 'different', 'scope', 'verified']
-	},
-	{
-		key: 'tourists',
-		Icon: UsersIcon,
-		items: [
-			'search',
-			'booking',
-			'contactOwner',
-			'reviews',
-			'favorites',
-			'issue',
-			'petFriendly',
-			'events',
-			'cancellation'
-		]
-	},
-	{
-		key: 'owners',
-		Icon: HomeIcon,
-		items: [
-			'publish',
-			'cost',
-			'commission',
-			'ready',
-			'manageReviews',
-			'featured',
-			'pause',
-			'payments',
-			'support'
-		]
-	},
-	{
-		key: 'contributors',
-		Icon: PostIcon,
-		items: [
-			'writeArticle',
-			'submitPhotos',
-			'submitEvent',
-			'paid',
-			'placeReviews',
-			'program',
-			'languages'
-		]
-	},
-	{
-		key: 'partners',
-		Icon: PromotionsIcon,
-		items: [
-			'advertise',
-			'formats',
-			'tourismOffices',
-			'eventSponsorship',
-			'officialPartner',
-			'commercialContact',
-			'minBudget'
-		]
-	},
-	{
-		key: 'account',
-		Icon: UserIcon,
-		items: [
-			'needAccount',
-			'deleteAccount',
-			'dataStored',
-			'themeLanguage',
-			'paymentSecurity',
-			'newsletter'
-		]
-	},
-	{
-		key: 'support',
-		Icon: ChatIcon,
-		items: ['channels', 'hours', 'whatsapp', 'urgency', 'freePhone', 'press']
-	}
+    {
+        key: 'about',
+        Icon: InfoIcon,
+        items: ['what', 'coverage', 'cost', 'languages', 'different', 'scope', 'verified']
+    },
+    {
+        key: 'tourists',
+        Icon: UsersIcon,
+        items: [
+            'search',
+            'booking',
+            'contactOwner',
+            'reviews',
+            'favorites',
+            'issue',
+            'petFriendly',
+            'events',
+            'cancellation'
+        ]
+    },
+    {
+        key: 'owners',
+        Icon: HomeIcon,
+        items: [
+            'publish',
+            'cost',
+            'commission',
+            'ready',
+            'manageReviews',
+            'featured',
+            'pause',
+            'payments',
+            'support'
+        ]
+    },
+    {
+        key: 'contributors',
+        Icon: PostIcon,
+        items: [
+            'writeArticle',
+            'submitPhotos',
+            'submitEvent',
+            'paid',
+            'placeReviews',
+            'program',
+            'languages'
+        ]
+    },
+    {
+        key: 'partners',
+        Icon: PromotionsIcon,
+        items: [
+            'advertise',
+            'formats',
+            'tourismOffices',
+            'eventSponsorship',
+            'officialPartner',
+            'commercialContact',
+            'minBudget'
+        ]
+    },
+    {
+        key: 'account',
+        Icon: UserIcon,
+        items: [
+            'needAccount',
+            'deleteAccount',
+            'dataStored',
+            'themeLanguage',
+            'paymentSecurity',
+            'newsletter'
+        ]
+    },
+    {
+        key: 'support',
+        Icon: ChatIcon,
+        items: ['channels', 'hours', 'whatsapp', 'urgency', 'freePhone', 'press']
+    }
 ] as const;
 
 const resolvedCategories = categories.map((cat) => ({
-	key: cat.key,
-	Icon: cat.Icon,
-	tagline: t(`faq.categories.${cat.key}.tagline`),
-	title: t(`faq.categories.${cat.key}.title`),
-	subtitle: t(`faq.categories.${cat.key}.subtitle`),
-	items: cat.items.map((itemKey) => ({
-		key: itemKey,
-		question: t(`faq.categories.${cat.key}.items.${itemKey}.question`),
-		answer: t(`faq.categories.${cat.key}.items.${itemKey}.answer`)
-	}))
+    key: cat.key,
+    Icon: cat.Icon,
+    tagline: t(`faq.categories.${cat.key}.tagline`),
+    title: t(`faq.categories.${cat.key}.title`),
+    subtitle: t(`faq.categories.${cat.key}.subtitle`),
+    items: cat.items.map((itemKey) => ({
+        key: itemKey,
+        question: t(`faq.categories.${cat.key}.items.${itemKey}.question`),
+        answer: t(`faq.categories.${cat.key}.items.${itemKey}.answer`)
+    }))
 }));
 
 // ─── JSON-LD: FAQPage with every Q/A flattened ────────────────────────────────
 // Routed through the shared, XSS-hardened FAQPageJsonLd component instead of an
 // inline JSON.stringify (SPEC-157 D-1: single canonical JSON-LD path).
 const faqSections = resolvedCategories.flatMap((cat) =>
-	cat.items.map((item) => ({ heading: item.question, body: item.answer }))
+    cat.items.map((item) => ({ heading: item.question, body: item.answer }))
 );
 
 const contactHref = buildUrl({ locale, path: '/contacto/' });
@@ -150,9 +150,9 @@ const whatsappHref = 'https://wa.me/543442453797';
 
 // Split titles to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {
-	const words = full.trim().split(/\s+/);
-	const accent = words.pop() ?? full;
-	return { main: words.join(' '), accent };
+    const words = full.trim().split(/\s+/);
+    const accent = words.pop() ?? full;
+    return { main: words.join(' '), accent };
 };
 
 const heroHeading = splitLastWord(t('faq.hero.title'));

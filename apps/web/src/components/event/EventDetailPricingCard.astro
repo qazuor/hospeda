@@ -1,4 +1,5 @@
 ---
+import type { EventDetailPricing } from '@/data/types';
 /**
  * @file EventDetailPricingCard.astro
  * @description Sidebar pricing card for the event detail page.
@@ -13,10 +14,9 @@
  *
  * All monetary values are formatted via `formatPrice()`.
  */
-import { formatPrice, formatDate } from '@/lib/format-utils';
-import { createTranslations } from '@/lib/i18n';
+import { formatDate, formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { EventDetailPricing } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     readonly pricing: EventDetailPricing;
@@ -45,8 +45,7 @@ const hasEarlyBird = earlyBirdPrice != null && earlyBirdDeadline != null;
 const hasGroupDiscount = groupDiscountThreshold != null && groupDiscountPercent != null;
 const hasGroupPrice = pricePerGroup != null;
 
-const fmt = (amount: number) =>
-    formatPrice({ amount, currency: currency ?? 'ARS', locale });
+const fmt = (amount: number) => formatPrice({ amount, currency: currency ?? 'ARS', locale });
 ---
 
 <aside class="event-pricing-card">

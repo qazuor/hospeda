@@ -10,8 +10,8 @@
  */
 
 import type { GastronomySocialNetworks } from '@/data/types';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
     readonly socialNetworks: GastronomySocialNetworks | null;
@@ -23,9 +23,7 @@ const { socialNetworks, menuUrl, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 /** Only render if at least one piece of contact info is present. */
-const hasSocial =
-    socialNetworks &&
-    Object.values(socialNetworks).some((v) => Boolean(v));
+const hasSocial = socialNetworks && Object.values(socialNetworks).some((v) => Boolean(v));
 
 if (!hasSocial && !menuUrl) {
     // Nothing to render — exit early

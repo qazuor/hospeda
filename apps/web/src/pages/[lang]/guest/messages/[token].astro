@@ -6,12 +6,12 @@
  * @rendering SSR (on-demand, no auth required)
  */
 
-import BaseLayout from '@/layouts/BaseLayout.astro';
 import { ConversationReply } from '@/components/account/ConversationReply.client';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import { publicConversationsApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
@@ -27,8 +27,8 @@ const result = await publicConversationsApi.getGuestThread({ token, cursor, limi
 
 // Handle token errors
 if (!result.ok) {
-    const reason = (result.error as { reason?: string })?.reason
-        ?? String(result.error?.code ?? '');
+    const reason =
+        (result.error as { reason?: string })?.reason ?? String(result.error?.code ?? '');
     const isRevoked = reason === 'TOKEN_REVOKED';
     const expiredUrl = buildUrl({ locale, path: 'guest/messages/verify-expired' });
     const requestAccessUrl = buildUrl({ locale, path: 'guest/messages/request-access' });
@@ -61,7 +61,9 @@ const canReply = !closedStatuses.includes(conversation.status.toUpperCase());
 
 let showOwnerReadReceipt = false;
 if (conversation.lastReadAtByOwner) {
-    const lastGuestMsg = [...messages].reverse().find((m) => m.senderType?.toLowerCase() === 'guest');
+    const lastGuestMsg = [...messages]
+        .reverse()
+        .find((m) => m.senderType?.toLowerCase() === 'guest');
     if (lastGuestMsg) {
         showOwnerReadReceipt =
             new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt);

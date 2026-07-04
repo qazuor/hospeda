@@ -145,10 +145,11 @@ describe('DeferredWidget', () => {
     });
 
     /**
-     * An accessible aria-label combining title and phaseSpec is present on
-     * the root so screen readers can identify the deferred slot.
+     * The root has no aria-label — its children (title heading + phaseSpec
+     * badge) already convey the same information visibly and to screen
+     * readers, so a duplicate label would be redundant.
      */
-    it('has an accessible aria-label containing the phaseSpec', () => {
+    it('renders both title and phaseSpec as visible text (no redundant aria-label)', () => {
         render(
             <DeferredWidget
                 phaseSpec="SPEC-165"
@@ -157,7 +158,8 @@ describe('DeferredWidget', () => {
         );
 
         const widget = screen.getByTestId('deferred-widget');
-        expect(widget.getAttribute('aria-label')).toContain('SPEC-165');
-        expect(widget.getAttribute('aria-label')).toContain('Comentarios');
+        expect(widget).not.toHaveAttribute('aria-label');
+        expect(screen.getByText('Comentarios')).toBeInTheDocument();
+        expect(screen.getByTestId('deferred-widget-spec-badge')).toHaveTextContent('SPEC-165');
     });
 });

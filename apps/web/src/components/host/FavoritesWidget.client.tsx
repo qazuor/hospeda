@@ -14,10 +14,10 @@
  * ```
  */
 
+import { type JSX, useMemo } from 'react';
 import type { FavoritesBreakdownData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type JSX, useMemo } from 'react';
 import styles from './FavoritesWidget.module.css';
 
 // ---------------------------------------------------------------------------

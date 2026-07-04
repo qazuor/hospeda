@@ -14,26 +14,26 @@
  * ```
  */
 
+import { ClientRouter } from 'astro:transitions';
+import PostHogScript from '@/components/analytics/PostHogScript.astro';
+import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
+import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
+import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
+import FontsLoader from '@/components/shared/FontsLoader.astro';
+import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
+import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
+import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
+import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
+import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
+import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import { ToastViewport } from '@/components/ui/ToastViewport.client';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
-import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
-import { ClientRouter } from 'astro:transitions';
-import Header from './Header.astro';
 import Footer from './Footer.astro';
-import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
-import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
-import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
-import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
-import FontsLoader from '@/components/shared/FontsLoader.astro';
-import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
-import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
-import PostHogScript from '@/components/analytics/PostHogScript.astro';
-import { ToastViewport } from '@/components/ui/ToastViewport.client';
-import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
-import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
-import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
-import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
+import Header from './Header.astro';
 import '@/styles/global.css';
 // Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
 // tracks it as a page-level CSS asset and preserves it across view transitions
@@ -52,15 +52,15 @@ import '@/styles/feedback-overrides.css';
 import '@/components/shared/favorite/collection-picker-popover.css';
 
 interface Props {
-	readonly locale: SupportedLocale;
-	readonly title?: string;
-	readonly description?: string;
+    readonly locale: SupportedLocale;
+    readonly title?: string;
+    readonly description?: string;
 }
 
 const {
-	locale,
-	title = 'Hospeda',
-	description = 'Descubrí alojamientos en el Litoral Entrerriano',
+    locale,
+    title = 'Hospeda',
+    description = 'Descubrí alojamientos en el Litoral Entrerriano'
 } = Astro.props;
 
 const cspNonce = Astro.locals.cspNonce ?? '';

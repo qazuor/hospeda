@@ -1,12 +1,12 @@
+import { AttractionCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import { createAttractionConsolidatedConfig } from '@/features/attractions/config';
 import { useCreateAttractionMutation } from '@/features/attractions/hooks/useAttractionQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { AttractionCreateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/destination-attractions/new')({
     component: AttractionCreatePage,

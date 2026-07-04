@@ -24,10 +24,10 @@
  * @see SPEC-154 T-022
  */
 
-import type { GroupItem, LinkItem, SeparatorItem, SidebarItem } from '@/config/ia/schema';
-import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import type { PermissionEnum } from '@repo/schemas';
 import { useMemo } from 'react';
+import type { GroupItem, LinkItem, SeparatorItem, SidebarItem } from '@/config/ia/schema';
+import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import { useUserPermissions } from './use-user-permissions';
 
 // ---------------------------------------------------------------------------

@@ -14,7 +14,7 @@ const page = Number(pageParam);
 // Reject obviously malformed values with a 404 instead of redirecting,
 // so we don't trade a broken URL for a slightly less broken one.
 if (!Number.isInteger(page) || page < 1) {
-	return new Response(null, { status: 404 });
+    return new Response(null, { status: 404 });
 }
 
 return Astro.redirect(`/${lang}/destinos/`, 301);

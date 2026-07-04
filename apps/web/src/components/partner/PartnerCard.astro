@@ -5,10 +5,10 @@
  * Displays partner name, type, tier, logo, and description.
  */
 
-import { buildUrl } from '@/lib/urls';
-import { createTranslations } from '@/lib/i18n';
 import type { PartnerCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     readonly data: PartnerCardData;

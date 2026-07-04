@@ -1,3 +1,4 @@
+import type { QZPayBilling, QZPayCustomer, QZPaySubscription } from '@qazuor/qzpay-core';
 import { initializeDb } from '@repo/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
@@ -9,8 +10,6 @@ import {
     skipIfNoSandbox,
     withRetry
 } from './sandbox-config';
-
-import type { QZPayBilling, QZPayCustomer, QZPaySubscription } from '@qazuor/qzpay-core';
 
 describe('MercadoPago Sandbox E2E', () => {
     let billing: QZPayBilling;

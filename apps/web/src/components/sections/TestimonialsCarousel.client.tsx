@@ -10,6 +10,10 @@
  * - Autoplay pauses on hover and focus-within for accessibility
  */
 
+import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
+import Autoplay from 'embla-carousel-autoplay';
+import useEmblaCarousel from 'embla-carousel-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReviewCard } from '@/components/shared/cards/ReviewCard';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { IconButton } from '@/components/ui/IconButtonReact';
@@ -17,10 +21,6 @@ import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
-import Autoplay from 'embla-carousel-autoplay';
-import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './TestimonialsCarousel.module.css';
 
 // ---------------------------------------------------------------------------
@@ -160,14 +160,33 @@ function TestimonialsCarouselInner({
     const scrollNext = useCallback(() => mainApi?.scrollNext(), [mainApi]);
     const scrollToSnap = useCallback((snap: number) => mainApi?.scrollTo(snap), [mainApi]);
 
-    // Pause autoplay on hover / focus
-    const handleMouseEnter = useCallback(() => autoplayPlugin.current.stop(), []);
-    const handleMouseLeave = useCallback(() => autoplayPlugin.current.play(), []);
-    const handleFocusIn = useCallback(() => autoplayPlugin.current.stop(), []);
-    const handleFocusOut = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
-        if (!wrapperRef.current?.contains(e.relatedTarget as Node)) {
-            autoplayPlugin.current.play();
-        }
+    // Pause autoplay on hover / focus. Attached imperatively (native
+    // mouseenter/mouseleave/focusin/focusout on the wrapper ref) rather than
+    // as JSX event props: the wrapper is a plain layout container (its
+    // interactive children — arrows, slides, dots — carry their own roles),
+    // so it should not itself need an ARIA role just to host these ambient
+    // autoplay-pause listeners.
+    useEffect(() => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const handleMouseEnter = () => autoplayPlugin.current.stop();
+        const handleMouseLeave = () => autoplayPlugin.current.play();
+        const handleFocusIn = () => autoplayPlugin.current.stop();
+        const handleFocusOut = (event: FocusEvent) => {
+            if (!el.contains(event.relatedTarget as Node | null)) {
+                autoplayPlugin.current.play();
+            }
+        };
+        el.addEventListener('mouseenter', handleMouseEnter);
+        el.addEventListener('mouseleave', handleMouseLeave);
+        el.addEventListener('focusin', handleFocusIn);
+        el.addEventListener('focusout', handleFocusOut);
+        return () => {
+            el.removeEventListener('mouseenter', handleMouseEnter);
+            el.removeEventListener('mouseleave', handleMouseLeave);
+            el.removeEventListener('focusin', handleFocusIn);
+            el.removeEventListener('focusout', handleFocusOut);
+        };
     }, []);
 
     if (reviews.length === 0) return null;
@@ -176,10 +195,6 @@ function TestimonialsCarouselInner({
         <div
             ref={wrapperRef}
             className={styles.wrapper}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onFocus={handleFocusIn}
-            onBlur={handleFocusOut}
         >
             {/* Carousel viewport with arrows */}
             <div className={styles.carouselArea}>
