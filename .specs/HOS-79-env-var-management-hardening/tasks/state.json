@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Spike: confirm env-registry-types.ts needs no new fields",
             "description": "Review packages/config/src/env-registry-types.ts against the wizard's needs (US-5). Confirm howToObtain/helpUrl already cover the secret-hint requirement (verified in spec) and that no other field is missing before Phase 2 work depends on the shape. If a gap IS found, add the field here first. Test: none required if no change is made; if a field is added, extend the existing packages/config type tests to cover it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -24,25 +24,38 @@
             ],
             "tags": ["config", "registry"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:37:41Z",
+                "completed": "2026-07-04T22:38:53Z"
             }
         },
         {
             "id": "T-002",
             "title": "Register the 3 known-missing env vars in the registry",
             "description": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER (packages/service-core/src/services/tag/tag.service.ts:241), HOSPEDA_DEPLOY_ENV (packages/media/src/server/environment.ts:43), HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (packages/billing/src/adapters/qzpay-test-control.ts:77) to packages/config/src/env-registry.hospeda.ts with full metadata (description, type, apps, category, secret if applicable). Test: pnpm env:check:registry still passes (no schema drift introduced); regenerate .env.example via pnpm gen:env-examples and confirm the 3 vars appear.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER entry", "completed": false },
-                { "title": "Add HOSPEDA_DEPLOY_ENV entry", "completed": false },
-                { "title": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED entry", "completed": false },
+                {
+                    "title": "Add HOSPEDA_TAG_USER_QUOTA_PER_USER entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add HOSPEDA_DEPLOY_ENV entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED entry",
+                    "completed": false
+                },
                 {
                     "title": "Run pnpm gen:env-examples and commit regenerated .env.example files",
                     "completed": false
@@ -50,11 +63,15 @@
             ],
             "tags": ["config", "registry"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:39:45Z",
+                "completed": "2026-07-04T22:48:36Z"
             }
         },
         {
@@ -66,13 +83,26 @@
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
             "subtasks": [
-                { "title": "Create env-schema.ts with the extracted z.object", "completed": false },
-                { "title": "Update env.ts to re-export from env-schema.ts", "completed": false },
-                { "title": "Update the cross-validation test's import path", "completed": false }
+                {
+                    "title": "Create env-schema.ts with the extracted z.object",
+                    "completed": false
+                },
+                {
+                    "title": "Update env.ts to re-export from env-schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update the cross-validation test's import path",
+                    "completed": false
+                }
             ],
             "tags": ["api", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -96,11 +126,18 @@
                     "title": "Update env.ts to re-export and keep logger-dependent code local",
                     "completed": false
                 },
-                { "title": "Update the cross-validation test's import path", "completed": false }
+                {
+                    "title": "Update the cross-validation test's import path",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -127,7 +164,11 @@
             ],
             "tags": ["mobile", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -150,7 +191,11 @@
             ],
             "tags": ["web", "env"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -170,13 +215,26 @@
                     "title": "Implement the source scanner (regex over apps/+packages/, exclusions)",
                     "completed": false
                 },
-                { "title": "Implement the two-way diff against ENV_REGISTRY", "completed": false },
-                { "title": "Wire the pnpm env:check:usage script", "completed": false },
-                { "title": "Write fixture-based unit test", "completed": false }
+                {
+                    "title": "Implement the two-way diff against ENV_REGISTRY",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:check:usage script",
+                    "completed": false
+                },
+                {
+                    "title": "Write fixture-based unit test",
+                    "completed": false
+                }
             ],
             "tags": ["config", "ci", "check"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -192,14 +250,30 @@
             "blockedBy": [],
             "blocks": ["T-013", "T-018"],
             "subtasks": [
-                { "title": "Implement .env.local parsing per app", "completed": false },
-                { "title": "Implement requiredScope-aware diff logic", "completed": false },
-                { "title": "Wire the pnpm env:check:local script", "completed": false },
-                { "title": "Write the 5 fixture-based unit tests", "completed": false }
+                {
+                    "title": "Implement .env.local parsing per app",
+                    "completed": false
+                },
+                {
+                    "title": "Implement requiredScope-aware diff logic",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:check:local script",
+                    "completed": false
+                },
+                {
+                    "title": "Write the 5 fixture-based unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["config", "check", "worktree"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -215,12 +289,22 @@
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-016", "T-021"],
             "subtasks": [
-                { "title": "Define CrossCheckRule type", "completed": false },
-                { "title": "Seed the REVALIDATION_SECRET rule", "completed": false }
+                {
+                    "title": "Define CrossCheckRule type",
+                    "completed": false
+                },
+                {
+                    "title": "Seed the REVALIDATION_SECRET rule",
+                    "completed": false
+                }
             ],
             "tags": ["config", "rules"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -244,12 +328,22 @@
                     "title": "Implement local .env.local value resolution per rule's compare[]",
                     "completed": false
                 },
-                { "title": "Wire the pnpm env:check:rules script", "completed": false },
-                { "title": "Write the 3 fixture-based unit tests", "completed": false }
+                {
+                    "title": "Wire the pnpm env:check:rules script",
+                    "completed": false
+                },
+                {
+                    "title": "Write the 3 fixture-based unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["config", "rules", "check"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -269,14 +363,30 @@
                     "title": "Implement Zod-shape introspection (enum/boolean/numeric)",
                     "completed": false
                 },
-                { "title": "Assemble and write the JSON artifact", "completed": false },
-                { "title": "Skip docker/seed AppIds explicitly", "completed": false },
-                { "title": "Wire pnpm gen:env-registry-json", "completed": false },
-                { "title": "Write the determinism test (run twice, diff)", "completed": false }
+                {
+                    "title": "Assemble and write the JSON artifact",
+                    "completed": false
+                },
+                {
+                    "title": "Skip docker/seed AppIds explicitly",
+                    "completed": false
+                },
+                {
+                    "title": "Wire pnpm gen:env-registry-json",
+                    "completed": false
+                },
+                {
+                    "title": "Write the determinism test (run twice, diff)",
+                    "completed": false
+                }
             ],
             "tags": ["config", "generator", "json-bridge"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -296,7 +406,10 @@
                     "title": "Re-implement JSON-building logic inline in the test",
                     "completed": false
                 },
-                { "title": "Add the drift=0 assertion", "completed": false },
+                {
+                    "title": "Add the drift=0 assertion",
+                    "completed": false
+                },
                 {
                     "title": "Add the zero-non-zod-import assertion for the 4 schema files",
                     "completed": false
@@ -304,7 +417,11 @@
             ],
             "tags": ["config", "test", "guard"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -320,12 +437,22 @@
             "blockedBy": ["T-007", "T-008", "T-010"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Wire the umbrella script", "completed": false },
-                { "title": "Verify aggregate exit-code behavior", "completed": false }
+                {
+                    "title": "Wire the umbrella script",
+                    "completed": false
+                },
+                {
+                    "title": "Verify aggregate exit-code behavior",
+                    "completed": false
+                }
             ],
             "tags": ["config", "ci"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -345,12 +472,22 @@
                     "title": "Create lib/repo-root.ts with the extracted resolution logic",
                     "completed": false
                 },
-                { "title": "Update update.ts to use the shared helper", "completed": false },
-                { "title": "Write the precedence unit test", "completed": false }
+                {
+                    "title": "Update update.ts to use the shared helper",
+                    "completed": false
+                },
+                {
+                    "title": "Write the precedence unit test",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "refactor"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -366,17 +503,30 @@
             "blockedBy": ["T-011", "T-014"],
             "blocks": ["T-017", "T-019", "T-022"],
             "subtasks": [
-                { "title": "Implement JSON-registry reading via repo-root.ts", "completed": false },
+                {
+                    "title": "Implement JSON-registry reading via repo-root.ts",
+                    "completed": false
+                },
                 {
                     "title": "Implement the Coolify-diff logic (missing/orphan)",
                     "completed": false
                 },
-                { "title": "Register the command in index.ts", "completed": false },
-                { "title": "Write mocked-client unit tests", "completed": false }
+                {
+                    "title": "Register the command in index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write mocked-client unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "coolify"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -404,8 +554,14 @@
                     "title": "Add per-rule try/catch + skipped-status reporting",
                     "completed": false
                 },
-                { "title": "Add (app,target)→uuid memoization within a run", "completed": false },
-                { "title": "Register the command in index.ts", "completed": false },
+                {
+                    "title": "Add (app,target)→uuid memoization within a run",
+                    "completed": false
+                },
+                {
+                    "title": "Register the command in index.ts",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests (skip-on-unreachable, memoization)",
                     "completed": false
@@ -413,7 +569,11 @@
             ],
             "tags": ["hops", "vps", "coolify", "rules"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -429,13 +589,26 @@
             "blockedBy": ["T-015", "T-016"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Implement the umbrella command", "completed": false },
-                { "title": "Register in index.ts", "completed": false },
-                { "title": "Write the aggregate-result test", "completed": false }
+                {
+                    "title": "Implement the umbrella command",
+                    "completed": false
+                },
+                {
+                    "title": "Register in index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write the aggregate-result test",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -463,8 +636,14 @@
                     "title": "Implement constraint-based prompt selection (enum/boolean/numeric)",
                     "completed": false
                 },
-                { "title": "Show howToObtain/helpUrl for secret entries", "completed": false },
-                { "title": "Wire the pnpm env:set script", "completed": false },
+                {
+                    "title": "Show howToObtain/helpUrl for secret entries",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the pnpm env:set script",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests with an injectable fake prompt adapter",
                     "completed": false
@@ -472,7 +651,11 @@
             ],
             "tags": ["config", "wizard", "dx"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -492,16 +675,26 @@
                     "title": "Add --wizard/--review-all flag parsing to env-set.ts",
                     "completed": false
                 },
-                { "title": "Source gaps from env-reconcile's diff logic", "completed": false },
+                {
+                    "title": "Source gaps from env-reconcile's diff logic",
+                    "completed": false
+                },
                 {
                     "title": "Reuse constraint-based prompt selection from T-018",
                     "completed": false
                 },
-                { "title": "Write unit tests for the VPS wizard variant", "completed": false }
+                {
+                    "title": "Write unit tests for the VPS wizard variant",
+                    "completed": false
+                }
             ],
             "tags": ["hops", "vps", "wizard"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -528,7 +721,11 @@
             ],
             "tags": ["test", "regression"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -544,12 +741,22 @@
             "blockedBy": ["T-009", "T-010", "T-011", "T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run and fix packages/config test suite", "completed": false },
-                { "title": "Run and fix packages/config typecheck", "completed": false }
+                {
+                    "title": "Run and fix packages/config test suite",
+                    "completed": false
+                },
+                {
+                    "title": "Run and fix packages/config typecheck",
+                    "completed": false
+                }
             ],
             "tags": ["test", "config"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -565,12 +772,22 @@
             "blockedBy": ["T-015", "T-016", "T-017", "T-018", "T-019"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run and fix scripts/server-tools test suite", "completed": false },
-                { "title": "Run and fix scripts/server-tools typecheck", "completed": false }
+                {
+                    "title": "Run and fix scripts/server-tools test suite",
+                    "completed": false
+                },
+                {
+                    "title": "Run and fix scripts/server-tools typecheck",
+                    "completed": false
+                }
             ],
             "tags": ["test", "hops"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -605,7 +822,11 @@
             ],
             "tags": ["test", "apps"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -621,12 +842,22 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Add the CI step to the guards job", "completed": false },
-                { "title": "Verify the step runs green in a CI run", "completed": false }
+                {
+                    "title": "Add the CI step to the guards job",
+                    "completed": false
+                },
+                {
+                    "title": "Verify the step runs green in a CI run",
+                    "completed": false
+                }
             ],
             "tags": ["ci", "devops"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -642,7 +873,10 @@
             "blockedBy": ["T-013", "T-017", "T-024"],
             "blocks": [],
             "subtasks": [
-                { "title": "Replace the manual Audit checklist section", "completed": false },
+                {
+                    "title": "Replace the manual Audit checklist section",
+                    "completed": false
+                },
                 {
                     "title": "Update the Sentry-tagging section (covered-by-rule note or follow-up flag)",
                     "completed": false
@@ -650,7 +884,11 @@
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
                 "started": null,
@@ -660,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 25,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.1
     }
