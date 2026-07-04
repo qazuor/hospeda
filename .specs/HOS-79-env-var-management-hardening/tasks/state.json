@@ -78,7 +78,7 @@
             "id": "T-003",
             "title": "Extract apps/api/src/utils/env-schema.ts (pure base schema)",
             "description": "Move ApiEnvBaseSchema (plain z.object, currently inline in apps/api/src/utils/env.ts) into a new file apps/api/src/utils/env-schema.ts with ZERO non-zod imports (no dotenv, no logger). Update env.ts to re-export it and keep the dotenv/validator wiring. Test: apps/api typecheck passes; apps/api/test/utils/env-registry-cross-validation.test.ts still passes unchanged (imports ApiEnvBaseSchema from the new location).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -105,15 +105,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-004",
             "title": "Extract apps/admin/src/env-schema.ts (pure base schema)",
             "description": "Extract the z.object({...}) currently in apps/admin/src/env.ts into a new apps/admin/src/env-schema.ts, WITHOUT the adminLogger import from '@/utils/logger' (confirmed this session: that Vite-only path alias does not resolve outside admin's own Vite/tsconfig context). Update env.ts to re-export it, moving any logger-dependent logic to stay in env.ts. Test: apps/admin typecheck passes; apps/admin/test/env-registry-cross-validation.test.ts still passes unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -140,15 +140,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-005",
             "title": "Extract apps/mobile/src/lib/env-schema.ts (pure base schema)",
             "description": "Extract EnvSchema currently in apps/mobile/src/lib/env.ts into apps/mobile/src/lib/env-schema.ts, WITHOUT the 'expo-constants' import (confirmed this session: unsafe to import under plain Node/tsx). Update env.ts to re-export it, keeping Constants-dependent logic local. Test: apps/mobile typecheck passes; existing mobile env tests still pass unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -171,15 +171,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add apps/web/src/env-schema.ts re-export for naming consistency",
             "description": "apps/web/src/env.ts's serverEnvBaseSchema is already import-clean (zero non-zod imports, confirmed this session). Add apps/web/src/env-schema.ts that re-exports it, purely for naming consistency with the other 3 apps so the JSON generator (T-011) can import a uniformly-named file per app. Test: apps/web typecheck passes; apps/web/test/lib/env-registry-cross-validation.test.ts still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-023"],
@@ -198,8 +198,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T22:53:27Z",
+                "completed": "2026-07-04T23:17:49Z"
             }
         },
         {
@@ -898,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 23,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     }
