@@ -51,13 +51,6 @@ updates:
     #     ignore when the monorepo TS-major alignment chore lands (ADR-034
     #     follow-up: unify the repo on a single TS major so mobile stops diverging).
     #     Owner: HOS-59.
-    #   - better-auth: 1.4 -> 1.6 changes the auth type signatures, breaking
-    #     apps/api typecheck at src/lib/auth.ts (TS2322). Core auth surface —
-    #     merits a dedicated migration spec. Lift when that migration lands.
-    #     The whole @better-auth/* scope must be gated together: a lone
-    #     @better-auth/expo minor bump desyncs against @better-auth/core and
-    #     breaks apps/mobile build (Unable to resolve @better-auth/core/utils/json).
-    #     Owner: HOS-60.
     #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
     #     packages/email/test/templates/verify-email.test.tsx. Lift when the
     #     react-email render bump is taken on with its template snapshots.
@@ -95,8 +88,6 @@ updates:
     ignore:
       - dependency-name: 'zod'
       - dependency-name: 'typescript'
-      - dependency-name: 'better-auth'
-      - dependency-name: '@better-auth/*'
       - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
       - dependency-name: '@tiptap/*'
