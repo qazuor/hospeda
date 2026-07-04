@@ -66,7 +66,6 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
     NITRO_PRESET=node-server
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile

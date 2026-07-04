@@ -41,7 +41,6 @@ ARG HOSPEDA_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ARG SENTRY_AUTH_TOKEN
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile

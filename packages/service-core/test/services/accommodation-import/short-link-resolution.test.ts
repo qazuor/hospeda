@@ -202,7 +202,7 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
             });
             // Google adapter supports the canonical URL, not the short link
             fakeGoogle.supports.mockImplementation((url: URL) =>
-                url.hostname.includes('google.com')
+                url.hostname.endsWith('.google.com')
             );
             fakeGoogle.extract.mockResolvedValue({
                 sourcePlatform: 'google',
@@ -251,7 +251,7 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
             // Google adapter supports maps.app.goo.gl (it does in the real impl).
             fakeGoogle.supports.mockImplementation(
                 (url: URL) =>
-                    url.hostname === 'maps.app.goo.gl' || url.hostname.includes('google.com')
+                    url.hostname === 'maps.app.goo.gl' || url.hostname.endsWith('.google.com')
             );
             fakeGoogle.extract.mockResolvedValue({ sourcePlatform: 'google' });
 
@@ -311,7 +311,7 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
             });
             // Booking adapter supports booking.com hotel URLs
             fakeBooking.supports.mockImplementation((url: URL) =>
-                url.hostname.includes('booking.com')
+                url.hostname.endsWith('.booking.com')
             );
             fakeBooking.extract.mockResolvedValue({
                 sourcePlatform: 'booking',
@@ -344,7 +344,7 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
             // Arrange — canonical hotel URL, NOT a /Share- stub
             const canonicalHotelUrl = 'https://www.booking.com/hotel/ar/my-hotel.es.html';
             fakeBooking.supports.mockImplementation((url: URL) =>
-                url.hostname.includes('booking.com')
+                url.hostname.endsWith('.booking.com')
             );
             fakeBooking.extract.mockResolvedValue({ sourcePlatform: 'booking' });
 

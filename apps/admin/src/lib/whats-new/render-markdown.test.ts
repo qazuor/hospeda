@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderMarkdownToHtml } from '../../../src/lib/whats-new/render-markdown';
+import { renderMarkdownToHtml } from './render-markdown';
 
-describe('renderMarkdownToHtml', () => {
+/**
+ * The What's New renderer constructs a real headless TipTap `Editor` with
+ * `[StarterKit, Markdown]` — the same bare-construction pattern that would
+ * surface a Tiptap #1890-style cross-major mismatch. If extensions ever diverge
+ * from core, construction throws and the function degrades to escaped plain
+ * text, so any assertion below that expects real HTML tags doubles as a v3
+ * compatibility canary.
+ */
+describe('renderMarkdownToHtml (admin)', () => {
     it('renders basic markdown formatting', () => {
         const html = renderMarkdownToHtml('**Hola**\n\n- uno\n- dos');
 
