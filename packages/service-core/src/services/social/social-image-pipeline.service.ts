@@ -88,6 +88,26 @@ export interface GptImagePayload {
     readonly altText?: string;
 }
 
+/**
+ * Flat GPT video payload type — mirrors the `GptVideoPayloadSchema` in
+ * `@repo/schemas/social-draft.http.schema` (HOS-65 T-007).
+ *
+ * Unlike {@link GptImagePayload}, `mode` has a single variant (`'public_url'`):
+ * video files are too large for OpenAI's `openai_file_refs` injection path, so
+ * phase 1 requires a direct HTTPS URL. `mode` stays a single-variant literal
+ * (not a bare string) so a future mode can be added without a breaking change.
+ */
+export interface GptVideoPayload {
+    /** Mode discriminant — currently only `'public_url'` is supported. */
+    readonly mode: 'public_url';
+    /** Direct HTTPS URL of the video to download and re-upload to Cloudinary. */
+    readonly url?: string;
+    /** Optional MIME type hint (e.g., "video/mp4"). */
+    readonly mimeType?: string;
+    /** Optional alt text for accessibility. */
+    readonly altText?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Input / output
 // ---------------------------------------------------------------------------
@@ -117,6 +137,28 @@ export interface ProcessImageInput {
      * is created — this keeps pre-HOS-65 G-3 callers backward compatible.
      */
     readonly socialPostTargetId?: string;
+}
+
+/**
+ * Input for {@link SocialImagePipelineService.processVideo} (HOS-65 T-013).
+ */
+export interface ProcessVideoInput {
+    /** GPT video payload (`public_url` mode only in phase 1). */
+    readonly video: GptVideoPayload;
+    /**
+     * ID of the `social_posts` row to link the asset to via `social_post_media`.
+     * When `undefined` no `social_post_media` row is created.
+     */
+    readonly socialPostId?: string;
+    /**
+     * ID of the `social_post_targets` row this asset should be scoped to
+     * (HOS-65 G-3). Same semantics as {@link ProcessImageInput.socialPostTargetId}.
+     */
+    readonly socialPostTargetId?: string;
+    /**
+     * ID of the acting user / system actor. Stored in `social_assets.created_by_id`.
+     */
+    readonly actorId?: string;
 }
 
 /**
@@ -378,48 +420,97 @@ export class SocialImagePipelineService {
             return this.gracefulFail();
         }
 
-        // Step 6: Optionally link to the social post.
-        if (socialPostId && assetId) {
-            try {
-                const postMedia = await this.postMediaModel.create({
-                    socialPostId,
-                    assetId,
-                    position
-                });
+        // Step 6: Optionally link to the social post (+ target, HOS-65 G-3).
+        if (assetId) {
+            await this.createMediaLinks({ assetId, position, socialPostId, socialPostTargetId });
+        }
 
-                // Step 6b: Optionally link the newly created media row to a
-                // specific target (HOS-65 G-3 per-target/per-format publishing).
-                if (socialPostTargetId) {
-                    try {
-                        await this.postTargetMediaModel.create({
-                            socialPostTargetId,
-                            socialPostMediaId: postMedia.id,
-                            position
-                        });
-                    } catch (err) {
-                        const message = err instanceof Error ? err.message : String(err);
-                        // Target-link failure is non-fatal: the asset and media row
-                        // exist, but the per-target scoping link did not.
-                        this.logger.warn(
-                            {
-                                error: message,
-                                assetId,
-                                socialPostMediaId: postMedia.id,
-                                socialPostTargetId
-                            },
-                            'Failed to create social_post_target_media link'
-                        );
-                    }
-                }
-            } catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                // Linking failure is non-fatal: the asset exists, but the link did not.
-                // This is logged as a warning but does not cause the whole pipeline to fail.
-                this.logger.warn(
-                    { error: message, assetId, socialPostId },
-                    'Failed to create social_post_media link'
-                );
-            }
+        return { assetId, cloudinaryUrl: url, warnings: [] };
+    }
+
+    /**
+     * Downloads the video from the GPT payload and re-uploads it to Cloudinary,
+     * then persists a `social_assets` row (with `mediaType` forced to `VIDEO`
+     * and `durationSeconds` set from the upload result) and optionally
+     * `social_post_media` / `social_post_target_media` link rows.
+     *
+     * Reuses the same download (fetch + `AbortController` timeout) and
+     * `uploadToCloudinary` steps as {@link processSingleImage}, and the same
+     * graceful-failure contract: on any error after argument parsing it
+     * returns `cloudinaryUrl: null` + a warning string instead of throwing,
+     * and never creates an orphaned link row.
+     *
+     * Video only supports `mode: 'public_url'` in phase 1 (HOS-65 T-013) — no
+     * `openai_file_refs` extraction is needed.
+     *
+     * @param input - Video payload, optional post/target IDs to link, optional actor ID.
+     * @returns Result with `assetId`, `cloudinaryUrl` (nullable), and `warnings`.
+     *
+     * @example
+     * ```ts
+     * const result = await pipeline.processVideo({
+     *   video: { mode: 'public_url', url: 'https://example.com/clip.mp4' },
+     *   socialPostId: 'post-uuid',
+     *   socialPostTargetId: 'target-uuid',
+     * });
+     * ```
+     */
+    public async processVideo(input: ProcessVideoInput): Promise<ProcessImageResult> {
+        const { video, socialPostId, socialPostTargetId, actorId } = input;
+
+        const downloadUrl = video.url ?? '';
+        const mimeType = video.mimeType ?? null;
+        const altText = video.altText ?? null;
+
+        // Step 1: Download the video bytes with a timeout.
+        const downloadResult = await this.downloadImage(downloadUrl);
+        if (!downloadResult.success) {
+            this.logger.warn(
+                { url: downloadUrl, error: downloadResult.error },
+                'Video download failed'
+            );
+            return this.gracefulFail();
+        }
+
+        // Step 2: Upload to Cloudinary.
+        const uploadResult = await this.uploadToCloudinary(downloadResult.buffer, mimeType);
+        if (!uploadResult.success) {
+            this.logger.warn({ error: uploadResult.error }, 'Cloudinary upload failed');
+            return this.gracefulFail();
+        }
+
+        const { url, publicId, width, height, durationSeconds } = uploadResult.data;
+
+        // Step 3: Persist the social_assets row. mediaType is always VIDEO here
+        // (unlike processSingleImage, which infers it from a MIME hint) and
+        // durationSeconds is persisted from the upload result.
+        let assetId: string | null = null;
+        try {
+            const asset = await this.assetModel.create({
+                source: SocialAssetSourceEnum.EXTERNAL_URL,
+                cloudinaryUrl: url,
+                cloudinaryPublicId: publicId,
+                originalUrl: downloadUrl,
+                openaiFileRef: undefined,
+                mimeType: mimeType ?? undefined,
+                mediaType: SocialMediaTypeEnum.VIDEO,
+                width: width ?? undefined,
+                height: height ?? undefined,
+                durationSeconds: durationSeconds ?? undefined,
+                altText: altText ?? undefined,
+                createdById: actorId && isUuid(actorId) ? actorId : undefined
+            });
+            assetId = asset.id;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.warn({ error: message }, 'Failed to persist social_assets row');
+            return this.gracefulFail();
+        }
+
+        // Step 4: Optionally link to the social post (+ target, HOS-65 G-3).
+        // A standalone video is always its own single asset, so position is 0.
+        if (assetId) {
+            await this.createMediaLinks({ assetId, position: 0, socialPostId, socialPostTargetId });
         }
 
         return { assetId, cloudinaryUrl: url, warnings: [] };
@@ -428,6 +519,73 @@ export class SocialImagePipelineService {
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
+
+    /**
+     * Optionally creates the `social_post_media` link row (and, in turn, the
+     * `social_post_target_media` link row when `socialPostTargetId` is given)
+     * for an already-persisted `social_assets` row.
+     *
+     * Both link steps are **non-fatal**: a failure here is logged as a warning
+     * but never causes the caller to fail, since the underlying asset already
+     * exists. No-ops entirely when `socialPostId` is absent — this is what
+     * keeps standalone/re-upload callers (no post to link to yet) working.
+     *
+     * @param params - The persisted asset ID, its `position`, and the optional
+     *   post/target IDs to link.
+     */
+    private async createMediaLinks(params: {
+        readonly assetId: string;
+        readonly position: number;
+        readonly socialPostId?: string;
+        readonly socialPostTargetId?: string;
+    }): Promise<void> {
+        const { assetId, position, socialPostId, socialPostTargetId } = params;
+
+        if (!socialPostId) {
+            return;
+        }
+
+        try {
+            const postMedia = await this.postMediaModel.create({
+                socialPostId,
+                assetId,
+                position
+            });
+
+            // Optionally link the newly created media row to a specific target
+            // (HOS-65 G-3 per-target/per-format publishing).
+            if (socialPostTargetId) {
+                try {
+                    await this.postTargetMediaModel.create({
+                        socialPostTargetId,
+                        socialPostMediaId: postMedia.id,
+                        position
+                    });
+                } catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    // Target-link failure is non-fatal: the asset and media row
+                    // exist, but the per-target scoping link did not.
+                    this.logger.warn(
+                        {
+                            error: message,
+                            assetId,
+                            socialPostMediaId: postMedia.id,
+                            socialPostTargetId
+                        },
+                        'Failed to create social_post_target_media link'
+                    );
+                }
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            // Linking failure is non-fatal: the asset exists, but the link did not.
+            // This is logged as a warning but does not cause the whole pipeline to fail.
+            this.logger.warn(
+                { error: message, assetId, socialPostId },
+                'Failed to create social_post_media link'
+            );
+        }
+    }
 
     /**
      * Extracts the download URL and relevant metadata from the GPT image payload.
