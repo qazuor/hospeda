@@ -404,6 +404,37 @@ describe('CloudinaryProvider', () => {
             expect(callOptions.tags).toEqual(['accommodation', 'gallery']);
         });
 
+        // HOS-65 T-016: optional transformation preset forwarded to the SDK
+        it('should forward transformation to the Cloudinary upload options when provided', async () => {
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+            const transformation = { width: 1080, height: 1920, crop: 'fill' as const };
+
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                transformation
+            });
+
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.transformation).toEqual(transformation);
+        });
+
+        it('should NOT include a transformation key in the upload options when omitted (backward compat)', async () => {
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.transformation).toBeUndefined();
+        });
+
         it('should reject with the error when upload_stream callback fires with an error', async () => {
             const uploadError = new Error('Network timeout');
             setupUploadStream(uploadError, null);

@@ -230,7 +230,7 @@ export class CloudinaryProvider implements ImageProvider {
      * @throws {Error} If Cloudinary returns an incomplete or missing response
      */
     async upload(options: UploadOptions): Promise<UploadResult> {
-        const { file, folder, publicId, tags, overwrite } = options;
+        const { file, folder, publicId, tags, overwrite, transformation } = options;
 
         if (!folder || !folder.startsWith(this.folderRoot)) {
             throw new InvalidFolderError(
@@ -249,6 +249,9 @@ export class CloudinaryProvider implements ImageProvider {
         }
         if (tags && tags.length > 0) {
             uploadOptions.tags = [...tags];
+        }
+        if (transformation !== undefined) {
+            uploadOptions.transformation = transformation;
         }
 
         const result = await this.uploadBuffer(file, uploadOptions);
