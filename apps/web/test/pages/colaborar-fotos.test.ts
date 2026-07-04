@@ -4,7 +4,7 @@
  * (SPEC-191 FR-4, BETA-68).
  *
  * Asserts:
- *   - SSG: prerender = true + getStaticPaths enumerating es/en/pt
+ *   - SSR (HOS-74): no prerender/getStaticPaths; locale from Astro.locals.locale
  *   - A clearly-labelled usage/license terms section with an anchor id
  *   - Delivery-mechanics copy (links in message / email follow-up)
  *   - The "by submitting you accept the terms" line anchor-linked to the
@@ -23,16 +23,17 @@ const src = readFileSync(
 );
 
 describe('colaborar/fotos/index.astro (photo call page, FR-4)', () => {
-    describe('rendering mode (SSG)', () => {
-        it('sets prerender = true', () => {
-            expect(src).toContain('export const prerender = true');
+    describe('rendering mode (SSR — HOS-74)', () => {
+        it('does NOT set prerender = true (SSR so the middleware CSP header reaches it)', () => {
+            expect(src).not.toContain('export const prerender = true');
         });
 
-        it('enumerates es, en and pt in getStaticPaths', () => {
-            expect(src).toContain('getStaticPaths');
-            expect(src).toContain("{ params: { lang: 'es' } }");
-            expect(src).toContain("{ params: { lang: 'en' } }");
-            expect(src).toContain("{ params: { lang: 'pt' } }");
+        it('does NOT declare getStaticPaths (lang resolved at request time under SSR)', () => {
+            expect(src).not.toContain('getStaticPaths');
+        });
+
+        it('reads the locale from Astro.locals.locale (validated by middleware)', () => {
+            expect(src).toContain('Astro.locals.locale');
         });
     });
 

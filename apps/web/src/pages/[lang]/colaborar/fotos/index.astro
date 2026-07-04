@@ -16,26 +16,12 @@
  * terms text changes on sign-off.
  *
  * @route /{lang}/colaborar/fotos/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import { CheckCircleIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
-import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
-import { ContributionForm } from '@/components/contributions/ContributionForm.client';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // Delivery mechanics (FR-4): the page must close the expectation loop for a

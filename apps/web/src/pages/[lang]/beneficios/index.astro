@@ -3,7 +3,7 @@
  * @file beneficios/index.astro
  * @description Benefits page showing tourist and owner benefits.
  * @route /{lang}/beneficios/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import {
@@ -21,23 +21,8 @@ import {
     StarIcon,
     StatisticsIcon
 } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const touristBenefits = [

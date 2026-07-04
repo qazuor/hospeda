@@ -9,6 +9,15 @@
  *
  * Pages are prerendered at build time so the docs site remains available even
  * if the SSR server is unhealthy.
+ *
+ * NOTE (HOS-74): this is the ONE `apps/web` route deliberately kept prerendered.
+ * Because `@astrojs/node` `standalone` serves prerendered files off-disk without
+ * running middleware, the CSP header set in `src/middleware.ts` does NOT reach
+ * these pages — accepted as a documented exception (private, `noindex` docs; the
+ * resilience of prerendering was judged to outweigh CSP hardening here). Every
+ * OTHER content route was moved off `prerender` (HOS-74) to receive the CSP
+ * header, and a test guard forbids re-adding `prerender` anywhere but here. Do
+ * not "fix" this by converting to SSR without re-checking that owner decision.
  */
 
 import { getCollection, render } from 'astro:content';

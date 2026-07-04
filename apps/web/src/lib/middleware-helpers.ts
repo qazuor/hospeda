@@ -523,7 +523,14 @@ export function buildCspHeader({
     const sentryConnectSrc = sentryTunnelEnabled ? '' : ' https://*.sentry.io';
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        // Cloudflare Turnstile (invisible bot-detection on the feedback form,
+        // SPEC-301) loads its widget script from https://challenges.cloudflare.com.
+        // With 'strict-dynamic' a compliant browser already trusts the script the
+        // nonce-tagged island injects, but the explicit host is the fallback for
+        // browsers that ignore 'strict-dynamic'. Adding it is harmless to the
+        // strict policy (host-source allowlists are ignored when strict-dynamic
+        // is honored).
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://challenges.cloudflare.com`,
         // The Astro client runtime injects an inline <style> at hydration time
         // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
         // Because the injection happens via JS AFTER the middleware response
@@ -551,7 +558,13 @@ export function buildCspHeader({
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-src 'none'",
+        // Cloudflare Turnstile renders its challenge in an iframe served from
+        // https://challenges.cloudflare.com. 'strict-dynamic' does NOT govern
+        // frames, so this host MUST be allowlisted here or the widget can never
+        // mount and no token is produced (SPEC-301 feedback form). Every other
+        // embed origin stays blocked; frame-ancestors 'none' still stops others
+        // from embedding us.
+        'frame-src https://challenges.cloudflare.com',
         "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',

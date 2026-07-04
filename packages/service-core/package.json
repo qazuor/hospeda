@@ -53,6 +53,7 @@
         "@repo/utils": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
+        "parse5": "^8.0.1",
         "zod": "^4.0.8"
     }
 }

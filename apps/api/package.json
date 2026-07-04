@@ -27,7 +27,7 @@
         "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/feedback --filter=@repo/content-moderation"
     },
     "dependencies": {
-        "@ai-sdk/gateway": "3.0.125",
+        "@ai-sdk/gateway": "4.0.3",
         "@hono/node-server": "^1.19.10",
         "@hono/swagger-ui": "^0.5.2",
         "@hono/zod-openapi": "^1.2.2",
@@ -61,7 +61,7 @@
         "cloudinary": "^2.9.0",
         "cron-parser": "^5.5.0",
         "cronstrue": "^3.14.0",
-        "dotenv": "^16.5.0",
+        "dotenv": "^17.4.2",
         "drizzle-orm": "^0.45.2",
         "file-type": "^22.0.1",
         "hono": "^4.12.21",

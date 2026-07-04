@@ -24,7 +24,7 @@
             "!**/docs/examples",
             "!**/mappings/id-mappings.json",
             "!**/.remember",
-            "!**/test/**/fixtures/**",
+            "!**/test/**/fixtures",
             "!**/*.svg"
         ]
     },

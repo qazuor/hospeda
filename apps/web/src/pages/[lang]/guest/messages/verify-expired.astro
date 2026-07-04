@@ -3,7 +3,7 @@
  * @file guest/messages/verify-expired.astro
  * @description Static error page shown when a verification link has expired or is invalid.
  * @route /{lang}/guest/messages/verify-expired/
- * @rendering SSG (static, no dynamic data needed)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -11,14 +11,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
-export const prerender = true;
-
-// prerender needs all supported locales
-export function getStaticPaths() {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
-
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const requestAccessUrl = buildUrl({ locale, path: 'guest/messages/request-access' });

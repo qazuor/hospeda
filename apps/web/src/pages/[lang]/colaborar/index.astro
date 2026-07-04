@@ -5,7 +5,7 @@
  * cards funnelling visitors into the contribution flows — report incorrect
  * destination info, contribute photos, apply as blog/events editor.
  * @route /{lang}/colaborar/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
@@ -15,15 +15,9 @@ import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const cards = [

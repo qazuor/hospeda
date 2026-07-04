@@ -4,10 +4,10 @@
  * @description Destination-info report page (SPEC-191 FR-3, BETA-69): mounts
  * the contribution form locked to `report_destination_info`. The optional
  * `?destino=<slug>` context is read client-side by the ContributionForm
- * island (this page is SSG — the server cannot read query params); the island
- * seeds the message with the destination and forwards the slug to analytics.
+ * island; the island seeds the message with the destination and forwards the
+ * slug to analytics.
  * @route /{lang}/colaborar/reportar/?destino=<slug>
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import type { GetStaticPaths } from 'astro';
@@ -18,14 +18,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 ---
 

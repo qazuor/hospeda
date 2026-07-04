@@ -2,8 +2,8 @@
  * @file RichTextEditor component
  *
  * A controlled rich-text editor for newsletter campaign body content.
- * Built on TipTap v2 with StarterKit + Image + Link + Underline + TextAlign
- * extensions. Emits TipTap JSON documents on change (debounced at 200 ms).
+ * Built on TipTap v3 with StarterKit (Link + Underline are bundled) + Image +
+ * TextAlign extensions. Emits TipTap JSON documents on change (debounced at 200 ms).
  *
  * Re-exports `TiptapDocument` from `@repo/utils` so consumers can use a single
  * import path for both the component and the document type.
@@ -13,9 +13,7 @@
 
 import type { TiptapDocument } from '@repo/utils';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -24,6 +22,20 @@ import { cn } from '@/lib/utils';
 
 // Re-export so pages can `import { type TiptapDocument } from '@/components/newsletter/RichTextEditor'`
 export type { TiptapDocument };
+
+/**
+ * TipTap extension set for the newsletter editor.
+ *
+ * Exported so the v3 compatibility test mounts the exact same configuration the
+ * component ships — no hand-copied mirror that can silently drift. v3 bundles
+ * Link and Underline into StarterKit; the bundled Link keeps the previous
+ * `openOnClick: false` behavior.
+ */
+export const NEWSLETTER_EDITOR_EXTENSIONS = [
+    StarterKit.configure({ link: { openOnClick: false } }),
+    Image,
+    TextAlign.configure({ types: ['heading', 'paragraph'] })
+];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -294,13 +306,7 @@ export function RichTextEditor({
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Underline,
-            Link.configure({ openOnClick: false }),
-            Image,
-            TextAlign.configure({ types: ['heading', 'paragraph'] })
-        ],
+        extensions: NEWSLETTER_EDITOR_EXTENSIONS,
         // Cast is safe: TiptapDocument is structurally compatible with JSONContent
         content: (value as JSONContent) ?? undefined,
         editable: !disabled,
@@ -334,7 +340,7 @@ export function RichTextEditor({
 
         if (current !== incoming) {
             // Cast is safe: TiptapDocument is structurally compatible with JSONContent
-            editor.commands.setContent((value as JSONContent) ?? null, false);
+            editor.commands.setContent((value as JSONContent) ?? null, { emitUpdate: false });
         }
     }, [editor, value]);
 

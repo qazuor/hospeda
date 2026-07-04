@@ -4,7 +4,7 @@
  * (SPEC-191 FR-3, BETA-69).
  *
  * Asserts:
- *   - SSG: prerender = true + getStaticPaths enumerating es/en/pt
+ *   - SSR (HOS-74): no prerender/getStaticPaths; locale from Astro.locals.locale
  *   - Mounts ContributionForm locked to report_destination_info
  *   - The ?destino= context is handled by the island (client-side), not the page
  *   - All copy through t() with contributions.* keys
@@ -20,19 +20,20 @@ const src = readFileSync(
 );
 
 describe('colaborar/reportar/index.astro (report form page, FR-3)', () => {
-    describe('rendering mode (SSG)', () => {
-        it('sets prerender = true', () => {
-            expect(src).toContain('export const prerender = true');
+    describe('rendering mode (SSR — HOS-74)', () => {
+        it('does NOT set prerender = true (SSR so the middleware CSP header reaches it)', () => {
+            expect(src).not.toContain('export const prerender = true');
         });
 
-        it('enumerates es, en and pt in getStaticPaths', () => {
-            expect(src).toContain('getStaticPaths');
-            expect(src).toContain("{ params: { lang: 'es' } }");
-            expect(src).toContain("{ params: { lang: 'en' } }");
-            expect(src).toContain("{ params: { lang: 'pt' } }");
+        it('does NOT declare getStaticPaths (lang resolved at request time under SSR)', () => {
+            expect(src).not.toContain('getStaticPaths');
         });
 
-        it('does NOT read query params server-side (SSG cannot)', () => {
+        it('reads the locale from Astro.locals.locale (validated by middleware)', () => {
+            expect(src).toContain('Astro.locals.locale');
+        });
+
+        it('does NOT read query params server-side (the ?destino= island handles it client-side)', () => {
             expect(src).not.toContain('Astro.url.searchParams');
             expect(src).not.toContain('Astro.request.url');
         });

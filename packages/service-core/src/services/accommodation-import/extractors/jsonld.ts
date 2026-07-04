@@ -2,8 +2,9 @@
  * JSON-LD Extractor (SPEC-222)
  *
  * Extracts structured lodging data from `<script type="application/ld+json">`
- * blocks embedded in raw HTML.  Uses regex + JSON.parse only — no DOM parser,
- * no cheerio, no jsdom.
+ * blocks embedded in raw HTML.  Block discovery is delegated to the shared
+ * {@link parseJsonLdBlocks} helper (parse5-based); this module only maps the
+ * parsed JSON-LD nodes to typed lodging fields.
  *
  * **Hard rule (SPEC-222)**: rating and review fields are NEVER present in the
  * returned result.  `aggregateRating`, `review`, `ratingValue`, `reviewCount`,
@@ -12,6 +13,8 @@
  *
  * @module services/accommodation-import/extractors/jsonld
  */
+
+import { parseJsonLdBlocks } from '../../../utils/html-jsonld.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -187,23 +190,6 @@ export interface JsonLdResult {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Regex that matches a `<script type="application/ld+json">` block.
- *
- * Design choices:
- * - Uses `[\s\S]*?` (lazy) inside each block so multiple scripts on the same
- *   page are matched as distinct captures, not collapsed into one.
- * - The `gi` flags make the attribute match case-insensitive and find all
- *   occurrences on the page.
- * - The script content is capped at 500 000 characters to prevent runaway
- *   backtracking on adversarial inputs.  Real JSON-LD blocks are far smaller.
- */
-// Single [^>]* group captures all tag attributes in one pass — avoids the
-// polynomial backtracking that two [^>]+…[^>]* quantifiers around a literal
-// produce (CodeQL ReDoS). The type="application/ld+json" check is done in JS
-// on the short attrs string (group 1) after the match; group 2 holds content.
-const JSONLD_SCRIPT_RE = /<script\b([^>]*)>([\s\S]{0,500000}?)<\/script>/gi;
 
 /**
  * Removes all keys listed in {@link RATING_FIELDS} from a plain object,
@@ -497,13 +483,13 @@ function mapNodeToResult(node: JsonLdNode): JsonLdResult {
  * blocks present in the given raw HTML.
  *
  * **Extraction pipeline:**
- * 1. Find every JSON-LD script block via a bounded regex.
- * 2. `JSON.parse` each block independently — malformed blocks are skipped, no throw.
- * 3. Flatten each parsed value to a list of candidate nodes (handles single object,
+ * 1. Find and parse every JSON-LD script block via {@link parseJsonLdBlocks}
+ *    (parse5-based) — malformed blocks are skipped, no throw.
+ * 2. Flatten each parsed value to a list of candidate nodes (handles single object,
  *    array, and `@graph` wrapper shapes).
- * 4. Filter to the first node whose `@type` is in the lodging-relevant set.
- * 5. Strip all rating/review fields (SPEC-222 hard rule).
- * 6. Map to a typed {@link JsonLdResult}.
+ * 3. Filter to the first node whose `@type` is in the lodging-relevant set.
+ * 4. Strip all rating/review fields (SPEC-222 hard rule).
+ * 5. Map to a typed {@link JsonLdResult}.
  *
  * If no lodging-relevant node is found across all blocks, returns an empty object.
  * This function never throws.
@@ -527,36 +513,9 @@ function mapNodeToResult(node: JsonLdNode): JsonLdResult {
 export function extractJsonLd(input: { readonly html: string }): JsonLdResult {
     const { html } = input;
 
-    // Reset lastIndex so the regex is re-entrant across calls.
-    JSONLD_SCRIPT_RE.lastIndex = 0;
-
-    // Iterate all JSON-LD script blocks. We avoid assigning inside the while
-    // condition (biome noAssignInExpressions) by calling exec and breaking.
-    for (;;) {
-        const match = JSONLD_SCRIPT_RE.exec(html);
-        if (match === null) {
-            break;
-        }
-
-        // Group 1 = tag attributes, group 2 = script content (see JSONLD_SCRIPT_RE).
-        const attrs = match[1] ?? '';
-        if (!/type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) {
-            continue;
-        }
-
-        const rawJson = match[2];
-        if (rawJson === undefined || rawJson.trim().length === 0) {
-            continue;
-        }
-
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(rawJson);
-        } catch {
-            // Malformed JSON — skip this block, continue to next.
-            continue;
-        }
-
+    // Iterate all JSON-LD script blocks (parse5-based discovery, malformed
+    // blocks already skipped by the helper) and return the first lodging node.
+    for (const parsed of parseJsonLdBlocks({ html })) {
         const nodes = flattenJsonLd(parsed);
 
         for (const node of nodes) {
