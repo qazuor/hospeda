@@ -1,5 +1,6 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.4.1/schema.json",
+    "root": false,
+    "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -8,48 +9,74 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "ignore": [
-            "**/node_modules/**",
-            "**/.turbo/**",
-            "**/dist/**",
-            "**/build/**",
-            "**/coverage/**",
-            "**/.output/**",
-            "**/.vinxi/**",
-            "**/tsup.config.bundled_*.mjs",
-            "**/routeTree.gen.ts",
-            "**/*.astro",
-            "**/docs/examples/**",
-            "**/mappings/id-mappings.json",
-            "**/.remember/**"
+        "includes": [
+            "**",
+            "!**/node_modules",
+            "!**/.turbo",
+            "!**/dist",
+            "!**/build",
+            "!**/coverage",
+            "!**/.output",
+            "!**/.vinxi",
+            "!**/tsup.config.bundled_*.mjs",
+            "!**/routeTree.gen.ts",
+            "!**/*.astro",
+            "!**/docs/examples",
+            "!**/mappings/id-mappings.json",
+            "!**/.remember",
+            "!**/test/**/fixtures/**",
+            "!**/*.svg"
         ]
     },
     "css": {
         "parser": {
-            "cssModules": true
+            "cssModules": true,
+            "tailwindDirectives": true
         }
     },
-    "organizeImports": {
-        "enabled": true
-    },
+    "assist": { "actions": { "source": { "organizeImports": "on" } } },
     "linter": {
         "enabled": true,
         "rules": {
-            "recommended": true,
+            "preset": "recommended",
             "correctness": {
                 "noUnusedVariables": "error",
                 "noUnusedImports": "error"
             },
             "style": {
                 "useConst": "error",
-                "noVar": "error",
                 "useTemplate": "error",
                 "noNegationElse": "error",
                 "noUselessElse": "error"
             },
             "suspicious": {
-                "noConsoleLog": "error",
-                "noExplicitAny": "error"
+                "noExplicitAny": "error",
+                "noVar": "error",
+                "noConsole": {
+                    "level": "error",
+                    "options": {
+                        "allow": [
+                            "assert",
+                            "clear",
+                            "count",
+                            "countReset",
+                            "debug",
+                            "dir",
+                            "dirxml",
+                            "error",
+                            "group",
+                            "groupCollapsed",
+                            "groupEnd",
+                            "info",
+                            "table",
+                            "time",
+                            "timeEnd",
+                            "timeLog",
+                            "trace",
+                            "warn"
+                        ]
+                    }
+                }
             },
             "nursery": {
                 "useSortedClasses": {
@@ -79,7 +106,7 @@
     },
     "overrides": [
         {
-            "include": ["tests/**", "__tests__/**", "test/**"],
+            "includes": ["**/tests/**", "**/__tests__/**", "**/test/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
@@ -95,17 +122,17 @@
             }
         },
         {
-            "include": ["./packages/db/src/seeds/**"],
+            "includes": ["packages/db/src/seeds/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
-                        "noConsoleLog": "off"
+                        "noConsole": "off"
                     }
                 }
             }
         },
         {
-            "include": ["**/github-workflow/**"],
+            "includes": ["**/github-workflow/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
@@ -115,26 +142,41 @@
             }
         },
         {
-            "include": [
-                "scripts/**/*.ts",
-                "scripts/**/*.mjs",
-                "scripts/**/*.js",
-                "scripts/**/*.cjs"
+            "includes": [
+                "**/scripts/**/*.ts",
+                "**/scripts/**/*.mjs",
+                "**/scripts/**/*.js",
+                "**/scripts/**/*.cjs"
             ],
             "linter": {
                 "rules": {
                     "suspicious": {
-                        "noConsoleLog": "off"
+                        "noConsole": "off"
                     }
                 }
             }
         },
         {
-            "include": ["**/components/account/CollectionPickers.tsx"],
+            "includes": ["**/components/account/CollectionPickers.tsx"],
             "linter": {
                 "rules": {
                     "a11y": {
                         "useSemanticElements": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": [
+                "packages/logger/**",
+                "**/logger.ts",
+                "**/lib/logger.ts",
+                "**/utils/logger.ts"
+            ],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsole": "off"
                     }
                 }
             }

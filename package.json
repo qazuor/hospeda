@@ -78,7 +78,7 @@
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
     },
     "devDependencies": {
-        "@biomejs/biome": "1.9.4",
+        "@biomejs/biome": "2.5.2",
         "@commitlint/cli": "^21.2.0",
         "@commitlint/config-conventional": "^21.2.0",
         "@inquirer/prompts": "^8.5.2",
@@ -108,7 +108,10 @@
         "glob": "^11.1.0",
         "zod": "^4.0.8"
     },
-    "workspaces": ["apps/*", "packages/*"],
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "pnpm": {
         "overrides": {
             "zod@>=4.0.0 <5": "4.3.6",
@@ -170,14 +173,27 @@
             "@vitejs/plugin-react": "^4.7.0",
             "turbo-stream": ">=3.0.0"
         },
-        "publicHoistPattern": ["react", "react-dom", "*react*"],
+        "publicHoistPattern": [
+            "react",
+            "react-dom",
+            "*react*"
+        ],
         "auditConfig": {
-            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5", "GHSA-5xrq-8626-4rwp"]
+            "ignoreGhsas": [
+                "GHSA-rmmr-r34h-pfm5",
+                "GHSA-5xrq-8626-4rwp"
+            ]
         }
     },
     "lint-staged": {
-        "*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched"],
-        "*.json": ["biome format --write"],
-        "*.md": ["markdownlint-cli2 --config .markdownlint-cli2.jsonc --fix"]
+        "*.{ts,tsx}": [
+            "biome check --write --no-errors-on-unmatched"
+        ],
+        "*.json": [
+            "biome format --write"
+        ],
+        "*.md": [
+            "markdownlint-cli2 --config .markdownlint-cli2.jsonc --fix"
+        ]
     }
 }
