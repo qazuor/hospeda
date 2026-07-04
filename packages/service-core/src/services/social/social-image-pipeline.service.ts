@@ -259,6 +259,64 @@ export class SocialImagePipelineService {
      * ```
      */
     public async processImage(input: ProcessImageInput): Promise<ProcessImageResult> {
+        return this.processSingleImage(input, 0);
+    }
+
+    /**
+     * Downloads and persists N image assets sequentially, assigning each one a
+     * 0-indexed `position` matching its index in `inputs` (HOS-65 G-3 carousel
+     * support).
+     *
+     * Each asset is processed independently via {@link processSingleImage} with
+     * the same graceful-failure contract as {@link processImage}: one asset
+     * failing does NOT abort its siblings, and a failed asset never produces an
+     * orphaned `social_post_media` or `social_post_target_media` row — both link
+     * rows are only created after a successful upload + `social_assets` insert
+     * for that specific asset.
+     *
+     * Assets are processed sequentially (not in parallel) so `position` values
+     * stay deterministic and DB writes for the same post do not race on the
+     * composite `(social_post_id, position)` unique index.
+     *
+     * @param inputs - One `ProcessImageInput` per asset, in the desired display order.
+     * @returns One {@link ProcessImageResult} per input, in the same order.
+     *
+     * @example
+     * ```ts
+     * const results = await pipeline.processImages([
+     *   { image: imageA, socialPostId, socialPostTargetId },
+     *   { image: imageB, socialPostId, socialPostTargetId },
+     * ]);
+     * // results[0] -> position 0, results[1] -> position 1
+     * ```
+     */
+    public async processImages(inputs: ProcessImageInput[]): Promise<ProcessImageResult[]> {
+        const results: ProcessImageResult[] = [];
+        for (let position = 0; position < inputs.length; position++) {
+            const input = inputs[position];
+            if (!input) continue;
+            const result = await this.processSingleImage(input, position);
+            results.push(result);
+        }
+        return results;
+    }
+
+    /**
+     * Downloads the image from the GPT payload and re-uploads it to Cloudinary,
+     * then persists a `social_assets` row and (optionally) `social_post_media` /
+     * `social_post_target_media` link rows at the given `position`.
+     *
+     * Shared implementation behind {@link processImage} (always `position = 0`)
+     * and {@link processImages} (sequential `position` per input index).
+     *
+     * @param input - Image payload, optional post/target IDs to link, optional actor ID.
+     * @param position - 0-indexed display/carousel position for this asset.
+     * @returns Result with `assetId`, `cloudinaryUrl` (nullable), and `warnings`.
+     */
+    private async processSingleImage(
+        input: ProcessImageInput,
+        position: number
+    ): Promise<ProcessImageResult> {
         const { image, socialPostId, actorId, socialPostTargetId } = input;
 
         // Step 1: Extract the download URL and any metadata from the payload.
@@ -326,7 +384,7 @@ export class SocialImagePipelineService {
                 const postMedia = await this.postMediaModel.create({
                     socialPostId,
                     assetId,
-                    position: 0
+                    position
                 });
 
                 // Step 6b: Optionally link the newly created media row to a
@@ -336,7 +394,7 @@ export class SocialImagePipelineService {
                         await this.postTargetMediaModel.create({
                             socialPostTargetId,
                             socialPostMediaId: postMedia.id,
-                            position: 0
+                            position
                         });
                     } catch (err) {
                         const message = err instanceof Error ? err.message : String(err);

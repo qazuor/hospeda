@@ -741,4 +741,144 @@ describe('SocialImagePipelineService', () => {
             expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
         });
     });
+
+    // -------------------------------------------------------------------------
+    // processImages — N-asset pipeline (HOS-65 T-012)
+    // -------------------------------------------------------------------------
+
+    describe('processImages — N-asset pipeline (HOS-65 G-3)', () => {
+        beforeEach(() => {
+            // Each social_post_media.create call gets a distinct id keyed by its
+            // requested position, so assertions can trace media rows to link rows.
+            postMediaModelMock.create.mockImplementation(async (data: Record<string, unknown>) =>
+                buildMockPostMediaRow({ id: `media-row-${data.position}`, ...data })
+            );
+        });
+
+        it('processes a single asset (N=1) at position 0 with one link row', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            const results = await service.processImages([
+                { image, socialPostId: MOCK_POST_UUID, socialPostTargetId: MOCK_TARGET_UUID }
+            ]);
+
+            // Assert
+            expect(results).toHaveLength(1);
+            expect(results[0]?.assetId).toBe(MOCK_ASSET_UUID);
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(1);
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(1);
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostMediaId: 'media-row-0', position: 0 })
+            );
+        });
+
+        it('processes N=3 assets writing sequential positions 0/1/2 on media rows and link rows', async () => {
+            // Arrange
+            const images: GptImagePayload[] = [
+                { mode: 'public_url', url: 'https://example.com/a.jpg' },
+                { mode: 'public_url', url: 'https://example.com/b.jpg' },
+                { mode: 'public_url', url: 'https://example.com/c.jpg' }
+            ];
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            const results = await service.processImages(
+                images.map((image) => ({
+                    image,
+                    socialPostId: MOCK_POST_UUID,
+                    socialPostTargetId: MOCK_TARGET_UUID
+                }))
+            );
+
+            // Assert
+            expect(results).toHaveLength(3);
+            for (const result of results) {
+                expect(result.assetId).toBe(MOCK_ASSET_UUID);
+            }
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(3);
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ position: 1 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenNthCalledWith(
+                3,
+                expect.objectContaining({ position: 2 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(3);
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ socialPostMediaId: 'media-row-0', position: 0 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ socialPostMediaId: 'media-row-1', position: 1 })
+            );
+            expect(postTargetMediaModelMock.create).toHaveBeenNthCalledWith(
+                3,
+                expect.objectContaining({ socialPostMediaId: 'media-row-2', position: 2 })
+            );
+        });
+
+        it('isolates a mid-array failure: siblings still succeed and no orphan link row is created for the failed asset', async () => {
+            // Arrange — index 1's download fails, indices 0 and 2 succeed.
+            const images: GptImagePayload[] = [
+                { mode: 'public_url', url: 'https://example.com/a.jpg' },
+                { mode: 'public_url', url: 'https://example.com/b.jpg' },
+                { mode: 'public_url', url: 'https://example.com/c.jpg' }
+            ];
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+                if (url === 'https://example.com/b.jpg') {
+                    throw new Error('network error');
+                }
+                return makeOkResponse();
+            });
+
+            // Act
+            const results = await service.processImages(
+                images.map((image) => ({
+                    image,
+                    socialPostId: MOCK_POST_UUID,
+                    socialPostTargetId: MOCK_TARGET_UUID
+                }))
+            );
+
+            // Assert — siblings unaffected
+            expect(results).toHaveLength(3);
+            expect(results[0]?.assetId).toBe(MOCK_ASSET_UUID);
+            expect(results[2]?.assetId).toBe(MOCK_ASSET_UUID);
+
+            // Assert — failed asset returns the graceful-fail shape
+            expect(results[1]?.assetId).toBeNull();
+            expect(results[1]?.cloudinaryUrl).toBeNull();
+            expect(results[1]?.warnings).toContain('Media upload failed; manual upload required');
+
+            // Assert — only 2 media rows created (indices 0 and 2), no row for index 1
+            expect(postMediaModelMock.create).toHaveBeenCalledTimes(2);
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 0 })
+            );
+            expect(postMediaModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ position: 2 })
+            );
+            expect(postMediaModelMock.create).not.toHaveBeenCalledWith(
+                expect.objectContaining({ position: 1 })
+            );
+
+            // Assert — only 2 link rows created, no orphan link row for the failed asset
+            expect(postTargetMediaModelMock.create).toHaveBeenCalledTimes(2);
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalledWith(
+                expect.objectContaining({ position: 1 })
+            );
+        });
+    });
 });
