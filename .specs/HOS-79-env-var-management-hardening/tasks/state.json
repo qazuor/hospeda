@@ -206,7 +206,7 @@
             "id": "T-007",
             "title": "Build pnpm env:check:usage (source-usage-vs-registry scanner)",
             "description": "Write scripts/check-env-usage.ts: regex-scan process.env.X across apps/**/src + packages/**/src (excluding test/dist/docs/scripts subpaths), build the used-keys set, diff against ENV_REGISTRY both directions (used-not-registered = fail with file:line; registered-not-used = informational phantom warning). Wire pnpm env:check:usage in package.json. Test: unit test with a fixture directory containing both a registered and an unregistered process.env.X usage, assert correct classification of each.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-020", "T-024"],
@@ -237,15 +237,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T23:20:31Z",
+                "completed": "2026-07-04T23:54:51Z"
             }
         },
         {
             "id": "T-008",
             "title": "Build pnpm env:check:local (.env.local vs registry diff)",
             "description": "Write scripts/check-env-local.ts: parse each app's .env.local (dotenv-style), diff against ENV_REGISTRY filtered by apps.includes(appId), honoring requiredScope ('always' must be present; 'production' NOT required locally; 'conditional' required only when requiredWhen's condition is met in that same .env.local). Wire pnpm env:check:local. Test: 5 fixture cases per US-2's acceptance criteria (present-and-required=pass, missing-and-always-required=fail, missing-and-production-scoped=pass, missing-and-conditional-met=fail, missing-and-conditional-unmet=pass).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-018"],
@@ -276,8 +276,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-04T23:20:31Z",
+                "completed": "2026-07-04T23:54:51Z"
             }
         },
         {
@@ -898,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 19,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.1
     }
