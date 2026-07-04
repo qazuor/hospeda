@@ -12,7 +12,7 @@ areas:
 # Tiptap v2 → v3 coordinated migration (admin + web rich-text editors)
 
 > Migrated from `.qtm/specs/SPEC-307-tiptap-v3-migration/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-17.
-
+>
 > Motivated by Dependabot PR #1890, which tried to bump **only**
 > `@tiptap/extension-text-align` from 2.27.2 to 3.27.1 while the rest of the
 > `@tiptap/*` stack stayed on v2. CI was green, but that green is misleading: a v3
@@ -138,11 +138,32 @@ we use none of those.
 
 1. Pin to `^3` (track minors) or exact-pin tiptap given the burned-by-minor
    history (text-align "minor" was actually cross-major churn)? Owner decision.
+   **Resolved (2026-07-04): caret `^3`.** The burned-by-minor incident was a
+   MAJOR mislabeled as a minor; within a correctly-versioned v3 major, minors are
+   expected to be safe, and the real safety net is the new dependabot `tiptap`
+   group (`@tiptap/*` + `tiptap-markdown`, all update-types) so every tiptap bump
+   — including the next major — moves as one coordinated PR regardless of the
+   pin style.
 2. Should the web editor and admin editors share a single `@repo/*` rich-text
    component instead of three independent ones, as part of this work or a
    follow-up? (Single-source-of-truth angle — likely a separate spec.)
+   **Deferred:** out of scope for this like-for-like major upgrade; left as a
+   potential future spec.
 
 ## Revision history
 
 - 2026-06-30 — initial draft, carved out of Dependabot PR #1890 (closed in favor
   of this coordinated migration).
+- 2026-07-04 — implemented. Bumped `@tiptap/*` to `^3` (resolved 3.27.1) in admin
+  - web; dropped direct `extension-link`/`extension-underline` (bundled into
+  StarterKit v3); folded their config into `StarterKit.configure({ link })`;
+  migrated the 3 `setContent` call sites to `{ emitUpdate: false }`. Discovered
+  `tiptap-markdown@0.9.0` (already declared in both apps) was on an UNSATISFIED
+  v3 peer against the v2 core — the migration fixes that latent split. Added a
+  local `readMarkdown` accessor since tiptap-markdown ships no v3 `Storage` type.
+  Added headless mount + round-trip tests per editor (importing each component's
+  exported extension set, so they can't drift) plus an admin What's New
+  render-markdown test (T-005). Grouped `@tiptap/*` + `tiptap-markdown` in
+  dependabot and lifted the ignore gate. OQ-1 resolved (caret `^3`). Behavior
+  change locked by test: markdown links in What's New now render as `<a>` under
+  v3 (v2 dropped them to plain text); current curated content contains none.
