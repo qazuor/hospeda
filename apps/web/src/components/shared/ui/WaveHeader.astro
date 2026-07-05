@@ -249,6 +249,63 @@ const { paddingTop = 'listing', class: className } = Astro.props;
   }
 
   /* =========================================================
+   * Shared compact-mode contract (HOS-84 T-007 / OQ-4)
+   * ---------------------------------------------------------
+   * The compact BEHAVIOR is defined ONCE here. Each entity header opts in
+   * per element by applying these utility classes in its own markup, and so
+   * chooses WHAT collapses — the per-page override "escape hatch". The
+   * elements keep their own `transition` declarations in their base (non-
+   * compact) rules so these value changes animate. Genuinely header-specific
+   * bits (e.g. a badge that shrinks via its own custom props, a page that
+   * also hides a summary paragraph) stay as small local overrides in that
+   * header, keyed off the same `.wave-header--compact` ancestor.
+   * ========================================================= */
+
+  /* Collapse a vertical stack into one wrapping row. Apply to the header's
+     main content container (the column that holds title + meta). */
+  :global(.wave-header--compact) :global(.wh-compact-row) {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+  }
+
+  /* Shrink the H1 to the compact title size. Apply to the header's <h1>. */
+  :global(.wave-header--compact) :global(.wh-compact-title) {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  /* Shrink a badge / status pill. Apply to type/category/status badges that
+     size themselves directly (not via their own custom props). */
+  :global(.wave-header--compact) :global(.wh-compact-badge) {
+    font-size: 0.6rem;
+    padding: 2px 10px;
+  }
+
+  /* Fully collapse a secondary element out of the compact row (rating, meta,
+     summary, attractions, pricing…). Apply to whatever each page drops.
+     The element MUST declare its own max-height/opacity transition in its
+     base rule for this to animate. */
+  :global(.wave-header--compact) :global(.wh-compact-hide) {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* Demote a secondary inline text (location / destination) and prefix it
+     with a dot separator once it sits inline in the compact row. */
+  :global(.wave-header--compact) :global(.wh-compact-demote) {
+    font-size: 0.85rem;
+  }
+  :global(.wave-header--compact) :global(.wh-compact-demote)::before {
+    content: '\00B7';
+    margin-right: 0.35em;
+    color: var(--core-muted-foreground);
+    font-weight: 700;
+  }
+
+  /* =========================================================
    * Reduced motion
    * ========================================================= */
   @media (prefers-reduced-motion: reduce) {
