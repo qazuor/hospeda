@@ -284,7 +284,7 @@
             "id": "T-009",
             "title": "Author packages/config/src/env-cross-checks.ts with the seeded REVALIDATION_SECRET rule",
             "description": "Create the CrossCheckRule type + array: { id, description, appliesTo: ('local'|'coolify')[], comparator: 'equals', compare: {app,key}[] }. Seed the first rule: HOSPEDA_REVALIDATION_SECRET must match between api and web, appliesTo: ['local','coolify']. Test: type-level test/compile check that the shape matches; no runtime test needed here (evaluation logic is T-010).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-016", "T-021"],
@@ -307,15 +307,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-010",
             "title": "Build pnpm env:check:rules (three-state rule evaluator, local values)",
             "description": "Write scripts/check-env-rules.ts: for each rule in env-cross-checks.ts with appliesTo including 'local', read the named .env.local values, evaluate to 'pass' (equal)/'fail' (both set, different)/'partial' (one side unset — non-failing everywhere). Wire pnpm env:check:rules. Test: 3 fixture cases (both-set-equal→pass, both-set-different→fail, one-unset→partial with exit 0).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-013", "T-021"],
@@ -346,15 +346,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-011",
             "title": "Build scripts/generate-env-registry-json.ts + committed JSON artifact",
             "description": "New sibling script (NOT folded into generate-env-examples.ts's main()) that imports ENV_REGISTRY, the 4 *-env-schema.ts files (T-003..T-006), and env-cross-checks.ts (T-009), introspects simple Zod shapes (ZodEnum.options, ZodBoolean, ZodNumber min/max via _def.checks) into a constraints map keyed 'app:KEY', and writes packages/config/generated/env-registry.json ({registry, crossChecks, constraints}). Skip docker/seed pseudo-AppIds explicitly (mirror EXAMPLE_PATHS' null mapping). Wire pnpm gen:env-registry-json. Test: run twice in a row, assert byte-identical output (determinism).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006", "T-009"],
             "blocks": ["T-012", "T-015", "T-016", "T-018", "T-021"],
@@ -389,15 +389,15 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write the env-registry-json guard test",
             "description": "Create packages/config/src/__tests__/env-registry-json.guard.test.ts, re-implementing the JSON-building logic inline (mirroring env-examples.guard.test.ts's exact convention — do NOT import the generator script). Assert committed packages/config/generated/env-registry.json has zero drift vs freshly generated. Also assert the 4 *-env-schema.ts files have zero non-zod imports (simple source-text check) so a future accidental re-import fails loudly. Test: this task IS the test — verify it fails on intentional drift and on an intentionally-reintroduced non-zod import in a throwaway local check before finalizing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-021"],
@@ -424,8 +424,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:09:31Z",
+                "completed": "2026-07-05T00:35:59Z"
             }
         },
         {
@@ -898,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 17,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.1
     }
