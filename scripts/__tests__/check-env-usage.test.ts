@@ -10,6 +10,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ENV_REGISTRY } from '../../packages/config/src/env-registry.js';
 import {
     PLATFORM_ENV_ALLOWLIST,
     blankBlockComments,
@@ -217,6 +218,32 @@ describe('diffUsageAgainstRegistry', () => {
         // Assert
         expect(before.unregistered).toHaveLength(3);
         expect(after.unregistered).toHaveLength(0);
+    });
+});
+
+describe('AC-1 regression against the REAL registry (HOS-79 T-020)', () => {
+    it('does not flag the 3 vars whose missing registration motivated this spec', () => {
+        // Arrange — unlike the synthetic red/green case above, this runs the
+        // scanner diff against the ACTUAL ENV_REGISTRY. Removing any of these
+        // three from packages/config regresses this test, closing AC-1 end to
+        // end at the scanner layer (not just the registry-presence layer).
+        const knownPreviouslyMissing = [
+            'HOSPEDA_TAG_USER_QUOTA_PER_USER',
+            'HOSPEDA_DEPLOY_ENV',
+            'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED'
+        ];
+        const usages = knownPreviouslyMissing.map((name, index) => ({
+            name,
+            file: 'regression-fixture.ts',
+            line: index + 1
+        }));
+        const registryNames = new Set(ENV_REGISTRY.map((entry) => entry.name));
+
+        // Act
+        const result = diffUsageAgainstRegistry({ usages, registryNames });
+
+        // Assert — all three now resolve; none reported as unregistered.
+        expect(result.unregistered).toEqual([]);
     });
 });
 
