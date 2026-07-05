@@ -173,7 +173,12 @@ WHERE u.email = '${escapedEmail}';
         return;
     }
 
-    const [userId, userEmail, customerId, currentCustomerEmail, deletedAt] = rows[0].split('|');
+    const row = rows[0];
+    if (!row) {
+        die(`No user found with email ${parsed.email}.`);
+        return;
+    }
+    const [userId, userEmail, customerId, currentCustomerEmail, deletedAt] = row.split('|');
 
     if (!customerId) {
         die(

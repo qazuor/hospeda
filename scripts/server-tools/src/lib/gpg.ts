@@ -53,7 +53,7 @@ export async function gpgSymmetricEncrypt(plaintext: Buffer, passphrase: string)
                 '--passphrase',
                 passphrase
             ],
-            { input: plaintext, encoding: null }
+            { input: plaintext, encoding: 'buffer' }
         );
         return Buffer.from(result.stdout as unknown as Uint8Array);
     } catch (err) {
@@ -83,7 +83,7 @@ export async function gpgSymmetricDecrypt(ciphertext: Buffer, passphrase: string
         const result = await execa(
             'gpg',
             ['--batch', '--yes', '--decrypt', '--passphrase', passphrase],
-            { input: ciphertext, encoding: null }
+            { input: ciphertext, encoding: 'buffer' }
         );
         return Buffer.from(result.stdout as unknown as Uint8Array);
     } catch (err) {
