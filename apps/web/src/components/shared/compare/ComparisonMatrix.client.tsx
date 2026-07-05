@@ -10,6 +10,24 @@
  * so the island handles `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` / generic
  * failures alongside the empty and loading states.
  *
+ * HOS-85 T-008 adds two independent desktop-matrix affordances on top of the
+ * original attribute rows:
+ * - A "highlight differences" toggle (default ON, see {@link rowValuesDiffer})
+ *   that shades a row's cells when its underlying values are not all equal.
+ * - Amber best-value markers (price = cheapest, rating = highest, computed by
+ *   {@link computeBestValue}) that always render regardless of the toggle.
+ *
+ * HOS-85 T-009 makes the same matrix usable on mobile, purely via CSS media
+ * queries scoped to `ComparisonMatrix.module.css` (no behavioral change,
+ * desktop keeps T-008's exact output):
+ * - The attribute column (`.stickyCol`) stays sticky-left with a solid
+ *   background so accommodation columns scroll *under* it.
+ * - The accommodation columns become a scroll-snap container
+ *   (`.scrollSnapContainer`) so columns snap into view one at a time.
+ * - The desktop best-value badge is swapped for a compact amber dot
+ *   (`.bestValueDot`) that still reads at small sizes.
+ * - A decorative scroll hint (`.scrollHint`) nudges users to swipe.
+ *
  * Rendered with `client:only="react"` because it depends entirely on the
  * client-side store (no meaningful SSR output).
  *
@@ -19,6 +37,7 @@
 import type { AccommodationCardData } from '@/data/types';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { cn } from '@/lib/cn';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { createT } from '@/lib/i18n';
@@ -27,6 +46,7 @@ import { useCompareStore } from '@/store/compare-store';
 import { StarIcon } from '@repo/icons';
 import { type FC, type ReactNode, useEffect, useState } from 'react';
 import styles from './ComparisonMatrix.module.css';
+import { computeBestValue } from './computeBestValue';
 
 /** Minimum number of accommodations required to render a comparison. */
 const MIN_TO_COMPARE = 2;
@@ -45,6 +65,51 @@ type MatrixStatus =
 export interface ComparisonMatrixProps {
     /** Locale for labels, formatting and links. Defaults to `es`. */
     readonly locale?: SupportedLocale;
+}
+
+/** A single comparable attribute row rendered by the matrix. */
+interface MatrixRow {
+    /** Stable identity for the row, independent of the (localized) label. */
+    readonly key: string;
+    /** Localized row label shown in the sticky first column. */
+    readonly label: string;
+    /** Renders the display value for one accommodation. */
+    readonly render: (a: AccommodationCardData) => ReactNode;
+    /**
+     * Extracts the underlying comparable value for one accommodation, used by
+     * {@link rowValuesDiffer} to decide whether this row should be highlighted.
+     * Must return a primitive so equality can be checked with `===`.
+     */
+    readonly getValue: (a: AccommodationCardData) => string | number | boolean | null;
+    /**
+     * `id`s of the accommodation(s) holding the "best value" for this row
+     * (price = cheapest, rating = highest). Omitted for rows with no
+     * best-value concept (type, location, reviews, featured, summary).
+     */
+    readonly bestValueIds?: ReadonlySet<string>;
+}
+
+/**
+ * Determines whether an attribute row's values differ across the compared
+ * accommodations.
+ *
+ * Drives the "highlight differences" affordance only — a row where every
+ * accommodation shares the same underlying value (per `getValue`) is never
+ * highlighted, even when the toggle is on.
+ *
+ * @param items - Accommodations currently being compared.
+ * @param getValue - Extracts the comparable value for one accommodation.
+ * @returns `true` if at least one item's value differs from the first item's.
+ */
+function rowValuesDiffer(
+    items: readonly AccommodationCardData[],
+    getValue: (a: AccommodationCardData) => string | number | boolean | null
+): boolean {
+    if (items.length === 0) {
+        return false;
+    }
+    const [first, ...rest] = items.map(getValue);
+    return rest.some((value) => value !== first);
 }
 
 /**
@@ -80,6 +145,8 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
         ids.length >= MIN_TO_COMPARE ? { kind: 'loading' } : { kind: 'empty' }
     );
     const [retry, setRetry] = useState(0);
+    /** Whether differing rows are shaded. Defaults to ON (HOS-85 T-008). */
+    const [highlightDiffs, setHighlightDiffs] = useState(true);
 
     // `retry` is an intentional re-fetch trigger (bumped by the error-state
     // retry button); it is not read inside the effect body.
@@ -217,27 +284,35 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
     // status.kind === 'ready'
     const { items } = status;
     const na = t('accommodations.comparison.matrix.notAvailable', 'N/D');
+    const { bestPriceIds, bestRatingIds } = computeBestValue({ items });
+    const bestPriceIdSet = new Set(bestPriceIds);
+    const bestRatingIdSet = new Set(bestRatingIds);
 
-    const rows: ReadonlyArray<{
-        readonly label: string;
-        readonly render: (a: AccommodationCardData) => ReactNode;
-    }> = [
+    const rows: readonly MatrixRow[] = [
         {
+            key: 'type',
             label: t('accommodations.comparison.matrix.type', 'Tipo'),
-            render: (a) => (a.type ? getAccommodationTypeLabel({ type: a.type, t }) : na)
+            render: (a) => (a.type ? getAccommodationTypeLabel({ type: a.type, t }) : na),
+            getValue: (a) => a.type
         },
         {
+            key: 'price',
             label: t('accommodations.comparison.matrix.price', 'Precio'),
             render: (a) =>
                 a.price
                     ? formatPrice({ amount: a.price.amount, currency: a.price.currency, locale })
-                    : na
+                    : na,
+            getValue: (a) => a.price?.amount ?? null,
+            bestValueIds: bestPriceIdSet
         },
         {
+            key: 'location',
             label: t('accommodations.comparison.matrix.location', 'Ubicación'),
-            render: (a) => a.cityName ?? a.location.city ?? na
+            render: (a) => a.cityName ?? a.location.city ?? na,
+            getValue: (a) => a.cityName ?? a.location.city ?? null
         },
         {
+            key: 'rating',
             label: t('accommodations.comparison.matrix.rating', 'Calificación'),
             render: (a) =>
                 a.averageRating > 0 ? (
@@ -251,13 +326,18 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
                     </span>
                 ) : (
                     na
-                )
+                ),
+            getValue: (a) => a.averageRating,
+            bestValueIds: bestRatingIdSet
         },
         {
+            key: 'reviews',
             label: t('accommodations.comparison.matrix.reviews', 'Reseñas'),
-            render: (a) => String(a.reviewsCount ?? 0)
+            render: (a) => String(a.reviewsCount ?? 0),
+            getValue: (a) => a.reviewsCount ?? 0
         },
         {
+            key: 'featured',
             label: t('accommodations.comparison.matrix.featured', 'Destacado'),
             render: (a) =>
                 a.isFeatured ? (
@@ -268,79 +348,158 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
                     />
                 ) : (
                     na
-                )
+                ),
+            getValue: (a) => a.isFeatured
         },
         {
+            key: 'summary',
             label: t('accommodations.comparison.matrix.summary', 'Descripción'),
-            render: (a) => a.summary || na
+            render: (a) => a.summary || na,
+            getValue: (a) => a.summary || null
         }
     ];
 
     return (
-        <div className={styles.tableWrap}>
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th
-                            scope="col"
-                            className={styles.cornerCell}
-                        >
-                            {t('accommodations.comparison.matrix.attribute', 'Atributo')}
-                        </th>
-                        {items.map((a) => (
+        <>
+            <div className={styles.toolbar}>
+                <button
+                    type="button"
+                    className={styles.highlightToggle}
+                    aria-pressed={highlightDiffs}
+                    onClick={() => setHighlightDiffs((prev) => !prev)}
+                >
+                    <span
+                        className={cn(styles.toggleSwitch, highlightDiffs && styles.toggleSwitchOn)}
+                        aria-hidden="true"
+                    >
+                        <span className={styles.toggleThumb} />
+                    </span>
+                    {t(
+                        'accommodations.comparison.matrix.highlightDifferences',
+                        'Resaltar diferencias'
+                    )}
+                </button>
+            </div>
+            <p
+                className={styles.scrollHint}
+                data-testid="comparison-scroll-hint"
+                aria-hidden="true"
+            >
+                {t('accommodations.comparison.matrix.scrollHint', 'Deslizá para ver más →')}
+            </p>
+            <div
+                className={cn(styles.tableWrap, styles.scrollSnapContainer)}
+                data-testid="comparison-scroll-container"
+            >
+                <table className={styles.table}>
+                    <thead>
+                        <tr>
                             <th
-                                key={a.id}
                                 scope="col"
-                                className={styles.headCell}
+                                className={cn(styles.cornerCell, styles.stickyCol)}
+                                data-testid="comparison-corner-cell"
                             >
-                                {a.featuredImage?.url ? (
-                                    <img
-                                        src={a.featuredImage.url}
-                                        alt={a.name}
-                                        className={styles.headImg}
-                                        loading="lazy"
-                                    />
-                                ) : (
-                                    <span
-                                        className={styles.headImgPlaceholder}
-                                        aria-hidden="true"
-                                    />
-                                )}
-                                <span className={styles.headName}>{a.name}</span>
-                                <a
-                                    href={`/${locale}/alojamientos/${a.slug}/`}
-                                    className={styles.headLink}
-                                >
-                                    {t(
-                                        'accommodations.comparison.matrix.viewDetails',
-                                        'Ver detalle'
-                                    )}
-                                </a>
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map((row) => (
-                        <tr key={row.label}>
-                            <th
-                                scope="row"
-                                className={styles.rowLabel}
-                            >
-                                {row.label}
+                                {t('accommodations.comparison.matrix.attribute', 'Atributo')}
                             </th>
                             {items.map((a) => (
-                                <td
+                                <th
                                     key={a.id}
-                                    className={styles.dataCell}
+                                    scope="col"
+                                    className={styles.headCell}
                                 >
-                                    {row.render(a)}
-                                </td>
+                                    {a.featuredImage?.url ? (
+                                        <img
+                                            src={a.featuredImage.url}
+                                            alt={a.name}
+                                            className={styles.headImg}
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <span
+                                            className={styles.headImgPlaceholder}
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                    <span className={styles.headName}>{a.name}</span>
+                                    <a
+                                        href={`/${locale}/alojamientos/${a.slug}/`}
+                                        className={styles.headLink}
+                                    >
+                                        {t(
+                                            'accommodations.comparison.matrix.viewDetails',
+                                            'Ver detalle'
+                                        )}
+                                    </a>
+                                </th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {rows.map((row) => {
+                            const differs = highlightDiffs && rowValuesDiffer(items, row.getValue);
+                            return (
+                                <tr
+                                    key={row.key}
+                                    className={cn(differs && styles.rowDiffers)}
+                                    data-testid={`comparison-row-${row.key}`}
+                                >
+                                    <th
+                                        scope="row"
+                                        className={cn(styles.rowLabel, styles.stickyCol)}
+                                        data-testid={`comparison-row-label-${row.key}`}
+                                    >
+                                        {row.label}
+                                    </th>
+                                    {items.map((a) => {
+                                        const isBestValue = row.bestValueIds?.has(a.id) ?? false;
+                                        return (
+                                            <td
+                                                key={a.id}
+                                                className={styles.dataCell}
+                                            >
+                                                <span className={styles.cellValue}>
+                                                    {row.render(a)}
+                                                </span>
+                                                {isBestValue ? (
+                                                    <>
+                                                        <span
+                                                            className={styles.bestValueBadge}
+                                                            data-testid={`best-value-${row.key}-${a.id}`}
+                                                            aria-label={t(
+                                                                'accommodations.comparison.matrix.bestValueAriaLabel',
+                                                                'Mejor valor en {{attribute}}',
+                                                                { attribute: row.label }
+                                                            )}
+                                                        >
+                                                            {t(
+                                                                'accommodations.comparison.matrix.bestValue',
+                                                                'Mejor valor'
+                                                            )}
+                                                        </span>
+                                                        {/* Mobile-only adaptation (HOS-85 T-009): the badge above is
+                                                         * hidden at narrow widths via CSS, this dot takes its place.
+                                                         * Never both visible at once, so no duplicate a11y announcement. */}
+                                                        <span
+                                                            className={styles.bestValueDot}
+                                                            data-testid={`best-value-dot-${row.key}-${a.id}`}
+                                                            role="img"
+                                                            aria-label={t(
+                                                                'accommodations.comparison.matrix.bestValueAriaLabel',
+                                                                'Mejor valor en {{attribute}}',
+                                                                { attribute: row.label }
+                                                            )}
+                                                        />
+                                                    </>
+                                                ) : null}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </>
     );
 };

@@ -1,0 +1,77 @@
+/* CompareCardSelect.module.css
+ * Whole-card compare-selection overlay (HOS-85 post-review fix). Shown only
+ * while compare mode is active — see CompareCardSelect.client.tsx. Draws the
+ * selected-state border + tint directly on the overlay itself (rather than by
+ * mutating the card's own markup, which lives in a separate island) plus a
+ * corner check badge.
+ * All values use CSS custom properties from global.css — never hardcode.
+ */
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 12px;
+    box-sizing: border-box;
+    border-radius: var(--radius-md, 12px);
+    border: 2px solid transparent;
+    background-color: transparent;
+    cursor: pointer;
+
+    transition:
+        border-color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease;
+}
+
+.overlay:hover {
+    border-color: var(--brand-primary-a35);
+    background-color: var(--brand-primary-a05);
+}
+
+.overlay:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* --- Selected (accommodation is in the comparison list) --- */
+.overlay[aria-checked='true'] {
+    border-color: var(--brand-primary);
+    background-color: var(--brand-primary-a08);
+}
+
+.overlay[aria-checked='true']:hover {
+    background-color: var(--brand-primary-a12);
+}
+
+/* --- Busy (entitlements still loading) --- */
+.overlay[aria-busy='true'] {
+    cursor: progress;
+}
+
+/* --- Check badge (top-right corner) --- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--core-card-a85);
+    color: var(--core-muted-foreground);
+    box-shadow: var(--shadow-card);
+}
+
+.overlay[aria-checked='true'] .badge {
+    color: var(--brand-primary);
+    background-color: var(--core-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay {
+        transition: none;
+    }
+}

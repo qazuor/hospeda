@@ -1,6 +1,7 @@
 /* CompareBar.module.css
- * Scoped styles for the floating comparison bar (SPEC-288 T-010).
- * All values use CSS custom properties from global.css — never hardcode.
+ * Scoped styles for the floating comparison bar (SPEC-288 T-010, redesigned
+ * HOS-85 T-007). All values use CSS custom properties from global.css —
+ * never hardcode.
  */
 
 .bar {
@@ -8,7 +9,21 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: var(--z-nav, 50);
+    /* Post-review fix (HOS-85): `--z-nav + 1` used to leave this bar UNDER
+     * the mobile floating filters trigger (`FilterSidebar.module.css`
+     * `.floatingTrigger`, raw z-index 200) and the list/map view toggle
+     * (`alojamientos/index.astro` `.view-toggle`, raw z-index 150) — both
+     * are `position: fixed` near the same bottom-of-viewport band on mobile,
+     * so they visually painted on top of this bar instead of the other way
+     * around. Anchored to the real `--z-toast` token (200) + a headroom
+     * offset so the bar reliably wins against both. Note: this intentionally
+     * sits slightly ABOVE the toast layer too (`ToastViewport.module.css`
+     * also uses `--z-toast` and shares the same mobile bottom band) — an
+     * accepted trade-off since a persistent comparison selection should not
+     * be hidden by a transient, auto-dismissing toast. Still well below the
+     * filters drawer overlay/panel (300/400) and the fullscreen mobile menu
+     * (`--z-mobile-menu`, 9100), so those continue to cover it as expected. */
+    z-index: calc(var(--z-toast, 200) + 10);
     background-color: var(--core-card);
     border-top: 1px solid var(--border);
     box-shadow: var(--shadow-card-hover);
@@ -25,11 +40,29 @@
     margin: 0 auto;
 }
 
+/* Counter + guidance subtitle, stacked. */
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex-shrink: 0;
+}
+
 .count {
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: var(--text-body-sm, 0.875rem);
     color: var(--core-foreground);
+    white-space: nowrap;
+    margin: 0;
+}
+
+/* Guidance subtitle — shown only while exactly one item is selected. */
+.guidance {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
     white-space: nowrap;
     margin: 0;
 }
@@ -68,6 +101,18 @@
     width: 100%;
     height: 100%;
     background-color: var(--muted);
+}
+
+/* Empty slot — a not-yet-selected comparison spot, up to the plan cap.
+   Dashed placeholder so the user sees at a glance how many more items they
+   can add without needing to read the counter text. */
+.emptySlot {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-md, 0.5rem);
+    border: 1px dashed var(--border);
+    background-color: transparent;
 }
 
 /* Per-item remove (×) pinned to the thumbnail corner. */
@@ -159,8 +204,59 @@
     pointer-events: auto;
 }
 
+/* Decorative arrow on the CTA — flex item, no independent styling needed
+   beyond a fixed size so it never gets squeezed by the pill's padding. */
+.ctaIcon {
+    flex-shrink: 0;
+}
+
+/*
+ * Mobile layout (<= 640px). Unlike the previous iteration — which hid the
+ * counter entirely on small screens — the redesign's whole purpose is to
+ * teach the user how the feature works, so the counter + guidance text stay
+ * visible everywhere. Instead, the row wraps into two stacked rows:
+ * (1) counter/guidance + actions, (2) the full-width thumbnail strip. The
+ * bar itself is still `position: fixed; bottom: 0` (see `.bar`) with the
+ * safe-area inset already applied, so on mobile it anchors flush to the very
+ * bottom of the viewport, above the browser chrome and above any other
+ * in-page fixed navigation and floating controls (`.bar`'s z-index is
+ * `--z-toast + 10` — see the rationale comment on `.bar` above).
+ */
 @media (max-width: 640px) {
-    .count {
+    .barMobile {
+        padding: 0.625rem 0.75rem;
+        padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .inner {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+
+    .info {
+        order: 1;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .count,
+    .guidance {
+        white-space: normal;
+    }
+
+    .actions {
+        order: 2;
+    }
+
+    /* The clear-all text button is a secondary action; drop it on mobile to
+       keep the primary row (counter + CTA) uncluttered. Items are still
+       removable individually via each thumbnail's remove button. */
+    .clearBtn {
         display: none;
+    }
+
+    .thumbs {
+        order: 3;
+        flex: 1 1 100%;
     }
 }
