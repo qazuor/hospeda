@@ -503,12 +503,16 @@ describe('SocialImagePipelineService', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Non-fatal: social_post_media create failure
+    // social_post_media create failure — SURFACED (HOS-65)
     // -------------------------------------------------------------------------
 
     describe('processImage — social_post_media create failure', () => {
-        it('should still return assetId and cloudinaryUrl when post media link fails', async () => {
-            // Arrange
+        it('should surface a warning and null out the result when the post media link fails (HOS-65)', async () => {
+            // Arrange — a social_post_media insert failure (e.g. a
+            // UNIQUE(social_post_id, position) collision) must NOT be silently
+            // swallowed; if it were, the caller would report a green
+            // assetStatus with no backing media row and the dispatch would leak
+            // another target's media.
             const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
             postMediaModelMock.create.mockRejectedValue(new Error('unique constraint violation'));
@@ -516,11 +520,12 @@ describe('SocialImagePipelineService', () => {
             // Act
             const result = await service.processImage({ image, socialPostId: MOCK_POST_UUID });
 
-            // Assert — link failure is non-fatal
-            expect(result.assetId).toBe(MOCK_ASSET_UUID);
-            expect(result.cloudinaryUrl).not.toBeNull();
-            // warnings array should remain empty (link failure is only logged, not surfaced)
-            expect(result.warnings).toHaveLength(0);
+            // Assert — failure is surfaced via the graceful-fail shape.
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
         });
     });
 

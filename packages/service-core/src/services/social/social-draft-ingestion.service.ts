@@ -649,6 +649,19 @@ export class SocialDraftIngestionService {
                     const pipeline = this.imagePipeline;
                     let anyUploaded = false;
 
+                    // Post-global running position for `social_post_media`
+                    // (HOS-65 collision fix). `social_post_media` has a
+                    // UNIQUE(social_post_id, position) index, so when a post
+                    // fans out to multiple targets that EACH carry media, every
+                    // target's media rows must occupy a DISTINCT position slice
+                    // of the whole post — NOT restart at 0 per target. Each
+                    // dispatched asset advances this counter by one; it is
+                    // passed to the pipeline as `mediaPositionOffset`. The
+                    // per-target `social_post_target_media` link position stays
+                    // 0..N-1 within the target (handled inside the pipeline), so
+                    // per-target ordering is preserved.
+                    let postMediaPosition = 0;
+
                     for (const plan of targetAssetPlans) {
                         if (plan.assets.length === 0) continue;
 
@@ -667,8 +680,10 @@ export class SocialDraftIngestionService {
                                     socialPostId: postId,
                                     socialPostTargetId: plan.target.id,
                                     actorId,
-                                    publishFormat
+                                    publishFormat,
+                                    mediaPositionOffset: postMediaPosition
                                 });
+                                postMediaPosition += 1;
                                 for (const w of imageResult.warnings) {
                                     warnings.push({ field: 'image', message: w });
                                 }
@@ -681,9 +696,16 @@ export class SocialDraftIngestionService {
                                     socialPostId: postId,
                                     socialPostTargetId: plan.target.id,
                                     actorId,
-                                    publishFormat
+                                    publishFormat,
+                                    // processImages assigns the per-target index
+                                    // 0..N-1 internally; the shared post-global
+                                    // base offset is added on top of that index
+                                    // so media positions stay globally unique
+                                    // across targets.
+                                    mediaPositionOffset: postMediaPosition
                                 }))
                             );
+                            postMediaPosition += imageAssets.length;
                             for (const imageResult of imageResults) {
                                 for (const w of imageResult.warnings) {
                                     warnings.push({ field: 'image', message: w });
@@ -698,8 +720,10 @@ export class SocialDraftIngestionService {
                                 socialPostId: postId,
                                 socialPostTargetId: plan.target.id,
                                 actorId,
-                                publishFormat
+                                publishFormat,
+                                mediaPositionOffset: postMediaPosition
                             });
+                            postMediaPosition += 1;
                             for (const w of videoResult.warnings) {
                                 warnings.push({ field: 'video', message: w });
                             }

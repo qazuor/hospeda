@@ -146,6 +146,19 @@ export interface ProcessImageInput {
      * T-021 callers) applies no transformation — fully backward compatible.
      */
     readonly publishFormat?: SocialPublishFormatEnum;
+    /**
+     * Post-global base offset for the `social_post_media.position` column
+     * (HOS-65 per-target collision fix). `social_post_media` has a
+     * `UNIQUE(social_post_id, position)` index, so when a post fans out to
+     * multiple targets that EACH carry media, every target's inserts must
+     * occupy a DISTINCT position slice of the post. The caller
+     * (`SocialDraftIngestionService`) threads a running count of media rows
+     * already created for the post as this offset; the pipeline adds the
+     * per-asset index on top. The `social_post_target_media` link row keeps a
+     * PER-TARGET position (0..N-1 within the target) so per-target ordering is
+     * unaffected. Defaults to `0` (single-target / standalone callers).
+     */
+    readonly mediaPositionOffset?: number;
 }
 
 /**
@@ -176,6 +189,13 @@ export interface ProcessVideoInput {
      * rejection points). `undefined` applies no limit — fully backward compatible.
      */
     readonly publishFormat?: SocialPublishFormatEnum;
+    /**
+     * Post-global base offset for the `social_post_media.position` column.
+     * See {@link ProcessImageInput.mediaPositionOffset}. A standalone video is
+     * always its own single asset, so the pipeline adds `0` on top of this
+     * offset. Defaults to `0`.
+     */
+    readonly mediaPositionOffset?: number;
 }
 
 /**
@@ -209,6 +229,17 @@ export interface ProcessImageResult {
 
 /** Warning message returned when media download or upload fails. */
 const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
+
+/**
+ * Warning returned when the Cloudinary upload + `social_assets` insert succeeded
+ * but persisting the `social_post_media` / `social_post_target_media` link row
+ * failed (HOS-65). This is surfaced (not silently swallowed) so the failure
+ * cannot masquerade as a green `assetStatus` while the media is missing from
+ * the post/target — which previously caused a silent fall-back to post-level
+ * media and cross-target media leaks.
+ */
+const MEDIA_LINK_FAILURE_WARNING =
+    'Media uploaded but could not be linked to the post/target; manual review required';
 
 /**
  * Builds the rejection warning for a video whose downloaded byte size exceeds
@@ -399,6 +430,7 @@ export class SocialImagePipelineService {
         position: number
     ): Promise<ProcessImageResult> {
         const { image, socialPostId, actorId, socialPostTargetId, publishFormat } = input;
+        const mediaPositionOffset = input.mediaPositionOffset ?? 0;
 
         // Step 1: Extract the download URL and any metadata from the payload.
         const { downloadUrl, openaiFileRef, mimeType, altText } = this.extractPayloadFields(image);
@@ -468,8 +500,20 @@ export class SocialImagePipelineService {
         }
 
         // Step 6: Optionally link to the social post (+ target, HOS-65 G-3).
+        // `social_post_media.position` is POST-GLOBAL (offset + per-asset index)
+        // so multiple targets never collide on UNIQUE(social_post_id, position);
+        // the `social_post_target_media` link row keeps the PER-TARGET position.
         if (assetId) {
-            await this.createMediaLinks({ assetId, position, socialPostId, socialPostTargetId });
+            const linkResult = await this.createMediaLinks({
+                assetId,
+                mediaPosition: mediaPositionOffset + position,
+                targetPosition: position,
+                socialPostId,
+                socialPostTargetId
+            });
+            if (!linkResult.ok) {
+                return this.gracefulFail(linkResult.warning);
+            }
         }
 
         return { assetId, cloudinaryUrl: url, warnings: [] };
@@ -512,6 +556,7 @@ export class SocialImagePipelineService {
      */
     public async processVideo(input: ProcessVideoInput): Promise<ProcessImageResult> {
         const { video, socialPostId, socialPostTargetId, actorId, publishFormat } = input;
+        const mediaPositionOffset = input.mediaPositionOffset ?? 0;
 
         const downloadUrl = video.url ?? '';
         const mimeType = video.mimeType ?? null;
@@ -613,9 +658,20 @@ export class SocialImagePipelineService {
         }
 
         // Step 4: Optionally link to the social post (+ target, HOS-65 G-3).
-        // A standalone video is always its own single asset, so position is 0.
+        // A standalone video is always its own single asset, so the per-target
+        // position is 0; the post-global media position is the caller-provided
+        // offset (post-global collision fix).
         if (assetId) {
-            await this.createMediaLinks({ assetId, position: 0, socialPostId, socialPostTargetId });
+            const linkResult = await this.createMediaLinks({
+                assetId,
+                mediaPosition: mediaPositionOffset,
+                targetPosition: 0,
+                socialPostId,
+                socialPostTargetId
+            });
+            if (!linkResult.ok) {
+                return this.gracefulFail(linkResult.warning);
+            }
         }
 
         return { assetId, cloudinaryUrl: url, warnings: [] };
@@ -626,70 +682,83 @@ export class SocialImagePipelineService {
     // ---------------------------------------------------------------------------
 
     /**
-     * Optionally creates the `social_post_media` link row (and, in turn, the
+     * Creates the `social_post_media` link row (and, in turn, the
      * `social_post_target_media` link row when `socialPostTargetId` is given)
      * for an already-persisted `social_assets` row.
      *
-     * Both link steps are **non-fatal**: a failure here is logged as a warning
-     * but never causes the caller to fail, since the underlying asset already
-     * exists. No-ops entirely when `socialPostId` is absent — this is what
-     * keeps standalone/re-upload callers (no post to link to yet) working.
+     * A failure of EITHER insert is now SURFACED (HOS-65): it is logged at
+     * `error` level and returned as `{ ok: false, warning }` so the caller can
+     * degrade the result to a graceful failure rather than reporting a green
+     * `assetStatus` with no backing media row. Previously these failures were
+     * silently swallowed, which let a `UNIQUE(social_post_id, position)`
+     * collision (from per-target position reuse) drop the media row and link
+     * row unnoticed — the dispatch then leaked one target's media to another.
      *
-     * @param params - The persisted asset ID, its `position`, and the optional
-     *   post/target IDs to link.
+     * No-ops entirely (returns `{ ok: true }`) when `socialPostId` is absent —
+     * this keeps standalone/re-upload callers (no post to link to yet) working.
+     *
+     * @param params - The persisted asset ID, the POST-GLOBAL `mediaPosition`
+     *   for the `social_post_media` row, the PER-TARGET `targetPosition` for
+     *   the `social_post_target_media` link row, and the optional post/target
+     *   IDs to link.
+     * @returns `{ ok: true }` on success (or when nothing to link), or
+     *   `{ ok: false, warning }` when an insert failed.
      */
     private async createMediaLinks(params: {
         readonly assetId: string;
-        readonly position: number;
+        readonly mediaPosition: number;
+        readonly targetPosition: number;
         readonly socialPostId?: string;
         readonly socialPostTargetId?: string;
-    }): Promise<void> {
-        const { assetId, position, socialPostId, socialPostTargetId } = params;
+    }): Promise<{ readonly ok: boolean; readonly warning?: string }> {
+        const { assetId, mediaPosition, targetPosition, socialPostId, socialPostTargetId } = params;
 
         if (!socialPostId) {
-            return;
+            return { ok: true };
         }
 
+        let postMediaId: string;
         try {
             const postMedia = await this.postMediaModel.create({
                 socialPostId,
                 assetId,
-                position
+                position: mediaPosition
             });
-
-            // Optionally link the newly created media row to a specific target
-            // (HOS-65 G-3 per-target/per-format publishing).
-            if (socialPostTargetId) {
-                try {
-                    await this.postTargetMediaModel.create({
-                        socialPostTargetId,
-                        socialPostMediaId: postMedia.id,
-                        position
-                    });
-                } catch (err) {
-                    const message = err instanceof Error ? err.message : String(err);
-                    // Target-link failure is non-fatal: the asset and media row
-                    // exist, but the per-target scoping link did not.
-                    this.logger.warn(
-                        {
-                            error: message,
-                            assetId,
-                            socialPostMediaId: postMedia.id,
-                            socialPostTargetId
-                        },
-                        'Failed to create social_post_target_media link'
-                    );
-                }
-            }
+            postMediaId = postMedia.id;
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            // Linking failure is non-fatal: the asset exists, but the link did not.
-            // This is logged as a warning but does not cause the whole pipeline to fail.
-            this.logger.warn(
-                { error: message, assetId, socialPostId },
+            this.logger.error(
+                { error: message, assetId, socialPostId, position: mediaPosition },
                 'Failed to create social_post_media link'
             );
+            return { ok: false, warning: MEDIA_LINK_FAILURE_WARNING };
         }
+
+        // Optionally link the newly created media row to a specific target
+        // (HOS-65 G-3 per-target/per-format publishing).
+        if (socialPostTargetId) {
+            try {
+                await this.postTargetMediaModel.create({
+                    socialPostTargetId,
+                    socialPostMediaId: postMediaId,
+                    position: targetPosition
+                });
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                this.logger.error(
+                    {
+                        error: message,
+                        assetId,
+                        socialPostMediaId: postMediaId,
+                        socialPostTargetId
+                    },
+                    'Failed to create social_post_target_media link'
+                );
+                return { ok: false, warning: MEDIA_LINK_FAILURE_WARNING };
+            }
+        }
+
+        return { ok: true };
     }
 
     /**
