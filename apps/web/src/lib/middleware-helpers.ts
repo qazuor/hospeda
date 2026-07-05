@@ -7,7 +7,7 @@
  */
 
 import * as Sentry from '@sentry/astro';
-import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
+import { DEFAULT_LOCALE, isValidLocale, type SupportedLocale } from './i18n';
 import { webLogger } from './logger';
 import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
@@ -464,19 +464,29 @@ export function generateCspNonce(): string {
  * grants nonce-loaded scripts the right to load further scripts they
  * legitimately need, without falling back to host allowlists.
  *
- * @param params - Object with nonce, optional API URL, and optional Sentry report URI
+ * HOS-91: in `astro dev`, Vite injects component CSS as nonce-less `<style>`
+ * tags client-side, and Astro 7's ClientRouter re-injects them on every
+ * soft-navigation. The enforcing, nonce-based `style-src` blocks all of them
+ * (confirmed: 20/20 soft-nav `<style>` tags had `.sheet === null`), so pages
+ * render unstyled after any client-side nav until a full reload. `isDev`
+ * relaxes `style-src` to a plain `'unsafe-inline'` policy in dev ONLY;
+ * build/prod keeps the strict nonce+hash policy unchanged.
+ *
+ * @param params - Object with nonce, optional API URL, optional Sentry report URI, and dev-mode flag
  * @returns Formatted CSP directive string
  */
 export function buildCspHeader({
     nonce,
     apiUrl,
     sentryReportUri,
-    sentryTunnelEnabled = false
+    sentryTunnelEnabled = false,
+    isDev = false
 }: {
     readonly nonce: string;
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
     readonly sentryTunnelEnabled?: boolean;
+    readonly isDev?: boolean;
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
@@ -521,9 +531,29 @@ export function buildCspHeader({
     // violation reports are browser-emitted (not SDK envelopes) and are not
     // tunneled; that directive is independent of `connect-src`.
     const sentryConnectSrc = sentryTunnelEnabled ? '' : ' https://*.sentry.io';
+
+    // HOS-91: CSP3 rule — a `style-src` directive that carries a nonce or a
+    // hash source causes browsers to IGNORE `'unsafe-inline'` in that SAME
+    // directive (nonces/hashes and 'unsafe-inline' are mutually exclusive per
+    // spec, precisely so an attacker who can't guess the nonce can't fall
+    // back to unsafe-inline). So the dev variant below must DROP the nonce
+    // and the hash entirely rather than append 'unsafe-inline' next to them —
+    // appending it alongside the nonce would be inert and the dev bug would
+    // persist. Dev-only: build/prod keeps the strict nonce+hash policy.
+    const styleSrc = isDev
+        ? "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'"
+        : `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}' 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`;
+
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        // Cloudflare Turnstile (invisible bot-detection on the feedback form,
+        // SPEC-301) loads its widget script from https://challenges.cloudflare.com.
+        // With 'strict-dynamic' a compliant browser already trusts the script the
+        // nonce-tagged island injects, but the explicit host is the fallback for
+        // browsers that ignore 'strict-dynamic'. Adding it is harmless to the
+        // strict policy (host-source allowlists are ignored when strict-dynamic
+        // is honored).
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://challenges.cloudflare.com`,
         // The Astro client runtime injects an inline <style> at hydration time
         // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
         // Because the injection happens via JS AFTER the middleware response
@@ -531,7 +561,8 @@ export function buildCspHeader({
         // stamp a nonce on it, and the browser blocks/reports it. The CSS
         // content is hardcoded in Astro's runtime so its SHA-256 is stable —
         // hash-allow it explicitly to keep `style-src` strict otherwise.
-        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}' 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`,
+        // See `styleSrc` above for the HOS-91 dev-only relaxation.
+        styleSrc,
         // `style-src` (above) defaults to gating BOTH `<style>` elements and
         // inline `style="..."` attributes. Nonces cannot be applied to style
         // attributes by spec, so a strict nonce-based `style-src` blocks every
@@ -551,7 +582,13 @@ export function buildCspHeader({
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-src 'none'",
+        // Cloudflare Turnstile renders its challenge in an iframe served from
+        // https://challenges.cloudflare.com. 'strict-dynamic' does NOT govern
+        // frames, so this host MUST be allowlisted here or the widget can never
+        // mount and no token is produced (SPEC-301 feedback form). Every other
+        // embed origin stays blocked; frame-ancestors 'none' still stops others
+        // from embedding us.
+        'frame-src https://challenges.cloudflare.com',
         "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',

@@ -73,8 +73,7 @@ import {
 import type { ServiceConfig } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
-import { SocialAuditLogService } from './social-audit-log.service';
-import { SocialAuditEvent } from './social-audit-log.service';
+import { SocialAuditEvent, SocialAuditLogService } from './social-audit-log.service';
 import {
     MAKE_WEBHOOK_TIMEOUT_MS_BOUNDS,
     MAKE_WEBHOOK_TIMEOUT_MS_KEY,
@@ -1671,7 +1670,7 @@ export class SocialPublishDispatchService {
                     publishedAt,
                     externalPostId: externalPostId ?? null,
                     externalPostUrl: externalPostUrl ?? null,
-                    ...(makeRunId !== undefined ? { makeLastRunId: makeRunId } : {})
+                    ...(makeRunId === undefined ? {} : { makeLastRunId: makeRunId })
                 }
             );
 

@@ -11,10 +11,10 @@
  * - error / stream_error sets error state without throwing.
  */
 
-import { useSearchChat } from '@/components/ai-search/useSearchChat';
-import type { SearchChatSseEvent } from '@/lib/api/search-chat-stream';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSearchChat } from '@/components/ai-search/useSearchChat';
+import type { SearchChatSseEvent } from '@/lib/api/search-chat-stream';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 

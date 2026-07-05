@@ -85,8 +85,8 @@ import {
     clearEntitlementCache,
     entitlementMiddleware
 } from '../../../../src/middlewares/entitlement.js';
-import { disablePlanLifecycle } from '../../../../src/services/plan-disable-lifecycle.service.js';
 import { PlanService } from '../../../../src/services/plan.service.js';
+import { disablePlanLifecycle } from '../../../../src/services/plan-disable-lifecycle.service.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import {
@@ -95,9 +95,9 @@ import {
 } from '../../helpers/billing-factories.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
-    type TestBillingPlansSeed,
     createTestUser,
-    seedBillingTestPlans
+    seedBillingTestPlans,
+    type TestBillingPlansSeed
 } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 

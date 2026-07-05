@@ -7,15 +7,14 @@
  * @module components/RevalidateEntityButton
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { useMutation } from '@tanstack/react-query';
-
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { revalidateEntity } from '@/lib/revalidation-http-adapter';
 import { cn } from '@/lib/utils';
-import { PermissionEnum } from '@repo/schemas';
 
 /**
  * Props for the RevalidateEntityButton component.
@@ -56,12 +55,6 @@ export function RevalidateEntityButton({
     const { addToast } = useToast();
     const canTriggerRevalidation = useHasPermission(PermissionEnum.REVALIDATION_TRIGGER);
 
-    if (!canTriggerRevalidation) {
-        return null;
-    }
-
-    const buttonLabel = label ?? t('revalidation.actions.revalidateEntity');
-
     const mutation = useMutation({
         mutationFn: () => revalidateEntity(entityType, entityId),
         onSuccess: () => {
@@ -77,6 +70,12 @@ export function RevalidateEntityButton({
             });
         }
     });
+
+    if (!canTriggerRevalidation) {
+        return null;
+    }
+
+    const buttonLabel = label ?? t('revalidation.actions.revalidateEntity');
 
     return (
         <Button

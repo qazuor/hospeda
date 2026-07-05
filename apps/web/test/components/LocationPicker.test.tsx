@@ -1,4 +1,3 @@
-import { useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
  * @file LocationPicker.test.tsx
  * @description Tests for LocationPicker component.
@@ -9,6 +8,7 @@ import { useGeocodingSearch } from '@/hooks/useGeocoding';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { useGeocodingSearch } from '@/hooks/useGeocoding';
 
 // Mock Spinner CSS module
 vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({

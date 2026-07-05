@@ -10,8 +10,8 @@
  * and column factories.
  */
 
-import { createCommerceEntityHooks } from '@/features/commerce';
 import type { ExperienceAdmin } from '@repo/schemas';
+import { createCommerceEntityHooks } from '@/features/commerce';
 
 // ---------------------------------------------------------------------------
 // Factory — produces all CRUD + commerce hooks for the experience entity

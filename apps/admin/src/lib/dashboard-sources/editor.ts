@@ -40,8 +40,8 @@
 import { fetchCampaignMetrics } from '@/hooks/newsletter/use-campaign-metrics';
 import { fetchApi } from '@/lib/api/client';
 import {
-    DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     registerDataSource
 } from '@/lib/dashboard-sources';
 

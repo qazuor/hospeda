@@ -197,7 +197,10 @@ function extractRelationItems(
 export function toAccommodationCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): AccommodationCardData {
     const priceData = item.price as
         | { price?: number; amount?: number; currency?: string }
         | undefined;
@@ -271,15 +274,15 @@ export function toAccommodationCardProps({
         // These fields are populated by the listing page after a bulk-check API
         // call. They are intentionally absent on unenriched responses so
         // FavoriteButton can fall back to its own single-check on mount.
-        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        isFavorited: item.isFavorited === undefined ? undefined : Boolean(item.isFavorited),
         favoriteBookmarkId: (() => {
             if (item.favoriteBookmarkId === undefined) return undefined;
             return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
         })(),
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined,
+        bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount),
         // F1: owner-level AI_CHAT entitlement, surfaced by the public list
         // endpoint. Absent on responses that don't enrich it.
-        hasAiChat: item.hasAiChat !== undefined ? Boolean(item.hasAiChat) : undefined
+        hasAiChat: item.hasAiChat === undefined ? undefined : Boolean(item.hasAiChat)
     };
 }
 
@@ -350,7 +353,10 @@ export function toAccommodationDetailedProps({
 export function toDestinationCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): DestinationCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): DestinationCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'destination',
@@ -425,7 +431,10 @@ export function toDestinationCardProps({
 export function toEventCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): EventCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'event',
@@ -479,14 +488,14 @@ export function toEventCardProps({
         cityName,
         cityPath,
         cityDestinationSlug,
-        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        isFavorited: item.isFavorited === undefined ? undefined : Boolean(item.isFavorited),
         favoriteBookmarkId:
-            item.favoriteBookmarkId !== undefined
-                ? item.favoriteBookmarkId === null
-                    ? null
-                    : String(item.favoriteBookmarkId)
-                : undefined,
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
+            item.favoriteBookmarkId === undefined
+                ? undefined
+                : item.favoriteBookmarkId === null
+                  ? null
+                  : String(item.favoriteBookmarkId),
+        bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
 }
 
@@ -499,7 +508,10 @@ export function toEventCardProps({
 export function toArticleCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): ArticleCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): ArticleCardData {
     const id = String(item.id || '');
     if (!id) {
         webLogger.warn(
@@ -551,14 +563,14 @@ export function toArticleCardProps({
         isNews: item.isNews ? Boolean(item.isNews) : false,
         expiresAt: item.expiresAt ? String(item.expiresAt) : undefined,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : undefined,
-        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        isFavorited: item.isFavorited === undefined ? undefined : Boolean(item.isFavorited),
         favoriteBookmarkId:
-            item.favoriteBookmarkId !== undefined
-                ? item.favoriteBookmarkId === null
-                    ? null
-                    : String(item.favoriteBookmarkId)
-                : undefined,
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
+            item.favoriteBookmarkId === undefined
+                ? undefined
+                : item.favoriteBookmarkId === null
+                  ? null
+                  : String(item.favoriteBookmarkId),
+        bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
 }
 
@@ -570,7 +582,9 @@ export function toArticleCardProps({
  */
 export function toTestimonialCardProps({
     item
-}: { readonly item: Record<string, unknown> }): ReviewCardData {
+}: {
+    readonly item: Record<string, unknown>;
+}): ReviewCardData {
     return {
         id: String(item.id || ''),
         quote: String(item.comment || item.title || ''),
@@ -615,7 +629,10 @@ export function toTestimonialCardProps({
 export function toAccommodationDetailPageProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationDetailData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
     // SPEC-095: prefer the `cityDestination` projection from the API; fall back
@@ -699,8 +716,8 @@ export function toAccommodationDetailPageProps({
             };
         })(),
         location: {
-            lat: locationObj?.lat != null ? Number(locationObj.lat) : null,
-            lng: locationObj?.lng != null ? Number(locationObj.lng) : null
+            lat: locationObj?.lat == null ? null : Number(locationObj.lat),
+            lng: locationObj?.lng == null ? null : Number(locationObj.lng)
         },
         approximateLocation: (() => {
             const aprox = item.approximateLocation as
@@ -723,7 +740,7 @@ export function toAccommodationDetailPageProps({
         // CANONICAL: price.price only — never price.amount
         price: priceObj
             ? {
-                  price: priceObj.price != null ? Number(priceObj.price) : null,
+                  price: priceObj.price == null ? null : Number(priceObj.price),
                   currency: priceObj.currency ? String(priceObj.currency) : null,
                   additionalFees:
                       (priceObj.additionalFees as AccommodationDetailData['price'] extends {
@@ -741,16 +758,16 @@ export function toAccommodationDetailPageProps({
             : null,
         extraInfo: extraInfoObj
             ? {
-                  capacity: extraInfoObj.capacity != null ? Number(extraInfoObj.capacity) : null,
-                  bedrooms: extraInfoObj.bedrooms != null ? Number(extraInfoObj.bedrooms) : null,
-                  beds: extraInfoObj.beds != null ? Number(extraInfoObj.beds) : null,
-                  bathrooms: extraInfoObj.bathrooms != null ? Number(extraInfoObj.bathrooms) : null,
-                  minNights: extraInfoObj.minNights != null ? Number(extraInfoObj.minNights) : null,
-                  maxNights: extraInfoObj.maxNights != null ? Number(extraInfoObj.maxNights) : null,
+                  capacity: extraInfoObj.capacity == null ? null : Number(extraInfoObj.capacity),
+                  bedrooms: extraInfoObj.bedrooms == null ? null : Number(extraInfoObj.bedrooms),
+                  beds: extraInfoObj.beds == null ? null : Number(extraInfoObj.beds),
+                  bathrooms: extraInfoObj.bathrooms == null ? null : Number(extraInfoObj.bathrooms),
+                  minNights: extraInfoObj.minNights == null ? null : Number(extraInfoObj.minNights),
+                  maxNights: extraInfoObj.maxNights == null ? null : Number(extraInfoObj.maxNights),
                   smokingAllowed:
-                      extraInfoObj.smokingAllowed != null
-                          ? Boolean(extraInfoObj.smokingAllowed)
-                          : null
+                      extraInfoObj.smokingAllowed == null
+                          ? null
+                          : Boolean(extraInfoObj.smokingAllowed)
               }
             : null,
         seo: seoObj
@@ -784,7 +801,7 @@ export function toAccommodationDetailPageProps({
                     name: String(a.slug ?? nestedAmenity?.slug ?? ''),
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
-                    additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null,
+                    additionalCost: a.additionalCost == null ? null : Number(a.additionalCost),
                     displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50)
                 };
             })
@@ -1129,7 +1146,7 @@ export function transformResponseRate({
     return {
         responseRatePct: Number(item.responseRatePct ?? 0),
         avgResponseTimeMinutes:
-            item.avgResponseTimeMinutes != null ? Number(item.avgResponseTimeMinutes) : null
+            item.avgResponseTimeMinutes == null ? null : Number(item.avgResponseTimeMinutes)
     };
 }
 
@@ -1174,14 +1191,14 @@ export function transformMarketComparison({
             accommodationId: String(entry.accommodationId ?? ''),
             accommodationName: String(entry.accommodationName ?? ''),
             accommodationType: String(entry.accommodationType ?? ''),
-            destinationName: entry.destinationName != null ? String(entry.destinationName) : null,
-            yourRating: entry.yourRating != null ? Number(entry.yourRating) : null,
+            destinationName: entry.destinationName == null ? null : String(entry.destinationName),
+            yourRating: entry.yourRating == null ? null : Number(entry.yourRating),
             yourReviews: Number(entry.yourReviews ?? 0),
             destinationAvgRating:
-                entry.destinationAvgRating != null ? Number(entry.destinationAvgRating) : null,
-            yourPrice: entry.yourPrice != null ? Number(entry.yourPrice) : null,
+                entry.destinationAvgRating == null ? null : Number(entry.destinationAvgRating),
+            yourPrice: entry.yourPrice == null ? null : Number(entry.yourPrice),
             destinationAvgPrice:
-                entry.destinationAvgPrice != null ? Number(entry.destinationAvgPrice) : null
+                entry.destinationAvgPrice == null ? null : Number(entry.destinationAvgPrice)
         }))
     };
 }
@@ -1189,7 +1206,10 @@ export function transformMarketComparison({
 export function toEventDetailProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventDetailData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): EventDetailData {
     // --- Identity ---
     const id = String(item.id || '');
     if (!id) {
@@ -1278,13 +1298,13 @@ export function toEventDetailProps({
     const coordsRaw = locationObj?.coordinates as
         | { lat?: string | number; lng?: string | number; long?: string | number }
         | undefined;
-    const coordLat = coordsRaw?.lat != null ? Number(coordsRaw.lat) : null;
+    const coordLat = coordsRaw?.lat == null ? null : Number(coordsRaw.lat);
     const coordLng =
-        coordsRaw?.lng != null
-            ? Number(coordsRaw.lng)
-            : coordsRaw?.long != null
-              ? Number(coordsRaw.long)
-              : null;
+        coordsRaw?.lng == null
+            ? coordsRaw?.long == null
+                ? null
+                : Number(coordsRaw.long)
+            : Number(coordsRaw.lng);
     const coordinates =
         coordLat !== null && coordLng !== null && !Number.isNaN(coordLat) && !Number.isNaN(coordLng)
             ? { lat: coordLat, lng: coordLng }
@@ -1300,8 +1320,8 @@ export function toEventDetailProps({
         ? Boolean(priceObj.isFree ?? (priceObj.amount == null && priceObj.price == null))
         : true;
 
-    const rawPrice = priceObj?.amount != null ? priceObj.amount : priceObj?.price;
-    const flatPrice = rawPrice != null ? Number(rawPrice) : undefined;
+    const rawPrice = priceObj?.amount == null ? priceObj?.price : priceObj.amount;
+    const flatPrice = rawPrice == null ? undefined : Number(rawPrice);
 
     const earlyBirdDeadlineRaw = priceObj?.earlyBirdDeadline
         ? String(priceObj.earlyBirdDeadline)
@@ -1312,8 +1332,8 @@ export function toEventDetailProps({
 
     const pricing: EventDetailData['pricing'] = {
         price: flatPrice,
-        priceFrom: priceObj?.priceFrom != null ? Number(priceObj.priceFrom) : undefined,
-        priceTo: priceObj?.priceTo != null ? Number(priceObj.priceTo) : undefined,
+        priceFrom: priceObj?.priceFrom == null ? undefined : Number(priceObj.priceFrom),
+        priceTo: priceObj?.priceTo == null ? undefined : Number(priceObj.priceTo),
         currency: priceObj?.currency ? String(priceObj.currency) : 'ARS',
         isFree: pricingIsFree,
         earlyBirdPrice:
@@ -1322,14 +1342,14 @@ export function toEventDetailProps({
                 : undefined,
         earlyBirdDeadline: earlyBirdIsUpcoming ? earlyBirdDeadlineRaw : undefined,
         groupDiscountThreshold:
-            priceObj?.groupDiscountThreshold != null
-                ? Number(priceObj.groupDiscountThreshold)
-                : undefined,
+            priceObj?.groupDiscountThreshold == null
+                ? undefined
+                : Number(priceObj.groupDiscountThreshold),
         groupDiscountPercent:
-            priceObj?.groupDiscountPercent != null
-                ? Number(priceObj.groupDiscountPercent)
-                : undefined,
-        pricePerGroup: priceObj?.pricePerGroup != null ? Number(priceObj.pricePerGroup) : undefined
+            priceObj?.groupDiscountPercent == null
+                ? undefined
+                : Number(priceObj.groupDiscountPercent),
+        pricePerGroup: priceObj?.pricePerGroup == null ? undefined : Number(priceObj.pricePerGroup)
     };
 
     // --- Organizer ---
@@ -1452,7 +1472,9 @@ import type { AccommodationEditData, AmenityData, DestinationData, MediaImage } 
  */
 export function transformAccommodationEdit({
     item
-}: { readonly item: Record<string, unknown> }): AccommodationEditData {
+}: {
+    readonly item: Record<string, unknown>;
+}): AccommodationEditData {
     const priceObj = item.price as
         | { price?: number; amount?: number; currency?: string }
         | undefined;
@@ -1492,19 +1514,19 @@ export function transformAccommodationEdit({
         destinationId: String(item.destinationId ?? ''),
         latitude: Number.isFinite(latitude) ? latitude : null,
         longitude: Number.isFinite(longitude) ? longitude : null,
-        maxGuests: extraInfo?.capacity != null ? Number(extraInfo.capacity) : null,
-        bedrooms: extraInfo?.bedrooms != null ? Number(extraInfo.bedrooms) : null,
-        bathrooms: extraInfo?.bathrooms != null ? Number(extraInfo.bathrooms) : null,
-        beds: extraInfo?.beds != null ? Number(extraInfo.beds) : null,
+        maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
+        bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
+        bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
+        beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
         basePrice:
-            priceObj?.price != null
-                ? Number(priceObj.price)
-                : priceObj?.amount != null
-                  ? Number(priceObj.amount)
-                  : null,
-        currency: priceObj?.currency != null ? String(priceObj.currency) : null,
-        isAvailable: item.isAvailable != null ? Boolean(item.isAvailable) : true,
-        isFeatured: item.isFeatured != null ? Boolean(item.isFeatured) : false,
+            priceObj?.price == null
+                ? priceObj?.amount == null
+                    ? null
+                    : Number(priceObj.amount)
+                : Number(priceObj.price),
+        currency: priceObj?.currency == null ? null : String(priceObj.currency),
+        isAvailable: item.isAvailable == null ? true : Boolean(item.isAvailable),
+        isFeatured: item.isFeatured == null ? false : Boolean(item.isFeatured),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
@@ -1604,7 +1626,7 @@ export function transformAmenityList({
         return {
             id: String(item.id ?? ''),
             slug,
-            category: item.category != null ? String(item.category) : null
+            category: item.category == null ? null : String(item.category)
         };
     });
 }
@@ -1617,7 +1639,9 @@ export function transformAmenityList({
  */
 export function transformDestinationList({
     items
-}: { readonly items: readonly Record<string, unknown>[] }): readonly DestinationData[] {
+}: {
+    readonly items: readonly Record<string, unknown>[];
+}): readonly DestinationData[] {
     return items.map((item) => ({
         id: String(item.id ?? ''),
         name: String(item.name ?? ''),
@@ -1649,7 +1673,9 @@ export interface AccommodationMediaResult {
  */
 export function transformAccommodationMedia({
     item
-}: { readonly item: Record<string, unknown> }): AccommodationMediaResult {
+}: {
+    readonly item: Record<string, unknown>;
+}): AccommodationMediaResult {
     const media = item.media as
         | {
               featuredImage?: {
@@ -1723,7 +1749,9 @@ function extractI18nField(raw: unknown): I18nFieldValues {
  */
 export function transformAccommodationTranslations({
     item
-}: { readonly item: Record<string, unknown> }): AccommodationTranslationData {
+}: {
+    readonly item: Record<string, unknown>;
+}): AccommodationTranslationData {
     return {
         name: extractI18nField(item.nameI18n),
         summary: extractI18nField(item.summaryI18n),
@@ -1762,22 +1790,22 @@ export function transformOwnerPromotion({
         id: String(item.id ?? ''),
         slug: String(item.slug ?? ''),
         ownerId: String(item.ownerId ?? ''),
-        accommodationId: item.accommodationId != null ? String(item.accommodationId) : null,
+        accommodationId: item.accommodationId == null ? null : String(item.accommodationId),
         title: String(item.title ?? ''),
-        description: item.description != null ? String(item.description) : null,
-        discountType: String(item.discountType ?? 'percentage') as import(
-            './types'
-        ).OwnerPromotionDiscountType,
+        description: item.description == null ? null : String(item.description),
+        discountType: String(
+            item.discountType ?? 'percentage'
+        ) as import('./types').OwnerPromotionDiscountType,
         discountValue: Number(item.discountValue ?? 0),
-        minNights: item.minNights != null ? Number(item.minNights) : null,
+        minNights: item.minNights == null ? null : Number(item.minNights),
         validFrom: String(item.validFrom ?? ''),
-        validUntil: item.validUntil != null ? String(item.validUntil) : null,
-        maxRedemptions: item.maxRedemptions != null ? Number(item.maxRedemptions) : null,
+        validUntil: item.validUntil == null ? null : String(item.validUntil),
+        maxRedemptions: item.maxRedemptions == null ? null : Number(item.maxRedemptions),
         currentRedemptions: Number(item.currentRedemptions ?? 0),
         lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
-        touristAudience: String(item.touristAudience ?? 'plus') as import(
-            './types'
-        ).OwnerPromotionTouristAudience,
+        touristAudience: String(
+            item.touristAudience ?? 'plus'
+        ) as import('./types').OwnerPromotionTouristAudience,
         createdAt: String(item.createdAt ?? ''),
         updatedAt: String(item.updatedAt ?? '')
     };
@@ -1893,7 +1921,10 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
 export function toGastronomyCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): GastronomyCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): GastronomyCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'gastronomy',
@@ -1929,7 +1960,7 @@ export function toGastronomyCardProps({
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
-        priceRange: item.priceRange != null ? String(item.priceRange) : null,
+        priceRange: item.priceRange == null ? null : String(item.priceRange),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
@@ -1939,12 +1970,12 @@ export function toGastronomyCardProps({
         // These fields are populated by the listing page after a bulk-check API
         // call. They are intentionally absent on unenriched responses so
         // FavoriteButton can fall back to its own single-check on mount.
-        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        isFavorited: item.isFavorited === undefined ? undefined : Boolean(item.isFavorited),
         favoriteBookmarkId: (() => {
             if (item.favoriteBookmarkId === undefined) return undefined;
             return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
         })(),
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
+        bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
 }
 
@@ -1985,13 +2016,13 @@ export function toGastronomyDetailPageProps({
             (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
             locale
         ),
-        richDescription: item.richDescription != null ? String(item.richDescription) : null,
-        menuUrl: item.menuUrl != null ? String(item.menuUrl) : null,
+        richDescription: item.richDescription == null ? null : String(item.richDescription),
+        menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
-                  title: seoObj.title != null ? String(seoObj.title) : null,
-                  description: seoObj.description != null ? String(seoObj.description) : null
+                  title: seoObj.title == null ? null : String(seoObj.title),
+                  description: seoObj.description == null ? null : String(seoObj.description)
               }
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
@@ -1999,9 +2030,9 @@ export function toGastronomyDetailPageProps({
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
-                  name: ownerObj.name != null ? String(ownerObj.name) : null,
-                  image: ownerObj.image != null ? String(ownerObj.image) : null,
-                  createdAt: ownerObj.createdAt != null ? String(ownerObj.createdAt) : null
+                  name: ownerObj.name == null ? null : String(ownerObj.name),
+                  image: ownerObj.image == null ? null : String(ownerObj.image),
+                  createdAt: ownerObj.createdAt == null ? null : String(ownerObj.createdAt)
               }
             : null
     };
@@ -2051,7 +2082,10 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
 export function toExperienceCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): ExperienceCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): ExperienceCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'experience',
@@ -2094,12 +2128,12 @@ export function toExperienceCardProps({
         // These fields are populated by the listing page after a bulk-check API
         // call. They are intentionally absent on unenriched responses so
         // FavoriteButton can fall back to its own single-check on mount.
-        isFavorited: item.isFavorited !== undefined ? Boolean(item.isFavorited) : undefined,
+        isFavorited: item.isFavorited === undefined ? undefined : Boolean(item.isFavorited),
         favoriteBookmarkId: (() => {
             if (item.favoriteBookmarkId === undefined) return undefined;
             return item.favoriteBookmarkId === null ? null : String(item.favoriteBookmarkId);
         })(),
-        bookmarkCount: item.bookmarkCount !== undefined ? Number(item.bookmarkCount) : undefined
+        bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
 }
 
@@ -2140,13 +2174,13 @@ export function toExperienceDetailPageProps({
             (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
             locale
         ),
-        richDescription: item.richDescription != null ? String(item.richDescription) : null,
+        richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeExperienceContactInfo(item.contactInfo),
         socialNetworks: normalizeExperienceSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
-                  title: seoObj.title != null ? String(seoObj.title) : null,
-                  description: seoObj.description != null ? String(seoObj.description) : null
+                  title: seoObj.title == null ? null : String(seoObj.title),
+                  description: seoObj.description == null ? null : String(seoObj.description)
               }
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
@@ -2154,9 +2188,9 @@ export function toExperienceDetailPageProps({
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
-                  name: ownerObj.name != null ? String(ownerObj.name) : null,
-                  image: ownerObj.image != null ? String(ownerObj.image) : null,
-                  createdAt: ownerObj.createdAt != null ? String(ownerObj.createdAt) : null
+                  name: ownerObj.name == null ? null : String(ownerObj.name),
+                  image: ownerObj.image == null ? null : String(ownerObj.image),
+                  createdAt: ownerObj.createdAt == null ? null : String(ownerObj.createdAt)
               }
             : null
     };
@@ -2172,7 +2206,10 @@ export function toExperienceDetailPageProps({
 export function toPartnerCardProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): PartnerCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): PartnerCardData {
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
@@ -2180,16 +2217,16 @@ export function toPartnerCardProps({
         type: String(item.type || ''),
         tier: String(item.tier || ''),
         description:
-            item.description != null
-                ? resolveI18nText(
+            item.description == null
+                ? null
+                : resolveI18nText(
                       (item.descriptionI18n as I18nTextLike | string) ?? item.description,
                       locale
-                  )
-                : null,
-        logoUrl: item.logoUrl != null ? String(item.logoUrl) : null,
-        websiteUrl: item.websiteUrl != null ? String(item.websiteUrl) : null,
+                  ),
+        logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
+        websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
         isFeatured: Boolean(item.isFeatured),
-        startsAt: item.startsAt != null ? String(item.startsAt) : null,
-        endsAt: item.endsAt != null ? String(item.endsAt) : null
+        startsAt: item.startsAt == null ? null : String(item.startsAt),
+        endsAt: item.endsAt == null ? null : String(item.endsAt)
     };
 }

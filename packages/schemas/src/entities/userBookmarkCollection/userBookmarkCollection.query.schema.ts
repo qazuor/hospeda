@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import {
+    createBooleanQueryParam,
     HttpPaginationSchema,
-    HttpSortingSchema,
-    createBooleanQueryParam
+    HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
 import { UserBookmarkCollectionSchema } from './userBookmarkCollection.schema.js';
 

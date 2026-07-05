@@ -1,6 +1,5 @@
 import { PostModel } from '@repo/db';
-import type { PostCreateInput } from '@repo/schemas';
-import type { PostIdType, UserIdType } from '@repo/schemas';
+import type { PostCreateInput, PostIdType, UserIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -8,7 +7,7 @@ import {
     PostCategoryEnum,
     VisibilityEnum
 } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/post/post.helpers';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';

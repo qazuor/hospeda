@@ -25,4 +25,24 @@ describe('renderMarkdownToHtml', () => {
         // it renders the literal text. No <a> tag is created, so no attack surface.
         expect(html).not.toMatch(/<a\s/i);
     });
+
+    it('renders http(s) markdown links as anchors under Tiptap v3', () => {
+        // v3 behavior lock: StarterKit v3 bundles the Link mark, so a normal
+        // markdown link now serializes as an <a> (under v2, StarterKit had no
+        // Link mark here and the link was dropped to plain text). The DOMPurify
+        // allowlist already permits `a` + `href`, so the anchor survives.
+        const html = renderMarkdownToHtml('[Hospeda](https://hospeda.com.ar)');
+
+        expect(html).toMatch(/<a\s/i);
+        expect(html).toContain('href="https://hospeda.com.ar"');
+        expect(html).toContain('Hospeda');
+    });
+
+    it('renders headings and blockquotes', () => {
+        const html = renderMarkdownToHtml('## Novedades\n\n> Una cita');
+
+        expect(html).toContain('<h2>');
+        expect(html).toContain('Novedades');
+        expect(html).toContain('<blockquote>');
+    });
 });

@@ -5,7 +5,7 @@
  * recruitment copy for the blog (publicaciones) and events sections, plus a
  * contribution form locked to `editor_application`.
  * @route /{lang}/colaborar/editores/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
@@ -15,16 +15,8 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // What volunteer editors do — sets expectations before the application form.

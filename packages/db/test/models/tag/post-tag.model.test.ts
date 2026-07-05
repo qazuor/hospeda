@@ -11,7 +11,7 @@
  * - AC-F13 (public listing returns only ACTIVE PostTags)
  *
  * Uses vi.mock + vi.spyOn to mock the DB client.
- * Uses @ts-ignore on Drizzle mocks — the RelationalQueryBuilder interface
+ * Uses @ts-expect-error on Drizzle mocks — the RelationalQueryBuilder interface
  * cannot be fully replicated in tests; only the used methods are mocked.
  */
 import type { PostTag } from '@repo/schemas';

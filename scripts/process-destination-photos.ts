@@ -36,12 +36,12 @@
  */
 
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { stdin as input, stdout as output } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { type UploadApiResponse, v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import { config as loadEnv } from 'dotenv';
 import sharp from 'sharp';
 

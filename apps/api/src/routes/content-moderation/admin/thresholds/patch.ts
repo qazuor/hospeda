@@ -2,8 +2,8 @@
  * Admin patch moderation threshold endpoint
  */
 import {
-    PermissionEnum,
     contentModerationThresholdSchema,
+    PermissionEnum,
     updateContentModerationThresholdSchema
 } from '@repo/schemas';
 import { ContentModerationThresholdService, ServiceError } from '@repo/service-core';

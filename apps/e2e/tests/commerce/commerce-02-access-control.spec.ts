@@ -111,8 +111,8 @@ async function authenticateContext(
 ): Promise<void> {
     const parsed = sessionCookie.split('; ').map((part) => {
         const eqIdx = part.indexOf('=');
-        const name = eqIdx !== -1 ? part.slice(0, eqIdx).trim() : part.trim();
-        const value = eqIdx !== -1 ? part.slice(eqIdx + 1) : '';
+        const name = eqIdx === -1 ? part.trim() : part.slice(0, eqIdx).trim();
+        const value = eqIdx === -1 ? '' : part.slice(eqIdx + 1);
         return { name, value, url: WEB_URL };
     });
     await context.addCookies(parsed);

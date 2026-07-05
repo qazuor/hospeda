@@ -1,19 +1,17 @@
+import { EntitlementKey } from '@repo/billing';
 import { useTranslations } from '@repo/i18n';
 import { AccommodationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+// ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
-import { EntitlementKey } from '@repo/billing';
+import { createAccommodationConsolidatedConfig } from '../config';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
-
-// ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
-import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
-import { createAccommodationConsolidatedConfig } from '../config';
 
 /**
  * Hook for managing accommodation entity pages

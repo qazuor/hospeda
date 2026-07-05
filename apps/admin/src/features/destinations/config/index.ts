@@ -1,7 +1,7 @@
 export { createDestinationConsolidatedConfig } from './destination-consolidated.config';
 export { createDestinationsColumns } from './destinations.columns';
 export {
-    destinationsConfig,
     DestinationsPageComponent,
-    DestinationsRoute
+    DestinationsRoute,
+    destinationsConfig
 } from './destinations.config';

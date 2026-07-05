@@ -30,6 +30,12 @@ FROM base AS build
 ARG HOSPEDA_API_URL=https://api.placeholder.local
 ARG VITE_API_URL=https://api.placeholder.local
 ARG VITE_SITE_URL=https://placeholder.local
+# VITE_ADMIN_URL is validated by requiredUrl() in apps/admin/src/env.ts, which
+# rejects an unset/placeholder(.invalid) value. Without this ARG, Docker
+# silently drops the --build-arg Coolify passes, so the build sees it unset and
+# the Zod check fails (BETA-101). The .placeholder.local default keeps local
+# `docker build` validation green; Coolify overrides it with the real URL.
+ARG VITE_ADMIN_URL=https://admin.placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
@@ -57,6 +63,7 @@ ARG VITE_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_API_URL=$VITE_API_URL \
     VITE_SITE_URL=$VITE_SITE_URL \
+    VITE_ADMIN_URL=$VITE_ADMIN_URL \
     VITE_BETTER_AUTH_URL=$VITE_BETTER_AUTH_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
@@ -66,7 +73,6 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
     NITRO_PRESET=node-server
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile

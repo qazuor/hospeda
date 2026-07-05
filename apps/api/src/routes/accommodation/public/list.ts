@@ -30,8 +30,8 @@ import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
     AccommodationSearchHttpSchema,
-    type SortField,
-    httpToDomainAccommodationSearch
+    httpToDomainAccommodationSearch,
+    type SortField
 } from '@repo/schemas';
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

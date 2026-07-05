@@ -7,9 +7,10 @@
  * managed on the Roles page); they can only be turned into a deny override via
  * the picker.
  */
+
+import type { PermissionEnum } from '@repo/schemas';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
-import type { PermissionEnum } from '@repo/schemas';
 
 export interface RolePermissionBadgeProps {
     readonly permission: PermissionEnum;

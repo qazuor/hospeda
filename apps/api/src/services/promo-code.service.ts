@@ -6,11 +6,11 @@
  * @deprecated Import from '@repo/service-core' instead.
  */
 export {
-    PromoCodeService,
     type CreatePromoCodeInput,
     type DiscountType,
     type ListPromoCodesFilters,
     type PromoCode,
+    PromoCodeService,
     type PromoCodeValidationContext,
     type PromoCodeValidationResult,
     type UpdatePromoCodeInput

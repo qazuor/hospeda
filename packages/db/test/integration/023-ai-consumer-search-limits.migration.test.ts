@@ -32,8 +32,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
-import { billingPlans } from '../../src/billing/index.ts';
 import type { QZPayBillingPlanInsert } from '../../src/billing/index.ts';
+import { billingPlans } from '../../src/billing/index.ts';
 import { closeTestPool, getTestDb, withCleanSlate } from './helpers.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -387,54 +387,60 @@ describe('SPEC-283 T-013 — extras/023-billing-plans-ai-consumer-search-limits.
 
     // ── T-013 AC-3: OR-PRESERVE ───────────────────────────────────────────────
     describe('T-013 AC-3 — OR-PRESERVE: operator-set values are never overwritten', () => {
-        it('pre-existing max_ai_search_per_month = 999 survives; ' +
-            'max_ai_chat_consumer_per_month (absent) is added at the seeded value', async () => {
-            await withCleanSlate(async () => {
-                const db = getTestDb();
-                // tourist-free with only max_ai_search_per_month pre-set to 999.
-                // max_ai_chat_consumer_per_month is intentionally absent.
-                const preRow = planRow({
-                    name: 'tourist-free',
-                    limits: { max_ai_search_per_month: 999 }
+        it(
+            'pre-existing max_ai_search_per_month = 999 survives; ' +
+                'max_ai_chat_consumer_per_month (absent) is added at the seeded value',
+            async () => {
+                await withCleanSlate(async () => {
+                    const db = getTestDb();
+                    // tourist-free with only max_ai_search_per_month pre-set to 999.
+                    // max_ai_chat_consumer_per_month is intentionally absent.
+                    const preRow = planRow({
+                        name: 'tourist-free',
+                        limits: { max_ai_search_per_month: 999 }
+                    });
+                    await db.insert(billingPlans).values([preRow]);
+
+                    await applyMigration();
+
+                    const row = await fetchPlan('tourist-free');
+                    const limits = toLimitsObject(row.limits);
+
+                    // Operator-set value MUST survive (OR-PRESERVE guard: NOT (limits ? key) is false).
+                    expect(limits.max_ai_search_per_month).toBe(999);
+
+                    // Missing key MUST be added (guard fires — absent key → merge in seeded default).
+                    expect(limits.max_ai_chat_consumer_per_month).toBe(10);
                 });
-                await db.insert(billingPlans).values([preRow]);
+            }
+        );
 
-                await applyMigration();
+        it(
+            'pre-existing max_ai_chat_consumer_per_month = 888 survives; ' +
+                'max_ai_search_per_month (absent) is added at the seeded value',
+            async () => {
+                await withCleanSlate(async () => {
+                    const db = getTestDb();
+                    // tourist-plus with only max_ai_chat_consumer_per_month pre-set.
+                    const preRow = planRow({
+                        name: 'tourist-plus',
+                        limits: { max_ai_chat_consumer_per_month: 888 }
+                    });
+                    await db.insert(billingPlans).values([preRow]);
 
-                const row = await fetchPlan('tourist-free');
-                const limits = toLimitsObject(row.limits);
+                    await applyMigration();
 
-                // Operator-set value MUST survive (OR-PRESERVE guard: NOT (limits ? key) is false).
-                expect(limits.max_ai_search_per_month).toBe(999);
+                    const row = await fetchPlan('tourist-plus');
+                    const limits = toLimitsObject(row.limits);
 
-                // Missing key MUST be added (guard fires — absent key → merge in seeded default).
-                expect(limits.max_ai_chat_consumer_per_month).toBe(10);
-            });
-        });
+                    // Operator-set value MUST survive.
+                    expect(limits.max_ai_chat_consumer_per_month).toBe(888);
 
-        it('pre-existing max_ai_chat_consumer_per_month = 888 survives; ' +
-            'max_ai_search_per_month (absent) is added at the seeded value', async () => {
-            await withCleanSlate(async () => {
-                const db = getTestDb();
-                // tourist-plus with only max_ai_chat_consumer_per_month pre-set.
-                const preRow = planRow({
-                    name: 'tourist-plus',
-                    limits: { max_ai_chat_consumer_per_month: 888 }
+                    // Missing key MUST be added.
+                    expect(limits.max_ai_search_per_month).toBe(50);
                 });
-                await db.insert(billingPlans).values([preRow]);
-
-                await applyMigration();
-
-                const row = await fetchPlan('tourist-plus');
-                const limits = toLimitsObject(row.limits);
-
-                // Operator-set value MUST survive.
-                expect(limits.max_ai_chat_consumer_per_month).toBe(888);
-
-                // Missing key MUST be added.
-                expect(limits.max_ai_search_per_month).toBe(50);
-            });
-        });
+            }
+        );
     });
 
     // ── T-013 AC-4: Scope guard — non-accommodation plans not mutated ─────────

@@ -5,10 +5,10 @@
  * label formatting, and onMinChange/onMaxChange callbacks.
  */
 
-import { DualRangeFilter } from '@/components/shared/filters/filter-types/DualRangeFilter';
-import type { DualRangeFilterConfig } from '@/components/shared/filters/filter-types/DualRangeFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { DualRangeFilterConfig } from '@/components/shared/filters/filter-types/DualRangeFilter';
+import { DualRangeFilter } from '@/components/shared/filters/filter-types/DualRangeFilter';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

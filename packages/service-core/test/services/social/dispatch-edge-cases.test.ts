@@ -47,8 +47,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SocialAuditLogService } from '../../../src/services/social/social-audit-log.service';
 import { SocialAuditEvent } from '../../../src/services/social/social-audit-log.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
-import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
 // UUID fixtures

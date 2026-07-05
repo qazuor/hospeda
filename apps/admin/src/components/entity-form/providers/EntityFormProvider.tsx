@@ -1,7 +1,7 @@
-import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 import { useForm, useStore } from '@tanstack/react-form';
 import * as React from 'react';
+import { adminLogger } from '@/utils/logger';
 import { validateFieldWithZod, validateFormWithZod } from '../../../lib/validation/validate-form';
 import {
     EntityFormContext,
@@ -91,69 +91,6 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     const autosaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     // Form actions
-    //
-    // `setFieldValue` is the single programmatic write path into the form (used
-    // e.g. by the AI post-generate panel via `useEntityFormContext`). It always
-    // writes the TanStack store AND notifies the optional `onFieldChange`
-    // callback. This callback matters for CREATE flows: `EntityCreatePageBase`
-    // keeps its own local `values` state as the submit source of truth and its
-    // sections do NOT route typing through this `setFieldValue`. Without the
-    // callback, a programmatic write would update the (unread-in-create) store
-    // but never the local `values`, leaving inputs empty. The create page wires
-    // `onFieldChange` to its `handleFieldChange` so programmatic writes land in
-    // local state too. Normal typing in create does NOT pass through here (the
-    // input's onChange calls the section's `onFieldChange` directly), so there
-    // is no double-fire.
-    const setFieldValue = React.useCallback(
-        (fieldId: string, value: unknown) => {
-            form.setFieldValue(fieldId, value);
-
-            // Mark field as dirty
-            setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
-
-            // Notify external callback (e.g. create page's local-state sync)
-            onFieldChange?.(fieldId, value);
-
-            // Handle autosave
-            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
-                if (autosaveTimerRef.current) {
-                    clearTimeout(autosaveTimerRef.current);
-                }
-                autosaveTimerRef.current = setTimeout(() => {
-                    handleSave();
-                }, autosave.interval);
-            }
-        },
-        [form, onFieldChange, autosave]
-    );
-
-    const handleFieldBlur = React.useCallback(
-        (fieldId: string) => {
-            // Validate field on blur
-            validateField(fieldId);
-
-            // Call external callback
-            onFieldBlur?.(fieldId);
-
-            // Handle autosave
-            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
-                handleSave();
-            }
-        },
-        [onFieldBlur, autosave]
-    );
-
-    const handleFieldFocus = React.useCallback(
-        (fieldId: string) => {
-            // Clear field error on focus
-            setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
-
-            // Call external callback
-            onFieldFocus?.(fieldId);
-        },
-        [onFieldFocus]
-    );
-
     const setMode = React.useCallback((newMode: FormModeEnum) => {
         setFormMode(newMode);
     }, []);
@@ -275,6 +212,68 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             }
         },
         [form.state.values, zodSchema, tAny]
+    );
+
+    // `setFieldValue` is the single programmatic write path into the form (used
+    // e.g. by the AI post-generate panel via `useEntityFormContext`). It always
+    // writes the TanStack store AND notifies the optional `onFieldChange`
+    // callback. This callback matters for CREATE flows: `EntityCreatePageBase`
+    // keeps its own local `values` state as the submit source of truth and its
+    // sections do NOT route typing through this `setFieldValue`. Without the
+    // callback, a programmatic write would update the (unread-in-create) store
+    // but never the local `values`, leaving inputs empty. The create page wires
+    // `onFieldChange` to its `handleFieldChange` so programmatic writes land in
+    // local state too. Normal typing in create does NOT pass through here (the
+    // input's onChange calls the section's `onFieldChange` directly), so there
+    // is no double-fire.
+    const setFieldValue = React.useCallback(
+        (fieldId: string, value: unknown) => {
+            form.setFieldValue(fieldId, value);
+
+            // Mark field as dirty
+            setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
+
+            // Notify external callback (e.g. create page's local-state sync)
+            onFieldChange?.(fieldId, value);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                if (autosaveTimerRef.current) {
+                    clearTimeout(autosaveTimerRef.current);
+                }
+                autosaveTimerRef.current = setTimeout(() => {
+                    handleSave();
+                }, autosave.interval);
+            }
+        },
+        [form, onFieldChange, autosave, handleSave]
+    );
+
+    const handleFieldBlur = React.useCallback(
+        (fieldId: string) => {
+            // Validate field on blur
+            validateField(fieldId);
+
+            // Call external callback
+            onFieldBlur?.(fieldId);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                handleSave();
+            }
+        },
+        [onFieldBlur, autosave, validateField, handleSave]
+    );
+
+    const handleFieldFocus = React.useCallback(
+        (fieldId: string) => {
+            // Clear field error on focus
+            setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
+
+            // Call external callback
+            onFieldFocus?.(fieldId);
+        },
+        [onFieldFocus]
     );
 
     const isFieldDirty = React.useCallback(

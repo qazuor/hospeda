@@ -12,51 +12,42 @@
  * @module ai-core/usage
  */
 
-export { DEFAULT_COST_CEILINGS, MODEL_RATES } from './model-rates.js';
-
-export {
-    calculateCostMicroUsd,
-    type CalculateCostInput,
-    type CalculateCostResult
-} from './cost-calculator.js';
-
-export { recordAiUsage, type RecordAiUsageInput } from './usage-recorder.js';
-
-// Read-only usage reporting (SPEC-173 T-018)
-export {
-    getMonthlyUsage,
-    getUsageByUser,
-    getUsageByFeature,
-    getUtcMonthRange,
-    type GetMonthlyUsageInput,
-    type GetUsageByUserInput,
-    type GetUsageByFeatureInput,
-    type GetUtcMonthRangeInput,
-    type UtcMonthRange
-} from './reporting/index.js';
-
-// Monthly call-count helper for quota enforcement (SPEC-173 T-031)
-export {
-    getMonthlyCallCount,
-    type GetMonthlyCallCountInput
-} from './reporting/index.js';
-
-// SPEC-260: new reporting wrappers — byModel, byProvider, byFeatureModel, daily
-export {
-    getUsageByModel,
-    getUsageByProvider,
-    getUsageByFeatureModel,
-    getDailyUsage,
-    type GetUsageByModelInput,
-    type GetUsageByProviderInput,
-    type GetUsageByFeatureModelInput,
-    type GetDailyUsageInput
-} from './reporting/index.js';
-
 // Cost-ceiling check (SPEC-173 T-017)
 export {
-    checkCostCeiling,
     type CheckCostCeilingInput,
+    checkCostCeiling,
     type ThresholdAlertHook,
     type ThresholdAlertInput
 } from './ceiling.js';
+
+export {
+    type CalculateCostInput,
+    type CalculateCostResult,
+    calculateCostMicroUsd
+} from './cost-calculator.js';
+export { DEFAULT_COST_CEILINGS, MODEL_RATES } from './model-rates.js';
+// Read-only usage reporting (SPEC-173 T-018)
+// Monthly call-count helper for quota enforcement (SPEC-173 T-031)
+// SPEC-260: new reporting wrappers — byModel, byProvider, byFeatureModel, daily
+export {
+    type GetDailyUsageInput,
+    type GetMonthlyCallCountInput,
+    type GetMonthlyUsageInput,
+    type GetUsageByFeatureInput,
+    type GetUsageByFeatureModelInput,
+    type GetUsageByModelInput,
+    type GetUsageByProviderInput,
+    type GetUsageByUserInput,
+    type GetUtcMonthRangeInput,
+    getDailyUsage,
+    getMonthlyCallCount,
+    getMonthlyUsage,
+    getUsageByFeature,
+    getUsageByFeatureModel,
+    getUsageByModel,
+    getUsageByProvider,
+    getUsageByUser,
+    getUtcMonthRange,
+    type UtcMonthRange
+} from './reporting/index.js';
+export { type RecordAiUsageInput, recordAiUsage } from './usage-recorder.js';

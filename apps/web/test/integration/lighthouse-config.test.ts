@@ -47,12 +47,14 @@ describe('lighthouserc.json (SPEC-269 T-269-11)', () => {
 
     describe('collect.url', () => {
         const urls = cfg.ci.collect.url;
-        it.each(['/es/', '/es/alojamientos/', '/es/eventos/', '/es/destinos/'])(
-            'audits %s',
-            (suffix) => {
-                expect(urls.some((u) => u.endsWith(suffix))).toBe(true);
-            }
-        );
+        it.each([
+            '/es/',
+            '/es/alojamientos/',
+            '/es/eventos/',
+            '/es/destinos/'
+        ])('audits %s', (suffix) => {
+            expect(urls.some((u) => u.endsWith(suffix))).toBe(true);
+        });
     });
 
     describe('assert.assertMatrix', () => {
@@ -73,12 +75,13 @@ describe('lighthouserc.json (SPEC-269 T-269-11)', () => {
             ]);
         });
 
-        it.each(['categories:accessibility', 'categories:best-practices', 'categories:seo'])(
-            'keeps home %s advisory (warn >= 0.9)',
-            (key) => {
-                expect(homeGroup?.assertions[key]).toEqual(['warn', { minScore: 0.9 }]);
-            }
-        );
+        it.each([
+            'categories:accessibility',
+            'categories:best-practices',
+            'categories:seo'
+        ])('keeps home %s advisory (warn >= 0.9)', (key) => {
+            expect(homeGroup?.assertions[key]).toEqual(['warn', { minScore: 0.9 }]);
+        });
 
         it('keeps listing performance advisory (warn)', () => {
             expect(listingGroup?.assertions['categories:performance']?.[0]).toBe('warn');

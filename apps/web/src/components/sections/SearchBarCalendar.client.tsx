@@ -6,8 +6,8 @@
  * imports outside of the SearchBar critical path.
  */
 
-import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import type { DateRange } from 'react-day-picker';
+import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import type { SupportedLocale } from '@/lib/i18n';

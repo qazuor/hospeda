@@ -9,10 +9,10 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CollectionColorPicker, CollectionIconPicker } from './CollectionPickers';
 import styles from './CreateEditCollectionModal.module.css';
 import { useCollectionMutation } from './useCollectionMutation';
@@ -263,6 +263,7 @@ export function CreateEditCollectionModal({
                             </label>
                             <span
                                 className={styles.counter}
+                                role="status"
                                 aria-live="polite"
                                 aria-label={t(
                                     'common.form.charCounter',
@@ -312,6 +313,7 @@ export function CreateEditCollectionModal({
                             </label>
                             <span
                                 className={styles.counter}
+                                role="status"
                                 aria-live="polite"
                                 aria-label={t(
                                     'common.form.charCounter',

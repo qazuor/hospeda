@@ -17,16 +17,16 @@ import { seedGastronomies } from './gastronomies.seed.js';
 import { seedHostTrades } from './hostTrades.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
-import { seedPostTagAssignments } from './postTagAssignments.seed.js';
 import { seedPosts } from './posts.seed.js';
+import { seedPostTagAssignments } from './postTagAssignments.seed.js';
 import { seedTagRelations } from './tagRelations.seed.js';
 import { seedTags } from './tags.seed.js';
 // NOTE: SPEC-143 test users moved to a separate `--test-users` seed group
 // (packages/seed/src/test-users/) so they never run against staging/prod
 // when only `--example` is requested.
 import { seedUserBookmarkCollections } from './userBookmarkCollections.seed.js';
-import { seedUserTags } from './userTags.seed.js';
 import { seedUsers } from './users.seed.js';
+import { seedUserTags } from './userTags.seed.js';
 
 /**
  * Executes all example seeds in the correct order.

@@ -19,8 +19,8 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
-    type TrustedOriginsConfig,
-    parseTrustedOriginsFromConfig
+    parseTrustedOriginsFromConfig,
+    type TrustedOriginsConfig
 } from '../../src/lib/auth-trusted-origins';
 
 /**

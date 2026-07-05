@@ -25,13 +25,14 @@
  * tokens when `status === 'error'`. The CRITICAL test case in the test
  * file proves this at the UI level.
  */
-import { Button } from '@/components/ui-wrapped/Button';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
+
 import type { TranslationKey } from '@repo/i18n';
 import { SparkleIcon } from '@repo/icons';
 import type { AiTextImproveFieldType } from '@repo/schemas';
 import { useCallback, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import { AI_TEXT_IMPROVE_ERROR_CODES, useAiTextImprove } from '../hooks/useAiTextImprove';
 
 // ---------------------------------------------------------------------------

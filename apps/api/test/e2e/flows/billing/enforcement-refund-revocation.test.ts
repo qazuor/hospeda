@@ -190,9 +190,10 @@ async function expectGatePassed(res: Response): Promise<void> {
  * Build and sign a payment.updated IPN payload with the given status.
  * The `data.id` field is what applyWebhookRefundLifecycle reads as mpPaymentId.
  */
-function buildSignedRefundWebhook(opts: {
-    readonly providerPaymentId: string;
-}): { readonly body: string; readonly headers: Record<string, string> } {
+function buildSignedRefundWebhook(opts: { readonly providerPaymentId: string }): {
+    readonly body: string;
+    readonly headers: Record<string, string>;
+} {
     const body = JSON.stringify({
         id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
         type: 'payment',

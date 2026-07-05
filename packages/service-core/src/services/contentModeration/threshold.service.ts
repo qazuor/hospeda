@@ -2,9 +2,9 @@ import { ContentModerationThresholdModel } from '@repo/db';
 import {
     type ContentModerationThreshold,
     type ContentModerationThresholdAdminSearch,
+    contentModerationThresholdAdminSearchSchema,
     PermissionEnum,
     ServiceErrorCode,
-    contentModerationThresholdAdminSearchSchema,
     updateContentModerationThresholdSchema
 } from '@repo/schemas';
 import { z } from 'zod';

@@ -28,12 +28,11 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { ServiceErrorCode } from '@repo/schemas';
 import type { AiFeature } from '@repo/schemas';
-import { RoleEnum } from '@repo/service-core';
-import { ServiceError } from '@repo/service-core';
-import { Hono } from 'hono';
+import { ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QuotaGatedAiFeature } from '../../src/middlewares/ai-quota';

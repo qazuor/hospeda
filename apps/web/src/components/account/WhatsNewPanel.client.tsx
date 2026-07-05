@@ -1,8 +1,8 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './WhatsNewModal.module.css'; // shared styles (modal + panel)
 
 interface WhatsNewPanelProps {

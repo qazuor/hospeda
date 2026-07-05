@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { DeleteIcon, EditIcon } from '@repo/icons';
 import type { Tag } from '@repo/schemas';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { DeleteOwnTagDialog } from './DeleteOwnTagDialog';
 import { EditOwnTagDialog } from './EditOwnTagDialog';
 import { PostTagColorBadge } from './PostTagColorBadge';
@@ -59,12 +59,12 @@ export function OwnTagRow({ tag, impactCount, onDeleteConfirm, isDeleting }: Own
 
             {/* Applied to count */}
             <td className="px-4 py-3 text-muted-foreground text-sm">
-                {impactCount !== undefined ? (
+                {impactCount === undefined ? (
+                    <span className="text-muted-foreground/50">—</span>
+                ) : (
                     <span>
                         {impactCount} {impactCount === 1 ? 'entidad' : 'entidades'}
                     </span>
-                ) : (
-                    <span className="text-muted-foreground/50">—</span>
                 )}
             </td>
 

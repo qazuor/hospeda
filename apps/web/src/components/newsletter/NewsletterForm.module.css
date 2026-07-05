@@ -92,8 +92,9 @@
     color: var(--core-card, #fff);
     border: 1px solid var(--core-card-a25);
     border-radius: var(--radius-button, 8px);
-    transition: border-color var(--duration-fast, 150ms) ease, box-shadow
-        var(--duration-fast, 150ms) ease;
+    transition:
+        border-color var(--duration-fast, 150ms) ease,
+        box-shadow var(--duration-fast, 150ms) ease;
 }
 
 /* The lock badge sits BEFORE the input in the DOM, so a `~ .lockBadge`
@@ -180,8 +181,9 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color var(--duration-fast, 150ms) ease, transform
-        var(--duration-fast, 150ms) ease;
+    transition:
+        background-color var(--duration-fast, 150ms) ease,
+        transform var(--duration-fast, 150ms) ease;
 }
 
 .submitButton:hover:not(:disabled) {

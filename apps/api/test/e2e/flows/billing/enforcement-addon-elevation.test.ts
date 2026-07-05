@@ -197,9 +197,10 @@ async function expectLimitGatePassed(res: Response): Promise<number> {
 // Mirrors the pattern from addon-purchase.test.ts / plan-upgrade.test.ts.
 // ---------------------------------------------------------------------------
 
-function buildSignedWebhookRequest(opts: {
-    readonly providerPaymentId: string;
-}): { readonly body: string; readonly headers: Record<string, string> } {
+function buildSignedWebhookRequest(opts: { readonly providerPaymentId: string }): {
+    readonly body: string;
+    readonly headers: Record<string, string>;
+} {
     const body = JSON.stringify({
         id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
         type: 'payment',

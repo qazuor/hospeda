@@ -10,7 +10,7 @@
  * - SPEC-086 D-018 (final schema shape: 4-column PK with assignedById)
  */
 import type { EntityTag } from '@repo/schemas';
-import { type SQL, and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema.ts';
 import { tags } from '../../schemas/tag/tag.dbschema.ts';

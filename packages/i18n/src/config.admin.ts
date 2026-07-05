@@ -35,23 +35,6 @@ export const adminNamespaces = [
 export type AdminNamespace = (typeof adminNamespaces)[number];
 
 // ---------------------------------------------------------------------------
-// Spanish — admin namespaces only
-// ---------------------------------------------------------------------------
-import adminAuthEs from './locales/es/admin-auth.json';
-import adminBillingEs from './locales/es/admin-billing.json';
-import adminCommonEs from './locales/es/admin-common.json';
-import adminDashboardEs from './locales/es/admin-dashboard.json';
-import adminEntitiesEs from './locales/es/admin-entities.json';
-import adminFiltersEs from './locales/es/admin-filters.json';
-import adminMenuEs from './locales/es/admin-menu.json';
-import adminNavEs from './locales/es/admin-nav.json';
-import adminNewsletterEs from './locales/es/admin-newsletter.json';
-import adminPagesEs from './locales/es/admin-pages.json';
-import adminTablesEs from './locales/es/admin-tables.json';
-import adminTabsEs from './locales/es/admin-tabs.json';
-import adminWhatsNewEs from './locales/es/admin-whats-new.json';
-
-// ---------------------------------------------------------------------------
 // English — admin namespaces only
 // ---------------------------------------------------------------------------
 import adminAuthEn from './locales/en/admin-auth.json';
@@ -67,6 +50,22 @@ import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
 import adminWhatsNewEn from './locales/en/admin-whats-new.json';
+// ---------------------------------------------------------------------------
+// Spanish — admin namespaces only
+// ---------------------------------------------------------------------------
+import adminAuthEs from './locales/es/admin-auth.json';
+import adminBillingEs from './locales/es/admin-billing.json';
+import adminCommonEs from './locales/es/admin-common.json';
+import adminDashboardEs from './locales/es/admin-dashboard.json';
+import adminEntitiesEs from './locales/es/admin-entities.json';
+import adminFiltersEs from './locales/es/admin-filters.json';
+import adminMenuEs from './locales/es/admin-menu.json';
+import adminNavEs from './locales/es/admin-nav.json';
+import adminNewsletterEs from './locales/es/admin-newsletter.json';
+import adminPagesEs from './locales/es/admin-pages.json';
+import adminTablesEs from './locales/es/admin-tables.json';
+import adminTabsEs from './locales/es/admin-tabs.json';
+import adminWhatsNewEs from './locales/es/admin-whats-new.json';
 
 // ---------------------------------------------------------------------------
 // Portuguese — admin namespaces only

@@ -14,8 +14,8 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import type { AddonDefinition } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as entitlementMiddleware from '../../src/middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon-lifecycle.service';

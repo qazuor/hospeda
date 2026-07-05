@@ -9,11 +9,10 @@
         "noUnusedParameters": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "baseUrl": "..",
         "paths": {
-            "@/*": ["./src/*"],
-            "@repo/schemas": ["../../packages/schemas/src/index.ts"],
-            "@repo/schemas/*": ["../../packages/schemas/src/*"]
+            "@/*": ["../src/*"],
+            "@repo/schemas": ["../../../packages/schemas/src/index.ts"],
+            "@repo/schemas/*": ["../../../packages/schemas/src/*"]
         }
     },
     "include": ["./**/*.ts", "../src/config/ia/**/*.ts"],

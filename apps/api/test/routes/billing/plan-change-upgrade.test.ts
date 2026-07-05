@@ -97,8 +97,8 @@ vi.mock('@repo/db', async (importOriginal) => {
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { handlePlanChange } from '../../../src/routes/billing/plan-change';
 import {
-    SubscriptionCheckoutError,
-    initiatePaidPlanUpgrade
+    initiatePaidPlanUpgrade,
+    SubscriptionCheckoutError
 } from '../../../src/services/subscription-checkout.service';
 
 // ---------------------------------------------------------------------------

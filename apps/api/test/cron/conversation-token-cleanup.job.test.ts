@@ -15,8 +15,8 @@
  * @module test/cron/conversation-token-cleanup
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (factories must NOT reference module-level variables)

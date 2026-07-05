@@ -12,8 +12,8 @@
  * Tasks: T-064
  */
 
-import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import styles from './HeroImageRotator.module.css';
 
 /** A single image entry for the rotator. */

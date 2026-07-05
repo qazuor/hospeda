@@ -51,8 +51,14 @@
  * @see {@link newsletter-token.helpers}
  */
 
-import { getDb } from '@repo/db';
 import type { InsertNewsletterSubscriber, SelectNewsletterSubscriber } from '@repo/db';
+import { getDb } from '@repo/db';
+import type {
+    NewsletterContentPreferences,
+    NewsletterSubscriberAdminSearch,
+    NewsletterSubscriberStatsResponse,
+    NewsletterSubscribersByPreference
+} from '@repo/schemas';
 import {
     DEFAULT_NEWSLETTER_PREFERENCES,
     NewsletterChannelEnum,
@@ -62,12 +68,6 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type {
-    NewsletterContentPreferences,
-    NewsletterSubscriberAdminSearch,
-    NewsletterSubscriberStatsResponse,
-    NewsletterSubscribersByPreference
-} from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -75,10 +75,10 @@ import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../
 import { ServiceError } from '../../types/index.js';
 import { checkCanViewSubscribers, requireSelf } from './newsletter-subscriber.permissions.js';
 import {
-    InvalidTokenError,
-    TokenExpiredError,
     generateUnsubscribeToken,
     generateVerificationToken,
+    InvalidTokenError,
+    TokenExpiredError,
     verifyUnsubscribeToken,
     verifyVerificationToken
 } from './newsletter-token.helpers.js';

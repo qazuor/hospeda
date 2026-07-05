@@ -28,7 +28,26 @@
 
 // Colors
 export { colors } from './colors';
-
+export type { RadiusScaleKey, RadiusSemanticName } from './radius';
+// Radius
+export {
+    base as radiusBase,
+    radius,
+    scale as radiusScale,
+    semantic as radiusSemantic
+} from './radius';
+export type { SpacingKey } from './spacing';
+// Spacing
+export { spacing } from './spacing';
+// Theme (aggregated object — primary import surface for screens)
+export { theme } from './theme';
+export type {
+    FontFamilyName,
+    FontSizeKey,
+    FontWeightName,
+    LineHeightRatioName,
+    SemanticSizeKey
+} from './typography';
 // Typography
 export {
     fontFamily,
@@ -39,26 +58,3 @@ export {
     semanticSize,
     typography
 } from './typography';
-export type {
-    FontFamilyName,
-    FontSizeKey,
-    FontWeightName,
-    LineHeightRatioName,
-    SemanticSizeKey
-} from './typography';
-
-// Spacing
-export { spacing } from './spacing';
-export type { SpacingKey } from './spacing';
-
-// Radius
-export {
-    base as radiusBase,
-    radius,
-    scale as radiusScale,
-    semantic as radiusSemantic
-} from './radius';
-export type { RadiusScaleKey, RadiusSemanticName } from './radius';
-
-// Theme (aggregated object — primary import surface for screens)
-export { theme } from './theme';

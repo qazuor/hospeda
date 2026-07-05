@@ -13,7 +13,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SearchBar, buildSearchUrl } from '../../../src/components/sections/SearchBar.client';
+import { buildSearchUrl, SearchBar } from '../../../src/components/sections/SearchBar.client';
 
 // ---------------------------------------------------------------------------
 // Module mocks

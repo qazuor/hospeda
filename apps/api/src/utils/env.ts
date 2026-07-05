@@ -604,8 +604,14 @@ export const ApiEnvBaseSchema = z.object({
      * which rejects detail URLs and returns an empty dataset.
      */
     HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().default('tri_angle/airbnb-rooms-urls-scraper'),
-    /** Apify actor ID/slug for the Booking.com scraper fallback (swappable without a code deploy) */
-    HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
+    /**
+     * Apify actor ID/slug for the Booking.com scraper fallback (swappable
+     * without a code deploy). Defaults to `voyager/booking-scraper` — the same
+     * default the @repo/config env registry declares. Was `.optional()` (no
+     * default), so it resolved to `undefined` at runtime and the documented
+     * default never applied (BETA-100).
+     */
+    HOSPEDA_APIFY_BOOKING_ACTOR: z.string().default('voyager/booking-scraper'),
     /** Google Places API (New) key for the Google Maps import tier */
     HOSPEDA_GOOGLE_PLACES_API_KEY: z.string().optional(),
     /** MercadoLibre OAuth app client ID (HOS-45 OAuth refresh flow). Optional: required only in environments where the ML import tier is enabled. */
@@ -864,19 +870,18 @@ export const validateApiEnv = (): void => {
     // a single safe summary from index.ts AFTER configureLogger() instead (I3).
 };
 
-// Export the schema for testing
-export { ApiEnvSchema };
-
 // Re-export config helpers for backward compatibility
 export {
-    parseCommaSeparated,
-    parseCorsOrigins,
     getCacheConfig,
-    getCorsConfig,
     getCompressionConfig,
+    getCorsConfig,
+    getDatabasePoolConfig,
     getRateLimitConfig,
+    getResponseConfig,
     getSecurityConfig,
     getValidationConfig,
-    getResponseConfig,
-    getDatabasePoolConfig
+    parseCommaSeparated,
+    parseCorsOrigins
 } from './env-config-helpers.js';
+// Export the schema for testing
+export { ApiEnvSchema };

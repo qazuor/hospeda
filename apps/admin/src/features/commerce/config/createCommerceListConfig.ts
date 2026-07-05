@@ -171,9 +171,9 @@ export function createCommerceListConfig<TListItem extends { id: string }>(
         layoutConfig: extraListConfig.layoutConfig ?? defaultLayoutConfig,
 
         // Optional: forward default sort if provided
-        ...(extraListConfig.defaultSort !== undefined
-            ? { defaultSort: extraListConfig.defaultSort }
-            : {}),
+        ...(extraListConfig.defaultSort === undefined
+            ? {}
+            : { defaultSort: extraListConfig.defaultSort }),
 
         // Column factory
         createColumns

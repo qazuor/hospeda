@@ -17,9 +17,9 @@
  *   - "mobile": vertical stack inside the MobileMenu overlay.
  */
 
+import type { JSX } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { JSX } from 'react';
 import styles from './LanguageSwitcher.module.css';
 
 const LOCALES = ['es', 'en', 'pt'] as const;

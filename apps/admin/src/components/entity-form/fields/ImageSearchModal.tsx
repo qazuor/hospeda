@@ -1,10 +1,5 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { fetchApi } from '@/lib/api/client';
-import { ApiError } from '@/lib/errors';
-import { cn } from '@/lib/utils';
-import { adminLogger } from '@/utils/logger';
-
-import { Input } from '@/components/ui-wrapped';
+import { AlertTriangleIcon, CloseIcon, ImageIcon, SearchIcon } from '@repo/icons';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -15,8 +10,12 @@ import {
     DialogTitle,
     DialogTrigger
 } from '@/components/ui/dialog';
-import { AlertTriangleIcon, CloseIcon, ImageIcon, SearchIcon } from '@repo/icons';
-import * as React from 'react';
+import { Input } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
+import { fetchApi } from '@/lib/api/client';
+import { ApiError } from '@/lib/errors';
+import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 
 export interface StockImageResult {
     providerId: string;
@@ -306,7 +305,7 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
                 <div className="flex flex-col gap-4 border-b pb-4">
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
-                            <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={searchState.query}
                                 onChange={(e) =>

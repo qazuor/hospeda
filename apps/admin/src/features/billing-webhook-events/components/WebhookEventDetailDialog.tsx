@@ -4,6 +4,8 @@
  * Modal dialog showing full details of a webhook event including
  * payload, retry info, and error messages.
  */
+
+import type { TranslationKey } from '@repo/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +23,6 @@ import type {
 } from '@/features/billing-webhook-events';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateWithSeconds } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
 
 /**
  * Get status badge variant

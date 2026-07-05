@@ -11,7 +11,7 @@ import {
     type GastronomyFaqAddInput,
     GastronomyFaqSingleOutputSchema
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, addGastronomyFaq } from '@repo/service-core';
+import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

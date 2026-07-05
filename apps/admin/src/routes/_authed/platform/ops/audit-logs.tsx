@@ -6,13 +6,14 @@
  * by AUDIT_LOG_VIEW; `requireAdminApiAccess` is the client-side route guard
  * (the API enforces the permission).
  */
+
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import {
     AuditLogsPageComponent,
     AuditLogsRoute
 } from '@/features/audit-logs/config/audit-logs.config';
 import { requireAdminPermission } from '@/lib/admin-api-access';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/audit-logs')({
     validateSearch: AuditLogsRoute.options.validateSearch,

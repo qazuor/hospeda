@@ -20,19 +20,19 @@
  */
 
 export {
+    type ColumnFilter,
+    type ColumnVisibilityState,
+    type PaginationState,
+    type PersistenceStrategy,
     // Types
     type SortingState,
-    type PaginationState,
-    type ColumnVisibilityState,
-    type ColumnFilter,
-    type TableState,
-    type PersistenceStrategy,
     type TablePersistenceConfig,
+    type TableState,
     type UseTablePersistenceResult,
-    // Main hook
-    useTablePersistence,
+    useColumnVisibilityPersistence,
+    usePaginationPersistence,
     // Utility hooks
     useSortingPersistence,
-    usePaginationPersistence,
-    useColumnVisibilityPersistence
+    // Main hook
+    useTablePersistence
 } from './table-persistence';

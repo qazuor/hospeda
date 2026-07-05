@@ -6,7 +6,7 @@
  * @deprecated Import from '@repo/service-core' instead.
  */
 export {
-    processExpiredAddonsBatch,
+    type ExpireAddonFn,
     type ProcessExpiredAddonsResult,
-    type ExpireAddonFn
+    processExpiredAddonsBatch
 } from '@repo/service-core';

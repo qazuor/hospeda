@@ -10,13 +10,13 @@
  * newsletter subscribers page (apps/admin/src/routes/_authed/newsletter/subscribers).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import type { EntityCommentAdminItem } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
 import { ModerationStateBadge } from '@/components/comments/ModerationStateBadge';
 import { Button } from '@/components/ui/button';
 import { useModerateComment, useSoftDeleteComment } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import type { EntityCommentAdminItem } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
 
 /** Props for {@link CommentsTable}. */
 export interface CommentsTableProps {

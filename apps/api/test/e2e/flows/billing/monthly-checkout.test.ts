@@ -438,9 +438,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
     /**
      * Helper: build + sign an MP IPN subscription_preapproval.updated payload.
      */
-    function buildSignedWebhookRequest(opts: {
-        readonly mpSubscriptionId: string;
-    }): {
+    function buildSignedWebhookRequest(opts: { readonly mpSubscriptionId: string }): {
         readonly body: string;
         readonly headers: Record<string, string>;
     } {

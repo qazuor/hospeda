@@ -11,6 +11,10 @@
  * No zodResolver. No create or delete.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import type { SocialSetting } from '@repo/schemas';
+import { useState } from 'react';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,10 +28,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateSocialSetting } from '@/hooks/use-social-platform-settings';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import type { SocialSetting } from '@repo/schemas';
-import { useState } from 'react';
-import { z } from 'zod';
 
 /** Inline validation schema (mirrors API UpdateSettingValueSchema). */
 const UpdateValueSchema = z.object({

@@ -17,6 +17,9 @@
  * Permission gate: SOCIAL_POST_VIEW (server-side enforced).
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import {
     AlertDialog,
@@ -34,9 +37,6 @@ import { useDeleteSocialPost, useSocialPostDetail } from '@/hooks/use-social-pos
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 import { PromoteHashtagModal } from './-components/PromoteHashtagModal';
 import { SocialPostApprovalBadge } from './-components/SocialPostApprovalBadge';
 import { SocialPostAuditTab } from './-components/SocialPostAuditTab';

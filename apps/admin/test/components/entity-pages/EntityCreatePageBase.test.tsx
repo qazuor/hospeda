@@ -1,9 +1,9 @@
-import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { EntityCreateConfig } from '@/components/entity-pages';
-import { EntityCreatePageBase } from '@/components/entity-pages/EntityCreatePageBase';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages/EntityCreatePageBase';
 
 // ---------------------------------------------------------------------------
 // Heavy provider / hook mocks

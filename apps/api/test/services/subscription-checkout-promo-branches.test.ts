@@ -70,9 +70,9 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import {
-    SubscriptionCheckoutError,
     initiatePaidAnnualSubscription,
-    initiatePaidMonthlySubscription
+    initiatePaidMonthlySubscription,
+    SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
 
 // --- Fixtures -------------------------------------------------------------

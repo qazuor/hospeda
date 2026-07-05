@@ -74,12 +74,12 @@
  * @module api/use-api-query
  */
 
-import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
     QueryFunctionContext,
     UseMutationResult,
     UseQueryResult
 } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ZodTypeAny } from 'zod';
 import { apiFetch } from './client';
 import type { HttpMethod } from './types';

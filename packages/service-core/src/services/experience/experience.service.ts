@@ -31,8 +31,8 @@
 import {
     AmenityModel,
     type ExperienceModel,
-    FeatureModel,
     experienceModel,
+    FeatureModel,
     rExperienceAmenityModel,
     rExperienceFeatureModel
 } from '@repo/db';

@@ -22,8 +22,7 @@ import {
     createMockAccommodation,
     createMockAccommodationUpdateInput
 } from '../../factories/accommodationFactory';
-import { createActor } from '../../factories/actorFactory';
-import { createAdminActor } from '../../factories/actorFactory';
+import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';

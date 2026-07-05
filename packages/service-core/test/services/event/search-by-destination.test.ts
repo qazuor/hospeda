@@ -9,7 +9,7 @@
 
 import { EventModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // Mock @repo/db to control getDb() calls made by _resolveLocationIdsForDestination
 vi.mock('@repo/db', async (importOriginal) => {

@@ -19,12 +19,12 @@
  * @module features/ai-usage/components/AiUsageByFeatureModelTable
  */
 
+import { formatMicroUsd } from '@repo/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatMicroUsd } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
 // Props

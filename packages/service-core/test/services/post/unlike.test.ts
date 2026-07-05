@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
 import type { PostIdType } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';

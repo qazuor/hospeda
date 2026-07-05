@@ -157,9 +157,7 @@ async function queryUserPermissionsWithEffect({
  * @param params - Optional parameters object
  * @param params.userId - Optional user ID to invalidate. If omitted, clears entire cache.
  */
-export function invalidateUserPermissionsCache(params?: {
-    readonly userId?: string;
-}): void {
+export function invalidateUserPermissionsCache(params?: { readonly userId?: string }): void {
     if (params?.userId) {
         cache.delete(params.userId);
         apiLogger.debug(`User permissions cache invalidated for ${params.userId}`);

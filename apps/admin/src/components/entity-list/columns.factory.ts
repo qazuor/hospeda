@@ -37,15 +37,15 @@ import type { ColumnConfig, ColumnTFunction, LinkHandler } from './types';
 
 // Re-export types and constants for backward compatibility
 export type {
-    BadgeOption,
     BadgeColumnOptions,
+    BadgeOption,
     ColumnFactoryConfig,
     NameColumnOptions
 } from './columns.factory.types';
 export {
-    getVisibilityBadgeOptions,
     getLifecycleStateBadgeOptions,
-    getModerationStateBadgeOptions
+    getModerationStateBadgeOptions,
+    getVisibilityBadgeOptions
 } from './columns.factory.types';
 
 import type {
@@ -310,10 +310,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          * Creates a visibility badge column with standard options
          */
         visibilityColumn: (
-            options: {
-                startVisibleOnTable?: boolean;
-                startVisibleOnGrid?: boolean;
-            } = {}
+            options: { startVisibleOnTable?: boolean; startVisibleOnGrid?: boolean } = {}
         ): ColumnConfig<TData> => ({
             id: 'visibility',
             header: t('admin-entities.columns.visibility'),
@@ -329,10 +326,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          * Creates a lifecycle state badge column with standard options
          */
         lifecycleStateColumn: (
-            options: {
-                startVisibleOnTable?: boolean;
-                startVisibleOnGrid?: boolean;
-            } = {}
+            options: { startVisibleOnTable?: boolean; startVisibleOnGrid?: boolean } = {}
         ): ColumnConfig<TData> => ({
             id: 'lifecycleState',
             header: t('admin-entities.columns.status'),
@@ -348,10 +342,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          * Creates a moderation state badge column with standard options
          */
         moderationStateColumn: (
-            options: {
-                startVisibleOnTable?: boolean;
-                startVisibleOnGrid?: boolean;
-            } = {}
+            options: { startVisibleOnTable?: boolean; startVisibleOnGrid?: boolean } = {}
         ): ColumnConfig<TData> => ({
             id: 'moderationState',
             header: t('admin-entities.columns.moderation'),

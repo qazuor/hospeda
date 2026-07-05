@@ -10,8 +10,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authLogger } from '../src/logger';
 import type { AuthSession, SessionUser } from '../src/types';
-import { UserMenu } from '../src/user-menu';
 import type { UserMenuProps } from '../src/user-menu';
+import { UserMenu } from '../src/user-menu';
 
 // Mock authLogger to avoid console noise and allow assertion
 vi.mock('../src/logger', () => ({

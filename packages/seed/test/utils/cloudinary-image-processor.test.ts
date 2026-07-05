@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ImageCache } from '../../src/utils/cloudinary-cache.js';
 import { processEntityImages } from '../../src/utils/cloudinary-image-processor.js';
 import {
-    type ImageProcessingCounters,
-    createImageProcessingCounters
+    createImageProcessingCounters,
+    type ImageProcessingCounters
 } from '../../src/utils/seedContext.js';
 
 /**

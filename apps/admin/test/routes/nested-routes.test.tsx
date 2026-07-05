@@ -339,11 +339,7 @@ describe('Nested Routes and Layout Persistence', () => {
         });
 
         it('should support outlet pattern for nested routes', () => {
-            function Layout({
-                outlet
-            }: {
-                outlet: React.ReactNode;
-            }) {
+            function Layout({ outlet }: { outlet: React.ReactNode }) {
                 return (
                     <div data-testid="layout">
                         <aside data-testid="sidebar">Sidebar</aside>

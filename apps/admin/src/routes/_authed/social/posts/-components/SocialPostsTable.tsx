@@ -10,15 +10,14 @@
  * Follows the same native-table pattern as CommentsTable.tsx.
  */
 
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { Button } from '@/components/ui/button';
-import { useApproveSocialPost } from '@/hooks/use-social-posts';
-import { useTranslations } from '@/hooks/use-translations';
-
 import { ImageIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
 import { Link } from '@tanstack/react-router';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { Button } from '@/components/ui/button';
+import { useApproveSocialPost } from '@/hooks/use-social-posts';
+import { useTranslations } from '@/hooks/use-translations';
 import { SocialPostApprovalBadge } from './SocialPostApprovalBadge';
 import { SocialPostPlatformIcons } from './SocialPostPlatformIcons';
 import { SocialPostStatusBadge } from './SocialPostStatusBadge';

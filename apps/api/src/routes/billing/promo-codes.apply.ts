@@ -17,7 +17,7 @@
  */
 
 import { ApplyPromoCodeSchema, PermissionEnum, PromoEffectKindEnum } from '@repo/schemas';
-import { PromoCodeService, assertSubscriptionOwnership } from '@repo/service-core';
+import { assertSubscriptionOwnership, PromoCodeService } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';

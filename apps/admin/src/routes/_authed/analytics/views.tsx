@@ -19,17 +19,17 @@
  * @module analytics/views
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useState } from 'react';
+import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { type TimeWindow, WindowToggle } from '@/components/views/WindowToggle';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import type { AuthState } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useState } from 'react';
-import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // ============================================================================
 // PERMISSION GUARD

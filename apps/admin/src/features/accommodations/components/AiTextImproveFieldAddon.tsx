@@ -8,8 +8,9 @@
  * the accepted suggestion back to the form state.
  *
  * For RichTextField (description), the existing `useEffect` sync in
- * RichTextField.tsx (line 165-171) picks up the value change and calls
- * `editor.commands.setContent(value, false)` to update the TipTap editor.
+ * RichTextField.tsx picks up the value change and calls
+ * `editor.commands.setContent(value, { emitUpdate: false })` to update the
+ * TipTap editor (v3 options-object signature).
  *
  * For TextareaField (summary), the textarea reflects the new value directly
  * via the controlled `value` prop.
@@ -17,9 +18,10 @@
  * This component does NOT modify BaseCrudService or forward `_aiMeta` to the
  * update API (AC-12 SHOULD-only: client-side audit hint via `onAiAssisted`).
  */
-import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
+
 import type { AiTextImproveFieldType } from '@repo/schemas';
 import { useCallback } from 'react';
+import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { AiTextImprovePanel } from './AiTextImprovePanel';
 
 // ---------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+import type { ApiErrorShape } from '@repo/i18n';
+import { formatNumber } from '@repo/i18n';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 /**
  * Rate History View
@@ -17,9 +20,6 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
-import { formatNumber } from '@repo/i18n';
-import type { ApiErrorShape } from '@repo/i18n';
-import { useState } from 'react';
 import { useExchangeRateHistoryQuery } from '../hooks';
 import type { ExchangeRate, ExchangeRateHistoryFilters } from '../types';
 
@@ -320,9 +320,9 @@ export function RateHistoryView() {
                                 !error &&
                                 history &&
                                 history.length > 0 &&
-                                history.map((rate: ExchangeRate, index: number) => (
+                                history.map((rate: ExchangeRate) => (
                                     <tr
-                                        key={`${rate.id}-${index}`}
+                                        key={rate.id}
                                         className="border-b hover:bg-muted/30"
                                     >
                                         <td className="px-4 py-3 text-sm">

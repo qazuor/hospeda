@@ -10,11 +10,11 @@
  * no ciphertext/iv/authTag/plaintext field or value ever appears in the DOM.
  */
 
-import type { SocialCredentialMasked } from '@/features/social-credentials';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { SocialCredentialMasked } from '@/features/social-credentials';
 import { CredentialsList } from '../-components/CredentialsList';
 
 vi.mock('@/hooks/use-toast', () => ({

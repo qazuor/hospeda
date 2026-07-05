@@ -5,6 +5,7 @@
  * Used in entity list filter bars for enum/string-based filters.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import {
     Select,
     SelectContent,
@@ -14,9 +15,8 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
-import { FILTER_ALL_VALUE } from './filter-types';
 import type { SelectFilterConfig } from './filter-types';
+import { FILTER_ALL_VALUE } from './filter-types';
 
 /**
  * Props for the FilterSelect component.

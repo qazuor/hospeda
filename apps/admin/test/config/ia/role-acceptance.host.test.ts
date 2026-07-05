@@ -11,10 +11,10 @@
  * item for the user's real permissions via hasSidebarAccessibleItem.
  */
 
-import { validatedConfig } from '@/config/ia/validate';
-import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { validatedConfig } from '@/config/ia/validate';
+import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // HOST real permission bundle

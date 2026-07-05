@@ -1,12 +1,12 @@
+import { EventLocationCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import { createEventLocationConsolidatedConfig } from '@/features/event-locations/config';
 import { useCreateEventLocationMutation } from '@/features/event-locations/hooks/useEventLocationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { EventLocationCreateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/locations/new')({
     component: EventLocationCreatePage,

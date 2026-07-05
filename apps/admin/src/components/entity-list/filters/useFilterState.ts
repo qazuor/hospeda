@@ -1,12 +1,12 @@
-import { useTranslations } from '@/hooks/use-translations';
 import { useCallback, useMemo } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 import type { ActiveFilters, FilterBarConfig, FilterChipData } from './filter-types';
 import {
-    FILTER_CLEARED_SENTINEL,
     buildFilterChips,
     buildFilterParamUpdate,
     computeDefaultFilters,
     extractActiveFilters,
+    FILTER_CLEARED_SENTINEL,
     filtersEqual
 } from './filter-utils';
 
@@ -186,10 +186,10 @@ export const useFilterState = ({
                 } else if (filter.type === 'date-range') {
                     updates[filter.paramKeyFrom] = undefined;
                     updates[filter.paramKeyTo] = undefined;
-                } else if (filter.defaultValue !== undefined) {
-                    updates[filter.paramKey] = FILTER_CLEARED_SENTINEL;
-                } else {
+                } else if (filter.defaultValue === undefined) {
                     updates[filter.paramKey] = undefined;
+                } else {
+                    updates[filter.paramKey] = FILTER_CLEARED_SENTINEL;
                 }
             }
 
@@ -212,10 +212,10 @@ export const useFilterState = ({
                 } else if (filter.type === 'date-range') {
                     updates[filter.paramKeyFrom] = undefined;
                     updates[filter.paramKeyTo] = undefined;
-                } else if (filter.defaultValue !== undefined) {
-                    updates[filter.paramKey] = filter.defaultValue;
-                } else {
+                } else if (filter.defaultValue === undefined) {
                     updates[filter.paramKey] = undefined;
+                } else {
+                    updates[filter.paramKey] = filter.defaultValue;
                 }
             }
 

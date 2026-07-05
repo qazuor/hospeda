@@ -1,3 +1,4 @@
+import { FeatureFlagModel } from '@repo/db';
 import {
     type FeatureFlag,
     type FeatureFlagAdminSearchSchema,
@@ -15,8 +16,6 @@ import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkCanManageFlags } from './feature-flags.permissions';
-
-import { FeatureFlagModel } from '@repo/db';
 
 type FeatureFlagAdminSearch = z.infer<typeof FeatureFlagAdminSearchSchema>;
 

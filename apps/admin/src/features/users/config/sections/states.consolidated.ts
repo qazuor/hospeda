@@ -1,6 +1,6 @@
+import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 
 // Spanish enum labels (SPEC-117 D-USERS.3 / D-DROPDOWN.1).
 const VISIBILITY_LABELS: Record<string, string> = {

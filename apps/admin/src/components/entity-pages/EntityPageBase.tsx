@@ -1,3 +1,7 @@
+import { LoaderIcon } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import React, { type ReactNode, Suspense } from 'react';
+import type { ZodSchema } from 'zod';
 import { EntityFormProvider, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import {
@@ -11,10 +15,6 @@ import {
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
-import { LoaderIcon } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import React, { Suspense, type ReactNode } from 'react';
-import type { ZodSchema } from 'zod';
 
 // ---------------------------------------------------------------------------
 // Helpers

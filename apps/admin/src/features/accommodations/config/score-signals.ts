@@ -101,7 +101,7 @@ export function createAccommodationSignals({
 
                 const hasFeaturedAlt = isNonEmptyString(featuredAlt);
                 const missing = galleryArr.filter((item) => !isNonEmptyString(item.caption)).length;
-                const total = galleryArr.length + (hasFeaturedAlt !== undefined ? 1 : 0);
+                const total = galleryArr.length + (hasFeaturedAlt === undefined ? 0 : 1);
 
                 if (total === 0) return { status: 'pending', progress: 0 };
                 if (missing === 0 && hasFeaturedAlt) return { status: 'done' };

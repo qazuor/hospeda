@@ -1,7 +1,7 @@
+import type { ReactNode } from 'react';
 import type { BadgeOption } from '@/components/table/DataTable';
 import { BadgeColor } from '@/components/table/DataTable';
 import { cn } from '@/lib/utils';
-import type { ReactNode } from 'react';
 
 type BadgeCellProps = {
     readonly value: unknown;

@@ -10,13 +10,13 @@
  * - `projectGastronomyOwnerAvatarList` maps the avatar projection across an array.
  */
 
+import type { Gastronomy } from '@repo/schemas';
 import {
     GastronomyTypeEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Gastronomy } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectGastronomyOwnerAvatar,

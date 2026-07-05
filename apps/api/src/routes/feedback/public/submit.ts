@@ -10,8 +10,7 @@
  * 2. On Linear failure, sends a fallback email via @repo/notifications.
  * 3. Returns a structured success response in both cases.
  */
-import { ALLOWED_FILE_TYPES, FEEDBACK_CONFIG } from '@repo/feedback/config';
-import { REPORT_TYPES } from '@repo/feedback/config';
+import { ALLOWED_FILE_TYPES, FEEDBACK_CONFIG, REPORT_TYPES } from '@repo/feedback/config';
 import type { NotificationPayload } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import type { Context } from 'hono';
@@ -28,8 +27,8 @@ import { sendNotification } from '../../../utils/notification-helper';
 import { createSimpleRoute } from '../../../utils/route-factory';
 import { getTurnstileSecret, verifyCfTurnstileToken } from '../../../utils/turnstile.js';
 import {
-    FIELD_LIMITS,
     FeedbackResponseSchema,
+    FIELD_LIMITS,
     feedbackSubmitSchema,
     validateMagicBytes
 } from './validation';

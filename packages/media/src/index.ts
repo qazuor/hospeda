@@ -14,11 +14,9 @@
  */
 
 export { extractPublicId } from './extract-public-id.js';
-
-export { getMediaUrl, stripCloudinaryTransform } from './get-media-url.js';
 export type { GetMediaUrlOptions } from './get-media-url.js';
-
-export { MEDIA_PRESETS } from './presets.js';
+export { getMediaUrl, stripCloudinaryTransform } from './get-media-url.js';
 export type { MediaPreset } from './presets.js';
+export { MEDIA_PRESETS } from './presets.js';
 
 export { generateGalleryId } from './utils/gallery-id.js';

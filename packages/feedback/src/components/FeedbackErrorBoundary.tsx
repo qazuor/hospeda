@@ -1,4 +1,5 @@
 import type { AppSourceId, ReportTypeId } from '@repo/schemas';
+import type { ErrorInfo, ReactNode } from 'react';
 /**
  * @repo/feedback - FeedbackErrorBoundary component.
  *
@@ -13,7 +14,6 @@ import type { AppSourceId, ReportTypeId } from '@repo/schemas';
  * Functional components cannot implement error boundaries.
  */
 import { Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { serializeFeedbackParams } from '../lib/query-params.js';
 import { Button } from '../ui/Button.js';
@@ -114,7 +114,7 @@ function truncate(text: string, maxLength: number): string {
  * @param appSource - App source identifier
  */
 function openFeedbackTab(feedbackPageUrl: string, error: Error, appSource: AppSourceId): void {
-    const currentUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+    const currentUrl = typeof window === 'undefined' ? undefined : window.location.href;
 
     const qs = serializeFeedbackParams({
         type: ERROR_REPORT_TYPE,

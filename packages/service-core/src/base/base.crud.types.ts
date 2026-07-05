@@ -1,6 +1,5 @@
 import type { DrizzleClient } from '@repo/db';
-import type { ZodObject } from 'zod';
-import type { z } from 'zod';
+import type { ZodObject, z } from 'zod';
 import type { Actor, ListOptions } from '../types';
 
 /**

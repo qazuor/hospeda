@@ -87,16 +87,16 @@ export const getSeoCounterTone = ({
         return 'text-muted-foreground';
     }
 
-    if (validationMax !== undefined) {
+    if (validationMax === undefined) {
+        if (length > max) {
+            return 'text-destructive';
+        }
+    } else {
         if (length > validationMax) {
             return 'text-destructive';
         }
         if (length > max) {
             return 'text-warning';
-        }
-    } else {
-        if (length > max) {
-            return 'text-destructive';
         }
     }
 

@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
-import { useTranslations } from '@/hooks/use-translations';
-
 import { ImageIcon } from '@repo/icons';
 import type * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/hooks/use-translations';
 
 /**
  * StockImageSearchTrigger button component.

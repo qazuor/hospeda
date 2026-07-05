@@ -11,14 +11,13 @@
  *    when the user opts out.
  */
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -16,11 +16,11 @@ import { PermissionEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { adminAuthMiddleware } from '../../../middlewares/authorization';
 import {
-    type TranslatableEntityType,
     applyManualOverride,
     batchTranslate,
     loadTranslatableFields,
     persistTranslations,
+    type TranslatableEntityType,
     translateEntity
 } from '../../../services/ai-translate.service';
 import { getActorFromContext } from '../../../utils/actor';

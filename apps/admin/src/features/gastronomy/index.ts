@@ -10,25 +10,35 @@
  * from `@/features/gastronomy`, not from sub-paths.
  */
 
-// List config + entity-list page (route + component)
-export {
-    GastronomiesPageComponent,
-    GastronomiesRoute,
-    GASTRONOMY_VIEW_PERMISSION,
-    gastronomyListConfig
-} from './config/gastronomy.config';
-
-export type { GastronomyListItem } from './config/gastronomy.config';
-
+export type { GastronomyCardProps } from './components/GastronomyCard';
+// UI components
+export { GastronomyCard } from './components/GastronomyCard';
+export type { GastronomyFormProps } from './components/GastronomyForm';
+export { GastronomyForm } from './components/GastronomyForm';
+export type { GastronomyQualityScoreProps } from './components/GastronomyQualityScore';
+export { GastronomyQualityScore } from './components/GastronomyQualityScore';
 // Column factory
 export { createGastronomyColumns } from './config/gastronomy.columns';
-
+export type { GastronomyListItem } from './config/gastronomy.config';
+// List config + entity-list page (route + component)
+export {
+    GASTRONOMY_VIEW_PERMISSION,
+    GastronomiesPageComponent,
+    GastronomiesRoute,
+    gastronomyListConfig
+} from './config/gastronomy.config';
 // Consolidated form config
 export { createGastronomyConsolidatedConfig } from './config/gastronomy-consolidated.config';
-
 // Quality score signals
 export { createGastronomySignals } from './config/score-signals';
-
+// Canonical hooks re-export (T-059 manifest)
+export {
+    useCreateGastronomyMutation as useGastronomyCreate,
+    useDeleteGastronomyMutation as useGastronomyDelete,
+    useRestoreGastronomyMutation as useGastronomyRestore,
+    useUpdateGastronomyMutation as useGastronomyUpdate
+} from './hooks/useGastronomies';
+export { useGastronomyPage } from './hooks/useGastronomyPage';
 // Hooks
 export {
     gastronomyHooks,
@@ -41,23 +51,3 @@ export {
     useRestoreGastronomyMutation,
     useUpdateGastronomyMutation
 } from './hooks/useGastronomyQuery';
-
-export { useGastronomyPage } from './hooks/useGastronomyPage';
-
-// Canonical hooks re-export (T-059 manifest)
-export {
-    useCreateGastronomyMutation as useGastronomyCreate,
-    useUpdateGastronomyMutation as useGastronomyUpdate,
-    useDeleteGastronomyMutation as useGastronomyDelete,
-    useRestoreGastronomyMutation as useGastronomyRestore
-} from './hooks/useGastronomies';
-
-// UI components
-export { GastronomyCard } from './components/GastronomyCard';
-export type { GastronomyCardProps } from './components/GastronomyCard';
-
-export { GastronomyForm } from './components/GastronomyForm';
-export type { GastronomyFormProps } from './components/GastronomyForm';
-
-export { GastronomyQualityScore } from './components/GastronomyQualityScore';
-export type { GastronomyQualityScoreProps } from './components/GastronomyQualityScore';

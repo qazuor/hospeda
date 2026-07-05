@@ -5,8 +5,8 @@
  * for class components where hooks cannot be used.
  */
 
-import { getTranslation, t } from '@/lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
+import { getTranslation, t } from '@/lib/i18n';
 
 describe('static-translations', () => {
     describe('getTranslation function', () => {

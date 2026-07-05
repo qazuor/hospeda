@@ -1,5 +1,5 @@
-import type { EntityConfig } from '@/components/entity-form/types/entity-config.types';
 import React from 'react';
+import type { EntityConfig } from '@/components/entity-form/types/entity-config.types';
 
 /**
  * Context for providing stable entity configuration

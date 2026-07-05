@@ -28,8 +28,8 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { CommerceLead } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';

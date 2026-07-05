@@ -8,15 +8,17 @@
  * Mirrors the gastronomy create page pattern (SPEC-240 T-028).
  */
 
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
-import type { EntityCreateConfig } from '@/components/entity-pages';
-import { createExperienceConsolidatedConfig } from '@/features/experience';
-import { useCreateExperienceMutation } from '@/features/experience';
-import { useTranslations } from '@/hooks/use-translations';
-import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { ExperienceAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
+import {
+    createExperienceConsolidatedConfig,
+    useCreateExperienceMutation
+} from '@/features/experience';
+import { useTranslations } from '@/hooks/use-translations';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 export const Route = createFileRoute('/_authed/experiences/new')({
     component: ExperienceCreatePage,

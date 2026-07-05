@@ -1,3 +1,4 @@
 // Event Location hooks
-export * from './useEventLocationQuery';
+
 export * from './useEventLocationPage';
+export * from './useEventLocationQuery';

@@ -1,11 +1,11 @@
-import { Input, Label } from '@/components/ui-wrapped';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CloseIcon, GripVerticalIcon, LoaderIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import type * as React from 'react';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input, Label } from '@/components/ui-wrapped';
+import { cn } from '@/lib/utils';
 import type { GalleryImage } from './gallery-types';
 
 /**

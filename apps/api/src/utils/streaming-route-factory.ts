@@ -32,8 +32,7 @@
  */
 
 import { createRoute } from '@hono/zod-openapi';
-import type { AiSearchChatFiltersEvent } from '@repo/schemas';
-import type { PermissionEnum } from '@repo/schemas';
+import type { AiSearchChatFiltersEvent, PermissionEnum } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { ZodTypeAny } from 'zod';

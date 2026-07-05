@@ -5,8 +5,8 @@
  * The sidebar content changes based on the active section.
  */
 
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import type { SidebarConfig, SidebarContextState } from '@/lib/sections/types';
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 /**
  * Context value with state and actions

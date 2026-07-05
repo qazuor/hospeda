@@ -9,7 +9,7 @@
  *
  * References: SPEC-086 T-038, tag-seeds.md
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 

@@ -5,7 +5,8 @@
  * Packages tab. Mirrors `CreateSponsorshipDialog` patterns.
  */
 
-import { useToast } from '@/components/ui/ToastProvider';
+import type { ApiErrorShape } from '@repo/i18n';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,12 +26,11 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/ToastProvider';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import type { ApiErrorShape } from '@repo/i18n';
-import { useState } from 'react';
 import { useCreateSponsorshipPackageMutation } from '../hooks/useSponsorshipQueries';
 
 interface CreateSponsorshipPackageDialogProps {

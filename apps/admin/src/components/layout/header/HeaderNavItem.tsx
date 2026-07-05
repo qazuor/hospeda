@@ -5,11 +5,11 @@
  * Represents a top-level section (Level 1 navigation).
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 
 export interface HeaderNavItemProps {
     /** Section identifier */

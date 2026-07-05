@@ -8,10 +8,9 @@
  * Extended in T-040: detail query, state-transition mutations, promote-hashtag mutation.
  */
 
-import { fetchApi } from '@/lib/api/client';
-import type { SocialPostDetail } from '@repo/service-core';
-import type { SocialPostListItem } from '@repo/service-core';
+import type { SocialPostDetail, SocialPostListItem } from '@repo/service-core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Query key factory

@@ -7,8 +7,8 @@ import {
     type AccommodationCreateHttp,
     AccommodationCreateHttpSchema,
     AccommodationProtectedSchema,
-    PermissionEnum,
-    httpToDomainAccommodationCreate
+    httpToDomainAccommodationCreate,
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Partner, PartnerListItemSchema } from '../schemas/partners.schemas';
 import { createPartnersColumns } from './partners.columns.tsx';
 
@@ -115,4 +115,5 @@ export const partnersConfig: EntityConfig<Partner> = {
 };
 
 const { component, route } = createEntityListPage(partnersConfig);
+
 export { component as PartnersPageComponent, route as PartnersRoute };

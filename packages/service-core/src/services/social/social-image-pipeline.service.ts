@@ -15,15 +15,15 @@ import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
 import type { SocialPublishFormatEnum } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
 import { isUuid } from '../../utils/identifier';
-import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
+import { serviceLogger } from '../../utils/service-logger';
 import {
     DOWNLOAD_TIMEOUT_MS_FALLBACK,
     DOWNLOAD_TIMEOUT_MS_KEY,
-    SOCIAL_ASSETS_FOLDER_FALLBACK,
-    SOCIAL_ASSETS_FOLDER_KEY,
     resolveNumericSettingWithFallback,
-    resolveStringSettingWithFallback
+    resolveStringSettingWithFallback,
+    SOCIAL_ASSETS_FOLDER_FALLBACK,
+    SOCIAL_ASSETS_FOLDER_KEY
 } from './social-image-pipeline-config.util';
 import { resolveVideoPipelinePreset } from './social-video-pipeline-config.util';
 

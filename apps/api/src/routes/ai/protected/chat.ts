@@ -90,8 +90,8 @@ import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
-    type StreamTextChunk,
-    createProtectedStreamingRoute
+    createProtectedStreamingRoute,
+    type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 
 const FEATURE: AiFeature = 'chat';

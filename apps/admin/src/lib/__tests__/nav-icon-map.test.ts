@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { sidebars } from '@/config/ia/sidebars';
 import { resolveNavIcon } from '@/lib/nav-icon-map';
-import { describe, expect, it } from 'vitest';
 
 /**
  * Recursively collect every `icon` string declared anywhere in the IA sidebar

@@ -19,7 +19,9 @@
     color: var(--primary-foreground, #ffffff);
     cursor: pointer;
     box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.15));
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .fab:hover {

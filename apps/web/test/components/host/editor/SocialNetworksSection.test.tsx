@@ -8,10 +8,10 @@
  * - Displays inline validation errors
  */
 
-import { SocialNetworksSection } from '@/components/host/editor/SocialNetworksSection.client';
-import type { SocialNetworksSectionProps } from '@/components/host/editor/SocialNetworksSection.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { SocialNetworksSectionProps } from '@/components/host/editor/SocialNetworksSection.client';
+import { SocialNetworksSection } from '@/components/host/editor/SocialNetworksSection.client';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

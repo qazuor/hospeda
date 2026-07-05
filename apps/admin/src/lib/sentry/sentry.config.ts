@@ -16,8 +16,8 @@
  * ```
  */
 
-import { env } from '@/env';
 import * as Sentry from '@sentry/react';
+import { env } from '@/env';
 import { adminLogger } from '../../utils/logger';
 
 /**

@@ -14,7 +14,7 @@
 
 import { EventModel } from '@repo/db';
 import { EventCategoryEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import {
     _resetTranslationService,

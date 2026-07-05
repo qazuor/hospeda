@@ -18,8 +18,8 @@
  * `[MISSING: <key>]` sentinel back to the appropriate fallback value.
  */
 
-import { type ApiErrorShape, type TranslationFn, translateApiError } from '@repo/i18n';
 import type { TranslationKey } from '@repo/i18n';
+import { type ApiErrorShape, type TranslationFn, translateApiError } from '@repo/i18n';
 
 /**
  * Admin's `useTranslations()` `t` signature.

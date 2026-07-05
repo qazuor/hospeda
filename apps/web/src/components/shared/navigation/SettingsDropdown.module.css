@@ -12,7 +12,10 @@
     border: 1px solid transparent;
     background: transparent;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 }
 
 /* Both hero and scrolled variants paint over a light navbar background

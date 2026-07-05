@@ -8,12 +8,12 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import type { NewsletterContentPreferences } from '@repo/schemas';
 import {
     NewsletterContentPreferencesSchema,
     NewsletterSubscriberStatusEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
-import type { NewsletterContentPreferences } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';

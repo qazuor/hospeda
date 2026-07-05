@@ -1,9 +1,9 @@
-import { useHasPermission } from '@/hooks/use-user-permissions';
-import { fetchApi } from '@/lib/api/client';
 import type { Tag } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { useHasPermission } from '@/hooks/use-user-permissions';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query key factory for picker tag queries.

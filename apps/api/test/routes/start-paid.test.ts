@@ -99,7 +99,9 @@ vi.mock('../../src/utils/env', () => ({
 //    existing 422 rejection tests (NOT_A_REAL_CODE) continue to pass.
 vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
     resolveCheckoutPromoPlan: vi.fn(
-        async (input: { promoCode?: string }): Promise<{
+        async (input: {
+            promoCode?: string;
+        }): Promise<{
             kind: 'none' | 'trial' | 'invalid';
             freeTrialDays?: number;
             message?: string;

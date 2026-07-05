@@ -1,22 +1,22 @@
-import { GridCard, GridEmptyState } from '@/components/grid';
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
-import { DataTable } from '@/components/table/DataTable';
-import { DataTableToolbar } from '@/components/table/DataTableToolbar';
-import { TableSearchInput } from '@/components/table/TableSearchInput';
-import { Button } from '@/components/ui-wrapped/Button';
-import { useToast } from '@/components/ui/ToastProvider';
-import { useTranslations } from '@/hooks/use-translations';
-import { useHasPermission } from '@/hooks/use-user-permissions';
-import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
 import { AddIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { EntitySummarySheet, type SummaryColumn } from './EntitySummarySheet';
+import { GridCard, GridEmptyState } from '@/components/grid';
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
+import { DataTable } from '@/components/table/DataTable';
+import { DataTableToolbar } from '@/components/table/DataTableToolbar';
+import { TableSearchInput } from '@/components/table/TableSearchInput';
+import { useToast } from '@/components/ui/ToastProvider';
+import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
+import { useHasPermission } from '@/hooks/use-user-permissions';
+import { adminLogger } from '@/utils/logger';
 import { createEntityApi } from './api/createEntityApi';
+import { EntitySummarySheet, type SummaryColumn } from './EntitySummarySheet';
 import { FilterBar } from './filters/FilterBar';
 import { useFilterState } from './filters/useFilterState';
 import { useEntityQuery } from './hooks/useEntityQuery';
@@ -182,7 +182,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 t(`admin-entities.entities.${config.entityKey}.plural` as TranslationKey) ||
                 config.pluralDisplayName ||
                 config.name,
-            [t, config.entityKey, config.pluralDisplayName, config.name]
+            [t]
         );
 
         // Compute translated UI strings
@@ -190,7 +190,7 @@ export const createEntityListPage = <TData extends { id: string }>(
             () =>
                 config.layoutConfig?.title ||
                 t('admin-entities.list.title' as TranslationKey, { entities: entityPlural }),
-            [t, entityPlural, config.layoutConfig?.title]
+            [t, entityPlural]
         );
         const translatedSearchPlaceholder = useMemo(
             () =>
@@ -264,7 +264,7 @@ export const createEntityListPage = <TData extends { id: string }>(
             } catch {
                 return [];
             }
-        }, [search.sort, config.defaultSort]);
+        }, [search.sort]);
 
         // updateSearch must be defined before useFilterState (which stores it in callbacks)
         const updateSearch = useCallback(
@@ -305,7 +305,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 });
                 adminLogger.error(`Failed to load ${config.name}`, error);
             }
-        }, [error, addToast, config.name, entityPlural, t]);
+        }, [error, addToast, entityPlural, t]);
 
         const rows: Row[] = (data?.data ?? []) as Row[];
         const total = data?.total ?? 0;
@@ -358,7 +358,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                       }
                     : undefined
             }));
-        }, [navigate, config.createColumns, config.basePath, t, hasAnalyticsView]);
+        }, [navigate, t, hasAnalyticsView]);
 
         // Column visibility logic
         const getInitialColumnVisibility = useCallback(
@@ -373,7 +373,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 }
                 return visibility;
             },
-            [config.createColumns, t, hasAnalyticsView]
+            [t, hasAnalyticsView]
         );
 
         const initialColumnVisibility = useMemo(() => {
@@ -406,40 +406,34 @@ export const createEntityListPage = <TData extends { id: string }>(
          * Otherwise we fall back to deriving the list from all `columns` (generic
          * behaviour for entities that haven't declared peekFields yet).
          */
-        const summaryColumns = useMemo<readonly SummaryColumn[]>(
-            () => {
-                if (config.peekFields) {
-                    return config.peekFields.map((pf) => {
-                        // For badge fields, look up the matching column to reuse its badgeOptions
-                        const matchingColumn =
-                            pf.format === 'badge'
-                                ? columns.find(
-                                      (c) =>
-                                          c.accessorKey === pf.accessorKey ||
-                                          c.id === pf.accessorKey
-                                  )
-                                : undefined;
-                        const badgeOptions = matchingColumn?.badgeOptions ?? pf.badgeOptions;
+        const summaryColumns = useMemo<readonly SummaryColumn[]>(() => {
+            if (config.peekFields) {
+                return config.peekFields.map((pf) => {
+                    // For badge fields, look up the matching column to reuse its badgeOptions
+                    const matchingColumn =
+                        pf.format === 'badge'
+                            ? columns.find(
+                                  (c) => c.accessorKey === pf.accessorKey || c.id === pf.accessorKey
+                              )
+                            : undefined;
+                    const badgeOptions = matchingColumn?.badgeOptions ?? pf.badgeOptions;
 
-                        return {
-                            id: pf.accessorKey,
-                            header: t(pf.labelKey as TranslationKey),
-                            accessorKey: pf.accessorKey,
-                            format: pf.format,
-                            maxLength: pf.maxLength,
-                            badgeOptions
-                        };
-                    });
-                }
-                return columns.map((c) => ({
-                    id: c.id,
-                    header: String(c.header),
-                    accessorKey: c.accessorKey as string
-                }));
-            },
-            // biome-ignore lint/correctness/useExhaustiveDependencies: config.peekFields is stable (config object is defined at module level)
-            [columns, config.peekFields, t]
-        );
+                    return {
+                        id: pf.accessorKey,
+                        header: t(pf.labelKey as TranslationKey),
+                        accessorKey: pf.accessorKey,
+                        format: pf.format,
+                        maxLength: pf.maxLength,
+                        badgeOptions
+                    };
+                });
+            }
+            return columns.map((c) => ({
+                id: c.id,
+                header: String(c.header),
+                accessorKey: c.accessorKey as string
+            }));
+        }, [columns, t]);
 
         /** Navigate to the full view page of the current peek row. */
         const handlePeekViewFull = useCallback(() => {
@@ -449,7 +443,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 params: { id: peekRow.id }
             } as DynamicNavigateOptions);
             setPeekRow(null);
-        }, [peekRow, navigate, config.basePath]);
+        }, [peekRow, navigate]);
 
         /** Navigate to the edit page of the current peek row. */
         const handlePeekEdit = useCallback(() => {
@@ -459,7 +453,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 params: { id: peekRow.id }
             } as DynamicNavigateOptions);
             setPeekRow(null);
-        }, [peekRow, navigate, config.basePath]);
+        }, [peekRow, navigate]);
 
         // Handlers
         const handleViewChange = useCallback(
@@ -526,7 +520,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                     {buttonText}
                 </Button>
             );
-        }, [config.layoutConfig, config.entityKey, config.name, t, navigate]);
+        }, [t, navigate]);
 
         const searchInput = searchConfig.enabled ? (
             <TableSearchInput

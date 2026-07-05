@@ -4,12 +4,12 @@
  * Displays event organizer information with tabs for related events and contact.
  */
 
+import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { PageTabs, eventOrganizerTabs } from '@/components/layout/PageTabs';
+import { eventOrganizerTabs, PageTabs } from '@/components/layout/PageTabs';
 import { useEventOrganizerPage } from '@/features/event-organizers/hooks/useEventOrganizerPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/organizers/$id')({
     component: EventOrganizerViewPage,

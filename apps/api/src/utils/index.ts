@@ -12,7 +12,7 @@ export {
 export { ResponseFactory } from './response-factory';
 export { RouteHelpers } from './route-helpers';
 export {
-    transformZodError,
     type TransformedValidationError,
+    transformZodError,
     type ValidationErrorResponse
 } from './zod-error-transformer';

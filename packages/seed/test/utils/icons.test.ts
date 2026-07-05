@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENTITY_ICONS, STATUS_ICONS, getEntityIcon, getStatusIcon } from '../../src/utils/icons.js';
+import { ENTITY_ICONS, getEntityIcon, getStatusIcon, STATUS_ICONS } from '../../src/utils/icons.js';
 
 describe('ENTITY_ICONS', () => {
     it('is a non-empty object', () => {

@@ -25,9 +25,9 @@
  * @see SPEC-174 §7.2, D12, D14
  */
 
+import { useMemo } from 'react';
 import type { Tour, TourRole } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
-import { useMemo } from 'react';
 import { useAdminTourState } from './use-admin-tour-state';
 import { useAuthContext } from './use-auth-context';
 import { useCurrentSection } from './use-current-section';

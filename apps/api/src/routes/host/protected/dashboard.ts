@@ -11,8 +11,8 @@ import { z } from '@hono/zod-openapi';
  */
 import { EntitlementKey } from '@repo/billing';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
-import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';

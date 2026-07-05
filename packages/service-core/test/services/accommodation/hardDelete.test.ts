@@ -12,7 +12,7 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';

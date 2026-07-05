@@ -35,8 +35,8 @@
  * @module apps/api/routes/ai/protected/text-improve
  */
 
-import { AiTextImproveRequestSchema } from '@repo/schemas';
 import type { AiFeature, AiTextImprove, AiTextImproveFieldType, LanguageEnum } from '@repo/schemas';
+import { AiTextImproveRequestSchema } from '@repo/schemas';
 import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 import { entitlementMiddleware } from '../../../middlewares/entitlement';

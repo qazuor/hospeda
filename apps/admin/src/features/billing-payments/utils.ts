@@ -1,9 +1,9 @@
+import type { TranslationKey } from '@repo/i18n';
+import { defaultIntlLocale } from '@repo/i18n';
 import {
     formatArs as formatArsHelper,
     formatDateWithTime as formatDateWithTimeHelper
 } from '@/lib/format-helpers';
-import { defaultIntlLocale } from '@repo/i18n';
-import type { TranslationKey } from '@repo/i18n';
 import type { PaymentMethod, PaymentStatus } from './types';
 
 /**

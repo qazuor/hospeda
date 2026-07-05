@@ -99,13 +99,7 @@ function renderMark({ mark, content }: { mark: TiptapMark; content: string }): s
  * @param params.text - Text content to wrap
  * @returns HTML string with all marks applied
  */
-function applyMarks({
-    marks,
-    text
-}: {
-    marks: ReadonlyArray<TiptapMark>;
-    text: string;
-}): string {
+function applyMarks({ marks, text }: { marks: ReadonlyArray<TiptapMark>; text: string }): string {
     return [...marks].reverse().reduce((content, mark) => renderMark({ mark, content }), text);
 }
 

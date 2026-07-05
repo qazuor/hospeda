@@ -218,9 +218,9 @@ function makeUpgradeBillingMock(opts: { getByCustomerIdThrows?: Error } = {}) {
     };
 
     const getByCustomerId =
-        opts.getByCustomerIdThrows !== undefined
-            ? vi.fn().mockRejectedValue(opts.getByCustomerIdThrows)
-            : vi.fn().mockResolvedValue([activeSub]);
+        opts.getByCustomerIdThrows === undefined
+            ? vi.fn().mockResolvedValue([activeSub])
+            : vi.fn().mockRejectedValue(opts.getByCustomerIdThrows);
 
     return {
         subscriptions: {
@@ -272,9 +272,9 @@ function makeDowngradeBillingMock(opts: { getByCustomerIdThrows?: Error } = {}) 
     };
 
     const getByCustomerId =
-        opts.getByCustomerIdThrows !== undefined
-            ? vi.fn().mockRejectedValue(opts.getByCustomerIdThrows)
-            : vi.fn().mockResolvedValue([activeSub]);
+        opts.getByCustomerIdThrows === undefined
+            ? vi.fn().mockResolvedValue([activeSub])
+            : vi.fn().mockRejectedValue(opts.getByCustomerIdThrows);
 
     return {
         subscriptions: {

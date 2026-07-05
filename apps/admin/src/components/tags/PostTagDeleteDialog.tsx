@@ -1,3 +1,5 @@
+import { LoaderIcon } from '@repo/icons';
+import type { ReactNode } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,8 +12,6 @@ import {
     AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import { usePostTagImpact } from '@/hooks/use-post-tags';
-import { LoaderIcon } from '@repo/icons';
-import type { ReactNode } from 'react';
 
 interface PostTagDeleteDialogProps {
     /** UUID of the PostTag to delete. */

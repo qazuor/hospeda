@@ -359,7 +359,10 @@ describe('FaqManager', () => {
             ({
                 children,
                 onDragEnd
-            }: { children: React.ReactNode; onDragEnd: (e: unknown) => void }) => {
+            }: {
+                children: React.ReactNode;
+                onDragEnd: (e: unknown) => void;
+            }) => {
                 capturedOnDragEnd = onDragEnd;
                 return <>{children}</>;
             }

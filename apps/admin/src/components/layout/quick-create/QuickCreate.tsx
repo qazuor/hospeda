@@ -26,6 +26,10 @@
  * @see SPEC-154 T-025
  */
 
+import { ChevronDownIcon } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import { useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,12 +41,8 @@ import { validatedConfig } from '@/config/ia/validate';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
-import { ChevronDownIcon } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

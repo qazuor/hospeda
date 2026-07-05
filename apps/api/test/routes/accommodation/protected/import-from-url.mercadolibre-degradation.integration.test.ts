@@ -42,9 +42,8 @@ vi.mock('../../../../src/services/mercadolibre-oauth/ml-token.service', () => ({
     getValidMercadoLibreToken: mockGetValidMercadoLibreToken
 }));
 
-import { MLTokenRefreshError } from '../../../../src/services/mercadolibre-oauth/ml-token.errors.js';
-
 import { initApp } from '../../../../src/app.js';
+import { MLTokenRefreshError } from '../../../../src/services/mercadolibre-oauth/ml-token.errors.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
 const ENDPOINT = '/api/v1/protected/accommodations/import-from-url';

@@ -31,14 +31,14 @@
  * action, not needed for first interaction).
  */
 
+import { BellIcon, LockIcon } from '@repo/icons';
+import { useCallback, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { BellIcon, LockIcon } from '@repo/icons';
-import { useCallback, useState } from 'react';
 import styles from './PriceAlertButton.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

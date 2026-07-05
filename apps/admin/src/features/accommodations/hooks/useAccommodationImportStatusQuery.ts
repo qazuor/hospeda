@@ -13,12 +13,12 @@
  * on every poll.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     AccommodationImportAsyncStartResponse,
     AccommodationImportStatusResponse
 } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /** The run handle echoed back from the `202` start response. */
 export type ImportRunHandle = AccommodationImportAsyncStartResponse;

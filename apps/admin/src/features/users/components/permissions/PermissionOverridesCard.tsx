@@ -1,4 +1,5 @@
-import { useToast } from '@/components/ui/ToastProvider';
+import { ShieldIcon } from '@repo/icons';
+import { type PermissionEffect, PermissionEffectEnum, type PermissionEnum } from '@repo/schemas';
 /**
  * PermissionOverridesCard (SPEC-170)
  *
@@ -8,14 +9,13 @@ import { useToast } from '@/components/ui/ToastProvider';
  * the per-user overrides query; mutations invalidate it and surface a toast.
  */
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
     useAssignUserPermission,
     useRevokeUserPermission,
     useUserPermissionOverrides
 } from '@/features/users/hooks/useUserPermissionOverrides';
 import { useTranslations } from '@/hooks/use-translations';
-import { ShieldIcon } from '@repo/icons';
-import { type PermissionEffect, PermissionEffectEnum, type PermissionEnum } from '@repo/schemas';
 import { OverrideRow } from './OverrideRow';
 import { PermissionPicker } from './PermissionPicker';
 

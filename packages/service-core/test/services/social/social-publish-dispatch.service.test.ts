@@ -67,8 +67,8 @@ import type {
     RearmRecurrenceResult
 } from '../../../src/services/social/social-publish-dispatch.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
-import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
 // UUID fixtures

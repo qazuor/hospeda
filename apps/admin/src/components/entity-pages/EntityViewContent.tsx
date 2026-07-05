@@ -1,3 +1,5 @@
+import type { PermissionEnum } from '@repo/schemas';
+import type { ReactNode } from 'react';
 import { EntityViewSection } from '@/components/entity-form';
 import {
     SectionAccordion,
@@ -7,10 +9,8 @@ import { EntitlementGatedSection } from '@/components/entity-form/sections/Entit
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { cn } from '@/lib/utils';
-import type { PermissionEnum } from '@repo/schemas';
-import type { ReactNode } from 'react';
-import { type SectionSortOptions, filterAndSortSections } from './utils/section-sorter';
-import { type SectionSummaryFn, computeSectionSummary } from './utils/section-summarizer';
+import { filterAndSortSections, type SectionSortOptions } from './utils/section-sorter';
+import { computeSectionSummary, type SectionSummaryFn } from './utils/section-summarizer';
 
 /**
  * Props for EntityViewContent component

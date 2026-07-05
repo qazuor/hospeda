@@ -3,6 +3,10 @@
  *
  * Displays billing notification logs with filtering and detail view.
  */
+
+import { CalendarIcon, FilterIcon, LoaderIcon, MailIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,20 +19,16 @@ import {
     type NotificationType,
     useNotificationLogsQuery
 } from '@/features/billing-notification-logs';
-import { useTranslations } from '@/hooks/use-translations';
-import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { formatDateWithTime } from '@/lib/format-helpers';
-import { CalendarIcon, FilterIcon, LoaderIcon, MailIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-
 import {
-    NotificationDetailDialog,
     getChannelLabel,
     getStatusLabel,
     getStatusVariant,
-    getTypeLabel
+    getTypeLabel,
+    NotificationDetailDialog
 } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
+import { useTranslations } from '@/hooks/use-translations';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
+import { formatDateWithTime } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/platform/email/logs')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),

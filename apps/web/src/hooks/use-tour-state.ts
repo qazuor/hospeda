@@ -10,8 +10,8 @@
  * `Record<string, number>` (tourId → version).
  */
 
-import { getApiUrl } from '@/lib/env';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '@/lib/env';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

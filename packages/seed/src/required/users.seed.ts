@@ -1,7 +1,7 @@
 import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core/index.js';
 import requiredManifest from '../manifest-required.json';
-import { STATUS_ICONS, createDateTransformer, createSeedFactory } from '../utils/index.js';
+import { createDateTransformer, createSeedFactory, STATUS_ICONS } from '../utils/index.js';
 
 /**
  * Seed factory for users

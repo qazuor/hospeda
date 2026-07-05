@@ -113,11 +113,7 @@ import '../../src/routes/billing/trial';
  * @returns A mock context object compatible with the handler signature
  */
 function createMockContext(
-    options: {
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-        body?: unknown;
-    } = {}
+    options: { billingEnabled?: boolean; billingCustomerId?: string | null; body?: unknown } = {}
 ) {
     const {
         billingEnabled = true,

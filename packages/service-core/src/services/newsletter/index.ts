@@ -6,10 +6,10 @@
  * stable entry point.
  */
 
-export * from './newsletter-token.helpers.js';
-export * from './newsletter-subscriber.service.js';
-export * from './newsletter-subscriber.permissions.js';
-export * from './newsletter-campaign.service.js';
 export * from './newsletter-campaign.permissions.js';
+export * from './newsletter-campaign.service.js';
 export * from './newsletter-delivery.service.js';
+export * from './newsletter-subscriber.permissions.js';
+export * from './newsletter-subscriber.service.js';
+export * from './newsletter-token.helpers.js';
 export * from './newsletter-tracking.service.js';

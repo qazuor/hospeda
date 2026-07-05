@@ -31,6 +31,7 @@
 
 import type { AccommodationExternalListing } from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
+import { parseJsonLdBlocks } from '../../../utils/html-jsonld.js';
 import { startApifyRun } from '../../accommodation-import/adapters/apify-client.js';
 import type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
 import { emptyReputationResult } from './adapter.types.js';
@@ -83,28 +84,7 @@ interface JsonLdNode {
  * @returns The parsed aggregate rating shape, or `null` when not found.
  */
 function parseAggregateRatingFromJsonLd(html: string): JsonLdAggregateRating | null {
-    // Single [^>]* group captures all tag attributes in one pass — avoids the
-    // polynomial backtracking that two [^>]+…[^>]* quantifiers around a
-    // literal produce (CodeQL ReDoS). The type check is done in JS on the
-    // short attrs string after the match, where catastrophic backtracking is
-    // not possible.
-    const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-    let match = scriptPattern.exec(html);
-
-    while (match !== null) {
-        const attrs = match[1] ?? '';
-        const raw = match[2];
-        match = scriptPattern.exec(html);
-        if (!/type\s*=\s*["']application\/ld\+json["']/i.test(attrs)) continue;
-        if (!raw) continue;
-
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(raw);
-        } catch {
-            continue;
-        }
-
+    for (const parsed of parseJsonLdBlocks({ html })) {
         const found = findAggregateRating(parsed);
         if (found) {
             return found;
@@ -162,19 +142,19 @@ function extractFromAggregateRating(raw: JsonLdAggregateRating): {
 } {
     const ratingRaw = raw.ratingValue;
     const rating =
-        ratingRaw !== undefined
-            ? typeof ratingRaw === 'number'
-                ? ratingRaw
-                : Number.parseFloat(String(ratingRaw))
-            : null;
+        ratingRaw === undefined
+            ? null
+            : typeof ratingRaw === 'number'
+              ? ratingRaw
+              : Number.parseFloat(String(ratingRaw));
 
     const countRaw = raw.reviewCount ?? raw.ratingCount;
     const reviewsCount =
-        countRaw !== undefined
-            ? typeof countRaw === 'number'
-                ? countRaw
-                : Number.parseInt(String(countRaw), 10)
-            : null;
+        countRaw === undefined
+            ? null
+            : typeof countRaw === 'number'
+              ? countRaw
+              : Number.parseInt(String(countRaw), 10);
 
     return {
         rating: rating !== null && Number.isFinite(rating) ? rating : null,

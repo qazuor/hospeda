@@ -20,18 +20,18 @@
  * @see SPEC-154 T-023
  */
 
+import type { PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import type { Section } from '@/config/ia/schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useCurrentSection } from '@/hooks/use-current-section';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import type { PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

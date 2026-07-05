@@ -1,6 +1,6 @@
-import { fetchApi } from '@/lib/api/client';
 import type { CreatePostTagInput, PostTag, UpdatePostTagInput } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query key factory for PostTag queries.

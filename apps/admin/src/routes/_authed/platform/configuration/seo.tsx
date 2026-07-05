@@ -1,3 +1,6 @@
+import { type SeoDefaultsValue, SeoDefaultsValueSchema } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +15,6 @@ import {
 } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { type SeoDefaultsValue, SeoDefaultsValueSchema } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/configuration/seo')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),

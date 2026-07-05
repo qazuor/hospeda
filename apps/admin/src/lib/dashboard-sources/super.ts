@@ -35,8 +35,8 @@
 
 import { fetchApi } from '@/lib/api/client';
 import {
-    DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     registerDataSource
 } from '@/lib/dashboard-sources';
 
@@ -118,7 +118,7 @@ registerDataSource('super.billing.stats', (ctx) => ({
         const mrrPesos =
             overview.mrr !== undefined && overview.mrr > 0 ? Math.round(overview.mrr / 100) : 0;
         const churnPct =
-            overview.churnRate !== undefined ? Math.round(overview.churnRate * 1000) / 10 : 0;
+            overview.churnRate === undefined ? 0 : Math.round(overview.churnRate * 1000) / 10;
 
         // Short, plain-Spanish labels so each tile fits without truncation. MRR
         // and Churn are jargon, so they get the meaning, not the acronym.

@@ -4,9 +4,10 @@
  * Wrapper component that gates a section based on entitlement
  * Used for premium features that require specific plan entitlements
  */
+
+import { ShieldAlertIcon } from '@repo/icons';
 import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
-import { ShieldAlertIcon } from '@repo/icons';
 
 export interface EntitlementGatedSectionProps {
     /** Entitlement key required to view section */

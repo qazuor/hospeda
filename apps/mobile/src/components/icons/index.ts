@@ -56,12 +56,12 @@
 // ============================================================================
 
 export type {
+    /** The React.FC type alias for any Phosphor icon. */
+    Icon as PhosphorIcon,
     /** Props accepted by every Phosphor icon component. */
     IconProps as PhosphorIconProps,
     /** The five weight variants: thin | light | regular | bold | fill | duotone */
-    IconWeight as PhosphorIconWeight,
-    /** The React.FC type alias for any Phosphor icon. */
-    Icon as PhosphorIcon
+    IconWeight as PhosphorIconWeight
 } from 'phosphor-react-native';
 
 // ============================================================================
@@ -130,29 +130,29 @@ export const ICON_DEFAULTS = {
 // Phosphor component's file name under `src/icons/`.
 // ============================================================================
 
-// Navigation / tabs
-export { House as HouseIcon } from 'phosphor-react-native/src/icons/House';
-export { MagnifyingGlass as SearchIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
-export { Heart as HeartIcon } from 'phosphor-react-native/src/icons/Heart';
-export { User as UserIcon } from 'phosphor-react-native/src/icons/User';
 export { Bell as BellIcon } from 'phosphor-react-native/src/icons/Bell';
-// Navigation actions
-export { CaretLeft as CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
-export { SignOut as SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
-// Content / listing details
-export { MapPin as MapPinIcon } from 'phosphor-react-native/src/icons/MapPin';
-export { Star as StarIcon } from 'phosphor-react-native/src/icons/Star';
-export { Calendar as CalendarIcon } from 'phosphor-react-native/src/icons/Calendar';
-export { Users as GuestsIcon } from 'phosphor-react-native/src/icons/Users';
-// Utility / affordance
-export { Info as InfoIcon } from 'phosphor-react-native/src/icons/Info';
-export { Warning as WarningIcon } from 'phosphor-react-native/src/icons/Warning';
-export { X as CloseIcon } from 'phosphor-react-native/src/icons/X';
-export { ShareNetwork as ShareIcon } from 'phosphor-react-native/src/icons/ShareNetwork';
-export { SlidersHorizontal as FiltersIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
 // Host management
 export { Buildings as BuildingsIcon } from 'phosphor-react-native/src/icons/Buildings';
-// Conversations / inbox
-export { ChatCircle as ChatCircleIcon } from 'phosphor-react-native/src/icons/ChatCircle';
+export { Calendar as CalendarIcon } from 'phosphor-react-native/src/icons/Calendar';
+// Navigation actions
+export { CaretLeft as CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
 // Metrics / analytics
 export { ChartBar as ChartBarIcon } from 'phosphor-react-native/src/icons/ChartBar';
+// Conversations / inbox
+export { ChatCircle as ChatCircleIcon } from 'phosphor-react-native/src/icons/ChatCircle';
+export { Heart as HeartIcon } from 'phosphor-react-native/src/icons/Heart';
+// Navigation / tabs
+export { House as HouseIcon } from 'phosphor-react-native/src/icons/House';
+// Utility / affordance
+export { Info as InfoIcon } from 'phosphor-react-native/src/icons/Info';
+export { MagnifyingGlass as SearchIcon } from 'phosphor-react-native/src/icons/MagnifyingGlass';
+// Content / listing details
+export { MapPin as MapPinIcon } from 'phosphor-react-native/src/icons/MapPin';
+export { ShareNetwork as ShareIcon } from 'phosphor-react-native/src/icons/ShareNetwork';
+export { SignOut as SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
+export { SlidersHorizontal as FiltersIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
+export { Star as StarIcon } from 'phosphor-react-native/src/icons/Star';
+export { User as UserIcon } from 'phosphor-react-native/src/icons/User';
+export { Users as GuestsIcon } from 'phosphor-react-native/src/icons/Users';
+export { Warning as WarningIcon } from 'phosphor-react-native/src/icons/Warning';
+export { X as CloseIcon } from 'phosphor-react-native/src/icons/X';

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-    SNIPPETS_TTL_MS,
-    buildExternalReputationBlock
-} from '../../../src/entities/accommodation-external/accommodation-external.public.schema.js';
 import type { ExternalReputationSource } from '../../../src/entities/accommodation-external/accommodation-external.public.schema.js';
+import {
+    buildExternalReputationBlock,
+    SNIPPETS_TTL_MS
+} from '../../../src/entities/accommodation-external/accommodation-external.public.schema.js';
 import { ExternalPlatformEnum } from '../../../src/enums/external-platform.enum.js';
 
 // ============================================================================

@@ -143,7 +143,7 @@ export const getSubscriptionPromoEffectHandler = async (
             valueKindRaw === 'percentage' || valueKindRaw === 'fixed' ? valueKindRaw : null;
 
         const remainingCycles =
-            row.promoEffectRemainingCycles !== undefined ? row.promoEffectRemainingCycles : null;
+            row.promoEffectRemainingCycles === undefined ? null : row.promoEffectRemainingCycles;
 
         // A discount effect is exhausted when remainingCycles has been counted
         // down to exactly 0 (null means forever — not exhausted).
@@ -166,10 +166,10 @@ export const getSubscriptionPromoEffectHandler = async (
             code: row.code ?? null,
             effectKind,
             valueKind,
-            value: row.value !== undefined ? row.value : null,
-            durationCycles: row.durationCycles !== undefined ? row.durationCycles : null,
+            value: row.value === undefined ? null : row.value,
+            durationCycles: row.durationCycles === undefined ? null : row.durationCycles,
             remainingCycles,
-            extraDays: row.extraDays !== undefined ? row.extraDays : null,
+            extraDays: row.extraDays === undefined ? null : row.extraDays,
             exhausted
         };
     } catch (error) {

@@ -3,9 +3,9 @@
  * @description Color-coded badge for social post approval status (SPEC-254 T-039).
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { SocialApprovalStatusEnum } from '@repo/schemas';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** Props for {@link SocialPostApprovalBadge}. */
 export interface SocialPostApprovalBadgeProps {

@@ -34,12 +34,11 @@ describe('fontFamily', () => {
         mono: 'ui-monospace, "Menlo", "Monaco", "Cascadia Code", monospace'
     };
 
-    it.each(Object.entries(expected))(
-        '%s matches web seed byte-for-byte',
-        (name, expectedValue) => {
-            expect(fontFamily[name as FontFamilyName]).toBe(expectedValue);
-        }
-    );
+    it.each(
+        Object.entries(expected)
+    )('%s matches web seed byte-for-byte', (name, expectedValue) => {
+        expect(fontFamily[name as FontFamilyName]).toBe(expectedValue);
+    });
 });
 
 describe('fontSize — doc 05 §5.2 base scale', () => {

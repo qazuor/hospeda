@@ -8,8 +8,8 @@ import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**

@@ -4,8 +4,9 @@
  *
  * Note: Vite automatically loads .env files, so we don't need dotenv here
  */
-import { adminLogger } from '@/utils/logger';
+
 import { z } from 'zod';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Detects the CI build placeholder URL.
@@ -208,7 +209,7 @@ const safeEnv = {
         defaultValue?: string | boolean | number
     ): string | boolean | number | undefined => {
         const value = import.meta.env[key];
-        return value !== undefined ? value : defaultValue;
+        return value === undefined ? defaultValue : value;
     },
     getBoolean: (key: string, defaultValue = false): boolean => {
         const value = import.meta.env[key];

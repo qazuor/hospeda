@@ -39,7 +39,7 @@
  * @see variant-tokens.ts — VARIANT_TOKEN_MAP (the tokens under test).
  */
 
-import { type Oklch, clampChroma, converter, differenceEuclidean } from 'culori';
+import { clampChroma, converter, differenceEuclidean, type Oklch } from 'culori';
 import { describe, expect, it } from 'vitest';
 
 import type { OKLCH } from '../tokens/colors.js';

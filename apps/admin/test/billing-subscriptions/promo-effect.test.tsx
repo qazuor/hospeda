@@ -7,13 +7,13 @@
  * @module test/billing-subscriptions/promo-effect.test
  */
 
+import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { SubscriptionPaymentHistoryBlock } from '@/features/billing-subscriptions/SubscriptionPaymentHistoryBlock';
 import { SubscriptionPromoEffectPanel } from '@/features/billing-subscriptions/SubscriptionPromoEffectPanel';
 import type { PaymentHistory } from '@/features/billing-subscriptions/types';
 import { getStatusLabel, getStatusVariant } from '@/features/billing-subscriptions/utils';
-import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Helpers

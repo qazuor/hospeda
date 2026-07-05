@@ -12,11 +12,11 @@
 import { describe, expect, it } from 'vitest';
 import type { FilterBarConfig, FilterControlConfig } from '../filter-types';
 import {
-    FILTER_CLEARED_SENTINEL,
     buildFilterChips,
     buildFilterParamUpdate,
     computeDefaultFilters,
     extractActiveFilters,
+    FILTER_CLEARED_SENTINEL,
     filtersEqual
 } from '../filter-utils';
 

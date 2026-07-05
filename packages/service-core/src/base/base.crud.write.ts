@@ -85,7 +85,7 @@ export abstract class BaseCrudWrite<
             schema: this.createSchema,
             ctx,
             execute: async (validatedData, validatedActor, execCtx) => {
-                await this._canCreate(validatedActor, validatedData);
+                await this._canCreate(validatedActor, validatedData, execCtx);
 
                 const normalizedData =
                     (await this.normalizers?.create?.(validatedData, validatedActor)) ??

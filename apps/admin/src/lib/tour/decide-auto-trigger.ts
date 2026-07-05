@@ -34,8 +34,7 @@
  * @see SPEC-174 §7.3, §7.6, D9, D13
  */
 
-import type { Tour, ToursRecord } from '@/config/ia/tour.schema';
-import type { TourRole } from '@/config/ia/tour.schema';
+import type { Tour, TourRole, ToursRecord } from '@/config/ia/tour.schema';
 
 // ============================================================================
 // Input / output types

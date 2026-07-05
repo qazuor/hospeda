@@ -7,10 +7,10 @@
  * @module use-user-profile
  */
 
-import { fetchApi } from '@/lib/api/client';
-import { isApiError } from '@/lib/errors';
 import type { ProfileEditInput, UserProtected, UserSettings } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+import { isApiError } from '@/lib/errors';
 
 /**
  * Query key factory for user profile queries

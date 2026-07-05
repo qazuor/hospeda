@@ -38,10 +38,10 @@
  * FULL url `${getApiUrl()}/api/v1/protected/ai/text-improve`.
  */
 
-import { getApiUrl } from '@/lib/env';
 import type { AiTextImprove } from '@repo/schemas';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getApiUrl } from '@/lib/env';
 import {
     AI_TEXT_IMPROVE_ERROR_CODES,
     normaliseErrorCode,

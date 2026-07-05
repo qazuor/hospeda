@@ -1,16 +1,23 @@
+import type { UserPushTokenModel } from '@repo/db';
 import {
-    UserModel,
     accounts,
     eq,
     getDb,
     safeIlike,
+    UserModel,
     userPushTokenModel,
     users as userTable
 } from '@repo/db';
-import type { UserPushTokenModel } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
-import type { EntityFilters, EntityOptionsItem, User, UserAdminStats } from '@repo/schemas';
+import type {
+    EntityFilters,
+    EntityOptionsItem,
+    User,
+    UserAdminStats,
+    UserOnboarding,
+    UserOnboardingWhatsNew
+} from '@repo/schemas';
 import {
     type CompleteProfileBody,
     CompleteProfileBodySchema,
@@ -41,8 +48,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import type { UserOnboarding, UserOnboardingWhatsNew } from '@repo/schemas';
-import { type SQL, inArray } from 'drizzle-orm';
+import { inArray, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -56,7 +62,7 @@ import type {
     ServiceLogger,
     ServiceOutput
 } from '../../types';
-import { ServiceError, listOptionsSchema } from '../../types';
+import { listOptionsSchema, ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { checkCanFindOptions, hasPermission } from '../../utils/permission';
 import {

@@ -1,7 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getWelcomeTourForRole } from '@/config/tours';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface RestartTourProps {
     readonly locale: SupportedLocale;
@@ -54,7 +54,7 @@ export function RestartTour({ locale, userRole }: RestartTourProps) {
                 doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
                 onDestroyStarted: handleDestroy,
                 steps: tour.steps.map((step) => ({
-                    ...(step.target !== 'center' ? { element: step.target } : {}),
+                    ...(step.target === 'center' ? {} : { element: step.target }),
                     popover: {
                         title: t(step.title, step.title),
                         description: t(step.body, step.body),

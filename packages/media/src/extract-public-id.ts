@@ -88,7 +88,7 @@ export function extractPublicId(url: string | null | undefined): string | null {
     }
 
     const dotIndex = lastSegment.lastIndexOf('.');
-    const lastSegmentWithoutExt = dotIndex !== -1 ? lastSegment.slice(0, dotIndex) : lastSegment;
+    const lastSegmentWithoutExt = dotIndex === -1 ? lastSegment : lastSegment.slice(0, dotIndex);
 
     publicSegments[publicSegments.length - 1] = lastSegmentWithoutExt;
 

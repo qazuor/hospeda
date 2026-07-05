@@ -8,13 +8,13 @@
  * when no translation is provided.
  */
 
+import type { LimitKey } from '@repo/billing';
 import {
     ENTITLEMENT_DEFINITIONS as DEFINITIONS,
     EntitlementKey as EK,
     LIMIT_METADATA,
     TOURIST_VIP_ENTITLEMENTS
 } from '@repo/billing';
-import type { LimitKey } from '@repo/billing';
 
 export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
 type Translator = (key: string, fallback?: string) => string;

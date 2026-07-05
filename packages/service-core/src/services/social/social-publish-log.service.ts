@@ -12,9 +12,8 @@
 import type { SocialPublishLogModel as SocialPublishLogModelType } from '@repo/db';
 import { SocialPublishLogModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import type { ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
-import type { Actor } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { serviceLogger } from '../../utils/service-logger';
 

@@ -8,9 +8,9 @@
  * - Displays count when > 0
  */
 
-import { UnreadBadge } from '@/features/conversations/components/UnreadBadge';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { UnreadBadge } from '@/features/conversations/components/UnreadBadge';
 
 // Mock useUnreadCount hook
 vi.mock('@/features/conversations/hooks/useUnreadCount', () => ({

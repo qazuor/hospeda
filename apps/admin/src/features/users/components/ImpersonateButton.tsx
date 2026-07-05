@@ -7,14 +7,14 @@
  * @module ImpersonateButton
  */
 
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { useTranslations } from '@/hooks/use-translations';
-import { authClient } from '@/lib/auth-client';
-import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
 import { UserSwitchIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { useCallback, useState } from 'react';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { useTranslations } from '@/hooks/use-translations';
+import { authClient } from '@/lib/auth-client';
+import { adminLogger } from '@/utils/logger';
 
 export interface ImpersonateButtonProps {
     /** The user ID to impersonate */

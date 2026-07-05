@@ -309,12 +309,12 @@ async function dropScratchDb(params: {
         input: dropSql
     });
 
-    if (result.exitCode !== 0) {
+    if (result.exitCode === 0) {
+        log.ok(`Scratch database '${params.scratchDb}' dropped.`);
+    } else {
         log.warn(
             `Could not drop scratch DB '${params.scratchDb}': ${result.stderr.trim() || result.stdout.trim()}. Drop it manually when convenient.`
         );
-    } else {
-        log.ok(`Scratch database '${params.scratchDb}' dropped.`);
     }
 }
 

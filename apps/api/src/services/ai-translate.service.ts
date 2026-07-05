@@ -15,7 +15,7 @@
  */
 
 import { getDb } from '@repo/db';
-import { events, accommodations, destinations, posts } from '@repo/db/schemas';
+import { accommodations, destinations, events, posts } from '@repo/db/schemas';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';

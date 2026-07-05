@@ -99,10 +99,17 @@ export const userBookmarksApi = {
     checkStatus(params: {
         readonly entityId: string;
         readonly entityType: BookmarkEntityType;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<{ readonly isFavorited: boolean; readonly bookmarkId: string | null }>> {
+        const { cookieHeader, ...rest } = params;
         return apiClient.getProtected({
             path: `${PROTECTED}/user-bookmarks/check`,
-            params
+            params: rest,
+            cookieHeader
         });
     },
 
@@ -485,9 +492,9 @@ export const billingApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/change-plan`,
             body:
-                keepSelections !== undefined
-                    ? { newPlanId, billingInterval, keepSelections }
-                    : { newPlanId, billingInterval },
+                keepSelections === undefined
+                    ? { newPlanId, billingInterval }
+                    : { newPlanId, billingInterval, keepSelections },
             headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
@@ -982,7 +989,9 @@ export const reviewsApi = {
      */
     delete({
         reviewId
-    }: { readonly reviewId: string }): Promise<ApiResult<{ readonly success: boolean }>> {
+    }: {
+        readonly reviewId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/reviews/${reviewId}` });
     }
 };
@@ -1201,10 +1210,7 @@ export const protectedConversationsApi = {
      * @param params - Accommodation ID and initial message
      * @returns Conversation ID, new flag, and message ID
      */
-    initiate(params: {
-        readonly accommodationId: string;
-        readonly message: string;
-    }): Promise<
+    initiate(params: { readonly accommodationId: string; readonly message: string }): Promise<
         ApiResult<{
             readonly conversationId: string;
             readonly isNew: boolean;
@@ -1650,11 +1656,7 @@ export const hostAnalyticsApi = {
      * if (result.ok) console.log(result.data.months);
      * ```
      */
-    getInquiryTrend({
-        months = 6
-    }: {
-        readonly months?: number;
-    } = {}): Promise<
+    getInquiryTrend({ months = 6 }: { readonly months?: number } = {}): Promise<
         ApiResult<{
             readonly months: readonly { readonly month: string; readonly count: number }[];
         }>
@@ -1765,7 +1767,9 @@ export const protectedAccommodationsApi = {
      */
     getOwnById({
         id
-    }: { readonly id: string }): Promise<ApiResult<Record<string, unknown> | null>> {
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown> | null>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}` });
     },
 
@@ -1818,11 +1822,7 @@ export const protectedMediaApi = {
      * if (result.ok) console.log(result.data.wasPresent);
      * ```
      */
-    deleteMedia({
-        publicId
-    }: {
-        readonly publicId: string;
-    }): Promise<
+    deleteMedia({ publicId }: { readonly publicId: string }): Promise<
         ApiResult<{
             readonly deleted: true;
             readonly publicId: string;
@@ -1893,13 +1893,7 @@ export const geocodingApi = {
      * if (result.ok && result.data.suggestion) console.log(result.data.suggestion.label);
      * ```
      */
-    reverse({
-        lat,
-        lng
-    }: {
-        readonly lat: number;
-        readonly lng: number;
-    }): Promise<
+    reverse({ lat, lng }: { readonly lat: number; readonly lng: number }): Promise<
         ApiResult<{
             readonly suggestion: {
                 readonly label: string;
@@ -2500,11 +2494,7 @@ export const ownerPromotionApi = {
      * if (result.ok) console.log(result.data.title);
      * ```
      */
-    getById({
-        id
-    }: {
-        readonly id: string;
-    }): Promise<ApiResult<Record<string, unknown>>> {
+    getById({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/owner-promotions/${id}` });
     },
 
@@ -2571,11 +2561,7 @@ export const ownerPromotionApi = {
      * if (result.ok) console.log('Promotion deleted');
      * ```
      */
-    remove({
-        id
-    }: {
-        readonly id: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
+    remove({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
     }
 };

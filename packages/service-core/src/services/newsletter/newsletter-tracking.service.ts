@@ -41,8 +41,7 @@
  *      instead of `provider_message_id`.
  */
 
-import { getDb } from '@repo/db';
-import { newsletterCampaignDeliveries, newsletterSubscribers } from '@repo/db';
+import { getDb, newsletterCampaignDeliveries, newsletterSubscribers } from '@repo/db';
 import {
     NewsletterDeliveryStatusEnum,
     NewsletterSubscriberStatusEnum,
