@@ -96,14 +96,16 @@ vi.mock('@hono/zod-openapi', async (importOriginal) => {
     const mockOpenAPIHono = vi.fn();
 
     // Set default implementation
-    mockOpenAPIHono.mockImplementation(() => ({
-        onError: vi.fn(),
-        use: vi.fn().mockReturnThis(),
-        notFound: vi.fn(),
-        route: vi.fn().mockReturnThis(),
-        get: vi.fn(),
-        request: vi.fn()
-    }));
+    mockOpenAPIHono.mockImplementation(function () {
+        return {
+            onError: vi.fn(),
+            use: vi.fn().mockReturnThis(),
+            notFound: vi.fn(),
+            route: vi.fn().mockReturnThis(),
+            get: vi.fn(),
+            request: vi.fn()
+        };
+    });
 
     return {
         ...actual,
@@ -120,14 +122,16 @@ describe('Create App Utility', () => {
         const mockOpenAPIHono = vi.mocked(OpenAPIHono);
 
         // Reset the mock implementation for each test
-        mockOpenAPIHono.mockImplementation(() => ({
-            onError: vi.fn(),
-            use: vi.fn().mockReturnThis(),
-            notFound: vi.fn(),
-            route: vi.fn().mockReturnThis(),
-            get: vi.fn().mockReturnThis(),
-            request: vi.fn()
-        }));
+        mockOpenAPIHono.mockImplementation(function () {
+            return {
+                onError: vi.fn(),
+                use: vi.fn().mockReturnThis(),
+                notFound: vi.fn(),
+                route: vi.fn().mockReturnThis(),
+                get: vi.fn().mockReturnThis(),
+                request: vi.fn()
+            };
+        });
     });
 
     describe('createRouter', () => {

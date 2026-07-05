@@ -285,7 +285,9 @@ beforeEach(() => {
 
     // Re-set defaults after reset
     mockGetQZPayBilling.mockReturnValue(makeBilling());
-    mockValidateTransition.mockImplementation(() => undefined); // no throw = valid
+    mockValidateTransition.mockImplementation(function () {
+        return undefined;
+    }); // no throw = valid
     mockSyncFeaturedByEntitlementForOwner.mockResolvedValue({ updated: 0, rows: [] });
     mockHandleSubscriptionCancellationAddons.mockResolvedValue({
         subscriptionId: SUB_ID_1,
@@ -295,7 +297,9 @@ beforeEach(() => {
         failed: [],
         elapsedMs: 10
     });
-    mockClearEntitlementCache.mockImplementation(() => undefined);
+    mockClearEntitlementCache.mockImplementation(function () {
+        return undefined;
+    });
     mockSendNotification.mockResolvedValue(undefined);
 
     // Rebuild insert and update return values

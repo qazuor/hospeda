@@ -73,11 +73,13 @@ vi.mock('../../../src/utils/actor', () => ({
 
 // Mock UserService so no real DB calls happen.
 vi.mock('@repo/service-core', () => ({
-    UserService: vi.fn(() => ({
-        create: mockCreate,
-        restore: mockRestore,
-        getById: mockGetById
-    })),
+    UserService: vi.fn(function () {
+        return {
+            create: mockCreate,
+            restore: mockRestore,
+            getById: mockGetById
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

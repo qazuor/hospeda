@@ -64,12 +64,16 @@ vi.mock('../../../../src/utils/actor', () => ({
 // RoleEnum must be included so entitlement.ts can build STAFF_BILLING_BYPASS_ROLES
 // at module-load time (SPEC-145 T-026).
 vi.mock('@repo/service-core', () => ({
-    AccommodationService: vi.fn(() => ({
-        list: mockListAccommodations
-    })),
-    UserBookmarkService: vi.fn(() => ({
-        countBookmarksForEntity: mockCountBookmarksForEntity
-    })),
+    AccommodationService: vi.fn(function () {
+        return {
+            list: mockListAccommodations
+        };
+    }),
+    UserBookmarkService: vi.fn(function () {
+        return {
+            countBookmarksForEntity: mockCountBookmarksForEntity
+        };
+    }),
     RoleEnum: {
         SUPER_ADMIN: 'SUPER_ADMIN',
         ADMIN: 'ADMIN',
@@ -105,10 +109,12 @@ vi.mock('../../../../src/utils/logger', () => ({
 // Mock plan.service so the module-level `new PlanService()` in entitlement.ts
 // does not throw when the route module is imported (SPEC-145 T-026).
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: vi.fn(),
-        getBySlug: vi.fn()
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: vi.fn(),
+            getBySlug: vi.fn()
+        };
+    })
 }));
 
 // ---------------------------------------------------------------------------

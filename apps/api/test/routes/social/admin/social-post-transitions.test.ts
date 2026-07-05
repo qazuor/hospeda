@@ -82,17 +82,19 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPostService: vi.fn(() => ({
-        approve: mockApprove,
-        reject: mockReject,
-        requestChanges: mockRequestChanges,
-        schedule: mockSchedule,
-        markReady: mockMarkReady,
-        pause: mockPause,
-        unpause: mockUnpause,
-        archive: mockArchive,
-        promoteHashtag: mockPromoteHashtag
-    })),
+    SocialPostService: vi.fn(function () {
+        return {
+            approve: mockApprove,
+            reject: mockReject,
+            requestChanges: mockRequestChanges,
+            schedule: mockSchedule,
+            markReady: mockMarkReady,
+            pause: mockPause,
+            unpause: mockUnpause,
+            archive: mockArchive,
+            promoteHashtag: mockPromoteHashtag
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         public code: string;
         public reason?: string;

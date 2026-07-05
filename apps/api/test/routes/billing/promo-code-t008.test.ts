@@ -109,16 +109,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        PromoCodeService: vi.fn().mockImplementation(() => ({
-            create: mockCreate,
-            getByCode: mockGetByCode,
-            apply: mockApply,
-            validate: vi.fn().mockResolvedValue({ valid: true }),
-            update: vi.fn(),
-            getById: vi.fn(),
-            list: vi.fn(),
-            delete: vi.fn()
-        })),
+        PromoCodeService: vi.fn().mockImplementation(function () {
+            return {
+                create: mockCreate,
+                getByCode: mockGetByCode,
+                apply: mockApply,
+                validate: vi.fn().mockResolvedValue({ valid: true }),
+                update: vi.fn(),
+                getById: vi.fn(),
+                list: vi.fn(),
+                delete: vi.fn()
+            };
+        }),
         // B1 fix: mock subscription ownership assertion (avoids real DB call)
         assertSubscriptionOwnership: mockAssertSubOwnership
     };

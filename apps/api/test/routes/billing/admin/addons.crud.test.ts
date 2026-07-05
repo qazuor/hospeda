@@ -49,16 +49,18 @@ const {
 
 // Mock AddonCatalogService — full CRUD interface
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        listAdmin: mockListAdmin,
-        getById: mockGetById,
-        create: mockCreate,
-        update: mockUpdate,
-        toggleActive: mockToggleActive,
-        softDelete: mockSoftDelete,
-        restore: mockRestore,
-        hardDelete: mockHardDelete
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            listAdmin: mockListAdmin,
+            getById: mockGetById,
+            create: mockCreate,
+            update: mockUpdate,
+            toggleActive: mockToggleActive,
+            softDelete: mockSoftDelete,
+            restore: mockRestore,
+            hardDelete: mockHardDelete
+        };
+    })
 }));
 
 // Mock @repo/schemas — preserve actual schemas, override PermissionEnum

@@ -65,17 +65,17 @@ const MOCK_UPLOAD_RESPONSE = {
  * accidentally relies on the callback firing before `end()` returns.
  */
 function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPONSE | null) {
-    mockUploadStream.mockImplementation(
-        (
-            _options: Record<string, unknown>,
-            callback: (err: Error | null, result: unknown) => void
-        ) => ({
+    mockUploadStream.mockImplementation(function (
+        _options: Record<string, unknown>,
+        callback: (err: Error | null, result: unknown) => void
+    ) {
+        return {
             on: vi.fn(),
             end: vi.fn(() => {
                 setImmediate(callback, error, result);
             })
-        })
-    );
+        };
+    });
 }
 
 /**
@@ -419,17 +419,17 @@ describe('CloudinaryProvider', () => {
 
         it('should reject with error when Cloudinary returns no result', async () => {
             // GAP-078-210: setImmediate to mirror real SDK async callback timing.
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: null, result: undefined) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: null, result: undefined) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn(() => {
                         setImmediate(callback, null, undefined);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             await expect(
@@ -543,18 +543,18 @@ describe('CloudinaryProvider', () => {
             const buffer = Buffer.from(dataUri.slice(commaIndex + 1), 'base64');
 
             let endedWith: Buffer | undefined;
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: Error | null, result: unknown) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: Error | null, result: unknown) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn((chunk: Buffer) => {
                         endedWith = chunk;
                         setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             // Act
@@ -583,18 +583,18 @@ describe('CloudinaryProvider', () => {
             const buffer = Buffer.from(remoteBytes);
 
             let endedWith: Buffer | undefined;
-            mockUploadStream.mockImplementation(
-                (
-                    _options: Record<string, unknown>,
-                    callback: (err: Error | null, result: unknown) => void
-                ) => ({
+            mockUploadStream.mockImplementation(function (
+                _options: Record<string, unknown>,
+                callback: (err: Error | null, result: unknown) => void
+            ) {
+                return {
                     on: vi.fn(),
                     end: vi.fn((chunk: Buffer) => {
                         endedWith = chunk;
                         setImmediate(callback, null, MOCK_UPLOAD_RESPONSE);
                     })
-                })
-            );
+                };
+            });
             const provider = new CloudinaryProvider(VALID_CONFIG);
 
             // Act

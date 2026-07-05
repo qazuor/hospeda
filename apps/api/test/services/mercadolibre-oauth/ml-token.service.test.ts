@@ -317,12 +317,11 @@ describe('ml-token.service', () => {
             // Arrange
             const expiresAt = new Date(Date.now() - 1000);
             mockGetActiveMLCredential.mockResolvedValue(buildCredential(expiresAt));
-            mockRefreshAccessToken.mockImplementation(
-                () =>
-                    new Promise<MLTokenResponse>((resolve) => {
-                        setTimeout(() => resolve(buildTokenResponse()), 0);
-                    })
-            );
+            mockRefreshAccessToken.mockImplementation(function () {
+                return new Promise<MLTokenResponse>((resolve) => {
+                    setTimeout(() => resolve(buildTokenResponse()), 0);
+                });
+            });
 
             // Act
             const [tokenA, tokenB] = await Promise.all([

@@ -34,10 +34,12 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // getAddonBySlug must NOT be called after cutover
@@ -96,9 +98,11 @@ vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
 }));
 
 vi.mock('../../../src/services/addon.service', () => ({
-    AddonService: vi.fn().mockImplementation(() => ({
-        confirmPurchase: vi.fn().mockResolvedValue({ success: true, data: undefined })
-    }))
+    AddonService: vi.fn().mockImplementation(function () {
+        return {
+            confirmPurchase: vi.fn().mockResolvedValue({ success: true, data: undefined })
+        };
+    })
 }));
 
 vi.mock('../../../src/services/addon-plan-change.service', () => ({

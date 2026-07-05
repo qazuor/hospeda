@@ -32,10 +32,12 @@ const { mockWithTransaction, mockFindDue, mockAdvanceSchedule, mockSendEmail } =
 });
 
 vi.mock('@repo/service-core', () => ({
-    NotificationScheduleService: vi.fn().mockImplementation(() => ({
-        findDue: mockFindDue,
-        advanceSchedule: mockAdvanceSchedule
-    }))
+    NotificationScheduleService: vi.fn().mockImplementation(function () {
+        return {
+            findDue: mockFindDue,
+            advanceSchedule: mockAdvanceSchedule
+        };
+    })
 }));
 
 vi.mock('@repo/email', () => ({
@@ -62,12 +64,16 @@ vi.mock('@repo/db', () => ({
     sql: vi.fn((strings: TemplateStringsArray) => ({ sql: strings.join('') })),
     conversations: { id: 'id', deletedAt: 'deletedAt' },
     messages: { conversationId: 'conversationId', createdAt: 'createdAt', body: 'body' },
-    AccommodationModel: vi.fn().mockImplementation(() => ({
-        findById: vi.fn().mockResolvedValue(null)
-    })),
-    UserModel: vi.fn().mockImplementation(() => ({
-        findById: vi.fn().mockResolvedValue(null)
-    }))
+    AccommodationModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+    }),
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+    })
 }));
 
 vi.mock('drizzle-orm', () => ({

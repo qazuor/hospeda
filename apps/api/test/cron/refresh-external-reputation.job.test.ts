@@ -67,9 +67,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationExternalReputationService: vi.fn().mockImplementation(() => ({
-            refresh: mockRefresh
-        }))
+        AccommodationExternalReputationService: vi.fn().mockImplementation(function () {
+            return {
+                refresh: mockRefresh
+            };
+        })
     };
 });
 

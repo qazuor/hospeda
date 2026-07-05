@@ -92,10 +92,12 @@ vi.mock('../../../../src/utils/logger', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    UserService: vi.fn(() => ({
-        update: mockUpdate,
-        getById: mockGetById
-    })),
+    UserService: vi.fn(function () {
+        return {
+            update: mockUpdate,
+            getById: mockGetById
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

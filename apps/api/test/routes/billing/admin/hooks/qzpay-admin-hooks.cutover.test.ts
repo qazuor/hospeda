@@ -31,10 +31,12 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
     }

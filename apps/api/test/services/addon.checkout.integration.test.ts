@@ -358,10 +358,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         AddonCatalogService: vi
             .fn()
             .mockImplementation(() => ({ getBySlug: mockAddonCatalogGetBySlug })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanGetById,
-            getBySlug: mockPlanGetBySlug
-        })),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanGetById,
+                getBySlug: mockPlanGetBySlug
+            };
+        }),
         isAccommodationSubscription: () => true
     };
 });

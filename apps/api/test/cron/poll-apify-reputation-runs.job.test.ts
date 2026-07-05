@@ -88,11 +88,13 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        AccommodationExternalReputationModel: vi.fn().mockImplementation(() => ({
-            findPendingRuns: mockFindPendingRuns,
-            upsertReputation: mockUpsertReputation,
-            updateRunStatus: mockUpdateRunStatus
-        }))
+        AccommodationExternalReputationModel: vi.fn().mockImplementation(function () {
+            return {
+                findPendingRuns: mockFindPendingRuns,
+                upsertReputation: mockUpsertReputation,
+                updateRunStatus: mockUpdateRunStatus
+            };
+        })
     };
 });
 

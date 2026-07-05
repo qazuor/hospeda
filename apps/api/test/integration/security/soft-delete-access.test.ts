@@ -45,9 +45,11 @@ vi.mock('@repo/service-core', async (orig) => {
     const actual = (await orig()) as Record<string, unknown>;
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockGetBySlug
-        }))
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockGetBySlug
+            };
+        })
     };
 });
 

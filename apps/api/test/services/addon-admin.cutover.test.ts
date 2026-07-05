@@ -31,10 +31,12 @@ const { mockList, mockGetBySlug, mockGetDb, mockWithTransaction } = vi.hoisted((
 
 // Mock AddonCatalogService (DB-backed, now used by addon.admin)
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        list: mockList,
-        getBySlug: mockGetBySlug
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockList,
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 vi.mock('@repo/db', () => ({
@@ -81,15 +83,19 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
+        };
+    })
 }));
 
 vi.mock('../../src/services/addon-expiration.service', () => ({
-    AddonExpirationService: vi.fn().mockImplementation(() => ({
-        expireAddon: vi.fn().mockResolvedValue({ success: true, data: {} })
-    }))
+    AddonExpirationService: vi.fn().mockImplementation(function () {
+        return {
+            expireAddon: vi.fn().mockResolvedValue({ success: true, data: {} })
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({

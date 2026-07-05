@@ -144,9 +144,11 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: mockAccommodationFindById
-        })),
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: mockAccommodationFindById
+            };
+        }),
         // SPEC-309 T-007: backs both the featured_listing_addon_grants insert
         // and the pre-existing needsEntitlementSync update.
         getDb: vi.fn(() => ({
@@ -245,10 +247,12 @@ vi.mock('../../src/utils/env', () => ({
 // PromoCodeService is constructed inside createAddonCheckout. Stub it so the
 // happy path skips real DB lookups.
 vi.mock('../../src/services/promo-code.service', () => ({
-    PromoCodeService: vi.fn().mockImplementation(() => ({
-        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
-        getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
-    }))
+    PromoCodeService: vi.fn().mockImplementation(function () {
+        return {
+            validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
+            getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+        };
+    })
 }));
 
 // SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
@@ -267,13 +271,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanServiceGetById,
-            getBySlug: mockPlanServiceGetBySlug
-        })),
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug
-        }))
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanServiceGetById,
+                getBySlug: mockPlanServiceGetBySlug
+            };
+        }),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug
+            };
+        })
     };
 });
 

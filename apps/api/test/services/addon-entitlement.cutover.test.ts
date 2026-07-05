@@ -29,14 +29,18 @@ const { mockGetBySlug, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(() => (
 // Mock AddonCatalogService (DB-backed after T-012 cutover; addon reads only)
 // PlanService added for T-025 plan-reads cutover (getById+getBySlug dual-resolve)
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    }),
     // SPEC-239 T-034: all test subscriptions here are accommodation-domain
     // (no productDomain set), so this should always return true.
     isAccommodationSubscription: () => true

@@ -58,10 +58,12 @@ const {
 });
 
 vi.mock('@repo/service-core', () => ({
-    AccessTokenService: vi.fn().mockImplementation(() => ({
-        findDueReminders: mockFindDueReminders,
-        markReminderSent: mockMarkReminderSent
-    }))
+    AccessTokenService: vi.fn().mockImplementation(function () {
+        return {
+            findDueReminders: mockFindDueReminders,
+            markReminderSent: mockMarkReminderSent
+        };
+    })
 }));
 
 vi.mock('@repo/email', () => ({
@@ -82,9 +84,11 @@ vi.mock('@repo/db', () => ({
     }),
     sql: vi.fn((strings: TemplateStringsArray) => ({ sql: strings.join('') })),
     conversations: { id: 'id', deletedAt: 'deletedAt', accommodationId: 'accommodationId' },
-    AccommodationModel: vi.fn().mockImplementation(() => ({
-        findById: mockAccommodationFindById
-    }))
+    AccommodationModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: mockAccommodationFindById
+        };
+    })
 }));
 
 vi.mock('drizzle-orm', () => ({

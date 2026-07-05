@@ -263,7 +263,9 @@ describe('persistChatTurn', () => {
         // Second .values() (assistant aiMessages) throws.
         // The SUT must log error AND re-throw; the assistant message insert
         // must NOT be attempted.
-        mockValues.mockImplementationOnce(() => ({ returning: mockReturning }));
+        mockValues.mockImplementationOnce(function () {
+            return { returning: mockReturning };
+        });
         mockValues.mockImplementationOnce(() => {
             throw dbError;
         });

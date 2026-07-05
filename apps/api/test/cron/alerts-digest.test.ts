@@ -48,28 +48,40 @@ const {
 }));
 
 vi.mock('@repo/service-core', () => ({
-    PriceDropEvaluatorService: vi.fn().mockImplementation(() => ({
-        evaluatePriceDrops: mockEvaluatePriceDrops
-    })),
-    PromoOfferEvaluatorService: vi.fn().mockImplementation(() => ({
-        evaluatePromoOffers: mockEvaluatePromoOffers
-    }))
+    PriceDropEvaluatorService: vi.fn().mockImplementation(function () {
+        return {
+            evaluatePriceDrops: mockEvaluatePriceDrops
+        };
+    }),
+    PromoOfferEvaluatorService: vi.fn().mockImplementation(function () {
+        return {
+            evaluatePromoOffers: mockEvaluatePromoOffers
+        };
+    })
 }));
 
 vi.mock('@repo/db', () => ({
-    UserModel: vi.fn().mockImplementation(() => ({
-        findByIds: mockFindByIds
-    }))
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findByIds: mockFindByIds
+        };
+    })
 }));
 
 vi.mock('@repo/notifications', () => ({
     createEmailClient: vi.fn().mockReturnValue({}),
-    BrevoEmailTransport: vi.fn().mockImplementation(() => ({})),
-    EmailAlertChannel: vi.fn().mockImplementation(() => ({ name: 'email' })),
-    AlertDigestDeliveryService: vi.fn().mockImplementation(() => ({
-        deliver: vi.fn().mockResolvedValue(undefined),
-        deliverBatch: mockDeliverBatch
-    }))
+    BrevoEmailTransport: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    EmailAlertChannel: vi.fn().mockImplementation(function () {
+        return { name: 'email' };
+    }),
+    AlertDigestDeliveryService: vi.fn().mockImplementation(function () {
+        return {
+            deliver: vi.fn().mockResolvedValue(undefined),
+            deliverBatch: mockDeliverBatch
+        };
+    })
 }));
 
 vi.mock('../../src/utils/env.js', () => ({

@@ -41,10 +41,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        })
     };
 });
 
@@ -248,10 +250,12 @@ const { mockApplyAddonEntitlements, mockRemoveAddonEntitlements } = vi.hoisted((
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: mockApplyAddonEntitlements,
-        removeAddonEntitlements: mockRemoveAddonEntitlements
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: mockApplyAddonEntitlements,
+            removeAddonEntitlements: mockRemoveAddonEntitlements
+        };
+    })
 }));
 
 import { EntitlementKey, getAddonBySlug } from '@repo/billing';

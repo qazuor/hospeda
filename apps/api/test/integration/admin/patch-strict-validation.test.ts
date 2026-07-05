@@ -39,15 +39,21 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        OwnerPromotionService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => ownerPromotionRef.update(...args)
-        })),
-        SponsorshipService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => sponsorshipRef.update(...args)
-        })),
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => accommodationReviewRef.update(...args)
-        })),
+        OwnerPromotionService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => ownerPromotionRef.update(...args)
+            };
+        }),
+        SponsorshipService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => sponsorshipRef.update(...args)
+            };
+        }),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => accommodationReviewRef.update(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

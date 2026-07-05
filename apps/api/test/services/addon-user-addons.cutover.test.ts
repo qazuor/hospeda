@@ -34,10 +34,12 @@ const { mockGetBySlug, mockWithTransaction, mockCancelAddonPurchaseRecord, mockR
 
 // Mock AddonCatalogService (DB-backed after cutover)
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
     cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
     queryAddonActive: vi.fn(),
     queryUserAddons: vi.fn(),

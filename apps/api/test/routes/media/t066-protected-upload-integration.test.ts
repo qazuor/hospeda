@@ -174,14 +174,17 @@ describe('POST /api/v1/protected/media/upload — integration (T-066)', () => {
             // Arrange: two independent user actors in sequence verify the
             // avatar-scoping invariant. Both calls use their respective ids
             // as the publicId.
-            mockUpload.mockImplementation(
-                async ({ publicId, folder }: { publicId: string; folder: string }) => ({
+            mockUpload.mockImplementation(async function ({
+                publicId,
+                folder
+            }: { publicId: string; folder: string }) {
+                return {
                     url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
                     publicId: `${folder}/${publicId}`,
                     width: 400,
                     height: 400
-                })
-            );
+                };
+            });
 
             const userA = createMockUserActor({ id: '00000000-0000-4000-8000-0000000000aa' });
             const userB = createMockUserActor({ id: '00000000-0000-4000-8000-0000000000bb' });

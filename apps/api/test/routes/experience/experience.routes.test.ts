@@ -59,28 +59,32 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        ExperienceService: vi.fn().mockImplementation(() => ({
-            search: (...args: unknown[]) => experienceSvc.search(...args),
-            getById: (...args: unknown[]) => experienceSvc.getById(...args),
-            getBySlug: (...args: unknown[]) => experienceSvc.getBySlug(...args),
-            create: (...args: unknown[]) => experienceSvc.create(...args),
-            update: (...args: unknown[]) => experienceSvc.update(...args),
-            updateOwn: (...args: unknown[]) => experienceSvc.updateOwn(...args),
-            softDelete: (...args: unknown[]) => experienceSvc.softDelete(...args),
-            hardDelete: (...args: unknown[]) => experienceSvc.hardDelete(...args),
-            restore: (...args: unknown[]) => experienceSvc.restore(...args),
-            adminList: (...args: unknown[]) => experienceSvc.adminList(...args),
-            loadJunctionIds: (...args: unknown[]) => experienceSvc.loadJunctionIds(...args)
-        })),
-        ExperienceReviewService: vi.fn().mockImplementation(() => ({
-            listByExperience: (...args: unknown[]) => reviewSvc.listByExperience(...args),
-            create: (...args: unknown[]) => reviewSvc.create(...args),
-            getById: (...args: unknown[]) => reviewSvc.getById(...args),
-            update: (...args: unknown[]) => reviewSvc.update(...args),
-            softDelete: (...args: unknown[]) => reviewSvc.softDelete(...args),
-            adminList: (...args: unknown[]) => reviewSvc.adminList(...args),
-            moderateReview: (...args: unknown[]) => reviewSvc.moderateReview(...args)
-        })),
+        ExperienceService: vi.fn().mockImplementation(function () {
+            return {
+                search: (...args: unknown[]) => experienceSvc.search(...args),
+                getById: (...args: unknown[]) => experienceSvc.getById(...args),
+                getBySlug: (...args: unknown[]) => experienceSvc.getBySlug(...args),
+                create: (...args: unknown[]) => experienceSvc.create(...args),
+                update: (...args: unknown[]) => experienceSvc.update(...args),
+                updateOwn: (...args: unknown[]) => experienceSvc.updateOwn(...args),
+                softDelete: (...args: unknown[]) => experienceSvc.softDelete(...args),
+                hardDelete: (...args: unknown[]) => experienceSvc.hardDelete(...args),
+                restore: (...args: unknown[]) => experienceSvc.restore(...args),
+                adminList: (...args: unknown[]) => experienceSvc.adminList(...args),
+                loadJunctionIds: (...args: unknown[]) => experienceSvc.loadJunctionIds(...args)
+            };
+        }),
+        ExperienceReviewService: vi.fn().mockImplementation(function () {
+            return {
+                listByExperience: (...args: unknown[]) => reviewSvc.listByExperience(...args),
+                create: (...args: unknown[]) => reviewSvc.create(...args),
+                getById: (...args: unknown[]) => reviewSvc.getById(...args),
+                update: (...args: unknown[]) => reviewSvc.update(...args),
+                softDelete: (...args: unknown[]) => reviewSvc.softDelete(...args),
+                adminList: (...args: unknown[]) => reviewSvc.adminList(...args),
+                moderateReview: (...args: unknown[]) => reviewSvc.moderateReview(...args)
+            };
+        }),
         listExperienceFaqs: (...args: unknown[]) => faqHelpers.listExperienceFaqs(...args),
         addExperienceFaq: (...args: unknown[]) => faqHelpers.addExperienceFaq(...args),
         updateExperienceFaq: (...args: unknown[]) => faqHelpers.updateExperienceFaq(...args),

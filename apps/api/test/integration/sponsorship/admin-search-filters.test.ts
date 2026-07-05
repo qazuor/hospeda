@@ -32,9 +32,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        SponsorshipService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => mockRef.adminList(...args)
-        })),
+        SponsorshipService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => mockRef.adminList(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

@@ -65,9 +65,11 @@ vi.mock('@repo/db', () => ({
         strings,
         values
     })),
-    SocialSettingModel: vi.fn().mockImplementation(() => ({
-        findOne: mockSettingFindOne
-    }))
+    SocialSettingModel: vi.fn().mockImplementation(function () {
+        return {
+            findOne: mockSettingFindOne
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
@@ -78,10 +80,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        SocialPublishDispatchService: vi.fn().mockImplementation(() => ({
-            findEligibleTargets: mockFindEligibleTargets,
-            dispatchTarget: mockDispatchTarget
-        }))
+        SocialPublishDispatchService: vi.fn().mockImplementation(function () {
+            return {
+                findEligibleTargets: mockFindEligibleTargets,
+                dispatchTarget: mockDispatchTarget
+            };
+        })
     };
 });
 

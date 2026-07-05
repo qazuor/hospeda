@@ -27,9 +27,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            create: mockCreate
-        }))
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        })
     };
 });
 

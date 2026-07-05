@@ -20,7 +20,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        FeatureFlagService: vi.fn().mockImplementation(() => mockFeatureFlagService)
+        FeatureFlagService: vi.fn().mockImplementation(function () {
+            return mockFeatureFlagService;
+        })
     };
 });
 

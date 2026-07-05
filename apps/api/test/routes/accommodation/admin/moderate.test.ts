@@ -54,9 +54,11 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    AccommodationReviewService: vi.fn(() => ({
-        moderateReview: mockModerateReview
-    })),
+    AccommodationReviewService: vi.fn(function () {
+        return {
+            moderateReview: mockModerateReview
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

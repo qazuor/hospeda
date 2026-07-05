@@ -23,9 +23,11 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationImportService: vi.fn().mockImplementation(() => ({
-            dispatchImportFromUrl: mockDispatchImportFromUrl
-        }))
+        AccommodationImportService: vi.fn().mockImplementation(function () {
+            return {
+                dispatchImportFromUrl: mockDispatchImportFromUrl
+            };
+        })
     };
 });
 

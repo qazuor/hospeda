@@ -166,10 +166,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         listAvailableAddons: mockCatalogList,
         getAddonCatalogEntry: mockCatalogGetBySlug,
         // DB-backed catalog service used by addon.user-addons.ts (SPEC-192 T-011 cutover)
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockCatalogGetBySlug,
-            list: mockCatalogList
-        })),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockCatalogGetBySlug,
+                list: mockCatalogList
+            };
+        }),
         // cancelAddonPurchaseRecord from the path-specific mock takes precedence for the
         // actual runtime path, but keeping it here ensures correct typing for consumers.
         cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
@@ -353,10 +355,12 @@ const {
 
 // Mock addon-entitlement service
 vi.mock('../../src/services/addon-entitlement.service', () => ({
-    AddonEntitlementService: vi.fn().mockImplementation(() => ({
-        applyAddonEntitlements: mockApplyAddonEntitlements,
-        removeAddonEntitlements: mockRemoveAddonEntitlements
-    }))
+    AddonEntitlementService: vi.fn().mockImplementation(function () {
+        return {
+            applyAddonEntitlements: mockApplyAddonEntitlements,
+            removeAddonEntitlements: mockRemoveAddonEntitlements
+        };
+    })
 }));
 
 // Mock addon-limit-recalculation service — default to success so cancelAddon tests
@@ -1245,7 +1249,9 @@ describe('AddonService', () => {
             const mockLimit = vi.fn().mockResolvedValue(records);
             const mockWhere = vi.fn(() => ({ limit: mockLimit }));
             const mockFrom = vi.fn(() => ({ where: mockWhere }));
-            mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+            mockDbSelect.mockImplementationOnce(function () {
+                return { from: mockFrom };
+            });
         }
 
         const PURCHASE_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';

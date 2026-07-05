@@ -41,9 +41,11 @@ vi.mock('../../src/middlewares/billing', () => ({
 
 // Mock usage tracking service
 vi.mock('../../src/services/usage-tracking.service', () => ({
-    UsageTrackingService: vi.fn().mockImplementation(() => ({
-        getUsageSummary: vi.fn()
-    }))
+    UsageTrackingService: vi.fn().mockImplementation(function () {
+        return {
+            getUsageSummary: vi.fn()
+        };
+    })
 }));
 
 describe('Admin Usage API - GET /:customerId', () => {
@@ -98,7 +100,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act
             const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
@@ -140,7 +144,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act
             const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
@@ -191,7 +197,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act
             const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
@@ -262,7 +270,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act & Assert
             await expect(
@@ -285,7 +295,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act & Assert
             await expect(
@@ -307,7 +319,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act & Assert
             await expect(
@@ -346,7 +360,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act
             const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
@@ -410,7 +426,9 @@ describe('Admin Usage API - GET /:customerId', () => {
                 const { UsageTrackingService } = await import(
                     '../../src/services/usage-tracking.service'
                 );
-                (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+                (UsageTrackingService as any).mockImplementation(function () {
+                    return mockUsageService;
+                });
 
                 // Act
                 const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
@@ -468,7 +486,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            (UsageTrackingService as any).mockImplementation(() => mockUsageService);
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
 
             // Act
             await getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId });

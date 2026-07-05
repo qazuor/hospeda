@@ -110,14 +110,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
             mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>)),
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanServiceGetById,
-            getBySlug: mockPlanServiceGetBySlug
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanServiceGetById,
+                getBySlug: mockPlanServiceGetBySlug
+            };
+        })
     };
 });
 

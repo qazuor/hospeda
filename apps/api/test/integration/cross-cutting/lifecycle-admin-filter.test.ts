@@ -26,18 +26,26 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => accomMock.adminList(...args)
-        })),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => destMock.adminList(...args)
-        })),
-        OwnerPromotionService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => ownerMock.adminList(...args)
-        })),
-        SponsorshipService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => sponsorMock.adminList(...args)
-        })),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => accomMock.adminList(...args)
+            };
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => destMock.adminList(...args)
+            };
+        }),
+        OwnerPromotionService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => ownerMock.adminList(...args)
+            };
+        }),
+        SponsorshipService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => sponsorMock.adminList(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

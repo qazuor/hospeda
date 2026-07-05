@@ -31,12 +31,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => accomMockRef.update(...args)
-        })),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => destMockRef.update(...args)
-        })),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => accomMockRef.update(...args)
+            };
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => destMockRef.update(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

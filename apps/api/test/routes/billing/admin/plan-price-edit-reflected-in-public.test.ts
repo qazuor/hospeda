@@ -40,10 +40,12 @@ const {
 // Mock PlanService — shared across admin and public routes.
 // Both modules import from the same path so a single mock covers both.
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: mockAdminPlanList,
-        update: mockAdminPlanUpdate
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockAdminPlanList,
+            update: mockAdminPlanUpdate
+        };
+    })
 }));
 
 // Capture admin route factory calls (admin/plans.ts).

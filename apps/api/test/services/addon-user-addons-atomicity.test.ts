@@ -113,10 +113,12 @@ vi.mock('@repo/service-core', () => ({
     cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
     queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
     queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockAddonCatalogGetBySlug,
-        list: vi.fn().mockResolvedValue({ success: true, data: [] })
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockAddonCatalogGetBySlug,
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        };
+    })
 }));
 
 // ─── Hoisted DB mock ──────────────────────────────────────────────────────────
@@ -236,7 +238,9 @@ function mockSelectReturningPurchase(
     const mockLimit = vi.fn().mockResolvedValue(records);
     const mockWhere = vi.fn(() => ({ limit: mockLimit }));
     const mockFrom = vi.fn(() => ({ where: mockWhere }));
-    mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+    mockDbSelect.mockImplementationOnce(function () {
+        return { from: mockFrom };
+    });
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -260,12 +264,16 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
         // Restore tx.update chain after clearAllMocks wipes the default implementations.
         const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
         const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
-        mockTxUpdate.mockImplementation(() => ({ set: mockTxUpdateSet }));
+        mockTxUpdate.mockImplementation(function () {
+            return { set: mockTxUpdateSet };
+        });
 
         // Restore db.update chain (used for non-limit addons).
         const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
         const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
-        mockDbUpdate.mockImplementation(() => ({ set: mockDbUpdateSet }));
+        mockDbUpdate.mockImplementation(function () {
+            return { set: mockDbUpdateSet };
+        });
 
         // Default: transaction executes callback correctly
         mockDbTransaction.mockImplementation(

@@ -34,9 +34,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        UserService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => userServiceRef.update(...args)
-        }))
+        UserService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => userServiceRef.update(...args)
+            };
+        })
     };
 });
 

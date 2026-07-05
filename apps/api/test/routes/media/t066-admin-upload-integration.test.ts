@@ -274,14 +274,17 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         it('generates a nanoid-shaped publicId under the gallery/ sub-folder', async () => {
             // Arrange: provider echoes back whatever publicId the route sent,
             // so we can inspect the nanoid shape.
-            mockUpload.mockImplementationOnce(
-                async ({ folder, publicId }: { folder: string; publicId: string }) => ({
+            mockUpload.mockImplementationOnce(async function ({
+                folder,
+                publicId
+            }: { folder: string; publicId: string }) {
+                return {
                     url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
                     publicId: `${folder}/${publicId}`,
                     width: 1920,
                     height: 1080
-                })
-            );
+                };
+            });
             const actor = createUploadReadyActor();
 
             // Act

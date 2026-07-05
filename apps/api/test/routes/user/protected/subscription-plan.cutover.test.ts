@@ -28,11 +28,13 @@ const { mockGetById, mockGetBySlug, mockCreateProtectedRoute } = vi.hoisted(() =
 // ─── Mock PlanService ─────────────────────────────────────────────────────────
 
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: vi.fn(),
-        getById: mockGetById,
-        getBySlug: mockGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: vi.fn(),
+            getById: mockGetById,
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 // ─── Mock @repo/billing ───────────────────────────────────────────────────────
@@ -77,15 +79,21 @@ vi.mock('../../../../src/utils/route-factory', () => ({
 // ─── Mock @repo/service-core services used by stats.ts ───────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AccommodationReviewService: vi.fn().mockImplementation(() => ({
-        listByUser: vi.fn().mockResolvedValue({ data: { total: 0 } })
-    })),
-    DestinationReviewService: vi.fn().mockImplementation(() => ({
-        listByUser: vi.fn().mockResolvedValue({ data: { pagination: { total: 0 } } })
-    })),
-    UserBookmarkService: vi.fn().mockImplementation(() => ({
-        countBookmarksForUser: vi.fn().mockResolvedValue({ data: { count: 0 } })
-    })),
+    AccommodationReviewService: vi.fn().mockImplementation(function () {
+        return {
+            listByUser: vi.fn().mockResolvedValue({ data: { total: 0 } })
+        };
+    }),
+    DestinationReviewService: vi.fn().mockImplementation(function () {
+        return {
+            listByUser: vi.fn().mockResolvedValue({ data: { pagination: { total: 0 } } })
+        };
+    }),
+    UserBookmarkService: vi.fn().mockImplementation(function () {
+        return {
+            countBookmarksForUser: vi.fn().mockResolvedValue({ data: { count: 0 } })
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         code: string;
         constructor(code: string, message: string) {

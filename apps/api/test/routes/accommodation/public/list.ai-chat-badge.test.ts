@@ -61,9 +61,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            search: mockSearch
-        })),
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                search: mockSearch
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             public readonly code: string;
             constructor(code: string, message: string) {
@@ -154,9 +156,9 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
     });
 
     it('marks hasAiChat true only for accommodations whose owner has AI_CHAT', async () => {
-        mockResolveOwnerEntitlements.mockImplementation(async (ownerId: string) =>
-            ownerId === OWNER_WITH_AI ? [EntitlementKey.AI_CHAT] : []
-        );
+        mockResolveOwnerEntitlements.mockImplementation(async function (ownerId: string) {
+            return ownerId === OWNER_WITH_AI ? [EntitlementKey.AI_CHAT] : [];
+        });
         mockSearch.mockResolvedValue({
             data: {
                 items: [

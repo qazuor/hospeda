@@ -33,9 +33,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        GastronomyReviewService: vi.fn().mockImplementation(() => ({
-            listForModeration: (...args: unknown[]) => mockRef.listForModeration(...args)
-        })),
+        GastronomyReviewService: vi.fn().mockImplementation(function () {
+            return {
+                listForModeration: (...args: unknown[]) => mockRef.listForModeration(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

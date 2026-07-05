@@ -31,7 +31,9 @@ const { MockLinearClient, mockClientInstance, mockFetch } = vi.hoisted(() => {
     };
 
     return {
-        MockLinearClient: vi.fn(() => instance),
+        MockLinearClient: vi.fn(function () {
+            return instance;
+        }),
         mockClientInstance: instance,
         mockFetch: vi.fn()
     };

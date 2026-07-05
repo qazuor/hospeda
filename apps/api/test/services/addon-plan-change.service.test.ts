@@ -183,14 +183,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return {
         ...actual,
         // SPEC-192 T-026: DB-backed catalog and plan services
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockCatalogGetBySlug,
-            list: vi.fn()
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanGetById,
-            getBySlug: mockPlanGetBySlug
-        })),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockCatalogGetBySlug,
+                list: vi.fn()
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanGetById,
+                getBySlug: mockPlanGetBySlug
+            };
+        }),
         withServiceTransaction: vi.fn(
             async (
                 cb: (ctx: { tx: unknown; hookState: Record<string, unknown> }) => Promise<unknown>

@@ -57,9 +57,11 @@ vi.mock('../../../src/utils/actor', () => ({
 
 // Mock PostService so no real DB calls happen.
 vi.mock('@repo/service-core', () => ({
-    PostService: vi.fn(() => ({
-        getMonthlyTrend: mockGetMonthlyTrend
-    })),
+    PostService: vi.fn(function () {
+        return {
+            getMonthlyTrend: mockGetMonthlyTrend
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

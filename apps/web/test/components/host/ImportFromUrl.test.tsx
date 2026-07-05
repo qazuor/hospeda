@@ -433,11 +433,11 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
     it('202 response switches to polling mode and keeps the spinner active', async () => {
         // Arrange — the run never settles for this test (poll in progress).
         mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
-        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
-            enabled
+        mockUseImportStatus.mockImplementation(function (_runHandle: unknown, enabled: boolean) {
+            return enabled
                 ? { draft: null, failureCode: null, settled: false, isPolling: true, error: null }
-                : IDLE_POLL_RESULT
-        );
+                : IDLE_POLL_RESULT;
+        });
         render(<ImportFromUrl locale="es" />);
 
         // Act
@@ -464,8 +464,8 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
             methodsUsed: ['jsonld'],
             partial: true
         };
-        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
-            enabled
+        mockUseImportStatus.mockImplementation(function (_runHandle: unknown, enabled: boolean) {
+            return enabled
                 ? {
                       draft: finalDraft,
                       failureCode: null,
@@ -473,8 +473,8 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
                       isPolling: false,
                       error: null
                   }
-                : IDLE_POLL_RESULT
-        );
+                : IDLE_POLL_RESULT;
+        });
         const onImported = vi.fn();
         render(
             <ImportFromUrl
@@ -496,8 +496,8 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
     it('202 -> poll -> settle-failure shows the i18n error banner (not onImported)', async () => {
         // Arrange
         mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
-        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
-            enabled
+        mockUseImportStatus.mockImplementation(function (_runHandle: unknown, enabled: boolean) {
+            return enabled
                 ? {
                       draft: null,
                       failureCode: 'source_blocked',
@@ -505,8 +505,8 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
                       isPolling: false,
                       error: null
                   }
-                : IDLE_POLL_RESULT
-        );
+                : IDLE_POLL_RESULT;
+        });
         const onImported = vi.fn();
         const onError = vi.fn();
         render(
@@ -532,11 +532,11 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
     it('unmounting mid-poll does not call onImported and does not throw', async () => {
         // Arrange — poll never settles (still in flight when unmounted).
         mockImportFromUrl.mockResolvedValueOnce({ ok: true, data: ASYNC_START });
-        mockUseImportStatus.mockImplementation((_runHandle: unknown, enabled: boolean) =>
-            enabled
+        mockUseImportStatus.mockImplementation(function (_runHandle: unknown, enabled: boolean) {
+            return enabled
                 ? { draft: null, failureCode: null, settled: false, isPolling: true, error: null }
-                : IDLE_POLL_RESULT
-        );
+                : IDLE_POLL_RESULT;
+        });
         const onImported = vi.fn();
         const { unmount } = render(
             <ImportFromUrl
