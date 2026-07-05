@@ -12,7 +12,7 @@ export * from './social-post.model.ts';
 export * from './social-post-footer.model.ts';
 export * from './social-post-hashtag.model.ts';
 export * from './social-post-media.model.ts';
-export * from './social-post-target-media.model.ts';
 export * from './social-post-target.model.ts';
+export * from './social-post-target-media.model.ts';
 export * from './social-publish-log.model.ts';
 export * from './social-setting.model.ts';
