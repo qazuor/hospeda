@@ -113,9 +113,18 @@ export abstract class BaseCrudPermissions<
      *
      * @param actor - The user or system performing the action.
      * @param data - The validated input data for the new entity.
+     * @param ctx - Optional service execution context (transaction + hookState),
+     *   forwarded from `create()`. Lets permission checks that must read
+     *   uncommitted rows participate in the caller's transaction, consistent with
+     *   `_beforeCreate`. Overrides that don't need it may keep the two-parameter
+     *   signature.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected abstract _canCreate(actor: Actor, data: z.infer<TCreateSchema>): Promise<void> | void;
+    protected abstract _canCreate(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<void> | void;
 
     /**
      * Checks if the actor has permission to update a given entity.

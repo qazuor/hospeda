@@ -99,11 +99,14 @@ export class UserBookmarkCollectionService extends BaseCrudService<
      * Only the owner with `USER_BOOKMARK_COLLECTION_CREATE` permission may
      * create a collection for themselves.
      *
-     * SPEC-287 (2026-07-01): the per-user quota check used to live here, but
-     * moved to {@link createCollection}'s own execute callback — this hook is
-     * called by `BaseCrudService.create()` WITHOUT forwarding `ctx` (see
-     * BETA-106), so it has no access to `ctx.hookState.planLimit`. Only the
-     * ownership/permission check remains here.
+     * SPEC-287 (2026-07-01): the per-user quota check historically could not
+     * live here because `BaseCrudService.create()` did not forward `ctx` to
+     * `_canCreate`, so the hook had no access to `ctx.hookState.planLimit`; the
+     * check was placed in {@link createCollection}'s execute callback instead.
+     * That limitation is now fixed (BETA-106 — `_canCreate` receives `ctx`), but
+     * the quota check is intentionally left in `createCollection` rather than
+     * re-homed here as part of that fix. Only the ownership/permission check
+     * lives here.
      *
      * @param actor - The actor attempting the create
      * @param data - The validated create input
@@ -437,9 +440,9 @@ export class UserBookmarkCollectionService extends BaseCrudService<
      * 2. Name uniqueness within the actor's active collections (pre-check before DB constraint).
      * 3. Per-user quota enforcement, resolved from `ctx.hookState.planLimit` (SPEC-287) —
      *    falls back to {@link DEFAULT_MAX_COLLECTIONS_PER_USER} when absent. Lives here
-     *    rather than in `_canCreate` because `BaseCrudService.create()` does not forward
-     *    `ctx` to that hook (BETA-106); `execCtx` is only reliably available in this
-     *    execute callback.
+     *    rather than in `_canCreate` for historical reasons (BETA-106 previously blocked
+     *    `ctx` from reaching that hook); BETA-106 is now fixed, but the check is
+     *    intentionally left here rather than moved as part of that fix.
      * 4. Input normalization (trim, colour uppercase) via `normalizeCreateInput`.
      *
      * @param actor - The authenticated actor performing the action
