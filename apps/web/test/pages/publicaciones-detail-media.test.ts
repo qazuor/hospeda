@@ -160,10 +160,11 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
         });
 
         it('hides the engagement block in the compact (scrolled) WaveHeader state', () => {
-            // Style rule must collapse the engagement bar alongside other meta
-            expect(headerSrc).toMatch(
-                /\.wave-header--compact[\s\S]*?\.post-header__engagement[\s\S]*?max-height:\s*0/
-            );
+            // HOS-84 (T-007) centralised the collapse: instead of a per-header
+            // `.wave-header--compact .post-header__engagement { max-height: 0 }`
+            // rule, the element opts into the shared `wh-compact-hide` utility
+            // (whose `max-height: 0` contract lives once in WaveHeader.astro).
+            expect(headerSrc).toMatch(/class="post-header__engagement[^"]*\bwh-compact-hide\b/);
         });
     });
 });
