@@ -3,7 +3,8 @@ title: "G-1 — Wave Header Rework: Options & Tradeoffs (owner decision)"
 linear: HOS-84
 statusSource: linear
 deliverable: G-1
-status: awaiting-owner-decision
+status: decided
+decision: "Opt-B band puro (both surfaces) + Beh-2 hide/reveal (detail) / static (listing); shared-component rework; dedicated --surface-header token; fold 6 compact blocks"
 created: 2026-07-04
 ---
 
@@ -16,6 +17,32 @@ created: 2026-07-04
 >
 > A companion **visual mockup** (light + dark, all four aesthetic directions rendered
 > side by side) accompanies this doc — see [§7](#7-visual-companion).
+
+## 0. Decision recorded (2026-07-04) — AC-1 ✅
+
+The owner reviewed the four aesthetics and five scroll behaviors (interactive mockup with
+the real Hospeda nav + full detail page) and chose:
+
+| OQ | Decision |
+|---|---|
+| **OQ-2 — Aesthetic** | **Opt-B — solid / gradient band, "band puro" (no image in the header)**, applied to **both** detail and listing surfaces. The entity photo stays in the body gallery, not the header. |
+| **OQ-6 — Behavior** | **Detail: Beh-2 — hide on scroll-down / reveal on scroll-up** (frees max reading height, title one flick away). **Listing: static band** (no compaction). |
+| **OQ-1 — Scope** | **Rework the single shared component** — NO detail-only variant. Enabled by using Opt-B on both surfaces; keeps blast radius minimal. |
+| **OQ-3 — Token** | **Dedicated `--surface-header` token** (light + dark), not a repo-wide `--surface-warm` rename. The band gradient is built from brand tokens. |
+| **OQ-4 — De-dup** | **Yes** — fold the 6 duplicated compact-mode blocks into the shared component. With Beh-2 + static listing, most of that compact CSS is deleted rather than moved. |
+| **OQ-5 — Content** | Recommended defaults (to confirm in implementation): **add a back button** (left of breadcrumb, composed from routing, NG-3-safe); **keep the favorite button** right-aligned in the header. |
+
+**Behavioral consequence (AC-3):** the current scroll-compaction hysteresis
+(`EXPAND_AT`/`COMPACT_AT`) and its `overflow-anchor:none` fix exist to solve trembling
+*during compaction*. Beh-2 does not compact — it slides the whole header out/in by scroll
+direction, so that compaction machinery can largely be **retired**. But Beh-2 introduces
+its **own** jitter surface (rapid show/hide when the scroll direction flickers): it needs a
+direction dead-zone / threshold, and the new model must be verified not to re-introduce
+trembling before the fix is removed. Do not delete `overflow-anchor` handling blindly.
+
+Phase 2 is now unblocked: `/startIssue HOS-84` → worktree + implementation.
+
+---
 
 ## 1. What we're deciding
 
