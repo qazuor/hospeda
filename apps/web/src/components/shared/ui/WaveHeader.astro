@@ -183,6 +183,11 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    * ========================================================= */
   .wave-header {
     position: relative;
+    /* Single source of truth for the compact/expand/hide timing. Defined here
+       on the wrapper so every entity header inside the slot inherits it and
+       stays in sync; tune these two to change the whole header's motion feel. */
+    --wave-header-anim-duration: 0.45s;
+    --wave-header-anim-ease: ease-in-out;
   }
 
   .wave-header__bar {
@@ -191,7 +196,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
        (publishNavbarHeight). 80px is a safe fallback before JS hydrates. */
     top: var(--navbar-height, 80px);
     z-index: calc(var(--z-nav, 50) - 1);
-    transition: transform 0.3s ease;
+    transition: transform var(--wave-header-anim-duration) var(--wave-header-anim-ease);
   }
 
   /* Hidden state: on a sustained scroll-down the whole band slides up behind
@@ -219,16 +224,16 @@ const { paddingTop = 'listing', class: className } = Astro.props;
        the compact transition. `overflow: hidden` + `max-height: 0` already
        hide the content cleanly. */
     transition:
-      max-height 0.3s ease,
-      padding 0.3s ease;
+      max-height var(--wave-header-anim-duration) var(--wave-header-anim-ease),
+      padding var(--wave-header-anim-duration) var(--wave-header-anim-ease);
   }
 
   .wave-header__content {
     padding-bottom: 1.5rem;
     background-color: var(--surface-header);
     transition:
-      padding 0.3s ease,
-      box-shadow 0.3s ease;
+      padding var(--wave-header-anim-duration) var(--wave-header-anim-ease),
+      box-shadow var(--wave-header-anim-duration) var(--wave-header-anim-ease);
   }
 
   /* =========================================================

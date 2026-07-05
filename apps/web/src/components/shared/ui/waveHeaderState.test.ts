@@ -16,7 +16,7 @@ const config: WaveHeaderStateConfig = DEFAULT_WAVE_HEADER_CONFIG;
 describe('nextWaveHeaderState', () => {
     describe('position axis — expanded', () => {
         it('returns expanded when scrollY is at or below EXPAND_AT', () => {
-            for (const scrollY of [0, 4, config.EXPAND_AT]) {
+            for (const scrollY of [0, config.EXPAND_AT]) {
                 const result = nextWaveHeaderState({
                     scrollY,
                     delta: 0,
@@ -120,10 +120,11 @@ describe('nextWaveHeaderState', () => {
         });
 
         it('transitions to hidden once accumulated downward delta reaches HIDE_DELTA', () => {
+            const delta = 10;
             const result = nextWaveHeaderState({
-                scrollY: 220,
-                delta: 10,
-                accumulator: 20,
+                scrollY: config.COMPACT_AT + config.HIDE_DELTA,
+                delta,
+                accumulator: config.HIDE_DELTA - delta,
                 currentState: 'compact',
                 config,
                 lockedCompact: false,
@@ -131,7 +132,7 @@ describe('nextWaveHeaderState', () => {
             });
 
             expect(result.state).toBe('hidden');
-            expect(result.accumulator).toBe(30);
+            expect(result.accumulator).toBe(config.HIDE_DELTA);
         });
 
         it('never hides while scrollY has not comfortably cleared COMPACT_AT', () => {
@@ -258,9 +259,15 @@ describe('nextWaveHeaderState', () => {
         });
 
         it('sums same-direction deltas without resetting', () => {
+            // Two same-direction deltas that together clear HIDE_DELTA; the point
+            // is that they SUM (accumulator reaches HIDE_DELTA) rather than reset.
+            const d1 = Math.ceil(config.HIDE_DELTA / 2);
+            const d2 = config.HIDE_DELTA - d1; // d1 + d2 === HIDE_DELTA
+            const baseY = config.COMPACT_AT + config.HIDE_DELTA;
+
             const step1 = nextWaveHeaderState({
-                scrollY: 200,
-                delta: 15,
+                scrollY: baseY,
+                delta: d1,
                 accumulator: 0,
                 currentState: 'compact',
                 config,
@@ -269,8 +276,8 @@ describe('nextWaveHeaderState', () => {
             });
 
             const step2 = nextWaveHeaderState({
-                scrollY: 215,
-                delta: 15,
+                scrollY: baseY + d2,
+                delta: d2,
                 accumulator: step1.accumulator,
                 currentState: step1.state,
                 config,
@@ -278,7 +285,7 @@ describe('nextWaveHeaderState', () => {
                 reducedMotion: false
             });
 
-            expect(step2.accumulator).toBe(30);
+            expect(step2.accumulator).toBe(config.HIDE_DELTA);
             expect(step2.state).toBe('hidden');
         });
     });

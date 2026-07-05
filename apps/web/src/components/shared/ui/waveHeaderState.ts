@@ -58,9 +58,9 @@ export interface WaveHeaderStateConfig {
  * previously hardcoded in `WaveHeader.astro`'s inline script (HOS-84).
  */
 export const DEFAULT_WAVE_HEADER_CONFIG: WaveHeaderStateConfig = {
-    EXPAND_AT: 8,
-    COMPACT_AT: 96,
-    HIDE_DELTA: 24,
+    EXPAND_AT: 0,
+    COMPACT_AT: 64,
+    HIDE_DELTA: 280,
     REVEAL_DELTA: 24
 };
 
