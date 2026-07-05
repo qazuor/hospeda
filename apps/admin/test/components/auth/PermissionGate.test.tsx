@@ -11,11 +11,11 @@
  * @module PermissionGate.test
  */
 
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { PermissionEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: vi.fn()

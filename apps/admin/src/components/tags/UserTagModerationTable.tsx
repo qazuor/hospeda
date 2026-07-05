@@ -1,6 +1,6 @@
+import { DeleteIcon } from '@repo/icons';
 import { Button } from '@/components/ui/button';
 import type { UserTagWithOwner } from '@/hooks/use-user-tag-moderation';
-import { DeleteIcon } from '@repo/icons';
 import { PostTagColorBadge } from './PostTagColorBadge';
 
 /** Lifecycle state badge colors — reusing same visual convention as post-tags list. */

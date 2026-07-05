@@ -31,13 +31,13 @@
  * @see SPEC-174 §7.1, §9
  */
 
+import { RoleEnum } from '@repo/schemas';
+import { describe, expect, it } from 'vitest';
+import type { z } from 'zod';
 import { rawConfig } from '@/config/ia/index';
 import { AdminIAConfigSchema } from '@/config/ia/schema';
 import { KNOWN_DATA_TOUR_IDS, type TourRole } from '@/config/ia/tour.schema';
 import { tours } from '@/config/ia/tours';
-import { RoleEnum } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
-import type { z } from 'zod';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Minimal valid config factory (with tours field)

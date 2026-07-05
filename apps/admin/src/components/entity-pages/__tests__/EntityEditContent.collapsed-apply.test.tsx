@@ -28,8 +28,8 @@ vi.mock('@/env', () => ({
     env: { VITE_DEBUG_LAZY_SECTIONS: false }
 }));
 
-import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import type { EntityFormContextValue } from '@/components/entity-form/context/EntityFormContext';
+import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { EntityFormProvider } from '@/components/entity-form/providers/EntityFormProvider';
 import type { EntityConfig } from '@/components/entity-form/types/entity-config.types';

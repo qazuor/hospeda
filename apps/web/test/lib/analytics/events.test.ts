@@ -8,8 +8,8 @@
  * naming convention so downstream PostHog dashboards keep matching.
  */
 
-import { WebEvents } from '@/lib/analytics/events';
 import { describe, expect, it } from 'vitest';
+import { WebEvents } from '@/lib/analytics/events';
 
 describe('WebEvents catalog (SPEC-140 acceptance)', () => {
     it('should include the SPEC-140 events, the SPEC-191 contribution events, the SPEC-159 entity-view events, and the SPEC-258 import events', () => {

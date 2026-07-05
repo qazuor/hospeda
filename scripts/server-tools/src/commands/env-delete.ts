@@ -135,7 +135,9 @@ export async function envDelete(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
-    log.ok(`Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}.`);
+    log.ok(
+        `Deleted ${deleted}/${candidates.length} entry(ies) for '${key}' on ${target}/${kindRaw}.`
+    );
     if (deleted > 0) {
         log.hint(
             'Run `hops redeploy <kind>` or `hops app-restart <kind>` for the change to take effect.'

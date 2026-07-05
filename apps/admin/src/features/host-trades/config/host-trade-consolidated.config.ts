@@ -1,5 +1,5 @@
-import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/consolidated-config.types';
 import type { useTranslations } from '@repo/i18n';
+import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { createBasicInfoConsolidatedSection } from './sections';
 
 /**

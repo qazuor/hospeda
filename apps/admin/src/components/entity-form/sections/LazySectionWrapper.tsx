@@ -1,7 +1,7 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { LoaderIcon } from '@repo/icons';
 import React, { Suspense, useState } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 /**
  * Props for LazySectionWrapper component

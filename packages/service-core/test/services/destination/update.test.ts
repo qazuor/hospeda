@@ -2,10 +2,11 @@ import type { DestinationModel } from '@repo/db';
 import {
     type Destination,
     type DestinationUpdateInput,
-    DestinationUpdateInputSchema
+    DestinationUpdateInputSchema,
+    PermissionEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';
 import { DestinationService } from '../../../src/services/destination/destination.service';
@@ -25,11 +26,7 @@ beforeEach(() => {
             const typedInput = input as unknown as import('zod').infer<
                 typeof DestinationUpdateInputSchema
             >;
-            if (
-                typedInput &&
-                Object.prototype.hasOwnProperty.call(typedInput, 'name') &&
-                typedInput.name === undefined
-            ) {
+            if (typedInput && Object.hasOwn(typedInput, 'name') && typedInput.name === undefined) {
                 return {
                     success: false,
                     error: new ZodError([

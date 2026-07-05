@@ -5,6 +5,9 @@
  * effect badge, and a remove button guarded by a confirmation dialog. Removing
  * reverts the user to their role's behavior for that permission.
  */
+
+import { DeleteIcon } from '@repo/icons';
+import type { PermissionEffect, PermissionEnum } from '@repo/schemas';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,8 +22,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import { DeleteIcon } from '@repo/icons';
-import type { PermissionEffect, PermissionEnum } from '@repo/schemas';
 
 export interface OverrideRowProps {
     readonly permission: PermissionEnum;

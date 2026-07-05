@@ -18,12 +18,12 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLocaleSwitchPathname } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './PreferenceToggles.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

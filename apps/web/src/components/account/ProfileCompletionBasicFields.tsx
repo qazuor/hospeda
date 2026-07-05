@@ -16,7 +16,7 @@ import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import type { SupportedLocale } from '@/lib/i18n';
-import { type ProfileCompletionFieldErrors, ddmmyyyyToDate } from './ProfileCompletion.helpers';
+import { ddmmyyyyToDate, type ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
 

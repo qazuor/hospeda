@@ -1,10 +1,10 @@
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { createElement } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import type { UserTagWithOwner } from '@/hooks/use-user-tag-moderation';
 import { useDeleteAnyUserTag } from '@/hooks/use-user-tag-moderation';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
-import { createElement } from 'react';
 
 /**
  * Badge options for user-moderation tag lifecycle state column.

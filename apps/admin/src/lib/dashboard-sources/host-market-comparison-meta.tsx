@@ -177,7 +177,16 @@ export function buildMarketComparisonMetaLines(
                 </span>
             )
         });
-    } else if (row.destinationAvgRating !== null) {
+    } else if (row.destinationAvgRating === null) {
+        lines.push({
+            key: 'rating',
+            content: (
+                <span className="inline-flex items-center gap-1.5 opacity-70">
+                    <StarIcon className="size-3.5 shrink-0" /> Sin reseñas en este destino todavía
+                </span>
+            )
+        });
+    } else {
         lines.push({
             key: 'rating',
             content: (
@@ -195,15 +204,6 @@ export function buildMarketComparisonMetaLines(
                             {' · '}Tu alojamiento aún no tiene reseñas
                         </span>
                     </span>
-                </span>
-            )
-        });
-    } else {
-        lines.push({
-            key: 'rating',
-            content: (
-                <span className="inline-flex items-center gap-1.5 opacity-70">
-                    <StarIcon className="size-3.5 shrink-0" /> Sin reseñas en este destino todavía
                 </span>
             )
         });

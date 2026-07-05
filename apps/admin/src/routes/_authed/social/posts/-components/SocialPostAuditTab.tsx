@@ -5,10 +5,9 @@
  * and renders them with actor, event type, and timestamp.
  */
 
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-
-import { useQuery } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
 // Types

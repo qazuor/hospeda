@@ -16,9 +16,9 @@
  * - ESC / close button closes the dialog
  */
 
-import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -31,13 +31,8 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 vi.mock('@/lib/api-errors', () => ({
-    translateApiError: ({
+    translateApiError: ({ fallback }: { error: unknown; locale: string; fallback: string }) =>
         fallback
-    }: {
-        error: unknown;
-        locale: string;
-        fallback: string;
-    }) => fallback
 }));
 
 vi.mock('@/lib/cn', () => ({

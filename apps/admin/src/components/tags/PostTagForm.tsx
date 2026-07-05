@@ -1,3 +1,7 @@
+import type { CreatePostTagInput, UpdatePostTagInput } from '@repo/schemas';
+import { CreatePostTagSchema, LifecycleStatusEnum, TagColorEnum } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,10 +13,6 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CreatePostTagSchema, LifecycleStatusEnum, TagColorEnum } from '@repo/schemas';
-import type { CreatePostTagInput, UpdatePostTagInput } from '@repo/schemas';
-import { useForm } from '@tanstack/react-form';
-import { useEffect } from 'react';
 import { PostTagColorBadge } from './PostTagColorBadge';
 
 /** Color options for the color select. */

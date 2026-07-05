@@ -1,3 +1,9 @@
+import { defaultLocale, trans } from '@repo/i18n';
+import { EditIcon } from '@repo/icons';
+import type { ApplicableVertical } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { createElement, Fragment } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { IconNameCell } from '@/components/entity-list/IconNameCell';
 import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
@@ -5,15 +11,9 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
-import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { defaultLocale, trans } from '@repo/i18n';
-import { EditIcon } from '@repo/icons';
-import type { ApplicableVertical } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
 import { AmenityTypeBadge } from '../components/AmenityTypeBadge';
 import { useDeleteAmenityMutation, useUpdateAmenityMutation } from '../hooks/useAmenityQuery';
 import type { Amenity } from '../schemas/amenities.schemas';

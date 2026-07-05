@@ -8,11 +8,12 @@
  * Search is disabled: app-log entries are not text-searchable via the API.
  * Grid view is disabled: the dense tabular layout is not meaningful as cards.
  */
+
+import { AppLogEntrySchema } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import { AppLogEntrySchema } from '@repo/schemas';
-import type { z } from 'zod';
 import { createAppLogsColumns } from './app-logs.columns';
 
 /** Inferred item type from the canonical schema. */
@@ -144,4 +145,5 @@ export const appLogsConfig: EntityConfig<AppLogItem> = {
 };
 
 const { component, route } = createEntityListPage(appLogsConfig);
+
 export { component as AppLogsPageComponent, route as AppLogsRoute };

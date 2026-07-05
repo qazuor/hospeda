@@ -14,67 +14,58 @@
  * @module ai-core/storage
  */
 
+// Re-export DB result types so other sub-modules / consumers can type their
+// return values without importing @repo/db directly (AC-4 isolation rule).
+export type { SelectAiPromptVersion, SelectAiUsage } from '@repo/db';
+
+export {
+    type ActivatePromptVersionInput,
+    activatePromptVersion,
+    type CreatePromptVersionInput,
+    createPromptVersion,
+    type GetActivePromptInput,
+    type GetActivePromptResult,
+    getActivePrompt,
+    type ListPromptVersionsByFeatureInput,
+    listPromptVersionsByFeature
+} from './prompt.storage.js';
 export {
     AiSettingsParseError,
     readAiSettings,
-    writeAiSettings,
-    type WriteAiSettingsInput
+    type WriteAiSettingsInput,
+    writeAiSettings
 } from './settings.storage.js';
-
-export {
-    getActivePrompt,
-    createPromptVersion,
-    activatePromptVersion,
-    listPromptVersionsByFeature,
-    type GetActivePromptInput,
-    type GetActivePromptResult,
-    type CreatePromptVersionInput,
-    type ActivatePromptVersionInput,
-    type ListPromptVersionsByFeatureInput
-} from './prompt.storage.js';
-
-export {
-    insertAiUsage,
-    insertAiRequestLog,
-    type InsertAiUsageInput,
-    type InsertAiRequestLogInput
-} from './usage.storage.js';
-
-// Re-export DB result types so other sub-modules / consumers can type their
-// return values without importing @repo/db directly (AC-4 isolation rule).
-export type { SelectAiUsage, SelectAiPromptVersion } from '@repo/db';
-
 // Read-only aggregate reporting queries (SPEC-173 T-018)
-export {
-    aggregateAiUsageByMonth,
-    aggregateAiUsageByUser,
-    aggregateAiUsageByFeature,
-    type AggregateAiUsageByMonthInput,
-    type AggregateAiUsageByUserInput,
-    type AggregateAiUsageByFeatureInput,
-    type AiUsageMonthlyAggRow,
-    type AiUsageByUserAggRow,
-    type AiUsageByFeatureAggRow
-} from './usage.queries.js';
-
 // Monthly call-count query for quota enforcement (SPEC-173 T-031)
-export {
-    countAiUsageForUserFeatureMonth,
-    type CountAiUsageForUserFeatureMonthInput
-} from './usage.queries.js';
-
 // SPEC-260: new aggregate queries — byModel, byProvider, byFeatureModel, daily
 export {
-    aggregateAiUsageByModel,
-    aggregateAiUsageByProvider,
-    aggregateAiUsageByFeatureModel,
-    aggregateAiUsageDaily,
-    type AggregateAiUsageByModelInput,
-    type AggregateAiUsageByProviderInput,
+    type AggregateAiUsageByFeatureInput,
     type AggregateAiUsageByFeatureModelInput,
+    type AggregateAiUsageByModelInput,
+    type AggregateAiUsageByMonthInput,
+    type AggregateAiUsageByProviderInput,
+    type AggregateAiUsageByUserInput,
     type AggregateAiUsageDailyInput,
+    type AiUsageByFeatureAggRow,
+    type AiUsageByFeatureModelAggRow,
     type AiUsageByModelAggRow,
     type AiUsageByProviderAggRow,
-    type AiUsageByFeatureModelAggRow,
-    type AiUsageDailyAggRow
+    type AiUsageByUserAggRow,
+    type AiUsageDailyAggRow,
+    type AiUsageMonthlyAggRow,
+    aggregateAiUsageByFeature,
+    aggregateAiUsageByFeatureModel,
+    aggregateAiUsageByModel,
+    aggregateAiUsageByMonth,
+    aggregateAiUsageByProvider,
+    aggregateAiUsageByUser,
+    aggregateAiUsageDaily,
+    type CountAiUsageForUserFeatureMonthInput,
+    countAiUsageForUserFeatureMonth
 } from './usage.queries.js';
+export {
+    type InsertAiRequestLogInput,
+    type InsertAiUsageInput,
+    insertAiRequestLog,
+    insertAiUsage
+} from './usage.storage.js';

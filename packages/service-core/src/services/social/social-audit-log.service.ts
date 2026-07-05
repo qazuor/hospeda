@@ -11,14 +11,13 @@
  */
 
 import type { SocialAuditLogModel as SocialAuditLogModelType } from '@repo/db';
-import { SocialAuditLogModel, gte, lte, socialAuditLog } from '@repo/db';
+import { gte, lte, SocialAuditLogModel, socialAuditLog } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import type { ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
-import type { Actor } from '../../types';
 import { hasPermission } from '../../utils/permission';
-import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
+import { serviceLogger } from '../../utils/service-logger';
 
 // ---------------------------------------------------------------------------
 // Audit event constants

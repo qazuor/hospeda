@@ -19,13 +19,12 @@
  * @module test/newsletter/campaign-editor
  */
 
+import type { NewsletterCampaign } from '@repo/schemas';
+import { NewsletterCampaignLocaleFilterEnum, NewsletterCampaignStatusEnum } from '@repo/schemas';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { NewsletterCampaign } from '@repo/schemas';
-import { NewsletterCampaignLocaleFilterEnum, NewsletterCampaignStatusEnum } from '@repo/schemas';
 import { renderWithProviders } from '../helpers/render-with-providers';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -113,13 +112,7 @@ vi.mock('@repo/utils', () => ({
 
 // Mock CampaignPreview (visual only)
 vi.mock('@/routes/_authed/newsletter/campaigns/-components/CampaignPreview', () => ({
-    CampaignPreview: ({
-        html,
-        subject
-    }: {
-        html: string;
-        subject: string;
-    }) => (
+    CampaignPreview: ({ html, subject }: { html: string; subject: string }) => (
         <div data-testid="campaign-preview">
             <span data-testid="preview-subject">{subject}</span>
             <div data-testid="preview-html">{html}</div>

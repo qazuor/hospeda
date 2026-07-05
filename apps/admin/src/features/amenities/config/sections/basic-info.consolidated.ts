@@ -1,6 +1,6 @@
+import { AmenitiesTypeEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { AmenitiesTypeEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated configuration for the Basic Info section of amenity.

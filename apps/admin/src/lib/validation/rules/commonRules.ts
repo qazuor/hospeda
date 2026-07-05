@@ -41,7 +41,7 @@ export const createPasswordConfirmationRule = <T extends PasswordFormData>(
             return null; // Don't validate if either field is empty
         }
 
-        return password !== confirmPassword ? 'Passwords do not match' : null;
+        return password === confirmPassword ? null : 'Passwords do not match';
     },
     debounceMs: 500
 });
@@ -207,7 +207,7 @@ export const createEmailConfirmationRule = <T extends Record<string, unknown>>(
             return null;
         }
 
-        return email !== confirmEmail ? 'Email addresses do not match' : null;
+        return email === confirmEmail ? null : 'Email addresses do not match';
     },
     debounceMs: 500
 });

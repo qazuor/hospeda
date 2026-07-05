@@ -102,7 +102,7 @@ describe('Enum consistency between TypeScript and database', () => {
                 // If the error is "type does not exist", report it clearly
                 if (error.code === '42704' || error.message?.includes('does not exist')) {
                     throw new Error(
-                        `Enum \"${dbEnumName}\" does not exist in the database for TypeScript enum \"${tsEnumName}\".\n` +
+                        `Enum "${dbEnumName}" does not exist in the database for TypeScript enum "${tsEnumName}".\n` +
                             `Database error: ${error.message}`
                     );
                 }

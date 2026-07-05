@@ -80,7 +80,7 @@ const FALLBACK_SUBJECT = 'Notificación de Hospeda';
  */
 function replacePlaceholders(pattern: string, data: Record<string, string>): string {
     return pattern.replace(/\{(\w+)\}/g, (match, key) => {
-        return data[key] !== undefined ? data[key] : match;
+        return data[key] === undefined ? match : data[key];
     });
 }
 

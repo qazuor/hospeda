@@ -3,5 +3,5 @@
  * Uses the same cell rendering logic as DataTable components.
  */
 
-export { GridCard, GridEmptyState } from './GridCard';
 export type { GridEmptyStateProps } from './GridCard';
+export { GridCard, GridEmptyState } from './GridCard';

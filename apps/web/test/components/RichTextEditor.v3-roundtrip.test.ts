@@ -12,12 +12,12 @@
  * asserts the Markdown value round-trips under v3.
  */
 
+import { Editor } from '@tiptap/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
     HOST_EDITOR_EXTENSIONS,
     readMarkdown
 } from '@/components/host/editor/RichTextEditor.client';
-import { Editor } from '@tiptap/react';
-import { afterEach, describe, expect, it } from 'vitest';
 
 /**
  * Constructs a headless editor with the component's real, exported extension

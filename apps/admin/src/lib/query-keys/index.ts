@@ -17,22 +17,19 @@
  */
 
 // Export factory functions
-export {
-    createCustomQueryKey,
-    createEntityQueryKeys,
-    getEntityInvalidationKey,
-    isEntityQueryKey,
-    type BaseQueryKey,
-    type QueryKeyFromFactory
-} from './factory';
-
 // Export pre-defined query keys for common entities
 export {
     accommodationQueryKeys,
+    type BaseQueryKey,
+    createCustomQueryKey,
+    createEntityQueryKeys,
     destinationQueryKeys,
     eventQueryKeys,
+    getEntityInvalidationKey,
     globalQueryKeys,
+    isEntityQueryKey,
     postQueryKeys,
+    type QueryKeyFromFactory,
     reviewQueryKeys,
     sponsorQueryKeys,
     userQueryKeys

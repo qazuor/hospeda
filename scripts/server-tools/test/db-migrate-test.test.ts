@@ -10,8 +10,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
-    type ParsedMigrateTestArgs,
     buildScratchDbName,
+    type ParsedMigrateTestArgs,
     parseMigrateTestArgs,
     resolveRepoRoot
 } from '../src/commands/db-migrate-test.ts';

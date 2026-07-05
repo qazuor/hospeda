@@ -7,8 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { streamChat } from '../../../src/lib/api/ai-chat-stream';
 import type { SseEvent } from '../../../src/lib/api/ai-chat-stream';
+import { streamChat } from '../../../src/lib/api/ai-chat-stream';
 
 // --- Helpers ---
 

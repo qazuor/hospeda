@@ -5,6 +5,13 @@
  * Uses SocialPostFooterCreateSchema.safeParse() inside the submit handler per convention.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import {
+    SocialPlatformEnum,
+    type SocialPostFooter,
+    SocialPostFooterCreateSchema
+} from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,13 +26,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateSocialFooter, useUpdateSocialFooter } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import {
-    SocialPlatformEnum,
-    type SocialPostFooter,
-    SocialPostFooterCreateSchema
-} from '@repo/schemas';
-import { useState } from 'react';
 
 /** Props for {@link FooterFormModal}. */
 export interface FooterFormModalProps {

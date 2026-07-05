@@ -1,13 +1,13 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
-import { adminLogger } from '@/utils/logger';
 import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import { DeleteIcon, EditIcon, ViewAllIcon } from '@repo/icons';
 import { Link } from '@tanstack/react-router';
 import type React from 'react';
-import { SimpleVirtualizedList, VirtualizedEntityListPage } from '../VirtualizedEntityListPage';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
+import { adminLogger } from '@/utils/logger';
 import { VIRTUALIZED_QUERY_PRESETS } from '../hooks/useVirtualizedEntityQuery';
+import { SimpleVirtualizedList, VirtualizedEntityListPage } from '../VirtualizedEntityListPage';
 
 /**
  * Example entity type for demonstration

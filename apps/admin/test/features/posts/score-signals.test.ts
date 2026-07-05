@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { computeScore } from '@/components/quality-score';
 import { createPostSignals } from '@/features/posts/config/score-signals';
-import { describe, expect, it } from 'vitest';
 
 const signalsUnlocked = createPostSignals({ hasVideoGalleryFeature: true });
 const signalsGated = createPostSignals({ hasVideoGalleryFeature: false });

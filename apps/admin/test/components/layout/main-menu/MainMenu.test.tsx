@@ -15,10 +15,10 @@
  * @see SPEC-154 T-023
  */
 
-import type { RoleConfig, Section } from '@/config/ia/schema';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RoleConfig, Section } from '@/config/ia/schema';
 
 // ---------------------------------------------------------------------------
 // Mock TanStack Router

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { SUPPORT_EMAIL, buildSupportMailto } from '../../src/lib/forbidden-mailto';
+import { buildSupportMailto, SUPPORT_EMAIL } from '../../src/lib/forbidden-mailto';
 
 const SUBJECT = 'Admin access request';
 const BODY_TEMPLATE = 'Hi.\nEmail: {email}\nID: {userId}\nReason: {reason}\nPath: {originalPath}\n';

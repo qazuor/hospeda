@@ -15,13 +15,13 @@
  * @module test/billing-subscriptions/utils.cutover.test
  */
 
+import { describe, expect, it } from 'vitest';
 import {
     formatArs,
     formatDate,
     getPlanBySlug,
     getStatusVariant
 } from '@/features/billing-subscriptions/utils';
-import { describe, expect, it } from 'vitest';
 
 describe('billing-subscriptions/utils.ts — plan display helpers (SPEC-192 T-027b)', () => {
     describe('getPlanBySlug — CONFIG-FALLBACK display-only lookup', () => {

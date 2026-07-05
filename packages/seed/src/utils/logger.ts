@@ -1,4 +1,4 @@
-import { type ILogger, LogLevel, LoggerColors, logger as baseLogger } from '@repo/logger';
+import { logger as baseLogger, type ILogger, LoggerColors, LogLevel } from '@repo/logger';
 
 /**
  * Logger instance used by DB helpers.
@@ -47,5 +47,5 @@ type SeedLogger = ILogger & {
 
 const typedSeedLogger = seedLogger as unknown as SeedLogger;
 
-export { typedSeedLogger as logger };
 export type { SeedLogger };
+export { typedSeedLogger as logger };

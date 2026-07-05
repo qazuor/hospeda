@@ -27,11 +27,11 @@
  * @see SPEC-155 T-034
  */
 
-import type { Dashboard, Widget } from '@/config/ia/schema';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Dashboard, Widget } from '@/config/ia/schema';
 import { DashboardRenderer } from '../DashboardRenderer';
 
 // ---------------------------------------------------------------------------
@@ -88,13 +88,7 @@ vi.mock('../widgets', () => ({
             data-widget-id={widget.id}
         />
     ),
-    DeferredWidget: ({
-        phaseSpec,
-        title
-    }: {
-        phaseSpec: string;
-        title?: string;
-    }) => (
+    DeferredWidget: ({ phaseSpec, title }: { phaseSpec: string; title?: string }) => (
         <div
             data-testid="deferred-widget"
             data-phase-spec={phaseSpec}

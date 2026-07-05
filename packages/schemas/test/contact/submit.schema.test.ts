@@ -263,13 +263,12 @@ describe('ContactSubmitSchema', () => {
             }
         });
 
-        it.each(PRE_EXISTING_TYPES)(
-            'should still accept the pre-existing type "%s" (historic-fixture compat)',
-            (type) => {
-                const result = ContactSubmitSchema.safeParse({ ...VALID_GENERAL, type });
-                expect(result.success).toBe(true);
-            }
-        );
+        it.each(
+            PRE_EXISTING_TYPES
+        )('should still accept the pre-existing type "%s" (historic-fixture compat)', (type) => {
+            const result = ContactSubmitSchema.safeParse({ ...VALID_GENERAL, type });
+            expect(result.success).toBe(true);
+        });
 
         it('should keep the pre-existing enum values in their original order (additive append only)', () => {
             // Guards against reordering/removal: the first ten options must be

@@ -165,8 +165,8 @@ import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
 import { applyDowngradeRestrictions } from '../../src/services/plan-downgrade-remediation.service';
-import { PlanCatalogMissError } from '../../src/services/subscription-downgrade-excess.service';
 import { getKeepSelectionsForChange } from '../../src/services/subscription-downgrade.service';
+import { PlanCatalogMissError } from '../../src/services/subscription-downgrade-excess.service';
 import { resolveOwnerUserId } from '../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ function makeScheduled(
         requestedAt: '2026-05-15T00:00:00.000Z',
         status: 'pending',
         attemptCount: 0,
-        ...(metadata !== undefined ? { metadata } : {}),
+        ...(metadata === undefined ? {} : { metadata }),
         ...rest
     };
 }
@@ -263,7 +263,7 @@ function makeBilling(opts: BillingMockOpts = {}) {
     // billing.plans.get — used by the cron to resolve the target plan slug and
     // plan names for the PLAN_CHANGE_CONFIRMATION notification (T-017).
     const planSlug = opts.planSlug === undefined ? NEW_PLAN_SLUG : opts.planSlug;
-    const planGet = vi.fn().mockResolvedValue(planSlug !== null ? { name: planSlug } : null);
+    const planGet = vi.fn().mockResolvedValue(planSlug === null ? null : { name: planSlug });
 
     // billing.customers.get — used by the cron for PLAN_CHANGE_CONFIRMATION (T-017).
     // Default: returns a minimal customer so notification tests don't fail on null.

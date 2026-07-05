@@ -15,12 +15,12 @@
  * are deferred to a future PR + the web app handles them today).
  */
 
+import { ExternalLinkIcon, FileTextIcon } from '@repo/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { env } from '@/env';
 import { useMyLatestInvoice } from '@/hooks/use-my-billing';
 import { useTranslations } from '@/hooks/use-translations';
-import { ExternalLinkIcon, FileTextIcon } from '@repo/icons';
 
 const WEB_BILLING_PATH_BY_LOCALE: Record<string, string> = {
     es: '/es/mi-cuenta/suscripcion',

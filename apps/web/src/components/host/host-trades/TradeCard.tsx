@@ -14,10 +14,10 @@
  * Styling: CSS Modules + design tokens (no Tailwind).
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import type { HostTradePublic } from '@repo/schemas';
 import type { JSX } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './TradeCard.module.css';
 
 // ---------------------------------------------------------------------------
@@ -91,12 +91,7 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             {/* ── Card header: name + category badge ── */}
             <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle}>{trade.name}</h3>
-                <span
-                    className={styles.categoryBadge}
-                    aria-label={categoryLabel}
-                >
-                    {categoryLabel}
-                </span>
+                <span className={styles.categoryBadge}>{categoryLabel}</span>
             </div>
 
             {/* ── is24h badge ── */}

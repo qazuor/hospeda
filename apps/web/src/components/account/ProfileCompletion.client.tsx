@@ -18,16 +18,16 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 import {
+    computeDisplayName,
+    computeInitialDisplayNameOverride,
     type ProfileCompletionFieldErrors,
     type ProfileCompletionPayload,
     type SocialPlatform,
-    computeDisplayName,
-    computeInitialDisplayNameOverride,
     validateProfileCompletionFields
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';

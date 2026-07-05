@@ -135,8 +135,8 @@ vi.mock('@repo/icons', async (importOriginal) => ({
 // Imports after mocks
 // ---------------------------------------------------------------------------
 
-import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-posts';
 import type { SocialDashboardResponse } from '@repo/schemas';
+import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-posts';
 import { DashboardDateRangeFilter } from '../-components/DashboardDateRangeFilter';
 import { DashboardKpiCards } from '../-components/DashboardKpiCards';
 import { PlatformBreakdownChart } from '../-components/PlatformBreakdownChart';

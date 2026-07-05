@@ -16,8 +16,7 @@
  * @see packages/db/src/schemas/exchange-rate/exchange-rate.dbschema.ts
  */
 
-import { numeric, pgTable } from 'drizzle-orm/pg-core';
-import { getTableConfig } from 'drizzle-orm/pg-core';
+import { getTableConfig, numeric, pgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
 import { accommodations } from '../src/schemas/accommodation/accommodation.dbschema.ts';

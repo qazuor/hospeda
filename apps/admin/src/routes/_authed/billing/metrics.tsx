@@ -10,6 +10,9 @@
  * The section is replaced by a placeholder banner; the related hooks are
  * still exported but stay disabled in `features/billing-metrics/hooks.ts`.
  */
+
+import { LoaderIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,8 +23,6 @@ import {
 } from '@/features/billing-metrics';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { LoaderIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/billing/metrics')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

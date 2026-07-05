@@ -19,10 +19,10 @@
  * event upstream).
  */
 
-import { cn } from '@/lib/cn';
 import { MonitorIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/cn';
 import styles from './ThemeControl.module.css';
 
 type ThemeChoice = 'light' | 'system' | 'dark';

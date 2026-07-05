@@ -4,7 +4,6 @@
  * Maps amenity icon names and keys to their corresponding @repo/icons components.
  */
 
-import type { CardAmenityFeature } from '@/data/types';
 import {
     AirConditioningIcon,
     BbqGrillIcon,
@@ -21,6 +20,7 @@ import {
     WifiHighIcon,
     WifiIcon
 } from '@repo/icons';
+import type { CardAmenityFeature } from '@/data/types';
 
 /** Icon component type (all share the same signature) */
 type IconComponent = typeof WifiIcon;

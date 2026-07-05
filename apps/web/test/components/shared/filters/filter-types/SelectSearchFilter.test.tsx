@@ -5,10 +5,10 @@
  * chip display/removal, and "show more / show less" pagination.
  */
 
-import { SelectSearchFilter } from '@/components/shared/filters/filter-types/SelectSearchFilter';
-import type { SelectSearchFilterConfig } from '@/components/shared/filters/filter-types/SelectSearchFilter';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { SelectSearchFilterConfig } from '@/components/shared/filters/filter-types/SelectSearchFilter';
+import { SelectSearchFilter } from '@/components/shared/filters/filter-types/SelectSearchFilter';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

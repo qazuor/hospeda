@@ -20,8 +20,9 @@
  *     `index.ts` so the init log is emitted exactly once on boot rather
  *     than lazily on the first request that touches the provider.
  */
-import { CloudinaryProvider } from '@repo/media/server';
+
 import type { ImageProvider } from '@repo/media/server';
+import { CloudinaryProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';

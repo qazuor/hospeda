@@ -13,8 +13,9 @@
  * destination name (the label field). If richer context is needed in the future,
  * request it from the backend options endpoint (FLAG: SPEC-169/UX-DEST-LABEL).
  */
-import { useTranslations } from '@/hooks/use-translations';
+
 import type { FC } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 import { ApiSelect, type ApiSelectOption } from '../ui/ApiSelect';
 
 /**

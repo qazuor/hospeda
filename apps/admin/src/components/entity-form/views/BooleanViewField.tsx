@@ -1,10 +1,9 @@
+import { CheckIcon, CloseIcon } from '@repo/icons';
+import * as React from 'react';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-
-import { CheckIcon, CloseIcon } from '@repo/icons';
-import * as React from 'react';
 
 /**
  * Props for BooleanViewField component

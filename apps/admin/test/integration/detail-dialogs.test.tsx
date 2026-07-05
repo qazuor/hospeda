@@ -8,13 +8,13 @@
  * @module test/integration/detail-dialogs
  */
 
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import type { NotificationLog } from '@/features/billing-notification-logs';
 import { NotificationDetailDialog } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
 import type { WebhookEvent } from '@/features/billing-webhook-events';
 import { WebhookEventDetailDialog } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
-import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
 import {
     mockNotificationLog,
     mockNotificationLogFailed,

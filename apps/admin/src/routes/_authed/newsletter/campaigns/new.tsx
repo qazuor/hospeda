@@ -11,11 +11,11 @@
  * @module NewCampaignPage
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 import { CampaignEditor } from './-components/CampaignEditor';
 
 // ─── Route ────────────────────────────────────────────────────────────────────

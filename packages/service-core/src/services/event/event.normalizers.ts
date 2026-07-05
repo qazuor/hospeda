@@ -36,7 +36,7 @@ export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }):
     const adminInfo = normalizeAdminInfo(input.adminInfo);
     // Exclude the original date property from rest
     const { adminInfo: _adminInfo, date: _date, id, ...rest } = input;
-    let date: EventDate | undefined = undefined;
+    let date: EventDate | undefined;
     if (input.date?.start) {
         date = {
             ...input.date,

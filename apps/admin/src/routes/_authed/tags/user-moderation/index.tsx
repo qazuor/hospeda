@@ -15,8 +15,8 @@
  * @see D-012 (TAG_USER_UPDATE_ANY exclusion)
  */
 
-import { UserModerationTagsRoute } from '@/features/tags/user-moderation/config/user-moderation-tags.config';
 import { createFileRoute } from '@tanstack/react-router';
+import { UserModerationTagsRoute } from '@/features/tags/user-moderation/config/user-moderation-tags.config';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;

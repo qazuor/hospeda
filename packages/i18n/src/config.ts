@@ -15,13 +15,13 @@
 // Re-export shared constants and types so that existing code importing them
 // from 'config' continues to work without changes.
 export {
-    defaultLocale,
     defaultIntlLocale,
-    locales,
+    defaultLocale,
     flattenObject,
-    webTrans,
     type Locale,
-    type WebNamespace
+    locales,
+    type WebNamespace,
+    webTrans
 } from './config.shared';
 
 import { adminNamespaces, adminTrans } from './config.admin';

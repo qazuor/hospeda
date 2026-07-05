@@ -117,7 +117,7 @@ export function normalizeCreateInput(
         title,
         summary,
         content,
-        ...(media !== undefined ? { media } : {}),
+        ...(media === undefined ? {} : { media }),
         ...(adminInfo ? { adminInfo } : {})
     } as z.infer<typeof PostCreateInputSchema>;
 }
@@ -162,10 +162,10 @@ export function normalizeUpdateInput(
     const adminInfo = normalizeAdminInfo(_adminInfo);
     return {
         ...rest,
-        ...(title !== undefined ? { title } : {}),
-        ...(summary !== undefined ? { summary } : {}),
-        ...(content !== undefined ? { content } : {}),
-        ...(media !== undefined ? { media } : {}),
+        ...(title === undefined ? {} : { title }),
+        ...(summary === undefined ? {} : { summary }),
+        ...(content === undefined ? {} : { content }),
+        ...(media === undefined ? {} : { media }),
         ...(adminInfo ? { adminInfo } : {})
     } as z.infer<typeof UpdatePostInputSchema>;
 }

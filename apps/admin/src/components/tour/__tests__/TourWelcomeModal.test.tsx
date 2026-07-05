@@ -15,10 +15,10 @@
  * @see SPEC-174 §7.4, D1
  */
 
-import type { Tour } from '@/config/ia/tour.schema';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Tour } from '@/config/ia/tour.schema';
 import { TourWelcomeModal } from '../TourWelcomeModal';
 
 // ---------------------------------------------------------------------------

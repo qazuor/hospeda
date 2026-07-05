@@ -1,6 +1,6 @@
 import { moderateText } from '@repo/content-moderation';
-import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { SelectMessage } from '@repo/db';
+import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import {
     ConversationStatusEnum,
     MessageSenderTypeEnum,

@@ -55,29 +55,29 @@ import {
 
 // ---------- post-category ----------
 import {
-    POST_CATEGORY_FALLBACK_VISUAL,
-    POST_CATEGORY_VISUALS,
     getPostCategoryColorScheme,
     getPostCategoryIcon,
-    getPostCategoryVisual
+    getPostCategoryVisual,
+    POST_CATEGORY_FALLBACK_VISUAL,
+    POST_CATEGORY_VISUALS
 } from '../src/domain/post-category';
 
 // ---------- sponsor-type ----------
 import {
-    SPONSOR_TYPE_FALLBACK_VISUAL,
-    SPONSOR_TYPE_VISUALS,
     getSponsorTypeColorScheme,
     getSponsorTypeIcon,
-    getSponsorTypeVisual
+    getSponsorTypeVisual,
+    SPONSOR_TYPE_FALLBACK_VISUAL,
+    SPONSOR_TYPE_VISUALS
 } from '../src/domain/sponsor-type';
 
 // ---------- user-role ----------
 import {
-    USER_ROLE_FALLBACK_VISUAL,
-    USER_ROLE_VISUALS,
     getUserRoleColorScheme,
     getUserRoleIcon,
-    getUserRoleVisual
+    getUserRoleVisual,
+    USER_ROLE_FALLBACK_VISUAL,
+    USER_ROLE_VISUALS
 } from '../src/domain/user-role';
 
 // ---------------------------------------------------------------------------

@@ -1,10 +1,10 @@
+import type { TranslationKey } from '@repo/i18n';
+import { useQueries } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import type { TranslationKey } from '@repo/i18n';
-import { useQueries } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/analytics/business')({
     component: AnalyticsBusinessPage

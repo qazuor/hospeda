@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { NotImplementedError, StubProvider } from '../src/providers/index.js';
 import type { AiProvider } from '../src/providers/index.js';
+import { NotImplementedError, StubProvider } from '../src/providers/index.js';
 
 /**
  * Unit tests for `StubProvider` and the `AiProvider` interface (T-012).

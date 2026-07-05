@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    type FixtureMediaBlock,
-    buildAccommodationMediaRows
+    buildAccommodationMediaRows,
+    type FixtureMediaBlock
 } from '../src/utils/accommodation-media-builder.js';
 
 /**

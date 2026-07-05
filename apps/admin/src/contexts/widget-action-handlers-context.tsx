@@ -41,8 +41,8 @@
  * @see SPEC-175 T-017
  */
 
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import type { ListItem } from '@/components/dashboards/widgets/ListWidget';
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 // ============================================================================
 // TYPES

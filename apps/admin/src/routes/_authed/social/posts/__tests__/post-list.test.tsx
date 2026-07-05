@@ -80,10 +80,10 @@ vi.mock('@repo/icons', async (importOriginal) => ({
 // Imports after mocks
 // ---------------------------------------------------------------------------
 
-import { useApproveSocialPost } from '@/hooks/use-social-posts';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
+import { useApproveSocialPost } from '@/hooks/use-social-posts';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { SocialPostsTable } from '../-components/SocialPostsTable';
 
 // ---------------------------------------------------------------------------

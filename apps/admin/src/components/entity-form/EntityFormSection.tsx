@@ -1,3 +1,4 @@
+import type { I18nText } from '@repo/schemas';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import {
     AccommodationSelectField,
@@ -15,8 +16,8 @@ import {
     PostSponsorshipSelectField,
     SelectField,
     SwitchField,
-    TextField,
     TextareaField,
+    TextField,
     UserSelectField
 } from '@/components/entity-form/fields';
 import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
@@ -27,7 +28,6 @@ import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryFie
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 import { Checkbox, Label as ShadLabel } from '@/components/ui-wrapped';
-import type { I18nText } from '@repo/schemas';
 
 // Heavy field components — lazy-loaded so tiptap/leaflet/upload don't sit in
 // the components-entity chunk. Each becomes its own async chunk loaded only
@@ -58,13 +58,14 @@ export interface FieldMediaHandlers {
     /** Called with the Cloudinary publicId before removing an image. */
     onDelete?: (publicId: string) => Promise<void>;
 }
+
+import * as React from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 import { PremiumBlock, type PremiumBlockItem } from '@/features/billing/PremiumBlock';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 /**
  * Props for EntityFormSection component
@@ -500,9 +501,9 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                         const jsonStringValue =
                             typeof fieldValue === 'string'
                                 ? fieldValue
-                                : fieldValue != null
-                                  ? JSON.stringify(fieldValue, null, 2)
-                                  : '';
+                                : fieldValue == null
+                                  ? ''
+                                  : JSON.stringify(fieldValue, null, 2);
                         return (
                             <TextareaField
                                 {...fieldProps}

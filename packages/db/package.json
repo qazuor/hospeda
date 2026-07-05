@@ -25,7 +25,9 @@
             "import": "./src/schemas/billing/index.ts"
         }
     },
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "drizzle-kit": "tsx node_modules/drizzle-kit/bin.cjs",
         "build": "tsup",

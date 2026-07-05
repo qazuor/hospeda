@@ -44,8 +44,8 @@
  * @module services/billing/promo-code/promo-code.renewal
  */
 
-import { billingSubscriptions, eq, getDb, sql } from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import { billingSubscriptions, eq, getDb, sql } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { PromoEffectKindEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
 import { loadSubscriptionDiscountState } from '../subscription/subscription-product-domain.js';
@@ -58,6 +58,7 @@ import { loadSubscriptionDiscountState } from '../subscription/subscription-prod
  * dependency tree and breaks test environments).
  */
 const log = createLogger('service-core:promo-code:renewal');
+
 import { calculatePromoCodeEffect } from './effect-reducer.js';
 import { getPromoCodeById } from './promo-code.crud.js';
 

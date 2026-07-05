@@ -1,13 +1,13 @@
+import { AlertCircleIcon, AlertTriangleIcon, CheckIcon, LoaderIcon } from '@repo/icons';
+import type React from 'react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
     type CrossFieldRule,
     useCrossFieldValidation
 } from '@/lib/validation/hooks/useCrossFieldValidation';
-import { AlertCircleIcon, AlertTriangleIcon, CheckIcon, LoaderIcon } from '@repo/icons';
-import type React from 'react';
-import type { ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Form submission state
@@ -332,7 +332,7 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                             >
                                 {submissionState.isSubmitting && (
                                     <LoaderIcon
-                                        className="-ml-1 mr-2 h-4 w-4 animate-spin"
+                                        className="mr-2 -ml-1 h-4 w-4 animate-spin"
                                         aria-label="Loading"
                                     />
                                 )}

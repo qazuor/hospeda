@@ -13,8 +13,10 @@
 import type { AccommodationModel, TouristPriceAlertModel } from '@repo/db';
 import type { Accommodation, PriceAlert } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import { calculatePriceDropMatch } from '../../../src/services/alert/price-drop-evaluator.service';
-import { PriceDropEvaluatorService } from '../../../src/services/alert/price-drop-evaluator.service';
+import {
+    calculatePriceDropMatch,
+    PriceDropEvaluatorService
+} from '../../../src/services/alert/price-drop-evaluator.service';
 import { getMockId } from '../../factories/utilsFactory';
 
 // ---------------------------------------------------------------------------

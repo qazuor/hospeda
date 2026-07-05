@@ -3,6 +3,9 @@
  *
  * Mirrors `_authed/ai/credentials.tsx`'s `DeleteCredentialDialog`.
  */
+
+import { DeleteIcon, LoaderIcon } from '@repo/icons';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,13 +17,11 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import {
-    type SocialCredentialKey,
     getSocialCredentialKeyLabel,
+    type SocialCredentialKey,
     useDeleteSocialCredentialMutation
 } from '@/features/social-credentials';
 import { useToast } from '@/hooks/use-toast';
-import { DeleteIcon, LoaderIcon } from '@repo/icons';
-import { useState } from 'react';
 
 /** Confirmation dialog for soft-deleting a social credential. */
 export function DeleteCredentialDialog({

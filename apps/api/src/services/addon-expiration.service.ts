@@ -29,13 +29,12 @@ import { findExpiredAddons, findExpiringAddons } from './addon-expiration.querie
 
 // ─── Re-export types for backward compatibility ───────────────────────────────
 
+export type { ProcessExpiredAddonsResult } from './addon-expiration.batch.js';
 export type {
     ExpiredAddon,
     ExpiringAddon,
     FindExpiringAddonsInput
 } from './addon-expiration.queries.js';
-
-export type { ProcessExpiredAddonsResult } from './addon-expiration.batch.js';
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 

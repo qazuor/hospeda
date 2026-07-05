@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Sponsor, SponsorListItemSchema } from '../schemas/sponsors.schemas';
 import { createSponsorsColumns } from './sponsors.columns';
 
@@ -83,4 +83,5 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
 };
 
 const { component, route } = createEntityListPage(sponsorsConfig);
+
 export { component as SponsorsPageComponent, route as SponsorsRoute };

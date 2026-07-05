@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDebounce } from '@/hooks/use-debounce';
 import { fetchApi } from '@/lib/api/client';
-import { useEffect, useRef, useState } from 'react';
 
 /** Accommodation item returned by the admin search endpoint. */
 interface AccommodationItem {

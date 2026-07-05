@@ -6,7 +6,7 @@
  */
 import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import type { Actor } from '../../../src';
 import { UserService } from '../../../src/services/user/user.service';
 import { createActor, createSuperAdminActor } from '../../factories/actorFactory';

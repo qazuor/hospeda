@@ -12,14 +12,14 @@
  * Mirrors the keyboard / dismissal behavior of UserMenu (click-outside, ESC).
  */
 
+import { ChevronDownIcon, SettingsIcon } from '@repo/icons';
+import type { JSX } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { ChevronDownIcon, SettingsIcon } from '@repo/icons';
-import type { JSX } from 'react';
-import { useEffect, useRef, useState } from 'react';
 import styles from './SettingsDropdown.module.css';
 
 const TEXTS = {
@@ -120,8 +120,10 @@ export function SettingsDropdown({
             </button>
 
             {isOpen && (
+                // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label labels the settings popover panel; a real <fieldset> would inherit user-agent border/padding/margin that fight this popover layout
                 <div
                     ref={popoverRef}
+                    role="group"
                     aria-label={texts.openSettings}
                     className={styles.popover}
                 >

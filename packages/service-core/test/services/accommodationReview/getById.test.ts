@@ -9,8 +9,8 @@ import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/sch
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodationReview/accommodationReview.permissions';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
-import { ServiceError } from '../../../src/types';
 import type { ServiceConfig } from '../../../src/types';
+import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';

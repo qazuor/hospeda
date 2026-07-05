@@ -108,7 +108,9 @@
     background-color: rgb(255 255 255 / 0.95) !important;
     box-shadow: 0 1px 3px oklch(0 0 0 / 0.18);
     z-index: 3;
-    transition: background-color 150ms ease-out, transform 150ms ease-out;
+    transition:
+        background-color 150ms ease-out,
+        transform 150ms ease-out;
 }
 
 .popup :global(.leaflet-popup-close-button:hover) {
@@ -397,7 +399,9 @@
     /* Slightly softer corner radius on the stacked variant; the single-line
      * pill keeps its fully rounded look via the base rule. */
     border-radius: 9999px;
-    box-shadow: 0 2px 6px oklch(0 0 0 / 0.12), 0 6px 16px oklch(0 0 0 / 0.1);
+    box-shadow:
+        0 2px 6px oklch(0 0 0 / 0.12),
+        0 6px 16px oklch(0 0 0 / 0.1);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -405,7 +409,10 @@
      * icon). */
     pointer-events: auto;
     cursor: pointer;
-    transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+    transition:
+        transform 150ms ease-out,
+        box-shadow 150ms ease-out,
+        background-color 150ms ease-out;
 }
 
 /* When the pill stacks name + price on two lines we soften the radius so the
@@ -429,7 +436,9 @@
 .itemPillInner:hover,
 .itemPillHovered {
     transform: translate(-50%, calc(-100% - 2px));
-    box-shadow: 0 4px 10px oklch(0 0 0 / 0.18), 0 10px 24px oklch(0 0 0 / 0.14);
+    box-shadow:
+        0 4px 10px oklch(0 0 0 / 0.18),
+        0 10px 24px oklch(0 0 0 / 0.14);
     background-color: var(--core-card, #fff);
     border-color: var(--brand-accent-a40);
 }

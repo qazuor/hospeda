@@ -27,11 +27,11 @@
 
 import {
     AccommodationModel,
-    UserModel,
     conversations,
     getDb,
     messages,
     sql,
+    UserModel,
     withTransaction
 } from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';

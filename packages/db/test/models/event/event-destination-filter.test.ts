@@ -65,10 +65,7 @@ function makeSearchMock(opts: {
  * Creates a mock for db.query.events.findMany() + db.select().from().where()
  * (used by searchWithRelations).
  */
-function makeSearchWithRelationsMock(opts: {
-    items?: unknown[];
-    total?: number;
-}) {
+function makeSearchWithRelationsMock(opts: { items?: unknown[]; total?: number }) {
     const { items = [], total = 0 } = opts;
 
     const findManyFn = vi.fn().mockResolvedValue(items);

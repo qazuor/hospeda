@@ -112,7 +112,7 @@ function main() {
     const verifierOutput = `${result.stdout ?? ''}${result.stderr ?? ''}`;
 
     if (result.status === 0) {
-        // biome-ignore lint/suspicious/noConsoleLog: CLI script for user-facing progress output
+        // biome-ignore lint/suspicious/noConsole: CLI script for user-facing progress output
         console.log('No missing keys — nothing to do.');
         return;
     }
@@ -128,12 +128,12 @@ function main() {
     );
 
     if (missingKeys.length === 0) {
-        // biome-ignore lint/suspicious/noConsoleLog: CLI script for user-facing progress output
+        // biome-ignore lint/suspicious/noConsole: CLI script for user-facing progress output
         console.log('No missing keys parsed from verifier output.');
         return;
     }
 
-    // biome-ignore lint/suspicious/noConsoleLog: CLI script for user-facing progress output
+    // biome-ignore lint/suspicious/noConsole: CLI script for user-facing progress output
     console.log(`Found ${missingKeys.length} missing key(s).`);
 
     for (const locale of LOCALES) {
@@ -157,7 +157,7 @@ function main() {
 
         const sorted = sortDeep(json);
         fs.writeFileSync(filePath, `${JSON.stringify(sorted, null, 4)}\n`);
-        // biome-ignore lint/suspicious/noConsoleLog: CLI script for user-facing progress output
+        // biome-ignore lint/suspicious/noConsole: CLI script for user-facing progress output
         console.log(`  ${locale}: added ${added} key(s)`);
     }
 }

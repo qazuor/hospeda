@@ -15,17 +15,17 @@
  * - Between tests, clear and re-register via stub after each test.
  */
 
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_QUERY_KEY_ROOT,
-    DASHBOARD_STALE_TIME_MS,
     _clearRegistryForTesting,
     buildDashboardQueryKey,
+    DASHBOARD_QUERY_KEY_ROOT,
+    DASHBOARD_STALE_TIME_MS,
     isSourceRegistered,
     registerDataSource,
     resolveDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // ============================================================================
 // HELPERS

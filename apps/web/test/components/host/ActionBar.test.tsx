@@ -3,10 +3,10 @@
  * @description Tests for ActionBar component — save/cancel buttons, loading state.
  */
 
-import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { ActionBar } from '@/components/host/editor/ActionBar.client';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

@@ -18,8 +18,8 @@
  * @module ai-core/storage/prompt
  */
 
-import { aiPromptVersions, and, desc, eq, getDb, isNull, max, withTransaction } from '@repo/db';
 import type { DrizzleClient, SelectAiPromptVersion } from '@repo/db';
+import { aiPromptVersions, and, desc, eq, getDb, isNull, max, withTransaction } from '@repo/db';
 import type { AiFeature } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------

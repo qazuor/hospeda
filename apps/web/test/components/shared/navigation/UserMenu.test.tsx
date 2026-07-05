@@ -5,11 +5,11 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
 import type {
     UserMenuProps,
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 

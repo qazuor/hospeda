@@ -1,8 +1,8 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { reportComponentError } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { reportComponentError } from '@/lib/errors';
 
 /**
  * Error fallback component for TanStack Query errors

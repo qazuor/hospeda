@@ -1,7 +1,7 @@
-import { fetchApi } from '@/lib/api/client';
-import { useEntityQueryKeys } from '@/lib/query-keys';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { fetchApi } from '@/lib/api/client';
+import { useEntityQueryKeys } from '@/lib/query-keys';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
 import type { VirtualizedListConfig } from './useVirtualizedList';
 

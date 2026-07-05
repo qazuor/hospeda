@@ -20,10 +20,10 @@
  * two lists stay in sync automatically.
  */
 
+import type { APIRoute } from 'astro';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
 import { parseNoindexHosts } from '@/lib/middleware-helpers';
 import { SITEMAP_EXCLUDED_PATHS } from '@/lib/seo-config';
-import type { APIRoute } from 'astro';
 
 export const prerender = false;
 

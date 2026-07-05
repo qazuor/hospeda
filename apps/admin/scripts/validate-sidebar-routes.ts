@@ -141,7 +141,9 @@ function deriveRoutePath(relativePath: string): string | null {
         //   a split route. We must NOT treat the dot as a nested path separator
         //   here; instead we split `$id_.edit` into `$id` + `edit`.
         const dotIdx = segment.indexOf('.');
-        if (dotIdx !== -1) {
+        if (dotIdx === -1) {
+            outputSegments.push(segment);
+        } else {
             const before = segment.slice(0, dotIdx);
             const after = segment.slice(dotIdx + 1);
 
@@ -154,8 +156,6 @@ function deriveRoutePath(relativePath: string): string | null {
                 // Flat-file dot notation: `foo.bar` → [foo, bar]
                 outputSegments.push(before, ...after.split('.'));
             }
-        } else {
-            outputSegments.push(segment);
         }
     }
 

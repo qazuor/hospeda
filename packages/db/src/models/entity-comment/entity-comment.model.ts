@@ -1,5 +1,5 @@
 import type { EntityComment } from '@repo/schemas';
-import { type SQL, and, asc, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { entityComments } from '../../schemas/entity-comment/entity_comment.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -105,10 +105,7 @@ export class EntityCommentModel extends BaseModelImpl<EntityComment> {
      *   mutating write so the recount is consistent within the transaction).
      * @returns The number of APPROVED, non-deleted POST comments for the post.
      */
-    async countApprovedByPostId(params: {
-        postId: string;
-        tx?: DrizzleClient;
-    }): Promise<number> {
+    async countApprovedByPostId(params: { postId: string; tx?: DrizzleClient }): Promise<number> {
         const { postId, tx } = params;
         const db = this.getClient(tx);
         const logContext = { postId };

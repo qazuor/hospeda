@@ -140,7 +140,9 @@
     background-color: var(--brand-primary);
     text-decoration: none;
     white-space: nowrap;
-    transition: opacity var(--duration-fast) ease, background-color var(--duration-fast) ease;
+    transition:
+        opacity var(--duration-fast) ease,
+        background-color var(--duration-fast) ease;
 }
 
 .cta:hover {

@@ -1,5 +1,5 @@
-import { billingNotificationLog } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { billingNotificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
@@ -57,7 +57,7 @@ import type {
 } from '../types/notification.types.js';
 import { getSubject } from '../utils/subject-builder.js';
 import type { PreferenceService } from './preference.service.js';
-import { RetryService, type RetryableNotification } from './retry.service.js';
+import { type RetryableNotification, RetryService } from './retry.service.js';
 
 /**
  * Dependencies for NotificationService

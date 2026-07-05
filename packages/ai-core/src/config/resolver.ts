@@ -27,8 +27,8 @@
  */
 
 import type { AiFeature, AiFeatureConfig, AiSettingsValue } from '@repo/schemas';
-import { readAiSettings, writeAiSettings } from '../storage/index.js';
 import type { WriteAiSettingsInput } from '../storage/index.js';
+import { readAiSettings, writeAiSettings } from '../storage/index.js';
 
 // ---------------------------------------------------------------------------
 // Cache TTL

@@ -1,12 +1,12 @@
+import { EntitlementKey } from '@repo/billing';
+import type { useTranslations } from '@repo/i18n';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
-import { EntitlementKey } from '@repo/billing';
-import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**

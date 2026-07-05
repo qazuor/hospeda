@@ -7,9 +7,9 @@
  * - Cancel resets the form
  */
 
-import { BlockDialog } from '@/features/conversations/components/BlockDialog';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { BlockDialog } from '@/features/conversations/components/BlockDialog';
 
 // Mock useUpdateStatusMutation
 vi.mock('@/features/conversations/hooks/useUpdateStatusMutation', () => ({

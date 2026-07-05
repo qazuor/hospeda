@@ -34,6 +34,7 @@
  * @see SPEC-155 T-020
  */
 
+import type { CronCategory } from '@repo/schemas';
 import { fetchApi } from '@/lib/api/client';
 import {
     CRON_CATEGORY_LABELS,
@@ -41,11 +42,10 @@ import {
     formatCronDateTime
 } from '@/lib/cron-presentation';
 import {
-    DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     registerDataSource
 } from '@/lib/dashboard-sources';
-import type { CronCategory } from '@repo/schemas';
 
 // ============================================================================
 // RESPONSE TYPE SHAPES

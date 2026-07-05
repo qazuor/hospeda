@@ -32,13 +32,13 @@
  */
 
 import { UserModel } from '@repo/db';
+import type { AlertDigestPayload } from '@repo/notifications';
 import {
     AlertDigestDeliveryService,
     BrevoEmailTransport,
-    EmailAlertChannel,
-    createEmailClient
+    createEmailClient,
+    EmailAlertChannel
 } from '@repo/notifications';
-import type { AlertDigestPayload } from '@repo/notifications';
 import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
 import { env } from '../../utils/env.js';

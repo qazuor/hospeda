@@ -17,6 +17,9 @@
  * - Keyboard navigation (Enter/Space to toggle)
  */
 
+import { DropdownIcon } from '@repo/icons';
+import { useLocation } from '@tanstack/react-router';
+import { useCallback, useId, useState } from 'react';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import type {
     VisibleGroupItem,
@@ -25,9 +28,6 @@ import type {
 } from '@/hooks/use-visible-sidebar-items';
 import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import { DropdownIcon } from '@repo/icons';
-import { useLocation } from '@tanstack/react-router';
-import { useCallback, useId, useState } from 'react';
 import { SidebarItem } from './SidebarItem';
 
 export interface SidebarGroupProps {
@@ -78,10 +78,7 @@ export function SidebarGroup({ item, onItemClick, className }: SidebarGroupProps
 
     if (item.disabled) {
         return (
-            <div
-                className={cn('mb-1 opacity-40', className)}
-                aria-label={label}
-            >
+            <div className={cn('mb-1 opacity-40', className)}>
                 <span
                     title="Requiere permiso"
                     className={cn(
@@ -110,10 +107,7 @@ export function SidebarGroup({ item, onItemClick, className }: SidebarGroupProps
     }
 
     return (
-        <div
-            className={cn('mb-1', className)}
-            aria-labelledby={`${contentId}-label`}
-        >
+        <div className={cn('mb-1', className)}>
             {/* Group header button */}
             <button
                 type="button"
@@ -150,7 +144,6 @@ export function SidebarGroup({ item, onItemClick, className }: SidebarGroupProps
             {/* Group children */}
             <div
                 id={contentId}
-                aria-labelledby={`${contentId}-label`}
                 className={cn(
                     'overflow-hidden transition-all duration-200 ease-out',
                     isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'

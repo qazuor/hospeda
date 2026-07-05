@@ -10,7 +10,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted — must appear before any imports that depend on them)

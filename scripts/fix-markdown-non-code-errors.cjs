@@ -30,7 +30,7 @@ function fixMD036(content) {
 
     const result = lines.map((line, index) => {
         // Pattern: **Text** on its own line, possibly followed by content
-        const match = line.match(/^(\*\*([A-Z][A-Za-z0-9\s\-\(\)\.]+)\*\*)\s*$/);
+        const match = line.match(/^(\*\*([A-Z][A-Za-z0-9\s\-().]+)\*\*)\s*$/);
 
         if (match) {
             const text = match[2];
@@ -47,7 +47,7 @@ function fixMD036(content) {
 
             // Don't convert if it looks like emphasis in a list
             const prevLine = index > 0 ? lines[index - 1] : '';
-            if (prevLine.trim().match(/^[-\*\d+\.]/)) {
+            if (prevLine.trim().match(/^[-*\d+.]/)) {
                 return line;
             }
 

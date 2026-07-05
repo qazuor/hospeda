@@ -3,7 +3,7 @@
  * Get all FAQs for a gastronomy listing — Admin endpoint.
  */
 import { GastronomyFaqListOutputSchema, PermissionEnum } from '@repo/schemas';
-import { GastronomyService, ServiceError, listGastronomyFaqs } from '@repo/service-core';
+import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

@@ -35,8 +35,8 @@
  * @module services/subscription-downgrade-excess
  */
 
-import { EntitlementKey, LimitKey, getPlanBySlug as billingGetPlanBySlug } from '@repo/billing';
 import type { PlanDefinition } from '@repo/billing';
+import { getPlanBySlug as billingGetPlanBySlug, EntitlementKey, LimitKey } from '@repo/billing';
 import type {
     ComputeDowngradeExcessInput,
     DowngradeExcessItem,

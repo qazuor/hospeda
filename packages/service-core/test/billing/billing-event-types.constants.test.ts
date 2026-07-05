@@ -10,8 +10,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { BILLING_EVENT_TYPES } from '../../src/services/billing/constants.js';
 import type { BillingEventType } from '../../src/services/billing/constants.js';
+import { BILLING_EVENT_TYPES } from '../../src/services/billing/constants.js';
 
 describe('BILLING_EVENT_TYPES', () => {
     describe('pre-existing event types — stable contract values', () => {

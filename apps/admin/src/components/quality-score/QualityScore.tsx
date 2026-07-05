@@ -1,9 +1,9 @@
+import { ArrowRightIcon, CheckCircleIcon, CircleIcon, CrownIcon, SparkleIcon } from '@repo/icons';
+import * as React from 'react';
 import { openSection } from '@/components/entity-form/accordion/section-navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { ArrowRightIcon, CheckCircleIcon, CircleIcon, CrownIcon, SparkleIcon } from '@repo/icons';
-import * as React from 'react';
 import type { EvaluatedSignal, ScoreResult, SignalHint } from './types';
 
 // ---------------------------------------------------------------------------

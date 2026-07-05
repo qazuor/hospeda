@@ -13,8 +13,8 @@
  */
 
 import type { AddonDefinition } from '@repo/billing';
-import { AddonCatalogService } from './addon-catalog.service.js';
 import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
+import { AddonCatalogService } from './addon-catalog.service.js';
 
 // ---------------------------------------------------------------------------
 // Module-level singleton — avoids re-constructing on every call while keeping

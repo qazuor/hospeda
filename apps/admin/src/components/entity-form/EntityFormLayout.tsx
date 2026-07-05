@@ -1,8 +1,8 @@
+import { EyeIcon, LoaderIcon, RotateCcwIcon, SaveIcon } from '@repo/icons';
+import * as React from 'react';
 import { Button } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { EyeIcon, LoaderIcon, RotateCcwIcon, SaveIcon } from '@repo/icons';
-import * as React from 'react';
 import { EntityFormSection } from './EntityFormSection';
 import { useEntityForm } from './hooks/useEntityForm';
 import { TabsLayout } from './layouts';

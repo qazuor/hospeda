@@ -13,7 +13,7 @@
  * NOTE: each test leaves data in the DB; afterEach runs testDb.clean() to reset state.
  */
 
-import { events, eq } from '@repo/db';
+import { eq, events } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';

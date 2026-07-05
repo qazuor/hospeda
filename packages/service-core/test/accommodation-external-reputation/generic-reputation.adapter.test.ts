@@ -10,8 +10,8 @@
  * - Never throws.
  */
 
-import { ExternalPlatformEnum, LifecycleStatusEnum } from '@repo/schemas';
 import type { AccommodationExternalListing } from '@repo/schemas';
+import { ExternalPlatformEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     GenericReputationAdapter,

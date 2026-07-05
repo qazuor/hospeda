@@ -10,11 +10,11 @@
  * - Toggling includeDeleted calls onChange with updated value
  */
 
-import type { CommentsFiltersValue } from '@/routes/_authed/comments/-components/CommentsFilters';
-import { CommentsFilters } from '@/routes/_authed/comments/-components/CommentsFilters';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import type { CommentsFiltersValue } from '@/routes/_authed/comments/-components/CommentsFilters';
+import { CommentsFilters } from '@/routes/_authed/comments/-components/CommentsFilters';
 
 const EMPTY_FILTERS: CommentsFiltersValue = {
     entityType: '',

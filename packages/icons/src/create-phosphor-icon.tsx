@@ -26,8 +26,8 @@
  * ```
  */
 import type { ComponentType } from 'react';
-import { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';
 import type { IconProps } from './types';
+import { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';
 
 /**
  * Props accepted by Phosphor icon components.

@@ -158,37 +158,38 @@ describe('AccommodationService.publish', () => {
         // ADMIN / SUPER_ADMIN / CLIENT_MANAGER are exempt from the billing
         // eligibility check (they publish on behalf of the platform without a
         // subscription). Regular HOST users go through the eligibility flow.
-        it.each([RoleEnum.ADMIN, RoleEnum.SUPER_ADMIN, RoleEnum.CLIENT_MANAGER])(
-            'skips eligibility entirely when the owner is %s',
-            async (role) => {
-                const deps = createPublishDeps();
-                const service = buildService(accommodationModel, userModel, deps);
-                const accommodation = createMockAccommodation({
-                    id: 'acc-exempt',
-                    ownerId: 'admin-owner',
-                    lifecycleState: LifecycleStatusEnum.DRAFT
-                });
-                (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-                asMock(userModel.findById as Mock).mockResolvedValue({
-                    id: 'admin-owner',
-                    role
-                });
-                (accommodationModel.update as Mock).mockResolvedValue({
-                    ...accommodation,
-                    lifecycleState: LifecycleStatusEnum.ACTIVE
-                });
+        it.each([
+            RoleEnum.ADMIN,
+            RoleEnum.SUPER_ADMIN,
+            RoleEnum.CLIENT_MANAGER
+        ])('skips eligibility entirely when the owner is %s', async (role) => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-exempt',
+                ownerId: 'admin-owner',
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'admin-owner',
+                role
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
 
-                const actor = createAdminActor({ id: 'admin-actor' });
-                const result = await service.publish(actor, 'acc-exempt');
+            const actor = createAdminActor({ id: 'admin-actor' });
+            const result = await service.publish(actor, 'acc-exempt');
 
-                expect(result.error).toBeUndefined();
-                expect(deps.checkEligibility).not.toHaveBeenCalled();
-                expect(deps.startTrial).not.toHaveBeenCalled();
-                // Role promotion never happens in publish — promotion is done at
-                // draft creation. The user model should not be touched here.
-                expect(userModel.update).not.toHaveBeenCalled();
-            }
-        );
+            expect(result.error).toBeUndefined();
+            expect(deps.checkEligibility).not.toHaveBeenCalled();
+            expect(deps.startTrial).not.toHaveBeenCalled();
+            // Role promotion never happens in publish — promotion is done at
+            // draft creation. The user model should not be touched here.
+            expect(userModel.update).not.toHaveBeenCalled();
+        });
     });
 
     describe('first publish for HOST owner (trial creation)', () => {

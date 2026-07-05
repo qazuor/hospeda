@@ -114,7 +114,6 @@ export function UsageProgressBar(props: UsageProgressBarProps) {
                     aria-valuenow={Math.round(percent)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    tabIndex={0}
                 >
                     <div
                         className={cn('h-full transition-all', fillToneClass[tone])}

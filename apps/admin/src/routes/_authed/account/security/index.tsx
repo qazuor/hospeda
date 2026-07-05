@@ -7,11 +7,11 @@
  * change. See spec OUT-of-scope §3 and 99-future-enhancements.md §3.1.
  */
 
+import { ChevronRightIcon, LockIcon, ShieldIcon } from '@repo/icons';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { ChevronRightIcon, LockIcon, ShieldIcon } from '@repo/icons';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/account/security/')({
     component: SecurityLandingPage

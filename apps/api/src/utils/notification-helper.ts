@@ -8,14 +8,14 @@
  */
 
 import { getDb } from '@repo/db';
+import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
 import {
     BrevoEmailTransport,
+    createEmailClient,
     NotificationService,
     PreferenceService,
-    RetryService,
-    createEmailClient
+    RetryService
 } from '@repo/notifications';
-import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
 import { env } from './env';
 import { apiLogger } from './logger';
 import { getRedisClient } from './redis';

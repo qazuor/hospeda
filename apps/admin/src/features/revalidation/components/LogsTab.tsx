@@ -7,6 +7,23 @@
  *
  * @module routes/_authed/revalidation/components/LogsTab
  */
+
+import type { TranslationKey } from '@repo/i18n';
+import { ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, RefreshIcon } from '@repo/icons';
+import type {
+    RevalidationEntityType,
+    RevalidationLog,
+    RevalidationLogFilter,
+    RevalidationStatus,
+    RevalidationTrigger
+} from '@repo/schemas';
+import {
+    RevalidationEntityTypeEnum,
+    RevalidationStatusEnum,
+    RevalidationTriggerEnum
+} from '@repo/schemas';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,21 +31,6 @@ import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { REVALIDATION_QUERY_KEYS, useRevalidationLogsFiltered } from '@/hooks/useRevalidation';
 import { formatDateWithTime } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronsUpDownIcon, RefreshIcon } from '@repo/icons';
-import type { RevalidationLog, RevalidationLogFilter } from '@repo/schemas';
-import {
-    RevalidationEntityTypeEnum,
-    RevalidationStatusEnum,
-    RevalidationTriggerEnum
-} from '@repo/schemas';
-import type {
-    RevalidationEntityType,
-    RevalidationStatus,
-    RevalidationTrigger
-} from '@repo/schemas';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { EmptyState, ErrorState, LoadingState } from './revalidation-shared';
 
@@ -497,9 +499,9 @@ export function LogsTab({ locale }: LogsTabProps) {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-right text-muted-foreground text-xs">
-                                                    {log.durationMs != null
-                                                        ? `${log.durationMs} ms`
-                                                        : '\u2014'}
+                                                    {log.durationMs == null
+                                                        ? '\u2014'
+                                                        : `${log.durationMs} ms`}
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
                                                     {formatDateWithTime({

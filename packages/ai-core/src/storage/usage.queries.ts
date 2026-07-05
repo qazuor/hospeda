@@ -28,9 +28,8 @@
  * @module ai-core/storage/usage.queries
  */
 
-import { and, count, eq, gte, lt, sql } from '@repo/db';
-import { aiUsage, getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { aiUsage, and, count, eq, getDb, gte, lt, sql } from '@repo/db';
 
 // ---------------------------------------------------------------------------
 // aggregateAiUsageByMonth

@@ -11,8 +11,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PasswordField } from '../../../src/components/ui/PasswordField.client';
 import type { PasswordFieldI18n } from '../../../src/components/ui/PasswordField.client';
+import { PasswordField } from '../../../src/components/ui/PasswordField.client';
 
 // ── Mock @repo/schemas ───────────────────────────────────────────────────────
 // @repo/schemas internally imports @repo/feedback/schemas which is not

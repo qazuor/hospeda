@@ -46,8 +46,8 @@ vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', 
 }));
 
 import * as contentModeration from '@repo/content-moderation';
-import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { SelectConversation, SelectMessage } from '@repo/db';
+import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import {
     ConversationStatusEnum,
     MessageSenderTypeEnum,
@@ -55,7 +55,7 @@ import {
     PermissionEnum,
     RoleEnum
 } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';

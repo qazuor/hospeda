@@ -106,7 +106,9 @@
     box-shadow: 0 4px 12px oklch(0 0 0 / 0.25);
     opacity: 0;
     transform: translateY(4px);
-    transition: opacity var(--duration-fast, 0.2s) ease, transform var(--duration-fast, 0.2s) ease;
+    transition:
+        opacity var(--duration-fast, 0.2s) ease,
+        transform var(--duration-fast, 0.2s) ease;
     pointer-events: none;
 }
 

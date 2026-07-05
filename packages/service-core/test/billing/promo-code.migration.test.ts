@@ -112,7 +112,7 @@ function buildDbMock(options: {
         const text = query.strings.join(' ');
         if (text.includes('FROM billing_prices')) {
             return Promise.resolve({
-                rows: unitAmount !== undefined ? [{ unit_amount: unitAmount }] : []
+                rows: unitAmount === undefined ? [] : [{ unit_amount: unitAmount }]
             });
         }
         return Promise.resolve({ rows: [] });

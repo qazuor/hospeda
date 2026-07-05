@@ -10,7 +10,7 @@
  *
  * Run via `pnpm --filter @repo/seed lint:image-pool` or directly through tsx.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { IMAGE_POOL_BY_TYPE } from '../src/data/accommodation/_image-pool.js';

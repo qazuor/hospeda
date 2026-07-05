@@ -218,34 +218,24 @@ vi.mock('@qazuor/qzpay-hono', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OpenAPIHono } = require('@hono/zod-openapi');
     return {
-        createBillingRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware?: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                // Stub routes that the billing router references
-                router.get(
-                    '/customers/:id',
-                    (c: {
-                        json: (d: unknown) => Response;
-                        req: { param: (n: string) => string };
-                    }) => c.json({ id: c.req.param('id') })
-                );
-                router.get(
-                    '/subscriptions/:id',
-                    (c: {
-                        json: (d: unknown) => Response;
-                        req: { param: (n: string) => string };
-                    }) => c.json({ id: c.req.param('id'), status: 'active' })
-                );
-                return router;
+        createBillingRoutes: vi.fn(({ authMiddleware }: { authMiddleware?: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        )
+            // Stub routes that the billing router references
+            router.get(
+                '/customers/:id',
+                (c: { json: (d: unknown) => Response; req: { param: (n: string) => string } }) =>
+                    c.json({ id: c.req.param('id') })
+            );
+            router.get(
+                '/subscriptions/:id',
+                (c: { json: (d: unknown) => Response; req: { param: (n: string) => string } }) =>
+                    c.json({ id: c.req.param('id'), status: 'active' })
+            );
+            return router;
+        })
     };
 });
 

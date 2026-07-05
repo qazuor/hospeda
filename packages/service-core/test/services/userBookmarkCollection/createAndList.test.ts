@@ -17,8 +17,8 @@
  */
 
 import { UserBookmarkCollectionModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { UserBookmarkCollection } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserBookmarkCollectionService } from '../../../src/services/userBookmarkCollection/userBookmarkCollection.service';
 import { createActor } from '../../factories/actorFactory';

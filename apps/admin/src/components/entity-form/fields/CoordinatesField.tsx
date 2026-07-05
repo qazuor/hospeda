@@ -1,3 +1,6 @@
+import { DownloadIcon, InfoIcon, LoaderIcon, SearchIcon } from '@repo/icons';
+import { createClientOnlyFn } from '@tanstack/react-start';
+import * as React from 'react';
 import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
@@ -5,7 +8,6 @@ import type {
     CoordinatesFieldConfig,
     FieldConfig
 } from '@/components/entity-form/types/field-config.types';
-import { Input, Label } from '@/components/ui-wrapped';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,11 +18,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from '@/components/ui/alert-dialog';
+import { Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { DownloadIcon, InfoIcon, LoaderIcon, SearchIcon } from '@repo/icons';
-import { createClientOnlyFn } from '@tanstack/react-start';
-import * as React from 'react';
 import { geocodeForward, geocodeReverse } from './nominatim-geocoding';
 
 /**

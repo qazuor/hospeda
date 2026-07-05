@@ -1,6 +1,6 @@
-import { fetchApi } from '@/lib/api/client';
 import type { Tag } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query key factory for entity attribution queries.

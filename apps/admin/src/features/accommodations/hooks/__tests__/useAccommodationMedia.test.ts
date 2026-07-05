@@ -10,12 +10,12 @@
  *   - Assert: correct data returned from response envelope
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { ModerationStatusEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import {
     accommodationMediaQueryKeys,
     useAccommodationMediaAdd,

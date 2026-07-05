@@ -182,7 +182,9 @@ const ATTRACTION_ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
  */
 export function getAttractionIcon({
     icon
-}: { readonly icon?: string | null }): ComponentType<IconProps> {
+}: {
+    readonly icon?: string | null;
+}): ComponentType<IconProps> {
     if (!icon) return MapIcon;
     return ATTRACTION_ICONS[icon.toLowerCase()] ?? MapIcon;
 }

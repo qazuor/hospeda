@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import logger, {
-    LogLevel,
-    LoggerColors,
     configureLogger,
     createLogger,
-    registerCategory,
     type LoggerCategoryOptions,
-    type LoggerOptions
+    LoggerColors,
+    type LoggerOptions,
+    LogLevel,
+    registerCategory
 } from '../src/index.js';
 import { resetLogger } from '../src/logger.js';
 

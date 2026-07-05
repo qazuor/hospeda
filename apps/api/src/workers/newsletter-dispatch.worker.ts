@@ -15,8 +15,8 @@
 import type { ILogger } from '@repo/logger';
 import type { NewsletterDeliveryService } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { Worker } from 'bullmq';
 import type { ConnectionOptions, Job } from 'bullmq';
+import { Worker } from 'bullmq';
 
 // ---------------------------------------------------------------------------
 // Constants

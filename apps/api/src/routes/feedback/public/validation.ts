@@ -151,7 +151,10 @@ const MAGIC_BYTES: Record<string, readonly number[]> = {
 export function validateMagicBytes({
     buffer,
     declaredType
-}: { buffer: Buffer; declaredType: string }): boolean {
+}: {
+    buffer: Buffer;
+    declaredType: string;
+}): boolean {
     const expected = MAGIC_BYTES[declaredType];
     if (!expected) return false;
 

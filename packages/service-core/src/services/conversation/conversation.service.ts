@@ -20,23 +20,23 @@
  * @see {@link conversation.permissions}
  */
 
-import {
-    AccommodationModel,
-    ConversationModel,
-    MessageModel,
-    and,
-    conversations,
-    eq,
-    getDb,
-    isNotNull,
-    isNull,
-    messages
-} from '@repo/db';
 import type {
     DrizzleClient,
     InsertConversation,
     SelectConversation,
     SelectMessage
+} from '@repo/db';
+import {
+    AccommodationModel,
+    and,
+    ConversationModel,
+    conversations,
+    eq,
+    getDb,
+    isNotNull,
+    isNull,
+    MessageModel,
+    messages
 } from '@repo/db';
 import type { HostConversationResponseRate } from '@repo/schemas';
 import {
@@ -48,7 +48,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { inArray } from 'drizzle-orm';
-import { SignJWT, errors as joseErrors, jwtVerify } from 'jose';
+import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';

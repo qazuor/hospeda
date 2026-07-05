@@ -13,15 +13,15 @@
  *   `isDeleting: false`.
  */
 
-import {
-    type UploadEntityImageInput,
-    createUploadHandler,
-    useMediaUpload
-} from '@/hooks/use-media-upload';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    createUploadHandler,
+    type UploadEntityImageInput,
+    useMediaUpload
+} from '@/hooks/use-media-upload';
 
 /**
  * Build a fresh QueryClient wrapper per test so mutation state is isolated.
@@ -45,11 +45,7 @@ const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
  * the body as text then parses JSON, so a stubbed object with `.ok`, `.status`,
  * and `.text()` is enough.
  */
-function buildFakeResponse(args: {
-    ok: boolean;
-    status: number;
-    body: unknown;
-}): Response {
+function buildFakeResponse(args: { ok: boolean; status: number; body: unknown }): Response {
     const { ok, status, body } = args;
     const text = JSON.stringify(body);
     return {

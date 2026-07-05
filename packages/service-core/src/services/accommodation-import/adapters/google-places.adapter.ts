@@ -198,7 +198,7 @@ function extractPlaceId(url: URL): string | null {
 
     // Strategy 2: scan the full URL string for a ChIJ-prefixed token.
     // Place IDs match /ChIJ[A-Za-z0-9_-]{10,50}/ in the current encoding.
-    const match = /ChIJ[A-Za-z0-9_\-]{10,50}/.exec(url.href);
+    const match = /ChIJ[A-Za-z0-9_-]{10,50}/.exec(url.href);
     if (match) {
         return match[0];
     }
@@ -703,9 +703,9 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
             ? { summary: { value: place.editorialSummary.text, source: 'official_api' } }
             : {}),
 
-        ...(mappedType !== undefined
-            ? { type: { value: mappedType, source: 'official_api' as const } }
-            : {}),
+        ...(mappedType === undefined
+            ? {}
+            : { type: { value: mappedType, source: 'official_api' as const } }),
 
         ...(locationEntries ? { location: locationEntries } : {}),
 

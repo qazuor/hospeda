@@ -33,8 +33,10 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-fast, 0.2s) ease, color var(--duration-fast, 0.2s)
-        ease, border-color var(--duration-fast, 0.2s) ease;
+    transition:
+        background-color var(--duration-fast, 0.2s) ease,
+        color var(--duration-fast, 0.2s) ease,
+        border-color var(--duration-fast, 0.2s) ease;
     white-space: nowrap;
 }
 

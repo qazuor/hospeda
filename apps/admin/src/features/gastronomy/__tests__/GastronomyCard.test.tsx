@@ -17,11 +17,11 @@
  *  - Calls onSelect when clicked
  */
 
-import type { GastronomyListItem } from '@/features/gastronomy/config/gastronomy.config';
 import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { GastronomyListItem } from '@/features/gastronomy/config/gastronomy.config';
 import { GastronomyCard } from '../components/GastronomyCard';
 
 // ---------------------------------------------------------------------------

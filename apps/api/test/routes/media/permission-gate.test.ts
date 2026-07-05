@@ -75,36 +75,37 @@ describe('validateEntityMediaPermission (unit)', () => {
         });
     });
 
-    describe.each(['destination', 'event', 'post'] as const)(
-        '%s — single flat permission',
-        (entityType) => {
-            const permMap: Record<'destination' | 'event' | 'post', PermissionEnum> = {
-                destination: PermissionEnum.DESTINATION_UPDATE,
-                event: PermissionEnum.EVENT_UPDATE,
-                post: PermissionEnum.POST_UPDATE
-            };
+    describe.each([
+        'destination',
+        'event',
+        'post'
+    ] as const)('%s — single flat permission', (entityType) => {
+        const permMap: Record<'destination' | 'event' | 'post', PermissionEnum> = {
+            destination: PermissionEnum.DESTINATION_UPDATE,
+            event: PermissionEnum.EVENT_UPDATE,
+            post: PermissionEnum.POST_UPDATE
+        };
 
-            it('allows actor with the flat UPDATE permission (no ownership check)', () => {
-                const actor = makeActor([permMap[entityType]]);
-                const result = validateEntityMediaPermission({
-                    actor,
-                    entityType,
-                    entity: { ownerId: 'not-the-actor' }
-                });
-                expect(result).toEqual({ allowed: true });
+        it('allows actor with the flat UPDATE permission (no ownership check)', () => {
+            const actor = makeActor([permMap[entityType]]);
+            const result = validateEntityMediaPermission({
+                actor,
+                entityType,
+                entity: { ownerId: 'not-the-actor' }
             });
+            expect(result).toEqual({ allowed: true });
+        });
 
-            it('rejects actor without the UPDATE permission', () => {
-                const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
-                const result = validateEntityMediaPermission({
-                    actor,
-                    entityType,
-                    entity: null
-                });
-                expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+        it('rejects actor without the UPDATE permission', () => {
+            const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
+            const result = validateEntityMediaPermission({
+                actor,
+                entityType,
+                entity: null
             });
-        }
-    );
+            expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+        });
+    });
 });
 
 describe('Admin media routes — route-level permission gate (smoke)', () => {

@@ -1,7 +1,7 @@
 /**
  * Admin get moderation threshold by ID endpoint
  */
-import { PermissionEnum, contentModerationThresholdSchema } from '@repo/schemas';
+import { contentModerationThresholdSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationThresholdService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';

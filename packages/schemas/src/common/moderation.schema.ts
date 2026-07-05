@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { ModerationStatusEnum } from '../enums/index.js';
-import { ModerationStatusEnumSchema } from '../enums/index.js';
+import { ModerationStatusEnum, ModerationStatusEnumSchema } from '../enums/index.js';
 
 /**
  * Input schema for review moderation actions (approve / reject).

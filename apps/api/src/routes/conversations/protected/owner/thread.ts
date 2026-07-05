@@ -7,7 +7,7 @@
  * Updates `lastReadAtByOwner` and cancels pending notification schedules.
  */
 
-import { AccommodationModel, UserModel, accommodations, getDb } from '@repo/db';
+import { AccommodationModel, accommodations, getDb, UserModel } from '@repo/db';
 import {
     OwnerThreadResponseSchema,
     PermissionEnum,

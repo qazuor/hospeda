@@ -28,14 +28,14 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import type { PriceAlertResponse } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import type { PriceAlertResponse } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './AlertsList.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -376,9 +376,9 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
 
                         <div className={styles.alertsItemActions}>
                             {confirmingThis ? (
+                                // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                                 <div
                                     className={styles.alertsDeleteConfirm}
-                                    // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                                     role="group"
                                     aria-label={`${t('account.alerts.deleteConfirmAria', 'Confirmar eliminación de alerta')}: ${alert.accommodationName}`}
                                 >

@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
 import { AccommodationIcon, DestinationIcon, EventIcon } from '@repo/icons';
 import { Link } from '@tanstack/react-router';
+import { cn } from '@/lib/utils';
 import type { Post } from '../schemas/posts.schemas';
 
 const ACCOMMODATION_CLASSES =

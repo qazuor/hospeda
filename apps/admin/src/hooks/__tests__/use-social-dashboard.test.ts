@@ -10,12 +10,12 @@
  * - Query key varies with filters so ranged and unranged views cache separately.
  */
 
-import { useSocialDashboard } from '@/hooks/use-social-dashboard';
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useSocialDashboard } from '@/hooks/use-social-dashboard';
+import { fetchApi } from '@/lib/api/client';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 const mockedFetchApi = vi.mocked(fetchApi);

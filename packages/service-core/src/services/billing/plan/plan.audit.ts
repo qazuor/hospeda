@@ -7,7 +7,7 @@
  * @module services/billing/plan/plan.audit
  */
 
-import { type DrizzleClient, billingAuditLogs } from '@repo/db';
+import { billingAuditLogs, type DrizzleClient } from '@repo/db';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -138,8 +138,8 @@ export function diffPlanFields(
     const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
 
     for (const key of allKeys) {
-        const inBefore = Object.prototype.hasOwnProperty.call(before, key);
-        const inAfter = Object.prototype.hasOwnProperty.call(after, key);
+        const inBefore = Object.hasOwn(before, key);
+        const inAfter = Object.hasOwn(after, key);
 
         if (!inBefore && inAfter) {
             added[key] = after[key];

@@ -8,16 +8,16 @@
  * on concrete Drizzle models and DB schemas.
  */
 import {
-    events,
-    DestinationModel,
-    EventModel,
-    PostModel,
     accommodations,
     and,
+    DestinationModel,
     destinations,
+    EventModel,
     eq,
+    events,
     getDb,
     isNull,
+    PostModel,
     posts
 } from '@repo/db';
 import { createLogger } from '@repo/logger';

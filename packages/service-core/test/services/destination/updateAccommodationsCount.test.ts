@@ -8,7 +8,7 @@
  * @module test/services/destination/updateAccommodationsCount
  */
 import type { AccommodationModel, DestinationModel } from '@repo/db';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 

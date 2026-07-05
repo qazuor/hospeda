@@ -246,16 +246,15 @@ describe('INV-1 transversal guard: every lifecycle handler calls clearEntitlemen
      * If a file is refactored and the call moves to a helper/delegate, update
      * the LIFECYCLE_SITES entry to point at the file where the call now lives.
      */
-    it.each(LIFECYCLE_SITES.map((s) => [s.description, s.file] as const))(
-        'clearEntitlementCache present in handler: %s',
-        (_description: string, file: string) => {
-            const source = readSrc(file);
-            expect(
-                source,
-                `clearEntitlementCache call is MISSING from ${file}.\nEvery lifecycle handler that mutates billing state MUST call clearEntitlementCache(customerId) so the in-process cache reflects the new state immediately (INV-1, SPEC-145 T-021).\nIf this file was intentionally split/refactored, update the LIFECYCLE_SITES table in test/services/inv1-cache-invalidation.guard.test.ts.`
-            ).toContain('clearEntitlementCache');
-        }
-    );
+    it.each(
+        LIFECYCLE_SITES.map((s) => [s.description, s.file] as const)
+    )('clearEntitlementCache present in handler: %s', (_description: string, file: string) => {
+        const source = readSrc(file);
+        expect(
+            source,
+            `clearEntitlementCache call is MISSING from ${file}.\nEvery lifecycle handler that mutates billing state MUST call clearEntitlementCache(customerId) so the in-process cache reflects the new state immediately (INV-1, SPEC-145 T-021).\nIf this file was intentionally split/refactored, update the LIFECYCLE_SITES table in test/services/inv1-cache-invalidation.guard.test.ts.`
+        ).toContain('clearEntitlementCache');
+    });
 
     it('LIFECYCLE_SITES table is non-empty (guard against accidental wipe)', () => {
         expect(LIFECYCLE_SITES.length).toBeGreaterThan(10);

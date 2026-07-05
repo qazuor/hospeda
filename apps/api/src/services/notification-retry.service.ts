@@ -12,8 +12,8 @@
  * @module services/notification-retry
  */
 
-import { billingNotificationLog, getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { billingNotificationLog, getDb } from '@repo/db';
 import { type NotificationPayload, NotificationType } from '@repo/notifications';
 import { and, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';

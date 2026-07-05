@@ -1,5 +1,5 @@
 import { errorHistory } from './errorHistory.js';
-import { STATUS_ICONS, getEntityIcon } from './icons.js';
+import { getEntityIcon, STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
 
@@ -135,6 +135,6 @@ export async function seedRunner<T>({
     }
 
     logger.info(`${SECTION_SEPARATOR}`);
-    // biome-ignore lint/suspicious/noConsoleLog: seed runner uses console.log for visual spacing in terminal output
+    // biome-ignore lint/suspicious/noConsole: seed runner uses console.log for visual spacing in terminal output
     console.log('\n');
 }

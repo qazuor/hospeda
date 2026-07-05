@@ -178,11 +178,7 @@ export function getAccommodationTypeColor({ type }: { readonly type: string }): 
  * @param params - Object containing the accommodation type string.
  * @returns A ColorScheme with solid bg, contrasting text, and matching border.
  */
-export function getAccommodationTypeColorSolid({
-    type
-}: {
-    readonly type: string;
-}): ColorScheme {
+export function getAccommodationTypeColorSolid({ type }: { readonly type: string }): ColorScheme {
     // Reuse the shared per-type token mapping (SSOT in `@repo/icons`) but keep
     // the solid (fully-opaque, contrast-clamped) rendering local to web. The
     // solid variant intentionally ignores the mapping's `textToken` and uses

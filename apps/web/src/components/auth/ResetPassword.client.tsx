@@ -7,12 +7,12 @@
  * Shows a success state with a sign-in link after the password is updated.
  */
 
+import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { resetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 import styles from './ResetPassword.module.css';
 
 /** Props for the ResetPassword component. */
@@ -172,7 +172,6 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     required
                     minLength={8}
                     autoComplete="new-password"
-                    aria-required="true"
                     disabled={isLoading}
                 />
             </div>
@@ -197,7 +196,6 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     required
                     minLength={8}
                     autoComplete="new-password"
-                    aria-required="true"
                     disabled={isLoading}
                 />
             </div>

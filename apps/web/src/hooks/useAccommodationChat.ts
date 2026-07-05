@@ -8,9 +8,9 @@
  * @module useAccommodationChat
  */
 
-import { streamChat } from '@/lib/api/ai-chat-stream';
-import type { SseEvent } from '@/lib/api/ai-chat-stream';
 import { useCallback, useRef, useState } from 'react';
+import type { SseEvent } from '@/lib/api/ai-chat-stream';
+import { streamChat } from '@/lib/api/ai-chat-stream';
 
 const PRICE_DISCLAIMER_MARKER = '---price-disclaimer---';
 const MAX_MESSAGES = 20;

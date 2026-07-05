@@ -38,6 +38,7 @@ import {
     PermissionExpressionSchema,
     PermissionGateSchema
 } from './primitives';
+
 export type { I18nLabel, OnMissing, PermissionExpression, PermissionGate } from './primitives';
 export { I18nLabelSchema, OnMissingSchema, PermissionExpressionSchema, PermissionGateSchema };
 

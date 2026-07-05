@@ -17,7 +17,7 @@
  */
 
 import { dockerInspectLabels, dockerPs } from './docker.ts';
-import { type Target, getAppResourceName, getDbResourceName } from './target.ts';
+import { getAppResourceName, getDbResourceName, type Target } from './target.ts';
 
 /**
  * The set of container roles the toolkit knows about. Add new entries
@@ -49,7 +49,7 @@ export type ContainerKind = 'api' | 'web' | 'admin' | 'postgres' | 'redis' | 'co
  * single-invocation contract is preferred (less plumbing, easier to
  * reason about).
  */
-let activeTarget: Target | undefined = undefined;
+let activeTarget: Target | undefined;
 
 /**
  * Override the target used by subsequent {@link findContainer} calls.

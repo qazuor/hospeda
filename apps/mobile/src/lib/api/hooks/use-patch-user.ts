@@ -19,8 +19,8 @@
  */
 
 import { InternationalPhoneRegex, UserSelfSchema } from '@repo/schemas';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { apiFetch } from '../client';
 import { selfProfileKeys } from './use-self-profile';

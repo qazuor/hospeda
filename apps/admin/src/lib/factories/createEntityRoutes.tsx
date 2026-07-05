@@ -18,11 +18,11 @@
  * ```
  */
 
-import { Button } from '@/components/ui-wrapped';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon, PreviousIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 
 /**
  * Default error component styles

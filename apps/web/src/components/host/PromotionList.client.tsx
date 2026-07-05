@@ -12,6 +12,7 @@
  * ```
  */
 
+import { type JSX, useCallback, useEffect, useState } from 'react';
 import { billingApi, ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
@@ -19,7 +20,6 @@ import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { type JSX, useCallback, useEffect, useState } from 'react';
 import styles from './PromotionList.module.css';
 
 // ---------------------------------------------------------------------------
@@ -367,7 +367,6 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                                     <h3 className={styles.cardTitle}>{promo.title}</h3>
                                     <span
                                         className={`${styles.badge} ${styles[`badge--${badgeVariant}`]}`}
-                                        aria-label={lifecycleLabel}
                                     >
                                         {lifecycleLabel}
                                     </span>

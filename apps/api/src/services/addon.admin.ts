@@ -9,16 +9,16 @@
  */
 
 import {
-    type DrizzleClient,
     billingAddonPurchases,
     billingCustomers,
+    type DrizzleClient,
     getDb,
     safeIlike,
     withTransaction
 } from '@repo/db';
-import { AddonCatalogService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
-import { type SQL, and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { AddonCatalogService } from '@repo/service-core';
+import { and, count, desc, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';

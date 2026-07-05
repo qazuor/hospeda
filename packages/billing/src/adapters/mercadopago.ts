@@ -7,9 +7,9 @@
 
 import type { QZPayLogger } from '@qazuor/qzpay-core';
 import {
+    createQZPayMercadoPagoAdapter,
     type QZPayMercadoPagoAdapter,
-    type QZPayMercadoPagoConfig,
-    createQZPayMercadoPagoAdapter
+    type QZPayMercadoPagoConfig
 } from '@qazuor/qzpay-mercadopago';
 import { getEnv, getEnvBoolean, getEnvNumber } from '@repo/config';
 import { createLogger } from '@repo/logger';
