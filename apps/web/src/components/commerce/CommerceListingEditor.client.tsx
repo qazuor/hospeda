@@ -530,7 +530,9 @@ export function CommerceListingEditor({
                     aria-live="polite"
                 >
                     {summaryError ||
-                        t('commerce.owner.editor.validation.summaryHint', `${summary.length}/300`)}
+                        t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
+                            count: summary.length
+                        })}
                 </span>
             </section>
 
