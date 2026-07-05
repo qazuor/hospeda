@@ -331,7 +331,15 @@ describe('chartColors', () => {
 describe('surfaces', () => {
     it('declares warm/dark/elevated + their foreground variants', () => {
         expect(Object.keys(surfaces).sort()).toEqual(
-            ['dark', 'darkForeground', 'elevated', 'warm', 'warmForeground'].sort()
+            [
+                'dark',
+                'darkForeground',
+                'elevated',
+                'header',
+                'headerForeground',
+                'warm',
+                'warmForeground'
+            ].sort()
         );
     });
 
