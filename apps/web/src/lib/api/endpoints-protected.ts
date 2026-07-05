@@ -99,10 +99,17 @@ export const userBookmarksApi = {
     checkStatus(params: {
         readonly entityId: string;
         readonly entityType: BookmarkEntityType;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<{ readonly isFavorited: boolean; readonly bookmarkId: string | null }>> {
+        const { cookieHeader, ...rest } = params;
         return apiClient.getProtected({
             path: `${PROTECTED}/user-bookmarks/check`,
-            params
+            params: rest,
+            cookieHeader
         });
     },
 

@@ -91,9 +91,11 @@ if (eventId) {
 
 	if (isAuthenticated) {
 		try {
+			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 			const statusResult = await userBookmarksApi.checkStatus({
 				entityId: eventId,
-				entityType: 'EVENT'
+				entityType: 'EVENT',
+				cookieHeader
 			});
 			if (statusResult.ok) {
 				initialIsFavorited = statusResult.data.isFavorited;
