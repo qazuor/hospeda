@@ -287,9 +287,11 @@ try {
 
 if (isAuthenticated) {
 	try {
+		const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 		const statusResult = await userBookmarksApi.checkStatus({
 			entityId: destId,
-			entityType: 'DESTINATION'
+			entityType: 'DESTINATION',
+			cookieHeader
 		});
 		if (statusResult.ok) {
 			initialIsFavorited = statusResult.data.isFavorited;
