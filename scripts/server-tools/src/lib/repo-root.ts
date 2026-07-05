@@ -152,11 +152,29 @@ export function loadRegistryJson(repoRoot: string = resolveRepoRoot()): EnvRegis
         );
     }
     const raw = readFileSync(path, 'utf-8');
+    let parsed: unknown;
     try {
-        return JSON.parse(raw) as EnvRegistryJson;
+        parsed = JSON.parse(raw);
     } catch (err) {
         throw new Error(
             `Failed to parse env-var registry JSON at '${path}': ${err instanceof Error ? err.message : String(err)}`
         );
     }
+    // Minimal shape check so a structurally-wrong-but-valid JSON (e.g. a
+    // truncated or half-generated file) fails HERE with an actionable message
+    // instead of surfacing later as an opaque TypeError deep in a consumer.
+    const candidate = parsed as Partial<EnvRegistryJson>;
+    if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        !Array.isArray(candidate.registry) ||
+        !Array.isArray(candidate.crossChecks) ||
+        typeof candidate.constraints !== 'object' ||
+        candidate.constraints === null
+    ) {
+        throw new Error(
+            `Env-var registry JSON at '${path}' is missing the expected { registry, crossChecks, constraints } shape. Regenerate it with \`pnpm gen:env-registry-json\`.`
+        );
+    }
+    return parsed as EnvRegistryJson;
 }
