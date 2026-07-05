@@ -13,6 +13,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { forceVerifyEmail } from '../../e2e/helpers/auth-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -43,12 +44,27 @@ let app: AppOpenAPI;
 const uniqueSuffix = Date.now();
 const testEmail = `audit-test-${uniqueSuffix}@example.com`;
 const testPassword = 'AuditTestPass123!';
+// Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+// mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+// Real browser clients always send one; tests must too. Matches HOSPEDA_SITE_URL.
+const TRUSTED_ORIGIN = 'http://localhost:4321';
+
+// `.env.test` sets HOSPEDA_DISABLE_AUTH=true, which makes `authMiddleware()`
+// install a Bearer-token-only mock branch that never inspects cookies (see
+// `src/middlewares/auth.ts`). This suite needs a real cookie-resolved actor
+// (SESSION_SIGNOUT, ACCESS_DENIED for an authenticated-but-unprivileged user)
+// so it must force the real Better Auth branch for its own `initApp()`
+// instance. Restored in `afterAll` because vitest.config.e2e.ts runs all e2e
+// files sequentially in a single fork (`singleFork: true`), so a stray
+// override here would leak into later files.
+const ORIGINAL_DISABLE_AUTH = process.env.HOSPEDA_DISABLE_AUTH;
 
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
 
 beforeAll(async () => {
+    process.env.HOSPEDA_DISABLE_AUTH = 'false';
     validateApiEnv();
     app = initApp();
     await testDb.setup();
@@ -57,6 +73,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await testDb.teardown();
     vi.restoreAllMocks();
+    process.env.HOSPEDA_DISABLE_AUTH = ORIGINAL_DISABLE_AUTH;
 });
 
 beforeEach(() => {
@@ -80,7 +97,8 @@ async function signUpUser(params: {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({
             email: params.email,
@@ -105,7 +123,8 @@ async function signIn(params: {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({
             email: params.email,
@@ -132,6 +151,10 @@ describe('Audit log production integration tests [SPEC-026 T-012]', () => {
             password: testPassword,
             name: 'Audit Test User'
         });
+
+        // Remove the fire-and-forget email-verify race (see forceVerifyEmail docs).
+        await forceVerifyEmail({ email: testEmail });
+
         auditLogSpy.mockClear();
 
         // Act: attempt sign-in with wrong password
@@ -194,11 +217,12 @@ describe('Audit log production integration tests [SPEC-026 T-012]', () => {
         auditLogSpy.mockClear();
 
         // Act: call Hospeda signout endpoint (emits SESSION_SIGNOUT if user is resolved)
-        const signoutRes = await app.request('/api/v1/auth/signout', {
+        const signoutRes = await app.request('/api/v1/public/auth/signout', {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -232,7 +256,8 @@ describe('Audit log production integration tests [SPEC-026 T-012]', () => {
             headers: {
                 cookie,
                 'user-agent': 'vitest',
-                accept: 'application/json'
+                accept: 'application/json',
+                origin: TRUSTED_ORIGIN
             }
         });
 

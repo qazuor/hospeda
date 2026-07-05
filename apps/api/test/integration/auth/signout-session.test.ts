@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { forceVerifyEmail } from '../../e2e/helpers/auth-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,17 @@ import { testDb } from '../../e2e/setup/test-database';
 // ---------------------------------------------------------------------------
 
 let app: AppOpenAPI;
+// Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+// mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+// Real browser clients always send one; tests must too. Matches HOSPEDA_SITE_URL.
+const TRUSTED_ORIGIN = 'http://localhost:4321';
+// `.env.test` sets HOSPEDA_DISABLE_AUTH=true, which makes authMiddleware install
+// a Bearer-only mock branch that never inspects cookies (see src/middlewares/auth.ts).
+// This suite exercises real cookie-session invalidation, so it forces the real
+// Better Auth branch for its own initApp() instance and restores the original in
+// afterAll (vitest.config.e2e.ts runs all e2e files in a single fork, so a stray
+// override would leak into later files that rely on the mock branch).
+const ORIGINAL_DISABLE_AUTH = process.env.HOSPEDA_DISABLE_AUTH;
 const testEmail = `test-signout-${Date.now()}@example.com`;
 const testPassword = 'TestPassword123!';
 let _sessionCookie: string;
@@ -29,6 +41,7 @@ let _sessionCookie: string;
 // ---------------------------------------------------------------------------
 
 beforeAll(async () => {
+    process.env.HOSPEDA_DISABLE_AUTH = 'false';
     validateApiEnv();
     app = initApp();
     await testDb.setup();
@@ -38,7 +51,8 @@ beforeAll(async () => {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({
             email: testEmail,
@@ -49,10 +63,14 @@ beforeAll(async () => {
 
     const setCookie = signupRes.headers.get('set-cookie');
     _sessionCookie = setCookie?.split(';')[0] ?? '';
+
+    // Remove the fire-and-forget email-verify race (see forceVerifyEmail docs).
+    await forceVerifyEmail({ email: testEmail });
 });
 
 afterAll(async () => {
     await testDb.teardown();
+    process.env.HOSPEDA_DISABLE_AUTH = ORIGINAL_DISABLE_AUTH;
 });
 
 // ---------------------------------------------------------------------------
@@ -68,7 +86,8 @@ async function signIn(): Promise<string> {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({ email: testEmail, password: testPassword })
     });
@@ -82,7 +101,13 @@ async function signIn(): Promise<string> {
  */
 function extractTokenFromCookie(cookie: string): string | null {
     const match = /better-auth\.session_token=([^;]+)/.exec(cookie);
-    return match?.[1] ?? null;
+    if (!match?.[1]) {
+        return null;
+    }
+    // Better Auth signs the cookie value as `<token>.<signature>` and
+    // URL-encodes it, while the `sessions.token` column stores only `<token>`.
+    // Decode and strip the signature so the value matches the DB row.
+    return decodeURIComponent(match[1]).split('.')[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +132,8 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -130,7 +156,8 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -139,7 +166,8 @@ describe('Sign-out session integration tests', () => {
             method: 'GET',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -163,7 +191,8 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -185,19 +214,22 @@ describe('Sign-out session integration tests', () => {
 
         // Act - call the Hospeda cleanup endpoint BEFORE Better Auth signout
         // (order matters: cleanup reads the session, then Better Auth destroys it)
-        const cleanupRes = await app.request('/api/v1/auth/signout', {
+        const cleanupRes = await app.request('/api/v1/public/auth/signout', {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
         // Assert
         expect(cleanupRes.status).toBe(200);
+        // createSimpleRoute wraps the handler payload as { success, data, metadata },
+        // so the endpoint's `cacheCleared` field lives under `data`.
         const cleanupBody = await cleanupRes.json();
-        expect(cleanupBody).toHaveProperty('cacheCleared');
-        expect(typeof cleanupBody.cacheCleared).toBe('boolean');
+        expect(cleanupBody.data).toHaveProperty('cacheCleared');
+        expect(typeof cleanupBody.data.cacheCleared).toBe('boolean');
     });
 
     it('should handle already-expired session gracefully on Better Auth signout', async () => {
@@ -209,7 +241,8 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -218,7 +251,8 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
@@ -235,22 +269,24 @@ describe('Sign-out session integration tests', () => {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
         // Act - Hospeda cleanup with the now-invalid cookie
-        const cleanupRes = await app.request('/api/v1/auth/signout', {
+        const cleanupRes = await app.request('/api/v1/public/auth/signout', {
             method: 'POST',
             headers: {
                 cookie,
-                'user-agent': 'vitest'
+                'user-agent': 'vitest',
+                origin: TRUSTED_ORIGIN
             }
         });
 
         // Assert - should return 200 with cacheCleared: false (no user to clear)
         expect(cleanupRes.status).toBe(200);
         const body = await cleanupRes.json();
-        expect(body.cacheCleared).toBe(false);
+        expect(body.data.cacheCleared).toBe(false);
     });
 });
