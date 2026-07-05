@@ -276,22 +276,20 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
         });
 
         // Default: transaction executes callback correctly
-        mockDbTransaction.mockImplementation(
-            async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
-                return callback({ update: mockTxUpdate });
-            }
-        );
+        mockDbTransaction.mockImplementation(async function (
+            callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>
+        ) {
+            return callback({ update: mockTxUpdate });
+        });
 
         // Restore withTransaction: wraps the callback in mockDbTransaction or passes through existingTx.
-        mockWithTransaction.mockImplementation(
-            async (
-                callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>,
-                existingTx?: unknown
-            ) => {
-                if (existingTx) return callback(existingTx as { update: typeof mockTxUpdate });
-                return mockDbTransaction(callback);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx) return callback(existingTx as { update: typeof mockTxUpdate });
+            return mockDbTransaction(callback);
+        });
     });
 
     afterEach(() => {
@@ -360,11 +358,11 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 };
             });
 
-            mockDbTransaction.mockImplementation(
-                async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
-                    return await callback({ update: captureUpdate });
-                }
-            );
+            mockDbTransaction.mockImplementation(async function (
+                callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>
+            ) {
+                return await callback({ update: captureUpdate });
+            });
 
             mockSelectReturningPurchase(activeLimitAddonPurchase);
 
@@ -479,11 +477,11 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 addonCount: 0
             });
 
-            mockDbTransaction.mockImplementation(
-                async (callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>) => {
-                    return await callback({ update: mockTxUpdate });
-                }
-            );
+            mockDbTransaction.mockImplementation(async function (
+                callback: (tx: { update: typeof mockTxUpdate }) => Promise<unknown>
+            ) {
+                return await callback({ update: mockTxUpdate });
+            });
 
             mockSelectReturningPurchase(activeLimitAddonPurchase);
 

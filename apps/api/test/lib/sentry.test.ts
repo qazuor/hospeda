@@ -131,7 +131,7 @@ describe('Sentry Configuration', () => {
         it('should return false when init throws', () => {
             (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
                 'https://test@sentry.io/123';
-            mockInit.mockImplementationOnce(() => {
+            mockInit.mockImplementationOnce(function () {
                 throw new Error('Init failed');
             });
 

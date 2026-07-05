@@ -178,12 +178,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 3 }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
@@ -201,12 +200,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 5 }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
 
@@ -235,12 +233,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: false,
                 error: { code: 'DATABASE_ERROR', message: 'Failed to count' }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
@@ -258,12 +255,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 100 }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
@@ -282,12 +278,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 5 }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             vi.mocked(checkLimit).mockReturnValueOnce({
                 allowed: false,
@@ -319,12 +314,11 @@ describe('Limit Enforcement Middleware', () => {
                 // eslint-disable-next-line @typescript-eslint/no-throw-literal
                 throw 'plain-string-error-for-coverage';
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
@@ -345,12 +339,11 @@ describe('Limit Enforcement Middleware', () => {
                     .fn()
                     .mockResolvedValueOnce({ success: true, data: { count: 1 } })
                     .mockResolvedValueOnce({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 const middleware = enforceAccommodationLimit({ skipWhenActiveDraftExists: true });
                 await middleware(mockContext, mockNext);
@@ -377,12 +370,11 @@ describe('Limit Enforcement Middleware', () => {
                     .fn()
                     .mockResolvedValueOnce({ success: true, data: { count: 0 } })
                     .mockResolvedValueOnce({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 const middleware = enforceAccommodationLimit({ skipWhenActiveDraftExists: true });
 
@@ -400,12 +392,11 @@ describe('Limit Enforcement Middleware', () => {
                 mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
 
                 const mockCount = vi.fn().mockResolvedValue({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 const middleware = enforceAccommodationLimit();
 
@@ -571,7 +562,7 @@ describe('Limit Enforcement Middleware', () => {
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
             // Throw a plain number (NOT an Error instance) — triggers String(error) path.
-            mockFindByAccommodation.mockImplementation(() => {
+            mockFindByAccommodation.mockImplementation(function () {
                 throw 42;
             });
 
@@ -599,12 +590,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 2 }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -630,12 +620,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 3 }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
 
@@ -649,12 +638,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: false,
                 error: { code: 'DATABASE_ERROR', message: 'Failed to count' }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -672,12 +660,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 1 }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -705,12 +692,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: undefined
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -730,12 +716,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 3 }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             // Inject a synthetic checkLimit result without upgradeMessage
             vi.mocked(checkLimit).mockReturnValueOnce({
@@ -759,12 +744,11 @@ describe('Limit Enforcement Middleware', () => {
 
             // Make OwnerPromotionService.count throw a raw Error (not ServiceError)
             const mockCount = vi.fn().mockRejectedValue(new TypeError('Unexpected proxy error'));
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -784,12 +768,11 @@ describe('Limit Enforcement Middleware', () => {
                 // eslint-disable-next-line @typescript-eslint/no-throw-literal
                 throw 42;
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -808,12 +791,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 1 }
             });
-            vi.mocked(OwnerPromotionService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as OwnerPromotionService
-            );
+            vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as OwnerPromotionService;
+            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -851,12 +833,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 2 }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 // Set up middleware to inject limits into context
                 app.use('/*', async (c, next) => {
@@ -897,12 +878,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 5 }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 // Set up middleware to inject limits into context
                 app.use('/*', async (c, next) => {
@@ -958,12 +938,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: false,
                     error: { code: 'DATABASE_ERROR', message: 'Connection timeout' }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 app.use('/*', enforceAccommodationLimit());
                 app.post('/accommodations', (c) => c.json({ success: true, id: 'new-456' }));
@@ -998,12 +977,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 0 }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 // Set up middleware to inject limits into context (limit = 0 means disabled)
                 app.use('/*', async (c, next) => {
@@ -1046,12 +1024,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 999999 }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 const middleware = enforceAccommodationLimit();
                 await middleware(mockContext, mockNext);
@@ -1070,12 +1047,11 @@ describe('Limit Enforcement Middleware', () => {
                 vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
                 const mockCount = vi.fn().mockRejectedValue(new Error('Network failure'));
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as AccommodationService;
+                });
 
                 const middleware = enforceAccommodationLimit();
                 await middleware(mockContext, mockNext);
@@ -1102,12 +1078,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 1 }
                 });
-                vi.mocked(OwnerPromotionService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as OwnerPromotionService
-                );
+                vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as OwnerPromotionService;
+                });
 
                 // Set up middleware to inject limits into context
                 app.use('/*', async (c, next) => {
@@ -1148,12 +1123,11 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 3 }
                 });
-                vi.mocked(OwnerPromotionService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockCount
-                        }) as unknown as OwnerPromotionService
-                );
+                vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                    return {
+                        count: mockCount
+                    } as unknown as OwnerPromotionService;
+                });
 
                 // Set up middleware to inject limits into context
                 app.use('/*', async (c, next) => {
@@ -1212,24 +1186,22 @@ describe('Limit Enforcement Middleware', () => {
                     success: true,
                     data: { count: 2 }
                 });
-                vi.mocked(AccommodationService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockAccommodationCount
-                        }) as unknown as AccommodationService
-                );
+                vi.mocked(AccommodationService).mockImplementation(function () {
+                    return {
+                        count: mockAccommodationCount
+                    } as unknown as AccommodationService;
+                });
 
                 // Mock promotion count
                 const mockPromotionCount = vi.fn().mockResolvedValue({
                     success: true,
                     data: { count: 1 }
                 });
-                vi.mocked(OwnerPromotionService).mockImplementation(
-                    () =>
-                        ({
-                            count: mockPromotionCount
-                        }) as unknown as OwnerPromotionService
-                );
+                vi.mocked(OwnerPromotionService).mockImplementation(function () {
+                    return {
+                        count: mockPromotionCount
+                    } as unknown as OwnerPromotionService;
+                });
 
                 // Both limits OK
 
@@ -1279,12 +1251,11 @@ describe('Limit Enforcement Middleware', () => {
                 success: true,
                 data: { count: 10 }
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        count: mockCount
-                    }) as unknown as AccommodationService
-            );
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
+            });
 
             const middleware = enforceAccommodationLimit();
 

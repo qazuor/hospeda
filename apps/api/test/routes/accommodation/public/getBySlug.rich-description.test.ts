@@ -127,7 +127,7 @@ vi.mock('../../../../src/utils/route-factory', () => ({
 }));
 
 function queueSelectResults(...rowsByCall: unknown[][]) {
-    mockSelect.mockImplementation(() => {
+    mockSelect.mockImplementation(function () {
         const rows = rowsByCall.shift() ?? [];
         const result = [...rows] as unknown[] & { limit?: (n: number) => Promise<unknown[]> };
         result.limit = vi.fn().mockResolvedValue(rows);

@@ -265,7 +265,7 @@ describe('handleSubscriptionCancellationAddons', () => {
         it('should revoke and cancel both addons, returning succeeded list', async () => {
             // Arrange
             // After SPEC-192 T-014 cutover, catalog resolves via AddonCatalogService.getBySlug
-            mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === PURCHASE_ENT.addonSlug) return { success: true, data: ENT_ADDON_DEF };
                 if (slug === PURCHASE_LIMIT.addonSlug)
                     return { success: true, data: LIMIT_ADDON_DEF };

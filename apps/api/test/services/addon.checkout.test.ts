@@ -344,7 +344,7 @@ describe('confirmAddonPurchase', () => {
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
         // Tests that need a different addon or a NOT_FOUND override individually.
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -404,39 +404,35 @@ describe('confirmAddonPurchase', () => {
 
         // Restore mockDbTransaction after clearAllMocks.
         // SPEC-064: tx must have both insert() and execute() (for SELECT FOR UPDATE dedup check).
-        mockDbTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: ReturnType<typeof vi.fn>;
-                    execute: ReturnType<typeof vi.fn>;
-                }) => Promise<unknown>
-            ) => {
-                const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
-                const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
-                mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
-                return callback({ insert: mockInsert, execute: mockExecute });
-            }
-        );
+        mockDbTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: ReturnType<typeof vi.fn>;
+                execute: ReturnType<typeof vi.fn>;
+            }) => Promise<unknown>
+        ) {
+            const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+            const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
+            mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
+            return callback({ insert: mockInsert, execute: mockExecute });
+        });
 
         // Restore mockWithTransaction (SPEC-064) after clearAllMocks.
-        mockWithTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: ReturnType<typeof vi.fn>;
-                    execute: ReturnType<typeof vi.fn>;
-                }) => Promise<unknown>,
-                existingTx?: unknown
-            ) => {
-                if (existingTx)
-                    return callback(
-                        existingTx as {
-                            insert: ReturnType<typeof vi.fn>;
-                            execute: ReturnType<typeof vi.fn>;
-                        }
-                    );
-                return mockDbTransaction(callback);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: ReturnType<typeof vi.fn>;
+                execute: ReturnType<typeof vi.fn>;
+            }) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx)
+                return callback(
+                    existingTx as {
+                        insert: ReturnType<typeof vi.fn>;
+                        execute: ReturnType<typeof vi.fn>;
+                    }
+                );
+            return mockDbTransaction(callback);
+        });
     });
 
     afterEach(() => {
@@ -1084,7 +1080,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         });
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -1258,7 +1254,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                 expiresAt: new Date('2030-01-01T00:30:00Z')
             });
             // Reset addon mock since clearAllMocks wipes it
-            mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === 'extra-photos-20') {
                     return {
                         success: true,
@@ -1571,16 +1567,15 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             const { PromoCodeService: MockedPromoCodeService } = await import(
                 '../../src/services/promo-code.service'
             );
-            vi.mocked(MockedPromoCodeService).mockImplementationOnce(
-                () =>
-                    ({
-                        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
-                        getByCode: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: { id: 'promo_full' }
-                        })
-                    }) as unknown as InstanceType<typeof MockedPromoCodeService>
-            );
+            vi.mocked(MockedPromoCodeService).mockImplementationOnce(function () {
+                return {
+                    validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
+                    getByCode: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: { id: 'promo_full' }
+                    })
+                } as unknown as InstanceType<typeof MockedPromoCodeService>;
+            });
 
             const billing = createBillingForCheckout({ customer });
 
@@ -1859,7 +1854,7 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
         });
 
         // Re-set addon catalog mock — extra-photos-20 is active
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,
@@ -2120,7 +2115,7 @@ describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', 
         });
 
         // Default addon catalog mock
-        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-photos-20') {
                 return {
                     success: true,

@@ -259,18 +259,18 @@ describe('addon.user-addons cutover parity (SPEC-192 T-011)', () => {
                 );
 
                 // withTransaction commits DB cancel then exits
-                mockWithTransaction.mockImplementation(
-                    async (callback: (tx: unknown) => Promise<unknown>) => {
-                        const fakeTx = {
-                            update: vi.fn().mockReturnValue({
-                                set: vi.fn().mockReturnValue({
-                                    where: vi.fn().mockResolvedValue({ rowCount: 1 })
-                                })
+                mockWithTransaction.mockImplementation(async function (
+                    callback: (tx: unknown) => Promise<unknown>
+                ) {
+                    const fakeTx = {
+                        update: vi.fn().mockReturnValue({
+                            set: vi.fn().mockReturnValue({
+                                where: vi.fn().mockResolvedValue({ rowCount: 1 })
                             })
-                        };
-                        return callback(fakeTx);
-                    }
-                );
+                        })
+                    };
+                    return callback(fakeTx);
+                });
 
                 // Catalog resolves the stub
                 mockGetBySlug.mockResolvedValue({ success: true, data: stub });

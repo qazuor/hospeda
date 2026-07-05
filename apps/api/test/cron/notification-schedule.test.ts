@@ -191,19 +191,20 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -248,19 +249,20 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -302,19 +304,20 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -350,19 +353,20 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -382,18 +386,19 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -415,7 +420,9 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             // Mock database-based retry to return stats
             vi.mocked(processDbNotificationRetries).mockResolvedValue({
                 processed: 5,
@@ -466,7 +473,9 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             // Mock database-based retry to fail
             vi.mocked(processDbNotificationRetries).mockRejectedValue(
@@ -501,7 +510,9 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -525,8 +536,12 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(() => mockRetryService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return mockRetryService as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -567,7 +582,9 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -602,19 +619,20 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(sendNotification).mockRejectedValue(new Error('Email service unavailable'));
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -636,18 +654,19 @@ describe('Notification Schedule Cron Job', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 2,
-                            succeeded: 2,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 2,
+                        succeeded: 2,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);

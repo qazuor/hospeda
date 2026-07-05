@@ -306,13 +306,14 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
         });
 
         // Restore withTransaction after clearAllMocks (SPEC-064)
-        mockWithTransaction.mockImplementation(
-            async (cb: (tx: unknown) => Promise<unknown>, existingTx?: unknown) => {
-                if (existingTx) return cb(existingTx);
-                const tx = { select: mockDbSelect, update: mockDbUpdate };
-                return cb(tx);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            cb: (tx: unknown) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx) return cb(existingTx);
+            const tx = { select: mockDbSelect, update: mockDbUpdate };
+            return cb(tx);
+        });
     });
 
     afterEach(() => {

@@ -177,7 +177,9 @@ vi.mock('../../../src/services/refund-lifecycle.service', () => ({
 
 vi.mock('../../../src/services/addon.service', () => {
     const confirmPurchase = vi.fn().mockResolvedValue({ success: true, data: undefined });
-    const MockAddonService = vi.fn().mockImplementation(() => ({ confirmPurchase }));
+    const MockAddonService = vi.fn().mockImplementation(function () {
+        return { confirmPurchase };
+    });
     // Expose confirmPurchase on the constructor for test access
     (MockAddonService as unknown as Record<string, unknown>).__mockConfirmPurchase =
         confirmPurchase;

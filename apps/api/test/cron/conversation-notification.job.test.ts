@@ -185,14 +185,14 @@ describe('Conversation Notification Cron Job', () => {
 
     describe('Advisory lock', () => {
         it('skips execution when advisory lock is not acquired', async () => {
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>) => {
-                    const fakeTx = {
-                        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
-                    };
-                    return callback(fakeTx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>
+            ) {
+                const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
+                };
+                return callback(fakeTx);
+            });
 
             const result = await conversationNotificationJob.handler(mockContext);
 

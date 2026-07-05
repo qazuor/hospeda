@@ -179,7 +179,7 @@ describe('AddonEntitlementService', () => {
         service = new AddonEntitlementService(mockBilling);
 
         // Default: catalog returns the stub for known slugs, NOT_FOUND for unknown
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             const stub = ADDON_STUBS[slug];
             if (stub) return { success: true, data: stub };
             return {
@@ -195,7 +195,7 @@ describe('AddonEntitlementService', () => {
         });
 
         // Default: plan getBySlug returns stub for known slugs
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             const stub = PLAN_STUBS[slug];
             if (stub) return { success: true, data: stub };
             return {

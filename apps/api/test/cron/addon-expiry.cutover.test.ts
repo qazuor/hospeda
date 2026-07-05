@@ -248,35 +248,34 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
             const { lookupCustomerDetails } = await import('../../src/utils/customer-lookup');
 
             // Override AddonExpirationService to return one expired addon
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () =>
-                    ({
-                        findExpiredAddons: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: [
-                                {
-                                    id: 'p-expired',
-                                    customerId: 'cust-exp',
-                                    addonSlug: 'visibility-boost-7d',
-                                    expiresAt: new Date('2025-01-01')
-                                }
-                            ]
-                        }),
-                        // SPEC-194 T-014: cron now calls expireAddon() per-item instead of
-                        // processExpiredAddons(); mock must return success so the notification
-                        // loop proceeds and catalogService.getBySlug is reached.
-                        expireAddon: vi.fn().mockResolvedValue({ success: true }),
-                        processExpiredAddons: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: {
-                                processed: 1,
-                                failed: 0,
-                                errors: []
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return {
+                    findExpiredAddons: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: [
+                            {
+                                id: 'p-expired',
+                                customerId: 'cust-exp',
+                                addonSlug: 'visibility-boost-7d',
+                                expiresAt: new Date('2025-01-01')
                             }
-                        }),
-                        findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
-                    }) as never
-            );
+                        ]
+                    }),
+                    // SPEC-194 T-014: cron now calls expireAddon() per-item instead of
+                    // processExpiredAddons(); mock must return success so the notification
+                    // loop proceeds and catalogService.getBySlug is reached.
+                    expireAddon: vi.fn().mockResolvedValue({ success: true }),
+                    processExpiredAddons: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: {
+                            processed: 1,
+                            failed: 0,
+                            errors: []
+                        }
+                    }),
+                    findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+                } as never;
+            });
 
             // lookupCustomerDetails returns customer data so notification fires
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
@@ -318,30 +317,29 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
             const { lookupCustomerDetails } = await import('../../src/utils/customer-lookup');
             const { sendNotification } = await import('../../src/utils/notification-helper');
 
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () =>
-                    ({
-                        findExpiredAddons: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: [
-                                {
-                                    id: 'p-retired',
-                                    customerId: 'cust-ret',
-                                    addonSlug: 'retired-addon',
-                                    expiresAt: new Date('2025-01-01')
-                                }
-                            ]
-                        }),
-                        // SPEC-194 T-014: cron now calls expireAddon() per-item; must succeed
-                        // so the notification loop continues and falls through to getBySlug.
-                        expireAddon: vi.fn().mockResolvedValue({ success: true }),
-                        processExpiredAddons: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: { processed: 1, failed: 0, errors: [] }
-                        }),
-                        findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
-                    }) as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return {
+                    findExpiredAddons: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: [
+                            {
+                                id: 'p-retired',
+                                customerId: 'cust-ret',
+                                addonSlug: 'retired-addon',
+                                expiresAt: new Date('2025-01-01')
+                            }
+                        ]
+                    }),
+                    // SPEC-194 T-014: cron now calls expireAddon() per-item; must succeed
+                    // so the notification loop continues and falls through to getBySlug.
+                    expireAddon: vi.fn().mockResolvedValue({ success: true }),
+                    processExpiredAddons: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: { processed: 1, failed: 0, errors: [] }
+                    }),
+                    findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+                } as never;
+            });
 
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'test@test.com',
@@ -383,17 +381,16 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
             const { AddonExpirationService } = await import(
                 '../../src/services/addon-expiration.service'
             );
-            vi.mocked(AddonExpirationService).mockImplementation(
-                () =>
-                    ({
-                        findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-                        processExpiredAddons: vi.fn().mockResolvedValue({
-                            success: true,
-                            data: { processed: 0, failed: 0, errors: [] }
-                        }),
-                        findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
-                    }) as never
-            );
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return {
+                    findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                    processExpiredAddons: vi.fn().mockResolvedValue({
+                        success: true,
+                        data: { processed: 0, failed: 0, errors: [] }
+                    }),
+                    findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+                } as never;
+            });
 
             // The orphaned purchases query is: select({...}).from(bap).innerJoin(bs, eq()).where().limit(100)
             // Chain: select → from → innerJoin → where → limit(100) → orphanedRows

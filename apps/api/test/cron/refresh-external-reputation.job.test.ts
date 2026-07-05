@@ -224,7 +224,7 @@ describe('Refresh External Reputation Cron Job', () => {
             );
 
             const callOrder: string[] = [];
-            mockRefresh.mockImplementation(async (accId: string) => {
+            mockRefresh.mockImplementation(async function (accId: string) {
                 callOrder.push(accId);
                 return {
                     data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }

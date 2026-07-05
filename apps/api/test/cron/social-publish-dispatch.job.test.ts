@@ -128,7 +128,9 @@ describe('Social Publish Dispatch Cron Job', () => {
         // Default: active make_api_key and make_webhook_url credentials exist
         // in the vault (HOS-64 T-022 / T-024). Keyed by the requested `key` so
         // both guards resolve independently.
-        mockGetDecryptedSocialCredential.mockImplementation(async (input: { key: string }) => {
+        mockGetDecryptedSocialCredential.mockImplementation(async function (input: {
+            key: string;
+        }) {
             if (input.key === 'make_api_key') {
                 return { data: { key: 'make_api_key', plaintext: 'test-make-api-key' } };
             }
@@ -257,7 +259,9 @@ describe('Social Publish Dispatch Cron Job', () => {
     describe('Missing make_webhook_url vault credential guard (HOS-64 T-024)', () => {
         beforeEach(() => {
             // make_api_key resolves fine; make_webhook_url does not.
-            mockGetDecryptedSocialCredential.mockImplementation(async (input: { key: string }) => {
+            mockGetDecryptedSocialCredential.mockImplementation(async function (input: {
+                key: string;
+            }) {
                 if (input.key === 'make_api_key') {
                     return { data: { key: 'make_api_key', plaintext: 'test-make-api-key' } };
                 }

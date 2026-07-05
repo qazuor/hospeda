@@ -457,33 +457,29 @@ describe('AddonService', () => {
         const txUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
         const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
         const txUpdate = vi.fn(() => ({ set: txUpdateSet }));
-        mockDbTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: typeof mockDbInsert;
-                    update: typeof txUpdate;
-                }) => Promise<unknown>
-            ) => {
-                return callback({ insert: mockDbInsert, update: txUpdate });
-            }
-        );
+        mockDbTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof txUpdate;
+            }) => Promise<unknown>
+        ) {
+            return callback({ insert: mockDbInsert, update: txUpdate });
+        });
 
         // Restore mockWithTransaction (SPEC-064) after clearAllMocks wipes it.
-        mockWithTransaction.mockImplementation(
-            async (
-                callback: (tx: {
-                    insert: typeof mockDbInsert;
-                    update: typeof txUpdate;
-                }) => Promise<unknown>,
-                existingTx?: unknown
-            ) => {
-                if (existingTx)
-                    return callback(
-                        existingTx as { insert: typeof mockDbInsert; update: typeof txUpdate }
-                    );
-                return mockDbTransaction(callback);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: (tx: {
+                insert: typeof mockDbInsert;
+                update: typeof txUpdate;
+            }) => Promise<unknown>,
+            existingTx?: unknown
+        ) {
+            if (existingTx)
+                return callback(
+                    existingTx as { insert: typeof mockDbInsert; update: typeof txUpdate }
+                );
+            return mockDbTransaction(callback);
+        });
     });
 
     describe('listAvailable', () => {
@@ -1396,7 +1392,7 @@ describe('AddonService', () => {
 
         it('should handle DB exceptions gracefully and return INTERNAL_ERROR', async () => {
             // Arrange: the select chain itself throws
-            mockDbSelect.mockImplementationOnce(() => {
+            mockDbSelect.mockImplementationOnce(function () {
                 throw new Error('Database connection error');
             });
 

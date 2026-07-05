@@ -26,7 +26,7 @@ const { MockWorker, mockWorkerInstance, mockCaptureException, mockSentryStartSpa
             _handlers: onHandlers
         };
 
-        const MockWorker = vi.fn().mockReturnValue(mockWorkerInstance);
+        const MockWorker = vi.fn().mockImplementation(() => mockWorkerInstance);
 
         const mockCaptureException = vi.fn();
         const mockSentryStartSpan = vi

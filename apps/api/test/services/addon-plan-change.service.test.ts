@@ -261,9 +261,18 @@ beforeEach(() => {
     // but also clears mockResolvedValue implementations set via vi.hoisted().
     // Re-applying the defaults here ensures the dedup check (mockTxLimit) and
     // the INSERT tracker (mockTxInsertValues) have known behaviour every test.
-    mockTxLimit.mockResolvedValue([]);
-    mockTxInsertValues.mockResolvedValue(undefined);
-    mockDbWhere.mockResolvedValue([]);
+    //
+    // Vitest 4: `mockReset()` is required (not just `mockResolvedValue`) because
+    // `vi.restoreAllMocks()` (afterEach) no longer drains the
+    // `mockResolvedValueOnce` queues of standalone `vi.fn()` mocks — it only
+    // restores `vi.spyOn` mocks now. Without the reset, an unconsumed `*Once`
+    // value queued by an earlier test (e.g. a per-describe beforeEach that sets
+    // two `mockResolvedValueOnce` on `mockTxLimit`) leaks into the next test,
+    // making its first recalculation take the wrong branch (so the in-memory
+    // dedup Map never gets populated and the fast-path assertion fails).
+    mockTxLimit.mockReset().mockResolvedValue([]);
+    mockTxInsertValues.mockReset().mockResolvedValue(undefined);
+    mockDbWhere.mockReset().mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -436,7 +445,7 @@ describe('handlePlanChangeAddonRecalculation — downgrade detection (AC-4.1 to 
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             if (slug === UPGRADE_PLAN_SLUG) return { success: true, data: mockUpgradePlan };
@@ -447,7 +456,7 @@ describe('handlePlanChangeAddonRecalculation — downgrade detection (AC-4.1 to 
         });
 
         // SPEC-192 T-013 cutover: addon resolution via AddonCatalogService (DB-backed).
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             if (slug === 'extra-accommodations-15') return { success: true, data: mockAddonDef15 };
             if (slug === 'verified-badge') return { success: true, data: mockEntitlementAddonDef };
@@ -681,7 +690,7 @@ describe('handlePlanChangeAddonRecalculation — downgrade detection (AC-4.1 to 
         it('should not call billing.limits.check when new plan has unlimited for limitKey', async () => {
             // Arrange — new plan unlimited for this key → outcome is 'skipped'
             // After SPEC-192 T-026, limits are Record<string,number>
-            mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+            mockPlanGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
                 if (slug === NEW_PLAN_SLUG) {
                     return {
@@ -805,7 +814,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             if (slug === UPGRADE_PLAN_SLUG) return { success: true, data: mockUpgradePlan };
@@ -814,7 +823,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             if (slug === 'extra-accommodations-15') return { success: true, data: mockAddonDef15 };
             if (slug === 'verified-badge') return { success: true, data: mockEntitlementAddonDef };
@@ -1039,7 +1048,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
     describe('AC-3.5: new plan unlimited (-1) for limitKey — key skipped', () => {
         it('should skip limits.set and return outcome=skipped when new plan is unlimited', async () => {
             // Arrange — new plan returns -1 for LIMIT_KEY (Record<string,number> shape after T-026)
-            mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+            mockPlanGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
                 if (slug === NEW_PLAN_SLUG) {
                     return { success: true, data: { ...mockNewPlan, limits: { [LIMIT_KEY]: -1 } } };
@@ -1072,7 +1081,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
         it('should skip the unlimited key but still process other finite limitKeys', async () => {
             // Arrange — LIMIT_KEY is unlimited in new plan, but second addon for
             // a different key should still be processed.
-            mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+            mockPlanGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
                 if (slug === NEW_PLAN_SLUG) {
                     return {
@@ -1098,7 +1107,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
                 affectsLimitKey: SECOND_LIMIT_KEY,
                 limitIncrease: 2
             };
-            mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
                 if (slug === 'extra-featured-2') return { success: true, data: secondKeyAddonDef };
                 return {
@@ -1146,7 +1155,7 @@ describe('handlePlanChangeAddonRecalculation — recalculation correctness (AC-3
     describe('AC-3.6: limitKey absent from new plan — basePlanLimit=0, warning + Sentry', () => {
         it('should treat missing limitKey as basePlanLimit=0 and call Sentry.captureMessage', async () => {
             // Arrange — new plan has NO entry for LIMIT_KEY (empty limits map)
-            mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+            mockPlanGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
                 if (slug === NEW_PLAN_SLUG) {
                     // limits Record does not contain LIMIT_KEY
@@ -1209,7 +1218,7 @@ describe('handlePlanChangeAddonRecalculation — AC-4.1 downgrade combined limit
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             return {
@@ -1217,7 +1226,7 @@ describe('handlePlanChangeAddonRecalculation — AC-4.1 downgrade combined limit
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             if (slug === 'extra-accommodations-15') return { success: true, data: mockAddonDef15 };
             return {
@@ -1297,7 +1306,7 @@ describe('handlePlanChangeAddonRecalculation — direction detection', () => {
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan }; // LIMIT_KEY base=10
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan }; // LIMIT_KEY base=3
             if (slug === UPGRADE_PLAN_SLUG) return { success: true, data: mockUpgradePlan }; // LIMIT_KEY base=50
@@ -1306,7 +1315,7 @@ describe('handlePlanChangeAddonRecalculation — direction detection', () => {
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             return {
                 success: false,
@@ -1362,7 +1371,7 @@ describe('handlePlanChangeAddonRecalculation — direction detection', () => {
 
     it('should return direction=lateral when both plans have identical base for the limitKey', async () => {
         // Arrange — configure both plans to have the same base value for LIMIT_KEY
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             const sameLimitPlan = {
                 ...mockOldPlan,
                 id: `plan-uuid-${slug}`,
@@ -1419,7 +1428,7 @@ describe('handlePlanChangeAddonRecalculation — new plan not found in config', 
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             // Old plan found, new plan NOT found
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             return {
@@ -1544,7 +1553,7 @@ describe('unit: dedup guard — in-memory Map blocks second call within window',
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             return {
@@ -1552,7 +1561,7 @@ describe('unit: dedup guard — in-memory Map blocks second call within window',
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             return {
                 success: false,
@@ -1735,7 +1744,7 @@ describe('unit: dedup guard — DB-backed dedup survives in-memory Map clear', (
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             return {
@@ -1743,7 +1752,7 @@ describe('unit: dedup guard — DB-backed dedup survives in-memory Map clear', (
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             return {
                 success: false,
@@ -1860,7 +1869,7 @@ describe('T-032: 3-phase transaction structure — QZPay called between TX1 and 
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
         });
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === OLD_PLAN_SLUG) return { success: true, data: mockOldPlan };
             if (slug === NEW_PLAN_SLUG) return { success: true, data: mockNewPlan };
             return {
@@ -1868,7 +1877,7 @@ describe('T-032: 3-phase transaction structure — QZPay called between TX1 and 
                 error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
             };
         });
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             if (slug === 'extra-accommodations-5') return { success: true, data: mockAddonDef };
             return {
                 success: false,

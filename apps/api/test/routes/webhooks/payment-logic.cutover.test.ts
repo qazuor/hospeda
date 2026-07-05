@@ -251,9 +251,9 @@ describe('payment-logic.ts addon reads cutover parity (SPEC-192 T-016)', () => {
             // Arrange — catalog NOT_FOUND only affects notification, not purchase confirmation
             const { AddonService } = await import('../../../src/services/addon.service');
             const mockConfirmPurchase = vi.fn().mockResolvedValue({ success: true });
-            vi.mocked(AddonService).mockImplementation(
-                () => ({ confirmPurchase: mockConfirmPurchase }) as never
-            );
+            vi.mocked(AddonService).mockImplementation(function () {
+                return { confirmPurchase: mockConfirmPurchase } as never;
+            });
 
             mockGetBySlug.mockResolvedValue({
                 success: false,

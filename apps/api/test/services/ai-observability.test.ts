@@ -433,7 +433,7 @@ describe('sink disabled (Sentry off, PostHog unavailable)', () => {
 describe('sink internal failure', () => {
     it('should swallow PostHog capture errors and return normally', async () => {
         // Arrange — PostHog capture throws.
-        mockPostHogCapture.mockImplementation(() => {
+        mockPostHogCapture.mockImplementation(function () {
             throw new Error('PostHog network error');
         });
 

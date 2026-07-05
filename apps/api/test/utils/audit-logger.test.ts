@@ -445,7 +445,7 @@ describe('audit-logger', () => {
         it('should not throw when the underlying logger throws', () => {
             // Arrange - make the audit logger's info method throw synchronously
             const mockInfo = getAuditInfoMock();
-            mockInfo.mockImplementationOnce(() => {
+            mockInfo.mockImplementationOnce(function () {
                 throw new Error('Logger transport failure');
             });
 
@@ -493,7 +493,7 @@ describe('audit-logger', () => {
             // Arrange - first call throws, second call succeeds
             const mockInfo = getAuditInfoMock();
             const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-            mockInfo.mockImplementationOnce(() => {
+            mockInfo.mockImplementationOnce(function () {
                 throw new Error('Transient failure');
             });
 
@@ -1033,7 +1033,7 @@ describe('audit-logger', () => {
 
         it('should not throw when Sentry.addBreadcrumb fails', () => {
             // Arrange
-            mockAddBreadcrumb.mockImplementationOnce(() => {
+            mockAddBreadcrumb.mockImplementationOnce(function () {
                 throw new Error('Sentry transport error');
             });
             const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);

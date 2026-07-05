@@ -369,7 +369,7 @@ describe('ml-token.service', () => {
             // write, proving the fix re-reads rather than trusting B's stale
             // outer snapshot).
             let callCount = 0;
-            mockGetActiveMLCredential.mockImplementation(() => {
+            mockGetActiveMLCredential.mockImplementation(function () {
                 callCount += 1;
                 if (callCount === 1 || callCount === 2) {
                     return Promise.resolve(staleCredential);

@@ -570,7 +570,7 @@ describe('billingCustomerMiddleware', () => {
                 executionOrder.push('set');
             });
 
-            mockNext.mockImplementation(() => {
+            mockNext.mockImplementation(function () {
                 executionOrder.push('next');
             });
 

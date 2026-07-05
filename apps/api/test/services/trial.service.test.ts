@@ -722,22 +722,20 @@ describe('TrialService', () => {
                 } as never;
             });
 
-            mockWithServiceTransaction.mockImplementationOnce(
-                async <T>(
-                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
-                ) => {
-                    txCallbackActive = true;
-                    const result = await callback({
-                        tx: {
-                            execute: vi.fn().mockResolvedValue({
-                                rows: [{ pg_try_advisory_xact_lock: true }]
-                            })
-                        }
-                    });
-                    txCallbackActive = false;
-                    return result;
-                }
-            );
+            mockWithServiceTransaction.mockImplementationOnce(async function (
+                callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+            ) {
+                txCallbackActive = true;
+                const result = await callback({
+                    tx: {
+                        execute: vi.fn().mockResolvedValue({
+                            rows: [{ pg_try_advisory_xact_lock: true }]
+                        })
+                    }
+                });
+                txCallbackActive = false;
+                return result;
+            });
 
             vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({

@@ -219,7 +219,7 @@ function resetAllMocks(): void {
         update: mockDbUpdate
     });
 
-    mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+    mockWithTransaction.mockImplementation(async function (cb: (tx: unknown) => Promise<void>) {
         const tx = {
             insert: mockDbInsert,
             update: mockDbUpdate,
@@ -311,7 +311,7 @@ describe('createSocialCredential', () => {
             mockDbSelectLimit.mockResolvedValue([]);
 
             const capturedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 capturedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -337,7 +337,7 @@ describe('createSocialCredential', () => {
             mockDbSelectLimit.mockResolvedValue([]);
 
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -396,7 +396,7 @@ describe('createSocialCredential', () => {
 
         it('should map a 23505 unique-violation race to VALIDATION_ERROR (post-check)', async () => {
             mockDbSelectLimit.mockResolvedValue([]);
-            mockWithTransaction.mockImplementation(async () => {
+            mockWithTransaction.mockImplementation(async function () {
                 const pgError = new Error('duplicate key value violates unique constraint');
                 (pgError as Error & { code: string }).code = '23505';
                 throw pgError;
@@ -420,7 +420,9 @@ describe('createSocialCredential', () => {
             mockDbSelectLimit.mockResolvedValue([]);
 
             let credentialInsertCalls = 0;
-            mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+            mockWithTransaction.mockImplementation(async function (
+                cb: (tx: unknown) => Promise<void>
+            ) {
                 const tx = {
                     insert: vi.fn().mockImplementation((table: unknown) => {
                         if (table && (table as { key?: unknown }).key === 'key') {
@@ -515,7 +517,7 @@ describe('rotateSocialCredential', () => {
 
         it('should update ciphertext in-place — not the plaintext', async () => {
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -536,7 +538,7 @@ describe('rotateSocialCredential', () => {
 
         it('should insert an audit row with action "rotated"', async () => {
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 return { returning: vi.fn().mockResolvedValue([]) };
             });
@@ -601,7 +603,7 @@ describe('updateSocialCredentialMetadata', () => {
 
         it('should update the label field', async () => {
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -619,7 +621,7 @@ describe('updateSocialCredentialMetadata', () => {
 
         it('should insert an audit row with action "updated"', async () => {
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 return { returning: vi.fn().mockResolvedValue([]) };
             });
@@ -682,7 +684,7 @@ describe('deleteSocialCredential', () => {
 
         it('should set deletedAt and deletedById on the credential row', async () => {
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -700,7 +702,7 @@ describe('deleteSocialCredential', () => {
 
         it('should insert an audit row with action "deleted"', async () => {
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 return { returning: vi.fn().mockResolvedValue([]) };
             });

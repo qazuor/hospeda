@@ -264,7 +264,7 @@ describe('subscription-poll cron job', () => {
         });
 
         it('exits cleanly when MercadoPago adapter cannot be constructed', async () => {
-            mockCreateMercadoPagoAdapter.mockImplementationOnce(() => {
+            mockCreateMercadoPagoAdapter.mockImplementationOnce(function () {
                 throw new Error('MP creds missing');
             });
 

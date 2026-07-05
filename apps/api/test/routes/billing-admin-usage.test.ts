@@ -459,7 +459,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             const { UsageTrackingService } = await import(
                 '../../src/services/usage-tracking.service'
             );
-            const UsageTrackingServiceSpy = vi.fn(() => mockUsageService);
+            const UsageTrackingServiceSpy = vi.fn(function () {
+                return mockUsageService;
+            });
             (UsageTrackingService as any).mockImplementation(UsageTrackingServiceSpy);
 
             // Act

@@ -170,14 +170,14 @@ describe('Conversation Token Reminder Cron Job', () => {
         };
 
         // Default: transaction executes callback inline (lock acquired)
-        mockWithTransaction.mockImplementation(
-            async (callback: (tx: unknown) => Promise<unknown>) => {
-                const fakeTx = {
-                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
-                };
-                return callback(fakeTx);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            callback: (tx: unknown) => Promise<unknown>
+        ) {
+            const fakeTx = {
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+            return callback(fakeTx);
+        });
 
         // Default: no due reminders
         mockFindDueReminders.mockResolvedValue({ data: [], error: null });
@@ -229,14 +229,14 @@ describe('Conversation Token Reminder Cron Job', () => {
 
     describe('Advisory lock', () => {
         it('skips execution when advisory lock is not acquired', async () => {
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>) => {
-                    const fakeTx = {
-                        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
-                    };
-                    return callback(fakeTx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>
+            ) {
+                const fakeTx = {
+                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: false }] })
+                };
+                return callback(fakeTx);
+            });
 
             const result = await conversationTokenReminderJob.handler(mockContext);
 

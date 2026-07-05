@@ -781,12 +781,11 @@ describe('MercadoPago Webhook Handler', () => {
                     }
                 }
             });
-            vi.mocked(AddonService).mockImplementation(
-                () =>
-                    ({
-                        confirmPurchase: mockConfirmPurchase
-                    }) as never
-            );
+            vi.mocked(AddonService).mockImplementation(function () {
+                return {
+                    confirmPurchase: mockConfirmPurchase
+                } as never;
+            });
 
             const context = createMockContext({ requestId: 'req_addon' });
             const event = createMockEvent({
