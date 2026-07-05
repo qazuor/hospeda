@@ -432,7 +432,7 @@
             "id": "T-013",
             "title": "Wire pnpm env:doctor umbrella script",
             "description": "Add the env:doctor script to package.json running env:check:usage + env:check:local + env:check:rules in sequence, aggregating exit codes (non-zero if any sub-check fails). Test: integration-style test (or a small script test) confirming aggregate exit code reflects the worst sub-check result.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007", "T-008", "T-010"],
             "blocks": ["T-025"],
@@ -455,8 +455,8 @@
             },
             "timestamps": {
                 "created": "2026-07-03T16:34:46.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T00:44:07Z",
+                "completed": "2026-07-05T00:47:36Z"
             }
         },
         {
@@ -898,9 +898,9 @@
     ],
     "summary": {
         "total": 25,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.1
     }
