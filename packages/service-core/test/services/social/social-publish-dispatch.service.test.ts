@@ -1062,6 +1062,98 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
     });
 
     // -------------------------------------------------------------------------
+    // Per-target caption/hashtags/footer overrides (HOS-65 T-020)
+    // -------------------------------------------------------------------------
+
+    describe('per-target caption/hashtags/footer overrides (HOS-65 T-020)', () => {
+        it('uses all 3 overrides when set on the target', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Target-specific caption',
+                    hashtagsOverrideText: '#target #override',
+                    footerOverride: 'Target-specific footer'
+                },
+                { finalCaption: 'Post caption', finalHashtagsText: '#post', footerId: FOOTER_ID }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Target-specific caption');
+            expect(payload.hashtagsFinal).toBe('#target #override');
+            expect(payload.footerFinal).toBe('Target-specific footer');
+            // The footer row lookup is skipped entirely when an override is set
+            expect(mocks.footerModel.findOne).not.toHaveBeenCalled();
+        });
+
+        it('inherits post-level values when all 3 overrides are null', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                { captionOverride: null, hashtagsOverrideText: null, footerOverride: null },
+                {
+                    finalCaption: 'Post caption',
+                    finalHashtagsText: '#post #hashtags',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Post caption');
+            expect(payload.hashtagsFinal).toBe('#post #hashtags');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+            expect(mocks.footerModel.findOne).toHaveBeenCalledWith({ id: FOOTER_ID });
+        });
+
+        it('applies a partial override (caption only) while hashtags/footer inherit', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Only caption is overridden',
+                    hashtagsOverrideText: null,
+                    footerOverride: null
+                },
+                {
+                    finalCaption: 'Post caption (should NOT be used)',
+                    finalHashtagsText: '#inherited',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Only caption is overridden');
+            expect(payload.hashtagsFinal).toBe('#inherited');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // Scheduling fields
     // -------------------------------------------------------------------------
 

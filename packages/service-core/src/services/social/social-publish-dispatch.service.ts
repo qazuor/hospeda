@@ -699,10 +699,13 @@ export class SocialPublishDispatchService {
      * - `platform` + `makeChannelKey` — from `social_platform_formats` via
      *   `target.platformFormatId`.
      * - `publishFormat` — from `social_post_targets.publish_format`.
-     * - `captionFinal` — `post.final_caption ?? post.caption_base`.
-     * - `hashtagsFinal` — `post.final_hashtags_text ?? ''`.
-     * - `footerFinal` — resolved from `social_post_footers.content` via
-     *   `post.footer_id`; empty string when `footer_id` is null.
+     * - `captionFinal` — `target.caption_override ?? post.final_caption ?? post.caption_base`
+     *   (HOS-65 T-020, AC-4: `null` on the target's override column means "inherit").
+     * - `hashtagsFinal` — `target.hashtags_override_text ?? post.final_hashtags_text ?? ''`.
+     * - `footerFinal` — `target.footer_override` when set (the `social_post_footers`
+     *   lookup is skipped entirely in that case); otherwise resolved from
+     *   `social_post_footers.content` via `post.footer_id`, empty string when
+     *   `footer_id` is also null.
      * - `mediaUrls` — resolved PER-TARGET and FORMAT-AWARE (HOS-65 T-019) via
      *   {@link resolveTargetMediaUrls}: `social_post_target_media` link rows
      *   scoped to this target (ordered by the link table's `position`), joined
@@ -742,17 +745,31 @@ export class SocialPublishDispatchService {
             (platformFormat?.makeChannelKey as string | null | undefined) ?? null;
         const publishFormat = target.publishFormat as string;
 
-        // -- Caption / hashtags ---------------------------------------------------
+        // -- Caption / hashtags (HOS-65 T-020 — per-target overrides, AC-4) --------
+        // `null` on the target's override column means "inherit the post-level
+        // value" — `??` only falls through on null/undefined, so a deliberate
+        // empty-string override is honored as-is rather than treated as absent.
+        const captionOverride = target.captionOverride as string | null | undefined;
         const captionFinal =
-            (post.finalCaption as string | null | undefined) ?? (post.captionBase as string);
-        const hashtagsFinal = (post.finalHashtagsText as string | null | undefined) ?? '';
+            captionOverride ??
+            (post.finalCaption as string | null | undefined) ??
+            (post.captionBase as string);
 
-        // -- Footer resolution -----------------------------------------------------
-        const footerId = post.footerId as string | null | undefined;
-        let footerFinal = '';
-        if (footerId) {
-            const footer = await this.footerModel.findOne({ id: footerId });
-            footerFinal = (footer?.content as string | null | undefined) ?? '';
+        const hashtagsOverrideText = target.hashtagsOverrideText as string | null | undefined;
+        const hashtagsFinal =
+            hashtagsOverrideText ?? (post.finalHashtagsText as string | null | undefined) ?? '';
+
+        // -- Footer resolution (HOS-65 T-020 — per-target override, AC-4) ---------
+        // When the target has its own footerOverride, it wins outright and the
+        // post-level footer row lookup is skipped entirely (no query needed).
+        const footerOverride = target.footerOverride as string | null | undefined;
+        let footerFinal = footerOverride ?? '';
+        if (footerOverride === null || footerOverride === undefined) {
+            const footerId = post.footerId as string | null | undefined;
+            if (footerId) {
+                const footer = await this.footerModel.findOne({ id: footerId });
+                footerFinal = (footer?.content as string | null | undefined) ?? '';
+            }
         }
 
         // -- Media URLs (HOS-65 T-019 — per-target, format-aware resolution) -------
