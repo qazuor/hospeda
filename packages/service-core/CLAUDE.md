@@ -1225,6 +1225,66 @@ blast radius, separate master key — never share `HOSPEDA_AI_VAULT_MASTER_KEY` 
   update/delete), gated by `SOCIAL_SETTINGS_MANAGE` (reused, not a dedicated permission — same
   precedent as the AI vault reusing `AI_SETTINGS_MANAGE`).
 
+## Social Automation: Per-Target Media & Multi-Format Publishing (HOS-65)
+
+Extends the HOS-64 pipeline so one `social_posts` row can fan out to N targets, each
+with its OWN media and format, published to new platforms (LinkedIn, TikTok).
+
+### Per-target media via a link table (not a column)
+
+Media associates to a target through `social_post_target_media` — a many-to-many link
+table (`socialPostTargetId` × `socialPostMediaId` + `position`), NOT a nullable FK column
+on `social_post_media`. A link table was chosen over a column so ONE asset can be shared
+by multiple targets (e.g. the same video on both a LinkedIn and a TikTok target) without
+duplicating the `social_post_media` row (see `.specs/HOS-65-publishing-engine-extension/spec.md`
+§7/§11). `social_post_media` still keeps its `socialPostId` — the post owns the media pool,
+the link table adds per-target scoping on top. Model: `SocialPostTargetMediaModel`
+(`packages/db/src/models/social/social-post-target-media.model.ts`).
+
+- **Write path**: `SocialImagePipelineService.processImage`/`processImages`/`processVideo`
+  create the `social_post_media` row as before AND, when a `socialPostTargetId` is passed,
+  a `social_post_target_media` link row at the same `position` (private `createMediaLinks()`
+  helper). `SocialDraftIngestionService` drives this per-target: for each valid target it
+  calls `resolveTargetAssets` (own `assets` array, else legacy root `image` fallback, else
+  `[]` for TEXT_POST/NONE) then dispatches each asset with that target's id.
+- **Read path** (`social-publish-dispatch.service.ts::buildMakePayload`): resolves media
+  per target via a 3-level join (link row → `social_post_media` → `social_assets`, ordered by
+  the link table's `position`), then `resolveTargetMediaUrls(publishFormat, targetMediaRows,
+  postMediaRowsFallback)` applies the per-format selection: TEXT_POST→0, STORY/IMAGE_POST→1,
+  VIDEO_POST/REEL→1 video, CAROUSEL/FEED_POST/PHOTO_POST→N. All 8 `SocialPublishFormatEnum`
+  values have an explicit rule — a selector scoped to only the 4 spec-named formats would
+  silently zero out media for real FEED_POST/PHOTO_POST targets.
+
+### Backfill + fallback for pre-existing posts
+
+`packages/db/src/migrations/extras/027-social-post-target-media-backfill.data-migration.sql`
+(idempotent, `pnpm db:apply-extras`) fans out every existing `social_post_media` row into one
+link row per target of that media's post, preserving `position`. For posts that have ZERO
+link rows yet (pre-/partially-migrated), `buildMakePayload` falls back to the post-level media
+query (`resolvePostLevelMediaRows`, invoked lazily only when target-scoped rows are empty), so
+old posts keep publishing correctly during the transition.
+
+### Override columns are now live
+
+`social_post_targets.captionOverride` / `hashtagsOverrideText` / `footerOverride` (nullable,
+shipped dead in SPEC-254) are now READ by `buildMakePayload`: non-null wins, `null` inherits
+the parent post's resolved caption/hashtags/footer (`??` so an explicit empty-string override
+is honored, not treated as absent). No schema change — the reader was the missing piece.
+
+### Video/story presets
+
+`social-video-pipeline-config.util.ts` exports the STORY 9:16 Cloudinary transform (applied
+via the `transformation` upload option) and VIDEO_POST duration/size LIMITS. Limits are
+enforced as pre/post-upload VALIDATION (reject over-limit via the graceful-fail contract), not
+as a Cloudinary transform — a duration transform would silently truncate the video.
+
+### New platforms
+
+`SocialPlatformEnum` gained `LINKEDIN` + `TIKTOK` (Postgres enum widened via migration
+`0047`). Seeded platform/format rows in `packages/seed/src/required/socialAutomation.seed.ts`
+(LinkedIn: TEXT_POST/VIDEO_POST; TikTok: VIDEO_POST — neither supports STORY). The dispatch
+service stays platform-agnostic; each new platform needs only its Make.com scenario (external).
+
 ## Decoupled External Ports (ImportContext)
 
 `ImportContext` (in `services/accommodation-import/adapter.types.ts`) carries optional
