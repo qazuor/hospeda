@@ -7,7 +7,7 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { CompareButton } from '@/components/shared/compare/CompareButton.client';
+import { CompareCardSelect } from '@/components/shared/compare/CompareCardSelect.client';
 import {
 	AskToAiIcon,
 	CheckCircleIcon,
@@ -76,6 +76,22 @@ const isNew = data.createdAt
 
 <article class="acc-card">
 	<a href={detailUrl} class="acc-card__link" aria-label={data.name}>
+		<!-- Whole-card compare-selection overlay (HOS-85): rendered as an
+		     absolutely-positioned overlay covering the whole card, but ONLY
+		     while compare mode is active (renders null otherwise — see
+		     CompareCardSelect.client.tsx). Hydrated with `client:idle`
+		     (NOT `client:visible`): the wrapper collapses to 0x0 via the
+		     `astro-island { display: contents }` rule below while empty, and
+		     an IntersectionObserver-based directive would never fire against
+		     a zero-area target, so the control would never hydrate. -->
+		<CompareCardSelect
+			client:idle
+			accommodationId={data.id}
+			accommodationName={data.name}
+			accommodationThumbnailUrl={data.featuredImage.url}
+			locale={locale}
+		/>
+
 		<!-- IMAGE AREA -->
 		<div class="acc-card__image-area">
 			{data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
@@ -155,7 +171,11 @@ const isNew = data.createdAt
 				</svg>
 			</div>
 
-			<!-- Top right actions: FavoriteButton island + photo count -->
+			<!-- Top right actions: FavoriteButton island + photo count.
+			     The always-on compare icon (SPEC-288) was removed here for
+			     HOS-85 — compare is now a whole-card selection overlay
+			     (CompareCardSelect, mounted at the top of the <a> above),
+			     only rendered while compare mode is active. -->
 			<div class="acc-card__actions">
 				<FavoriteButton
 					client:visible
@@ -168,14 +188,6 @@ const isNew = data.createdAt
 					showCount={true}
 					locale={locale}
 					isAuthenticated={isAuthenticated}
-				/>
-				<CompareButton
-					client:visible
-					accommodationId={data.id}
-					accommodationName={data.name}
-					accommodationThumbnailUrl={data.featuredImage.url}
-					variant="standalone"
-					locale={locale}
 				/>
 				{(data.photoCount ?? 0) > 0 && (
 					<div class="acc-card__photo-count" aria-hidden="true">
@@ -276,6 +288,11 @@ const isNew = data.createdAt
 	}
 
 	.acc-card__link {
+		/* position: relative anchors the CompareCardSelect overlay island
+		 * (HOS-85), which covers the whole card with `position: absolute;
+		 * inset: 0` only while compare mode is active — see the component
+		 * mounted at the top of this <a> and the astro-island rule below. */
+		position: relative;
 		text-decoration: none;
 		color: inherit;
 		display: flex;
@@ -484,6 +501,19 @@ const isNew = data.createdAt
 		flex-direction: column;
 		gap: 10px;
 		flex: 1;
+	}
+
+	/* The CompareCardSelect overlay island (HOS-85) is mounted as the first
+	 * child of `.acc-card__link` so it can absolutely position itself over
+	 * the whole card once hydrated. Force its `astro-island` wrapper to
+	 * `display: contents` explicitly (rather than relying on Astro's own
+	 * runtime-injected stylesheet, which only lands at hydration time) so
+	 * that when compare mode is off — the default, including the initial SSR
+	 * render — the wrapper collapses out of the flex flow entirely instead of
+	 * consuming space as an empty flex item. Same technique as
+	 * `.acc-listing-map :global(astro-island)` in `pages/[lang]/alojamientos/mapa.astro`. */
+	.acc-card__link > :global(astro-island) {
+		display: contents;
 	}
 
 	/* Category + Location row. The category badge is a bounded enum label

@@ -316,13 +316,6 @@ export function MapCardsSidebar({
                                             locale={locale}
                                             isAuthenticated={isAuthenticated}
                                         />
-                                        <CompareButton
-                                            accommodationId={item.id}
-                                            accommodationName={item.name}
-                                            accommodationThumbnailUrl={item.thumbnailUrl}
-                                            variant="standalone"
-                                            locale={locale}
-                                        />
                                         {photos > 0 && item.photosLabel ? (
                                             <div
                                                 className={sidebarStyles.cardPhotoCount}
@@ -444,6 +437,27 @@ export function MapCardsSidebar({
 
                                     {/* Divider */}
                                     <div className={sidebarStyles.cardDivider} />
+
+                                    {/* Contextual compare control (HOS-85): a labeled
+                                        add/remove button, only rendered while compare
+                                        mode is active — mirrors the placement in
+                                        AccommodationCard.astro so the map sidebar cards
+                                        behave identically to the listing cards. Unlike
+                                        the Astro island version, no `display: contents`
+                                        wrapper trick is needed here: this is a plain
+                                        React child, so it emits no DOM node at all when
+                                        it renders `null` (compare mode off), leaving the
+                                        `gap` layout of `.cardContent` unaffected. The
+                                        button's own `handleClick` already stops event
+                                        propagation, so it won't trigger the card's
+                                        hover-select/navigation handlers. */}
+                                    <CompareButton
+                                        accommodationId={item.id}
+                                        accommodationName={item.name}
+                                        accommodationThumbnailUrl={item.thumbnailUrl}
+                                        variant="contextual"
+                                        locale={locale}
+                                    />
 
                                     {/* Price + CTA */}
                                     <div className={sidebarStyles.cardPriceRow}>

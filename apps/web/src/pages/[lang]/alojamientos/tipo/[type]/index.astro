@@ -23,6 +23,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
@@ -401,6 +402,8 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		title={typeName}
 		totalCount={total}
 	/>
+
+	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
 
 	<FilterSidebar
 		slot="filters"

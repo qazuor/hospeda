@@ -6,8 +6,12 @@
  *
  * Layout: a 2-column flex row at all times — `.detail-header__main` on the
  * left holds badges + name + destination + rating; `.detail-header__favorite`
- * on the right anchors the heart button. The favorite stays right-aligned
- * regardless of viewport size or compact mode.
+ * on the right anchors the compare button (HOS-85 T-010) and the heart
+ * button, in that order. This action cluster stays right-aligned regardless
+ * of viewport size or compact mode. Below 768px the compare button collapses
+ * to an icon-only circle (DetailCompareButton.module.css) matching the
+ * FavoriteButton's diameter so the pair fits without squeezing/overflowing
+ * the header row on mobile (HOS-85 post-review fix).
  *
  * The status badges (featured/new) are rendered as plain spans here (instead
  * of going through the `Badge` primitive) so we can size them identically to
@@ -21,6 +25,7 @@ import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
 import { CheckCircleIcon, StarIcon } from '@repo/icons';
 
 interface Props {
@@ -130,6 +135,14 @@ const newStyle =
   </div>
 
   <div class="detail-header__favorite">
+    <DetailCompareButton
+      client:load
+      accommodationId={accommodationId}
+      accommodationName={accommodation.name}
+      accommodationThumbnailUrl={accommodation.featuredImage}
+      locale={locale}
+      className="detail-header__compare-btn"
+    />
     <FavoriteButton
       client:load
       entityId={accommodationId}
@@ -165,6 +178,9 @@ const newStyle =
   .detail-header__favorite {
     flex-shrink: 0;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
   }
 
   .detail-header__badges {

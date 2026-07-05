@@ -20,11 +20,16 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('FavoriteButton');
         });
 
-        it('should import and render the CompareButton island (SPEC-288)', () => {
-            expect(src).toContain("from '@/components/shared/compare/CompareButton.client'");
-            expect(src).toContain('<CompareButton');
+        it('should import and render the CompareCardSelect island (HOS-85)', () => {
+            expect(src).toContain("from '@/components/shared/compare/CompareCardSelect.client'");
+            expect(src).toContain('<CompareCardSelect');
             expect(src).toContain('accommodationId={data.id}');
             expect(src).toContain('accommodationName={data.name}');
+        });
+
+        it('should NOT import the old CompareButton island (replaced by CompareCardSelect, HOS-85)', () => {
+            expect(src).not.toContain('compare/CompareButton');
+            expect(src).not.toContain('<CompareButton');
         });
 
         it('should NOT import FavoriteIcon directly (delegated to FavoriteButton island)', () => {
@@ -142,6 +147,67 @@ describe('AccommodationCard.astro', () => {
 
         it('should forward isAuthenticated to FavoriteButton', () => {
             expect(src).toContain('isAuthenticated={isAuthenticated}');
+        });
+    });
+
+    describe('whole-card compare selection overlay (HOS-85 post-review fix)', () => {
+        /**
+         * The original contextual CompareButton (`client:visible`) never
+         * hydrated: it rendered `null` while compare mode was off, and the
+         * `display: contents` wrapper around an empty render collapsed to a
+         * 0x0 area, so the `IntersectionObserver` behind `client:visible`
+         * never had anything to observe. This fix mounts CompareCardSelect
+         * with `client:idle` (hydrates regardless of size/visibility) as an
+         * overlay covering the WHOLE card, instead of a small button in the
+         * card body.
+         */
+        const actionsBlock = src.slice(
+            src.indexOf('acc-card__actions'),
+            src.indexOf('CONTENT AREA')
+        );
+        const linkBlock = src.slice(src.indexOf('acc-card__link"'), src.indexOf('IMAGE AREA'));
+
+        it('should NOT render any CompareButton inside the actions column', () => {
+            expect(actionsBlock).not.toContain('<CompareButton');
+            expect(actionsBlock).not.toContain('compare/CompareButton');
+        });
+
+        it('should still render FavoriteButton inside the actions column', () => {
+            expect(actionsBlock).toContain('<FavoriteButton');
+        });
+
+        it('should NOT render the old contextual-variant CompareButton anywhere', () => {
+            expect(src).not.toContain('variant="contextual"');
+        });
+
+        it('should mount CompareCardSelect with client:idle as the first child of the card link', () => {
+            expect(linkBlock).toContain('<CompareCardSelect');
+            const selectStart = linkBlock.indexOf('<CompareCardSelect');
+            const selectTag = linkBlock.slice(
+                selectStart,
+                linkBlock.indexOf('/>', selectStart) + 2
+            );
+            // Scope the directive assertions to the CompareCardSelect tag itself:
+            // the card link also hosts other islands (e.g. FavoriteButton) that
+            // legitimately use client:visible.
+            expect(selectTag).toContain('client:idle');
+            expect(selectTag).not.toContain('client:visible');
+            expect(selectTag).toContain('accommodationId={data.id}');
+            expect(selectTag).toContain('accommodationName={data.name}');
+            expect(selectTag).toContain('accommodationThumbnailUrl={data.featuredImage.url}');
+            expect(selectTag).toContain('locale={locale}');
+        });
+
+        it('should give the card link position:relative so the overlay can anchor to it', () => {
+            expect(src).toContain('.acc-card__link {');
+            const linkRuleIndex = src.indexOf('.acc-card__link {');
+            const linkRule = src.slice(linkRuleIndex, src.indexOf('}', linkRuleIndex));
+            expect(linkRule).toContain('position: relative;');
+        });
+
+        it('should force the CompareCardSelect island wrapper to display:contents so it takes no layout space when hidden', () => {
+            expect(src).toContain('.acc-card__link > :global(astro-island)');
+            expect(src).toContain('display: contents;');
         });
     });
 
