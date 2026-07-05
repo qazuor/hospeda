@@ -51,6 +51,13 @@
     inset: 0;
     width: 100%;
     height: 100%;
+    cursor: default;
+}
+
+/* Applied by React while the pointer is near a clickable pin (proximity-driven),
+   so the cursor signals clickability without an inline style (CSP-friendly). */
+.pinsLayerInteractive {
+    cursor: pointer;
 }
 
 /* --- Generic pin wrapper --- */
@@ -61,6 +68,11 @@
     flex-direction: column;
     align-items: center;
     transform: translate(-50%, -50%);
+    /* Pointer interaction is owned by .pinsLayer, which resolves clicks/hover by
+       proximity to the nearest dot (BETA-109). Wrappers let mouse/touch fall
+       through; the inner buttons stay keyboard-focusable (pointer-events does
+       not affect Tab focus or keyboard activation). */
+    pointer-events: none;
 }
 
 /* --- Main city pin (clickable button) --- */
@@ -102,7 +114,9 @@
     opacity: 0.35;
 }
 
-.mainPin:hover .mainDot {
+/* Hover emphasis is applied by React (proximity-driven) via .mainDotHovered so
+   the highlighted pin always matches the one a click would select. */
+.mainDotHovered {
     opacity: 0.8;
 }
 
@@ -189,7 +203,7 @@
     opacity: 0.6;
 }
 
-.mainPin:hover .mainLabel {
+.mainLabelHovered {
     opacity: 0.9;
 }
 
@@ -286,7 +300,7 @@
         height var(--duration-fast) ease;
 }
 
-.secondaryPin:hover .secondaryDot {
+.secondaryDotHovered {
     opacity: 0.75;
 }
 
@@ -351,7 +365,7 @@
         0 0 8px var(--core-card-a100);
 }
 
-.secondaryPin:hover .secondaryLabel {
+.secondaryLabelHovered {
     opacity: 0.8;
 }
 
