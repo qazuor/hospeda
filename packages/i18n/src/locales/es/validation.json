@@ -3387,6 +3387,11 @@
         },
         "title": {
             "required": "El title es obligatorio"
+        },
+        "video": {
+            "url": {
+                "invalid": "La URL del video no es válida"
+            }
         }
     },
     "socialHashtag": {
