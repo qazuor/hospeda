@@ -259,4 +259,41 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('transform: scale(');
         });
     });
+
+    // BETA-110/114: the image scrim and the text overlaid on it must use
+    // THEME-INVARIANT tokens. Deriving them from --core-foreground /
+    // --primary-foreground inverts the scrim (dark→light) and the text in dark
+    // mode, washing the overlaid content out.
+    describe('theme-invariant image scrim (BETA-110/114)', () => {
+        /** Extract a single flat CSS rule block (no nested braces) by selector. */
+        const rule = (selector: string): string => {
+            const start = src.indexOf(`${selector} {`);
+            if (start === -1) return '';
+            return src.slice(start, src.indexOf('}', start));
+        };
+
+        it('grid scrim uses the theme-invariant overlay token, not --core-foreground', () => {
+            const scrim = rule('.dest-card__gradient');
+            expect(scrim).toContain('--overlay-bg-light');
+            expect(scrim).not.toContain('--core-foreground');
+        });
+
+        it('carousel scrim uses the stronger theme-invariant overlay token', () => {
+            const scrim = rule('.dest-card--carousel .dest-card__gradient');
+            expect(scrim).toContain('--overlay-bg-strong');
+            expect(scrim).not.toContain('--core-foreground');
+        });
+
+        it('overlaid name/count/description use theme-invariant light text', () => {
+            for (const sel of [
+                '.dest-card__name--overlay',
+                '.dest-card__count--overlay',
+                '.dest-card__description--overlay'
+            ]) {
+                const block = rule(sel);
+                expect(block).toContain('--surface-dark-foreground');
+                expect(block).not.toContain('--primary-foreground');
+            }
+        });
+    });
 });

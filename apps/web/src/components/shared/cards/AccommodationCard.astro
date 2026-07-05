@@ -479,14 +479,17 @@ const isNew = data.createdAt
 	/* Photo-count pill: always visible. Bigger + labeled (e.g. "9 fotos")
 	 * so the meaning reads at a glance, but keeps the original translucent
 	 * surface so it doesn't overpower the photo. */
+	/* Badge sits over the photo → theme-invariant dark pill + light text, not the
+	   theme-flipping --core-foreground / --primary-foreground which invert the
+	   badge (dark-on-light) in dark mode (BETA-114). */
 	.acc-card__photo-count {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background-color: var(--core-foreground-a55);
+		background-color: var(--overlay-bg-strong);
 		padding: 6px 12px;
 		border-radius: 9999px;
-		color: var(--primary-foreground);
+		color: var(--surface-dark-foreground);
 		font-family: var(--font-sans);
 		font-weight: 600;
 		font-size: 13px;
