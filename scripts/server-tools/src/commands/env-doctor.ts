@@ -77,7 +77,19 @@ export async function runEnvDoctorChecks(
     for (const check of checks) {
         process.exitCode = 0;
         log.info(`\n── ${check.name} ──`);
-        await check.run();
+        try {
+            await check.run();
+        } catch (err) {
+            // An infra-level THROW (container not found, missing token, an
+            // unexpected Coolify client error) must NOT abort the umbrella:
+            // record this check as failed and still run the rest, honoring
+            // "report BOTH, never stop at the first failure". This is what
+            // lets a broken env-reconcile still fall through to env-check-rules
+            // (which degrades unreachable apps to `skipped`). Ordinary check
+            // failures signal via process.exitCode and never reach here.
+            log.error(`${check.name} errored: ${err instanceof Error ? err.message : String(err)}`);
+            process.exitCode = 1;
+        }
         if (process.exitCode !== undefined && process.exitCode !== 0) {
             failed.push(check.name);
         }

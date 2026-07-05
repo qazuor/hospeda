@@ -50,6 +50,15 @@ describe('isRequiredForDeployedTarget()', () => {
     it('is required when requiredScope is "always" alongside required: true', () => {
         expect(isRequiredForDeployedTarget({ required: true, requiredScope: 'always' })).toBe(true);
     });
+
+    it('is required when requiredScope is "always" even if required is false (L2 guard)', () => {
+        // The latent case check-env-local's isAlwaysRequired already guards:
+        // an "always" scope must win regardless of the plain required flag, so
+        // a genuinely-required var is never under-reported as missing on prod.
+        expect(isRequiredForDeployedTarget({ required: false, requiredScope: 'always' })).toBe(
+            true
+        );
+    });
 });
 
 describe('diffRegistryVsCoolify()', () => {

@@ -88,8 +88,16 @@ function isApp(value: string): value is App {
 export function isRequiredForDeployedTarget(
     entry: Pick<RegistryEnvVarDefinition, 'required' | 'requiredScope'>
 ): boolean {
-    if (entry.required) return true;
-    return entry.requiredScope === 'production';
+    // 'always' and 'production' are both required on a deployed target (prod
+    // and staging both run NODE_ENV=production). 'conditional' cannot be
+    // evaluated from presence alone, so it is never treated as required here
+    // (it is surfaced separately as conditionalUnset). With no requiredScope,
+    // fall back to the plain `required` flag. Mirrors check-env-local's
+    // isAlwaysRequired shape so a { requiredScope: 'always', required: false }
+    // entry is still caught.
+    if (entry.requiredScope === 'always' || entry.requiredScope === 'production') return true;
+    if (entry.requiredScope === 'conditional') return false;
+    return entry.required === true;
 }
 
 /** Input to {@link diffRegistryVsCoolify} — pure, zero I/O. */
@@ -206,6 +214,13 @@ export async function envReconcile(argv: ReadonlyArray<string>): Promise<void> {
 
     // Only the production (non-preview) Coolify slot represents the live
     // running config — mirrors env-list's default scope.
+    //
+    // Presence-only by design: a required var set to an EMPTY value would
+    // ideally be flagged like a missing one, but Coolify returns `value: null`
+    // BOTH for an empty field AND when the token lacks `read:sensitive` scope
+    // (see coolify.ts). Filtering by empty value would false-positive EVERY
+    // var whenever the token is unscoped — worse than the edge it would fix.
+    // Key presence is the only signal Coolify reports reliably here.
     const coolifyKeys = vars.filter((v) => !v.is_preview).map((v) => v.key);
 
     const { missing, unexpected, conditionalUnset } = diffRegistryVsCoolify({

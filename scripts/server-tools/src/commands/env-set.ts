@@ -37,6 +37,20 @@ import { diffRegistryVsCoolify } from './env-reconcile.ts';
 const KINDS = ['api', 'web', 'admin'] as const;
 type App = (typeof KINDS)[number];
 
+/**
+ * Thrown when the operator cancels (Ctrl+C) any wizard prompt. Caught by
+ * {@link runEnvSetWizard} to abort the ENTIRE run with zero writes — a
+ * cancel must never be confused with a per-entry "keep / skip" (which
+ * returns `undefined` normally). Mirrors the LOCAL wizard's
+ * `WizardCancelledError` contract.
+ */
+class WizardCancelledError extends Error {
+    constructor() {
+        super('Wizard cancelled by operator.');
+        this.name = 'WizardCancelledError';
+    }
+}
+
 const HELP = `
 hops env-set <api|web|admin> <KEY> <VALUE>
 hops env-set <api|web|admin> <KEY> --secret
@@ -320,7 +334,8 @@ export async function envSet(argv: ReadonlyArray<string>): Promise<void> {
  * answering "keep" (`p.isCancel` aside) skips the type-specific prompt.
  *
  * @returns The new value, or `undefined` when the operator kept the current
- *   value (review mode only) or cancelled the prompt.
+ *   value (review mode only). Throws {@link WizardCancelledError} on a
+ *   Ctrl+C cancel — the caller aborts the whole run with zero writes.
  */
 async function promptWizardEntry(input: {
     entry: RegistryEnvVarDefinition;
@@ -333,7 +348,7 @@ async function promptWizardEntry(input: {
     if (mode === 'review') {
         const label = formatCurrentValueLabel({ entry, currentValue });
         const keep = await p.confirm({ message: `${entry.name} — keep current value (${label})?` });
-        if (p.isCancel(keep)) return undefined;
+        if (p.isCancel(keep)) throw new WizardCancelledError();
         if (keep) return undefined;
     }
 
@@ -349,7 +364,7 @@ async function promptWizardEntry(input: {
                 message: `${entry.name} — ${entry.description}`,
                 options: enumValues.map((value) => ({ value, label: value }))
             });
-            if (p.isCancel(answer)) return undefined;
+            if (p.isCancel(answer)) throw new WizardCancelledError();
             return answer;
         }
     }
@@ -359,7 +374,7 @@ async function promptWizardEntry(input: {
             message: `${entry.name} — ${entry.description}`,
             initialValue: currentValue === 'true'
         });
-        if (p.isCancel(answer)) return undefined;
+        if (p.isCancel(answer)) throw new WizardCancelledError();
         return String(answer);
     }
 
@@ -371,7 +386,7 @@ async function promptWizardEntry(input: {
                 return undefined;
             }
         });
-        if (p.isCancel(answer)) return undefined;
+        if (p.isCancel(answer)) throw new WizardCancelledError();
         return answer;
     }
 
@@ -391,7 +406,7 @@ async function promptWizardEntry(input: {
                 return undefined;
             }
         });
-        if (p.isCancel(answer)) return undefined;
+        if (p.isCancel(answer)) throw new WizardCancelledError();
         return answer;
     }
 
@@ -481,17 +496,28 @@ async function runEnvSetWizard(input: {
     log.info(`${entries.length} var(s) to ${reviewAll ? 'review' : 'fill'} on ${kindRaw}.`);
 
     const answers: WizardAnswer[] = [];
-    for (const entry of entries) {
-        const currentValue = liveVars.find((v) => v.key === entry.name)?.value ?? undefined;
-        const value = await promptWizardEntry({
-            entry,
-            constraint: registryJson.constraints[entry.name],
-            currentValue: currentValue ?? undefined,
-            mode: reviewAll ? 'review' : 'gap'
-        });
-        if (value !== undefined) {
-            answers.push({ key: entry.name, value });
+    try {
+        for (const entry of entries) {
+            const currentValue = liveVars.find((v) => v.key === entry.name)?.value ?? undefined;
+            const value = await promptWizardEntry({
+                entry,
+                constraint: registryJson.constraints[entry.name],
+                currentValue: currentValue ?? undefined,
+                mode: reviewAll ? 'review' : 'gap'
+            });
+            if (value !== undefined) {
+                answers.push({ key: entry.name, value });
+            }
         }
+    } catch (err) {
+        // A cancel (Ctrl+C) on ANY prompt aborts the whole run with zero
+        // writes — never a partial write, even under --yes. A per-entry
+        // "keep / skip" returns undefined normally and does NOT reach here.
+        if (err instanceof WizardCancelledError) {
+            log.warn('Cancelled — no changes written.');
+            return;
+        }
+        throw err;
     }
 
     if (answers.length === 0) {
