@@ -1,7 +1,6 @@
 {
     "extends": "../typescript-config/package-base.json",
     "compilerOptions": {
-        "outDir": "dist",
         "jsx": "react-jsx",
         "lib": ["es2022", "dom"]
     },

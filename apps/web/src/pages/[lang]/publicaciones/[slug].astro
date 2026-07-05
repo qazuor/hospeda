@@ -161,7 +161,12 @@ if (postId) {
 
 	if (isAuthenticated) {
 		try {
-			const statusResult = await userBookmarksApi.checkStatus({ entityId: postId, entityType: 'POST' });
+			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+			const statusResult = await userBookmarksApi.checkStatus({
+				entityId: postId,
+				entityType: 'POST',
+				cookieHeader
+			});
 			if (statusResult.ok) {
 				initialIsFavorited = statusResult.data.isFavorited;
 				initialBookmarkId = statusResult.data.bookmarkId;

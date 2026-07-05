@@ -466,14 +466,24 @@ describe('buildCspHeader', () => {
         expect(styleSrc).not.toContain('unsafe-inline');
     });
 
-    // SPEC-046 GAP-046-12: lock the embed surface — we never embed anything,
-    // and even if frame-ancestors blocks others from embedding us, frame-src
-    // is the symmetric guard that stops us from embedding others. Together
-    // they make the frame story explicit on both directions.
-    it("must include frame-src 'none' (GAP-046-12)", () => {
+    // SPEC-046 GAP-046-12 + SPEC-301: lock the embed surface. The ONLY origin we
+    // embed is Cloudflare Turnstile's challenge iframe (feedback form), which must
+    // be allowlisted here because 'strict-dynamic' does not govern frames. Every
+    // other embed origin stays blocked, and frame-ancestors 'none' still stops
+    // others from embedding us — the frame story stays explicit in both directions.
+    it('must restrict frame-src to the Cloudflare Turnstile host only (GAP-046-12, SPEC-301)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
-        expect(frameSrc).toBe("frame-src 'none'");
+        expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
+    });
+
+    // SPEC-301 regression: the feedback form's Turnstile widget injects its
+    // script from https://challenges.cloudflare.com. It must appear in script-src
+    // as the fallback for browsers that do not honor 'strict-dynamic'.
+    it('must allowlist the Cloudflare Turnstile host in script-src (SPEC-301)', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        expect(scriptSrc).toContain('https://challenges.cloudflare.com');
     });
 
     // SPEC-046 GAP-046-11 follow-up: the manual Cloudflare Web Analytics

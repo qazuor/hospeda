@@ -643,9 +643,18 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
             });
 
             it('should set total=0 for missing (date, entityType) combinations', async () => {
-                // Arrange — model returns only one row; 89 others must be zero-filled
+                // Arrange — model returns only one row; 89 others must be zero-filled.
+                // The mocked date must fall inside the [today-29 .. today] UTC window that
+                // gapFillDailySeries generates, so derive it from today (today-5) instead of
+                // hard-coding a calendar date that drifts out of the window as time passes.
+                const nowUtc = new Date();
+                const inWindowUtc = new Date(
+                    Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()) -
+                        5 * 24 * 60 * 60 * 1000
+                );
+                const inWindowDate = `${inWindowUtc.getUTCFullYear()}-${String(inWindowUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(inWindowUtc.getUTCDate()).padStart(2, '0')}`;
                 asMock(modelMock.getDailySeries).mockResolvedValue([
-                    { date: '2026-06-05', entityType: EntityTypeEnum.ACCOMMODATION, total: 42 }
+                    { date: inWindowDate, entityType: EntityTypeEnum.ACCOMMODATION, total: 42 }
                 ]);
                 const input: GetAdminDailySeriesInput = {
                     actor: makeAnalyticsActor(),
@@ -658,10 +667,10 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
                 // Assert
                 expect(result.data).toHaveLength(90);
 
-                // All rows that are NOT (2026-06-05, ACCOMMODATION) must have total: 0
+                // All rows that are NOT (inWindowDate, ACCOMMODATION) must have total: 0
                 const zeroRows = (result.data ?? []).filter(
                     (r) =>
-                        !(r.date === '2026-06-05' && r.entityType === EntityTypeEnum.ACCOMMODATION)
+                        !(r.date === inWindowDate && r.entityType === EntityTypeEnum.ACCOMMODATION)
                 );
                 expect(zeroRows).toHaveLength(89);
                 for (const row of zeroRows) {

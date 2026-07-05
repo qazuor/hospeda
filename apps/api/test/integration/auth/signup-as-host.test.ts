@@ -172,6 +172,12 @@ vi.mock('../../../src/middlewares/billing-customer', () => ({
 vi.mock('../../../src/middlewares/entitlement', () => ({
     entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
         await next();
+    },
+    requireEntitlement: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
+    },
+    requireLimit: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
     }
 }));
 

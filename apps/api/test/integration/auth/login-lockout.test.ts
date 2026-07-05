@@ -12,11 +12,13 @@
 
 // Set lockout threshold BEFORE any imports so the lazy config picks it up
 process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { forceVerifyEmail } from '../../e2e/helpers/auth-helpers';
+import { testDb } from '../../e2e/setup/test-database';
 
 /** Maximum failed attempts before lockout (matches process.env override) */
 const MAX_ATTEMPTS = 3;
@@ -30,7 +32,13 @@ const SIGN_UP_PATH = '/api/auth/sign-up/email';
 /** Shared request headers for all test requests */
 const BASE_HEADERS: Record<string, string> = {
     'content-type': 'application/json',
-    'user-agent': 'vitest'
+    'user-agent': 'vitest',
+    // Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+    // mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+    // Without it, sign-in returns 403 before the lockout middleware can count
+    // the failed attempt, so the 401→429 threshold is never reached.
+    // Matches HOSPEDA_SITE_URL.
+    origin: 'http://localhost:4321'
 };
 
 /** Test user credentials */
@@ -97,6 +105,7 @@ describe('Auth Login Lockout Integration', () => {
     beforeAll(async () => {
         validateApiEnv();
         app = initApp();
+        await testDb.setup();
 
         // Create a test user via Better Auth signup
         const signUpRes = await signUp({
@@ -111,6 +120,15 @@ describe('Auth Login Lockout Integration', () => {
             const body = await signUpRes.text();
             throw new Error(`Failed to create test user (status ${signUpRes.status}): ${body}`);
         }
+
+        // The "reset lockout counter after successful login" test needs a
+        // successful sign-in, which Better Auth blocks until the email is
+        // verified. Remove the fire-and-forget email-verify race.
+        await forceVerifyEmail({ email: TEST_EMAIL });
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     afterEach(async () => {

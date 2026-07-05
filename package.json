@@ -89,7 +89,7 @@
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "cloudinary": "^2.9.0",
-        "dotenv": "^17.2.3",
+        "dotenv": "^17.4.2",
         "fuse.js": "^7.4.2",
         "husky": "^9.1.7",
         "lint-staged": "^17.0.8",
@@ -97,7 +97,7 @@
         "sharp": "^0.34.5",
         "tsx": "^4.22.4",
         "turbo": "^2.10.2",
-        "typescript": "^5.8.3",
+        "typescript": "6.0.3",
         "vitest": "^4.1.9"
     },
     "packageManager": "pnpm@9.12.3",
@@ -111,6 +111,7 @@
     "workspaces": ["apps/*", "packages/*"],
     "pnpm": {
         "overrides": {
+            "typescript": "6.0.3",
             "zod@>=4.0.0 <5": "4.3.6",
             "ws": ">=8.21.0",
             "form-data": ">=4.0.6",

@@ -21,11 +21,12 @@ process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
 // Short window so window-expiry tests finish in a few seconds.
 process.env.HOSPEDA_AUTH_LOCKOUT_WINDOW_MS = '2000';
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 /** Maximum failed attempts before lockout (matches process.env override). */
 const MAX_ATTEMPTS = 3;
@@ -36,8 +37,15 @@ const LOCKOUT_WINDOW_MS = 2000;
 /** Sign-in endpoint path. */
 const SIGN_IN_PATH = '/api/auth/sign-in/email';
 
-/** Forgot-password endpoint path. */
-const FORGOT_PASSWORD_PATH = '/api/auth/forget-password';
+/**
+ * Forgot-password endpoint path.
+ * Better Auth's actual route name is `/request-password-reset`; the historical
+ * `/forget-password` never matched Better Auth's internal router, so the
+ * lockout-protected wrapper (registered at `/request-password-reset` in
+ * `src/routes/auth/handler.ts`) never fired. Use the real path so the
+ * forgot-password lockout tests actually exercise the 429 behavior.
+ */
+const FORGOT_PASSWORD_PATH = '/api/auth/request-password-reset';
 
 /** Sign-up endpoint path. */
 const SIGN_UP_PATH = '/api/auth/sign-up/email';
@@ -67,6 +75,11 @@ const RESEND_MAX_ATTEMPTS = 5;
 const BASE_HEADERS: Record<string, string> = {
     'content-type': 'application/json',
     'user-agent': 'vitest',
+    // Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+    // mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+    // Without it, requests return 403 before the lockout middleware can count
+    // the attempt, so the 429 threshold is never reached. Matches HOSPEDA_SITE_URL.
+    origin: 'http://localhost:4321',
     'x-forwarded-for': '10.0.0.99'
 };
 
@@ -201,6 +214,7 @@ describe('Auth lockout edge cases [SPEC-026 T-026 / GAP-015]', () => {
     beforeAll(async () => {
         validateApiEnv();
         app = initApp();
+        await testDb.setup();
 
         // Create the test user for sign-in tests
         const res = await app.request(SIGN_UP_PATH, {
@@ -218,6 +232,10 @@ describe('Auth lockout edge cases [SPEC-026 T-026 / GAP-015]', () => {
             const body = await res.text();
             throw new Error(`Failed to create test user (status ${res.status}): ${body}`);
         }
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     afterEach(async () => {

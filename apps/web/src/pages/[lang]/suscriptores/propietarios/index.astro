@@ -4,7 +4,7 @@
  * @description Property owners landing page with hero, benefits, how-it-works, FAQ, and CTA.
  * Matches Figma design: full-width marketing sections.
  * @route /{lang}/suscriptores/propietarios/
- * @rendering SSG (prerender)
+ * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -15,7 +15,6 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, SparkleIcon, StarIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
 interface BenefitDefinition {
 	readonly Icon: typeof MapIcon;
@@ -25,14 +24,7 @@ interface BenefitDefinition {
 	readonly descFb: string;
 }
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const benefits: ReadonlyArray<BenefitDefinition> = [
