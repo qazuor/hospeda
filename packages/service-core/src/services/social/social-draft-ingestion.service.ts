@@ -67,6 +67,7 @@ import {
     type SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
+    type SocialPublishFormatEnum,
     SocialSourceEnum
 } from '@repo/schemas';
 import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
@@ -552,6 +553,7 @@ export class SocialDraftIngestionService {
             const createdTargets: Array<{
                 id: string;
                 mediaType: string;
+                publishFormat: string;
                 assets?: TargetAsset[];
             }> = [];
 
@@ -567,6 +569,7 @@ export class SocialDraftIngestionService {
                 createdTargets.push({
                     id: createdTarget.id as string,
                     mediaType: target.mediaType,
+                    publishFormat: target.publishFormat,
                     assets: target.assets
                 });
             }
@@ -653,6 +656,10 @@ export class SocialDraftIngestionService {
                         const imageAssets = plan.assets.flatMap((a) => (a.image ? [a.image] : []));
                         const videoAssets = plan.assets.flatMap((a) => (a.video ? [a.video] : []));
 
+                        // HOS-65 T-021: thread the target's own publishFormat so
+                        // the pipeline can resolve the STORY/VIDEO_POST preset.
+                        const publishFormat = plan.target.publishFormat as SocialPublishFormatEnum;
+
                         if (imageAssets.length === 1) {
                             const soleImage = imageAssets[0];
                             if (soleImage) {
@@ -660,7 +667,8 @@ export class SocialDraftIngestionService {
                                     image: soleImage,
                                     socialPostId: postId,
                                     socialPostTargetId: plan.target.id,
-                                    actorId
+                                    actorId,
+                                    publishFormat
                                 });
                                 for (const w of imageResult.warnings) {
                                     warnings.push({ field: 'image', message: w });
@@ -673,7 +681,8 @@ export class SocialDraftIngestionService {
                                     image,
                                     socialPostId: postId,
                                     socialPostTargetId: plan.target.id,
-                                    actorId
+                                    actorId,
+                                    publishFormat
                                 }))
                             );
                             for (const imageResult of imageResults) {
@@ -689,7 +698,8 @@ export class SocialDraftIngestionService {
                                 video,
                                 socialPostId: postId,
                                 socialPostTargetId: plan.target.id,
-                                actorId
+                                actorId,
+                                publishFormat
                             });
                             for (const w of videoResult.warnings) {
                                 warnings.push({ field: 'video', message: w });

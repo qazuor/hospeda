@@ -10,8 +10,9 @@ import {
     SocialPostTargetMediaModel as RealSocialPostTargetMediaModel,
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
-import type { ImageProvider } from '@repo/media/server';
+import type { ImageProvider, UploadOptions } from '@repo/media/server';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
+import type { SocialPublishFormatEnum } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
 import { isUuid } from '../../utils/identifier';
 import { serviceLogger } from '../../utils/service-logger';
@@ -24,6 +25,7 @@ import {
     resolveNumericSettingWithFallback,
     resolveStringSettingWithFallback
 } from './social-image-pipeline-config.util';
+import { resolveVideoPipelinePreset } from './social-video-pipeline-config.util';
 
 // ---------------------------------------------------------------------------
 // Image payload types
@@ -137,6 +139,13 @@ export interface ProcessImageInput {
      * is created — this keeps pre-HOS-65 G-3 callers backward compatible.
      */
     readonly socialPostTargetId?: string;
+    /**
+     * The target's publish format (HOS-65 T-021). When it resolves to a
+     * `STORY` preset via {@link resolveVideoPipelinePreset}, the 9:16
+     * Cloudinary transform is applied to the upload. `undefined` (pre-HOS-65
+     * T-021 callers) applies no transformation — fully backward compatible.
+     */
+    readonly publishFormat?: SocialPublishFormatEnum;
 }
 
 /**
@@ -159,6 +168,14 @@ export interface ProcessVideoInput {
      * ID of the acting user / system actor. Stored in `social_assets.created_by_id`.
      */
     readonly actorId?: string;
+    /**
+     * The target's publish format (HOS-65 T-021). When it resolves to a
+     * `VIDEO_POST` preset via {@link resolveVideoPipelinePreset}, the
+     * resolved duration/size limits are enforced as pre-persist validation
+     * (see {@link SocialImagePipelineService.processVideo} for the exact
+     * rejection points). `undefined` applies no limit — fully backward compatible.
+     */
+    readonly publishFormat?: SocialPublishFormatEnum;
 }
 
 /**
@@ -192,6 +209,28 @@ export interface ProcessImageResult {
 
 /** Warning message returned when media download or upload fails. */
 const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
+
+/**
+ * Builds the rejection warning for a video whose downloaded byte size exceeds
+ * the resolved VIDEO_POST limit (HOS-65 T-021). Checked BEFORE the Cloudinary
+ * upload call — cheap, since the bytes are already in memory from the download
+ * step, and avoids uploading an asset that will be rejected anyway.
+ */
+function buildVideoSizeLimitWarning(maxSizeBytes: number): string {
+    return `Video exceeds the maximum allowed size of ${maxSizeBytes} bytes for VIDEO_POST; manual upload required`;
+}
+
+/**
+ * Builds the rejection warning for a video whose Cloudinary-reported duration
+ * exceeds the resolved VIDEO_POST limit (HOS-65 T-021). Checked AFTER the
+ * Cloudinary upload call — duration is only known once Cloudinary has
+ * processed the file, so the asset is already stored there when this check
+ * runs; the `social_assets` row is simply never created (same orphaned-asset
+ * precedent as an `assetModel.create` failure elsewhere in this class).
+ */
+function buildVideoDurationLimitWarning(maxDurationSeconds: number): string {
+    return `Video exceeds the maximum allowed duration of ${maxDurationSeconds}s for VIDEO_POST; manual upload required`;
+}
 
 // ---------------------------------------------------------------------------
 // Service
@@ -359,7 +398,7 @@ export class SocialImagePipelineService {
         input: ProcessImageInput,
         position: number
     ): Promise<ProcessImageResult> {
-        const { image, socialPostId, actorId, socialPostTargetId } = input;
+        const { image, socialPostId, actorId, socialPostTargetId, publishFormat } = input;
 
         // Step 1: Extract the download URL and any metadata from the payload.
         const { downloadUrl, openaiFileRef, mimeType, altText } = this.extractPayloadFields(image);
@@ -374,8 +413,16 @@ export class SocialImagePipelineService {
             return this.gracefulFail();
         }
 
-        // Step 3: Upload to Cloudinary.
-        const uploadResult = await this.uploadToCloudinary(downloadResult.buffer, mimeType);
+        // Step 3: Upload to Cloudinary. STORY targets get the 9:16 aspect-ratio
+        // transform preset (HOS-65 T-021); every other format uploads untouched.
+        const preset = publishFormat ? resolveVideoPipelinePreset(publishFormat) : null;
+        const transformation = preset?.kind === 'story' ? preset.transformation : undefined;
+
+        const uploadResult = await this.uploadToCloudinary(
+            downloadResult.buffer,
+            mimeType,
+            transformation
+        );
         if (!uploadResult.success) {
             this.logger.warn({ error: uploadResult.error }, 'Cloudinary upload failed');
             return this.gracefulFail();
@@ -443,6 +490,14 @@ export class SocialImagePipelineService {
      * Video only supports `mode: 'public_url'` in phase 1 (HOS-65 T-013) — no
      * `openai_file_refs` extraction is needed.
      *
+     * When `publishFormat` resolves to the `VIDEO_POST` preset (HOS-65 T-021,
+     * see {@link resolveVideoPipelinePreset}), its duration/size limits are
+     * enforced as graceful-failure VALIDATION (not a Cloudinary transform —
+     * there is no non-destructive way to "cap" a video via a transform param):
+     * an oversized download is rejected BEFORE the Cloudinary upload call; an
+     * over-duration video (only knowable from Cloudinary's own response) is
+     * rejected AFTER upload, by simply never persisting the `social_assets` row.
+     *
      * @param input - Video payload, optional post/target IDs to link, optional actor ID.
      * @returns Result with `assetId`, `cloudinaryUrl` (nullable), and `warnings`.
      *
@@ -456,11 +511,25 @@ export class SocialImagePipelineService {
      * ```
      */
     public async processVideo(input: ProcessVideoInput): Promise<ProcessImageResult> {
-        const { video, socialPostId, socialPostTargetId, actorId } = input;
+        const { video, socialPostId, socialPostTargetId, actorId, publishFormat } = input;
 
         const downloadUrl = video.url ?? '';
         const mimeType = video.mimeType ?? null;
         const altText = video.altText ?? null;
+
+        // Resolve the VIDEO_POST preset (HOS-65 T-021). This preset is DURATION/
+        // SIZE LIMITS, not a Cloudinary transform — there is no meaningful
+        // Cloudinary transform for "cap this video's duration/size" that doesn't
+        // silently mutate (e.g. truncate) the uploaded content, which the pipeline
+        // must not do without the caller asking for it. Limits are therefore
+        // enforced as pre/post-upload VALIDATION using the existing
+        // graceful-failure contract, at the earliest point each value is known:
+        // size is known immediately after download (checked BEFORE uploading,
+        // to avoid uploading an asset that will be rejected anyway); duration is
+        // only reported by Cloudinary AFTER upload completes (checked before the
+        // `social_assets` row is persisted).
+        const preset = publishFormat ? resolveVideoPipelinePreset(publishFormat) : null;
+        const videoLimits = preset?.kind === 'video_post' ? preset.limits : null;
 
         // Step 1: Download the video bytes with a timeout.
         const downloadResult = await this.downloadImage(downloadUrl);
@@ -472,6 +541,17 @@ export class SocialImagePipelineService {
             return this.gracefulFail();
         }
 
+        if (videoLimits && downloadResult.buffer.byteLength > videoLimits.maxSizeBytes) {
+            this.logger.warn(
+                {
+                    sizeBytes: downloadResult.buffer.byteLength,
+                    maxSizeBytes: videoLimits.maxSizeBytes
+                },
+                'Video exceeds VIDEO_POST max size limit; upload skipped'
+            );
+            return this.gracefulFail(buildVideoSizeLimitWarning(videoLimits.maxSizeBytes));
+        }
+
         // Step 2: Upload to Cloudinary.
         const uploadResult = await this.uploadToCloudinary(downloadResult.buffer, mimeType);
         if (!uploadResult.success) {
@@ -480,6 +560,20 @@ export class SocialImagePipelineService {
         }
 
         const { url, publicId, width, height, durationSeconds } = uploadResult.data;
+
+        if (
+            videoLimits &&
+            durationSeconds !== undefined &&
+            durationSeconds > videoLimits.maxDurationSeconds
+        ) {
+            this.logger.warn(
+                { durationSeconds, maxDurationSeconds: videoLimits.maxDurationSeconds },
+                'Video exceeds VIDEO_POST max duration limit; social_assets row not persisted'
+            );
+            return this.gracefulFail(
+                buildVideoDurationLimitWarning(videoLimits.maxDurationSeconds)
+            );
+        }
 
         // Step 3: Persist the social_assets row. mediaType is always VIDEO here
         // (unlike processSingleImage, which infers it from a MIME hint) and
@@ -676,11 +770,15 @@ export class SocialImagePipelineService {
      *
      * @param buffer - Raw image bytes.
      * @param _mimeType - Optional MIME type hint (currently unused — Cloudinary auto-detects).
+     * @param transformation - Optional Cloudinary transform preset forwarded
+     *   to `UploadOptions.transformation` (HOS-65 T-016/T-021 — e.g. the
+     *   STORY 9:16 crop). `undefined` applies no transformation.
      * @returns Upload result or failure.
      */
     private async uploadToCloudinary(
         buffer: Buffer,
-        _mimeType: string | null
+        _mimeType: string | null,
+        transformation?: UploadOptions['transformation']
     ): Promise<
         | {
               success: true;
@@ -699,7 +797,8 @@ export class SocialImagePipelineService {
             const result = await this.mediaProvider.upload({
                 file: buffer,
                 folder: assetsFolder,
-                tags: ['social', 'gpt-ingestion']
+                tags: ['social', 'gpt-ingestion'],
+                transformation
             });
             return {
                 success: true,
@@ -722,9 +821,14 @@ export class SocialImagePipelineService {
      *
      * Called whenever a recoverable error occurs so that the upstream
      * draft ingestion service can still persist the post.
+     *
+     * @param message - Warning message to surface. Defaults to the generic
+     *   {@link MEDIA_FAILURE_WARNING}; callers with a more specific reason
+     *   (e.g. a VIDEO_POST duration/size limit violation, HOS-65 T-021) pass
+     *   their own message instead.
      */
-    private gracefulFail(): ProcessImageResult {
-        return { assetId: null, cloudinaryUrl: null, warnings: [MEDIA_FAILURE_WARNING] };
+    private gracefulFail(message: string = MEDIA_FAILURE_WARNING): ProcessImageResult {
+        return { assetId: null, cloudinaryUrl: null, warnings: [message] };
     }
 
     /**

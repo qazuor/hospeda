@@ -28,13 +28,17 @@ import type {
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
+import { SocialAssetSourceEnum, SocialMediaTypeEnum, SocialPublishFormatEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type GptImagePayload,
     type GptVideoPayload,
     SocialImagePipelineService
 } from '../../../src/services/social/social-image-pipeline.service';
+import {
+    STORY_ASPECT_RATIO_TRANSFORM,
+    VIDEO_POST_LIMITS
+} from '../../../src/services/social/social-video-pipeline-config.util';
 import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
@@ -979,6 +983,121 @@ describe('SocialImagePipelineService', () => {
             expect(result.warnings).toContain('Media upload failed; manual upload required');
             expect(assetModelMock.create).not.toHaveBeenCalled();
             expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Video/story Cloudinary presets (HOS-65 T-021)
+    // -------------------------------------------------------------------------
+
+    describe('video/story Cloudinary presets (HOS-65 T-021)', () => {
+        const FAKE_VIDEO_URL = 'https://example.com/fake-video.mp4';
+
+        it('processVideo rejects gracefully (no asset row, no link row) when duration exceeds the VIDEO_POST limit', async () => {
+            // Arrange — Cloudinary reports a duration over VIDEO_POST_LIMITS.maxDurationSeconds
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-2',
+                width: 1080,
+                height: 1920,
+                durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds + 1
+            });
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — graceful failure, no DB rows written for the rejected asset
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(assetModelMock.create).not.toHaveBeenCalled();
+            expect(postMediaModelMock.create).not.toHaveBeenCalled();
+            expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('processVideo succeeds when duration is within the VIDEO_POST limit', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-3',
+                width: 1080,
+                height: 1920,
+                durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds
+            });
+            assetModelMock.create.mockResolvedValue(
+                buildMockAssetRow({
+                    mediaType: SocialMediaTypeEnum.VIDEO,
+                    durationSeconds: VIDEO_POST_LIMITS.maxDurationSeconds
+                })
+            );
+
+            // Act
+            const result = await service.processVideo({
+                video,
+                socialPostId: MOCK_POST_UUID,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — exactly-at-the-limit is allowed (not exceeded)
+            expect(result.assetId).toBe(MOCK_ASSET_UUID);
+            expect(result.warnings).toHaveLength(0);
+        });
+
+        it('forwards the STORY 9:16 transformation to the upload call for a STORY-format image', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({ image, publishFormat: SocialPublishFormatEnum.STORY });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: STORY_ASPECT_RATIO_TRANSFORM })
+            );
+        });
+
+        it('forwards NO transformation for a non-STORY image upload', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({
+                image,
+                publishFormat: SocialPublishFormatEnum.FEED_POST
+            });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined })
+            );
+        });
+
+        it('forwards NO transformation when publishFormat is omitted entirely (backward compat)', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload');
+
+            // Act
+            await service.processImage({ image });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined })
+            );
         });
     });
 });
