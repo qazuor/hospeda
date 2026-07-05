@@ -48,8 +48,8 @@ import { EnvSchema as MobileEnvSchema } from '../apps/mobile/src/lib/env-schema.
 import { serverEnvBaseSchema } from '../apps/web/src/env-schema.js';
 import type { CrossCheckRule } from '../packages/config/src/env-cross-checks.js';
 import { CROSS_CHECK_RULES } from '../packages/config/src/env-cross-checks.js';
-import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 import { ENV_REGISTRY } from '../packages/config/src/env-registry.js';
+import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 
 // ---------------------------------------------------------------------------
 // Types

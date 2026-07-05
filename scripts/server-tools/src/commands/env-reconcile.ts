@@ -42,9 +42,9 @@ import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/conta
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import {
+    loadRegistryJson,
     type RegistryAppId,
-    type RegistryEnvVarDefinition,
-    loadRegistryJson
+    type RegistryEnvVarDefinition
 } from '../lib/repo-root.ts';
 
 const KINDS = ['api', 'web', 'admin'] as const;

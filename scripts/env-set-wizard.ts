@@ -59,10 +59,10 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { confirm, input, password, select } from '@inquirer/prompts';
-import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 import { ENV_REGISTRY } from '../packages/config/src/env-registry.js';
+import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 import { findMissingAlwaysRequiredVars, readDotenvFile } from './check-env-local.js';
-import { type EnvVarConstraint, buildConstraints } from './generate-env-registry-json.js';
+import { buildConstraints, type EnvVarConstraint } from './generate-env-registry-json.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -165,7 +165,7 @@ export function selectReviewAllEntries(input: {
         .filter((entry) => entry.apps.includes(app) && !entry.platformInjected)
         .sort((a, b) => {
             const catCmp = a.category.localeCompare(b.category);
-            return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+            return catCmp === 0 ? a.name.localeCompare(b.name) : catCmp;
         });
 }
 

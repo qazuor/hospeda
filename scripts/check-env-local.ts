@@ -34,8 +34,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseDotenv } from 'dotenv';
-import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 import { ENV_REGISTRY } from '../packages/config/src/env-registry.js';
+import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -34,9 +34,9 @@ import { findContainer, getActiveTarget, getApplicationUuid } from '../lib/conta
 import { CoolifyApiError, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
 import {
+    loadRegistryJson,
     type RegistryAppId,
-    type RegistryCrossCheckRule,
-    loadRegistryJson
+    type RegistryCrossCheckRule
 } from '../lib/repo-root.ts';
 
 const KINDS = ['api', 'web', 'admin'] as const;

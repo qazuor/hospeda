@@ -12,11 +12,11 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ENV_REGISTRY } from '../../packages/config/src/env-registry.js';
 import {
-    PLATFORM_ENV_ALLOWLIST,
     blankBlockComments,
     diffUsageAgainstRegistry,
     extractEnvUsages,
-    findSourceFiles
+    findSourceFiles,
+    PLATFORM_ENV_ALLOWLIST
 } from '../check-env-usage.js';
 
 describe('blankBlockComments', () => {

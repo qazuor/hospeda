@@ -27,10 +27,10 @@ import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib
 import { die, log } from '../lib/log.ts';
 import { confirm } from '../lib/prompt.ts';
 import {
+    loadRegistryJson,
     type RegistryAppId,
     type RegistryEnvVarConstraint,
-    type RegistryEnvVarDefinition,
-    loadRegistryJson
+    type RegistryEnvVarDefinition
 } from '../lib/repo-root.ts';
 import { diffRegistryVsCoolify } from './env-reconcile.ts';
 
@@ -176,7 +176,7 @@ export function selectWizardReviewAllEntries(input: {
         .filter((entry) => isVpsWizardEligible(entry, app))
         .sort((a, b) => {
             const catCmp = a.category.localeCompare(b.category);
-            return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+            return catCmp === 0 ? a.name.localeCompare(b.name) : catCmp;
         });
 }
 

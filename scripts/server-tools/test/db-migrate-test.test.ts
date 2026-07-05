@@ -11,8 +11,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
-    type ParsedMigrateTestArgs,
     buildScratchDbName,
+    type ParsedMigrateTestArgs,
     parseMigrateTestArgs
 } from '../src/commands/db-migrate-test.ts';
 
