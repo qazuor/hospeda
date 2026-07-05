@@ -73,7 +73,7 @@ async function processTagRelations(
         try {
             const directoryName = ENTITY_DIRECTORY_MAP[entityType];
             const filePath = path.resolve(SEED_DATA_BASE, `${directoryName}/${fileName}`);
-            const entityData = await import(filePath, { assert: { type: 'json' } });
+            const entityData = await import(filePath, { with: { type: 'json' } });
             const entity = entityData.default as EntityWithTags;
 
             if (entity.tagIds && entity.tagIds.length > 0) {
@@ -89,7 +89,7 @@ async function processTagRelations(
         try {
             const directoryName = ENTITY_DIRECTORY_MAP[entityType];
             const filePath = path.resolve(SEED_DATA_BASE, `${directoryName}/${fileName}`);
-            const entityData = await import(filePath, { assert: { type: 'json' } });
+            const entityData = await import(filePath, { with: { type: 'json' } });
             const entity = entityData.default as EntityWithTags;
 
             if (!entity.tagIds || entity.tagIds.length === 0) {
