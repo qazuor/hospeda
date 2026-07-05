@@ -90,6 +90,9 @@
                     },
                     "a11y": {
                         "useButtonType": "off"
+                    },
+                    "complexity": {
+                        "useArrowFunction": "off"
                     }
                 }
             }
