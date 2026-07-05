@@ -35,7 +35,9 @@ app.openapi(authStatusOpenAPIRoute, (c) => {
         success: true,
         data: {
             isAuthenticated: !!user?.id,
-            userId: user?.id,
+            // Guests have an explicit null userId, not an absent field. The schema
+            // (AuthStatusResponseSchema.userId) is nullish, so null validates.
+            userId: user?.id ?? null,
             actor: {
                 id: actor.id,
                 role: actor.role as string,

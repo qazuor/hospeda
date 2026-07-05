@@ -566,10 +566,9 @@ export function PhotoSection({
                                 src={item.url}
                                 alt={
                                     item.alt ??
-                                    t(
-                                        'host.properties.editor.photo.galleryAlt',
-                                        `Foto ${index + 1}`
-                                    )
+                                    t('host.properties.editor.photo.galleryAlt', undefined, {
+                                        index: index + 1
+                                    })
                                 }
                                 className={styles.galleryItemImage}
                             />

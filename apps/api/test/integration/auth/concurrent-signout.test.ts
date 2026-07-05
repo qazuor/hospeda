@@ -18,6 +18,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { forceVerifyEmail } from '../../e2e/helpers/auth-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -25,14 +26,28 @@ import { testDb } from '../../e2e/setup/test-database';
 // ---------------------------------------------------------------------------
 
 let app: AppOpenAPI;
+// Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+// mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+// Real browser clients always send one; tests must too. Matches HOSPEDA_SITE_URL.
+const TRUSTED_ORIGIN = 'http://localhost:4321';
 const testPassword = 'TestPassword123!';
 let userCounter = 0;
+
+// `.env.test` sets HOSPEDA_DISABLE_AUTH=true, which makes `authMiddleware()`
+// install a Bearer-token-only mock branch that never inspects cookies (see
+// `src/middlewares/auth.ts`). This suite asserts real cookie-session behavior
+// (`isAuthenticated: true` after sign-in) so it must force the real Better
+// Auth branch for its own `initApp()` instance. Restored in `afterAll` because
+// vitest.config.e2e.ts runs all e2e files sequentially in a single fork
+// (`singleFork: true`), so a stray override here would leak into later files.
+const ORIGINAL_DISABLE_AUTH = process.env.HOSPEDA_DISABLE_AUTH;
 
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
 
 beforeAll(async () => {
+    process.env.HOSPEDA_DISABLE_AUTH = 'false';
     validateApiEnv();
     app = initApp();
     await testDb.setup();
@@ -40,6 +55,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await testDb.teardown();
+    process.env.HOSPEDA_DISABLE_AUTH = ORIGINAL_DISABLE_AUTH;
 });
 
 // ---------------------------------------------------------------------------
@@ -66,7 +82,8 @@ async function createTestUser(): Promise<string> {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({
             email,
@@ -76,6 +93,10 @@ async function createTestUser(): Promise<string> {
     });
 
     expect(res.status).toBeLessThan(400);
+
+    // Remove the fire-and-forget email-verify race (see forceVerifyEmail docs).
+    await forceVerifyEmail({ email });
+
     return email;
 }
 
@@ -90,7 +111,8 @@ async function signIn({ email }: { readonly email: string }): Promise<string> {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         },
         body: JSON.stringify({ email, password: testPassword })
     });
@@ -113,7 +135,8 @@ async function signOut({ cookie }: { readonly cookie: string }): Promise<Respons
         method: 'POST',
         headers: {
             cookie,
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         }
     });
 }
@@ -129,7 +152,8 @@ async function isAuthenticated({ cookie }: { readonly cookie: string }): Promise
         method: 'GET',
         headers: {
             cookie,
-            'user-agent': 'vitest'
+            'user-agent': 'vitest',
+            origin: TRUSTED_ORIGIN
         }
     });
 
