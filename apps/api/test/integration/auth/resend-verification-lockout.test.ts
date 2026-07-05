@@ -17,11 +17,12 @@
 // from other tests sharing the same process.
 process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 /**
  * Maximum resend-verification attempts before lockout.
@@ -71,6 +72,11 @@ describe('Auth Send-Verification-Email Lockout Integration', () => {
     beforeAll(async () => {
         validateApiEnv();
         app = initApp();
+        await testDb.setup();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     afterEach(async () => {

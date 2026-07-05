@@ -6,18 +6,20 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 describe('Authentication Integration Tests', () => {
     let app: AppOpenAPI;
 
-    beforeAll(() => {
+    beforeAll(async () => {
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
+        await testDb.setup();
     });
 
-    afterAll(() => {
-        // Cleanup if needed
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     describe('GET /api/v1/public/auth/status', () => {

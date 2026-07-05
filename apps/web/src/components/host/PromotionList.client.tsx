@@ -33,6 +33,17 @@ import styles from './PromotionList.module.css';
  */
 const ENTITLEMENT_CREATE_PROMOTIONS = 'create_promotions';
 
+/**
+ * Promotion validity dates (`validFrom` / `validUntil`) are date-only values
+ * stored as UTC-midnight `timestamptz`. Forcing `timeZone: 'UTC'` here keeps
+ * the rendered calendar day stable across all viewer time zones — without it,
+ * an Argentina user (UTC-3) would see the date shift back by one day (BETA-88).
+ */
+const DATE_ONLY_OPTIONS: Intl.DateTimeFormatOptions = {
+    dateStyle: 'long',
+    timeZone: 'UTC'
+};
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -343,8 +354,8 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                             freeNightLabel
                         });
                         const validityText = promo.validUntil
-                            ? `${formatDate({ date: promo.validFrom, locale })} → ${formatDate({ date: promo.validUntil, locale })}`
-                            : `${formatDate({ date: promo.validFrom, locale })} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
+                            ? `${formatDate({ date: promo.validFrom, locale, options: DATE_ONLY_OPTIONS })} → ${formatDate({ date: promo.validUntil, locale, options: DATE_ONLY_OPTIONS })}`
+                            : `${formatDate({ date: promo.validFrom, locale, options: DATE_ONLY_OPTIONS })} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
 
                         return (
                             <li

@@ -259,6 +259,31 @@ describe('PromotionList', () => {
         expect(errorBanner).toBeInTheDocument();
     });
 
+    // ---------------------------------------------------------------------------
+    // Validity date rendering (BETA-88): validFrom/validUntil are date-only
+    // UTC-midnight values and must render on the same calendar day regardless
+    // of the runtime's local timezone.
+    // ---------------------------------------------------------------------------
+
+    it('renders the validity date on the correct calendar day under a non-UTC runtime timezone (BETA-88)', async () => {
+        vi.stubEnv('TZ', 'America/Argentina/Buenos_Aires');
+        try {
+            mockOwnerPromotionList.mockResolvedValue(makeListResponse([mockPromo1]));
+
+            render(<PromotionList locale="es" />);
+
+            await screen.findByText('Descuento de verano');
+
+            // mockPromo1.validFrom = '2026-12-01' (UTC-midnight, date-only).
+            // Without forcing UTC at the formatDate call site, Argentina's
+            // UTC-3 offset would render this as "30 de noviembre" instead.
+            expect(screen.getByText(/1 de diciembre de 2026/i)).toBeInTheDocument();
+            expect(screen.queryByText(/30 de noviembre de 2026/i)).not.toBeInTheDocument();
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+
     it('renders edit link for each promotion pointing to the edit route', async () => {
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([mockPromo1]));
 
