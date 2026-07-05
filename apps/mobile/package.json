@@ -18,7 +18,7 @@
     },
     "dependencies": {
         "@better-auth/expo": "1.6.23",
-        "@expo/metro-runtime": "~56.0.15",
+        "@expo/metro-runtime": "~57.0.1",
         "@repo/i18n": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@tanstack/react-query": "5.101.2",
