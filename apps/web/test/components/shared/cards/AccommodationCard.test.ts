@@ -300,4 +300,24 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('acc-card__fav-btn:focus-visible');
         });
     });
+
+    // BETA-114: the photo-count badge sits over the photo, so it must use a
+    // theme-invariant dark pill + light text. Deriving from --core-foreground /
+    // --primary-foreground inverts it in dark mode.
+    describe('theme-invariant photo-count badge (BETA-114)', () => {
+        const badge = (() => {
+            const start = src.indexOf('.acc-card__photo-count {');
+            return start === -1 ? '' : src.slice(start, src.indexOf('}', start));
+        })();
+
+        it('uses a theme-invariant dark overlay background, not --core-foreground', () => {
+            expect(badge).toContain('--overlay-bg-strong');
+            expect(badge).not.toContain('--core-foreground');
+        });
+
+        it('uses theme-invariant light text, not --primary-foreground', () => {
+            expect(badge).toContain('--surface-dark-foreground');
+            expect(badge).not.toContain('--primary-foreground');
+        });
+    });
 });

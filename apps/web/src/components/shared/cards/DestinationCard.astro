@@ -303,13 +303,16 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 	/* =========================================================================
 	   GRADIENT OVERLAY
 	   ========================================================================= */
+	/* Scrim uses a THEME-INVARIANT dark overlay token, not the theme-flipping
+	   --core-foreground (which is dark in light mode but near-white in dark
+	   mode, inverting the scrim and washing out overlaid text — BETA-110/114). */
 	.dest-card__gradient {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(
 			to bottom,
 			transparent 30%,
-			var(--core-foreground-a55) 100%
+			var(--overlay-bg-light) 100%
 		);
 		pointer-events: none;
 	}
@@ -319,7 +322,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		background: linear-gradient(
 			to bottom,
 			transparent 20%,
-			var(--core-foreground-a75) 100%
+			var(--overlay-bg-strong) 100%
 		);
 	}
 
@@ -379,12 +382,15 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		gap: 6px;
 	}
 
+	/* Overlay text sits on the dark scrim, so it must stay light in BOTH themes.
+	   --primary-foreground inverts (light→dark) and would go dark-on-dark in dark
+	   mode; --surface-dark-foreground is theme-invariant light (BETA-110/114). */
 	.dest-card__name--overlay {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: clamp(1.125rem, 1vw + 0.875rem, 1.5rem);
 		line-height: 1.25;
-		color: var(--primary-foreground);
+		color: var(--surface-dark-foreground);
 		margin: 0;
 	}
 
@@ -393,7 +399,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		font-weight: 600;
 		font-size: 13px;
 		line-height: 1.4;
-		color: var(--primary-foreground-a85);
+		color: var(--surface-dark-foreground-a75);
 		margin: 0;
 	}
 
@@ -402,7 +408,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		font-weight: 400;
 		font-size: 13px;
 		line-height: 1.5;
-		color: var(--primary-foreground-a75);
+		color: var(--surface-dark-foreground-a75);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		display: -webkit-box;
