@@ -14,7 +14,7 @@
 
 import { EntityViewModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewService,
     type GetAdminBatchInput,
@@ -70,6 +70,12 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
     beforeEach(() => {
+        // Pin the clock so the getDailySeries gap-fill window (last N UTC days from
+        // "today") deterministically includes the hard-coded 2026-06-0x fixture
+        // dates. Without this the test decays: once real "today" drifts past the
+        // 30-day window the fixture rows fall outside it (unrelated to HOS-28 /
+        // Vitest 4 — it would fail on v3 run today too).
+        vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
         // EntityViewModel has no constructor params; createTypedModelMock handles it.
         // List all new admin model methods so they are definitely present as vi.fn().
         modelMock = createTypedModelMock(EntityViewModel, [
@@ -83,6 +89,10 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
         loggerMock = createLoggerMock();
         // Pass undefined for accommodationModel — admin methods never use it.
         service = new EntityViewService({ logger: loggerMock }, modelMock, undefined);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     // =========================================================================
