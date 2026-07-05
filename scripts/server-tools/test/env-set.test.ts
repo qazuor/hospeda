@@ -120,6 +120,22 @@ describe('selectWizardReviewAllEntries', () => {
 
         expect(result).toEqual([]);
     });
+
+    it('excludes framework-level keys the VPS wizard must not hand-set (M2)', () => {
+        // NODE_ENV/API_PORT/API_HOST are NOT platformInjected in the registry
+        // (they are dev-settable locally), but must never be written into
+        // Coolify by hand — so the VPS wizard filters them out even in review.
+        const registry = [
+            makeEntry({ name: 'NODE_ENV', apps: ['api'] }),
+            makeEntry({ name: 'API_PORT', apps: ['api'] }),
+            makeEntry({ name: 'API_HOST', apps: ['api'] }),
+            makeEntry({ name: 'HOSPEDA_REAL', apps: ['api'] })
+        ];
+
+        const result = selectWizardReviewAllEntries({ registry, app: 'api' });
+
+        expect(result.map((e) => e.name)).toEqual(['HOSPEDA_REAL']);
+    });
 });
 
 describe('formatCurrentValueLabel (secret redaction)', () => {

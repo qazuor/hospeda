@@ -51,6 +51,31 @@ class WizardCancelledError extends Error {
     }
 }
 
+/**
+ * Framework/platform-level keys that must NEVER be hand-set into Coolify via
+ * this VPS wizard: the runtime/deploy platform owns them (see CLAUDE.md env
+ * policy — `NODE_ENV`, `API_PORT`, `API_HOST` are read as-is). The registry
+ * does NOT flag them `platformInjected` on purpose, because they ARE
+ * dev-settable locally — so the LOCAL wizard (`pnpm env:set`) still offers
+ * them; only this Coolify-writing wizard excludes them. (Truly platform-only
+ * vars like `CI`/`SOURCE_COMMIT` already carry `platformInjected` and are
+ * excluded by that flag everywhere.)
+ */
+const VPS_WIZARD_EXCLUDED_KEYS: ReadonlySet<string> = new Set(['NODE_ENV', 'API_PORT', 'API_HOST']);
+
+/**
+ * Whether an entry may be prompted for by the VPS wizard: applicable to the
+ * app, not platform-injected, and not a framework-level key we refuse to
+ * hand-write into Coolify ({@link VPS_WIZARD_EXCLUDED_KEYS}).
+ */
+function isVpsWizardEligible(entry: RegistryEnvVarDefinition, app: RegistryAppId): boolean {
+    return (
+        entry.apps.includes(app) &&
+        !entry.platformInjected &&
+        !VPS_WIZARD_EXCLUDED_KEYS.has(entry.name)
+    );
+}
+
 const HELP = `
 hops env-set <api|web|admin> <KEY> <VALUE>
 hops env-set <api|web|admin> <KEY> --secret
@@ -127,17 +152,20 @@ export function selectWizardGaps(input: {
     const { registry, app, coolifyKeys } = input;
     const { missing } = diffRegistryVsCoolify({ registry, app, coolifyKeys });
     const missingSet = new Set(missing);
-    return registry.filter((entry) => entry.apps.includes(app) && missingSet.has(entry.name));
+    return registry.filter(
+        (entry) => isVpsWizardEligible(entry, app) && missingSet.has(entry.name)
+    );
 }
 
 /**
  * Computes the `--review-all` wizard prompt set for one app: every registry
- * entry applicable to the app, EXCLUDING `platformInjected` vars (injected by
- * the platform/CI, never set by hand). Sorted by category then name for a
+ * entry applicable to the app, EXCLUDING `platformInjected` vars and the
+ * framework-level keys this VPS wizard refuses to hand-write into Coolify
+ * ({@link VPS_WIZARD_EXCLUDED_KEYS}). Sorted by category then name for a
  * deterministic, scannable walk order.
  *
  * @param input - The full registry and which app to scope to.
- * @returns Every applicable, non-platform-injected entry for `app`.
+ * @returns Every VPS-wizard-eligible entry for `app`.
  */
 export function selectWizardReviewAllEntries(input: {
     registry: readonly RegistryEnvVarDefinition[];
@@ -145,7 +173,7 @@ export function selectWizardReviewAllEntries(input: {
 }): RegistryEnvVarDefinition[] {
     const { registry, app } = input;
     return registry
-        .filter((entry) => entry.apps.includes(app) && !entry.platformInjected)
+        .filter((entry) => isVpsWizardEligible(entry, app))
         .sort((a, b) => {
             const catCmp = a.category.localeCompare(b.category);
             return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
