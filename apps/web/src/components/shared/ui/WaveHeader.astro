@@ -263,7 +263,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
   /* Collapse a vertical stack into one wrapping row. Apply to the header's
      main content container (the column that holds title + meta). */
-  :global(.wave-header--compact) :global(.wh-compact-row) {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-row) {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
@@ -271,13 +271,13 @@ const { paddingTop = 'listing', class: className } = Astro.props;
   }
 
   /* Shrink the H1 to the compact title size. Apply to the header's <h1>. */
-  :global(.wave-header--compact) :global(.wh-compact-title) {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-title) {
     font-size: clamp(1rem, 2vw, 1.25rem);
   }
 
   /* Shrink a badge / status pill. Apply to type/category/status badges that
      size themselves directly (not via their own custom props). */
-  :global(.wave-header--compact) :global(.wh-compact-badge) {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-badge) {
     font-size: 0.6rem;
     padding: 2px 10px;
   }
@@ -286,7 +286,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
      summary, attractions, pricing…). Apply to whatever each page drops.
      The element MUST declare its own max-height/opacity transition in its
      base rule for this to animate. */
-  :global(.wave-header--compact) :global(.wh-compact-hide) {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-hide) {
     max-height: 0;
     opacity: 0;
     pointer-events: none;
@@ -295,10 +295,10 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
   /* Demote a secondary inline text (location / destination) and prefix it
      with a dot separator once it sits inline in the compact row. */
-  :global(.wave-header--compact) :global(.wh-compact-demote) {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-demote) {
     font-size: 0.85rem;
   }
-  :global(.wave-header--compact) :global(.wh-compact-demote)::before {
+  :global(.wave-header.wave-header--compact) :global(.wh-compact-demote)::before {
     content: '\00B7';
     margin-right: 0.35em;
     color: var(--core-muted-foreground);
