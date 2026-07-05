@@ -697,6 +697,18 @@ export class SocialImagePipelineService {
      * No-ops entirely (returns `{ ok: true }`) when `socialPostId` is absent —
      * this keeps standalone/re-upload callers (no post to link to yet) working.
      *
+     * ORPHAN CLEANUP (HOS-65 FIX 7): the `social_post_media` insert and the
+     * `social_post_target_media` insert are two separate statements with no
+     * surrounding DB transaction — this class is constructed with directly
+     * injected models (no `ServiceContext`/`ctx.tx` propagation convention,
+     * unlike `BaseCrudService`-derived services), so wrapping both in a real
+     * transaction is not available here without a larger structural change.
+     * If the SECOND insert (the target link) throws, the already-committed
+     * `social_post_media` row from the first insert is explicitly deleted via
+     * `hardDelete` as a best-effort compensating action, so it never lingers
+     * as an orphan with zero link rows. A failure of that compensating delete
+     * is logged but does not change the already-decided graceful-fail outcome.
+     *
      * @param params - The persisted asset ID, the POST-GLOBAL `mediaPosition`
      *   for the `social_post_media` row, the PER-TARGET `targetPosition` for
      *   the `social_post_target_media` link row, and the optional post/target
@@ -754,6 +766,23 @@ export class SocialImagePipelineService {
                     },
                     'Failed to create social_post_target_media link'
                 );
+
+                // HOS-65 FIX 7: the social_post_media row above is already
+                // committed (no surrounding transaction) — delete it so it
+                // does not linger as an orphan with zero link rows. Best
+                // effort: a failure here is logged but does not change the
+                // already-decided graceful-fail outcome below.
+                try {
+                    await this.postMediaModel.hardDelete({ id: postMediaId });
+                } catch (deleteErr) {
+                    const deleteMessage =
+                        deleteErr instanceof Error ? deleteErr.message : String(deleteErr);
+                    this.logger.error(
+                        { error: deleteMessage, socialPostMediaId: postMediaId },
+                        'Failed to delete orphaned social_post_media row after link-insert failure'
+                    );
+                }
+
                 return { ok: false, warning: MEDIA_LINK_FAILURE_WARNING };
             }
         }

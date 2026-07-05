@@ -750,6 +750,68 @@ describe('SocialImagePipelineService', () => {
             expect(postMediaModelMock.create).not.toHaveBeenCalled();
             expect(postTargetMediaModelMock.create).not.toHaveBeenCalled();
         });
+
+        // HOS-65 FIX 7: orphan cleanup when the SECOND insert (the target
+        // link) fails after the FIRST insert (social_post_media) already
+        // committed — there is no surrounding transaction in this pipeline.
+        it('deletes the orphaned social_post_media row when the social_post_target_media link insert fails', async () => {
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+            postTargetMediaModelMock.create.mockRejectedValue(
+                new Error('unique constraint violation on social_post_target_media')
+            );
+            postMediaModelMock.hardDelete.mockResolvedValue(1);
+
+            // Act
+            const result = await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert — the already-committed social_post_media row is deleted
+            // so it never lingers as an orphan with zero link rows.
+            expect(postMediaModelMock.hardDelete).toHaveBeenCalledWith({ id: 'media-row-uuid' });
+
+            // Assert — the failure still surfaces as a graceful-fail, exactly
+            // as it did before FIX 7 (the cleanup is purely internal).
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
+        });
+
+        it('still surfaces the graceful-fail warning even when the compensating delete itself fails', async () => {
+            // Arrange — both the link insert AND the compensating hardDelete
+            // fail; the delete failure must not mask the original outcome.
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            postMediaModelMock.create.mockResolvedValue(
+                buildMockPostMediaRow({ id: 'media-row-uuid' })
+            );
+            postTargetMediaModelMock.create.mockRejectedValue(new Error('link insert failed'));
+            postMediaModelMock.hardDelete.mockRejectedValue(new Error('delete also failed'));
+
+            // Act
+            const result = await service.processImage({
+                image,
+                socialPostId: MOCK_POST_UUID,
+                socialPostTargetId: MOCK_TARGET_UUID
+            });
+
+            // Assert — graceful-fail contract still holds despite the
+            // secondary delete failure.
+            expect(result.assetId).toBeNull();
+            expect(result.cloudinaryUrl).toBeNull();
+            expect(result.warnings).toContain(
+                'Media uploaded but could not be linked to the post/target; manual review required'
+            );
+        });
     });
 
     // -------------------------------------------------------------------------
