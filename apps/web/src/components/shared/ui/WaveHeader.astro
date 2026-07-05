@@ -94,6 +94,13 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
 
+      // Elements the compact contract visually collapses (`wh-compact-hide`):
+      // CSS hiding (max-height:0/opacity:0) does NOT drop them from the tab
+      // order or the a11y tree, so the new back button (and any collapsed link)
+      // would be focusable-but-invisible in compact. `inert` is toggled per
+      // state in apply() to fix that (HOS-84 review High-1).
+      const compactHideEls = bar.querySelectorAll<HTMLElement>('.wh-compact-hide');
+
       // Detail surfaces get the full 3-state model (expanded/compact/hidden).
       // Listing surfaces compact but never hide: the band condenses to a slim
       // pinned strip instead of sliding out (owner decision, HOS-84). The state
@@ -111,8 +118,14 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         // in both so the slide-out animates from the compact band, not the tall
         // expanded one. On listing the translate is suppressed, so the band just
         // stays compact.
+        const slidOut = allowHidden && next === 'hidden';
         header.classList.toggle('wave-header--compact', next === 'compact' || next === 'hidden');
-        header.classList.toggle('wave-header--hidden', allowHidden && next === 'hidden');
+        header.classList.toggle('wave-header--hidden', slidOut);
+        // A11y: collapsed elements leave the tab order + a11y tree in compact/
+        // hidden; the whole bar does once it is slid out of view (hidden).
+        const collapsed = next === 'compact' || next === 'hidden';
+        for (const el of compactHideEls) el.inert = collapsed;
+        bar.inert = slidOut;
       };
 
       let ticking = false;
@@ -183,9 +196,11 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    * ========================================================= */
   .wave-header {
     position: relative;
-    /* Single source of truth for the compact/expand/hide timing. Defined here
-       on the wrapper so every entity header inside the slot inherits it and
-       stays in sync; tune these two to change the whole header's motion feel. */
+    /* Timing for the band wrapper's own compact/expand/hide transitions
+       (bar transform + breadcrumbs + content). Published here so entity headers
+       inside the slot CAN inherit it — but as of HOS-84 close they still hardcode
+       their title/badge transition duration, so this var does not yet drive their
+       motion (deferred polish, see apps/web/CLAUDE.md). */
     --wave-header-anim-duration: 0.45s;
     --wave-header-anim-ease: ease-in-out;
   }
