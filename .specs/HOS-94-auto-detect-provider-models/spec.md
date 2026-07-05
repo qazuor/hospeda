@@ -271,23 +271,36 @@ detected"), and error states (bad key / provider down / rate limit) are explicit
   decrypt only inside `apps/api` (never in `ai-core`), never log the key, never
   return it; reuse `getDecryptedAiProviderCredential`.
 
-## 11. Open questions
+## 11. Open questions — RESOLVED (owner, Phase 2 kickoff 2026-07-05)
 
-- **OQ-1 — Filtering strategy**: per-provider allowlist regex vs. denylist of known
-  non-chat families vs. capability hints where available? (Leaning: denylist +
-  "uncertain" bucket.)
-- **OQ-2 — Sync trigger**: manual "Sync models" button only, or also auto-sync on
-  credential create/rotate? (Leaning: manual only in v1; auto later.)
-- **OQ-3 — Persistence of detected catalog**: keep suggestions ephemeral (fetch each
-  time) vs. persist the detected list (with `fetchedAt`/source) to DB for history and
-  offline display? (Leaning: ephemeral v1, no migration.)
-- **OQ-4 — Provider-layer home**: `listModels()` on the `AiProvider` interface
-  (single contract, but overlaps HOS-88 and touches every adapter) vs. a standalone
-  `listProviderModels` fetcher decoupled from the generate/stream contract? (Leaning:
-  standalone fetcher, to fully decouple from HOS-88.)
-- **OQ-5 — Ollama/base-URL discovery**: for compatible providers behind a custom
-  `baseURL`, do we assume `/v1/models` universally, or make the list-models path
-  configurable per credential?
+All five were decided with the owner before implementation. Recorded here and on
+the Linear issue (owner-decisions comment).
+
+- **OQ-1 — Filtering strategy** → **RESOLVED: denylist + "uncertain" bucket.** Hide
+  known non-chat families (`text-embedding`, `whisper`, `tts`, `dall-e`,
+  `*-moderation`, deprecated). Anything not confidently classified is surfaced as
+  "uncertain — enable manually" rather than silently dropped. Chosen over an
+  allowlist regex because it's robust to new/unexpected model names.
+- **OQ-2 — Sync trigger** → **RESOLVED: manual button + auto-sync on create/rotate
+  (both).** In addition to the "Sync models" button, syncing runs automatically when
+  a credential is created or rotated. **IMPLICATION (hard requirement): the
+  auto-sync path MUST be fail-open** — a failed list-models call (bad key, provider
+  down, rate limit) must NOT break the credential save. On failure it skips
+  populating suggestions and surfaces a non-blocking warning; the credential is still
+  saved. The manual button, by contrast, may surface a blocking error inline.
+- **OQ-3 — Persistence of detected catalog** → **RESOLVED: ephemeral, no migration.**
+  Sync returns suggestions live each time; only the operator-enabled set persists to
+  `metadata.models` (as today). No detected-catalog column or `metadata.detectedModels`
+  state. Confirms Section 7's "no DB migration" path.
+- **OQ-4 — Provider-layer home** → **RESOLVED: standalone `listProviderModels()`
+  fetcher** (Section 6.1 option b), separate from the `AiProvider` interface, plain
+  REST `fetch` per provider. Fully decoupled from the AI SDK generate/stream types →
+  does NOT edit `vercel-openai.adapter.ts` → **zero conflict with HOS-88** (retires
+  R-1 as a blocker; the two specs no longer touch the same file).
+- **OQ-5 — Ollama/base-URL discovery** → **RESOLVED: convention per provider.**
+  Assume `{baseURL}/v1/models` for OpenAI-compatible, `{baseURL}/api/tags` for
+  Ollama, `/v1beta/models` for Gemini. No per-credential path override in v1;
+  special-case later if a real compatible provider diverges.
 
 ## 12. Implementation notes
 
