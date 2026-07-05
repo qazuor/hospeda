@@ -737,6 +737,13 @@ const isNew = data.createdAt
 	}
 
 	.acc-card__cta-btn {
+		/* Sits above the CompareCardSelect overlay (z-index: 5) so that, while
+		 * compare mode is active, clicking "Ver más" still navigates to the
+		 * detail page (the click reaches the card's <a>) while the rest of the
+		 * card toggles the compare selection. Harmless outside compare mode —
+		 * no overlay is rendered then (HOS-85 review fix). */
+		position: relative;
+		z-index: 6;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;

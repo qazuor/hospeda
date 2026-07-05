@@ -209,6 +209,18 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('.acc-card__link > :global(astro-island)');
             expect(src).toContain('display: contents;');
         });
+
+        it('should raise the "Ver más" CTA above the compare overlay so it still navigates in compare mode', () => {
+            // The CompareCardSelect overlay (z-index: 5) covers the whole card
+            // <a> while compare mode is active. The CTA must sit above it so a
+            // click on "Ver más" reaches the card link and navigates to the
+            // detail page instead of toggling the compare selection.
+            const ctaRuleIndex = src.indexOf('.acc-card__cta-btn {');
+            expect(ctaRuleIndex).toBeGreaterThan(-1);
+            const ctaRule = src.slice(ctaRuleIndex, src.indexOf('}', ctaRuleIndex));
+            expect(ctaRule).toContain('position: relative;');
+            expect(ctaRule).toMatch(/z-index:\s*6/);
+        });
     });
 
     describe('amenity icon resolver (extracted to accommodation-card-icons.ts)', () => {
