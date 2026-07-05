@@ -9,9 +9,9 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { useState } from 'react';
 import styles from './CreateCollectionCTA.module.css';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 

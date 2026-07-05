@@ -1,6 +1,6 @@
 import type { AmenityModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/amenity/amenity.permissions';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import { ServiceError } from '../../../src/types';

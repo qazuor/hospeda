@@ -6,5 +6,5 @@ export {
     useDestinationQuery,
     useUpdateDestinationMutation
 } from './useDestinationQuery';
-export { useDestinationsQuery } from './useDestinationsQuery';
 export type { UseDestinationsQueryInput } from './useDestinationsQuery';
+export { useDestinationsQuery } from './useDestinationsQuery';

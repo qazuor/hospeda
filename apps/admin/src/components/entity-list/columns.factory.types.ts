@@ -4,8 +4,8 @@
  * Type definitions and badge option constants used by the entity columns factory.
  */
 
-import { BadgeColor } from '@/components/table/DataTable';
 import type { EntityType } from '@/components/table/DataTable';
+import { BadgeColor } from '@/components/table/DataTable';
 import type { ColumnTFunction, LinkHandler } from './types';
 
 /**

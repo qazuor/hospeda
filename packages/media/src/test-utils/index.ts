@@ -10,8 +10,8 @@
  * explicitly via the `@repo/media/test-utils` subpath.
  */
 
-export { InMemoryImageProvider } from './mock-provider.js';
 export type {
     InMemoryImageProviderOptions,
     InMemoryImageRecord
 } from './mock-provider.js';
+export { InMemoryImageProvider } from './mock-provider.js';

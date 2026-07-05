@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { useDeleteOwnTag, useOwnTagQuota, useOwnTags } from '@/hooks/use-own-tags';
 import { TagsIcon } from '@repo/icons';
 import type { Tag } from '@repo/schemas';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useDeleteOwnTag, useOwnTagQuota, useOwnTags } from '@/hooks/use-own-tags';
 import { CreateOwnTagDialog } from './CreateOwnTagDialog';
 import { OwnTagRow } from './OwnTagRow';
 
@@ -241,7 +241,7 @@ export function OwnTagManager() {
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-                <div
+                <nav
                     className="flex items-center justify-between text-sm"
                     aria-label="Paginación"
                 >
@@ -269,7 +269,7 @@ export function OwnTagManager() {
                             Siguiente
                         </Button>
                     </div>
-                </div>
+                </nav>
             )}
         </div>
     );

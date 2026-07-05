@@ -15,7 +15,7 @@ import { adminDark } from '../themes/admin-dark.ts';
 import { adminLight } from '../themes/admin-light.ts';
 import { webDark } from '../themes/web-dark.ts';
 import { webLight } from '../themes/web-light.ts';
-import { SHADES, formatOKLCH, palettes, river } from '../tokens/colors.ts';
+import { formatOKLCH, palettes, river, SHADES } from '../tokens/colors.ts';
 import { buildCSS } from './generate-css.ts';
 
 const CSS = buildCSS();

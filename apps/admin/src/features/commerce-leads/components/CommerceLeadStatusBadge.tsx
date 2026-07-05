@@ -5,9 +5,9 @@
  * i18n label.  Keeps all status → variant mapping in one place.
  */
 
+import type { CommerceLeadStatus } from '@repo/schemas';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
-import type { CommerceLeadStatus } from '@repo/schemas';
 
 /** Props for `CommerceLeadStatusBadge`. */
 export type CommerceLeadStatusBadgeProps = {

@@ -29,9 +29,13 @@
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
-        var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
-    box-shadow: 0 4px 12px -4px var(--brand-primary-a25), 0 0 0 1px var(--brand-primary-a15);
+    transition:
+        border-color var(--duration-normal, 0.4s) ease,
+        box-shadow var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
+    box-shadow:
+        0 4px 12px -4px var(--brand-primary-a25),
+        0 0 0 1px var(--brand-primary-a15);
     margin-bottom: var(--space-8, 2rem);
     position: relative;
     overflow: hidden;
@@ -52,7 +56,9 @@
 .searchBar:hover {
     border-color: var(--brand-primary, #2563eb);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px -6px var(--brand-primary-a35), 0 0 0 1px var(--brand-primary-a20);
+    box-shadow:
+        0 8px 24px -6px var(--brand-primary-a35),
+        0 0 0 1px var(--brand-primary-a20);
 }
 
 .searchBar:hover::before {
@@ -95,7 +101,11 @@
     flex-shrink: 0;
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-pill, 9999px);
-    background: linear-gradient(135deg, var(--brand-primary, #2563eb), var(--brand-accent, #f97316));
+    background: linear-gradient(
+        135deg,
+        var(--brand-primary, #2563eb),
+        var(--brand-accent, #f97316)
+    );
     color: #ffffff;
     font-size: 0.6875rem;
     font-weight: 700;
@@ -137,7 +147,9 @@
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 4px 16px -2px var(--brand-primary-a40);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
     animation: fabIn 0.25s ease;
 }
 
@@ -252,7 +264,9 @@
     font-size: 1.25rem;
     line-height: 1;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .closeButton:hover {

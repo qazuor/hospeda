@@ -29,10 +29,10 @@
  * @see SPEC-174 §7.5, §6.4
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { TourProgressBody, UserProtected, UserSettings } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
+import { fetchApi } from '@/lib/api/client';
 import { useAuthContext } from './use-auth-context';
 
 // ---------------------------------------------------------------------------

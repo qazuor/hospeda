@@ -27,7 +27,7 @@
  *                 repeated for multiple tiers. Defaults to all four.
  *   `--dry-run`: print summary without writing JSONs.
  */
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

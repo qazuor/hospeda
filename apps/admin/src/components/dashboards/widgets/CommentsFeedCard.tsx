@@ -31,12 +31,12 @@
  * @see SPEC-165 T-016
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { useQuery } from '@tanstack/react-query';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useHasPermission } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { useQuery } from '@tanstack/react-query';
 import type { RecentCommentItem } from '../../../lib/dashboard-sources/editor';
 import {
     WidgetCard,
@@ -308,7 +308,7 @@ export function CommentsFeedCard({ widget }: CommentsFeedCardProps) {
     // -- 8. Empty (null / undefined / empty array) ---------------------------
     const rawItems = Array.isArray(data) ? (data as RecentCommentItem[]) : [];
     const slicedItems =
-        config.maxItems !== undefined ? rawItems.slice(0, config.maxItems) : rawItems;
+        config.maxItems === undefined ? rawItems : rawItems.slice(0, config.maxItems);
 
     if (slicedItems.length === 0) {
         return (

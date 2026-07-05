@@ -3,12 +3,23 @@
  *
  * Displays invoices with filtering, search, and detail view.
  */
+
+import { CalendarIcon, DownloadIcon, LoaderIcon, MailIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useToast } from '@/components/ui/ToastProvider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/ToastProvider';
+import {
+    getStatusLabel,
+    getStatusVariant,
+    type Invoice,
+    InvoiceDetailDialog,
+    type InvoiceStatus
+} from '@/features/billing-invoices/components/InvoiceDetailDialog';
 import {
     useInvoicesQuery,
     usePayInvoiceMutation,
@@ -17,17 +28,6 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 import { formatArs, formatShortDate } from '@/lib/format-helpers';
-import { CalendarIcon, DownloadIcon, LoaderIcon, MailIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-
-import {
-    type Invoice,
-    InvoiceDetailDialog,
-    type InvoiceStatus,
-    getStatusLabel,
-    getStatusVariant
-} from '@/features/billing-invoices/components/InvoiceDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/invoices')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

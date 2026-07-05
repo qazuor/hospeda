@@ -1,7 +1,12 @@
 import type { DestinationModel } from '@repo/db';
-import { type DestinationCreateInput, DestinationCreateInputSchema } from '@repo/schemas';
-import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    type DestinationCreateInput,
+    DestinationCreateInputSchema,
+    DestinationTypeEnum,
+    PermissionEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';
 import { DestinationService } from '../../../src/services/destination/destination.service';

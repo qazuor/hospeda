@@ -10,6 +10,7 @@
  *   - `/api/v1/protected/conversations/...` (T-010)
  *   - `/api/v1/admin/conversations/...`     (T-011, pending)
  */
-export { publicConversationsRouter } from './public/index';
-export { protectedConversationRoutes } from './protected/index';
+
 export { adminConversationsRouter } from './admin/index';
+export { protectedConversationRoutes } from './protected/index';
+export { publicConversationsRouter } from './public/index';

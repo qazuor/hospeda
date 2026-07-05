@@ -20,8 +20,8 @@
  * @module cron/jobs/dunning
  */
 
-import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
+import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
 import {
@@ -286,9 +286,9 @@ export const dunningJob: CronJobDefinition = {
                                 success: payment.status === 'succeeded',
                                 paymentId: payment.id,
                                 error:
-                                    payment.status !== 'succeeded'
-                                        ? `Payment ${payment.status}`
-                                        : undefined
+                                    payment.status === 'succeeded'
+                                        ? undefined
+                                        : `Payment ${payment.status}`
                             };
                         } catch (error) {
                             const errorMessage =

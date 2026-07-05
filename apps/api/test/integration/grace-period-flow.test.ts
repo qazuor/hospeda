@@ -20,8 +20,8 @@
  * @module test/integration/grace-period-flow
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { pastDueGraceMiddleware } from '../../src/middlewares/past-due-grace.middleware';
 

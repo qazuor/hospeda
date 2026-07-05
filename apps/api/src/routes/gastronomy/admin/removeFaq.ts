@@ -7,7 +7,7 @@ import {
     GastronomyFaqRemoveOutputSchema,
     PermissionEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, removeGastronomyFaq } from '@repo/service-core';
+import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

@@ -1,5 +1,5 @@
-import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useCallback, useMemo, useState } from 'react';
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 
 /**
  * Configuration for lazy section loading

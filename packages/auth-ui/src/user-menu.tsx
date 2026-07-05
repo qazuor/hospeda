@@ -108,12 +108,11 @@ export const UserMenu = ({
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 z-10"
+                    <button
+                        type="button"
+                        className="fixed inset-0 z-10 cursor-default"
                         onClick={() => setIsOpen(false)}
                         onKeyDown={(e) => e.key === 'Escape' && setIsOpen(false)}
-                        role="button"
-                        tabIndex={0}
                         aria-label="Close menu"
                     />
 

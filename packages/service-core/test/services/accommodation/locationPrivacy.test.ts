@@ -13,7 +13,7 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';

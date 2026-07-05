@@ -43,13 +43,13 @@
  * @see SPEC-174 §14, D9, D12, D13
  */
 
-import type { Tour } from '@/config/ia/tour.schema';
 import type { UserProtected } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Tour } from '@/config/ia/tour.schema';
 
 // ---------------------------------------------------------------------------
 // window.matchMedia polyfill — JSDOM does not implement it
@@ -308,16 +308,15 @@ import { fetchApi } from '@/lib/api/client';
 
 const mockedFetchApi = vi.mocked(fetchApi);
 
-import { useAdminTourState } from '@/hooks/use-admin-tour-state';
-import { TourAutoTrigger } from '../TourAutoTrigger';
-import { TourWelcomeModal } from '../TourWelcomeModal';
-
 // WhatsNewAutoTrigger for D12 tests
 import { WhatsNewAutoTrigger } from '@/components/whats-new/WhatsNewAutoTrigger';
 // TourProvider for context
 import { TourProvider } from '@/contexts/tour-context';
+import { useAdminTourState } from '@/hooks/use-admin-tour-state';
 // HeaderUser for manual replay tests
 import { HeaderUser } from '@/integrations/clerk/header-user';
+import { TourAutoTrigger } from '../TourAutoTrigger';
+import { TourWelcomeModal } from '../TourWelcomeModal';
 
 // ---------------------------------------------------------------------------
 // Fixtures

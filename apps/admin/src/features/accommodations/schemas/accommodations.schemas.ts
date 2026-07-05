@@ -1,14 +1,14 @@
-import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schemas';
 import {
     AccommodationSchema,
     AccommodationListItemSchema as BaseAccommodationListItemSchema,
     CityDestinationRefSchema,
+    createAverageRatingField,
     LifecycleStatusEnumSchema,
     ModerationStatusEnumSchema,
-    VisibilityEnumSchema,
-    createAverageRatingField
+    VisibilityEnumSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
+import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schemas';
 
 // Re-export base schema from @repo/schemas
 export { AccommodationSchema };

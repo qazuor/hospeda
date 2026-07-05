@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addToast,
     clearToasts,
-    getToastTimer,
     getToasts,
+    getToastTimer,
     pauseToast,
     promiseToast,
     removeToast,

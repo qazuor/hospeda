@@ -5,10 +5,6 @@
  * Read-only reference page showing role hierarchy and capabilities.
  */
 
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import {
     EditIcon,
@@ -21,6 +17,10 @@ import {
 } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/access/roles')({
     component: RolesPage

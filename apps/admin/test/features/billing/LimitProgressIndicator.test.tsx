@@ -1,6 +1,6 @@
-import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 
 /**
  * Mock the single dependency of LimitProgressIndicator so we can pin the

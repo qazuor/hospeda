@@ -8,15 +8,15 @@
  * Uses useComment(id) from use-comment-moderation.ts to fetch the comment.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { CommentDetailPanel } from '@/components/comments/CommentDetailPanel';
 import { Button } from '@/components/ui/button';
 import { useComment } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/comments/$commentId')({
     component: CommentDetailPage,

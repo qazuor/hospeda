@@ -10,13 +10,13 @@
  * - setMasterToggle: happy path, admin, FORBIDDEN, VALIDATION_ERROR, INTERNAL_ERROR
  */
 
+import type { AccommodationExternalListing } from '@repo/schemas';
 import {
     ExternalPlatformEnum,
     LifecycleStatusEnum,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AccommodationExternalListing } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { AccommodationExternalListingService } from '../../src/services/accommodation-external-reputation/accommodation-external-listing.service.js';
 import type { Actor, ServiceConfig } from '../../src/types/index.js';

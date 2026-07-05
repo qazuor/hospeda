@@ -7,11 +7,11 @@
  * @module AiChatWidget
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { AiChatFab } from './AiChatFab';
 import styles from './AiChatWidget.module.css';
 
@@ -170,6 +170,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     >
                         {chat.state.messages.map((m, i) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
                                 key={`${m.role}-${i}`}
                                 className={`${styles.bubble} ${m.role === 'user' ? styles.userBubble : styles.assistantBubble}`}
                             >

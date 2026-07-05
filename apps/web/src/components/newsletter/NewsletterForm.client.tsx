@@ -33,12 +33,12 @@
  * to `window.dataLayer` when available.
  */
 
+import { useEffect, useId, useState } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useId, useState } from 'react';
 import styles from './NewsletterForm.module.css';
 
 // ---------------------------------------------------------------------------
@@ -754,8 +754,10 @@ export function NewsletterForm({
                             // Android / Samsung Internet (BETA-25); the static
                             // text avoids that trap and the "Configurar" link
                             // sends the user to the full newsletter settings.
+                            // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-labelledby groups the label+value text; a real <fieldset> would inherit user-agent border/padding/margin that fight this inline layout
                             <div
                                 className={styles.authedEmail}
+                                role="group"
                                 aria-labelledby={emailLabelId}
                             >
                                 <span className={styles.authedEmailLabel}>

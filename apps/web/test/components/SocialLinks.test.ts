@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SOCIAL_PROFILES, SOCIAL_PROFILE_URLS, TWITTER_SITE_HANDLE } from '../../src/lib/constants';
+import { SOCIAL_PROFILE_URLS, SOCIAL_PROFILES, TWITTER_SITE_HANDLE } from '../../src/lib/constants';
 
 const src = readFileSync(
     resolve(__dirname, '../../src/components/shared/SocialLinks.astro'),

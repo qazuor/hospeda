@@ -190,7 +190,6 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit",
         "source.organizeImports.biome": "always",
-        "quickfix.biome": "always",
         "source.addMissingImports.biome": "explicit",
         "source.fixAll.biome": "explicit"
     },

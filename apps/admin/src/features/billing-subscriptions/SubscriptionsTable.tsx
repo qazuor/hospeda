@@ -1,8 +1,8 @@
+import { LoaderIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
 import type { Subscription } from './types';
 import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
 

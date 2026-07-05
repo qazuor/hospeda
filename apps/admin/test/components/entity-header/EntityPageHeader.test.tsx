@@ -1,6 +1,6 @@
-import { EntityPageHeader } from '@/components/entity-header/EntityPageHeader';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EntityPageHeader } from '@/components/entity-header/EntityPageHeader';
 
 // IntersectionObserver is used internally by the scroll-shrink hook.
 class MockIntersectionObserver {

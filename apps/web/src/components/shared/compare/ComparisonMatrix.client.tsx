@@ -34,17 +34,17 @@
  * @module components/shared/compare/ComparisonMatrix
  */
 
+import { StarIcon } from '@repo/icons';
+import { type FC, type ReactNode, useEffect, useState } from 'react';
 import type { AccommodationCardData } from '@/data/types';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { cn } from '@/lib/cn';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
-import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { useCompareStore } from '@/store/compare-store';
-import { StarIcon } from '@repo/icons';
-import { type FC, type ReactNode, useEffect, useState } from 'react';
 import styles from './ComparisonMatrix.module.css';
 import { computeBestValue } from './computeBestValue';
 

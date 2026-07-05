@@ -15,7 +15,7 @@
  */
 
 import { toBcp47Locale } from '@repo/i18n/web';
-import { SORT_KEY_PHRASES, getPhrase } from './summary.catalogs';
+import { getPhrase, SORT_KEY_PHRASES } from './summary.catalogs';
 import { FILTER_DESCRIPTORS, FLOW_MODIFIER_KEYS } from './summary.descriptors';
 import type {
     BuildEventListingSummaryInput,

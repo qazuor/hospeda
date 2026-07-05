@@ -5,9 +5,9 @@
  * Buttons are conditionally visible based on the current filter state.
  */
 
+import { CloseIcon, RotateCcwIcon } from '@repo/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useTranslations } from '@/hooks/use-translations';
-import { CloseIcon, RotateCcwIcon } from '@repo/icons';
 
 /**
  * Props for the FilterActions component.

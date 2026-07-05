@@ -11,15 +11,6 @@
  * - Types — GastronomyHookState
  */
 
-// Main service
-export { GastronomyService } from './gastronomy.service';
-
-// Review service
-export {
-    GastronomyReviewService,
-    type GastronomyReviewModerateInput
-} from './gastronomy.review.service';
-
 // FAQ helpers
 export {
     addGastronomyFaq,
@@ -28,15 +19,6 @@ export {
     reorderGastronomyFaqs,
     updateGastronomyFaq
 } from './gastronomy.faq';
-
-// Projection utilities
-export {
-    projectGastronomyOwnerAvatar,
-    projectGastronomyOwnerAvatarList,
-    projectGastronomyPublic,
-    projectGastronomyPublicList
-} from './gastronomy.projections';
-
 // Permission helpers
 export {
     checkGastronomyCanAdminList,
@@ -50,6 +32,20 @@ export {
     checkGastronomyCanRestore,
     checkGastronomyCanView
 } from './gastronomy.permissions';
+// Projection utilities
+export {
+    projectGastronomyOwnerAvatar,
+    projectGastronomyOwnerAvatarList,
+    projectGastronomyPublic,
+    projectGastronomyPublicList
+} from './gastronomy.projections';
+// Review service
+export {
+    type GastronomyReviewModerateInput,
+    GastronomyReviewService
+} from './gastronomy.review.service';
+// Main service
+export { GastronomyService } from './gastronomy.service';
 
 // Types
 export type { GastronomyHookState } from './gastronomy.types';

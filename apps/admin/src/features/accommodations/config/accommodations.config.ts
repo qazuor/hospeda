@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Accommodation, AccommodationListItemSchema } from '../schemas/accommodations.schemas';
 import { createAccommodationsColumns } from './accommodations.columns';
 

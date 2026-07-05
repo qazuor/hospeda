@@ -22,10 +22,10 @@
  * @module PermissionGate
  */
 
-import { useAuthContext } from '@/hooks/use-auth-context';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import type { PermissionEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 
 export interface PermissionGateProps {
     /** Required permissions to render children */

@@ -4,9 +4,9 @@
  * sidebar dual rendering that fixes SPEC-135 F-020 (BLOCKER).
  */
 
-import { FormSidebarLayout } from '@/components/entity-form/layouts/FormSidebarLayout';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { FormSidebarLayout } from '@/components/entity-form/layouts/FormSidebarLayout';
 
 vi.mock('@repo/i18n', () => ({
     useTranslations: () => ({

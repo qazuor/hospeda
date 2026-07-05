@@ -25,8 +25,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
-import { billingPlans, billingPrices } from '../../src/billing/index.ts';
 import type { QZPayBillingPlanInsert } from '../../src/billing/index.ts';
+import { billingPlans, billingPrices } from '../../src/billing/index.ts';
 import { closeTestPool, getTestDb, withCleanSlate } from './helpers.ts';
 
 const __filename = fileURLToPath(import.meta.url);

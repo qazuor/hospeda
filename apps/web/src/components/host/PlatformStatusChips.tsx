@@ -12,6 +12,7 @@
  *  - idle + error|blocked|not_found → error chip with tooltip
  */
 
+import type { ReactElement } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type {
     FetchStatus,
@@ -20,7 +21,6 @@ import type {
 } from '@/hooks/use-reputation-status';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { ReactElement } from 'react';
 import styles from './ReputationStatus.module.css';
 
 // ---------------------------------------------------------------------------
@@ -124,7 +124,6 @@ export function PlatformStatusChips({
                             <>
                                 <span
                                     className={`${styles.chip} ${chipClass(runStatus, fetchStatus)}`}
-                                    aria-label={chipText ?? undefined}
                                 >
                                     <Spinner
                                         size="sm"
@@ -153,6 +152,7 @@ export function PlatformStatusChips({
                                     >[0],
                                     chipText ?? fetchStatus
                                 )}
+                                role="img"
                                 aria-label={chipText ?? fetchStatus}
                             >
                                 {chipText}

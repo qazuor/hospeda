@@ -8,6 +8,9 @@
  * SocialPostActionDialogs. ARIA live regions surface mutation feedback.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     useApproveSocialPost,
@@ -21,9 +24,6 @@ import {
 } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
-import { useCallback, useState } from 'react';
 import { RejectDialog, RequestChangesDialog, ScheduleDialog } from './SocialPostActionDialogs';
 import { mapApiError } from './social-post-detail.utils';
 

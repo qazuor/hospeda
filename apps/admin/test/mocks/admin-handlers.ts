@@ -8,7 +8,7 @@
  * in MSW server setup.
  */
 
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 
 import {
     mockAccommodation,

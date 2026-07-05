@@ -11,12 +11,12 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
-    type TargetSource,
     getAppResourceName,
     getDbCredentials,
     getDbResourceName,
     getR2Config,
-    resolveTarget
+    resolveTarget,
+    type TargetSource
 } from '../src/lib/target.ts';
 
 const ENV_KEYS_TOUCHED = [

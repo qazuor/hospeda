@@ -5,9 +5,9 @@
  * surfaces email and role instead of two redundant name columns.
  */
 
-import { createUsersColumns } from '@/features/users/config/users.columns';
 import type { TranslationKey } from '@repo/i18n';
 import { describe, expect, it } from 'vitest';
+import { createUsersColumns } from '@/features/users/config/users.columns';
 
 const t = (key: TranslationKey | string) => String(key);
 

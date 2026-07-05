@@ -79,7 +79,9 @@
     border-radius: var(--radius-card, 16px);
     background-color: var(--toast-bg, var(--core-card, #fff));
     border: 1px solid transparent;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04);
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.04);
     color: var(--core-foreground);
     animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     touch-action: pan-y;
@@ -151,7 +153,10 @@
     border-radius: var(--radius-pill, 9999px);
     display: inline-flex;
     align-items: center;
-    transition: filter 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+    transition:
+        filter 0.15s ease,
+        transform 0.15s ease,
+        background-color 0.15s ease;
 }
 
 .actionPrimary {

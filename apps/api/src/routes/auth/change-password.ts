@@ -4,7 +4,7 @@
  * Also clears the passwordChangeRequired flag and the mustChangePassword
  * column (SPEC-239 T-041: commerce owner forced-password-change gate).
  */
-import { UserModel, accounts, getDb, users } from '@repo/db';
+import { accounts, getDb, UserModel, users } from '@repo/db';
 import { ChangePasswordInputSchema, ChangePasswordResponseSchema } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { compare, hash } from 'bcryptjs';

@@ -1,13 +1,3 @@
-import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
-import {
-    FieldTypeEnum,
-    RichTextFeatureEnum
-} from '@/components/entity-form/enums/form-config.enums';
-import type {
-    FieldConfig,
-    RichTextFieldConfig
-} from '@/components/entity-form/types/field-config.types';
-import { cn } from '@/lib/utils';
 import {
     BoldIcon,
     ItalicIcon,
@@ -21,6 +11,16 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import * as React from 'react';
 import { Markdown } from 'tiptap-markdown';
+import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
+import {
+    FieldTypeEnum,
+    RichTextFeatureEnum
+} from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    RichTextFieldConfig
+} from '@/components/entity-form/types/field-config.types';
+import { cn } from '@/lib/utils';
 
 /**
  * Reads the Markdown serialization from a TipTap editor.
@@ -205,7 +205,7 @@ export function RichTextField({
                 hasError={hasError}
                 errorMessage={errorMessage}
                 mode="edit"
-                charCount={maxLength !== undefined ? (value ?? '').length : undefined}
+                charCount={maxLength === undefined ? undefined : (value ?? '').length}
                 maxLength={maxLength}
                 className={className}
             >
@@ -234,7 +234,7 @@ export function RichTextField({
             hasError={hasError}
             errorMessage={errorMessage}
             mode="edit"
-            charCount={maxLength !== undefined ? (value ?? '').length : undefined}
+            charCount={maxLength === undefined ? undefined : (value ?? '').length}
             maxLength={maxLength}
             className={className}
         >

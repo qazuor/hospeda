@@ -1,3 +1,5 @@
+import { ExternalLinkIcon } from '@repo/icons';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     EntitySelectFieldConfig,
@@ -7,9 +9,6 @@ import type {
 import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-
-import { ExternalLinkIcon } from '@repo/icons';
-import * as React from 'react';
 
 /**
  * Props for EntitySelectViewField component

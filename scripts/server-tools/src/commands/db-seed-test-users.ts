@@ -49,7 +49,7 @@ Additively seed the 13 SPEC-143 test-user accounts (role × plan matrix,
 password Password123!, ready to log in immediately — no onboarding
 friction). ADD-ONLY: never resets or wipes the target database.
 
-  1. (optional) git pull \$HOPS_REPO_ROOT
+  1. (optional) git pull $HOPS_REPO_ROOT
   2. pnpm --filter @repo/seed seed --test-users
 
 Rejected outright on --target=prod (see the file's module doc for why).
@@ -58,7 +58,7 @@ Flags:
   --build             Force a turbo build of @repo/seed's workspace deps
                       first. Off by default — the seed resolves deps from
                       src/ via tsconfig paths, no build needed.
-  --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
+  --pull              Always git pull $HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
   --yes               Skip the pull prompt (defaults to "yes, pull").

@@ -1,3 +1,6 @@
+import { LoaderIcon, TagsIcon } from '@repo/icons';
+import type { EntityTypeEnum, Tag } from '@repo/schemas';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -7,9 +10,6 @@ import {
 } from '@/hooks/use-entity-tag-assignments';
 import { useOwnTagQuota } from '@/hooks/use-own-tags';
 import { usePickerTags } from '@/hooks/use-picker-tags';
-import { LoaderIcon, TagsIcon } from '@repo/icons';
-import type { EntityTypeEnum, Tag } from '@repo/schemas';
-import { useCallback, useMemo, useRef, useState } from 'react';
 import { CreateOwnTagDialog } from './CreateOwnTagDialog';
 import { TagPickerOption } from './TagPickerOption';
 
@@ -134,10 +134,7 @@ export function TagPicker({ entityType, entityId, className = '' }: TagPickerPro
                     </div>
 
                     {/* Tag list */}
-                    <div
-                        className="max-h-64 overflow-y-auto p-1"
-                        aria-label="Tags disponibles"
-                    >
+                    <div className="max-h-64 overflow-y-auto p-1">
                         {(isLoadingTags || isLoadingAssignments) && (
                             <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
                                 <LoaderIcon

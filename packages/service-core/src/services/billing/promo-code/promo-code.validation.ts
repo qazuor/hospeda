@@ -14,16 +14,16 @@
  * @module services/billing/promo-code/promo-code.validation
  */
 
+import type { QueryContext } from '@repo/db';
 import {
-    billingPromoCodeUsage,
     billingPromoCodes,
+    billingPromoCodeUsage,
     billingSubscriptions,
     count,
     eq,
     getDb,
     sql
 } from '@repo/db';
-import type { QueryContext } from '@repo/db';
 import type { EffectPreview } from '@repo/schemas';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import { calculatePromoCodeEffect } from './effect-reducer.js';

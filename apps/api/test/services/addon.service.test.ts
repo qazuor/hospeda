@@ -14,7 +14,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AddonService } from '../../src/services/addon.service';
 
 // Hoisted mock functions for service-core query functions (addon-user-addons).
@@ -101,30 +101,28 @@ const {
     ];
 
     // Catalog service mocks — filter MOCK_ADDONS like the real service would.
-    const mockCatalogList = vi.fn().mockImplementation(
-        async (
-            input: {
-                billingType?: string;
-                targetCategory?: string;
-                active?: boolean;
-            } = {}
-        ) => {
-            let filtered = [...MOCK_ADDONS];
-            if (input.billingType !== undefined) {
-                filtered = filtered.filter((a) => a.billingType === input.billingType);
+    const mockCatalogList = vi
+        .fn()
+        .mockImplementation(
+            async (
+                input: { billingType?: string; targetCategory?: string; active?: boolean } = {}
+            ) => {
+                let filtered = [...MOCK_ADDONS];
+                if (input.billingType !== undefined) {
+                    filtered = filtered.filter((a) => a.billingType === input.billingType);
+                }
+                if (input.targetCategory !== undefined) {
+                    filtered = filtered.filter((a) =>
+                        (a.targetCategories as readonly string[]).includes(input.targetCategory!)
+                    );
+                }
+                if (input.active !== undefined) {
+                    filtered = filtered.filter((a) => a.isActive === input.active);
+                }
+                filtered.sort((a, b) => a.sortOrder - b.sortOrder);
+                return { success: true, data: filtered };
             }
-            if (input.targetCategory !== undefined) {
-                filtered = filtered.filter((a) =>
-                    (a.targetCategories as readonly string[]).includes(input.targetCategory!)
-                );
-            }
-            if (input.active !== undefined) {
-                filtered = filtered.filter((a) => a.isActive === input.active);
-            }
-            filtered.sort((a, b) => a.sortOrder - b.sortOrder);
-            return { success: true, data: filtered };
-        }
-    );
+        );
 
     const mockCatalogGetBySlug = vi.fn().mockImplementation(async (slug: string) => {
         const addon = MOCK_ADDONS.find((a) => a.slug === slug);

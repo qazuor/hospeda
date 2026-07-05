@@ -16,8 +16,8 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from '../widget-states';
 import type { WidgetVariant } from '../widget-states';
+import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from '../widget-states';
 
 // Mock icons — tests don't depend on the Phosphor bundle.
 vi.mock('@repo/icons', async (importOriginal) => ({
@@ -42,13 +42,12 @@ const ALL_VARIANTS: WidgetVariant[] = ['kpi', 'list', 'chart', 'checklist', 'sta
 // ---------------------------------------------------------------------------
 
 describe('WidgetSkeleton', () => {
-    it.each(ALL_VARIANTS)(
-        'renders data-testid="%s-widget-skeleton" for variant "%s"',
-        (variant) => {
-            render(<WidgetSkeleton variant={variant} />);
-            expect(screen.getByTestId(`${variant}-widget-skeleton`)).toBeInTheDocument();
-        }
-    );
+    it.each(
+        ALL_VARIANTS
+    )('renders data-testid="%s-widget-skeleton" for variant "%s"', (variant) => {
+        render(<WidgetSkeleton variant={variant} />);
+        expect(screen.getByTestId(`${variant}-widget-skeleton`)).toBeInTheDocument();
+    });
 
     it('has aria-busy="true" and aria-label="Loading"', () => {
         render(<WidgetSkeleton variant="kpi" />);
@@ -213,18 +212,17 @@ describe('WidgetEmpty', () => {
 // ---------------------------------------------------------------------------
 
 describe('WidgetUnavailable', () => {
-    it.each(ALL_VARIANTS)(
-        'renders data-testid="%s-widget-unavailable" for variant "%s"',
-        (variant) => {
-            render(
-                <WidgetUnavailable
-                    variant={variant}
-                    label="Test"
-                />
-            );
-            expect(screen.getByTestId(`${variant}-widget-unavailable`)).toBeInTheDocument();
-        }
-    );
+    it.each(
+        ALL_VARIANTS
+    )('renders data-testid="%s-widget-unavailable" for variant "%s"', (variant) => {
+        render(
+            <WidgetUnavailable
+                variant={variant}
+                label="Test"
+            />
+        );
+        expect(screen.getByTestId(`${variant}-widget-unavailable`)).toBeInTheDocument();
+    });
 
     it('includes the label in the aria-label', () => {
         render(

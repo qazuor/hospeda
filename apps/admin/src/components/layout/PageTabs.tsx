@@ -5,12 +5,12 @@
  * Uses URL-based navigation for state persistence.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import type { TabConfig } from '@/lib/sections/types';
-import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TabConfig } from '@/lib/sections/types';
+import { cn } from '@/lib/utils';
 
 export interface PageTabsProps {
     /** Tab configurations */

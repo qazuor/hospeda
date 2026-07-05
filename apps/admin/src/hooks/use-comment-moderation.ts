@@ -6,9 +6,9 @@
  * factory, typed response shapes, API helper functions, and named export hooks.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { EntityCommentAdminItem } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Query key factory
@@ -216,8 +216,10 @@ export function useModerateComment() {
         mutationFn: ({
             id,
             moderationState
-        }: { id: string; moderationState: 'APPROVED' | 'REJECTED' }) =>
-            moderateCommentRequest(id, moderationState),
+        }: {
+            id: string;
+            moderationState: 'APPROVED' | 'REJECTED';
+        }) => moderateCommentRequest(id, moderationState),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.lists() });
             queryClient.invalidateQueries({

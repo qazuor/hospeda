@@ -14,8 +14,8 @@
  * ```
  */
 
-import { cn } from '@/lib/cn';
 import type { CSSProperties, ReactElement } from 'react';
+import { cn } from '@/lib/cn';
 import styles from './SkeletonCard.module.css';
 
 export interface SkeletonCardProps {

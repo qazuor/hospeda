@@ -166,8 +166,8 @@ vi.mock('../../../../src/utils/pagination', () => ({
 // ---------------------------------------------------------------------------
 
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../src/utils/actor';
 

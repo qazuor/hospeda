@@ -1,11 +1,10 @@
-import type { AccommodationExternalReputation } from '@repo/schemas';
-import type { ExternalReputationRunStatus } from '@repo/schemas';
+import type { AccommodationExternalReputation, ExternalReputationRunStatus } from '@repo/schemas';
 import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationExternalListings } from '../../schemas/accommodation-external/accommodation_external_listings.dbschema.ts';
 import {
-    type InsertAccommodationExternalReputation,
-    accommodationExternalReputation
+    accommodationExternalReputation,
+    type InsertAccommodationExternalReputation
 } from '../../schemas/accommodation-external/accommodation_external_reputation.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';

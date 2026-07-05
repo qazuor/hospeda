@@ -27,11 +27,11 @@
  * - Simple business logic
  */
 export {
+    type CreateProductInput,
+    type Product,
     ProductModel,
     productModel,
     productTable,
-    type Product,
-    type CreateProductInput,
     type UpdateProductInput
 } from './basic-model';
 
@@ -48,24 +48,24 @@ export {
  * - Junction tables
  */
 export {
-    ProductModel as ProductWithRelationsModel,
-    productModel as productWithRelationsModel,
+    type Category,
     CategoryModel,
     categoryModel,
-    productTable as productRelationsTable,
     categoryTable,
-    reviewTable,
-    tagTable,
-    productTagTable,
     type Product as ProductWithRelations,
-    type Category,
-    type Review,
-    type Tag,
+    ProductModel as ProductWithRelationsModel,
     type ProductTag,
+    type ProductWithAll,
     type ProductWithCategory,
     type ProductWithReviews,
     type ProductWithTags,
-    type ProductWithAll
+    productModel as productWithRelationsModel,
+    productTable as productRelationsTable,
+    productTagTable,
+    type Review,
+    reviewTable,
+    type Tag,
+    tagTable
 } from './with-relations';
 
 // ============================================================================
@@ -81,20 +81,20 @@ export {
  * - Transaction handling
  */
 export {
-    OrderModel,
-    orderModel,
-    orderTable,
-    orderLineTable,
+    type CursorResult,
+    type Customer,
     customerTable,
-    orderStatusEnum,
     type Order,
     type OrderLine,
-    type Customer,
-    type OrderStatus,
+    OrderModel,
     type OrderSearchFilters,
     type OrderStats,
-    type PaginatedResult,
-    type CursorResult
+    type OrderStatus,
+    orderLineTable,
+    orderModel,
+    orderStatusEnum,
+    orderTable,
+    type PaginatedResult
 } from './complex-queries';
 
 // ============================================================================
@@ -111,16 +111,16 @@ export {
  * - Lifecycle hooks
  */
 export {
-    PostModel,
-    postModel,
-    SimpleCache,
-    postTable as postAdvancedTable,
-    userTable,
+    type BatchResult,
+    type Comment,
     commentTable as commentAdvancedTable,
     type Post,
+    PostModel,
+    postModel,
+    postTable as postAdvancedTable,
+    SimpleCache,
     type User,
-    type Comment,
-    type BatchResult
+    userTable
 } from './advanced-patterns';
 
 // ============================================================================

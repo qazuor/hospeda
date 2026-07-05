@@ -7,11 +7,11 @@
  * manual requests. Implementation tracked in 99-future-enhancements.md.
  */
 
+import { MailIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { MailIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/account/data')({
     component: MyDataPage

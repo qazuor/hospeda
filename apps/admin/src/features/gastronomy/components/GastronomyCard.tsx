@@ -7,11 +7,11 @@
  * replaced by a card grid.
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
-import { Badge } from '@/components/ui/badge';
 import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import * as React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import type { GastronomyListItem } from '../config/gastronomy.config';
 
 // ---------------------------------------------------------------------------

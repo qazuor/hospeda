@@ -128,9 +128,9 @@ import {
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
 import {
+    fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails,
-    type MPAuthorizedPaymentResult,
-    fetchAuthorizedPaymentDetails
+    type MPAuthorizedPaymentResult
 } from '../../src/utils/mp-authorized-payment';
 
 // ---------------------------------------------------------------------------

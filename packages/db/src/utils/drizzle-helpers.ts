@@ -1,7 +1,4 @@
 import {
-    type SQL,
-    type SQLWrapper,
-    type Table,
     and,
     asc,
     desc,
@@ -10,7 +7,10 @@ import {
     ilike,
     isNull,
     lte,
-    or
+    or,
+    type SQL,
+    type SQLWrapper,
+    type Table
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { DbError } from './error.ts';
@@ -108,7 +108,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
             // Handle _like suffix for ilike queries
             if (key.endsWith('_like') && typeof value === 'string') {
                 const columnName = key.slice(0, -5);
-                if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
+                if (Object.hasOwn(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as SQLWrapper;
                     return safeIlike(column as PgColumn, value);
                 }
@@ -119,7 +119,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
             // Handle _gte suffix for >= comparisons
             if (key.endsWith('_gte')) {
                 const columnName = key.slice(0, -4);
-                if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
+                if (Object.hasOwn(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as PgColumn;
                     return gte(column, value);
                 }
@@ -130,7 +130,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
             // Handle _lte suffix for <= comparisons
             if (key.endsWith('_lte')) {
                 const columnName = key.slice(0, -4);
-                if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
+                if (Object.hasOwn(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as PgColumn;
                     return lte(column, value);
                 }
@@ -138,7 +138,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                 return undefined;
             }
 
-            if (Object.prototype.hasOwnProperty.call(tableRecord, key)) {
+            if (Object.hasOwn(tableRecord, key)) {
                 const column = tableRecord[key] as SQLWrapper;
                 if (value === null) {
                     return isNull(column);
@@ -203,7 +203,7 @@ export function buildOrderByClause(
     if (typeof table !== 'object' || table === null) return undefined;
     const tableRecord = table as unknown as Record<string, unknown>;
 
-    if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
+    if (!Object.hasOwn(tableRecord, sortBy)) {
         return undefined;
     }
 
@@ -231,7 +231,7 @@ export function buildSearchCondition(
     const trimmedTerm = term.trim();
 
     const conditions = columns
-        .filter((col) => Object.prototype.hasOwnProperty.call(tableRecord, col))
+        .filter((col) => Object.hasOwn(tableRecord, col))
         .map((col) => {
             const column = tableRecord[col] as PgColumn;
             return safeIlike(column, trimmedTerm);

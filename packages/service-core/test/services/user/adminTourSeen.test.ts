@@ -16,9 +16,9 @@
  * Mirrors the structure of whatsNewSeen.test.ts (SPEC-175 T-002).
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/schemas';
 import type { UserSettings } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it } from 'vitest';
+import { RoleEnum } from '@repo/schemas';
+import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createMockUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';

@@ -88,7 +88,7 @@ const makeTrade = (
     benefit: overrides.benefit ?? '10% de descuento presentando la app',
     destinationId: 'dest-uuid-1',
     is24h: overrides.is24h ?? false,
-    scheduleText: overrides.scheduleText !== undefined ? overrides.scheduleText : null
+    scheduleText: overrides.scheduleText === undefined ? null : overrides.scheduleText
 });
 
 const tradePlomeria = makeTrade({

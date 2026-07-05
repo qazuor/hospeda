@@ -3,6 +3,9 @@
  *
  * Modal dialog for creating or editing owner promotions.
  */
+
+import { LifecycleStatusEnum } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,8 +24,6 @@ import {
 } from '@/features/owner-promotions/hooks';
 import type { CreateOwnerPromotionInput, OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { LifecycleStatusEnum } from '@repo/schemas';
-import { useState } from 'react';
 
 interface PromotionFormDialogProps {
     readonly open: boolean;

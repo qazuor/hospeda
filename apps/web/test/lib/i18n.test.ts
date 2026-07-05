@@ -5,12 +5,12 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    DEFAULT_LOCALE,
-    SUPPORTED_LOCALES,
     createT,
     createTranslations,
+    DEFAULT_LOCALE,
     isValidLocale,
-    parseAcceptLanguage
+    parseAcceptLanguage,
+    SUPPORTED_LOCALES
 } from '../../src/lib/i18n';
 
 describe('isValidLocale', () => {

@@ -7,7 +7,7 @@
  * @module features/content/components/TranslationOverrideModal
  */
 
-import { Button } from '@/components/ui-wrapped/Button';
+import { useCallback, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -16,8 +16,8 @@ import {
     DialogHeader,
     DialogTitle
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui-wrapped/Button';
 import { useTranslations } from '@/hooks/use-translations';
-import { useCallback, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Props

@@ -10,13 +10,13 @@
  * - Aria-labels present on chips when loaded.
  */
 
-import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
-import { fetchApi } from '@/lib/api/client';
 import type { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -231,9 +231,10 @@ describe('EntityViewStatChips — happy path', () => {
         // Act
         renderChips();
 
-        // Assert — chips have aria-labels
+        // Assert — chips have aria-labels. Each chip exposes role="img" so the
+        // aria-label is valid ARIA (a bare generic element does not support it).
         await waitFor(() => {
-            const elements = screen.getAllByRole('generic', { hidden: false });
+            const elements = screen.getAllByRole('img', { hidden: false });
             const withAria = elements.filter((el) => el.getAttribute('aria-label'));
             expect(withAria.length).toBeGreaterThan(0);
         });

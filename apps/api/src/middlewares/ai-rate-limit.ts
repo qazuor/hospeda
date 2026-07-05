@@ -46,8 +46,7 @@
 import type { AiFeature } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from '../types';
-import { getClientIp } from './rate-limit';
-import { createSlidingWindowPerUserRateLimit } from './rate-limit';
+import { createSlidingWindowPerUserRateLimit, getClientIp } from './rate-limit';
 
 // ---------------------------------------------------------------------------
 // AiRateLimitOptions

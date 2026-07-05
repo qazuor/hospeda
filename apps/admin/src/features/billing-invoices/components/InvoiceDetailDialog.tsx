@@ -4,6 +4,9 @@
  * Modal dialog showing full invoice details including line items,
  * totals, payment info, and action buttons.
  */
+
+import type { TranslationKey } from '@repo/i18n';
+import { DownloadIcon, FileTextIcon, MailIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +19,6 @@ import {
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatArs, formatShortDate } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
-import { DownloadIcon, FileTextIcon, MailIcon } from '@repo/icons';
 
 /** Invoice status type */
 export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';

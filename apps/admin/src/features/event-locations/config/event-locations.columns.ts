@@ -1,3 +1,7 @@
+import { EditIcon } from '@repo/icons';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { createElement, Fragment } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import {
     type InlineStateOption,
@@ -5,10 +9,6 @@ import {
 } from '@/components/entity-list/InlineStateSelectCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
-import { EditIcon } from '@repo/icons';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
 import {
     useDeleteEventLocationMutation,
     useUpdateEventLocationMutation

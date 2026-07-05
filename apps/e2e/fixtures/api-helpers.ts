@@ -582,7 +582,7 @@ function extractSessionCookie(setCookieHeader: string | null): string | null {
     // (e.g. `%3D` for `=`). The Cookie request header accepts the decoded
     // form just fine, so we decode for readability.
     const cookies = setCookieHeader
-        .split(/,(?=\s*[A-Za-z0-9_.\-]+=)/)
+        .split(/,(?=\s*[A-Za-z0-9_.-]+=)/)
         .map((entry) => {
             const nameValue = entry.split(';')[0]?.trim();
             if (!nameValue) return null;

@@ -4,8 +4,8 @@
  * Shows a user-friendly fallback UI with a retry button when an island crashes.
  */
 
-import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
 
 interface ErrorBoundaryProps {
     /** Child components to wrap */

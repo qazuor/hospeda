@@ -17,8 +17,9 @@
     line-height: 1.5;
     color: var(--core-foreground);
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, border-color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
     white-space: pre-wrap;
     word-break: break-word;
 }
@@ -49,8 +50,9 @@
     color: var(--core-muted-foreground);
     cursor: pointer;
     font-style: italic;
-    transition: background-color var(--duration-normal, 0.4s) ease, border-color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
 }
 
 .notePlaceholder:hover {
@@ -86,8 +88,9 @@
     color: var(--core-foreground);
     background-color: var(--core-card);
     box-shadow: 0 0 0 3px var(--brand-primary-a15);
-    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        border-color var(--duration-normal, 0.4s) ease,
+        box-shadow var(--duration-normal, 0.4s) ease;
     box-sizing: border-box;
 }
 
@@ -166,8 +169,9 @@
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
 }
 
 .cancelBtn:hover:not(:disabled) {

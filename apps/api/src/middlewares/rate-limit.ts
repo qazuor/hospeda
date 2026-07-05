@@ -1388,7 +1388,7 @@ export function createSlidingWindowPerUserRateLimit(
         if (currentCount >= max) {
             // Calculate Retry-After from the oldest timestamp in the window
             const oldest = await resolvedStore.oldestInWindow(storeKey, windowMs);
-            const retryAfterMs = oldest !== undefined ? windowMs - (Date.now() - oldest) : windowMs;
+            const retryAfterMs = oldest === undefined ? windowMs : windowMs - (Date.now() - oldest);
             const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
             const resetEpochSec = Math.ceil((Date.now() + retryAfterMs) / 1000);
 

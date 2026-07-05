@@ -7,7 +7,7 @@ import {
     ExperienceFaqRemoveOutputSchema,
     PermissionEnum
 } from '@repo/schemas';
-import { ExperienceService, ServiceError, removeExperienceFaq } from '@repo/service-core';
+import { ExperienceService, removeExperienceFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

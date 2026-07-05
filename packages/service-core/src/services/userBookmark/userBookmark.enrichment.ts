@@ -15,11 +15,11 @@
  */
 
 import {
-    events,
-    type DrizzleClient,
     accommodationMediaModel,
     accommodations,
+    type DrizzleClient,
     destinations,
+    events,
     experiences,
     gastronomies,
     getDb,

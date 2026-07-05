@@ -2,7 +2,7 @@
  * Admin batch import moderation terms endpoint
  */
 import { z } from '@hono/zod-openapi';
-import { PermissionEnum, createContentModerationTermSchema } from '@repo/schemas';
+import { createContentModerationTermSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';

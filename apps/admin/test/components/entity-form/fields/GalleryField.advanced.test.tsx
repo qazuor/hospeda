@@ -13,14 +13,13 @@
  * - Internal drag-reorder path: arrayMove updates order values via onChange.
  */
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { GalleryField, type GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers

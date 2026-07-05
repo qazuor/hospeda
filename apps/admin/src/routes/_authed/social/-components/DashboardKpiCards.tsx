@@ -6,10 +6,10 @@
  * publishedLast30Days, and failedActionNeeded.
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import type { SocialDashboardKpis } from '@repo/schemas';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** Props for {@link DashboardKpiCards}. */
 export interface DashboardKpiCardsProps {

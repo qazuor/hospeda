@@ -17,45 +17,6 @@
  * @module ai-core/capabilities
  */
 
-// generateText
-export type {
-    ExecuteGenerateTextInput,
-    GenerateTextCapabilityInput,
-    GenerateTextCapabilityOutput
-} from './generate-text.capability.js';
-export { executeGenerateText } from './generate-text.capability.js';
-
-// generateObject
-export type {
-    ExecuteGenerateObjectInput,
-    GenerateObjectCapabilityInput,
-    GenerateObjectCapabilityOutput
-} from './generate-object.capability.js';
-export { executeGenerateObject } from './generate-object.capability.js';
-
-// extractIntent
-export type {
-    ExecuteExtractIntentInput,
-    ExtractIntentCapabilityInput,
-    ExtractIntentCapabilityOutput
-} from './extract-intent.capability.js';
-export { executeExtractIntent } from './extract-intent.capability.js';
-
-// moderate
-export type {
-    ExecuteModerateInput,
-    ModerateCapabilityInput,
-    ModerateCapabilityOutput
-} from './moderate.capability.js';
-export { executeModerate } from './moderate.capability.js';
-
-// streamText (T-024)
-export type {
-    ExecuteStreamTextInput,
-    StreamTextCapabilityInput
-} from './stream-text.capability.js';
-export { executeStreamText } from './stream-text.capability.js';
-
 // embed (V2 stub)
 export type {
     EmbedInput,
@@ -64,3 +25,37 @@ export type {
     ExecuteEmbedInput
 } from './embed.capability.js';
 export { executeEmbed } from './embed.capability.js';
+// extractIntent
+export type {
+    ExecuteExtractIntentInput,
+    ExtractIntentCapabilityInput,
+    ExtractIntentCapabilityOutput
+} from './extract-intent.capability.js';
+export { executeExtractIntent } from './extract-intent.capability.js';
+// generateObject
+export type {
+    ExecuteGenerateObjectInput,
+    GenerateObjectCapabilityInput,
+    GenerateObjectCapabilityOutput
+} from './generate-object.capability.js';
+export { executeGenerateObject } from './generate-object.capability.js';
+// generateText
+export type {
+    ExecuteGenerateTextInput,
+    GenerateTextCapabilityInput,
+    GenerateTextCapabilityOutput
+} from './generate-text.capability.js';
+export { executeGenerateText } from './generate-text.capability.js';
+// moderate
+export type {
+    ExecuteModerateInput,
+    ModerateCapabilityInput,
+    ModerateCapabilityOutput
+} from './moderate.capability.js';
+export { executeModerate } from './moderate.capability.js';
+// streamText (T-024)
+export type {
+    ExecuteStreamTextInput,
+    StreamTextCapabilityInput
+} from './stream-text.capability.js';
+export { executeStreamText } from './stream-text.capability.js';

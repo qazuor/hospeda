@@ -5,8 +5,8 @@
  * substring search input.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import { NewsletterSourceEnum, NewsletterSubscriberStatusEnum } from '@repo/schemas';
+import { useTranslations } from '@/hooks/use-translations';
 
 export interface SubscriberFiltersValue {
     readonly subscriberStatus: NewsletterSubscriberStatusEnum | '';

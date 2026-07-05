@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import type { AmenityData } from '@/lib/api/types';
 /**
  * @file AmenitiesFeaturesField.tsx
@@ -14,7 +15,6 @@ import type { AmenityData } from '@/lib/api/types';
  * The slug falls through as raw fallback when no i18n key is found.
  */
 import { translateAmenityName } from '@/lib/catalog-names';
-import type { JSX } from 'react';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
 type Translate = (key: string, fallback?: string) => string;

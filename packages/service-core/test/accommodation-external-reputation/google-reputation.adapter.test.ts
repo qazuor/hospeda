@@ -13,8 +13,8 @@
  * - Snippets carry the data the service will timestamp (TTL anchor concept).
  */
 
-import { ExternalPlatformEnum, LifecycleStatusEnum } from '@repo/schemas';
 import type { AccommodationExternalListing } from '@repo/schemas';
+import { ExternalPlatformEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GoogleReputationAdapter } from '../../src/services/accommodation-external-reputation/adapters/google-reputation.adapter.js';
 

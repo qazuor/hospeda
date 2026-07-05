@@ -1,5 +1,5 @@
-import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { PermissionEnum } from '@repo/schemas';
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 
 // ---------------------------------------------------------------------------
 // Types

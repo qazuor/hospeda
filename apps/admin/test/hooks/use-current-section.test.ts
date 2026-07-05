@@ -23,10 +23,10 @@
  * @see SPEC-154 T-021
  */
 
-import { useCurrentSection } from '@/hooks/use-current-section';
-import { useCurrentSidebar } from '@/hooks/use-current-sidebar';
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useCurrentSection } from '@/hooks/use-current-section';
+import { useCurrentSidebar } from '@/hooks/use-current-sidebar';
 
 // ---------------------------------------------------------------------------
 // Mock @tanstack/react-router so we can control pathname per test.

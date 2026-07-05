@@ -26,7 +26,7 @@
  * never hardcode slugs.
  */
 
-import { type Page, expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 type Theme = 'light' | 'dark';
 

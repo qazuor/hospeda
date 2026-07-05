@@ -1,6 +1,6 @@
+import type { Accommodation } from '@repo/schemas';
 import type { FormModeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ClientStateExtension } from '@/shared/schemas';
-import type { Accommodation } from '@repo/schemas';
 
 /**
  * Accommodation form data type

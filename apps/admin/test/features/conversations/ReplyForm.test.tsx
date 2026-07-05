@@ -7,9 +7,9 @@
  * - Inline 422/API error appears below the textarea
  */
 
-import { ReplyForm } from '@/features/conversations/components/ReplyForm';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ReplyForm } from '@/features/conversations/components/ReplyForm';
 
 // Mock useReplyMutation
 vi.mock('@/features/conversations/hooks/useReplyMutation', () => ({

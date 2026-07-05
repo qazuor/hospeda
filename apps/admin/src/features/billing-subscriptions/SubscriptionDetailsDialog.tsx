@@ -1,4 +1,6 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import type { TranslationKey } from '@repo/i18n';
+import { CalendarIcon, CreditCardIcon, PlayIcon, PowerOffIcon, XCircleIcon } from '@repo/icons';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,15 +11,13 @@ import {
     DialogHeader,
     DialogTitle
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import {
     usePaymentHistoryQuery,
     useSubscriptionEventsQuery,
     useSubscriptionPromoEffectQuery
 } from '@/features/billing-subscriptions/hooks';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { CalendarIcon, CreditCardIcon, PlayIcon, PowerOffIcon, XCircleIcon } from '@repo/icons';
-import { useState } from 'react';
 import { SubscriptionPaymentHistoryBlock } from './SubscriptionPaymentHistoryBlock';
 import { SubscriptionPromoEffectPanel } from './SubscriptionPromoEffectPanel';
 import type { PaymentHistory, Subscription, SubscriptionStatus } from './types';

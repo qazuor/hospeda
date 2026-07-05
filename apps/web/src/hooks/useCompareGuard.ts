@@ -18,6 +18,7 @@
  * @module hooks/useCompareGuard
  */
 
+import { useCallback } from 'react';
 import type { CompareItemMeta } from '@/store/compare-store';
 import {
     addToCompare,
@@ -25,7 +26,6 @@ import {
     removeFromCompare,
     useCompareStore
 } from '@/store/compare-store';
-import { useCallback } from 'react';
 import { useMyEntitlements } from './useMyEntitlements';
 
 // ---------------------------------------------------------------------------

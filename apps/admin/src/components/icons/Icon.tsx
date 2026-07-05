@@ -8,10 +8,10 @@
  * - Accessibility support
  */
 
-import { cn } from '@/lib/utils';
 import { ICON_SIZES as PACKAGE_ICON_SIZES } from '@repo/icons';
 import { forwardRef } from 'react';
-import { FallbackIcon, ICON_REGISTRY, type IconName, hasIcon } from './IconRegistry';
+import { cn } from '@/lib/utils';
+import { FallbackIcon, hasIcon, ICON_REGISTRY, type IconName } from './IconRegistry';
 
 /**
  * Tailwind CSS class mapping for icon sizing in admin layout.

@@ -10,7 +10,7 @@
  * in afterEach.
  */
 
-import { events, entityComments, eq, getDb, posts } from '@repo/db';
+import { entityComments, eq, events, getDb, posts } from '@repo/db';
 import type { EntityComment, Event, Post } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------

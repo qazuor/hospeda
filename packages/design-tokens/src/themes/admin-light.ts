@@ -47,13 +47,13 @@ import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
 import { amenityTypeTokens } from '../tokens/amenity-types.js';
 import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
-    type OKLCH,
     accent,
     brandSecondary,
     danger,
     forest,
     info,
     neutral,
+    type OKLCH,
     river,
     sand,
     sky,

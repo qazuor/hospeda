@@ -11,10 +11,10 @@ import type {
     SocialPostFooterUpdate
 } from '@repo/schemas';
 import {
+    parseAdminSort,
     SocialPostFooterAdminSearchSchema,
     SocialPostFooterCreateSchema,
-    SocialPostFooterUpdateSchema,
-    parseAdminSort
+    SocialPostFooterUpdateSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';

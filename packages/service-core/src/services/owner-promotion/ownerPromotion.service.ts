@@ -15,15 +15,15 @@ import {
     OwnerPromotionUpdateInputSchema,
     TouristAudienceEnumSchema
 } from '@repo/schemas';
-import { and, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { and, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
 import {
-    OwnerPromotionLifecycleEventType,
-    emitOwnerPromotionLifecycleEvent
+    emitOwnerPromotionLifecycleEvent,
+    OwnerPromotionLifecycleEventType
 } from './ownerPromotion.lifecycle-events';
 import {
     checkCanAdminList,

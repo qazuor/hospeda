@@ -10,9 +10,9 @@
  * @see https://ui.shadcn.com/docs/components/chart
  */
 
-import { cn } from '@/lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
+import { cn } from '@/lib/utils';
 
 // ============================================================================
 // CHART CONFIG TYPE
@@ -110,13 +110,7 @@ ChartContainer.displayName = 'ChartContainer';
 // CHART STYLE (injects CSS vars for series colors)
 // ============================================================================
 
-function ChartStyle({
-    id,
-    config
-}: {
-    readonly id: string;
-    readonly config: ChartConfig;
-}) {
+function ChartStyle({ id, config }: { readonly id: string; readonly config: ChartConfig }) {
     const colorConfig = Object.entries(config).filter(([, entry]) => entry.theme ?? entry.color);
 
     if (!colorConfig.length) {

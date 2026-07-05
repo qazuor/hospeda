@@ -190,5 +190,8 @@ export const httpToDomainAmenityUpdate = (httpData: AmenityUpdateHttp): AmenityU
     icon: httpData.icon,
     isFeatured: httpData.isFeatured,
     displayWeight: httpData.displayWeight,
-    isBuiltin: httpData.isActive !== undefined ? !httpData.isActive : undefined // Map isActive inversely to isBuiltin
+    isBuiltin:
+        httpData.isActive === undefined
+            ? undefined // Map isActive inversely to isBuiltin
+            : !httpData.isActive
 });

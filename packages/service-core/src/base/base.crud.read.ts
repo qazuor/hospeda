@@ -1,5 +1,5 @@
 import { buildSearchCondition } from '@repo/db';
-import { ServiceErrorCode, parseAdminSort } from '@repo/schemas';
+import { parseAdminSort, ServiceErrorCode } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
@@ -8,11 +8,11 @@ import {
     type AdminSearchExecuteParams,
     type BaseModel,
     type ListOptions,
+    listOptionsSchema,
     type PaginatedListOutput,
     type ServiceContext,
     ServiceError,
-    type ServiceOutput,
-    listOptionsSchema
+    type ServiceOutput
 } from '../types';
 import { BaseCrudHooks } from './base.crud.hooks';
 
@@ -309,7 +309,7 @@ export abstract class BaseCrudRead<
                     const table = this.model.getTable();
                     // TYPE-WORKAROUND: Drizzle table reference object structurally matches Record<string, unknown> for dynamic column lookup; runtime safe via hasOwnProperty.
                     const tableRecord = table as unknown as Record<string, unknown>;
-                    if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
+                    if (!Object.hasOwn(tableRecord, sortBy)) {
                         throw new ServiceError(
                             ServiceErrorCode.VALIDATION_ERROR,
                             `Invalid sort field "${sortBy}". Field does not exist on ${this.entityName} table.`
@@ -495,7 +495,7 @@ export abstract class BaseCrudRead<
                 const table = this.model.getTable();
                 // TYPE-WORKAROUND: Drizzle table reference object structurally matches Record<string, unknown> for dynamic column lookup; runtime safe via hasOwnProperty.
                 const tableRecord = table as unknown as Record<string, unknown>;
-                if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
+                if (!Object.hasOwn(tableRecord, sortBy)) {
                     throw new ServiceError(
                         ServiceErrorCode.VALIDATION_ERROR,
                         `Invalid sort field "${sortBy}". Field does not exist on ${this.entityName} table.`

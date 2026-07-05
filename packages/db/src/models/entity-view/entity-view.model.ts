@@ -30,11 +30,11 @@
 import { EntityTypeEnum, type EntityViewStats, type TrackableEntityType } from '@repo/schemas';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
-import { entityViews } from '../../schemas/entity-view/entity_view.dbschema.ts';
 import type {
     InsertEntityView,
     SelectEntityView
 } from '../../schemas/entity-view/entity_view.dbschema.ts';
+import { entityViews } from '../../schemas/entity-view/entity_view.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';

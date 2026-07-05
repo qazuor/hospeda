@@ -81,7 +81,7 @@ const formatSinkError = (err: unknown): string => {
     }
     const cause = (err as Error & { cause?: unknown }).cause;
     const causeMsg =
-        cause instanceof Error ? cause.message : cause !== undefined ? String(cause) : undefined;
+        cause instanceof Error ? cause.message : cause === undefined ? undefined : String(cause);
     return causeMsg ? `${err.message} | cause: ${causeMsg}` : err.message;
 };
 
@@ -116,14 +116,14 @@ export const createAppLogSinkHandler = (
         // fire-and-forget promise settles.
         const reqCtx = getRequestContext();
         const contextFields: Pick<CreateAppLogEntry, 'requestId' | 'userId' | 'method' | 'path'> =
-            reqCtx !== undefined
-                ? {
+            reqCtx === undefined
+                ? {}
+                : {
                       requestId: reqCtx.requestId,
                       method: reqCtx.method,
                       path: reqCtx.path,
-                      ...(reqCtx.userId !== undefined ? { userId: reqCtx.userId } : {})
-                  }
-                : {};
+                      ...(reqCtx.userId === undefined ? {} : { userId: reqCtx.userId })
+                  };
 
         const input: CreateAppLogEntry = { ...mapEntryToCreateInput(entry), ...contextFields };
 

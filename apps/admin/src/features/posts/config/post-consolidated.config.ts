@@ -1,9 +1,9 @@
+import type { useTranslations } from '@repo/i18n';
+import { createElement } from 'react';
 import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { AiPostGeneratePanel } from '@/features/posts/components/AiPostGeneratePanel';
-import type { useTranslations } from '@repo/i18n';
-import { createElement } from 'react';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContentConsolidatedSection } from './sections/content.consolidated';
 import { createMediaConsolidatedSection } from './sections/media.consolidated';

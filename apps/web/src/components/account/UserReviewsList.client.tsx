@@ -9,11 +9,11 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useCallback, useEffect, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { useCallback, useEffect, useState } from 'react';
 import styles from './UserReviewsList.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -281,6 +281,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
         return (
             <div
                 className={styles.loadingWrap}
+                role="status"
                 aria-live="polite"
                 aria-busy="true"
                 aria-label={t('common.loading', 'Cargando…')}
@@ -351,6 +352,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                             {review.rating !== null && review.rating !== undefined && (
                                 <span
                                     className={styles.ratingBadge}
+                                    role="img"
                                     aria-label={`${t('account.reviews.ratingLabel', 'Calificación')}: ${review.rating}`}
                                 >
                                     ★ {review.rating}

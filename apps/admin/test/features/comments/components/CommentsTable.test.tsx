@@ -10,11 +10,11 @@
  * - Disabled state when moderationState already matches button action
  */
 
-import { CommentsTable } from '@/routes/_authed/comments/-components/CommentsTable';
 import { EntityTypeEnum, ModerationStatusEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { CommentsTable } from '@/routes/_authed/comments/-components/CommentsTable';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -49,7 +49,11 @@ vi.mock('@tanstack/react-router', () => ({
         children,
         to,
         ...props
-    }: { children: React.ReactNode; to: string; [key: string]: unknown }) => (
+    }: {
+        children: React.ReactNode;
+        to: string;
+        [key: string]: unknown;
+    }) => (
         <a
             href={to}
             {...props}

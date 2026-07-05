@@ -1,13 +1,13 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
+import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 /**
  * Accommodation View Route Configuration

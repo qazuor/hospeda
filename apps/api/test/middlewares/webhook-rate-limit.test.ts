@@ -15,6 +15,7 @@ process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
 // Mock Redis so tests run in-memory
 import { vi } from 'vitest';
+
 vi.mock('../../src/utils/redis', () => ({
     getRedisClient: vi.fn().mockResolvedValue(undefined),
     disconnectRedis: vi.fn().mockResolvedValue(undefined),

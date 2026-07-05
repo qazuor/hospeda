@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';

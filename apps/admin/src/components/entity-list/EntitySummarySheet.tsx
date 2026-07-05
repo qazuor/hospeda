@@ -1,6 +1,6 @@
-import type { BadgeOption } from '@/components/table/DataTable';
+import type { TranslationKey } from '@repo/i18n';
 import { BadgeCell } from '@/components/table/cells/BadgeCell';
-import { Button } from '@/components/ui-wrapped/Button';
+import type { BadgeOption } from '@/components/table/DataTable';
 import {
     Sheet,
     SheetContent,
@@ -9,9 +9,9 @@ import {
     SheetHeader,
     SheetTitle
 } from '@/components/ui/sheet';
+import { Button } from '@/components/ui-wrapped/Button';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatShortDate } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
 
 /**
  * Column descriptor used by EntitySummarySheet to render label/value rows.

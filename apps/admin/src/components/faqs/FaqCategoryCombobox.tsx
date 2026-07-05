@@ -11,11 +11,11 @@
  * categories seed the datalist; anything typed is valid.
  */
 
+import { FAQ_BASELINE_CATEGORIES } from '@repo/schemas';
+import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { FAQ_BASELINE_CATEGORIES } from '@repo/schemas';
-import { useId } from 'react';
 
 const DATALIST_ID_PREFIX = 'faq-categories-';
 

@@ -10,6 +10,7 @@
  * The layout uses URL-based navigation for state persistence across page reloads.
  */
 
+import type { ReactNode } from 'react';
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 import { BottomNav } from '@/components/layout/mobile-nav/BottomNav';
 import { TourAutoTrigger } from '@/components/tour/TourAutoTrigger';
@@ -19,7 +20,6 @@ import { SidebarProvider } from '@/contexts/sidebar-context';
 import { TourProvider } from '@/contexts/tour-context';
 import { WidgetActionHandlersProvider } from '@/contexts/widget-action-handlers-context';
 import { useWelcomeTourPending } from '@/hooks/use-tours';
-import type { ReactNode } from 'react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 

@@ -4,13 +4,7 @@
  * Displays a single cron job with displayName, category key, human schedule,
  * last-run status, next-run time, and an inline trigger result panel.
  */
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useTranslations } from '@/hooks/use-translations';
-import { formatCronDateTime } from '@/lib/cron-presentation';
+
 import {
     AlertCircleIcon,
     CheckCircleIcon,
@@ -20,6 +14,13 @@ import {
     XCircleIcon
 } from '@repo/icons';
 import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatCronDateTime } from '@/lib/cron-presentation';
 import { useTriggerCronJobMutation } from '../hooks';
 import type { CronJobAdmin, CronJobResult } from '../types';
 
@@ -30,11 +31,7 @@ interface CronJobCardProps {
 /**
  * Badge variant + label for a last-run status.
  */
-function LastRunBadge({
-    status
-}: {
-    readonly status: 'success' | 'failed' | 'timeout';
-}) {
+function LastRunBadge({ status }: { readonly status: 'success' | 'failed' | 'timeout' }) {
     const { t } = useTranslations();
 
     if (status === 'success') {

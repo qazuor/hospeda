@@ -30,17 +30,17 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { ImageResponse } from '@vercel/og';
+import type { APIRoute } from 'astro';
 import {
+    buildOgElement,
     HERO_KEYS,
     type HeroKey,
     OG_FONT_URLS,
     type OgAssets,
-    type SatoriNode,
-    buildOgElement,
-    parseOgParams
+    parseOgParams,
+    type SatoriNode
 } from '@/lib/og-template';
-import { ImageResponse } from '@vercel/og';
-import type { APIRoute } from 'astro';
 
 export const prerender = false;
 

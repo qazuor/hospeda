@@ -13,6 +13,7 @@
  * References: D-022, AC-003-01..04
  */
 import { REntityTagModel, TagModel } from '@repo/db';
+import type { EntityTag, Tag } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     PermissionEnum,
@@ -20,7 +21,6 @@ import {
     TagColorEnum,
     TagTypeEnum
 } from '@repo/schemas';
-import type { EntityTag, Tag } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';

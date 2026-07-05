@@ -3,7 +3,7 @@
  * Get all FAQs for an experience listing — Admin endpoint.
  */
 import { ExperienceFaqListOutputSchema, PermissionEnum } from '@repo/schemas';
-import { ExperienceService, ServiceError, listExperienceFaqs } from '@repo/service-core';
+import { ExperienceService, listExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

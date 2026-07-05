@@ -143,6 +143,8 @@ const NAV_ICON_MAP: Record<string, ComponentType<IconProps>> = {
  */
 export function resolveNavIcon({
     iconName
-}: { readonly iconName: string }): ComponentType<IconProps> | undefined {
+}: {
+    readonly iconName: string;
+}): ComponentType<IconProps> | undefined {
     return NAV_ICON_MAP[iconName];
 }

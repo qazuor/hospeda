@@ -222,7 +222,7 @@ export function groupActiveCount(group: FilterGroup, state: FilterState): number
         return total > 0 ? total : null;
     }
     if (group.type === 'geo-radius') {
-        return state.geo[group.id] !== undefined ? 1 : null;
+        return state.geo[group.id] === undefined ? null : 1;
     }
     return null;
 }

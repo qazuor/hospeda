@@ -15,11 +15,11 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 
-import { OverrideRow } from '@/features/users/components/permissions/OverrideRow';
-import { RolePermissionBadge } from '@/features/users/components/permissions/RolePermissionBadge';
 import { PermissionEffectEnum, PermissionEnum } from '@repo/schemas';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { OverrideRow } from '@/features/users/components/permissions/OverrideRow';
+import { RolePermissionBadge } from '@/features/users/components/permissions/RolePermissionBadge';
 import { renderWithProviders } from '../../../../helpers/render-with-providers';
 
 const K = 'admin-pages.access.users.permissions';

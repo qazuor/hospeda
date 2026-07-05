@@ -6,8 +6,8 @@ import {
     type AmenityCreateHttp,
     AmenityCreateHttpSchema,
     AmenityProtectedSchema,
-    PermissionEnum,
-    httpToDomainAmenityCreate
+    httpToDomainAmenityCreate,
+    PermissionEnum
 } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

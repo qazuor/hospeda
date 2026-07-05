@@ -58,10 +58,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         'rounded border border-border bg-transparent px-2 py-1 text-muted-foreground text-xs italic'
                 )}
             >
-                {segments.map((seg, idx) =>
+                {segments.map((seg) =>
                     seg.type === 'link' ? (
                         <a
-                            key={`${seg.type}-${idx}-${seg.href}`}
+                            key={`${seg.type}-${seg.start}-${seg.href}`}
                             href={seg.href}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -70,7 +70,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                             {seg.value}
                         </a>
                     ) : (
-                        <span key={`${seg.type}-${idx}-${seg.value.slice(0, 16)}`}>
+                        <span key={`${seg.type}-${seg.start}-${seg.value.slice(0, 16)}`}>
                             {seg.value}
                         </span>
                     )

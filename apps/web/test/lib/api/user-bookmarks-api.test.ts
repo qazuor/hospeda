@@ -9,9 +9,9 @@
  * the module level and assert on the call shape.
  */
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/lib/api/client';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api/client', () => ({
     apiClient: {

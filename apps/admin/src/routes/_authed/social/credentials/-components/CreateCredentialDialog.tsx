@@ -5,6 +5,9 @@
  * password-type input for the plaintext secret (never round-tripped back
  * from the server) and a `Select` restricted to the 4 fixed credential keys.
  */
+
+import { AddIcon, LoaderIcon } from '@repo/icons';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,14 +28,12 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import {
+    getSocialCredentialKeyLabel,
     SOCIAL_CREDENTIAL_KEY_LABELS,
     type SocialCredentialKey,
-    getSocialCredentialKeyLabel,
     useCreateSocialCredentialMutation
 } from '@/features/social-credentials';
 import { useToast } from '@/hooks/use-toast';
-import { AddIcon, LoaderIcon } from '@repo/icons';
-import { useState } from 'react';
 
 const SOCIAL_CREDENTIAL_KEYS = Object.keys(SOCIAL_CREDENTIAL_KEY_LABELS) as SocialCredentialKey[];
 

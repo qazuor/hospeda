@@ -20,13 +20,13 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { ProfileEditSchema } from '@repo/schemas';
+import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { ProfileEditSchema } from '@repo/schemas';
-import { useRef, useState } from 'react';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
 import { type ProfileEditFieldErrors, parseZodErrors } from './ProfileEditForm.helpers';

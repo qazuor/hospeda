@@ -9,7 +9,7 @@ import {
     type FaqCreatePayloadType,
     PermissionEnum
 } from '@repo/schemas';
-import { ExperienceService, ServiceError, addExperienceFaq } from '@repo/service-core';
+import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

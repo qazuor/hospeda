@@ -18,13 +18,13 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './SearchHistoryList.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -504,9 +504,9 @@ export function SearchHistoryList({
             {!isEmpty && (
                 <div className={styles['search-history__header']}>
                     {confirmClearVisible ? (
+                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                         <div
                             className={styles['search-history__confirm-inline']}
-                            // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                             role="group"
                             aria-label={t('account.searchHistory.clearAll', 'Borrar todo')}
                         >
@@ -637,9 +637,9 @@ export function SearchHistoryList({
                                     </a>
 
                                     {confirmingThis ? (
+                                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                                         <div
                                             className={styles['search-history__delete-confirm']}
-                                            // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
                                             role="group"
                                             aria-label={`${t('account.searchHistory.deleteConfirmAria', 'Confirmar eliminación')}: ${entry.queryText ?? t('account.searchHistory.noQuery', 'Búsqueda sin texto')}`}
                                         >
@@ -686,6 +686,5 @@ export function SearchHistoryList({
 }
 
 // Exported type alias so tests can import the exact item shape.
-export type { SearchHistoryApiItem };
 // UserSearchHistoryListItem is re-exported for downstream consumers.
-export type { UserSearchHistoryListItem };
+export type { SearchHistoryApiItem, UserSearchHistoryListItem };

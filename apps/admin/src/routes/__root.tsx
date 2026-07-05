@@ -1,18 +1,18 @@
 import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, type QZPayProviderProps, QZPayThemeProvider } from '@qazuor/qzpay-react';
+import { FeedbackErrorBoundary } from '@repo/feedback';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
+    createRootRoute,
     HeadContent,
     Link,
     Outlet,
     Scripts,
-    createRootRoute,
     useRouterState
 } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 import type * as React from 'react';
-
+import { useEffect, useState } from 'react';
 import { BrowserGateBanner } from '@/components/BrowserGateBanner';
 import { AdminFeedbackHeadlessHost } from '@/components/feedback/AdminFeedbackHeadlessHost';
 import { ToastProvider } from '@/components/ui/ToastProvider';
@@ -25,7 +25,6 @@ import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { initSentry } from '@/lib/sentry';
-import { FeedbackErrorBoundary } from '@repo/feedback';
 import '@repo/feedback/styles.css';
 
 // Validate environment variables eagerly at module load time - fails fast on misconfiguration
@@ -310,10 +309,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                                     userEmail={session?.user.email}
                                     userName={session?.user.name}
                                 >
-                                    {billing !== null ? (
-                                        <QZPayProvider billing={billing}>{children}</QZPayProvider>
-                                    ) : (
+                                    {billing === null ? (
                                         children
+                                    ) : (
+                                        <QZPayProvider billing={billing}>{children}</QZPayProvider>
                                     )}
                                 </FeedbackErrorBoundary>
                             </GlobalErrorBoundary>

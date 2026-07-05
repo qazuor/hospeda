@@ -118,15 +118,9 @@ const buildTokenResponse = (overrides?: Partial<MLTokenResponse>): MLTokenRespon
 });
 
 describe('ml-token.service', () => {
-    let getValidMercadoLibreToken: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.service.js'
-    ).getValidMercadoLibreToken;
-    let needsRefresh: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.service.js'
-    ).needsRefresh;
-    let MLTokenRefreshError: typeof import(
-        '../../../src/services/mercadolibre-oauth/ml-token.errors.js'
-    ).MLTokenRefreshError;
+    let getValidMercadoLibreToken: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').getValidMercadoLibreToken;
+    let needsRefresh: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').needsRefresh;
+    let MLTokenRefreshError: typeof import('../../../src/services/mercadolibre-oauth/ml-token.errors.js').MLTokenRefreshError;
 
     beforeEach(async () => {
         vi.clearAllMocks();

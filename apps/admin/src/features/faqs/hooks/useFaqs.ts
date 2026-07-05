@@ -11,10 +11,9 @@
  * All mutations invalidate the list query on success.
  */
 
-import { fetchApi } from '@/lib/api/client';
-import type { FaqCreatePayloadType, FaqUpdatePayloadType } from '@repo/schemas';
-import type { FaqReorderPayload } from '@repo/schemas';
+import type { FaqCreatePayloadType, FaqReorderPayload, FaqUpdatePayloadType } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /** Supported entity types for FAQ management. */
 export type FaqEntityType = 'destinations' | 'accommodations' | 'gastronomies' | 'experiences';

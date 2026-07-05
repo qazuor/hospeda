@@ -1,9 +1,9 @@
+import { defaultIntlLocale } from '@repo/i18n';
+import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCentsToArs, formatShortDate } from '@/lib/format-helpers';
-import { defaultIntlLocale } from '@repo/i18n';
-import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import type { PromoCode } from './types';
 
 /**

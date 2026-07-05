@@ -1,4 +1,3 @@
-import { ClientStateExtensionSchema } from '@/shared/schemas';
 import type { AccommodationUpdateInput } from '@repo/schemas';
 import {
     AccommodationCreateInputSchema,
@@ -6,6 +5,7 @@ import {
     AccommodationUpdateInputSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
+import { ClientStateExtensionSchema } from '@/shared/schemas';
 
 /**
  * Accommodation schemas for admin client-side usage

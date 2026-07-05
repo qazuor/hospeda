@@ -40,7 +40,7 @@ describe('RUserPermissionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 userPermission: userPermissionMock
             }
         });
@@ -66,7 +66,7 @@ describe('RUserPermissionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 userPermission: userPermissionMock
             }
         });
@@ -80,7 +80,7 @@ describe('RUserPermissionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 userPermission: userPermissionMock
             }
         });

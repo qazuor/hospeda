@@ -81,20 +81,21 @@ describe('computeUserSettingsBackfill', () => {
     });
 
     describe('language → languageWeb / languageAdmin mapping', () => {
-        it.each(['es', 'en', 'pt'] as const)(
-            'copies supported language %s to both surfaces',
-            (lang) => {
-                const settings = buildSettings({ language: lang });
+        it.each([
+            'es',
+            'en',
+            'pt'
+        ] as const)('copies supported language %s to both surfaces', (lang) => {
+            const settings = buildSettings({ language: lang });
 
-                const result = computeUserSettingsBackfill(settings);
+            const result = computeUserSettingsBackfill(settings);
 
-                expect(result.changed).toBe(true);
-                expect(result.settings.languageWeb).toBe(lang);
-                expect(result.settings.languageAdmin).toBe(lang);
-                expect(result.appliedFields).toContain('languageWeb');
-                expect(result.appliedFields).toContain('languageAdmin');
-            }
-        );
+            expect(result.changed).toBe(true);
+            expect(result.settings.languageWeb).toBe(lang);
+            expect(result.settings.languageAdmin).toBe(lang);
+            expect(result.appliedFields).toContain('languageWeb');
+            expect(result.appliedFields).toContain('languageAdmin');
+        });
 
         it('does not copy unsupported locales (e.g. fr, de)', () => {
             const settings = buildSettings({ language: 'fr' });

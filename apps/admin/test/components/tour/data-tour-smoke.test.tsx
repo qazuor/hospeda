@@ -35,10 +35,10 @@
  * @see SPEC-174 §7.7
  */
 
-import type { RoleConfig } from '@/config/ia/schema';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { RoleConfig } from '@/config/ia/schema';
 
 // ---------------------------------------------------------------------------
 // Common router mock

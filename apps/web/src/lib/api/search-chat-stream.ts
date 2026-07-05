@@ -116,9 +116,9 @@ export async function streamSearchChat(params: StreamSearchChatParams): Promise<
             messages: params.messages as AiSearchChatRequest['messages'],
             locale: params.locale ?? 'es',
             conversationId: params.conversationId ?? undefined,
-            ...(params.currentFilters !== undefined
-                ? { currentFilters: params.currentFilters }
-                : {})
+            ...(params.currentFilters === undefined
+                ? {}
+                : { currentFilters: params.currentFilters })
         };
 
         const response = await fetch(`${params.apiUrl}/api/v1/protected/ai/search-chat`, {

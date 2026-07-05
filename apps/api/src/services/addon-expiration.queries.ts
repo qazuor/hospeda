@@ -13,8 +13,8 @@ export type {
 export {
     BATCH_SIZE,
     daysAheadSchema,
-    parseLimitAdjustments,
-    parseEntitlementAdjustments,
     findExpiredAddons,
-    findExpiringAddons
+    findExpiringAddons,
+    parseEntitlementAdjustments,
+    parseLimitAdjustments
 } from '@repo/service-core';

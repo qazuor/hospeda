@@ -121,12 +121,11 @@ export type AccommodationReviewUpdateHttp = z.infer<typeof AccommodationReviewUp
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { AccommodationReviewSearchInput } from './accommodationReview.query.schema.js';
-
 import type {
     AccommodationReviewCreateInput,
     AccommodationReviewUpdateInput
 } from './accommodationReview.crud.schema.js';
+import type { AccommodationReviewSearchInput } from './accommodationReview.query.schema.js';
 
 /**
  * Convert HTTP accommodation review search parameters to domain search schema

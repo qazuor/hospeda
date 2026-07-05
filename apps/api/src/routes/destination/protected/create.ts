@@ -6,8 +6,8 @@ import {
     type DestinationCreateHttp,
     DestinationCreateHttpSchema,
     DestinationProtectedSchema,
-    PermissionEnum,
-    httpToDomainDestinationCreate
+    httpToDomainDestinationCreate,
+    PermissionEnum
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Feature, FeatureListItemSchema } from '../schemas/features.schemas';
 import { createFeaturesColumns } from './features.columns';
 
@@ -78,4 +78,5 @@ export const featuresConfig: EntityConfig<Feature> = {
 };
 
 const { component, route } = createEntityListPage(featuresConfig);
+
 export { component as FeaturesPageComponent, route as FeaturesRoute };

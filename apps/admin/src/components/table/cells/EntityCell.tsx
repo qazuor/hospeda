@@ -1,6 +1,3 @@
-import type { EntityOption } from '@/components/table/DataTable';
-import { BadgeColor, EntityType } from '@/components/table/DataTable';
-import { cn } from '@/lib/utils';
 import {
     AccommodationIcon,
     DestinationIcon,
@@ -10,6 +7,9 @@ import {
     UsersManagementIcon
 } from '@repo/icons';
 import type { ReactNode } from 'react';
+import type { EntityOption } from '@/components/table/DataTable';
+import { BadgeColor, EntityType } from '@/components/table/DataTable';
+import { cn } from '@/lib/utils';
 
 type EntityCellProps<TData> = {
     readonly value: unknown;

@@ -111,7 +111,9 @@
     line-height: 1;
     color: var(--brand-accent);
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease;
 }
 
 .groupReset:hover {
@@ -174,7 +176,9 @@
     padding-top: 0.25rem;
     overflow: hidden;
     max-height: 500px;
-    transition: max-height var(--duration-normal) ease, opacity var(--duration-fast) ease,
+    transition:
+        max-height var(--duration-normal) ease,
+        opacity var(--duration-fast) ease,
         padding-top var(--duration-fast) ease;
     opacity: 1;
 }

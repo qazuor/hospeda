@@ -53,17 +53,16 @@ vi.mock('@tanstack/react-router', () => ({
 
 // Import route modules AFTER mocks are set up
 
-import { Route as SponsorViewRoute } from '@/routes/_authed/sponsors/$id';
-import { Route as SponsorEditRoute } from '@/routes/_authed/sponsors/$id_.edit';
-// Admin sponsor management routes
-import { Route as SponsorsListRoute } from '@/routes/_authed/sponsors/index';
-import { Route as SponsorNewRoute } from '@/routes/_authed/sponsors/new';
-
 import { Route as SponsorAnalyticsRoute } from '@/routes/_authed/sponsor/analytics';
 // Sponsor dashboard routes
 import { Route as SponsorDashboardRoute } from '@/routes/_authed/sponsor/index';
 import { Route as SponsorInvoicesRoute } from '@/routes/_authed/sponsor/invoices';
 import { Route as SponsorSponsorshipsRoute } from '@/routes/_authed/sponsor/sponsorships';
+import { Route as SponsorViewRoute } from '@/routes/_authed/sponsors/$id';
+import { Route as SponsorEditRoute } from '@/routes/_authed/sponsors/$id_.edit';
+// Admin sponsor management routes
+import { Route as SponsorsListRoute } from '@/routes/_authed/sponsors/index';
+import { Route as SponsorNewRoute } from '@/routes/_authed/sponsors/new';
 
 describe('Sponsors smoke tests', () => {
     // --- Admin sponsor management ---

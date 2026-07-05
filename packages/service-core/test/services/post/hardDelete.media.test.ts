@@ -17,7 +17,7 @@ import { PostModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { PermissionEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';

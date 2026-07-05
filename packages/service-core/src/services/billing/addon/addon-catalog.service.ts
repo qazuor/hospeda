@@ -23,7 +23,6 @@ import type { QueryContext } from '@repo/db';
 import { and, asc, billingAddons, count, eq, getDb, isNull, sql } from '@repo/db';
 import type { AdminAddonResponse } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
-import { mapRowToAddonDefinition } from './addon-catalog.mapper.js';
 import {
     createAddon,
     hardDeleteAddon,
@@ -35,6 +34,7 @@ import {
 } from './addon.crud.js';
 import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
 import type { CreateAddonInput, UpdateAddonInput } from './addon.write-types.js';
+import { mapRowToAddonDefinition } from './addon-catalog.mapper.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

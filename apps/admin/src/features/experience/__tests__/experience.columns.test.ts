@@ -13,9 +13,9 @@
  *  - Badge options for type include all ExperienceTypeEnum values
  */
 
-import { ColumnType } from '@/components/table/DataTable';
 import { ExperienceTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { ColumnType } from '@/components/table/DataTable';
 import { createExperienceColumns } from '../config/experience.columns';
 
 // ---------------------------------------------------------------------------

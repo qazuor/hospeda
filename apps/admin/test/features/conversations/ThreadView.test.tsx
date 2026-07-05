@@ -8,10 +8,10 @@
  * - Loading skeleton shown during fetch
  */
 
-import { ThreadView } from '@/features/conversations/components/ThreadView';
-import type { ConversationThread } from '@/features/conversations/types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ThreadView } from '@/features/conversations/components/ThreadView';
+import type { ConversationThread } from '@/features/conversations/types';
 
 // Mock useConversation hook
 vi.mock('@/features/conversations/hooks/useConversation', () => ({

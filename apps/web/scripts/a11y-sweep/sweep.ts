@@ -177,13 +177,7 @@ function filterEntries(
     return entries;
 }
 
-function buildEntityUrl({
-    basePath,
-    slug
-}: {
-    basePath: string;
-    slug: unknown;
-}): string | null {
+function buildEntityUrl({ basePath, slug }: { basePath: string; slug: unknown }): string | null {
     if (typeof slug !== 'string' || slug.trim().length === 0) {
         return null;
     }

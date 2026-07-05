@@ -62,25 +62,24 @@ import {
     SocialPostTargetModel as RealSocialPostTargetModel,
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
+import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import {
     SocialApprovalStatusEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialSourceEnum
 } from '@repo/schemas';
-import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ServiceConfig } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
+import { normalizeHashtag } from './social.helpers';
 import type {
     HashtagCountsByPlatform,
     HashtagLimitViolation,
     MaxHashtagsByPlatform
 } from './social-hashtag-limit.util';
 import { checkHashtagLimits } from './social-hashtag-limit.util';
-import type { GptImagePayload } from './social-image-pipeline.service';
-import type { SocialImagePipelineService } from './social-image-pipeline.service';
-import { normalizeHashtag } from './social.helpers';
+import type { GptImagePayload, SocialImagePipelineService } from './social-image-pipeline.service';
 
 // ---------------------------------------------------------------------------
 // max_hashtags_<platform> setting keys + fallback defaults.

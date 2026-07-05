@@ -1,20 +1,20 @@
+import { useTranslations } from '@repo/i18n';
+import { LoaderIcon } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import { Suspense, useMemo, useState } from 'react';
+import type { ZodSchema } from 'zod';
 import { EntityFormProvider, EntityFormSection, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
 import { unflattenValues } from '@/components/entity-form/utils/unflatten-values.utils';
 import { EntityPageHeader } from '@/components/entity-header/EntityPageHeader';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
-import { Card, CardContent } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
+import { Card, CardContent } from '@/components/ui-wrapped/Card';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import { useTranslations } from '@repo/i18n';
-import { LoaderIcon } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import { Suspense, useMemo, useState } from 'react';
-import type { ZodSchema } from 'zod';
 import type { EntityCreateConfig } from './EntityCreateContent';
 
 /**

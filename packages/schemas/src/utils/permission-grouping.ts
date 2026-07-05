@@ -1,5 +1,4 @@
-import { PermissionCategoryEnum } from '../enums/permission.enum.js';
-import { PermissionEnum } from '../enums/permission.enum.js';
+import { PermissionCategoryEnum, PermissionEnum } from '../enums/permission.enum.js';
 
 /**
  * Permission catalog grouping (SPEC-170).

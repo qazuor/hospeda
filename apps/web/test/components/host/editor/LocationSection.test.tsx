@@ -9,10 +9,10 @@
  * - Shows hint text
  */
 
-import { LocationSection } from '@/components/host/editor/LocationSection.client';
-import type { LocationSectionProps } from '@/components/host/editor/LocationSection.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { LocationSectionProps } from '@/components/host/editor/LocationSection.client';
+import { LocationSection } from '@/components/host/editor/LocationSection.client';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

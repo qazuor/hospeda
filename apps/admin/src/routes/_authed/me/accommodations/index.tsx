@@ -10,8 +10,8 @@
  * silently overwritten with actor.id on every request — no client-side filter needed.
  */
 
-import { MeAccommodationsRoute } from '@/features/accommodations/config/me-accommodations.config';
 import { createFileRoute } from '@tanstack/react-router';
+import { MeAccommodationsRoute } from '@/features/accommodations/config/me-accommodations.config';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;

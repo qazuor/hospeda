@@ -1,3 +1,4 @@
+import type { Destination } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -5,7 +6,6 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Destination } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCreateDestination,

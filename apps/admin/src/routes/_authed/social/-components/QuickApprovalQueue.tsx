@@ -7,15 +7,13 @@
  * optimistic cache update in `useApproveSocialPost`.
  */
 
-import { Button } from '@/components/ui/button';
-import { useApproveSocialPost } from '@/hooks/use-social-posts';
-import { socialPostQueryKeys } from '@/hooks/use-social-posts';
-import { useTranslations } from '@/hooks/use-translations';
-import { SocialPostPlatformIcons } from '@/routes/_authed/social/posts/-components/SocialPostPlatformIcons';
-
 import type { SocialDashboardQueueItem, SocialDashboardResponse } from '@repo/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
+import { socialPostQueryKeys, useApproveSocialPost } from '@/hooks/use-social-posts';
+import { useTranslations } from '@/hooks/use-translations';
+import { SocialPostPlatformIcons } from '@/routes/_authed/social/posts/-components/SocialPostPlatformIcons';
 
 /** Props for {@link QuickApprovalQueue}. */
 export interface QuickApprovalQueueProps {

@@ -247,48 +247,45 @@ describe('ExchangeRateConfig CRUD Schemas', () => {
 
     describe('Type Inference', () => {
         it('should correctly infer update input type', () => {
-            const input: import(
-                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
-            ).ExchangeRateConfigUpdateInput = {
-                defaultRateType: ExchangeRateTypeEnum.BLUE,
-                dolarApiFetchIntervalMinutes: 20
-            };
+            const input: import('../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js').ExchangeRateConfigUpdateInput =
+                {
+                    defaultRateType: ExchangeRateTypeEnum.BLUE,
+                    dolarApiFetchIntervalMinutes: 20
+                };
 
             expect(input).toBeDefined();
         });
 
         it('should correctly infer get output type', () => {
-            const output: import(
-                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
-            ).ExchangeRateConfigGetOutput = {
-                id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-                defaultRateType: ExchangeRateTypeEnum.OFICIAL,
-                dolarApiFetchIntervalMinutes: 15,
-                exchangeRateApiFetchIntervalHours: 6,
-                showConversionDisclaimer: true,
-                disclaimerText: null,
-                enableAutoFetch: true,
-                updatedAt: new Date(),
-                updatedById: null
-            };
+            const output: import('../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js').ExchangeRateConfigGetOutput =
+                {
+                    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                    defaultRateType: ExchangeRateTypeEnum.OFICIAL,
+                    dolarApiFetchIntervalMinutes: 15,
+                    exchangeRateApiFetchIntervalHours: 6,
+                    showConversionDisclaimer: true,
+                    disclaimerText: null,
+                    enableAutoFetch: true,
+                    updatedAt: new Date(),
+                    updatedById: null
+                };
 
             expect(output).toBeDefined();
         });
 
         it('should correctly infer update output type', () => {
-            const output: import(
-                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
-            ).ExchangeRateConfigUpdateOutput = {
-                id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-                defaultRateType: ExchangeRateTypeEnum.BLUE,
-                dolarApiFetchIntervalMinutes: 30,
-                exchangeRateApiFetchIntervalHours: 12,
-                showConversionDisclaimer: false,
-                disclaimerText: 'Updated',
-                enableAutoFetch: false,
-                updatedAt: new Date(),
-                updatedById: 'a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789'
-            };
+            const output: import('../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js').ExchangeRateConfigUpdateOutput =
+                {
+                    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                    defaultRateType: ExchangeRateTypeEnum.BLUE,
+                    dolarApiFetchIntervalMinutes: 30,
+                    exchangeRateApiFetchIntervalHours: 12,
+                    showConversionDisclaimer: false,
+                    disclaimerText: 'Updated',
+                    enableAutoFetch: false,
+                    updatedAt: new Date(),
+                    updatedById: 'a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789'
+                };
 
             expect(output).toBeDefined();
         });

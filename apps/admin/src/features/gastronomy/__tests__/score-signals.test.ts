@@ -17,9 +17,9 @@
  * Also verifies that weights sum to 100.
  */
 
-import { computeScore } from '@/components/quality-score';
-import type { ScoreResult } from '@/components/quality-score';
 import { describe, expect, it } from 'vitest';
+import type { ScoreResult } from '@/components/quality-score';
+import { computeScore } from '@/components/quality-score';
 import { createGastronomySignals } from '../config/score-signals';
 
 // ---------------------------------------------------------------------------

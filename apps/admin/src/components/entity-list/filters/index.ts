@@ -3,17 +3,17 @@
  */
 
 export { FilterBar } from './FilterBar';
-export { useFilterState } from './useFilterState';
-export { FILTER_ALL_VALUE } from './filter-types';
 export type {
+    ActiveFilters,
+    BooleanFilterConfig,
+    DateRangeFilterConfig,
+    FilterBarConfig,
+    FilterChipData,
     FilterControlConfig,
     FilterControlType,
-    SelectFilterConfig,
-    BooleanFilterConfig,
     NumberRangeFilterConfig,
-    DateRangeFilterConfig,
-    TextFilterConfig,
-    FilterBarConfig,
-    ActiveFilters,
-    FilterChipData
+    SelectFilterConfig,
+    TextFilterConfig
 } from './filter-types';
+export { FILTER_ALL_VALUE } from './filter-types';
+export { useFilterState } from './useFilterState';
