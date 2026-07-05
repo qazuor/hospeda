@@ -55,19 +55,19 @@
 }
 
 /* --- Selected (accommodation is in the comparison list) --- */
-.button[aria-pressed='true'] {
+.button[aria-pressed="true"] {
     color: var(--brand-primary);
     border-color: var(--brand-primary-a35);
     background-color: var(--brand-primary-a08);
 }
 
-.button[aria-pressed='true']:hover {
+.button[aria-pressed="true"]:hover {
     border-color: var(--brand-primary-a40);
     background-color: var(--brand-primary-a12);
 }
 
 /* --- Busy (entitlements still loading) --- */
-.button[aria-busy='true'] {
+.button[aria-busy="true"] {
     opacity: 0.6;
     cursor: progress;
 }
@@ -78,7 +78,9 @@
     .button:hover,
     .button:active {
         transform: none;
-        transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+        transition:
+            color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
     }
 }
 

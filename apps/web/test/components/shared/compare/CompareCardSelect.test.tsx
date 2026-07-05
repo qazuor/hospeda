@@ -27,8 +27,8 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CompareCardSelect } from '../../../../src/components/shared/compare/CompareCardSelect.client';
 import type { CompareCardSelectProps } from '../../../../src/components/shared/compare/CompareCardSelect.client';
+import { CompareCardSelect } from '../../../../src/components/shared/compare/CompareCardSelect.client';
 import { setCompareMode } from '../../../../src/store/compare-store';
 
 // ---------------------------------------------------------------------------

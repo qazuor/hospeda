@@ -37,18 +37,18 @@
  * @module components/shared/compare/CompareModeToggle
  */
 
+import { ColumnIcon } from '@repo/icons';
+import { type FC, useEffect, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
-import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import {
     loadCompareModeFromStorage,
     toggleCompareMode,
     useCompareMode
 } from '@/store/compare-store';
-import { ColumnIcon } from '@repo/icons';
-import { type FC, useEffect, useRef, useState } from 'react';
 import styles from './CompareModeToggle.module.css';
 import { CompareUpsellPopover } from './CompareUpsellPopover.client';
 
@@ -136,7 +136,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
      * Safely resolves the current page URL for the auth return-redirect.
      * Guarded by typeof window check for SSR safety (mirrors FavoriteButton).
      */
-    const returnUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const returnUrl = typeof window === 'undefined' ? '' : window.location.href;
 
     const handleClick = (): void => {
         if (canCompare) {

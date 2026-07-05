@@ -22,13 +22,13 @@
  * @module components/accommodation/DetailCompareButton
  */
 
-import { useCompareGuard } from '@/hooks/useCompareGuard';
-import { cn } from '@/lib/cn';
-import { createT } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
 import { CheckIcon, ColumnIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
+import { useCompareGuard } from '@/hooks/useCompareGuard';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { addToast } from '@/store/toast-store';
 import styles from './DetailCompareButton.module.css';
 
 /** Props for the DetailCompareButton island. */

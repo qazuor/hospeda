@@ -465,6 +465,7 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
                                                         <span
                                                             className={styles.bestValueBadge}
                                                             data-testid={`best-value-${row.key}-${a.id}`}
+                                                            role="img"
                                                             aria-label={t(
                                                                 'accommodations.comparison.matrix.bestValueAriaLabel',
                                                                 'Mejor valor en {{attribute}}',

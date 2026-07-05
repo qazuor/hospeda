@@ -35,17 +35,17 @@
 }
 
 /* --- Selected (accommodation is in the comparison list) --- */
-.overlay[aria-checked='true'] {
+.overlay[aria-checked="true"] {
     border-color: var(--brand-primary);
     background-color: var(--brand-primary-a08);
 }
 
-.overlay[aria-checked='true']:hover {
+.overlay[aria-checked="true"]:hover {
     background-color: var(--brand-primary-a12);
 }
 
 /* --- Busy (entitlements still loading) --- */
-.overlay[aria-busy='true'] {
+.overlay[aria-busy="true"] {
     cursor: progress;
 }
 

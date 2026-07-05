@@ -23,13 +23,13 @@
  * @module components/shared/compare/CompareButton
  */
 
-import { useCompareMode } from '@/store/compare-store';
 import { ColumnIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { useCompareMode } from '@/store/compare-store';
 import { addToast } from '@/store/toast-store';
 import styles from './CompareButton.module.css';
 

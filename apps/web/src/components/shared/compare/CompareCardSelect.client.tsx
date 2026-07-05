@@ -55,14 +55,14 @@
  * @module components/shared/compare/CompareCardSelect
  */
 
-import { useCompareGuard } from '@/hooks/useCompareGuard';
-import { cn } from '@/lib/cn';
-import { createT } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { useCompareMode } from '@/store/compare-store';
-import { addToast } from '@/store/toast-store';
 import { CheckCircleIcon } from '@repo/icons';
 import type { FC, KeyboardEvent, MouseEvent } from 'react';
+import { useCompareGuard } from '@/hooks/useCompareGuard';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { useCompareMode } from '@/store/compare-store';
+import { addToast } from '@/store/toast-store';
 import styles from './CompareCardSelect.module.css';
 
 /** Props for the CompareCardSelect overlay island. */

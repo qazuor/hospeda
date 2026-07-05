@@ -639,19 +639,20 @@ describe('compare-store', () => {
         // ---------------------------------------------------------------------
 
         describe('clearCompareModeIfOutsideSection', () => {
-            it.each(['es', 'en', 'pt'])(
-                'leaves mode ON when pathname is under /%s/alojamientos/',
-                (locale) => {
-                    // Arrange
-                    setCompareMode(true);
+            it.each([
+                'es',
+                'en',
+                'pt'
+            ])('leaves mode ON when pathname is under /%s/alojamientos/', (locale) => {
+                // Arrange
+                setCompareMode(true);
 
-                    // Act
-                    clearCompareModeIfOutsideSection(`/${locale}/alojamientos/`);
+                // Act
+                clearCompareModeIfOutsideSection(`/${locale}/alojamientos/`);
 
-                    // Assert
-                    expect(getCompareModeSnapshot()).toBe(true);
-                }
-            );
+                // Assert
+                expect(getCompareModeSnapshot()).toBe(true);
+            });
 
             it('leaves mode ON for a nested path under the section (e.g. detail page)', () => {
                 // Arrange
@@ -675,19 +676,20 @@ describe('compare-store', () => {
                 expect(getCompareModeSnapshot()).toBe(true);
             });
 
-            it.each(['es', 'en', 'pt'])(
-                'turns mode OFF when pathname is outside the section (/%s/mi-cuenta/)',
-                (locale) => {
-                    // Arrange
-                    setCompareMode(true);
+            it.each([
+                'es',
+                'en',
+                'pt'
+            ])('turns mode OFF when pathname is outside the section (/%s/mi-cuenta/)', (locale) => {
+                // Arrange
+                setCompareMode(true);
 
-                    // Act
-                    clearCompareModeIfOutsideSection(`/${locale}/mi-cuenta/`);
+                // Act
+                clearCompareModeIfOutsideSection(`/${locale}/mi-cuenta/`);
 
-                    // Assert
-                    expect(getCompareModeSnapshot()).toBe(false);
-                }
-            );
+                // Assert
+                expect(getCompareModeSnapshot()).toBe(false);
+            });
 
             it('turns mode OFF for the site root', () => {
                 // Arrange

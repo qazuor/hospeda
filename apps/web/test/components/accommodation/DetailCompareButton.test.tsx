@@ -22,8 +22,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DetailCompareButton } from '../../../src/components/accommodation/DetailCompareButton.client';
 import type { DetailCompareButtonProps } from '../../../src/components/accommodation/DetailCompareButton.client';
+import { DetailCompareButton } from '../../../src/components/accommodation/DetailCompareButton.client';
 import { COMPARE_ENTITLEMENT_KEY, COMPARE_LIMIT_KEY } from '../../../src/hooks/useCompareGuard';
 import { clearCompare } from '../../../src/store/compare-store';
 

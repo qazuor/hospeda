@@ -25,11 +25,11 @@
  * with auto-flip (above/below) and auto-shift (clamped to viewport).
  */
 
-import { cn } from '@/lib/cn';
 import { CrownIcon } from '@repo/icons';
 import type { JSX, RefObject } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/lib/cn';
 import styles from './CompareUpsellPopover.module.css';
 
 // ---------------------------------------------------------------------------

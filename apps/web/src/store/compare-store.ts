@@ -56,8 +56,8 @@
  * (for any supported locale), and leaves it untouched otherwise.
  */
 
-import { SUPPORTED_LOCALES } from '@/lib/i18n';
 import { useSyncExternalStore } from 'react';
+import { SUPPORTED_LOCALES } from '@/lib/i18n';
 
 /**
  * Display metadata for a selected accommodation. Supplied by the selecting UI

@@ -119,7 +119,9 @@
     .toggle,
     .toggle:active {
         transform: none;
-        transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+        transition:
+            color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
     }
 }
 

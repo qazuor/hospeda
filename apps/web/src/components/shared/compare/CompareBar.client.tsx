@@ -33,14 +33,14 @@
  * @module components/shared/compare/CompareBar
  */
 
-import { useCompareGuard } from '@/hooks/useCompareGuard';
-import { cn } from '@/lib/cn';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import { ArrowRightIcon, XIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
 import { useEffect } from 'react';
+import { useCompareGuard } from '@/hooks/useCompareGuard';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import styles from './CompareBar.module.css';
 
 /** `<html>` dataset flag published while the bar is visible. See the file header. */
