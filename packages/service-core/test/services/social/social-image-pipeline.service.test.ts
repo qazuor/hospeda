@@ -1099,5 +1099,82 @@ describe('SocialImagePipelineService', () => {
                 expect.objectContaining({ transformation: undefined })
             );
         });
+
+        // HOS-65 FIX 2: processVideo must upload with resource_type 'video',
+        // otherwise Cloudinary treats the bytes as an image and never reports
+        // `duration`, silently disabling the VIDEO_POST duration limit.
+        it('forwards resourceType "video" to the upload call for processVideo', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-rt',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 10
+            });
+
+            // Act
+            await service.processVideo({ video });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ resourceType: 'video' })
+            );
+        });
+
+        // HOS-65 FIX 5: a STORY-format video must get the 9:16 transform, just
+        // like a STORY image — previously processVideo ignored the STORY preset.
+        it('forwards the STORY 9:16 transformation (and resourceType video) for a STORY-format video', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-story',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 8
+            });
+
+            // Act
+            await service.processVideo({
+                video,
+                publishFormat: SocialPublishFormatEnum.STORY
+            });
+
+            // Assert
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    transformation: STORY_ASPECT_RATIO_TRANSFORM,
+                    resourceType: 'video'
+                })
+            );
+        });
+
+        it('forwards NO transformation for a VIDEO_POST video (limits only, no crop)', async () => {
+            // Arrange
+            const video: GptVideoPayload = { mode: 'public_url', url: FAKE_VIDEO_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+            const uploadSpy = vi.spyOn(mediaProvider, 'upload').mockResolvedValue({
+                url: FAKE_CLOUDINARY_URL,
+                publicId: 'hospeda/social/assets/generated-video-vp',
+                width: 1080,
+                height: 1920,
+                durationSeconds: 8
+            });
+
+            // Act
+            await service.processVideo({
+                video,
+                publishFormat: SocialPublishFormatEnum.VIDEO_POST
+            });
+
+            // Assert — VIDEO_POST enforces limits but applies no Cloudinary crop.
+            expect(uploadSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ transformation: undefined, resourceType: 'video' })
+            );
+        });
     });
 });

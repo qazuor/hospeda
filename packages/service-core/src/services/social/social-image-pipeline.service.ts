@@ -530,6 +530,10 @@ export class SocialImagePipelineService {
         // `social_assets` row is persisted).
         const preset = publishFormat ? resolveVideoPipelinePreset(publishFormat) : null;
         const videoLimits = preset?.kind === 'video_post' ? preset.limits : null;
+        // STORY targets get the 9:16 aspect-ratio transform, mirroring the
+        // image path (HOS-65 T-021) — a STORY video must be cropped to 9:16
+        // exactly like a STORY image, not uploaded untouched.
+        const transformation = preset?.kind === 'story' ? preset.transformation : undefined;
 
         // Step 1: Download the video bytes with a timeout.
         const downloadResult = await this.downloadImage(downloadUrl);
@@ -552,8 +556,15 @@ export class SocialImagePipelineService {
             return this.gracefulFail(buildVideoSizeLimitWarning(videoLimits.maxSizeBytes));
         }
 
-        // Step 2: Upload to Cloudinary.
-        const uploadResult = await this.uploadToCloudinary(downloadResult.buffer, mimeType);
+        // Step 2: Upload to Cloudinary. Force `resource_type: 'video'` so
+        // Cloudinary processes the file as a video and reports `duration`
+        // (HOS-65), and apply the STORY 9:16 transform when applicable.
+        const uploadResult = await this.uploadToCloudinary(
+            downloadResult.buffer,
+            mimeType,
+            transformation,
+            'video'
+        );
         if (!uploadResult.success) {
             this.logger.warn({ error: uploadResult.error }, 'Cloudinary upload failed');
             return this.gracefulFail();
