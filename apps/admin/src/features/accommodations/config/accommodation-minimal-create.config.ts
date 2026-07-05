@@ -1,7 +1,7 @@
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import type { useTranslations } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
+import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import type { ConsolidatedEntityConfig } from '../types/consolidated-config.types';
 
 /**

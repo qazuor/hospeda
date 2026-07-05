@@ -1,9 +1,9 @@
+import type { PostTag } from '@repo/schemas';
+import { PostTagSchema } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import { PostTagSchema } from '@repo/schemas';
-import type { PostTag } from '@repo/schemas';
-import type { z } from 'zod';
 import { createPostTagsColumns } from './post-tags.columns';
 
 /**
@@ -132,4 +132,5 @@ export const postTagsConfig: EntityConfig<PostTag> = {
 };
 
 const { component, route } = createEntityListPage(postTagsConfig);
+
 export { component as PostTagsPageComponent, route as PostTagsRoute };

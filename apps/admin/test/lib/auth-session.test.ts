@@ -15,7 +15,7 @@
  * be invoked directly in a vitest/jsdom environment without booting the
  * TanStack Start server-function RPC machinery.
  */
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { server } from '../mocks/server';
 

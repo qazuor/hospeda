@@ -17,12 +17,12 @@ import {
     type CancellationStartedEvent,
     type ExpirationWarningEvent,
     type ExpiredEvent,
+    emitLifecycleEvent,
+    getAddonLifecycleMetrics,
     type LimitsRecalculatedEvent,
     type PurchaseConfirmedEvent,
     type RenewalConfirmedEvent,
     type RevocationFailedEvent,
-    emitLifecycleEvent,
-    getAddonLifecycleMetrics,
     resetAddonLifecycleMetrics
 } from '../../src/services/addon-lifecycle-events';
 

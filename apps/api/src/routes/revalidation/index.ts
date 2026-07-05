@@ -13,6 +13,7 @@
  * @module routes/revalidation
  */
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
+import type { RevalidationEntityType } from '@repo/schemas';
 import {
     ManualRevalidateRequestSchema,
     PermissionEnum,
@@ -25,11 +26,10 @@ import {
     RevalidationStatsSchema,
     UpdateRevalidationConfigInputSchema
 } from '@repo/schemas';
-import type { RevalidationEntityType } from '@repo/schemas';
 import {
-    RevalidationStatsService,
     getAffectedPaths,
-    getRevalidationService
+    getRevalidationService,
+    RevalidationStatsService
 } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';

@@ -12,7 +12,7 @@
 
 import { billingWebhookEvents, getDb } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, type SQL } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { ListWebhookEventsQuerySchema, WebhookEventsListResponseSchema } from '../../../schemas';
 import { apiLogger } from '../../../utils/logger';

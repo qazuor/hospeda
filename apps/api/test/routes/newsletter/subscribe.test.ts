@@ -28,9 +28,7 @@ const buildActor = () => ({
     permissions: [] as string[]
 });
 
-const buildCtx = (opts: {
-    headers?: Record<string, string>;
-}) => {
+const buildCtx = (opts: { headers?: Record<string, string> }) => {
     const actor = buildActor();
     const headers = opts.headers ?? {};
     return {

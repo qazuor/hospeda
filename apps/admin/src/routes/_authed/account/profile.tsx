@@ -10,6 +10,11 @@
  * `profile.bio` and `profile.avatarUrl`).
  */
 
+import { LoaderIcon, MailIcon, ShieldIcon, UserIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
+import { type ProfileEditInput, ProfileEditSchema, type UserProtected } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute } from '@tanstack/react-router';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -23,11 +28,6 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUpdateUserProfile, useUserProfile } from '@/hooks/use-user-profile';
-import { LoaderIcon, MailIcon, ShieldIcon, UserIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
-import { type ProfileEditInput, ProfileEditSchema, type UserProtected } from '@repo/schemas';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/account/profile')({
     component: MyProfilePage

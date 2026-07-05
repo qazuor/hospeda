@@ -9,6 +9,11 @@
  * This is a single-page settings surface (NOT 4-page CRUD), matching the
  * pattern established by `billing/settings.tsx`.
  */
+
+import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useMemo } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,10 +39,6 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
 
 export const Route = createFileRoute('/_authed/ai/settings')({
     component: AiSettingsPage

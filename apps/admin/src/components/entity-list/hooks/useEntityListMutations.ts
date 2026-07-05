@@ -1,6 +1,6 @@
+import { useMutation } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { useEntityQueryKeys } from '@/lib/query-keys/hooks/useEntityQueryKeys';
-import { useMutation } from '@tanstack/react-query';
 
 type UseEntityListMutationsProps<TData> = {
     readonly entityName: string;
@@ -210,7 +210,10 @@ export const useEntityListMutations = <TData extends { id: string }>({
         mutationFn: async ({
             ids,
             data
-        }: { ids: string[]; data: Partial<TData> }): Promise<TData[]> => {
+        }: {
+            ids: string[];
+            data: Partial<TData>;
+        }): Promise<TData[]> => {
             if (!bulkUpdateEndpoint) {
                 throw new Error('Bulk update operation not supported');
             }

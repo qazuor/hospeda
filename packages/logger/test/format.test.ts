@@ -8,7 +8,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import logger, { LogFormat, LogLevel, configureLogger } from '../src/index.js';
+import logger, { configureLogger, LogFormat, LogLevel } from '../src/index.js';
 import { resetLogger } from '../src/logger.js';
 
 describe('LOG_FORMAT toggle (public logger -> console)', () => {

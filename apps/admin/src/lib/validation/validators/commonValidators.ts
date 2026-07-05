@@ -170,8 +170,8 @@ export const phoneValidator: AsyncValidator = async (phone: string): Promise<str
     }
 
     // Basic phone format validation
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+    const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(phone.replace(/[\s\-()]/g, ''))) {
         return 'Please enter a valid phone number';
     }
 
@@ -179,7 +179,7 @@ export const phoneValidator: AsyncValidator = async (phone: string): Promise<str
     return new Promise((resolve) => {
         setTimeout(() => {
             // Mock validation logic
-            const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+            const cleanPhone = phone.replace(/[\s\-()]/g, '');
             if (cleanPhone.length < 10) {
                 resolve('Phone number is too short');
             } else if (cleanPhone.length > 15) {

@@ -21,8 +21,9 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: opacity var(--duration-normal, 0.4s) ease, background-color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        opacity var(--duration-normal, 0.4s) ease,
+        background-color var(--duration-normal, 0.4s) ease;
 }
 
 .ctaBtn:hover:not(:disabled) {

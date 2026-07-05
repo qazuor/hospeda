@@ -1,6 +1,6 @@
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { useTranslations } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
+import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**

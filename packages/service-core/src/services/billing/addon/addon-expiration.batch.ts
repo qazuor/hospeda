@@ -9,8 +9,8 @@
  */
 
 import type { QueryContext } from '@repo/db';
-import { findExpiredAddons } from './addon-expiration.queries.js';
 import type { ServiceResult } from './addon.types.js';
+import { findExpiredAddons } from './addon-expiration.queries.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -27,8 +27,8 @@
  * @see SPEC-175 T-017
  */
 
-import { useWidgetActionHandlers } from '@/contexts/widget-action-handlers-context';
 import { useEffect, useState } from 'react';
+import { useWidgetActionHandlers } from '@/contexts/widget-action-handlers-context';
 import { WhatsNewModal } from './WhatsNewModal';
 import { WhatsNewPanel } from './WhatsNewPanel';
 

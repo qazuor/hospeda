@@ -14,7 +14,7 @@
  * @module middlewares/billing
  */
 
-import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
+import { createQZPayBilling, type QZPayBilling } from '@qazuor/qzpay-core';
 import {
     createMercadoPagoAdapter,
     createStubMercadoPagoAdapter,

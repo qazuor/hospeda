@@ -189,9 +189,9 @@ describe('ModerationAggregationService.getPendingCount', () => {
         it('propagates optional ctx.tx to each model count call', async () => {
             // Arrange
             const actor = makeModerationActor();
-            const fakeTx = { __tx: true } as unknown as import(
-                '../../../src/types'
-            ).ServiceContext['tx'];
+            const fakeTx = {
+                __tx: true
+            } as unknown as import('../../../src/types').ServiceContext['tx'];
             const ctx = { tx: fakeTx, hookState: undefined };
 
             // Act

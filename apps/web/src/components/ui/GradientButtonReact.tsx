@@ -4,8 +4,8 @@
  * Uses the same .btn-gradient CSS classes from components.css as the Astro version.
  */
 
-import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { ReactNode } from 'react';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 
 export interface GradientButtonProps {
     readonly label: string;

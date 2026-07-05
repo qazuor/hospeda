@@ -1,9 +1,9 @@
+import type { Tag } from '@repo/schemas';
+import { TagSchema } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import { TagSchema } from '@repo/schemas';
-import type { Tag } from '@repo/schemas';
-import type { z } from 'zod';
 import { createInternalTagsColumns } from './internal-tags.columns';
 
 /**
@@ -133,4 +133,5 @@ export const internalTagsConfig: EntityConfig<Tag> = {
 };
 
 const { component, route } = createEntityListPage(internalTagsConfig);
+
 export { component as InternalTagsPageComponent, route as InternalTagsRoute };

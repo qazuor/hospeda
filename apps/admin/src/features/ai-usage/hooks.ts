@@ -25,7 +25,6 @@
  * @module features/ai-usage/hooks
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     AiUsageByFeatureModelRow,
     AiUsageByModelRow,
@@ -33,13 +32,14 @@ import type {
     AiUsageDailyRow
 } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { buildAiUsageSearchParams } from './types';
+import { fetchApi } from '@/lib/api/client';
 import type {
     AiUsageByFeatureModelSearch,
     AiUsageByModelSearch,
     AiUsageByProviderSearch,
     AiUsageDailySearch
 } from './types';
+import { buildAiUsageSearchParams } from './types';
 
 // ---------------------------------------------------------------------------
 // Pagination envelope shape

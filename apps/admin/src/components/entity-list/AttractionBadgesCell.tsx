@@ -7,8 +7,8 @@
  * Renders an em dash when there are no attractions.
  */
 
-import { cn } from '@/lib/utils';
 import { getAttractionIcon } from '@repo/icons';
+import { cn } from '@/lib/utils';
 
 /** A single attraction as projected into the admin list (name + icon slug). */
 export interface AttractionBadgeItem {

@@ -28,7 +28,9 @@
     font-size: 0.6875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease;
 }
 
 .selectSearchChip:hover {
@@ -57,7 +59,9 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     color: var(--core-foreground);
-    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    transition:
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
 }
 
 .selectSearchInput::placeholder {

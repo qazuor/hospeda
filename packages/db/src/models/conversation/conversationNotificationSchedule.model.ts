@@ -1,10 +1,10 @@
 import { and, eq, isNull, lte, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { conversationNotificationSchedules } from '../../schemas/conversation/conversation_notification_schedules.dbschema.ts';
 import type {
     InsertConversationNotificationSchedule,
     SelectConversationNotificationSchedule
 } from '../../schemas/conversation/conversation_notification_schedules.dbschema.ts';
+import { conversationNotificationSchedules } from '../../schemas/conversation/conversation_notification_schedules.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';

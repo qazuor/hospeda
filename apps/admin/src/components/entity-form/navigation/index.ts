@@ -6,12 +6,11 @@
  * breadcrumbs, and smart scrolling capabilities.
  */
 
+export type { SmartBreadcrumbsProps } from './SmartBreadcrumbs';
+export { SmartBreadcrumbs } from './SmartBreadcrumbs';
+export type { SmartNavigationProps } from './SmartNavigation';
 // Navigation Components
 export { SmartNavigation } from './SmartNavigation';
-export type { SmartNavigationProps } from './SmartNavigation';
-
-export { SmartBreadcrumbs } from './SmartBreadcrumbs';
-export type { SmartBreadcrumbsProps } from './SmartBreadcrumbs';
 
 // TODO: Add more navigation components
 // export { SectionTabs } from './SectionTabs';

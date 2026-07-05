@@ -42,13 +42,7 @@ function collectKeys({
 /**
  * Resolves a dot-notation key to its value in a nested object
  */
-function resolveKey({
-    obj,
-    key
-}: {
-    obj: Record<string, unknown>;
-    key: string;
-}): unknown {
+function resolveKey({ obj, key }: { obj: Record<string, unknown>; key: string }): unknown {
     return key.split('.').reduce<unknown>((current, part) => {
         if (current && typeof current === 'object' && !Array.isArray(current)) {
             return (current as Record<string, unknown>)[part];

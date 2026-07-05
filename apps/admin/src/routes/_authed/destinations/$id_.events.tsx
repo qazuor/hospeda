@@ -4,12 +4,12 @@
  * Displays events associated with a specific destination.
  */
 
+import { formatDate } from '@repo/i18n';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { DestinationSubTabLayout } from '@/features/destinations/components/DestinationSubTabLayout';
 import { useDestinationQuery } from '@/features/destinations/hooks/useDestinationQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatDate } from '@repo/i18n';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/destinations/$id_/events')({
     component: DestinationEventsPage

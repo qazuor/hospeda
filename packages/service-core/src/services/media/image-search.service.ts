@@ -1,7 +1,7 @@
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { ServiceConfig } from '../../types';
-import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
+import { serviceLogger } from '../../utils/service-logger';
 
 export type StockImageProvider = 'unsplash' | 'pexels';
 

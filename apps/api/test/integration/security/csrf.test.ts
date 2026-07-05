@@ -82,40 +82,44 @@ describe('CSRF / origin verification — mutation methods', () => {
         app = buildApp();
     });
 
-    it.each(['POST', 'PUT', 'PATCH', 'DELETE'] as const)(
-        'allows %s with Origin matching configured CORS origin',
-        async (method) => {
-            const response = await app.request('/resource', {
-                method,
-                headers: {
-                    origin: 'https://hospeda.com.ar',
-                    'content-type': 'application/json'
-                },
-                body: method === 'DELETE' ? undefined : JSON.stringify({})
-            });
-            expect(response.status).toBe(200);
-        }
-    );
+    it.each([
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE'
+    ] as const)('allows %s with Origin matching configured CORS origin', async (method) => {
+        const response = await app.request('/resource', {
+            method,
+            headers: {
+                origin: 'https://hospeda.com.ar',
+                'content-type': 'application/json'
+            },
+            body: method === 'DELETE' ? undefined : JSON.stringify({})
+        });
+        expect(response.status).toBe(200);
+    });
 
-    it.each(['POST', 'PUT', 'PATCH', 'DELETE'] as const)(
-        'rejects %s with foreign Origin (403 ORIGIN_NOT_ALLOWED)',
-        async (method) => {
-            const response = await app.request('/resource', {
-                method,
-                headers: {
-                    origin: 'https://attacker.example.com',
-                    'content-type': 'application/json'
-                },
-                body: method === 'DELETE' ? undefined : JSON.stringify({})
-            });
-            expect(response.status).toBe(403);
-            const body = await response.json();
-            expect(body).toMatchObject({
-                success: false,
-                error: { code: 'ORIGIN_NOT_ALLOWED' }
-            });
-        }
-    );
+    it.each([
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE'
+    ] as const)('rejects %s with foreign Origin (403 ORIGIN_NOT_ALLOWED)', async (method) => {
+        const response = await app.request('/resource', {
+            method,
+            headers: {
+                origin: 'https://attacker.example.com',
+                'content-type': 'application/json'
+            },
+            body: method === 'DELETE' ? undefined : JSON.stringify({})
+        });
+        expect(response.status).toBe(403);
+        const body = await response.json();
+        expect(body).toMatchObject({
+            success: false,
+            error: { code: 'ORIGIN_NOT_ALLOWED' }
+        });
+    });
 
     it('falls back to Referer header when Origin is missing', async () => {
         const response = await app.request('/resource', {

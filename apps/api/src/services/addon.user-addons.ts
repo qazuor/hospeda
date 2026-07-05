@@ -8,22 +8,22 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type DrizzleClient, billingSubscriptions, getDb, withTransaction } from '@repo/db';
+import { billingSubscriptions, type DrizzleClient, getDb, withTransaction } from '@repo/db';
 import { billingAddonPurchases, billingSubscriptionEvents } from '@repo/db/schemas';
 import { NotificationType } from '@repo/notifications';
-import { AddonCatalogService } from '@repo/service-core';
-import {
-    BILLING_EVENT_TYPES,
-    cancelAddonPurchaseRecord,
-    queryAddonActive,
-    queryUserAddons
-} from '@repo/service-core';
 import type {
     CancelAddonInput,
     RevokeAllAddonsInput,
     RevokeAllAddonsResult,
     ServiceResult,
     UserAddon
+} from '@repo/service-core';
+import {
+    AddonCatalogService,
+    BILLING_EVENT_TYPES,
+    cancelAddonPurchaseRecord,
+    queryAddonActive,
+    queryUserAddons
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -156,7 +156,54 @@ export async function cancelUserAddon(
         // These must run OUTSIDE the DB transaction to avoid holding a Postgres connection
         // during external HTTP latency. The purchase status UPDATE is in the transaction;
         // the QZPay recalculation happens post-commit.
-        if (addonDef?.affectsLimitKey != null) {
+        if (addonDef?.affectsLimitKey == null) {
+            // No limit recalculation needed — use service-core helper for the DB update.
+            try {
+                const rowCount = await cancelAddonPurchaseRecord({
+                    purchaseId: input.purchaseId
+                });
+
+                if (rowCount === 0) {
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            addonSlug,
+                            purchaseId: input.purchaseId,
+                            reason: input.reason
+                        },
+                        'UPDATE affected 0 rows — record may have been concurrently canceled; continuing with entitlement removal'
+                    );
+                } else {
+                    apiLogger.info(
+                        {
+                            customerId: input.customerId,
+                            addonSlug,
+                            purchaseId: input.purchaseId,
+                            reason: input.reason
+                        },
+                        'Canceled billing_addon_purchase record'
+                    );
+                }
+            } catch (dbError) {
+                apiLogger.error(
+                    {
+                        error: dbError instanceof Error ? dbError.message : String(dbError),
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId
+                    },
+                    'Failed to cancel billing_addon_purchase record'
+                );
+
+                return {
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to update addon purchase status'
+                    }
+                };
+            }
+        } else {
             const limitKey = addonDef.affectsLimitKey;
 
             // Phase 1: DB-only — cancel the purchase record atomically, then commit.
@@ -276,53 +323,6 @@ export async function cancelUserAddon(
                     },
                     'Addon limit recalculated after cancellation'
                 );
-            }
-        } else {
-            // No limit recalculation needed — use service-core helper for the DB update.
-            try {
-                const rowCount = await cancelAddonPurchaseRecord({
-                    purchaseId: input.purchaseId
-                });
-
-                if (rowCount === 0) {
-                    apiLogger.warn(
-                        {
-                            customerId: input.customerId,
-                            addonSlug,
-                            purchaseId: input.purchaseId,
-                            reason: input.reason
-                        },
-                        'UPDATE affected 0 rows — record may have been concurrently canceled; continuing with entitlement removal'
-                    );
-                } else {
-                    apiLogger.info(
-                        {
-                            customerId: input.customerId,
-                            addonSlug,
-                            purchaseId: input.purchaseId,
-                            reason: input.reason
-                        },
-                        'Canceled billing_addon_purchase record'
-                    );
-                }
-            } catch (dbError) {
-                apiLogger.error(
-                    {
-                        error: dbError instanceof Error ? dbError.message : String(dbError),
-                        customerId: input.customerId,
-                        addonSlug,
-                        purchaseId: input.purchaseId
-                    },
-                    'Failed to cancel billing_addon_purchase record'
-                );
-
-                return {
-                    success: false,
-                    error: {
-                        code: 'INTERNAL_ERROR',
-                        message: 'Failed to update addon purchase status'
-                    }
-                };
             }
         }
 

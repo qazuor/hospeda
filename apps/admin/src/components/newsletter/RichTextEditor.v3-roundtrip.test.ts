@@ -17,8 +17,8 @@
  * unlike the async ProseMirror view mount.
  */
 
-import { Editor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/react';
+import { Editor } from '@tiptap/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { NEWSLETTER_EDITOR_EXTENSIONS } from './RichTextEditor';
 

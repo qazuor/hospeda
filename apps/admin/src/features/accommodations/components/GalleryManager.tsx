@@ -31,6 +31,10 @@
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
+import { AddIcon, LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
+import type { AccommodationMedia } from '@repo/schemas';
+import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
     useAccommodationMediaAdd,
@@ -40,10 +44,6 @@ import {
 } from '@/features/accommodations/hooks/useAccommodationMedia';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
-import { AddIcon, LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
-import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
-import type { AccommodationMedia } from '@repo/schemas';
-import * as React from 'react';
 
 // ---------------------------------------------------------------------------
 // Props

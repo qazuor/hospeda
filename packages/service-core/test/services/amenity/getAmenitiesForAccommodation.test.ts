@@ -1,7 +1,7 @@
 import type { AmenityModel, RAccommodationAmenityModel } from '@repo/db';
 import type { AmenityListWrapper } from '@repo/schemas';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import type { ServiceOutput } from '../../../src/types';
 import { getMockAccommodationId } from '../../../test/factories/accommodationFactory';

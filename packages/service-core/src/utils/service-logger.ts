@@ -51,5 +51,5 @@ type ServiceLogger = ILogger & {
 // TYPE-WORKAROUND: Base @repo/logger instance does not declare the custom `permission` method we attach for service-level permission logging; cast bridges the TS-only declaration gap.
 const typedServiceLogger = serviceLogger as unknown as ServiceLogger;
 
-export { typedServiceLogger as serviceLogger };
 export type { ServiceLogger };
+export { typedServiceLogger as serviceLogger };

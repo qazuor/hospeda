@@ -28,8 +28,8 @@
 
 import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AiCeilingHitError, createAiEngine } from '../../src/engine/index.js';
 import type { AiEngineEvent } from '../../src/engine/index.js';
+import { AiCeilingHitError, createAiEngine } from '../../src/engine/index.js';
 import type { AiProvider } from '../../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../../src/providers/index.js';
 import { calculateCostMicroUsd } from '../../src/usage/cost-calculator.js';

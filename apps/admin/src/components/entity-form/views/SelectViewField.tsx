@@ -1,9 +1,8 @@
+import * as React from 'react';
 import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-
-import * as React from 'react';
 
 /**
  * Props for SelectViewField component

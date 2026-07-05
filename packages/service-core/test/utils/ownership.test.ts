@@ -7,7 +7,7 @@
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '../../src/types';
-import { OWNERSHIP_REGISTRY, getOwnershipDescriptor } from '../../src/utils/ownership';
+import { getOwnershipDescriptor, OWNERSHIP_REGISTRY } from '../../src/utils/ownership';
 
 const makeActor = (id: string): Actor => ({
     id,

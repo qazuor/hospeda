@@ -1,5 +1,5 @@
-import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for payment-related queries
@@ -51,11 +51,7 @@ async function fetchPayment(id: string) {
 /**
  * Refund a payment
  */
-async function refundPayment(payload: {
-    id: string;
-    amount?: number;
-    reason: string;
-}) {
+async function refundPayment(payload: { id: string; amount?: number; reason: string }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/billing/payments/${payload.id}/refund`,
         method: 'POST',

@@ -171,7 +171,9 @@
     border: 1px solid var(--border);
     cursor: pointer;
     /* M-15: transition includes transform for scale-based active state */
-    transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
+    transition:
+        box-shadow var(--duration-normal) ease,
+        transform var(--duration-normal) ease;
     height: 420px;
     width: 100%;
     background-color: var(--core-card);
@@ -395,7 +397,9 @@
     cursor: pointer;
     line-height: 1;
     border-radius: var(--radius-sm);
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    transition:
+        color var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -433,8 +437,11 @@
     cursor: pointer;
     /* compensate padding so visual layout stays the same */
     box-sizing: content-box;
-    transition: width var(--duration-fast) ease, border-radius var(--duration-fast) ease,
-        background-color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    transition:
+        width var(--duration-fast) ease,
+        border-radius var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
     flex-shrink: 0;
 }
 
@@ -487,7 +494,9 @@
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease,
+    transition:
+        background-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease,
         transform var(--duration-fast) ease;
 }
 

@@ -243,19 +243,18 @@ export const validateApiEnv = (): void => {
     // a single safe summary from index.ts AFTER configureLogger() instead (I3).
 };
 
-// Export the schema for testing
-export { ApiEnvSchema };
-
 // Re-export config helpers for backward compatibility
 export {
-    parseCommaSeparated,
-    parseCorsOrigins,
     getCacheConfig,
-    getCorsConfig,
     getCompressionConfig,
+    getCorsConfig,
+    getDatabasePoolConfig,
     getRateLimitConfig,
+    getResponseConfig,
     getSecurityConfig,
     getValidationConfig,
-    getResponseConfig,
-    getDatabasePoolConfig
+    parseCommaSeparated,
+    parseCorsOrigins
 } from './env-config-helpers.js';
+// Export the schema for testing
+export { ApiEnvSchema };

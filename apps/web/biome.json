@@ -1,8 +1,9 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+    "root": false,
+    "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
     "extends": ["../../packages/biome-config/biome.json"],
     "files": {
-        "ignore": ["**/a11y-baseline.json"]
+        "includes": ["!**/a11y-baseline.json"]
     },
     "css": {
         "parser": {
@@ -11,7 +12,8 @@
     },
     "linter": {
         "rules": {
-            "nursery": {
+            "nursery": {},
+            "style": {
                 "noRestrictedImports": {
                     "level": "error",
                     "options": {

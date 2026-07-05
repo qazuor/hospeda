@@ -187,7 +187,7 @@ export const httpToDomainExperienceCreate = (
     description: httpData.description ?? '',
     type: httpData.type,
     destinationId: httpData.destinationId,
-    ...(httpData.ownerId !== undefined ? { ownerId: httpData.ownerId } : {}),
+    ...(httpData.ownerId === undefined ? {} : { ownerId: httpData.ownerId }),
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
@@ -234,8 +234,8 @@ export const httpToDomainExperienceCreate = (
         : {}),
 
     // Junction sync (write-only): pass through when provided
-    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
-    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {})
+    ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
+    ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds })
 });
 
 /**
@@ -261,9 +261,9 @@ export const httpToDomainExperienceUpdate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone !== undefined ? { mobilePhone: httpData.phone } : {}),
-                  ...(httpData.email !== undefined ? { personalEmail: httpData.email } : {}),
-                  ...(httpData.website !== undefined ? { website: httpData.website } : {})
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
+                  ...(httpData.website === undefined ? {} : { website: httpData.website })
               } as ExperienceUpdateInput['contactInfo']
           }
         : {}),
@@ -277,19 +277,19 @@ export const httpToDomainExperienceUpdate = (
     httpData.youtube !== undefined
         ? {
               socialNetworks: {
-                  ...(httpData.twitter !== undefined ? { twitter: httpData.twitter } : {}),
-                  ...(httpData.facebook !== undefined ? { facebook: httpData.facebook } : {}),
-                  ...(httpData.instagram !== undefined ? { instagram: httpData.instagram } : {}),
-                  ...(httpData.linkedin !== undefined ? { linkedIn: httpData.linkedin } : {}),
-                  ...(httpData.tiktok !== undefined ? { tiktok: httpData.tiktok } : {}),
-                  ...(httpData.youtube !== undefined ? { youtube: httpData.youtube } : {})
+                  ...(httpData.twitter === undefined ? {} : { twitter: httpData.twitter }),
+                  ...(httpData.facebook === undefined ? {} : { facebook: httpData.facebook }),
+                  ...(httpData.instagram === undefined ? {} : { instagram: httpData.instagram }),
+                  ...(httpData.linkedin === undefined ? {} : { linkedIn: httpData.linkedin }),
+                  ...(httpData.tiktok === undefined ? {} : { tiktok: httpData.tiktok }),
+                  ...(httpData.youtube === undefined ? {} : { youtube: httpData.youtube })
               }
           }
         : {}),
 
     // Junction sync (write-only): pass through when provided
-    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
-    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {})
+    ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
+    ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds })
 });
 
 // ============================================================================

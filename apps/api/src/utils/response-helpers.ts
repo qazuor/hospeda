@@ -298,7 +298,7 @@ export const createErrorResponse = (
             code: error.code,
             message: error.message,
             details: error.details,
-            ...(error.reason !== undefined ? { reason: error.reason } : {})
+            ...(error.reason === undefined ? {} : { reason: error.reason })
         },
         metadata: {
             timestamp: new Date().toISOString(),

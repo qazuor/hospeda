@@ -5,11 +5,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveReasonI18nKey, resolveReasonKey } from '../../../src/lib/checkout/resolve-reason';
 import type {
     CheckoutReasonI18nKey,
     CheckoutReasonKey
 } from '../../../src/lib/checkout/resolve-reason';
+import { resolveReasonI18nKey, resolveReasonKey } from '../../../src/lib/checkout/resolve-reason';
 
 // ---------------------------------------------------------------------------
 // resolveReasonKey

@@ -6,10 +6,10 @@
  * never drift apart on the available filters.
  */
 
+import type { AmenityPublic, DestinationPublic, FeaturePublic } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import type { TranslationFn } from '@/lib/i18n';
-import type { AmenityPublic, DestinationPublic, FeaturePublic } from '@repo/schemas';
 
 interface BuildAccommodationsFilterGroupsParams {
     /** Bound translation function for the active locale. */

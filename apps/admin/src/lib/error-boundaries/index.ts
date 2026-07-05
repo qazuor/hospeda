@@ -30,16 +30,14 @@ export {
     EntityErrorBoundary,
     withEntityErrorBoundary
 } from './EntityErrorBoundary';
-
-export {
-    QueryErrorBoundary,
-    withQueryErrorBoundary
-} from './QueryErrorBoundary';
-
 export {
     GlobalErrorBoundary,
     useErrorBoundary
 } from './GlobalErrorBoundary';
+export {
+    QueryErrorBoundary,
+    withQueryErrorBoundary
+} from './QueryErrorBoundary';
 
 /**
  * Utility components for error boundaries

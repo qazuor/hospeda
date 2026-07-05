@@ -27,13 +27,13 @@
  * @see SPEC-254 T-030
  */
 
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
     CreateSocialDraftBaseSchema,
     CreateSocialDraftResponseSchema,
+    PermissionEnum,
     SocialCatalogResponseDataSchema
 } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
 import { env } from '../../../utils/env';
 import { createAdminRoute } from '../../../utils/route-factory';
 

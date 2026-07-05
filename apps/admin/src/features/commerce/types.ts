@@ -13,11 +13,11 @@
  * shell's field definitions.
  */
 
+import type { z } from 'zod';
 import type { FilterControlConfig } from '@/components/entity-list/filters/filter-types';
 import type { ColumnTFunction, EntityConfig } from '@/components/entity-list/types';
 import type { EntityType } from '@/components/table/DataTable';
 import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/consolidated-config.types';
-import type { z } from 'zod';
 
 // ---------------------------------------------------------------------------
 // List / entity-config layer

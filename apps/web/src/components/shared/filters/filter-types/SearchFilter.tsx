@@ -9,9 +9,9 @@
  * search to ''), the local state syncs automatically.
  */
 
+import { useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useRef, useState } from 'react';
 import styles from './FilterGroupContent.module.css';
 
 interface SearchFilterProps {

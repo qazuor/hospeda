@@ -1,6 +1,6 @@
-import { PremiumBlock } from '@/features/billing/PremiumBlock';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { PremiumBlock } from '@/features/billing/PremiumBlock';
 
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({

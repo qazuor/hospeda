@@ -12,11 +12,11 @@
  * - Action buttons call the correct mutation hooks
  */
 
-import { CommentDetailPanel } from '@/components/comments/CommentDetailPanel';
 import { EntityTypeEnum, ModerationStatusEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { CommentDetailPanel } from '@/components/comments/CommentDetailPanel';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -49,7 +49,11 @@ vi.mock('@tanstack/react-router', () => ({
         children,
         to,
         ...props
-    }: { children: React.ReactNode; to: string; [key: string]: unknown }) => (
+    }: {
+        children: React.ReactNode;
+        to: string;
+        [key: string]: unknown;
+    }) => (
         <a
             href={to}
             {...props}

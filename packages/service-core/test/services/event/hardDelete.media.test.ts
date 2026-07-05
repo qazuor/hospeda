@@ -17,7 +17,7 @@ import { EventModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';

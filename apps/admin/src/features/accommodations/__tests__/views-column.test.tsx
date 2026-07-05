@@ -11,13 +11,13 @@
  * Uses the same renderHook + QueryClientProvider pattern as billing-addons tests.
  */
 
-import { Views30dCell } from '@/components/entity-list/Views30dCell';
-import { createAccommodationsColumns } from '@/features/accommodations/config/accommodations.columns';
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Views30dCell } from '@/components/entity-list/Views30dCell';
+import { createAccommodationsColumns } from '@/features/accommodations/config/accommodations.columns';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Mocks

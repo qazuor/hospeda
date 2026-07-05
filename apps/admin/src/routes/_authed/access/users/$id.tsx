@@ -5,6 +5,8 @@
  * Actividad) wired into the sticky entity header.
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
@@ -15,8 +17,6 @@ import { useUserPage } from '@/features/users/hooks/useUserPage';
 import { useDeleteUserMutation } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/access/users/$id')({
     component: UserViewPage,

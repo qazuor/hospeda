@@ -29,13 +29,13 @@
 
 import type { AiFeatureConfig, AiSettingsValue } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AiEngine, AiEngineEvent } from '../src/engine/index.js';
 import {
     AiCeilingHitError,
     AiFeatureDisabledError,
     AiNoEnabledProviderError,
     createAiEngine
 } from '../src/engine/index.js';
-import type { AiEngine, AiEngineEvent } from '../src/engine/index.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 import { DEFAULT_COST_CEILINGS } from '../src/usage/model-rates.js';

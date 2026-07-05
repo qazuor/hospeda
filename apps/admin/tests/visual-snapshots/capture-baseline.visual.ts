@@ -18,7 +18,7 @@
  * Coverage: key authed pages × 4 viewports × 2 themes.
  */
 
-import { type Page, expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 type Theme = 'light' | 'dark';
 

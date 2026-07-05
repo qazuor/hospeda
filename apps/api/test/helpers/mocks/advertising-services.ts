@@ -28,11 +28,11 @@ export class AdSlotService {
                 pricingModel: String(b.pricingModel || 'CPM'),
                 basePrice: Number(b.basePrice || 0),
                 currency: String(b.currency || 'USD'),
-                isActive: b.isActive !== undefined ? b.isActive : true,
-                isTestSlot: b.isTestSlot !== undefined ? b.isTestSlot : false,
+                isActive: b.isActive === undefined ? true : b.isActive,
+                isTestSlot: b.isTestSlot === undefined ? false : b.isTestSlot,
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isDeleted: b.isDeleted !== undefined ? b.isDeleted : false,
+                isDeleted: b.isDeleted === undefined ? false : b.isDeleted,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             }
@@ -283,7 +283,7 @@ export class CampaignService {
                 status: String(b.status || 'DRAFT'),
                 metadata: b.metadata || null,
                 lifecycleState: b.lifecycleState || 'ACTIVE',
-                isActive: b.isActive !== undefined ? b.isActive : true,
+                isActive: b.isActive === undefined ? true : b.isActive,
                 isDeleted: false,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()

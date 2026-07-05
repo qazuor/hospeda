@@ -19,7 +19,7 @@
 import { UserModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createSuperAdminActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';

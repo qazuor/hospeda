@@ -1,7 +1,7 @@
-import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterAndSortSections, getAccommodationAnchorIds } from '../section-sorter';
 
 // ---------------------------------------------------------------------------

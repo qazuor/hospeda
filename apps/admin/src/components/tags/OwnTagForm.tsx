@@ -1,3 +1,6 @@
+import type { TagCreateInput, TagUpdateInput } from '@repo/schemas';
+import { LifecycleStatusEnum, TagColorEnum } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +12,6 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { LifecycleStatusEnum, TagColorEnum } from '@repo/schemas';
-import type { TagCreateInput, TagUpdateInput } from '@repo/schemas';
-import { useForm } from '@tanstack/react-form';
 import { PostTagColorBadge } from './PostTagColorBadge';
 
 /** Color options for the color select. */

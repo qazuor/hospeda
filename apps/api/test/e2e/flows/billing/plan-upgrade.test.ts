@@ -80,11 +80,11 @@ import {
 } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
-    type TestBillingPlansSeed,
     createTestPlan,
     createTestPrice,
     createTestUser,
-    seedBillingTestPlans
+    seedBillingTestPlans,
+    type TestBillingPlansSeed
 } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 
@@ -506,9 +506,7 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
     /**
      * Helper: build + sign an MP IPN payment.updated payload.
      */
-    function buildSignedWebhookRequest(opts: {
-        readonly providerPaymentId: string;
-    }): {
+    function buildSignedWebhookRequest(opts: { readonly providerPaymentId: string }): {
         readonly body: string;
         readonly headers: Record<string, string>;
     } {

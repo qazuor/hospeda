@@ -13,7 +13,7 @@
  */
 
 import type { QZPayPlan } from '@qazuor/qzpay-core';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpBillingAdapter } from '../../src/lib/billing-http-adapter';
 import { server } from '../mocks/server';

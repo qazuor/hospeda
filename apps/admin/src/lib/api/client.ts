@@ -64,7 +64,7 @@ export const fetchApi = async <T>({
     });
     const status = res.status;
     const text = await res.text();
-    let parsed: unknown = undefined;
+    let parsed: unknown;
     try {
         parsed = text ? JSON.parse(text) : undefined;
     } catch {

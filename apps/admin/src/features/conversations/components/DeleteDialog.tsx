@@ -6,6 +6,8 @@
  * Navigates to /conversations after successful deletion.
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { useState } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,8 +22,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
-import { PermissionEnum } from '@repo/schemas';
-import { useState } from 'react';
 import { useDeleteConversationMutation } from '../hooks/useDeleteConversationMutation';
 
 /** Props for DeleteDialog */

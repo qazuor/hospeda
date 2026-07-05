@@ -85,11 +85,7 @@ export function computeHierarchyPathIds({
  * @param params - The parent level (or null for root)
  * @returns The computed level
  */
-export function computeHierarchyLevel({
-    parentLevel
-}: {
-    parentLevel: number | null;
-}): number {
+export function computeHierarchyLevel({ parentLevel }: { parentLevel: number | null }): number {
     if (parentLevel === null || parentLevel === undefined) {
         return 0;
     }

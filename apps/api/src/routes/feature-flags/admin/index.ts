@@ -15,4 +15,5 @@ app.route('/', adminUpdateFeatureFlagRoute);
 app.route('/', adminToggleFeatureFlagRoute);
 app.route('/', adminDeleteFeatureFlagRoute);
 app.route('/', adminGetFeatureFlagAuditLogRoute);
+
 export { app as adminFeatureFlagRoutes };

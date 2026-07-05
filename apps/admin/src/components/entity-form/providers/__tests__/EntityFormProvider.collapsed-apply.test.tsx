@@ -22,7 +22,6 @@ vi.mock('@/features/billing/use-my-entitlements', () => ({
     useMyEntitlements: () => ({ has: () => true, isLoading: false })
 }));
 
-import { EntityFormSection } from '@/components/entity-form/EntityFormSection';
 import {
     SectionAccordion,
     SectionAccordionItem
@@ -31,6 +30,7 @@ import {
     EntityFormContext,
     type EntityFormContextValue
 } from '@/components/entity-form/context/EntityFormContext';
+import { EntityFormSection } from '@/components/entity-form/EntityFormSection';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { EntityFormProvider } from '@/components/entity-form/providers/EntityFormProvider';
 import type { EntityConfig } from '@/components/entity-form/types/entity-config.types';

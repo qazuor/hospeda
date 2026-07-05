@@ -16,7 +16,7 @@
 
 import type { Locale } from '@repo/i18n';
 import * as SecureStore from 'expo-secure-store';
-import { type ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { appDefaultLocale, supportedLocales } from './i18n';
 
 // ---------------------------------------------------------------------------

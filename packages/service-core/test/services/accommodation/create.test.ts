@@ -1,6 +1,6 @@
 import type { AccommodationModel } from '@repo/db';
 import { DestinationTypeEnum, ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createMockAccommodationCreateInput } from '../../factories/accommodationFactory';

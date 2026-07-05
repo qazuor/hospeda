@@ -7,7 +7,7 @@
  * that can view the listing can read its FAQs (open public).
  */
 import { ExperienceFaqPublicListOutputSchema } from '@repo/schemas';
-import { ExperienceService, ServiceError, listExperienceFaqs } from '@repo/service-core';
+import { ExperienceService, listExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

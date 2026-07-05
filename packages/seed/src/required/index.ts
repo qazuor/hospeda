@@ -183,12 +183,12 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         await seedSocialAutomation();
 
         logger.info(`${separator}`);
-        // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output
+        // biome-ignore lint/suspicious/noConsole: seed script uses console.log for visual spacing in terminal output
         console.log('\n\n');
         logger.success({ msg: `${STATUS_ICONS.Success}  REQUIRED DATA LOAD COMPLETED` });
     } catch (error) {
         logger.info(`${separator}`);
-        // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output
+        // biome-ignore lint/suspicious/noConsole: seed script uses console.log for visual spacing in terminal output
         console.log('\n\n');
         logger.error(`${STATUS_ICONS.Error}  REQUIRED DATA LOAD INTERRUPTED`);
         logger.error(`   Error: ${(error as Error).message}`);

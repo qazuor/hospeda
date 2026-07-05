@@ -20,8 +20,8 @@
  * @see SPEC-174 §7.3, §7.6, D9, D13
  */
 
-import type { Tour, ToursRecord } from '@/config/ia/tour.schema';
 import { describe, expect, it } from 'vitest';
+import type { Tour, ToursRecord } from '@/config/ia/tour.schema';
 import type { HasSeenFn } from '../decide-auto-trigger';
 import { decideAutoTrigger } from '../decide-auto-trigger';
 

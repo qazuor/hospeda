@@ -3,9 +3,17 @@
  *
  * View and manage sponsor's own sponsorships
  */
+
+import { formatNumber } from '@repo/i18n';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
-import { DataTable } from '@/components/table/DataTable';
+import {
+    BadgeColor,
+    ColumnType,
+    DataTable,
+    type DataTableColumn
+} from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,9 +29,6 @@ import { useSponsorSponsorshipsQuery } from '@/features/sponsor-dashboard/hooks'
 import type { SponsorSponsorship } from '@/features/sponsor-dashboard/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatShortDate } from '@/lib/format-helpers';
-import { formatNumber } from '@repo/i18n';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/sponsor/sponsorships')({
     component: SponsorSponsorshipsPage

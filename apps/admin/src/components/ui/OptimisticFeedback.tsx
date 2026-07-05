@@ -1,8 +1,8 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import { CheckInIcon, CloseIcon, LoaderIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 import React from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 
 type OptimisticState = 'idle' | 'pending' | 'success' | 'error';
 

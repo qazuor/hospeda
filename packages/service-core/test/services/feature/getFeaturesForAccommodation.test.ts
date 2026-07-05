@@ -1,6 +1,6 @@
 import type { FeatureModel, RAccommodationFeatureModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import { getMockAccommodationId } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';

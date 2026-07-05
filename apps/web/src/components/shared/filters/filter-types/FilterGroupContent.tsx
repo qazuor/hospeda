@@ -11,14 +11,6 @@ import { resolveWebIcon } from '@/lib/icon-map';
 import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
-import { GeoRadiusFilter } from './GeoRadiusFilter';
-import { IconChipsFilter } from './IconChipsFilter';
-import { PriceCompositeFilter } from './PriceCompositeFilter';
-import { SearchFilter } from './SearchFilter';
-import { SelectSearchFilter } from './SelectSearchFilter';
-import { StarsFilter } from './StarsFilter';
-import { StepperFilter } from './StepperFilter';
-import { ToggleFilter } from './ToggleFilter';
 import type {
     FilterDispatch,
     FilterGroup,
@@ -27,6 +19,8 @@ import type {
     IconChipsFilterConfig,
     PriceCompositeFilterConfig
 } from './filter.types';
+import { GeoRadiusFilter } from './GeoRadiusFilter';
+import { IconChipsFilter } from './IconChipsFilter';
 import type {
     DateRangeFilterConfig,
     DualRangeFilterConfig,
@@ -35,6 +29,12 @@ import type {
     StepperFilterConfig,
     ToggleFilterConfig
 } from './index';
+import { PriceCompositeFilter } from './PriceCompositeFilter';
+import { SearchFilter } from './SearchFilter';
+import { SelectSearchFilter } from './SelectSearchFilter';
+import { StarsFilter } from './StarsFilter';
+import { StepperFilter } from './StepperFilter';
+import { ToggleFilter } from './ToggleFilter';
 
 interface FilterGroupContentProps {
     readonly group: FilterGroup;

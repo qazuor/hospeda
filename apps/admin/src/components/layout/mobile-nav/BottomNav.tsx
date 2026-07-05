@@ -21,18 +21,18 @@
  * @see SPEC-154 T-026
  */
 
+import type { PermissionEnum } from '@repo/schemas';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import type { CreateAction, Section } from '@/config/ia/schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useCurrentSection } from '@/hooks/use-current-section';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import type { PermissionEnum } from '@repo/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 /**
  * Above this many visible sections the bottom nav switches to icon-only
@@ -141,7 +141,7 @@ function BottomNavFab({ action }: BottomNavFabProps) {
                 navigate({ to: action.route });
             }}
             className={cn(
-                '-translate-x-1/2 absolute bottom-full left-1/2 mb-3',
+                'absolute bottom-full left-1/2 mb-3 -translate-x-1/2',
                 'flex h-14 w-14 items-center justify-center rounded-full',
                 'bg-primary text-primary-foreground shadow-lg',
                 'transition-transform hover:bg-primary/90 active:scale-95',

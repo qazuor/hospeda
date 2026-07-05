@@ -5,10 +5,10 @@
  * and onChange callback invocation.
  */
 
-import { StepperFilter } from '@/components/shared/filters/filter-types/StepperFilter';
-import type { StepperFilterConfig } from '@/components/shared/filters/filter-types/StepperFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { StepperFilterConfig } from '@/components/shared/filters/filter-types/StepperFilter';
+import { StepperFilter } from '@/components/shared/filters/filter-types/StepperFilter';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({

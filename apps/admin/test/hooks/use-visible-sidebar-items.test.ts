@@ -19,15 +19,15 @@
  * @see SPEC-154 T-022
  */
 
-import type { SidebarItem } from '@/config/ia/schema';
-import {
-    type VisibleGroupItem,
-    type VisibleLinkItem,
-    useVisibleSidebarItems
-} from '@/hooks/use-visible-sidebar-items';
 import { PermissionEnum } from '@repo/schemas';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { SidebarItem } from '@/config/ia/schema';
+import {
+    useVisibleSidebarItems,
+    type VisibleGroupItem,
+    type VisibleLinkItem
+} from '@/hooks/use-visible-sidebar-items';
 
 // ---------------------------------------------------------------------------
 // Mock useUserPermissions so we control the user's permissions per test.

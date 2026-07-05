@@ -3,8 +3,8 @@ import type {
     FieldConfig,
     GalleryFieldConfig,
     RichTextFieldConfig,
-    TextFieldConfig,
-    TextareaFieldConfig
+    TextareaFieldConfig,
+    TextFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 
 /**

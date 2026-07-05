@@ -1,13 +1,12 @@
-import { Button, Input, Label } from '@/components/ui-wrapped';
+import { CloseIcon, LoaderIcon, UploadIcon } from '@repo/icons';
+import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button, Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { getInitialsFromName } from '@/lib/avatar-utils';
 import { DEFAULT_AVATAR_MAX_SIZE_MB } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-
-import { CloseIcon, LoaderIcon, UploadIcon } from '@repo/icons';
-import * as React from 'react';
 
 /**
  * Default accepted MIME types for avatar uploads.

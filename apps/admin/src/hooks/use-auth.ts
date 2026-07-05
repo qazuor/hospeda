@@ -3,13 +3,13 @@
  * This provides a clean API for components to use authentication
  */
 
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import {
     useAuthContext,
     useHasAnyRole,
     useHasPermission,
     useHasRole
 } from '@/hooks/use-auth-context';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
 
 export { useAuthContext, useHasAnyRole, useHasPermission, useHasRole };
 

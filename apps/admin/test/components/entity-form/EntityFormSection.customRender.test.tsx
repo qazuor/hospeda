@@ -18,11 +18,11 @@
  * hooks/providers so the component renders without a full app context.
  */
 
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { EntityFormSection } from '@/components/entity-form/EntityFormSection';
 import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks for heavy hooks that EntityFormSection pulls in

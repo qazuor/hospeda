@@ -17,13 +17,13 @@
  * - disableReputation: permission check, transaction atomicity
  */
 
+import type { AccommodationExternalListing, AccommodationExternalReputation } from '@repo/schemas';
 import {
     ExternalPlatformEnum,
     LifecycleStatusEnum,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AccommodationExternalListing, AccommodationExternalReputation } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationExternalReputationService } from '../../src/services/accommodation-external-reputation/accommodation-external-reputation.service.js';
 import type { Actor, ServiceConfig } from '../../src/types/index.js';

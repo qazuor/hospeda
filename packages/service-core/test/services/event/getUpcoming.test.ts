@@ -1,6 +1,6 @@
 import { EventModel } from '@repo/db';
 import { DestinationTypeEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockEvent } from '../../factories/eventFactory';

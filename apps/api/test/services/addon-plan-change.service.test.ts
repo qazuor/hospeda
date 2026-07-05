@@ -35,10 +35,10 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { NotificationType } from '@repo/notifications';
 import { ADDON_RECALC_SOURCE_ID, BILLING_EVENT_TYPES } from '@repo/service-core';
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import {
-    type PlanChangeRecalculationResult,
-    handlePlanChangeAddonRecalculation
+    handlePlanChangeAddonRecalculation,
+    type PlanChangeRecalculationResult
 } from '../../src/services/addon-plan-change.service';
 import { createMockBilling, createMockCustomer } from '../helpers/mock-factories';
 

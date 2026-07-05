@@ -99,7 +99,9 @@
     border: 1px solid var(--border);
     border-radius: 1rem;
     background-color: var(--core-card);
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 4px 12px oklch(0 0 0 / 0.03);
+    box-shadow:
+        0 1px 3px oklch(0 0 0 / 0.04),
+        0 4px 12px oklch(0 0 0 / 0.03);
 }
 
 /* ============================================================
@@ -210,7 +212,9 @@
     line-height: 1;
     color: var(--core-muted-foreground);
     cursor: pointer;
-    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+    transition:
+        color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
         background-color var(--duration-fast) ease;
 }
 
@@ -275,7 +279,9 @@
     line-height: 1;
     color: var(--brand-accent);
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease;
 }
 
 .groupReset:hover {
@@ -320,8 +326,12 @@
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 4px 18px oklch(0 0 0 / 0.18), 0 1px 3px oklch(0 0 0 / 0.08);
-        transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease,
+        box-shadow:
+            0 4px 18px oklch(0 0 0 / 0.18),
+            0 1px 3px oklch(0 0 0 / 0.08);
+        transition:
+            opacity var(--duration-fast) ease,
+            transform var(--duration-fast) ease,
             background-color var(--duration-fast) ease;
     }
 

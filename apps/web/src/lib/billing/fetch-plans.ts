@@ -18,8 +18,8 @@
  * in this module (see `PublicPlanData`).
  */
 
-import { getApiUrl } from '@/lib/env';
 import type { PlanCategory } from '@repo/billing';
+import { getApiUrl } from '@/lib/env';
 
 /** Cache TTL in seconds set on the SSR response via `s-maxage`. */
 export const PRICING_CACHE_MAX_AGE_SECONDS = 300;

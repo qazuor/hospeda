@@ -15,9 +15,9 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type AddonDefinition, EntitlementKey, LimitKey } from '@repo/billing';
 import type { CancelAddonInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cancelUserAddon } from '../../src/services/addon.user-addons';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import type { RecalculationResult } from '../../src/services/addon-limit-recalculation.service';
-import { cancelUserAddon } from '../../src/services/addon.user-addons';
 import { createMockBilling } from '../helpers/mock-factories';
 
 // ─── Hoisted mock setup ───────────────────────────────────────────────────────

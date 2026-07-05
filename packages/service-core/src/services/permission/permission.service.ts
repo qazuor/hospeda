@@ -1,5 +1,5 @@
-import { UserModel } from '@repo/db';
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
+import { UserModel } from '@repo/db';
 import type { RolePermissionAssignment, UserIdType, UserPermissionAssignment } from '@repo/schemas';
 import {
     type PermissionAssignmentOutput,

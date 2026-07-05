@@ -4,11 +4,11 @@
  * Displays attractions associated with a specific destination.
  */
 
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { DestinationSubTabLayout } from '@/features/destinations/components/DestinationSubTabLayout';
 import { useDestinationQuery } from '@/features/destinations/hooks/useDestinationQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/destinations/$id_/attractions')({
     component: DestinationAttractionsPage

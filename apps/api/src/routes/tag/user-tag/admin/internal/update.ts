@@ -5,8 +5,7 @@ import { TagModel } from '@repo/db';
  *
  * @see SPEC-086 D-002, D-017, D-018
  */
-import { PermissionEnum, TagSchema, TagUpdateInputSchema } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, TagSchema, TagUpdateInputSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';

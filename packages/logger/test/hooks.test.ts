@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import logger, {
-    type LogEntry,
-    LogLevel,
     clearHooks,
     configureLogger,
     dispatchHooks,
     hasHooks,
+    type LogEntry,
+    LogLevel,
     registerHook,
     unregisterHook
 } from '../src/index.js';

@@ -17,7 +17,7 @@
  * @module services/subscription-pause
  */
 
-import { type DrizzleClient, accommodations, billingCustomers, eq, getDb, users } from '@repo/db';
+import { accommodations, billingCustomers, type DrizzleClient, eq, getDb, users } from '@repo/db';
 import { type EntityChangeData, getRevalidationService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
 

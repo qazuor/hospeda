@@ -4,13 +4,13 @@ import {
     FacebookUrlRegex,
     InstagramUrlRegex,
     InternationalPhoneRegex,
-    SlugRegex,
-    TimeRegExp,
-    TwitterUrlRegex,
     isValidLatitude,
     isValidLongitude,
     omittedSystemFieldsForActions,
-    stripShapeDefaults
+    SlugRegex,
+    stripShapeDefaults,
+    TimeRegExp,
+    TwitterUrlRegex
 } from '../../src/utils/utils.js';
 
 describe('Regular Expressions', () => {

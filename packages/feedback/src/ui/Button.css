@@ -12,8 +12,10 @@
     border-radius: var(--fb-radius-sm);
     font-family: var(--fb-font-family);
     font-weight: var(--fb-font-weight-medium);
-    transition: background-color var(--fb-duration-fast) var(--fb-easing), color
-        var(--fb-duration-fast) var(--fb-easing), opacity var(--fb-duration-fast) var(--fb-easing);
+    transition:
+        background-color var(--fb-duration-fast) var(--fb-easing),
+        color var(--fb-duration-fast) var(--fb-easing),
+        opacity var(--fb-duration-fast) var(--fb-easing);
     cursor: pointer;
     border: none;
     outline: none;

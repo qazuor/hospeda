@@ -41,9 +41,9 @@ import type {
     UserBookmarkCollectionModel as UBCModelType,
     UserBookmarkModel as UBModelType
 } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { UserBookmark, UserBookmarkCollection } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Chainable Drizzle stub

@@ -13,6 +13,10 @@
  *   Mobile main-menu navigation is handled by `BottomNav` on mobile devices.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
+import { Link, useRouter } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
 import { CommandPalette } from '@/components/search/CommandPalette';
 import { WhatsNewBadge } from '@/components/whats-new/WhatsNewBadge';
 import { useSidebarContext } from '@/contexts/sidebar-context';
@@ -20,10 +24,6 @@ import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useTranslations } from '@/hooks/use-translations';
 import { HeaderUser as AuthHeader } from '@/integrations/clerk/header-user';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
-import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
-import { Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
 import { MainMenu } from '../main-menu/MainMenu';
 import { QuickCreate } from '../quick-create/QuickCreate';
 
@@ -63,6 +63,33 @@ export function Header() {
         };
         window.addEventListener('pointerdown', onPointerDown, true);
         return () => window.removeEventListener('pointerdown', onPointerDown, true);
+    }, [showNotifications]);
+
+    // Close notifications on Escape.
+    useEffect(() => {
+        if (!showNotifications) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowNotifications(false);
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [showNotifications]);
+
+    // Close notifications when keyboard focus moves outside the widget
+    // (mirrors the previous onBlur-on-container behavior without an event
+    // handler on a static element).
+    useEffect(() => {
+        if (!showNotifications) return;
+        const onFocusOut = (e: FocusEvent) => {
+            const next = e.relatedTarget as Node | null;
+            if (notifRef.current && next && notifRef.current.contains(next)) return;
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+        const node = notifRef.current;
+        node?.addEventListener('focusout', onFocusOut);
+        return () => node?.removeEventListener('focusout', onFocusOut);
     }, [showNotifications]);
 
     return (
@@ -123,15 +150,6 @@ export function Header() {
                         <div
                             ref={notifRef}
                             className="relative"
-                            onBlur={(e) => {
-                                const next = e.relatedTarget as Node | null;
-                                if (notifRef.current && next && notifRef.current.contains(next))
-                                    return;
-                                setShowNotifications(false);
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') setShowNotifications(false);
-                            }}
                         >
                             <button
                                 type="button"
@@ -201,7 +219,7 @@ export function Header() {
                 edge (same river fill as the band), mirroring apps/web's footer wave. */}
             <div
                 aria-hidden="true"
-                className="-mt-px pointer-events-none text-[var(--palette-river-100)]"
+                className="pointer-events-none -mt-px text-[var(--palette-river-100)]"
             >
                 <svg
                     viewBox="0 0 1440 40"

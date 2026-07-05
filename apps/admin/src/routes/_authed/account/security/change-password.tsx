@@ -10,15 +10,12 @@
  * - Specific API error messages
  */
 
-import { MainPageLayout } from '@/components/layout/MainPageLayout';
-import { env } from '@/env';
-import { useFlashyToast } from '@/hooks/use-flashy-toast';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { AlertTriangleIcon, CheckCircleIcon, ShieldIcon, XCircleIcon } from '@repo/icons';
 import { createFileRoute, useNavigate, useRouteContext } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
-
+import { MainPageLayout } from '@/components/layout/MainPageLayout';
+import { env } from '@/env';
 import {
     PasswordRequirements,
     PasswordStrengthIndicator
@@ -27,6 +24,8 @@ import {
     checkPasswordRules,
     mapApiErrorToTranslationKey
 } from '@/features/user-profile/components/password-validation';
+import { useFlashyToast } from '@/hooks/use-flashy-toast';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/account/security/change-password')({
     component: ChangePasswordPage

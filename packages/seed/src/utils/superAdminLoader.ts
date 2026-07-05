@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { UserModel, accounts, getDb } from '@repo/db';
+import { accounts, getDb, UserModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { hash } from 'bcryptjs';

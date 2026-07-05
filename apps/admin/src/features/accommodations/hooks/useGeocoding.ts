@@ -5,8 +5,9 @@
  * never the upstream providers directly — the server enforces auth, rate
  * limiting, caching and User-Agent.
  */
-import { fetchApi } from '@/lib/api/client';
+
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 export interface GeocodingSuggestion {
     label: string;

@@ -518,14 +518,14 @@ export type { ApiKeyActorIdentity, ApiKeyMiddlewareConfig };
 // Streaming Route Factory (SSE) — re-exported here for discoverability
 // ============================================================================
 
-export {
-    createProtectedStreamingRoute,
-    createStreamingRoute
-} from './streaming-route-factory';
 export type {
     ProtectedStreamingRouteOptions,
     StreamHandlerContext,
     StreamHandlerResult,
-    StreamTextChunk,
-    StreamingRouteOptions
+    StreamingRouteOptions,
+    StreamTextChunk
+} from './streaming-route-factory';
+export {
+    createProtectedStreamingRoute,
+    createStreamingRoute
 } from './streaming-route-factory';

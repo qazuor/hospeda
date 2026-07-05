@@ -11,9 +11,9 @@
  * - SPEC-228 T-022: '...' text never appears on the button
  */
 
-import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import type { ExperienceReviewPublicItem } from '../../../src/lib/api/endpoints';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────

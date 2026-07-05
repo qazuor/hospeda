@@ -102,5 +102,5 @@ const addonLogger = logger.registerCategory('ADDON-LIFECYCLE', 'ADDON_LIFECYCLE'
     stringifyObj: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_STRINGIFY', false)
 });
 
-export { typedApiLogger as apiLogger, addonLogger };
 export type { ApiLogger };
+export { addonLogger, typedApiLogger as apiLogger };

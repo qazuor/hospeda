@@ -11,12 +11,12 @@
  * - Review date formatted as short month + year (e.g. "mar 2024")
  */
 
+import { AccommodationIcon, CompassIcon, QuotesIcon, StarIcon } from '@repo/icons';
+import { useState } from 'react';
 import type { ReviewCardData } from '@/data/types';
 import { getInitialsFromName } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { AccommodationIcon, CompassIcon, QuotesIcon, StarIcon } from '@repo/icons';
-import { useState } from 'react';
 import styles from './ReviewCard.module.css';
 
 /**
@@ -28,7 +28,11 @@ function ReviewerAvatar({
     url,
     alt,
     initials
-}: { readonly url: string | null; readonly alt: string; readonly initials: string }) {
+}: {
+    readonly url: string | null;
+    readonly alt: string;
+    readonly initials: string;
+}) {
     const [broken, setBroken] = useState(false);
     const showImg = url && !broken;
     return (
@@ -213,6 +217,7 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
             {/* Individual star rating — stars only, no numeric value */}
             <div
                 className={styles.reviewRating}
+                role="img"
                 aria-label={`Calificación: ${data.rating} de 5`}
             >
                 <div

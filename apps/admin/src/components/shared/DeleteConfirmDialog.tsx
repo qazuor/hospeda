@@ -12,6 +12,7 @@
  * - Enter on the Delete button confirms (native button behavior).
  */
 
+import * as React from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,7 +24,6 @@ import {
     AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 /**
  * Props for {@link DeleteConfirmDialog}. RO-RO pattern.

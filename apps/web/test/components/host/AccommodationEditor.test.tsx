@@ -10,11 +10,11 @@
  * - Submit handler: builds PATCH payload from changed fields only
  */
 
-import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
-import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
+import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
 
 // ---------------------------------------------------------------------------
 // Mocks

@@ -6,7 +6,7 @@
  * The FAQ must belong to the specified gastronomy (enforced inside removeGastronomyFaq).
  */
 import { GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError, removeGastronomyFaq } from '@repo/service-core';
+import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

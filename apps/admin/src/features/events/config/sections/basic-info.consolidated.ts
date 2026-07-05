@@ -1,10 +1,10 @@
+import { EventCategoryEnum, PermissionEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { EventCategoryEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated configuration for the Basic Info section of event

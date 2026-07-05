@@ -16,8 +16,8 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CompareButton } from '../../../../src/components/shared/compare/CompareButton.client';
 import type { CompareButtonProps } from '../../../../src/components/shared/compare/CompareButton.client';
+import { CompareButton } from '../../../../src/components/shared/compare/CompareButton.client';
 
 // ---------------------------------------------------------------------------
 // Module mocks

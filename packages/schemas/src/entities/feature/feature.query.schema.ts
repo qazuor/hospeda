@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import {
+    createArrayQueryParam,
     HttpPaginationSchema,
     HttpQueryFields,
-    HttpSortingSchema,
-    createArrayQueryParam
+    HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 import { FeatureSchema } from './feature.schema.js';
 

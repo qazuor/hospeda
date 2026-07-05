@@ -1,6 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { isApiError } from '@/lib/errors';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import {
     type AccommodationListFilters,
@@ -342,35 +342,42 @@ export const useDeleteAccommodationMutation = () => {
 };
 
 /**
- * Hook for async field validation
+ * Hook for async field uniqueness validation.
+ *
+ * Unlike a hook-factory returning a callback that itself calls `useQuery`
+ * (which violates the Rules of Hooks — hooks must be called unconditionally
+ * at a stable position, never from inside a function invoked on demand),
+ * this hook takes the field/value/excludeId directly and always calls
+ * `useQuery` at its own top level.
  */
-export const useAccommodationValidation = () => {
-    return {
-        /**
-         * Check if a field value is unique
-         */
-        checkUnique: (field: string, value: string, excludeId?: string) => {
-            return useQuery({
-                queryKey: accommodationQueryKeys.uniqueCheck(field, value, excludeId),
-                queryFn: async (): Promise<{ isUnique: boolean }> => {
-                    const searchParams = new URLSearchParams({
-                        field,
-                        value
-                    });
-
-                    if (excludeId) {
-                        searchParams.append('excludeId', excludeId);
-                    }
-
-                    const response = await fetchApi({
-                        path: `/api/v1/admin/accommodations/validate/unique?${searchParams.toString()}`
-                    });
-                    return response.data as { isUnique: boolean };
-                },
-                enabled: Boolean(field && value),
-                staleTime: 30 * 1000, // 30 seconds
-                gcTime: 60 * 1000 // 1 minute
+export const useAccommodationUniqueCheck = ({
+    field,
+    value,
+    excludeId
+}: {
+    readonly field: string;
+    readonly value: string;
+    readonly excludeId?: string;
+}) => {
+    return useQuery({
+        queryKey: accommodationQueryKeys.uniqueCheck(field, value, excludeId),
+        queryFn: async (): Promise<{ isUnique: boolean }> => {
+            const searchParams = new URLSearchParams({
+                field,
+                value
             });
-        }
-    };
+
+            if (excludeId) {
+                searchParams.append('excludeId', excludeId);
+            }
+
+            const response = await fetchApi({
+                path: `/api/v1/admin/accommodations/validate/unique?${searchParams.toString()}`
+            });
+            return response.data as { isUnique: boolean };
+        },
+        enabled: Boolean(field && value),
+        staleTime: 30 * 1000, // 30 seconds
+        gcTime: 60 * 1000 // 1 minute
+    });
 };

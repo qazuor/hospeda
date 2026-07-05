@@ -20,14 +20,14 @@
  * @see SPEC-175 §7.4, §12.4
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import type { WhatsNewItem } from '@repo/schemas';
+import { useCallback, useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import { trackEvent } from '@/lib/analytics/posthog-client';
-import type { TranslationKey } from '@repo/i18n';
-import type { WhatsNewItem } from '@repo/schemas';
-import { useCallback, useEffect, useState } from 'react';
 import { WhatsNewModal } from './WhatsNewModal';
 
 // ---------------------------------------------------------------------------

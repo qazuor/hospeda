@@ -9,10 +9,10 @@
  */
 
 export { AccommodationExternalListingService } from './accommodation-external-listing.service.js';
-export { AccommodationExternalReputationService } from './accommodation-external-reputation.service.js';
 export type {
-    RefreshResult,
+    AccommodationExternalReputationServiceDeps,
     RefreshFailureEntry,
-    AccommodationExternalReputationServiceDeps
+    RefreshResult
 } from './accommodation-external-reputation.service.js';
+export { AccommodationExternalReputationService } from './accommodation-external-reputation.service.js';
 export * from './adapters/index.js';

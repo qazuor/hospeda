@@ -35,12 +35,12 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+import type { AiFeature } from '@repo/ai-core';
 import {
     AiEngineExhaustedError,
     AiFeatureDisabledError,
     AiModerationBlockedError
 } from '@repo/ai-core';
-import type { AiFeature } from '@repo/ai-core';
 import type { AiProviderId } from '@repo/schemas';
 import { createTestApp } from '../../src/utils/create-app';
 import {

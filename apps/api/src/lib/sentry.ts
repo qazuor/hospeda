@@ -7,8 +7,8 @@
  * @module lib/sentry
  */
 
-import * as Sentry from '@sentry/node';
 import type { ErrorEvent, EventHint } from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import type { Context } from 'hono';
 import { env } from '../utils/env';
@@ -305,11 +305,11 @@ export function captureBillingError(
             planId: context.planId,
             billingCycle: context.billingCycle,
             // Provider error tags — present only for SPEC-149 provider sync errors
-            ...(context.operation !== undefined ? { billing_operation: context.operation } : {}),
-            ...(context.providerStatus !== undefined
-                ? { provider_status: String(context.providerStatus) }
-                : {}),
-            ...(context.providerCode !== undefined ? { provider_code: context.providerCode } : {})
+            ...(context.operation === undefined ? {} : { billing_operation: context.operation }),
+            ...(context.providerStatus === undefined
+                ? {}
+                : { provider_status: String(context.providerStatus) }),
+            ...(context.providerCode === undefined ? {} : { provider_code: context.providerCode })
         },
         contexts: {
             billing: {
@@ -327,15 +327,15 @@ export function captureBillingError(
                 promoCode: context.promoCode,
                 addonCount: context.addonIds?.length,
                 // Provider error context — present only for SPEC-149 provider sync errors
-                ...(context.operation !== undefined
-                    ? { providerOperation: context.operation }
-                    : {}),
-                ...(context.providerStatus !== undefined
-                    ? { providerStatus: context.providerStatus }
-                    : {}),
-                ...(context.providerCode !== undefined
-                    ? { providerCode: context.providerCode }
-                    : {})
+                ...(context.operation === undefined
+                    ? {}
+                    : { providerOperation: context.operation }),
+                ...(context.providerStatus === undefined
+                    ? {}
+                    : { providerStatus: context.providerStatus }),
+                ...(context.providerCode === undefined
+                    ? {}
+                    : { providerCode: context.providerCode })
             }
         }
     });

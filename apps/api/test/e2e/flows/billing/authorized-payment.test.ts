@@ -114,9 +114,9 @@ import {
 } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
-    type TestBillingPlansSeed,
     createTestUser,
-    seedBillingTestPlans
+    seedBillingTestPlans,
+    type TestBillingPlansSeed
 } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 

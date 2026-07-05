@@ -24,7 +24,7 @@ import {
     PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
-import { ServiceError, entityViewService } from '@repo/service-core';
+import { entityViewService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory';
 

@@ -1,6 +1,6 @@
-import { fetchApi } from '@/lib/api/client';
 import type { LifecycleStatusEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { CreateOwnerPromotionInput, UpdateOwnerPromotionInput } from './types';
 
 /**

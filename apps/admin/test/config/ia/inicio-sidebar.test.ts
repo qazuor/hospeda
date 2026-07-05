@@ -8,9 +8,9 @@
  * AC-14: SPONSOR.enabled === false and CLIENT_MANAGER.enabled === false.
  */
 
-import { validatedConfig } from '@/config/ia/validate';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { validatedConfig } from '@/config/ia/validate';
 
 // ---------------------------------------------------------------------------
 // AC-23 + AC-24 — Inicio sidebar structure

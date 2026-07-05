@@ -167,6 +167,7 @@ export function Dialog({
 
     return createPortal(
         // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via the document listener for Esc + focus trap.
+        // biome-ignore lint/a11y/noStaticElementInteractions: overlay click-to-close is a mouse-only convenience; Escape + focus trap (handled above via the document listener) cover keyboard users, and role="presentation" intentionally keeps this decorative backdrop out of the AT tree.
         <div
             className={cn(styles.overlay, overlayClassName)}
             onClick={handleOverlayClick}

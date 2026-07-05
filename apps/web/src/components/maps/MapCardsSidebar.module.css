@@ -90,7 +90,9 @@
  * brand-color border (which felt out of place against the warm palette and
  * was disorienting at first glance). */
 .cardHovered {
-    box-shadow: 0 4px 12px oklch(0 0 0 / 0.1), 0 14px 32px oklch(0 0 0 / 0.14);
+    box-shadow:
+        0 4px 12px oklch(0 0 0 / 0.1),
+        0 14px 32px oklch(0 0 0 / 0.14);
 }
 
 /* Strip native <button> chrome so the card-as-action looks identical to the
@@ -292,7 +294,9 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
-    box-shadow: 0 1px 2px oklch(0 0 0 / 0.08), 0 2px 6px oklch(0 0 0 / 0.06);
+    box-shadow:
+        0 1px 2px oklch(0 0 0 / 0.08),
+        0 2px 6px oklch(0 0 0 / 0.06);
 }
 
 .cardTypePillLabel {
@@ -507,9 +511,13 @@
     font-weight: 600;
     border: 1px solid var(--core-foreground-a40);
     cursor: pointer;
-    box-shadow: 0 4px 18px oklch(0 0 0 / 0.25), 0 1px 3px oklch(0 0 0 / 0.08);
-    transition: transform var(--duration-fast, 0.2s) ease, background-color
-        var(--duration-fast, 0.2s) ease, opacity var(--duration-fast, 0.2s) ease;
+    box-shadow:
+        0 4px 18px oklch(0 0 0 / 0.25),
+        0 1px 3px oklch(0 0 0 / 0.08);
+    transition:
+        transform var(--duration-fast, 0.2s) ease,
+        background-color var(--duration-fast, 0.2s) ease,
+        opacity var(--duration-fast, 0.2s) ease;
 }
 
 .sheetTrigger:hover {

@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
     billingCustomers,
@@ -12,7 +13,6 @@ import {
     sql,
     users
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';

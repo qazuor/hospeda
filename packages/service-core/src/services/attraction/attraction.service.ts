@@ -17,10 +17,10 @@ import {
     AttractionRemoveFromDestinationInputSchema,
     type AttractionSearchInput,
     AttractionSearchInputSchema,
-    type AttractionUpdateInput,
-    AttractionUpdateInputSchema,
     type AttractionsByDestinationInput,
     AttractionsByDestinationInputSchema,
+    type AttractionUpdateInput,
+    AttractionUpdateInputSchema,
     type CountResponse,
     type DestinationsByAttractionInput,
     DestinationsByAttractionInputSchema,
@@ -140,7 +140,7 @@ export class AttractionService extends BaseCrudRelatedService<
     ): Promise<Partial<Attraction>> {
         let slug = (data as { slug?: string }).slug;
         if (!slug && data.name) {
-            let entity: Attraction | undefined = undefined;
+            let entity: Attraction | undefined;
             if ('id' in data && data.id) {
                 const found = await this.model.findById(data.id as AttractionIdType);
                 entity = found ?? undefined;

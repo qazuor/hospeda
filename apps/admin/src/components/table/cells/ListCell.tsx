@@ -1,6 +1,6 @@
+import type { ReactNode } from 'react';
 import { ListOrientation } from '@/components/table/DataTable';
 import { useTranslations } from '@/hooks/use-translations';
-import type { ReactNode } from 'react';
 
 type ListCellProps = {
     readonly value: unknown;

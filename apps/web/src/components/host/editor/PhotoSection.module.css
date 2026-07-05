@@ -34,7 +34,9 @@
     border-radius: var(--radius-md, 10px);
     background-color: var(--core-card, #fafafa);
     cursor: pointer;
-    transition: border-color 150ms ease-out, background-color 150ms ease-out;
+    transition:
+        border-color 150ms ease-out,
+        background-color 150ms ease-out;
     text-align: center;
 }
 
@@ -184,7 +186,9 @@
     cursor: pointer;
     color: var(--core-muted-foreground, #9ca3af);
     font-size: 1.5rem;
-    transition: border-color 150ms ease-out, color 150ms ease-out;
+    transition:
+        border-color 150ms ease-out,
+        color 150ms ease-out;
 }
 
 .galleryAddButton:hover {

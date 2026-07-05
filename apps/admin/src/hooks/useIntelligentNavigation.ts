@@ -1,6 +1,6 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { adminLogger } from '@/utils/logger';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSectionProgress } from './useSectionProgress';
 import { useSmartScroll } from './useSmartScroll';
 

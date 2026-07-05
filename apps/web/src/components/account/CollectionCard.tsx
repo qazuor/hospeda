@@ -12,8 +12,8 @@
  */
 
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
-import styles from './UserFavoritesList.module.css';
 import { ICON_OPTIONS } from './collection-picker-config';
+import styles from './UserFavoritesList.module.css';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

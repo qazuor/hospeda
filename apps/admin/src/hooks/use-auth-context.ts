@@ -1,6 +1,6 @@
+import { useContext } from 'react';
 import { AuthContext, type AuthContextValue } from '@/contexts/auth-context';
 import { adminLogger } from '@/utils/logger';
-import { useContext } from 'react';
 
 /**
  * Hook to use auth context

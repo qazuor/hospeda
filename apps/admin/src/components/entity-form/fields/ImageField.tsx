@@ -1,3 +1,6 @@
+import { CloseIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
+import { ModerationStatusEnum } from '@repo/schemas';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageSearchModal } from '@/components/entity-form/fields';
 import { ImageFieldErrorBanner } from '@/components/entity-form/fields/ImageFieldErrorBanner';
@@ -6,16 +9,12 @@ import type {
     ImageFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
-import { Input, Label } from '@/components/ui-wrapped';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-
-import { CloseIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
-import { ModerationStatusEnum } from '@repo/schemas';
-import * as React from 'react';
 
 /**
  * Image value type — mirrors `ImageSchema` from `@repo/schemas` so the

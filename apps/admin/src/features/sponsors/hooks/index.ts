@@ -1,3 +1,4 @@
 // Sponsor hooks
-export * from './useSponsorQuery';
+
 export * from './useSponsorPage';
+export * from './useSponsorQuery';

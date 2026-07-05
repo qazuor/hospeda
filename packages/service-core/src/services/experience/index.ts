@@ -11,15 +11,6 @@
  * - Types — ExperienceHookState
  */
 
-// Main service
-export { ExperienceService } from './experience.service';
-
-// Review service
-export {
-    ExperienceReviewService,
-    type ExperienceReviewModerateInput
-} from './experience.review.service';
-
 // FAQ helpers
 export {
     addExperienceFaq,
@@ -28,15 +19,6 @@ export {
     reorderExperienceFaqs,
     updateExperienceFaq
 } from './experience.faq';
-
-// Projection utilities
-export {
-    projectExperienceOwnerAvatar,
-    projectExperienceOwnerAvatarList,
-    projectExperiencePublic,
-    projectExperiencePublicList
-} from './experience.projections';
-
 // Permission helpers
 export {
     checkExperienceCanAdminList,
@@ -50,6 +32,20 @@ export {
     checkExperienceCanRestore,
     checkExperienceCanView
 } from './experience.permissions';
+// Projection utilities
+export {
+    projectExperienceOwnerAvatar,
+    projectExperienceOwnerAvatarList,
+    projectExperiencePublic,
+    projectExperiencePublicList
+} from './experience.projections';
+// Review service
+export {
+    type ExperienceReviewModerateInput,
+    ExperienceReviewService
+} from './experience.review.service';
+// Main service
+export { ExperienceService } from './experience.service';
 
 // Types
 export type { ExperienceHookState } from './experience.types';

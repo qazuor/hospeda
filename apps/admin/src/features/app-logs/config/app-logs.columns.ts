@@ -6,10 +6,11 @@
  * `enableSorting: false` to prevent the framework from sending invalid sort
  * params.
  */
-import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
-import { ColumnType } from '@/components/table/DataTable';
+
 import type { AppLogEntry } from '@repo/schemas';
 import { createElement } from 'react';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { ColumnType } from '@/components/table/DataTable';
 import { AppLogLevelBadge } from '../components/AppLogLevelBadge';
 import { AppLogMessageCell } from '../components/AppLogMessageCell';
 

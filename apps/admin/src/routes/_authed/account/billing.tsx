@@ -16,14 +16,14 @@
  * receive either permission.
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { BillingActionsSection } from '@/components/billing/BillingActionsSection';
 import { PlanUsageSection } from '@/components/billing/PlanUsageSection';
 import { SubscriptionSummarySection } from '@/components/billing/SubscriptionSummarySection';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/account/billing')({
     beforeLoad: ({ context }) => {

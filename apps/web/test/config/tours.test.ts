@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { WEB_TOURS, getWelcomeTourForRole } from '../../src/config/tours';
+import { getWelcomeTourForRole, WEB_TOURS } from '../../src/config/tours';
 
 describe('web tours config', () => {
     it('returns the host welcome tour for host roles', () => {

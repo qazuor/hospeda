@@ -269,9 +269,7 @@ export class BillingCustomerSyncService {
      *
      * @param userId - User ID to delete
      */
-    async handleUserDeletion(input: {
-        userId: string;
-    }): Promise<void> {
+    async handleUserDeletion(input: { userId: string }): Promise<void> {
         // Billing not enabled - nothing to do
         if (!this.billing) {
             return;

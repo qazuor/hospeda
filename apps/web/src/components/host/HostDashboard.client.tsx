@@ -11,14 +11,14 @@
  * ```
  */
 
+import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
+import { type JSX, useCallback, useEffect, useState } from 'react';
 import { hostDashboardApi } from '@/lib/api/endpoints-protected';
 import { transformHostDashboard } from '@/lib/api/transforms';
 import type { HostDashboardData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
-import { type JSX, useCallback, useEffect, useState } from 'react';
 import { AnalyticsSection } from './AnalyticsSection.client';
 import styles from './HostDashboard.module.css';
 

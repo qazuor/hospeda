@@ -17,7 +17,7 @@ import type {
     UserIdType
 } from '@repo/schemas';
 import { LifecycleStatusEnum, ModerationStatusEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service.js';
 import type { ServiceConfig } from '../../../src/types/index.js';
 import { createActor } from '../../factories/actorFactory.js';

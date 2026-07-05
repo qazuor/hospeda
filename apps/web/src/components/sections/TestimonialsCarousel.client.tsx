@@ -10,6 +10,10 @@
  * - Autoplay pauses on hover and focus-within for accessibility
  */
 
+import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
+import Autoplay from 'embla-carousel-autoplay';
+import useEmblaCarousel from 'embla-carousel-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReviewCard } from '@/components/shared/cards/ReviewCard';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { IconButton } from '@/components/ui/IconButtonReact';
@@ -17,10 +21,6 @@ import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
-import Autoplay from 'embla-carousel-autoplay';
-import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './TestimonialsCarousel.module.css';
 
 // ---------------------------------------------------------------------------
@@ -173,6 +173,7 @@ function TestimonialsCarouselInner({
     if (reviews.length === 0) return null;
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: hover/focus-within listeners only pause/resume autoplay (WCAG 2.2.2 pause-on-interaction) for the real interactive children (arrow buttons, dots); the wrapper itself is not focusable and has no click/keyboard behavior of its own
         <div
             ref={wrapperRef}
             className={styles.wrapper}

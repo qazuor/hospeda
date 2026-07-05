@@ -40,11 +40,11 @@ import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
-import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
+import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbRestore } from './commands/db-restore.ts';
-import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSeed } from './commands/db-seed.ts';
+import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSuperAdminPass } from './commands/db-superadmin-pass.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envCheckRules } from './commands/env-check-rules.ts';
@@ -65,8 +65,8 @@ import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
 import { setActiveTarget } from './lib/container-lookup.ts';
 import { die, log } from './lib/log.ts';
+import { resolveTarget, type Target, type TargetPolicy, type TargetSource } from './lib/target.ts';
 import { evaluateTargetPolicy } from './lib/target-policy.ts';
-import { type Target, type TargetPolicy, type TargetSource, resolveTarget } from './lib/target.ts';
 
 /**
  * Toolkit version. MUST stay in sync with `scripts/server-tools/package.json`

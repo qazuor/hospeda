@@ -26,16 +26,16 @@
 import { render } from '@react-email/render';
 import {
     BrevoEmailTransport,
-    NewsletterCampaign,
     createEmailClient,
+    NewsletterCampaign,
     renderTiptapEmailContent,
     sendBatch
 } from '@repo/notifications';
 import { NewsletterDeliveryService } from '@repo/service-core';
-import { Queue } from 'bullmq';
 import type { ConnectionOptions } from 'bullmq';
-import IORedis from 'ioredis';
+import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
+import IORedis from 'ioredis';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 

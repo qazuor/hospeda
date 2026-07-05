@@ -13,15 +13,11 @@
  * After successful password change, redirects to dashboard.
  */
 
-import { env } from '@/env';
-import { useTranslations } from '@/hooks/use-translations';
-import { fetchAuthSession } from '@/lib/auth-session';
 import type { TranslationKey } from '@repo/i18n';
 import { AlertTriangleIcon, CheckCircleIcon, ShieldIcon, XCircleIcon } from '@repo/icons';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
-
+import { env } from '@/env';
 import {
     PasswordRequirements,
     PasswordStrengthIndicator
@@ -30,6 +26,9 @@ import {
     checkPasswordRules,
     mapApiErrorToTranslationKey
 } from '@/features/auth/components/password-validation';
+import { useTranslations } from '@/hooks/use-translations';
+import { fetchAuthSession } from '@/lib/auth-session';
+import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
 
 export const Route = createFileRoute('/auth/change-password')({
     beforeLoad: async () => {

@@ -12,16 +12,16 @@
  * Pagination: page + pageSize (admin convention — NOT limit).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialPostFooter } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import type { CatalogListFilters } from '@/hooks/use-social-catalog';
 import { useDeleteSocialFooter, useSocialFootersList } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialPostFooter } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { CatalogDeleteConfirm } from '../catalog/-components/CatalogDeleteConfirm';
 import { FooterFormModal } from './-components/FooterFormModal';
 import { FootersTable } from './-components/FootersTable';

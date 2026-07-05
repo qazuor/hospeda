@@ -18,10 +18,10 @@
  * @see SPEC-154 T-021
  */
 
-import type { Section } from '@/config/ia/schema';
-import { validatedConfig } from '@/config/ia/validate';
 import { useLocation } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import type { Section } from '@/config/ia/schema';
+import { validatedConfig } from '@/config/ia/validate';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

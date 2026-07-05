@@ -1,7 +1,6 @@
 import type { Destination, DestinationType, DestinationWithAttractionNames } from '@repo/schemas';
 import {
     type AnyColumn,
-    type SQL,
     and,
     asc,
     count,
@@ -12,6 +11,7 @@ import {
     like,
     lte,
     or,
+    type SQL,
     sql
 } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';

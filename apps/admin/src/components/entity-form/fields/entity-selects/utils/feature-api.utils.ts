@@ -16,10 +16,10 @@
  * (es → en → pt fallback).
  */
 
+import { defaultLocale, trans } from '@repo/i18n';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
-import { defaultLocale, trans } from '@repo/i18n';
 
 /** Maximum number of pages fetched as a defensive hard-cap (100 items/page = 2000 items). */
 const MAX_PAGES = 20;

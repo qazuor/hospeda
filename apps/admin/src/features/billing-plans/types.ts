@@ -91,4 +91,4 @@ export interface UpdatePlanPayload extends Partial<Omit<CreatePlanPayload, 'slug
     readonly id: string;
 }
 
-export type { PlanDefinition, EntitlementKey, LimitKey };
+export type { EntitlementKey, LimitKey, PlanDefinition };

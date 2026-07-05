@@ -14,10 +14,10 @@
  * - Real PermissionEnum keys where permission gates are used.
  */
 
-import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
-import { DashboardSchema } from '@/config/ia/schema';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
+import { DashboardSchema } from '@/config/ia/schema';
 
 // ---------------------------------------------------------------------------
 // Source object IDs — AC-4

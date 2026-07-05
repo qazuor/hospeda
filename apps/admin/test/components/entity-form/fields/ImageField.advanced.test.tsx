@@ -14,14 +14,13 @@
  * - Validation error clears the banner after a new successful upload.
  */
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 // New uploads always carry moderationState PENDING (commit 61f08b016).
 const PENDING = ModerationStatusEnum.PENDING;

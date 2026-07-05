@@ -157,10 +157,10 @@ async function sendRequest(
     const init: RequestInit = {
         method,
         headers: {
-            ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+            ...(body === undefined ? {} : { 'content-type': 'application/json' }),
             ...headers
         },
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {})
+        ...(body === undefined ? {} : { body: JSON.stringify(body) })
     };
 
     return app.request(path, init);

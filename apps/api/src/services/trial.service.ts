@@ -17,20 +17,20 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
-import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
+    calculateTrialDaysRemaining,
+    checkSubscriptionStatusTransition,
     type ReactivateFromTrialInput,
     type ReactivateSubscriptionInput,
     type ReactivateSubscriptionResult,
     type StartTrialInput,
     type TrialEndingSubscription,
     type TrialStatus,
-    calculateTrialDaysRemaining,
-    checkSubscriptionStatusTransition,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -1086,9 +1086,7 @@ export class TrialService {
      * @param input - Days ahead to check
      * @returns List of trials ending soon with user details
      */
-    async findTrialsEndingSoon(input: {
-        daysAhead: number;
-    }): Promise<TrialEndingSubscription[]> {
+    async findTrialsEndingSoon(input: { daysAhead: number }): Promise<TrialEndingSubscription[]> {
         if (!this.billing) {
             apiLogger.debug('Billing not enabled, skipping trial ending soon query');
             return [];
@@ -1236,9 +1234,7 @@ export class TrialService {
      * }
      * ```
      */
-    async reconcileDuplicateSubscriptions(input: {
-        customerId: string;
-    }): Promise<ReconcileResult> {
+    async reconcileDuplicateSubscriptions(input: { customerId: string }): Promise<ReconcileResult> {
         if (!this.billing) {
             return { cancelledCount: 0, cancelledIds: [], keptId: null };
         }

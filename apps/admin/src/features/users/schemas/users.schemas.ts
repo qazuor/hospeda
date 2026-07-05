@@ -1,10 +1,10 @@
+import { UserListItemWithCountsSchema, UserSchema } from '@repo/schemas';
+import { z } from 'zod';
 import {
     AdminActivityExtensionSchema,
     AdminStatusExtensionSchema,
     AdminTagsExtensionSchema
 } from '@/shared/schemas';
-import { UserListItemWithCountsSchema, UserSchema } from '@repo/schemas';
-import { z } from 'zod';
 
 /**
  * Extended user list item schema for admin compatibility

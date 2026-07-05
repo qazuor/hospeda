@@ -112,11 +112,7 @@ vi.mock('@tanstack/react-query', async (importActual) => {
             return { data: undefined, isLoading: false, isError: false };
         }),
         useQueries: vi.fn(
-            ({
-                queries
-            }: {
-                queries: Array<{ queryKey: readonly [string, string, string] }>;
-            }) =>
+            ({ queries }: { queries: Array<{ queryKey: readonly [string, string, string] }> }) =>
                 queries.map(({ queryKey }) => {
                     const entityId = queryKey[2];
                     // Resolve acc-001 → 'Hospedaje Los Robles', others → null (fallback)

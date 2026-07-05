@@ -15,14 +15,14 @@
  * reads import.meta.env and is not available in the Vitest jsdom context.
  */
 
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import {
-    PRICING_CACHE_MAX_AGE_SECONDS,
-    PRICING_CACHE_SWR_SECONDS,
     fetchPublicPlans,
-    filterPlansByCategory
+    filterPlansByCategory,
+    PRICING_CACHE_MAX_AGE_SECONDS,
+    PRICING_CACHE_SWR_SECONDS
 } from '@/lib/billing/fetch-plans';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Module-level mock: bypass validateWebEnv() which requires import.meta.env.
 // Pattern established by apps/web/test/pages/sitemap-dynamic.test.ts.

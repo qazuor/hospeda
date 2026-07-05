@@ -6,4 +6,4 @@
 // in better-auth bundle cleanly. Runtime path is unaffected — admin uses
 // the postgres adapter, not SQLite.
 export * from 'kysely/dist/index.js';
-export { DEFAULT_MIGRATION_TABLE, DEFAULT_MIGRATION_LOCK_TABLE } from 'kysely/migration';
+export { DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE } from 'kysely/migration';

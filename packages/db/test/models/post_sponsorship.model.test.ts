@@ -52,7 +52,7 @@ describe('PostSponsorshipModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 postSponsorships: postSponsorshipsMock
             }
         });
@@ -88,7 +88,7 @@ describe('PostSponsorshipModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 postSponsorships: postSponsorshipsMock
             }
         });
@@ -102,7 +102,7 @@ describe('PostSponsorshipModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 postSponsorships: postSponsorshipsMock
             }
         });

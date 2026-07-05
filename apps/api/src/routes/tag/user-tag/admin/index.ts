@@ -28,7 +28,8 @@
  * @see SPEC-086 T-025..T-028, decisions.md D-002, D-017, D-024
  */
 import { createRouter } from '../../../../utils/create-app';
-
+// ─── Entity attribution sub-router (T-026) ───────────────────────────────────
+import { adminEntityTagAttributionRoutes } from './entity-attribution.js';
 // ─── INTERNAL sub-router ─────────────────────────────────────────────────────
 import {
     adminCreateInternalTagRoute,
@@ -39,16 +40,6 @@ import {
     adminUpdateInternalTagRoute
 } from './internal/index.js';
 
-// ─── SYSTEM sub-router ───────────────────────────────────────────────────────
-import {
-    adminCreateSystemTagRoute,
-    adminDeleteSystemTagRoute,
-    adminGetSystemTagByIdRoute,
-    adminGetSystemTagImpactRoute,
-    adminListSystemTagsRoute,
-    adminUpdateSystemTagRoute
-} from './system/index.js';
-
 // ─── OWN USER tag sub-router ─────────────────────────────────────────────────
 import {
     adminCreateOwnTagRoute,
@@ -58,12 +49,17 @@ import {
     adminListOwnTagsRoute,
     adminUpdateOwnTagRoute
 } from './own/index.js';
-
+// ─── SYSTEM sub-router ───────────────────────────────────────────────────────
+import {
+    adminCreateSystemTagRoute,
+    adminDeleteSystemTagRoute,
+    adminGetSystemTagByIdRoute,
+    adminGetSystemTagImpactRoute,
+    adminListSystemTagsRoute,
+    adminUpdateSystemTagRoute
+} from './system/index.js';
 // ─── USER moderation sub-router ──────────────────────────────────────────────
 import { adminUserTagModerationRoutes } from './user-moderation.js';
-
-// ─── Entity attribution sub-router (T-026) ───────────────────────────────────
-import { adminEntityTagAttributionRoutes } from './entity-attribution.js';
 
 // ─── INTERNAL sub-router assembly ────────────────────────────────────────────
 const internalApp = createRouter();
@@ -100,9 +96,9 @@ ownApp.route('/', adminUpdateOwnTagRoute);
 ownApp.route('/', adminDeleteOwnTagRoute);
 
 export {
-    internalApp as adminInternalTagRoutes,
-    systemApp as adminSystemTagRoutes,
-    ownApp as adminOwnTagRoutes,
+    adminEntityTagAttributionRoutes,
     adminUserTagModerationRoutes,
-    adminEntityTagAttributionRoutes
+    internalApp as adminInternalTagRoutes,
+    ownApp as adminOwnTagRoutes,
+    systemApp as adminSystemTagRoutes
 };

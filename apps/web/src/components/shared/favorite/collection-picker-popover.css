@@ -29,11 +29,14 @@
     background-color: var(--surface-elevated);
     border: 1px solid var(--brand-primary-a20);
     border-radius: var(--radius-md, 10px);
-    box-shadow: 0 10px 28px -8px var(--core-foreground-a25), 0 4px 10px -4px
-        var(--core-foreground-a15);
+    box-shadow:
+        0 10px 28px -8px var(--core-foreground-a25),
+        0 4px 10px -4px var(--core-foreground-a15);
     font-family: var(--font-sans);
     color: var(--core-foreground);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
 }
 
 .collection-picker--hidden {
@@ -148,8 +151,9 @@
     color: var(--core-foreground);
     text-align: left;
     cursor: pointer;
-    transition: background-color var(--duration-fast, 0.15s) ease, border-color
-        var(--duration-fast, 0.15s) ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        border-color var(--duration-fast, 0.15s) ease;
 }
 
 .collection-picker__chip:hover:not(:disabled) {

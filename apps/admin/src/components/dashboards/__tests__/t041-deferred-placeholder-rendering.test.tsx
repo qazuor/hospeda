@@ -30,11 +30,11 @@
  * @see SPEC-155 T-041, AC-T-041
  */
 
-import type { Dashboard, Widget } from '@/config/ia/schema';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Dashboard, Widget } from '@/config/ia/schema';
 import { DashboardRenderer } from '../DashboardRenderer';
 import { DeferredWidget } from '../widgets/DeferredWidget';
 
@@ -99,14 +99,8 @@ vi.mock('../widgets', () => ({
      * DeferredWidget stub — exposes phaseSpec and title as data attributes
      * so assertions remain independent of i18n output and icon rendering.
      */
-    DeferredWidget: ({
-        phaseSpec,
-        title
-    }: {
-        phaseSpec: string;
-        title?: string;
-    }) => (
-        <div
+    DeferredWidget: ({ phaseSpec, title }: { phaseSpec: string; title?: string }) => (
+        <section
             data-testid="deferred-widget"
             data-phase-spec={phaseSpec}
             data-title={title ?? ''}

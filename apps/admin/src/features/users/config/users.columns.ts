@@ -1,3 +1,7 @@
+import { EditIcon, getUserRoleIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { createElement, Fragment } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import {
     type InlineStateOption,
@@ -6,10 +10,6 @@ import {
 import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
-import { EditIcon, getUserRoleIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
 import { AuthProviderBadge } from '../components/AuthProviderBadge';
 import { ImpersonateButton } from '../components/ImpersonateButton';
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';

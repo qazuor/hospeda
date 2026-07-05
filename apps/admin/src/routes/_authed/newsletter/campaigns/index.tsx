@@ -10,19 +10,19 @@
  * + the API itself).
  */
 
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { Button } from '@/components/ui/button';
-import { useNewsletterCampaigns } from '@/hooks/newsletter';
-import { useTranslations } from '@/hooks/use-translations';
-import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { EmailIcon } from '@repo/icons';
 import {
     type NewsletterCampaign,
     NewsletterCampaignStatusEnum,
     PermissionEnum
 } from '@repo/schemas';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { Button } from '@/components/ui/button';
+import { useNewsletterCampaigns } from '@/hooks/newsletter';
+import { useTranslations } from '@/hooks/use-translations';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 export const Route = createFileRoute('/_authed/newsletter/campaigns/')({
     component: CampaignsListPage,

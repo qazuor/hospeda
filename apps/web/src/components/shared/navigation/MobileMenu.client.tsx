@@ -14,6 +14,15 @@
  * Tasks: T-074
  */
 
+import {
+    BuildingIcon,
+    ChevronDownIcon,
+    CloseIcon,
+    LogoutIcon,
+    SearchIcon,
+    UserIcon
+} from '@repo/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
@@ -24,15 +33,6 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import {
-    BuildingIcon,
-    ChevronDownIcon,
-    CloseIcon,
-    LogoutIcon,
-    SearchIcon,
-    UserIcon
-} from '@repo/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './MobileMenu.module.css';
 
 // ---------------------------------------------------------------------------

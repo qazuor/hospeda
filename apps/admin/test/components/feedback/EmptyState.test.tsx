@@ -12,10 +12,10 @@
  * @module EmptyState.test
  */
 
-import { EmptyState } from '@/components/feedback/EmptyState';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { EmptyState } from '@/components/feedback/EmptyState';
 
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({

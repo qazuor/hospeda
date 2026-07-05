@@ -3,6 +3,9 @@
  *
  * Mirrors `_authed/ai/credentials.tsx`'s `RotateCredentialDialog`.
  */
+
+import { LoaderIcon } from '@repo/icons';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,13 +19,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    type SocialCredentialKey,
     getSocialCredentialKeyLabel,
+    type SocialCredentialKey,
     useRotateSocialCredentialMutation
 } from '@/features/social-credentials';
 import { useToast } from '@/hooks/use-toast';
-import { LoaderIcon } from '@repo/icons';
-import { useState } from 'react';
 
 /** Dialog for rotating an existing social credential's secret. */
 export function RotateCredentialDialog({

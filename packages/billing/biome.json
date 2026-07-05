@@ -1,6 +1,7 @@
 {
+    "root": false,
     "extends": ["../biome-config/biome.json"],
     "files": {
-        "ignore": ["dist", "node_modules", "examples"]
+        "includes": ["!**/dist", "!**/node_modules", "!**/examples"]
     }
 }

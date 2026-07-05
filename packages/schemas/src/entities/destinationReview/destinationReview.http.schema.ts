@@ -119,12 +119,11 @@ export type DestinationReviewUpdateHttp = z.infer<typeof DestinationReviewUpdate
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { DestinationReviewSearchInput } from './destinationReview.query.schema.js';
-
 import type {
     DestinationReviewCreateInput,
     DestinationReviewUpdateInput
 } from './destinationReview.crud.schema.js';
+import type { DestinationReviewSearchInput } from './destinationReview.query.schema.js';
 
 /**
  * Convert HTTP destination review search parameters to domain search schema
