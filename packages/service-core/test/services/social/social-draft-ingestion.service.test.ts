@@ -19,8 +19,10 @@
  * SPEC-254 T-028.
  */
 
+import { InMemoryImageProvider } from '@repo/media/test-utils';
 import {
     SocialApprovalStatusEnum,
+    SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialPublishFormatEnum,
@@ -32,7 +34,9 @@ import type {
     IngestionResult
 } from '../../../src/services/social/social-draft-ingestion.service';
 import { SocialDraftIngestionService } from '../../../src/services/social/social-draft-ingestion.service';
+import { SocialImagePipelineService as RealSocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
 import type { SocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
+import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
 import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
@@ -1226,5 +1230,290 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(postModel.create).not.toHaveBeenCalled();
             expect(aiRequestModel.create).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-65 T-023/T-024/T-026: full-chain verification harness
+//
+// These tests are DELIBERATELY different from the scripted-mock tests above:
+// they wire a REAL `SocialImagePipelineService` and a REAL
+// `SocialPublishDispatchService` to STATEFUL in-memory fake models (not
+// `vi.fn().mockResolvedValue(...)` mocks with canned return values). The
+// pipeline's writes and the dispatch service's reads share the SAME store
+// instances, so a genuine wiring bug (wrong id threaded through, wrong filter
+// key, a format not mapped) surfaces as a real query miss/assertion failure —
+// not a scripted mock silently papering over it. No real DB or network is
+// used (fetch and the Cloudinary upload are the only mocked/faked I/O).
+// ---------------------------------------------------------------------------
+
+interface FakeCrudRow extends Record<string, unknown> {
+    id: string;
+}
+
+/**
+ * Minimal, STATEFUL in-memory fake for a `BaseModelImpl`-shaped CRUD model
+ * (`create`/`findOne`/`findAll`). See the file-level comment above for why
+ * this exists instead of a scripted mock.
+ */
+function createFakeCrudModel<T extends FakeCrudRow>() {
+    const store = new Map<string, T>();
+    let counter = 0;
+
+    function matches(row: T, where: Record<string, unknown>): boolean {
+        return Object.entries(where).every(([key, value]) => row[key] === value);
+    }
+
+    return {
+        async create(data: Partial<T>): Promise<T> {
+            counter += 1;
+            const id = (data.id as string | undefined) ?? `fake-${counter}`;
+            const row = { ...data, id } as T;
+            store.set(id, row);
+            return row;
+        },
+        async findOne(where: Record<string, unknown>): Promise<T | null> {
+            for (const row of store.values()) {
+                if (matches(row, where)) return row;
+            }
+            return null;
+        },
+        async findAll(
+            where: Record<string, unknown>,
+            options?: { sortBy?: string; sortOrder?: 'asc' | 'desc' }
+        ): Promise<{ items: T[]; total: number }> {
+            let items = Array.from(store.values()).filter((row) => matches(row, where));
+            if (options?.sortBy) {
+                const sortKey = options.sortBy;
+                const dir = options.sortOrder === 'desc' ? -1 : 1;
+                items = [...items].sort((a, b) => {
+                    const aVal = a[sortKey];
+                    const bVal = b[sortKey];
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                        return (aVal - bVal) * dir;
+                    }
+                    return 0;
+                });
+            }
+            return { items, total: items.length };
+        }
+    };
+}
+
+/**
+ * Builds a REAL `SocialImagePipelineService` and a REAL
+ * `SocialPublishDispatchService`, sharing the same fake
+ * assetModel/postMediaModel/postTargetMediaModel stores between them. The
+ * dispatch service's `platformFormatModel.findOne` is seeded from
+ * `platformFormatRows` (looked up by `id`, matching `buildMakePayload`'s real
+ * query shape: `{ id: target.platformFormatId }`).
+ */
+function buildFullChainHarness(platformFormatRows: Array<Record<string, unknown>>) {
+    const assetModel = createFakeCrudModel<FakeCrudRow>();
+    const postMediaModel = createFakeCrudModel<FakeCrudRow>();
+    const postTargetMediaModel = createFakeCrudModel<FakeCrudRow>();
+
+    const pipelineSettingModel = createModelMock();
+    pipelineSettingModel.findOne.mockResolvedValue(undefined);
+
+    const mediaProvider = new InMemoryImageProvider({ cloudName: 'test-cloud' });
+
+    const realPipeline = new RealSocialImagePipelineService(
+        {},
+        mediaProvider as never,
+        assetModel as never,
+        postMediaModel as never,
+        pipelineSettingModel as never,
+        postTargetMediaModel as never
+    );
+
+    const dispatchPlatformFormatModel = createModelMock();
+    dispatchPlatformFormatModel.findOne.mockImplementation(
+        async (where: Record<string, unknown>) =>
+            platformFormatRows.find((row) => row.id === where.id) ?? null
+    );
+
+    const dispatchService = new SocialPublishDispatchService(
+        { logger: undefined },
+        createModelMock() as never, // postModel — buildMakePayload receives `post` directly
+        createModelMock() as never, // targetModel — buildMakePayload receives `target` directly
+        postMediaModel as never,
+        dispatchPlatformFormatModel as never,
+        createModelMock() as never, // footerModel — unused when post.footerId is null
+        assetModel as never,
+        createModelMock() as never, // publishLogModel — unused by buildMakePayload
+        createModelMock() as never, // settingModel — unused by buildMakePayload
+        { log: vi.fn() } as never, // auditLog — unused by buildMakePayload
+        postTargetMediaModel as never
+    );
+
+    return { realPipeline, dispatchService, assetModel, postMediaModel, postTargetMediaModel };
+}
+
+describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
+    const STORY_PLATFORM_FORMAT_ID = 'pf-instagram-story';
+    const FEED_PLATFORM_FORMAT_ID = 'pf-facebook-feed';
+
+    const PLATFORM_FORMAT_ROWS = [
+        {
+            id: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'instagram_story_image',
+            enabled: true
+        },
+        {
+            id: FEED_PLATFORM_FORMAT_ID,
+            platform: 'FACEBOOK',
+            publishFormat: 'FEED_POST',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'facebook_feed_image',
+            enabled: true
+        }
+    ];
+
+    /** Ingestion-side platform-format lookup — queried by `{platform, publishFormat, enabled}`. */
+    function buildIngestionPlatformFormatModel(rows: Array<Record<string, unknown>>) {
+        const m = createModelMock();
+        m.findOne.mockImplementation(
+            async (where: Record<string, unknown>) =>
+                rows.find(
+                    (row) =>
+                        row.platform === where.platform && row.publishFormat === where.publishFormat
+                ) ?? null
+        );
+        return m;
+    }
+
+    /** Sequential-id `social_post_targets` mock, keyed for later lookup by publishFormat. */
+    function buildSequentialPostTargetModel() {
+        const m = createModelMock();
+        let counter = 0;
+        const idByFormat: Record<string, string> = {};
+        m.create.mockImplementation(async (data: Record<string, unknown>) => {
+            counter += 1;
+            const id = `target-${counter}`;
+            idByFormat[data.publishFormat as string] = id;
+            return { id };
+        });
+        return { model: m, idByFormat };
+    }
+
+    it('T-023: STORY end-to-end publish + media isolation from a co-target of a different format', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const STORY_IMAGE_URL = 'https://example.com/story.jpg';
+        const FEED_IMAGE_URL = 'https://example.com/feed.jpg';
+
+        // Act — ingest a draft with a STORY target (own asset) and a FEED_POST
+        // co-target of a DIFFERENT format (own, different asset) on the same post.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.STORY,
+                        assets: [{ image: { mode: 'public_url', url: STORY_IMAGE_URL } }]
+                    },
+                    {
+                        platform: SocialPlatformEnum.FACEBOOK,
+                        publishFormat: SocialPublishFormatEnum.FEED_POST,
+                        assets: [{ image: { mode: 'public_url', url: FEED_IMAGE_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        expect(result.data.assetStatus).toBe('uploaded');
+
+        const storyTargetId = idByFormat.STORY;
+        const feedTargetId = idByFormat.FEED_POST;
+        expect(storyTargetId).toBeDefined();
+        expect(feedTargetId).toBeDefined();
+
+        // Assert — the pipeline persisted a social_assets row (mediaType=IMAGE)
+        // AND a social_post_target_media link row scoped SPECIFICALLY to the
+        // STORY target — not to the FEED_POST co-target.
+        const storyLinkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: storyTargetId })
+        ).items;
+        expect(storyLinkRows).toHaveLength(1);
+
+        const storyMediaRow = await harness.postMediaModel.findOne({
+            id: storyLinkRows[0]?.socialPostMediaId
+        });
+        expect(storyMediaRow).not.toBeNull();
+
+        const storyAsset = await harness.assetModel.findOne({ id: storyMediaRow?.assetId });
+        expect(storyAsset?.mediaType).toBe(SocialMediaTypeEnum.IMAGE);
+        expect(storyAsset?.originalUrl).toBe(STORY_IMAGE_URL);
+        const storyCloudinaryUrl = storyAsset?.cloudinaryUrl as string;
+        expect(storyCloudinaryUrl).toBeTruthy();
+
+        const feedLinkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: feedTargetId })
+        ).items;
+        expect(feedLinkRows).toHaveLength(1);
+        const feedMediaRow = await harness.postMediaModel.findOne({
+            id: feedLinkRows[0]?.socialPostMediaId
+        });
+        const feedAsset = await harness.assetModel.findOne({ id: feedMediaRow?.assetId });
+        const feedCloudinaryUrl = feedAsset?.cloudinaryUrl as string;
+        expect(feedCloudinaryUrl).toBeTruthy();
+        expect(feedCloudinaryUrl).not.toBe(storyCloudinaryUrl);
+
+        // Assert — buildMakePayload resolves exactly 1 mediaUrl for the STORY
+        // target, and it is the STORY asset's own URL (never the FEED_POST one).
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const storyTargetRow = {
+            id: storyTargetId,
+            platformFormatId: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY'
+        };
+        const feedTargetRow = {
+            id: feedTargetId,
+            platformFormatId: FEED_PLATFORM_FORMAT_ID,
+            platform: 'FACEBOOK',
+            publishFormat: 'FEED_POST'
+        };
+
+        const { payload: storyPayload } = await harness.dispatchService.buildMakePayload({
+            target: storyTargetRow,
+            post: postRow
+        });
+        expect(storyPayload.mediaUrls).toEqual([storyCloudinaryUrl]);
+        expect(storyPayload.mediaUrls).not.toContain(feedCloudinaryUrl);
+
+        // Assert — the FEED_POST co-target does NOT receive the STORY asset.
+        const { payload: feedPayload } = await harness.dispatchService.buildMakePayload({
+            target: feedTargetRow,
+            post: postRow
+        });
+        expect(feedPayload.mediaUrls).toEqual([feedCloudinaryUrl]);
+        expect(feedPayload.mediaUrls).not.toContain(storyCloudinaryUrl);
     });
 });
