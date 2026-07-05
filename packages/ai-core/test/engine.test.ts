@@ -165,12 +165,16 @@ beforeEach(() => {
     // are active — preserving all existing test expectations.
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: { featureConfig: AiFeatureConfig }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

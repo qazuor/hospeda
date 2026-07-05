@@ -105,12 +105,16 @@ beforeEach(() => {
     // Default config mock setup — mirrors engine.test.ts beforeEach.
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: { featureConfig: AiFeatureConfig }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------

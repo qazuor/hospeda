@@ -180,12 +180,16 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: { featureConfig: AiFeatureConfig }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -549,11 +553,13 @@ describe('when the primary provider streamText rejects with a retryable error', 
             params: {}
         };
         mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_WITH_FALLBACK);
-        mockGetProviderOrder.mockImplementation(
-            ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+        mockGetProviderOrder.mockImplementation(function ({
+            featureConfig
+        }: { featureConfig: AiFeatureConfig }) {
+            return {
                 providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-            })
-        );
+            };
+        });
 
         // Primary provider always rejects with a retryable error (rate-limit-style)
         const primaryStreamTextSpy = vi

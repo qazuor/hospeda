@@ -117,7 +117,9 @@ beforeEach(() => {
         .mockReturnValue({ type: 'fake-chat-lm' });
     mockCreateOpenAI.mockReturnValue(mockOpenAiProvider);
     // mockZodSchema is a pass-through by default after reset; re-assign.
-    mockZodSchema.mockImplementation((s: unknown) => s);
+    mockZodSchema.mockImplementation(function (s: unknown) {
+        return s;
+    });
 });
 
 // ---------------------------------------------------------------------------
