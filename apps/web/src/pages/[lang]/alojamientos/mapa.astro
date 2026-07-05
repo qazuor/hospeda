@@ -617,10 +617,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	 * Mobile fullscreen-map setup. On narrow viewports the map page collapses
 	 * to: navbar + compact wave header + map filling the rest of the viewport.
 	 * Steps on every astro:page-load (so View Transitions still trigger it):
-	 *   1. Add `data-locked-compact` + the compact class directly. On listing
-	 *      surfaces the wave state machine does not run (HOS-84: it attaches only
-	 *      on detail), so the manually-applied compact class stays put and the
-	 *      bar can't expand back out near the top.
+	 *   1. Add `data-locked-compact` + the compact class directly. The wave state
+	 *      machine honors data-locked-compact (pins compact, suppresses hidden),
+	 *      and on listing the --hidden translate is suppressed anyway, so the bar
+	 *      can't expand back out or slide away near the top.
 	 *   2. Wait one frame for the compact class + CSS transition to apply,
 	 *      then measure the bar and publish its height as
 	 *      `--wave-bar-compact`. The map's CSS uses that var to size itself
@@ -643,11 +643,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			history.scrollRestoration = 'manual';
 		}
 
-		// Lock the wave header in compact mode. On listing surfaces the wave
-		// state machine does not run (HOS-84: it attaches only on detail), so
-		// this manually-added compact class is authoritative — nothing expands
-		// the bar back out. data-locked-compact is kept as a belt-and-suspenders
-		// signal for any future consumer.
+		// Lock the wave header in compact mode. The wave state machine honors
+		// data-locked-compact (pins compact, never hides), and on listing the
+		// --hidden translate is suppressed regardless, so nothing expands or
+		// slides the bar out. The manual compact class covers the pre-init frame.
 		waveHeader.dataset.lockedCompact = 'true';
 		waveHeader.classList.add('wave-header--compact');
 

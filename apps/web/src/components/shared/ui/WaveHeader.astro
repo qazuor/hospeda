@@ -68,7 +68,9 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    *
    * Three-state model on DETAIL surfaces (data-wave-padding="detail"):
    *   expanded → compact → hidden, with scroll-up revealing back to compact.
-   * LISTING surfaces render a STATIC band — no scroll machine is attached at all.
+   * LISTING surfaces compact but NEVER hide (owner decision, HOS-84): the state
+   * machine still runs so the band condenses to a slim pinned strip on scroll,
+   * but the --hidden translate-out is applied on detail only.
    *
    * `overflow-anchor: none` (see <style>) + the position hysteresis in the pure
    * module are the anti-trembling fix; the direction-delta dead-zone is the
@@ -89,13 +91,14 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       const bar = header.querySelector<HTMLElement>('.wave-header__bar');
       if (!bar) continue;
 
-      // Static band on listing surfaces: no scroll state machine. The header
-      // stays expanded. The mobile fullscreen map manages its own locked
-      // compact class directly (see mapa.astro), so it is not driven here.
-      if (header.dataset.wavePadding !== 'detail') continue;
-
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
+
+      // Detail surfaces get the full 3-state model (expanded/compact/hidden).
+      // Listing surfaces compact but never hide: the band condenses to a slim
+      // pinned strip instead of sliding out (owner decision, HOS-84). The state
+      // machine runs either way; we just gate the --hidden translate on detail.
+      const allowHidden = header.dataset.wavePadding === 'detail';
 
       let state: WaveHeaderState = 'expanded';
       let accumulator = 0;
@@ -106,9 +109,10 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         state = next;
         // `hidden` is `compact` styling PLUS a translate-out; keep --compact on
         // in both so the slide-out animates from the compact band, not the tall
-        // expanded one.
+        // expanded one. On listing the translate is suppressed, so the band just
+        // stays compact.
         header.classList.toggle('wave-header--compact', next === 'compact' || next === 'hidden');
-        header.classList.toggle('wave-header--hidden', next === 'hidden');
+        header.classList.toggle('wave-header--hidden', allowHidden && next === 'hidden');
       };
 
       let ticking = false;
