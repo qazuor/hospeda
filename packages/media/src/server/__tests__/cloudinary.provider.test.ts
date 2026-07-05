@@ -64,7 +64,10 @@ const MOCK_UPLOAD_RESPONSE = {
  * synchronous mock would mask race conditions where the production code
  * accidentally relies on the callback firing before `end()` returns.
  */
-function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPONSE | null) {
+function setupUploadStream(
+    error: Error | null,
+    result: (typeof MOCK_UPLOAD_RESPONSE & { duration?: number }) | null
+) {
     mockUploadStream.mockImplementation(
         (
             _options: Record<string, unknown>,
@@ -659,6 +662,77 @@ describe('CloudinaryProvider', () => {
             const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
             expect(callOptions).toBeDefined();
             expect(callOptions.resource_type).toBe('image');
+        });
+
+        // HOS-65: default resource_type stays 'image' when resourceType is omitted.
+        it("should default resource_type to 'image' when resourceType is not provided", async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.resource_type).toBe('image');
+        });
+
+        // HOS-65: video callers pass resourceType 'video' so Cloudinary
+        // processes the file as a video (and reports duration).
+        it("should forward resource_type: 'video' when resourceType is 'video'", async () => {
+            // Arrange
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            await provider.upload({
+                file: Buffer.from('fake-video'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                resourceType: 'video'
+            });
+
+            // Assert
+            const callOptions = mockUploadStream.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(callOptions).toBeDefined();
+            expect(callOptions.resource_type).toBe('video');
+        });
+
+        // HOS-65: the SDK's video `duration` must be surfaced as
+        // UploadResult.durationSeconds so the VIDEO_POST duration limit works.
+        it('should return durationSeconds from the SDK duration field for a video upload', async () => {
+            // Arrange
+            setupUploadStream(null, { ...MOCK_UPLOAD_RESPONSE, duration: 42.5 });
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-video'),
+                folder: 'hospeda/prod/accommodations/abc-123',
+                resourceType: 'video'
+            });
+
+            // Assert
+            expect(result.durationSeconds).toBe(42.5);
+        });
+
+        it('should leave durationSeconds undefined for an image upload (no duration reported)', async () => {
+            // Arrange — MOCK_UPLOAD_RESPONSE has no `duration` field (image).
+            setupUploadStream(null, MOCK_UPLOAD_RESPONSE);
+            const provider = new CloudinaryProvider(VALID_CONFIG);
+
+            // Act
+            const result = await provider.upload({
+                file: Buffer.from('fake-image'),
+                folder: 'hospeda/prod/accommodations/abc-123'
+            });
+
+            // Assert
+            expect(result.durationSeconds).toBeUndefined();
         });
 
         // GAP-078-219: empty tags array must not be forwarded to the SDK and

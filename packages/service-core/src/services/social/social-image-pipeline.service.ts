@@ -773,12 +773,17 @@ export class SocialImagePipelineService {
      * @param transformation - Optional Cloudinary transform preset forwarded
      *   to `UploadOptions.transformation` (HOS-65 T-016/T-021 — e.g. the
      *   STORY 9:16 crop). `undefined` applies no transformation.
+     * @param resourceType - Optional Cloudinary `resource_type` forwarded to
+     *   `UploadOptions.resourceType`. Defaults to `'image'` at the provider
+     *   level when omitted; video callers pass `'video'` so Cloudinary
+     *   processes the file as a video and reports `duration` (HOS-65).
      * @returns Upload result or failure.
      */
     private async uploadToCloudinary(
         buffer: Buffer,
         _mimeType: string | null,
-        transformation?: UploadOptions['transformation']
+        transformation?: UploadOptions['transformation'],
+        resourceType?: UploadOptions['resourceType']
     ): Promise<
         | {
               success: true;
@@ -798,7 +803,8 @@ export class SocialImagePipelineService {
                 file: buffer,
                 folder: assetsFolder,
                 tags: ['social', 'gpt-ingestion'],
-                transformation
+                transformation,
+                resourceType
             });
             return {
                 success: true,

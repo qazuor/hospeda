@@ -237,7 +237,7 @@ export class CloudinaryProvider implements ImageProvider {
      * @throws {Error} If Cloudinary returns an incomplete or missing response
      */
     async upload(options: UploadOptions): Promise<UploadResult> {
-        const { file, folder, publicId, tags, overwrite, transformation } = options;
+        const { file, folder, publicId, tags, overwrite, transformation, resourceType } = options;
 
         if (!folder || !folder.startsWith(this.folderRoot)) {
             throw new InvalidFolderError(
@@ -248,7 +248,10 @@ export class CloudinaryProvider implements ImageProvider {
         const uploadOptions: Record<string, unknown> = {
             folder,
             overwrite: overwrite ?? true,
-            resource_type: 'image' as const
+            // Default to 'image' when the caller does not specify a resource
+            // type, preserving the historical image-only behavior. Video
+            // callers pass 'video' so Cloudinary reports video metadata.
+            resource_type: resourceType ?? 'image'
         };
 
         if (publicId) {

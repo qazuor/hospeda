@@ -46,6 +46,17 @@ export interface UploadOptions {
      * Purely additive: omitting it preserves current behavior exactly (HOS-65 T-016).
      */
     readonly transformation?: UploadApiOptions['transformation'];
+    /**
+     * Cloudinary `resource_type` for the upload. Controls whether Cloudinary
+     * treats the bytes as an image, a video, or auto-detects the kind.
+     *
+     * Defaults to `'image'` when omitted, preserving the historical behavior
+     * for every existing image caller (backward compatible). Video callers
+     * (e.g. the social pipeline's `processVideo`) MUST pass `'video'` so that
+     * Cloudinary processes the file as a video and reports video-only metadata
+     * such as `duration` (HOS-65 — video upload fix).
+     */
+    readonly resourceType?: 'image' | 'video' | 'auto';
 }
 
 /**
