@@ -30,23 +30,23 @@
  * the import returned a value for each one (progressive disclosure).
  */
 
-import { SearchableSelect } from '@/components/form/SearchableSelect.client';
+import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
+import { AccommodationTypeEnum } from '@repo/schemas';
+import { useCallback, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
+import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
-import { translateApiError } from '@/lib/api-errors';
 import { destinationsApi } from '@/lib/api/endpoints';
+import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { AccommodationTypeEnum } from '@repo/schemas';
-import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
-import { useCallback, useId, useMemo, useState } from 'react';
 import styles from './CreatePropertyMiniForm.module.css';
 
 // ---------------------------------------------------------------------------
@@ -1086,7 +1086,7 @@ export function CreatePropertyMiniForm({
                     {extrasOpen ? (
                         <div className={styles.extrasBody}>
                             {/* Description */}
-                            {importMeta.description !== undefined ? (
+                            {importMeta.description === undefined ? null : (
                                 <div className="form-field">
                                     <div className={styles.fieldWithBadge}>
                                         <label
@@ -1118,7 +1118,7 @@ export function CreatePropertyMiniForm({
                                         data-testid="extras-description"
                                     />
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Capacity row: maxGuests / bedrooms / beds / bathrooms */}
                             {importMeta.maxGuests !== undefined ||
@@ -1126,7 +1126,7 @@ export function CreatePropertyMiniForm({
                             importMeta.beds !== undefined ||
                             importMeta.bathrooms !== undefined ? (
                                 <div className={styles.extrasRow}>
-                                    {importMeta.maxGuests !== undefined ? (
+                                    {importMeta.maxGuests === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1150,9 +1150,9 @@ export function CreatePropertyMiniForm({
                                                 type="number"
                                                 min={0}
                                                 value={
-                                                    extras.maxGuests !== undefined
-                                                        ? String(extras.maxGuests)
-                                                        : ''
+                                                    extras.maxGuests === undefined
+                                                        ? ''
+                                                        : String(extras.maxGuests)
                                                 }
                                                 onChange={(e) => {
                                                     const v = e.target.value;
@@ -1164,9 +1164,9 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-maxGuests"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
 
-                                    {importMeta.bedrooms !== undefined ? (
+                                    {importMeta.bedrooms === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1190,9 +1190,9 @@ export function CreatePropertyMiniForm({
                                                 type="number"
                                                 min={0}
                                                 value={
-                                                    extras.bedrooms !== undefined
-                                                        ? String(extras.bedrooms)
-                                                        : ''
+                                                    extras.bedrooms === undefined
+                                                        ? ''
+                                                        : String(extras.bedrooms)
                                                 }
                                                 onChange={(e) => {
                                                     const v = e.target.value;
@@ -1204,9 +1204,9 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-bedrooms"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
 
-                                    {importMeta.beds !== undefined ? (
+                                    {importMeta.beds === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1230,9 +1230,9 @@ export function CreatePropertyMiniForm({
                                                 type="number"
                                                 min={0}
                                                 value={
-                                                    extras.beds !== undefined
-                                                        ? String(extras.beds)
-                                                        : ''
+                                                    extras.beds === undefined
+                                                        ? ''
+                                                        : String(extras.beds)
                                                 }
                                                 onChange={(e) => {
                                                     const v = e.target.value;
@@ -1244,9 +1244,9 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-beds"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
 
-                                    {importMeta.bathrooms !== undefined ? (
+                                    {importMeta.bathrooms === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1270,9 +1270,9 @@ export function CreatePropertyMiniForm({
                                                 type="number"
                                                 min={0}
                                                 value={
-                                                    extras.bathrooms !== undefined
-                                                        ? String(extras.bathrooms)
-                                                        : ''
+                                                    extras.bathrooms === undefined
+                                                        ? ''
+                                                        : String(extras.bathrooms)
                                                 }
                                                 onChange={(e) => {
                                                     const v = e.target.value;
@@ -1284,12 +1284,12 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-bathrooms"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
                                 </div>
                             ) : null}
 
                             {/* Base price */}
-                            {importMeta.basePrice !== undefined ? (
+                            {importMeta.basePrice === undefined ? null : (
                                 <div className="form-field">
                                     <div className={styles.fieldWithBadge}>
                                         <label
@@ -1322,9 +1322,9 @@ export function CreatePropertyMiniForm({
                                         type="number"
                                         min={0}
                                         value={
-                                            extras.basePrice !== undefined
-                                                ? String(extras.basePrice)
-                                                : ''
+                                            extras.basePrice === undefined
+                                                ? ''
+                                                : String(extras.basePrice)
                                         }
                                         onChange={(e) => {
                                             const v = e.target.value;
@@ -1336,10 +1336,10 @@ export function CreatePropertyMiniForm({
                                         data-testid="extras-basePrice"
                                     />
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Coordinates — read-only indicator */}
-                            {importMeta.coordinates !== undefined ? (
+                            {importMeta.coordinates === undefined ? null : (
                                 <div
                                     className={styles.extrasReadOnly}
                                     data-testid="extras-coordinates"
@@ -1366,12 +1366,12 @@ export function CreatePropertyMiniForm({
                                         t={t}
                                     />
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Street / number */}
                             {importMeta.street !== undefined || importMeta.number !== undefined ? (
                                 <div className={styles.extrasRow}>
-                                    {importMeta.street !== undefined ? (
+                                    {importMeta.street === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1403,9 +1403,9 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-street"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
 
-                                    {importMeta.number !== undefined ? (
+                                    {importMeta.number === undefined ? null : (
                                         <div className="form-field">
                                             <div className={styles.fieldWithBadge}>
                                                 <label
@@ -1437,12 +1437,12 @@ export function CreatePropertyMiniForm({
                                                 data-testid="extras-number"
                                             />
                                         </div>
-                                    ) : null}
+                                    )}
                                 </div>
                             ) : null}
 
                             {/* Phone */}
-                            {importMeta.phone !== undefined ? (
+                            {importMeta.phone === undefined ? null : (
                                 <div className="form-field">
                                     <div className={styles.fieldWithBadge}>
                                         <label
@@ -1474,10 +1474,10 @@ export function CreatePropertyMiniForm({
                                         data-testid="extras-phone"
                                     />
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Website */}
-                            {importMeta.website !== undefined ? (
+                            {importMeta.website === undefined ? null : (
                                 <div className="form-field">
                                     <div className={styles.fieldWithBadge}>
                                         <label
@@ -1509,7 +1509,7 @@ export function CreatePropertyMiniForm({
                                         data-testid="extras-website"
                                     />
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Amenities — read-only count chip */}
                             {extras.amenityIds && extras.amenityIds.length > 0 ? (

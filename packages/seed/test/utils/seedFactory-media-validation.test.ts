@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 import { IdMapper } from '../../src/utils/idMapper.js';
-import { type SeedContext, createImageProcessingCounters } from '../../src/utils/seedContext.js';
+import { createImageProcessingCounters, type SeedContext } from '../../src/utils/seedContext.js';
 import { createSeedFactory } from '../../src/utils/seedFactory.js';
 
 /**

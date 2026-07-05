@@ -6,10 +6,10 @@
  * @module AiChatFab
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { ChatIcon } from '@repo/icons';
 import { forwardRef } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './AiChatFab.module.css';
 
 export interface AiChatFabProps {

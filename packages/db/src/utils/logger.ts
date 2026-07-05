@@ -1,5 +1,5 @@
 // Standardized logger helpers for DB layer
-import { type ILogger, LoggerColors, logger as baseLogger } from '@repo/logger';
+import { logger as baseLogger, type ILogger, LoggerColors } from '@repo/logger';
 
 /**
  * Logger instance used by DB helpers.
@@ -52,5 +52,5 @@ type DbLogger = ILogger;
 
 const typedDbLogger = dbLogger as unknown as DbLogger;
 
-export { typedDbLogger as dbLogger };
 export type { DbLogger };
+export { typedDbLogger as dbLogger };

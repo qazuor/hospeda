@@ -24,7 +24,7 @@
  *
  * `--dry-run` prints the plan to stdout without modifying the markdown file.
  */
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

@@ -9,8 +9,8 @@
  */
 
 import type { BaseModel as BaseModelDB } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { ListRelationsConfig } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseCrudService } from '../../src/base/base.crud.service';

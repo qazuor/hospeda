@@ -14,15 +14,15 @@
  * Pagination: page + pageSize (admin convention — NOT limit).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialPlatformFormat } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import type { PlatformSettingsListFilters } from '@/hooks/use-social-platform-settings';
 import { usePlatformFormatsList } from '@/hooks/use-social-platform-settings';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialPlatformFormat } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { PlatformFormatFormModal } from './-components/PlatformFormatFormModal';
 import { PlatformFormatsTable } from './-components/PlatformFormatsTable';
 

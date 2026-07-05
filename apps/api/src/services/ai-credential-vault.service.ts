@@ -28,12 +28,11 @@
  */
 
 import { aiCredentialAudit, aiProviderCredentials, getDb, withTransaction } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
 import type { AiCredentialMasked } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor, ServiceOutput } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
-import { encryptSecret } from '../utils/ai-vault.js';
-import { decryptSecret } from '../utils/ai-vault.js';
+import { decryptSecret, encryptSecret } from '../utils/ai-vault.js';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
@@ -309,8 +308,8 @@ export async function createAiProviderCredential(
                     ciphertext,
                     iv,
                     authTag,
-                    ...(label !== undefined ? { label } : {}),
-                    ...(metadata !== undefined ? { metadata } : {})
+                    ...(label === undefined ? {} : { label }),
+                    ...(metadata === undefined ? {} : { metadata })
                 })
                 .returning({ id: aiProviderCredentials.id });
 

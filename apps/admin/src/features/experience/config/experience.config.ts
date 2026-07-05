@@ -8,11 +8,11 @@
  * `extraFilters`.
  */
 
+import { ExperienceAdminListItemSchema, ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
 import { createCommerceListConfig } from '@/features/commerce';
-import { ExperienceAdminListItemSchema, ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
-import type { z } from 'zod';
 import { createExperienceColumns } from './experience.columns';
 
 // ---------------------------------------------------------------------------
@@ -104,9 +104,8 @@ export const experienceListConfig = createCommerceListConfig<ExperienceListItem>
     // grid could only show raw FK UUIDs in the Destino / Propietario columns.
     // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
     // structurally compatible with the list-item shape, brand-only mismatch.
-    listItemSchema: ExperienceAdminListItemSchema as unknown as import(
-        'zod'
-    ).ZodSchema<ExperienceListItem>,
+    listItemSchema:
+        ExperienceAdminListItemSchema as unknown as import('zod').ZodSchema<ExperienceListItem>,
     createColumns: createExperienceColumns,
     extraFilters: [
         {

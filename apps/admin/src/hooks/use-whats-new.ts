@@ -24,9 +24,9 @@
  * @see SPEC-175 §7.1, §12.4
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { WhatsNewGetResponse, WhatsNewItem, WhatsNewSeenBody } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import { useAuthContext } from './use-auth-context';
 
 // ---------------------------------------------------------------------------

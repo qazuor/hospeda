@@ -18,14 +18,16 @@ import { GoogleReputationAdapter } from './google-reputation.adapter.js';
 // Re-export types and all adapters for consumers that need them directly.
 export type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
 export { emptyReputationResult } from './adapter.types.js';
-export { GoogleReputationAdapter } from './google-reputation.adapter.js';
-export type { GoogleReputationCredentials } from './google-reputation.adapter.js';
-export { BookingReputationAdapter } from './booking-reputation.adapter.js';
-export type { BookingReputationCredentials } from './booking-reputation.adapter.js';
-export { AirbnbReputationAdapter } from './airbnb-reputation.adapter.js';
 export type { AirbnbReputationCredentials } from './airbnb-reputation.adapter.js';
-export { GenericReputationAdapter } from './generic-reputation.adapter.js';
-export { parseAggregateRatingFromPage } from './generic-reputation.adapter.js';
+export { AirbnbReputationAdapter } from './airbnb-reputation.adapter.js';
+export type { BookingReputationCredentials } from './booking-reputation.adapter.js';
+export { BookingReputationAdapter } from './booking-reputation.adapter.js';
+export {
+    GenericReputationAdapter,
+    parseAggregateRatingFromPage
+} from './generic-reputation.adapter.js';
+export type { GoogleReputationCredentials } from './google-reputation.adapter.js';
+export { GoogleReputationAdapter } from './google-reputation.adapter.js';
 
 // ---------------------------------------------------------------------------
 // Credentials container

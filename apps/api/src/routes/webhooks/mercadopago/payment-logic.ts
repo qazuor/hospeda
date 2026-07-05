@@ -33,8 +33,8 @@ import {
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
-import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
+import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
@@ -43,12 +43,12 @@ import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
 import {
-    type PlanChangeUpgradeMetadata,
     extractAddonFromReference,
     extractAddonMetadata,
     extractAnnualSubscriptionMetadata,
     extractPaymentInfo,
-    extractPlanChangeUpgradeMetadata
+    extractPlanChangeUpgradeMetadata,
+    type PlanChangeUpgradeMetadata
 } from './utils';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-016) ─────────────────
@@ -813,7 +813,7 @@ async function applyWebhookRefundLifecycle({
             ? data.transaction_amount_refunded
             : null;
     const refundAmountCentavos =
-        mpRefundedAmountMajor !== null ? Math.round(mpRefundedAmountMajor * 100) : undefined;
+        mpRefundedAmountMajor === null ? undefined : Math.round(mpRefundedAmountMajor * 100);
 
     try {
         await applyRefundLifecycle({

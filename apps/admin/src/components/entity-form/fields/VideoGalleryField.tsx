@@ -1,9 +1,9 @@
-import { Button, Input, Label, Textarea } from '@/components/ui-wrapped';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import { AddIcon, DeleteIcon, PlayIcon } from '@repo/icons';
 import { ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
+import { Button, Input, Label, Textarea } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { FieldConfig } from '../types/field-config.types';
 
 /**
@@ -285,7 +285,7 @@ export const VideoGalleryField = React.forwardRef<HTMLInputElement, VideoGallery
                                                     size={24}
                                                     weight="fill"
                                                     aria-hidden="true"
-                                                    className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 text-white drop-shadow"
+                                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white drop-shadow"
                                                 />
                                             </>
                                         ) : (

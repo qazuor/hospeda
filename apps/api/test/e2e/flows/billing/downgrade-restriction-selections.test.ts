@@ -78,6 +78,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { randomUUID } from 'node:crypto';
+import type { InsertAccommodationMedia } from '@repo/db';
 import {
     accommodationMedia,
     accommodations,
@@ -86,7 +87,6 @@ import {
     eq,
     ownerPromotions
 } from '@repo/db';
-import type { InsertAccommodationMedia } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

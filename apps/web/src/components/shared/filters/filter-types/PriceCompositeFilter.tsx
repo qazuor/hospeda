@@ -13,9 +13,9 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { DualRangeFilter } from './DualRangeFilter';
+import type { PriceCompositeFilterConfig } from './filter.types';
 import styles from './PriceCompositeFilter.module.css';
 import { ToggleFilter } from './ToggleFilter';
-import type { PriceCompositeFilterConfig } from './filter.types';
 
 interface PriceCompositeFilterProps {
     readonly config: PriceCompositeFilterConfig;

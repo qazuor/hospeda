@@ -12,16 +12,16 @@
  * user is authenticated, fires a lightweight check on mount to hydrate the state.
  */
 
+import { FavoriteIcon } from '@repo/icons';
+import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
-import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { FavoriteIcon } from '@repo/icons';
-import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
 import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
 import { getUserCollections } from './user-collections-cache';
@@ -297,7 +297,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      * Safely resolves the current page URL for the auth return-redirect.
      * Guarded by typeof window check for SSR safety.
      */
-    const returnUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const returnUrl = typeof window === 'undefined' ? '' : window.location.href;
 
     /**
      * Handle click for authenticated users.

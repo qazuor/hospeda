@@ -2,9 +2,9 @@
  * Admin create moderation term endpoint
  */
 import {
-    PermissionEnum,
     contentModerationTermSchema,
-    createContentModerationTermSchema
+    createContentModerationTermSchema,
+    PermissionEnum
 } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

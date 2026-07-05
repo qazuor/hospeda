@@ -49,13 +49,9 @@
  * @see SPEC-155 T-026
  */
 
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui-wrapped';
+import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon, EditIcon, EyeIcon } from '@repo/icons';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -63,12 +59,16 @@ import {
     DialogTitle,
     DialogTrigger
 } from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui-wrapped';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon, EditIcon, EyeIcon } from '@repo/icons';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,

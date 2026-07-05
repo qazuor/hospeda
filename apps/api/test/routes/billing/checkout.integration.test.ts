@@ -43,8 +43,8 @@ process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
 // Module mocks — must be hoisted before imports
 // ---------------------------------------------------------------------------
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/logger', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();

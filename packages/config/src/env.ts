@@ -200,7 +200,7 @@ export function exposeSharedEnv(
             if (validate && schema) {
                 try {
                     schema.parse(process.env);
-                    // biome-ignore lint/suspicious/noConsoleLog: Startup validation message
+                    // biome-ignore lint/suspicious/noConsole: Startup validation message
                     console.log(`✅ ${context} environment validation passed`);
                 } catch (error) {
                     if (error instanceof z.ZodError) {

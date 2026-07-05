@@ -3,12 +3,12 @@
  * Requires authentication and ownership
  */
 import {
+    httpToDomainPostUpdate,
     PermissionEnum,
     PostIdSchema,
     PostProtectedSchema,
     type PostUpdateHttp,
-    PostUpdateHttpSchema,
-    httpToDomainPostUpdate
+    PostUpdateHttpSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

@@ -8,11 +8,11 @@
  * Hydration directive: client:visible (lazy, below the fold).
  */
 
+import { type FormEvent, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useState } from 'react';
 import styles from './CommentThreadIsland.module.css';
 
 /** Maximum allowed comment length (mirrors COMMENT_CONTENT_MAX_LENGTH from @repo/schemas). */

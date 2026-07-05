@@ -2,7 +2,7 @@
  * Admin partners list endpoint
  * Returns all partners with full admin access
  */
-import { PermissionEnum, adminSearchPartnerSchema, partnerSchema } from '@repo/schemas';
+import { adminSearchPartnerSchema, PermissionEnum, partnerSchema } from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';

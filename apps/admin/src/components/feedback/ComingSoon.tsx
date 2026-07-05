@@ -7,10 +7,10 @@
  * @module ComingSoon
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import { EMPTY_SURFACE_CLASS } from './empty-surface';
 
 export interface ComingSoonProps {

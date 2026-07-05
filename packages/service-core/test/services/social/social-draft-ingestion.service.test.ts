@@ -236,13 +236,13 @@ function buildService(
         })();
 
     const imagePipeline =
-        overrides.imagePipeline !== undefined
-            ? overrides.imagePipeline
-            : buildImagePipelineMock({
+        overrides.imagePipeline === undefined
+            ? buildImagePipelineMock({
                   assetId: 'asset-uuid',
                   cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
                   warnings: []
-              });
+              })
+            : overrides.imagePipeline;
 
     return new SocialDraftIngestionService(
         {},

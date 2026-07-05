@@ -8,13 +8,13 @@
  * - Better TypeScript support with our own types
  */
 
+import { LoaderIcon } from '@repo/icons';
+import { forwardRef } from 'react';
 import {
     Button as ShadcnButton,
     type ButtonProps as ShadcnButtonProps
 } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { LoaderIcon } from '@repo/icons';
-import { forwardRef } from 'react';
 
 /**
  * Enhanced Button Props with additional functionality

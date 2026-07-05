@@ -5,13 +5,6 @@
  * panels. Replaces the static SearchBar.astro stub with full interactivity.
  */
 
-import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
-import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
-import { cn } from '@/lib/cn';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import {
     BuildingIcon,
     CalendarDotsIcon,
@@ -21,8 +14,15 @@ import {
     StarIcon,
     UsersIcon
 } from '@repo/icons';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
+import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './SearchBar.module.css';
 
 /**
@@ -321,15 +321,16 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     });
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: <search> element has inconsistent browser support
         <div
             ref={barRef}
             className={styles.searchBar}
-            // biome-ignore lint/a11y/useSemanticElements: <search> element has inconsistent browser support
             role="search"
             aria-label={t('home.searchBar.searchAriaLabel', 'Buscar alojamientos')}
         >
             <div className={styles.inner}>
                 {/* Col 1: Destination */}
+                {/* biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button> */}
                 <div
                     className={cn(
                         styles.col,
@@ -343,7 +344,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             togglePanel('destination');
                         }
                     }}
-                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'destination'}
@@ -373,6 +373,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
 
                 {/* Col 2: Type */}
+                {/* biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button> */}
                 <div
                     className={cn(
                         styles.col,
@@ -386,7 +387,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             togglePanel('type');
                         }
                     }}
-                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'type'}
@@ -416,6 +416,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
 
                 {/* Col 3: Dates */}
+                {/* biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button> */}
                 <div
                     className={cn(
                         styles.col,
@@ -431,7 +432,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     }}
                     onPointerEnter={preloadCalendar}
                     onFocus={preloadCalendar}
-                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'dates'}
@@ -459,6 +459,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </div>
 
                 {/* Col 4: Guests */}
+                {/* biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button> */}
                 <div
                     className={cn(styles.col, activePanel === 'guests' && styles.colActive)}
                     onClick={() => togglePanel('guests')}
@@ -468,7 +469,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             togglePanel('guests');
                         }
                     }}
-                    // biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button>
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'guests'}
@@ -629,6 +629,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                     {dest.isFeatured && (
                                         <span
                                             className="featured-indicator"
+                                            role="img"
                                             aria-label={t(
                                                 'home.searchBar.featuredDestinationLabel',
                                                 'Destino destacado'

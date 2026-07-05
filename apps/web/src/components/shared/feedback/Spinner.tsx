@@ -13,8 +13,8 @@
  * ```
  */
 
-import { cn } from '@/lib/cn';
 import type { ReactElement } from 'react';
+import { cn } from '@/lib/cn';
 import styles from './Spinner.module.css';
 
 /** Visual size of the spinner ring. */

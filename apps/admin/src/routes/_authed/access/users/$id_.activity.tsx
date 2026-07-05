@@ -9,15 +9,15 @@
  * stays visually cohesive.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { ActivityIcon, CalendarIcon, ClockIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatLongDate } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
-import { ActivityIcon, CalendarIcon, ClockIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/access/users/$id_/activity')({
     component: UserActivityPage

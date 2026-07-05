@@ -58,25 +58,25 @@ describe('formatPriceArs', () => {
         const result = formatPriceArs(1_500_000, 'es-AR');
         // Intl may produce "$ 15.000", "$15.000", or "ARS 15.000" depending on the runtime
         expect(result).toContain('15');
-        expect(result).toMatch(/15[\.,]?000/);
+        expect(result).toMatch(/15[.,]?000/);
     });
 
     it('should format owner-pro (3_500_000 cents) as ~AR$35.000', () => {
         const result = formatPriceArs(3_500_000, 'es-AR');
         expect(result).toContain('35');
-        expect(result).toMatch(/35[\.,]?000/);
+        expect(result).toMatch(/35[.,]?000/);
     });
 
     it('should format owner-premium (7_500_000 cents) as ~AR$75.000', () => {
         const result = formatPriceArs(7_500_000, 'es-AR');
         expect(result).toContain('75');
-        expect(result).toMatch(/75[\.,]?000/);
+        expect(result).toMatch(/75[.,]?000/);
     });
 
     it('should format tourist-plus (500_000 cents) as ~AR$5.000', () => {
         const result = formatPriceArs(500_000, 'es-AR');
         expect(result).toContain('5');
-        expect(result).toMatch(/5[\.,]?000/);
+        expect(result).toMatch(/5[.,]?000/);
     });
 
     it('should NOT include decimal fraction digits (legal requirement: whole pesos only)', () => {

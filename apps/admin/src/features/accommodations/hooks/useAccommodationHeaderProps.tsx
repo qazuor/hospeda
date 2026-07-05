@@ -8,9 +8,10 @@
  * gracefully during the loading state.
  */
 
+import { useTranslations } from '@repo/i18n';
+import { getAccommodationTypeIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-
 import type { EntityPageHeaderMedia } from '@/components/entity-header/EntityPageHeader';
 import {
     getLifecycleStateBadgeOptions,
@@ -18,8 +19,6 @@ import {
     getVisibilityBadgeOptions
 } from '@/components/entity-list/columns.factory.types';
 import { BadgeCell } from '@/components/table/cells/BadgeCell';
-import { useTranslations } from '@repo/i18n';
-import { getAccommodationTypeIcon } from '@repo/icons';
 
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 

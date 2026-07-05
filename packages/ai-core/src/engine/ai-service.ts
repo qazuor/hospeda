@@ -62,21 +62,21 @@ import type {
     ModerateResponse
 } from '@repo/schemas';
 import type { ZodType } from 'zod';
-import { executeEmbed } from '../capabilities/embed.capability.js';
 import type { EmbedInput, EmbedOutput } from '../capabilities/embed.capability.js';
-import { executeExtractIntent } from '../capabilities/extract-intent.capability.js';
+import { executeEmbed } from '../capabilities/embed.capability.js';
 import type { ExtractIntentCapabilityInput } from '../capabilities/extract-intent.capability.js';
-import { executeGenerateObject } from '../capabilities/generate-object.capability.js';
+import { executeExtractIntent } from '../capabilities/extract-intent.capability.js';
 import type { GenerateObjectCapabilityInput } from '../capabilities/generate-object.capability.js';
-import { executeGenerateText } from '../capabilities/generate-text.capability.js';
+import { executeGenerateObject } from '../capabilities/generate-object.capability.js';
 import type { GenerateTextCapabilityInput } from '../capabilities/generate-text.capability.js';
-import { executeModerate } from '../capabilities/moderate.capability.js';
+import { executeGenerateText } from '../capabilities/generate-text.capability.js';
 import type { ModerateCapabilityInput } from '../capabilities/moderate.capability.js';
-import { executeStreamText } from '../capabilities/stream-text.capability.js';
+import { executeModerate } from '../capabilities/moderate.capability.js';
 import type { StreamTextCapabilityInput } from '../capabilities/stream-text.capability.js';
+import { executeStreamText } from '../capabilities/stream-text.capability.js';
 import type { StreamTextResult } from '../providers/ai-provider.interface.js';
-import { createAiEngine } from './engine.js';
 import type { AiEngine, AiEngineEvent, CreateAiEngineInput } from './engine.js';
+import { createAiEngine } from './engine.js';
 
 // ---------------------------------------------------------------------------
 // Factory input
@@ -421,7 +421,12 @@ export function createAiService(input: CreateAiServiceInput): AiService {
 // Re-export capability input types for callers' convenience
 // ---------------------------------------------------------------------------
 
+/**
+ * The routing feature identifier (re-exported so callers that import from
+ * `AiService` don't need a separate `@repo/schemas` import for routing).
+ */
 export type {
+    AiFeature,
     EmbedInput,
     EmbedOutput,
     ExtractIntentCapabilityInput,
@@ -430,9 +435,3 @@ export type {
     ModerateCapabilityInput,
     StreamTextCapabilityInput
 };
-
-/**
- * The routing feature identifier (re-exported so callers that import from
- * `AiService` don't need a separate `@repo/schemas` import for routing).
- */
-export type { AiFeature };

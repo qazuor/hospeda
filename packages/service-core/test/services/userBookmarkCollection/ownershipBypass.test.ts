@@ -62,7 +62,7 @@ describe('UserBookmarkCollectionService — ownership bypass prevention (Fix 2)'
         page: 1,
         pageSize: 10,
         includeBookmarkCount: false,
-        ...(userId !== undefined ? { userId } : {})
+        ...(userId === undefined ? {} : { userId })
     });
 
     /**
@@ -72,7 +72,7 @@ describe('UserBookmarkCollectionService — ownership bypass prevention (Fix 2)'
         page: 1,
         pageSize: 10,
         includeBookmarkCount: false,
-        ...(userId !== undefined ? { userId } : {})
+        ...(userId === undefined ? {} : { userId })
     });
 
     describe('search()', () => {

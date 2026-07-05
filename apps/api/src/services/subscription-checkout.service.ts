@@ -26,9 +26,9 @@ import type {
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
 import {
-    type DrizzleClient,
     billingSubscriptions,
     commerceListingSubscriptions,
+    type DrizzleClient,
     eq,
     getDb,
     partnerSubscriptions,
@@ -488,11 +488,11 @@ export async function initiatePaidMonthlySubscription(
         // SPEC-126 D9: extra free-trial days are forwarded to the MP
         // preapproval so the first recurring charge is delayed by N days.
         // Omitted when no qualifying promo code was supplied.
-        ...(freeTrialDays !== undefined ? { freeTrialDays } : {}),
+        ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
         metadata: {
             source: 'start-paid-monthly',
             createdBy: 'subscription-flow',
-            ...(promoCode !== undefined ? { promoCode } : {})
+            ...(promoCode === undefined ? {} : { promoCode })
         }
     });
 

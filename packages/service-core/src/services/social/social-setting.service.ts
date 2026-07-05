@@ -7,11 +7,11 @@ import {
 } from '@repo/db';
 import type { SocialSettingAdminSearch, SocialSettingCreate } from '@repo/schemas';
 import {
+    parseAdminSort,
     ServiceErrorCode,
     SocialSettingAdminSearchSchema,
     SocialSettingCreateSchema,
-    SocialSettingUpdateSchema,
-    parseAdminSort
+    SocialSettingUpdateSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';

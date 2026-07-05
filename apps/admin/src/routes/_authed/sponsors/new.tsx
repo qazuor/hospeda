@@ -1,12 +1,12 @@
+import { PermissionEnum, PostSponsorCreateInputSchema } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import { createSponsorConsolidatedConfig } from '@/features/sponsors/config';
 import { useCreateSponsorMutation } from '@/features/sponsors/hooks/useSponsorQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, PostSponsorCreateInputSchema } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/sponsors/new')({
     component: SponsorCreatePage,

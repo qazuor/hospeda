@@ -1,4 +1,4 @@
-import { type SQL, gte, lt, lte } from 'drizzle-orm';
+import { gte, lt, lte, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { auditLogEntries } from '../../schemas/audit-log/audit_log_entry.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';

@@ -1,6 +1,6 @@
-import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
-import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
 import type { ReactNode } from 'react';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
+import { destinationTabs, PageTabs } from '@/components/layout/PageTabs';
 
 /**
  * Props for DestinationSubTabLayout.

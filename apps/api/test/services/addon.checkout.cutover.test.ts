@@ -126,8 +126,8 @@ vi.mock('../../src/services/promo-code.service', () => ({
 // Import after all mocks
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
-import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
+import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 
 // ─── Stubs ────────────────────────────────────────────────────────────────────
 

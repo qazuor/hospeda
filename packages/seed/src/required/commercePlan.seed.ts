@@ -1,5 +1,5 @@
 import { COMMERCE_LISTING_PLAN } from '@repo/billing';
-import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb } from '@repo/db';
+import { and, billingPlans, billingPrices, type DrizzleClient, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';

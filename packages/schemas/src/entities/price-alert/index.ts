@@ -7,11 +7,9 @@
  * (SPEC-286 T-005) for the tier that consumes these.
  */
 
-// Core schema (stored entity)
-export * from './price-alert.schema.js';
-
 // CRUD inputs (create/delete)
 export * from './price-alert.crud.schema.js';
-
 // Query + response schemas (list input, denormalized response)
 export * from './price-alert.query.schema.js';
+// Core schema (stored entity)
+export * from './price-alert.schema.js';

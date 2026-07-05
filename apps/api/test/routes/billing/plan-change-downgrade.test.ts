@@ -117,11 +117,11 @@ import { NotificationType } from '@repo/notifications';
 import type { DowngradePreview } from '@repo/schemas';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { handlePlanChange } from '../../../src/routes/billing/plan-change';
-import { computeDowngradeExcess } from '../../../src/services/subscription-downgrade-excess.service';
 import {
     SubscriptionDowngradeError,
     scheduleSubscriptionDowngrade
 } from '../../../src/services/subscription-downgrade.service';
+import { computeDowngradeExcess } from '../../../src/services/subscription-downgrade-excess.service';
 
 // ---------------------------------------------------------------------------
 // Helpers

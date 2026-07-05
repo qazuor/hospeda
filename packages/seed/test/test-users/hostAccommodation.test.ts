@@ -77,25 +77,24 @@ describe('buildHostAccommodationCoreFields', () => {
         expect(types.size).toBe(5);
     });
 
-    it.each(hostEmails)(
-        'should build a schema-valid AccommodationCreateInput payload for %s',
-        (email) => {
-            // Arrange
-            const displayName = email.split('@')[0] ?? email;
+    it.each(
+        hostEmails
+    )('should build a schema-valid AccommodationCreateInput payload for %s', (email) => {
+        // Arrange
+        const displayName = email.split('@')[0] ?? email;
 
-            // Act
-            const fields = buildHostAccommodationCoreFields({
-                spec: { email, displayName },
-                ownerId: VALID_OWNER_ID,
-                destinationId: VALID_DESTINATION_ID,
-                coordinates: VALID_COORDINATES
-            });
-            const result = AccommodationCreateInputSchema.safeParse(fields);
+        // Act
+        const fields = buildHostAccommodationCoreFields({
+            spec: { email, displayName },
+            ownerId: VALID_OWNER_ID,
+            destinationId: VALID_DESTINATION_ID,
+            coordinates: VALID_COORDINATES
+        });
+        const result = AccommodationCreateInputSchema.safeParse(fields);
 
-            // Assert
-            expect(result.success).toBe(true);
-        }
-    );
+        // Assert
+        expect(result.success).toBe(true);
+    });
 
     it('should derive a stable, unique slug per host from the email local-part', () => {
         // Arrange / Act

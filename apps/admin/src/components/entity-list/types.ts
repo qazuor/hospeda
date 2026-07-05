@@ -1,3 +1,6 @@
+import type { TranslationKey } from '@repo/i18n';
+import type { ComponentType, ReactNode } from 'react';
+import type { z } from 'zod';
 import type {
     BadgeOption,
     ColumnType,
@@ -7,9 +10,6 @@ import type {
     ListOrientation,
     WidgetRenderer
 } from '@/components/table/DataTable';
-import type { TranslationKey } from '@repo/i18n';
-import type { ComponentType, ReactNode } from 'react';
-import type { z } from 'zod';
 import type { FilterBarConfig } from './filters/filter-types';
 
 /**

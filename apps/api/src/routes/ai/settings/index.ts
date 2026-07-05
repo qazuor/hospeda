@@ -15,14 +15,13 @@
  */
 
 import { readAiSettings, resolveConfig, saveConfig } from '@repo/ai-core';
+import type { AiSettingsResponse, AiSettingsValue } from '@repo/schemas';
 import {
     AiSettingsResponseSchema,
     AiSettingsValueSchema,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AiSettingsResponse } from '@repo/schemas';
-import type { AiSettingsValue } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { createRouter } from '../../../utils/create-app.js';

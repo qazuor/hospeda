@@ -7,7 +7,7 @@
  * actor whose plan lacks the entitlement.
  */
 
-import { EntitlementKey, LimitKey, getPlanBySlug } from '@repo/billing';
+import { EntitlementKey, getPlanBySlug, LimitKey } from '@repo/billing';
 import type { Context } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
 import { gateAlerts, gateFavorites } from '../../src/middlewares/tourist-entitlements';

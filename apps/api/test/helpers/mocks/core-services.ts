@@ -7,15 +7,15 @@
  * @module test/helpers/mocks/core-services
  */
 
+export {
+    AccommodationReviewService,
+    AccommodationService,
+    AmenityService
+} from './accommodation-services';
 export { PostService, TagService } from './content-services';
 export {
-    AccommodationService,
-    AmenityService,
-    AccommodationReviewService
-} from './accommodation-services';
-export {
-    DestinationService,
-    DestinationReviewService,
     AttractionService,
+    DestinationReviewService,
+    DestinationService,
     FeatureService
 } from './destination-services';

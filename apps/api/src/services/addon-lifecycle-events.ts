@@ -5,21 +5,21 @@
  * @module services/addon-lifecycle-events
  */
 export type {
-    PurchaseConfirmedEvent,
-    CancellationStartedEvent,
+    AddonLifecycleEvent,
+    AddonLifecycleResult,
     CancellationCompletedEvent,
+    CancellationStartedEvent,
     ExpirationWarningEvent,
     ExpiredEvent,
-    RenewalConfirmedEvent,
     LimitsRecalculatedEvent,
-    RevocationFailedEvent,
-    AddonLifecycleEvent,
-    AddonLifecycleResult
+    PurchaseConfirmedEvent,
+    RenewalConfirmedEvent,
+    RevocationFailedEvent
 } from '@repo/service-core';
 
 export {
-    getAddonLifecycleMetrics,
-    resetAddonLifecycleMetrics,
     AddonLifecycleEventType,
-    emitLifecycleEvent
+    emitLifecycleEvent,
+    getAddonLifecycleMetrics,
+    resetAddonLifecycleMetrics
 } from '@repo/service-core';

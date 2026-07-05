@@ -8,13 +8,11 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
+import { CloseIcon, CopyIcon, FacebookIcon, ShareIcon, WhatsappIcon } from '@repo/icons';
+import { useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { FacebookIcon, ShareIcon, WhatsappIcon } from '@repo/icons';
-import { CopyIcon } from '@repo/icons';
-import { CloseIcon } from '@repo/icons';
-import { useEffect, useRef, useState } from 'react';
 import styles from './ShareButtons.module.css';
 
 /**

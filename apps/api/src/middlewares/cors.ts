@@ -13,7 +13,10 @@ import { getCorsConfig } from '../utils/env';
 function matchOrigin({
     requestOrigin,
     allowedOrigins
-}: { requestOrigin: string; allowedOrigins: readonly string[] }): boolean {
+}: {
+    requestOrigin: string;
+    allowedOrigins: readonly string[];
+}): boolean {
     return allowedOrigins.some((allowed) => {
         if (allowed === '*' || allowed === requestOrigin) return true;
         // Support wildcard subdomains (e.g., *.example.com)

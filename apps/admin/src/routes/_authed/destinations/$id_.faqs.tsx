@@ -13,10 +13,10 @@
  * other destination sub-tab in this project.
  */
 
+import { createFileRoute } from '@tanstack/react-router';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { DestinationSubTabLayout } from '@/features/destinations/components/DestinationSubTabLayout';
 import { useDestinationQuery } from '@/features/destinations/hooks/useDestinationQuery';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/destinations/$id_/faqs')({
     component: DestinationFaqsPage

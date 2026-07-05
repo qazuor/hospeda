@@ -162,6 +162,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 // Imports after mocks
 // ---------------------------------------------------------------------------
 
+import { PermissionEnum } from '@repo/schemas';
 import {
     useCreateSocialHashtag,
     useDeleteSocialHashtag,
@@ -173,7 +174,6 @@ import {
     useUpdateSocialHashtag
 } from '@/hooks/use-social-catalog';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { PermissionEnum } from '@repo/schemas';
 import { AudiencesTable } from '../audiences/-components/AudiencesTable';
 import { BatchesTable } from '../batches/-components/BatchesTable';
 import { CampaignsTable } from '../campaigns/-components/CampaignsTable';

@@ -105,46 +105,46 @@ describe('cspMiddleware (HOS-33 T-006 — request-type middleware)', () => {
         expect(typeof cspMiddleware.options.server).toBe('function');
     });
 
-    it.each(['router', 'serverFn'] as const)(
-        'sets the CSP header AND the header nonce matches the nonce visible via getGlobalStartContext() during the render (handlerType=%s)',
-        async (handlerType) => {
-            // Arrange
-            const server = cspMiddleware.options.server;
-            if (!server) {
-                throw new Error('cspMiddleware.options.server is not defined');
-            }
-            const { next, nextImpl, getNonceSeenDuringRender } = createDownstreamNext(handlerType);
-
-            // Act
-            const result = await server({
-                request: new Request('http://localhost:3000/'),
-                pathname: '/',
-                context: undefined,
-                next,
-                handlerType
-            });
-
-            // Assert — next() was called (downstream chain actually ran)
-            expect(nextImpl).toHaveBeenCalledTimes(1);
-
-            // Assert — the CSP header made it onto the final response
-            const response = extractResponse(result);
-            const cspHeader = response.headers.get(CSP_HEADER_NAME);
-            expect(cspHeader).toBeTruthy();
-
-            // Assert — the render observed a nonce via getGlobalStartContext()
-            const nonceSeenDuringRender = getNonceSeenDuringRender();
-            expect(nonceSeenDuringRender).toBeDefined();
-
-            // Assert (load-bearing): the nonce in the CSP header's
-            // 'script-src' directive is the SAME nonce the render saw. A
-            // mismatch here means the browser would block scripts carrying
-            // the render's nonce once CSP moves from Report-Only to
-            // enforcement (SPEC-046), even though nothing here would fail
-            // in Report-Only mode.
-            expect(cspHeader).toContain(`'nonce-${nonceSeenDuringRender}'`);
+    it.each([
+        'router',
+        'serverFn'
+    ] as const)('sets the CSP header AND the header nonce matches the nonce visible via getGlobalStartContext() during the render (handlerType=%s)', async (handlerType) => {
+        // Arrange
+        const server = cspMiddleware.options.server;
+        if (!server) {
+            throw new Error('cspMiddleware.options.server is not defined');
         }
-    );
+        const { next, nextImpl, getNonceSeenDuringRender } = createDownstreamNext(handlerType);
+
+        // Act
+        const result = await server({
+            request: new Request('http://localhost:3000/'),
+            pathname: '/',
+            context: undefined,
+            next,
+            handlerType
+        });
+
+        // Assert — next() was called (downstream chain actually ran)
+        expect(nextImpl).toHaveBeenCalledTimes(1);
+
+        // Assert — the CSP header made it onto the final response
+        const response = extractResponse(result);
+        const cspHeader = response.headers.get(CSP_HEADER_NAME);
+        expect(cspHeader).toBeTruthy();
+
+        // Assert — the render observed a nonce via getGlobalStartContext()
+        const nonceSeenDuringRender = getNonceSeenDuringRender();
+        expect(nonceSeenDuringRender).toBeDefined();
+
+        // Assert (load-bearing): the nonce in the CSP header's
+        // 'script-src' directive is the SAME nonce the render saw. A
+        // mismatch here means the browser would block scripts carrying
+        // the render's nonce once CSP moves from Report-Only to
+        // enforcement (SPEC-046), even though nothing here would fail
+        // in Report-Only mode.
+        expect(cspHeader).toContain(`'nonce-${nonceSeenDuringRender}'`);
+    });
 
     it('produces a different nonce (and header) on each invocation', async () => {
         // Arrange

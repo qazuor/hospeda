@@ -1,15 +1,15 @@
-import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
+import { DestinationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
-import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
+import { destinationTabs, PageTabs } from '@/components/layout/PageTabs';
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { DestinationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 /**
  * Destination Edit Route Configuration

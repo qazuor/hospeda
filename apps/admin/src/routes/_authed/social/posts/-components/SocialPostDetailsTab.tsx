@@ -13,13 +13,13 @@
  * If the user lacks the permission, all fields are read-only (original behaviour).
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { useSocialHashtagsList } from '@/hooks/use-social-catalog';
 import { useSetPostHashtags, useUpdateSocialPost } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
-import { PermissionEnum } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Helpers

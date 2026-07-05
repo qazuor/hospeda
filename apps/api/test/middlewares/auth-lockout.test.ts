@@ -8,6 +8,7 @@
  * @module test/middlewares/auth-lockout
  */
 
+import type { LockoutConfig } from '../../src/middlewares/auth-lockout';
 import {
     checkLockout,
     checkLockoutByKey,
@@ -18,7 +19,6 @@ import {
     resetLockoutByKey,
     resetLockoutStore
 } from '../../src/middlewares/auth-lockout';
-import type { LockoutConfig } from '../../src/middlewares/auth-lockout';
 import { getRedisClient } from '../../src/utils/redis';
 
 vi.mock('../../src/utils/redis', () => ({

@@ -9,6 +9,10 @@
  * @module SendConfirmDialog
  */
 
+import { LoaderIcon } from '@repo/icons';
+import type { NewsletterCampaign, NewsletterCampaignStatusEnum } from '@repo/schemas';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,14 +23,9 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { useCampaignMetrics } from '@/hooks/newsletter';
-import { useSendCampaign } from '@/hooks/newsletter';
+import { useCampaignMetrics, useSendCampaign } from '@/hooks/newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
-import type { NewsletterCampaign, NewsletterCampaignStatusEnum } from '@repo/schemas';
-import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -147,7 +146,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                                 {t('admin-newsletter.campaigns.confirmSendAudience')
                                     .replace(
                                         '{count}',
-                                        audienceCount !== null ? String(audienceCount) : '...'
+                                        audienceCount === null ? '...' : String(audienceCount)
                                     )
                                     .replace('{locale}', localeLabel)}
                             </p>

@@ -113,7 +113,9 @@
     color: var(--core-foreground);
     text-decoration: none;
     font-size: 0.9375rem;
-    transition: color var(--duration-normal) ease, background-color var(--duration-normal) ease;
+    transition:
+        color var(--duration-normal) ease,
+        background-color var(--duration-normal) ease;
 }
 
 .searchLink:hover {
@@ -249,7 +251,9 @@
     color: var(--core-foreground);
     text-decoration: none;
     border-radius: var(--radius-button);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 .accountLink:hover {

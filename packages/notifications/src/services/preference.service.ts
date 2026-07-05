@@ -62,17 +62,17 @@ export class PreferenceService {
         // Merge with existing preferences
         const updatedPrefs: NotificationPreferences = {
             emailEnabled:
-                preferences.emailEnabled !== undefined
-                    ? preferences.emailEnabled
-                    : currentPrefs.emailEnabled,
+                preferences.emailEnabled === undefined
+                    ? currentPrefs.emailEnabled
+                    : preferences.emailEnabled,
             disabledCategories:
-                preferences.disabledCategories !== undefined
-                    ? preferences.disabledCategories
-                    : currentPrefs.disabledCategories,
+                preferences.disabledCategories === undefined
+                    ? currentPrefs.disabledCategories
+                    : preferences.disabledCategories,
             disabledTypes:
-                preferences.disabledTypes !== undefined
-                    ? preferences.disabledTypes
-                    : currentPrefs.disabledTypes
+                preferences.disabledTypes === undefined
+                    ? currentPrefs.disabledTypes
+                    : preferences.disabledTypes
         };
 
         // Update settings in DB

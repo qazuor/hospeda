@@ -97,7 +97,10 @@ export async function readHistory({ rootDir }: { rootDir?: string } = {}): Promi
 export async function recordCommand({
     id,
     rootDir
-}: { id: string; rootDir?: string }): Promise<void> {
+}: {
+    id: string;
+    rootDir?: string;
+}): Promise<void> {
     const root = rootDir ?? findMonorepoRoot();
     const historyPath = join(root, HISTORY_FILE);
     const tmpPath = join(root, `${HISTORY_FILE}.tmp`);
@@ -108,12 +111,12 @@ export async function recordCommand({
     const existing = current.entries.find((e) => e.id === id);
 
     let updatedEntries: CliHistoryEntry[];
-    if (existing !== undefined) {
+    if (existing === undefined) {
+        updatedEntries = [...current.entries, { id, lastRun: now, runCount: 1 }];
+    } else {
         updatedEntries = current.entries.map((e) =>
             e.id === id ? { id: e.id, lastRun: now, runCount: e.runCount + 1 } : e
         );
-    } else {
-        updatedEntries = [...current.entries, { id, lastRun: now, runCount: 1 }];
     }
 
     if (updatedEntries.length > MAX_ENTRIES) {

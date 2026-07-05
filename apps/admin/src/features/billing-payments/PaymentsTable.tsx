@@ -1,8 +1,8 @@
+import { LoaderIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
 import type { Payment } from './types';
 import {
     formatArs,
@@ -156,12 +156,12 @@ export function PaymentsTable({
                                                     onClick={() => onRefund(payment)}
                                                     disabled={payment.status !== 'completed'}
                                                     title={
-                                                        payment.status !== 'completed'
+                                                        payment.status === 'completed'
                                                             ? t(
-                                                                  'admin-billing.payments.refundDisabledTitle'
+                                                                  'admin-billing.payments.refundEnabledTitle'
                                                               )
                                                             : t(
-                                                                  'admin-billing.payments.refundEnabledTitle'
+                                                                  'admin-billing.payments.refundDisabledTitle'
                                                               )
                                                     }
                                                 >

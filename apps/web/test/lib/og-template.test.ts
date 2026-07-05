@@ -10,15 +10,15 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    HERO_KEYS,
-    type OgAssets,
-    TYPE_BADGE,
     buildHeroCard,
     buildOgElement,
     buildOgImagePath,
     buildPhotoCard,
+    HERO_KEYS,
+    type OgAssets,
     parseOgParams,
     pickHeroKey,
+    TYPE_BADGE,
     truncateWords
 } from '../../src/lib/og-template';
 

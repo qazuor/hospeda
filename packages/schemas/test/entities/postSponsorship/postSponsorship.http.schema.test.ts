@@ -9,13 +9,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    PostSponsorshipSearchHttpSchema,
     httpToDomainPostSponsorshipCreate,
     httpToDomainPostSponsorshipSearch,
-    httpToDomainPostSponsorshipUpdate
+    httpToDomainPostSponsorshipUpdate,
+    PostSponsorshipSearchHttpSchema
 } from '../../../src/entities/postSponsorship/postSponsorship.http.schema.js';
-import { PriceCurrencyEnum } from '../../../src/enums/index.js';
-import { LifecycleStatusEnum } from '../../../src/enums/index.js';
+import { LifecycleStatusEnum, PriceCurrencyEnum } from '../../../src/enums/index.js';
 
 // ---------------------------------------------------------------------------
 // Valid UUIDs for testing

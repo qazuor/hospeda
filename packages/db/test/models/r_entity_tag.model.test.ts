@@ -43,7 +43,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -70,7 +70,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -84,7 +84,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -112,7 +112,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -142,7 +142,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -159,7 +159,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
@@ -174,7 +174,7 @@ describe('REntityTagModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });

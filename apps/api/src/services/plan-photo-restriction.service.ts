@@ -41,10 +41,10 @@
  */
 
 import {
-    type DrizzleClient,
     accommodationMedia,
     and,
     asc,
+    type DrizzleClient,
     eq,
     inArray,
     isNull,
@@ -351,17 +351,17 @@ export async function restoreAccommodationPhotos(
         let count: number;
         if (input.restoreCount !== undefined) {
             count = Math.min(input.restoreCount, currentArchivedCount);
-        } else if (input.toCap !== undefined) {
+        } else if (input.toCap === undefined) {
+            throw new Error(
+                'restoreAccommodationPhotos: provide exactly one of restoreCount or toCap'
+            );
+        } else {
             // M-3: toCap is the TOTAL plan cap (gallery + featuredImage combined).
             // Reserve one slot for featuredImage when present — symmetric with the
             // restriction side: gallerySlots = cap - (hasFeaturedImage ? 1 : 0).
             const galleryTarget = Math.max(0, input.toCap - (hasFeaturedImage ? 1 : 0));
             const needed = Math.max(0, galleryTarget - currentGalleryCount);
             count = Math.min(needed, currentArchivedCount);
-        } else {
-            throw new Error(
-                'restoreAccommodationPhotos: provide exactly one of restoreCount or toCap'
-            );
         }
 
         // Short-circuit: nothing to restore

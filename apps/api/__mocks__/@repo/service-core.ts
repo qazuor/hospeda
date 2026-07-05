@@ -10,80 +10,73 @@
  * @module __mocks__/@repo/service-core
  */
 
-export { ServiceError, PostService, TagService } from '../../test/helpers/mocks/content-services';
-
 export {
+    AccommodationReviewService,
     AccommodationService,
-    AmenityService,
-    AccommodationReviewService
+    AmenityService
 } from '../../test/helpers/mocks/accommodation-services';
-
 export {
-    DestinationService,
-    DestinationReviewService,
-    AttractionService,
-    FeatureService
-} from '../../test/helpers/mocks/destination-services';
-
-export {
-    EventService,
-    EventLocationService,
-    EventOrganizerService
-} from '../../test/helpers/mocks/event-services';
-
-export { UserService, UserBookmarkService } from '../../test/helpers/mocks/user-services';
-
-export {
-    ClientService,
-    ClientAccessRightService,
-    ProductService,
-    PricingPlanService,
-    PricingTierService,
-    SubscriptionService,
-    PurchaseService,
-    SubscriptionItemService,
-    PaymentService,
-    PaymentMethodService,
-    InvoiceService,
-    InvoiceLineService,
-    RefundService,
-    CreditNoteService
-} from '../../test/helpers/mocks/billing-services';
-
-export {
-    AdSlotService,
-    AdSlotReservationService,
-    AdPricingCatalogService,
     AdMediaAssetService,
+    AdPricingCatalogService,
+    AdSlotReservationService,
+    AdSlotService,
     CampaignService,
-    SponsorshipService,
+    OwnerPromotionService,
     SponsorshipLevelService,
     SponsorshipPackageService,
-    OwnerPromotionService
+    SponsorshipService
 } from '../../test/helpers/mocks/advertising-services';
-
 export {
-    ProfessionalServiceService,
-    ProfessionalServiceOrderService,
-    ServiceListingService,
-    AccommodationListingService,
-    AccommodationListingPlanService,
-    ServiceListingPlanService,
-    BenefitPartnerService,
-    BenefitListingPlanService,
-    BenefitListingService,
-    TouristServiceService,
-    FeaturedAccommodationService,
-    NotificationService,
-    PromotionService,
-    DiscountCodeService,
-    DiscountCodeUsageService
-} from '../../test/helpers/mocks/marketplace-services';
-
+    ClientAccessRightService,
+    ClientService,
+    CreditNoteService,
+    InvoiceLineService,
+    InvoiceService,
+    PaymentMethodService,
+    PaymentService,
+    PricingPlanService,
+    PricingTierService,
+    ProductService,
+    PurchaseService,
+    RefundService,
+    SubscriptionItemService,
+    SubscriptionService
+} from '../../test/helpers/mocks/billing-services';
+export { PostService, ServiceError, TagService } from '../../test/helpers/mocks/content-services';
 export {
-    ExchangeRateService,
+    AttractionService,
+    DestinationReviewService,
+    DestinationService,
+    FeatureService
+} from '../../test/helpers/mocks/destination-services';
+export {
+    EventLocationService,
+    EventOrganizerService,
+    EventService
+} from '../../test/helpers/mocks/event-services';
+export {
+    DolarApiClient,
+    ExchangeRateApiClient,
     ExchangeRateConfigService,
     ExchangeRateFetcher,
-    DolarApiClient,
-    ExchangeRateApiClient
+    ExchangeRateService
 } from '../../test/helpers/mocks/exchange-rate-services';
+
+export {
+    AccommodationListingPlanService,
+    AccommodationListingService,
+    BenefitListingPlanService,
+    BenefitListingService,
+    BenefitPartnerService,
+    DiscountCodeService,
+    DiscountCodeUsageService,
+    FeaturedAccommodationService,
+    NotificationService,
+    ProfessionalServiceOrderService,
+    ProfessionalServiceService,
+    PromotionService,
+    ServiceListingPlanService,
+    ServiceListingService,
+    TouristServiceService
+} from '../../test/helpers/mocks/marketplace-services';
+export { UserBookmarkService, UserService } from '../../test/helpers/mocks/user-services';

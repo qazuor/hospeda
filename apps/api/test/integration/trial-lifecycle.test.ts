@@ -14,8 +14,8 @@
  * @module test/integration/trial-lifecycle
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { TrialService } from '../../src/services/trial.service';
 

@@ -121,12 +121,11 @@ export type EventLocationGetHttp = z.infer<typeof EventLocationGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { EventLocationSearchInput } from './eventLocation.query.schema.js';
-
 import type {
     EventLocationCreateInput,
     EventLocationUpdateInput
 } from './eventLocation.crud.schema.js';
+import type { EventLocationSearchInput } from './eventLocation.query.schema.js';
 
 /**
  * Convert HTTP event location search parameters to domain search schema

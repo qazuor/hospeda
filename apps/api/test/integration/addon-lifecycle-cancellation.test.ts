@@ -23,8 +23,8 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleSubscriptionCancellationAddons } from '../../src/services/addon-lifecycle-cancellation.service.js';
 import type { CancellationResult } from '../../src/services/addon-lifecycle-cancellation.service.js';
+import { handleSubscriptionCancellationAddons } from '../../src/services/addon-lifecycle-cancellation.service.js';
 
 // ─── Hoisted mock setup ────────────────────────────────────────────────────────
 //

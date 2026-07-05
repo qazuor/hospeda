@@ -6,8 +6,8 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { AmenitySchema, ApplicableVerticalSchema } from './amenity.schema.js';
 
 /**

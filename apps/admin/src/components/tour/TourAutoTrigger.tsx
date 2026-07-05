@@ -40,14 +40,14 @@
  * @see SPEC-174 §7.6, D9, D12, D13
  */
 
+import { useLocation, useRouter } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
 import type { TourRole } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useTour } from '@/contexts/tour-context';
 import { useAdminTourState } from '@/hooks/use-admin-tour-state';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { decideAutoTrigger } from '@/lib/tour/decide-auto-trigger';
-import { useLocation, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
 
 // ---------------------------------------------------------------------------
 // Dashboard route constant

@@ -131,23 +131,26 @@ describe('loadSubscriptionDiscountState', () => {
 });
 
 describe('isAccommodationSubscription — dual-read removal (HOS-75 T-003)', () => {
-    it('does NOT fall back to the raw snake_case product_domain field ' +
-        '(only the typed camelCase productDomain is read)', () => {
-        // Arrange — a hypothetical row that carries ONLY the raw snake_case
-        // field (as if it came from an untyped `SELECT *`), no camelCase
-        // productDomain at all. Before HOS-75 T-003, the `?? record.product_domain`
-        // fallback would find 'commerce' here and exclude it (return false).
-        const snakeCaseOnlyCommerceRow = {
-            id: 'sub-1',
-            status: 'active',
-            product_domain: 'commerce'
-        };
+    it(
+        'does NOT fall back to the raw snake_case product_domain field ' +
+            '(only the typed camelCase productDomain is read)',
+        () => {
+            // Arrange — a hypothetical row that carries ONLY the raw snake_case
+            // field (as if it came from an untyped `SELECT *`), no camelCase
+            // productDomain at all. Before HOS-75 T-003, the `?? record.product_domain`
+            // fallback would find 'commerce' here and exclude it (return false).
+            const snakeCaseOnlyCommerceRow = {
+                id: 'sub-1',
+                status: 'active',
+                product_domain: 'commerce'
+            };
 
-        // Act
-        const result = isAccommodationSubscription(snakeCaseOnlyCommerceRow);
+            // Act
+            const result = isAccommodationSubscription(snakeCaseOnlyCommerceRow);
 
-        // Assert — post-T-003, the function only reads `productDomain`, which
-        // is absent here, so the "undefined → include" default rule applies.
-        expect(result).toBe(true);
-    });
+            // Assert — post-T-003, the function only reads `productDomain`, which
+            // is absent here, so the "undefined → include" default rule applies.
+            expect(result).toBe(true);
+        }
+    );
 });

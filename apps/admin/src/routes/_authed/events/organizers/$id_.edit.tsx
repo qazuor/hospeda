@@ -1,10 +1,10 @@
+import { EventOrganizerUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventOrganizerPage } from '@/features/event-organizers/hooks/useEventOrganizerPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { EventOrganizerUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Event Organizer Edit Route Configuration

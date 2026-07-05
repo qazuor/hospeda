@@ -41,7 +41,7 @@ describe('RDestinationAttractionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
             }
         });
@@ -75,7 +75,7 @@ describe('RDestinationAttractionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
             }
         });
@@ -92,7 +92,7 @@ describe('RDestinationAttractionModel', () => {
         });
         vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
-                // @ts-ignore: mock Drizzle relation for test
+                // @ts-expect-error: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
             }
         });

@@ -260,6 +260,7 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 // ---------------------------------------------------------------------------
 
 import * as contentModeration from '@repo/content-moderation';
+import type { AccommodationReview, DestinationReview } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -267,7 +268,6 @@ import {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { AccommodationReview, DestinationReview } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service.js';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service.js';

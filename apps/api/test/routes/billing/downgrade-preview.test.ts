@@ -75,8 +75,8 @@ import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../../src/middlewares/actor';
 import { handleDowngradePreview } from '../../../src/routes/billing/downgrade-preview';
 import {
-    PlanCatalogMissError,
-    computeDowngradeExcess
+    computeDowngradeExcess,
+    PlanCatalogMissError
 } from '../../../src/services/subscription-downgrade-excess.service';
 
 // ---------------------------------------------------------------------------
@@ -158,7 +158,7 @@ function makeContext(actorOverride?: unknown) {
  * Build a minimal query object for the handler.
  */
 function makeQuery(targetPlan?: string): Record<string, unknown> {
-    return targetPlan !== undefined ? { targetPlan } : {};
+    return targetPlan === undefined ? {} : { targetPlan };
 }
 
 // ---------------------------------------------------------------------------

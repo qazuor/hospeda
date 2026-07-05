@@ -7,11 +7,11 @@
  * (e.g. chip clear, reset-all).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
-import { useEffect, useRef, useState } from 'react';
 import type { TextFilterConfig } from './filter-types';
 
 /** Default debounce delay (ms) used when `config.debounceMs` is not specified. */

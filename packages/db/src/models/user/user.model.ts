@@ -1,6 +1,5 @@
-import type { UserAdminStats } from '@repo/schemas';
-import type { User } from '@repo/schemas';
-import { type SQL, and, count, isNull, or, sql } from 'drizzle-orm';
+import type { User, UserAdminStats } from '@repo/schemas';
+import { and, count, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';

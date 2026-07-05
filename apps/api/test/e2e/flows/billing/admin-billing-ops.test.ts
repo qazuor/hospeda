@@ -99,9 +99,9 @@ import {
 } from '../../helpers/billing-factories.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
-    type TestBillingPlansSeed,
     createTestUser,
-    seedBillingTestPlans
+    seedBillingTestPlans,
+    type TestBillingPlansSeed
 } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 
@@ -201,9 +201,9 @@ describe('SPEC-143 T-143-42 — admin billing ops', () => {
         const purchaseId = randomUUID();
         const status = input.status ?? 'active';
         const expiresAt =
-            input.expiresAtDaysFromNow !== undefined
-                ? new Date(Date.now() + input.expiresAtDaysFromNow * 24 * 60 * 60 * 1000)
-                : null;
+            input.expiresAtDaysFromNow === undefined
+                ? null
+                : new Date(Date.now() + input.expiresAtDaysFromNow * 24 * 60 * 60 * 1000);
         await testDb.getDb().execute(sql`
             INSERT INTO billing_addon_purchases (
                 id, customer_id, subscription_id, addon_slug,

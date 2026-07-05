@@ -33,9 +33,9 @@
  * @see SPEC-175 §7.2, §7.6, §12.4, D17
  */
 
+import { useEffect, useRef, useState } from 'react';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import { hasUnseenHighlights } from '@/lib/whats-new/has-unseen-highlights';
-import { useEffect, useRef, useState } from 'react';
 import { WhatsNewModal } from './WhatsNewModal';
 
 // ---------------------------------------------------------------------------

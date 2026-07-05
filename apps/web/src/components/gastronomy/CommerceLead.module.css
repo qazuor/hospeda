@@ -46,7 +46,9 @@
     font-size: var(--text-body);
     background-color: var(--core-card);
     color: var(--core-foreground);
-    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    transition:
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
     box-sizing: border-box;
 }
 
@@ -132,8 +134,11 @@
     font-weight: 700;
     font-size: var(--text-button);
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        transform var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
     align-self: stretch;
     box-shadow: 0 4px 12px -4px var(--brand-accent-a50);
 }

@@ -1,4 +1,4 @@
-import { AccommodationModel, AmenityModel, RAccommodationAmenityModel, amenities } from '@repo/db';
+import { AccommodationModel, AmenityModel, amenities, RAccommodationAmenityModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationAmenityRelation,

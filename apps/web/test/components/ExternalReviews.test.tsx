@@ -42,7 +42,10 @@ vi.mock('@repo/icons', () => ({
     StarIcon: ({
         weight,
         'aria-hidden': ariaHidden
-    }: { weight?: string; 'aria-hidden'?: string }) => (
+    }: {
+        weight?: string;
+        'aria-hidden'?: string;
+    }) => (
         <svg
             data-testid={`star-${weight ?? 'regular'}`}
             aria-hidden={ariaHidden}

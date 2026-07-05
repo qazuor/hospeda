@@ -12,9 +12,9 @@
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    isCommerceOwnerRole,
     ROLES_WITH_ACCOMMODATIONS_NAV,
-    ROLES_WITH_COMMERCE_NAV,
-    isCommerceOwnerRole
+    ROLES_WITH_COMMERCE_NAV
 } from '../account-roles';
 
 describe('isCommerceOwnerRole', () => {

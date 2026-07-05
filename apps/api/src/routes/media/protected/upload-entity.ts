@@ -20,9 +20,9 @@
  */
 import { generateGalleryId } from '@repo/media';
 import {
+    getGalleryCap,
     ProtectedUploadEntityRequestSchema,
-    UploadResponseDataSchema,
-    getGalleryCap
+    UploadResponseDataSchema
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -197,8 +197,8 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             entityType: formData.get('entityType'),
             entityId: formData.get('entityId'),
             role: formData.get('role'),
-            ...(tagsArray !== undefined ? { tags: tagsArray } : {}),
-            ...(overwriteBool !== undefined ? { overwrite: overwriteBool } : {})
+            ...(tagsArray === undefined ? {} : { tags: tagsArray }),
+            ...(overwriteBool === undefined ? {} : { overwrite: overwriteBool })
         };
 
         const parseResult = ProtectedUploadEntityRequestSchema.safeParse(rawFields);

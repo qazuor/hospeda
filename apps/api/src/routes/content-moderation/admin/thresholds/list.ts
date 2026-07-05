@@ -1,7 +1,7 @@
 /**
  * Admin list moderation thresholds endpoint
  */
-import { PermissionEnum, contentModerationThresholdSchema } from '@repo/schemas';
+import { contentModerationThresholdSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationThresholdService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';

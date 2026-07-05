@@ -5,17 +5,14 @@
  * unique visitors + total visits over 7-day and 30-day rolling windows.
  */
 
-// Core schema (stored entity + trackable-type subset)
-export * from './entityView.schema.js';
+// Admin schemas (SPEC-197 admin-tier endpoints)
+export * from './entityView.admin.schema.js';
 
 // CRUD inputs (capture)
 export * from './entityView.crud.schema.js';
-
-// Query schemas (window enum, stats query params)
-export * from './entityView.query.schema.js';
-
 // HTTP wire schemas (path params, request bodies, response items)
 export * from './entityView.http.schema.js';
-
-// Admin schemas (SPEC-197 admin-tier endpoints)
-export * from './entityView.admin.schema.js';
+// Query schemas (window enum, stats query params)
+export * from './entityView.query.schema.js';
+// Core schema (stored entity + trackable-type subset)
+export * from './entityView.schema.js';

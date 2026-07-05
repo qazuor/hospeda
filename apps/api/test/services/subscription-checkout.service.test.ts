@@ -20,12 +20,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    PENDING_PROVIDER_TTL_MS,
-    SubscriptionCheckoutError,
     computePlanChangeDelta,
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
-    initiatePaidPlanUpgrade
+    initiatePaidPlanUpgrade,
+    PENDING_PROVIDER_TTL_MS,
+    SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
 
 // ---------------------------------------------------------------------------

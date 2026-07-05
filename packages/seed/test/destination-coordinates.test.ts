@@ -18,7 +18,7 @@
  * inside it; aggregate destinations (country/region) are intentionally excluded
  * because their centroids can fall outside the province.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

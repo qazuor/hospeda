@@ -7,12 +7,12 @@
  * Shows a success state after submission instead of redirecting.
  */
 
+import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { forgetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 import styles from './ForgotPassword.module.css';
 
 /** Props for the ForgotPassword component. */

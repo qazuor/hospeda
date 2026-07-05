@@ -8,8 +8,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { PasswordField } from '../src/password-field';
 import type { PasswordFieldI18n } from '../src/password-field';
+import { PasswordField } from '../src/password-field';
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
 

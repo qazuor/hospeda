@@ -6,20 +6,24 @@
  * All write operations hit the live admin API endpoints via TanStack Query
  * mutations; the `id` (UUID) is the mutation identifier per SPEC-168 D1.
  */
+
+import { AddIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { DataTable } from '@/components/table/DataTable';
 import type { DataTableColumn } from '@/components/table/DataTable';
+import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
     type CreatePlanPayload,
+    getPlanColumns,
     HardDeleteConfirmDialog,
     type ParsedPlanRecord,
     PlanDialog,
     SoftDeleteConfirmDialog,
-    getPlanColumns,
     useCreatePlanMutation,
     useDeletePlanMutation,
     useHardDeletePlanMutation,
@@ -32,9 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, isApiError, reportError } from '@/lib/errors';
-import { AddIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/plans')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

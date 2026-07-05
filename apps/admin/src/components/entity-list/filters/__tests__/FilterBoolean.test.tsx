@@ -10,8 +10,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FilterBoolean } from '../FilterBoolean';
-import { FILTER_ALL_VALUE } from '../filter-types';
 import type { BooleanFilterConfig } from '../filter-types';
+import { FILTER_ALL_VALUE } from '../filter-types';
 
 // useTranslations is already mocked globally in test/setup.tsx.
 vi.mock('@/hooks/use-translations', () => ({

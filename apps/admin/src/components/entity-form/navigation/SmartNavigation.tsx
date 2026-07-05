@@ -1,9 +1,9 @@
+import { useTranslations } from '@repo/i18n';
+import type React from 'react';
 import { Icon } from '@/components/icons/Icon';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Progress } from '@/components/ui-wrapped/Progress';
 import { cn } from '@/lib/utils';
-import { useTranslations } from '@repo/i18n';
-import type React from 'react';
 import type { OverallProgress, SectionProgress } from '../../../hooks/useSectionProgress';
 
 /**

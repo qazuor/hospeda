@@ -9,16 +9,16 @@
  * stays visually cohesive.
  */
 
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
-import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
-import { useUserQuery } from '@/features/users/hooks/useUserQuery';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { InfoIcon, ShieldIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
+import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
+import { useUserQuery } from '@/features/users/hooks/useUserQuery';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/access/users/$id_/permissions')({
     component: UserPermissionsPage

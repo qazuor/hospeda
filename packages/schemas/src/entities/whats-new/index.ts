@@ -14,8 +14,7 @@
  *   - {@link WhatsNewGetResponseSchema} — full GET response
  */
 
-// Base entity schemas
-export * from './whats-new.schema.js';
-
 // HTTP request / response schemas
 export * from './whats-new.http.schema.js';
+// Base entity schemas
+export * from './whats-new.schema.js';

@@ -1,6 +1,6 @@
+import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchAuthSession } from '@/lib/auth-session';
-import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
  * NotFoundComponent for auth routes

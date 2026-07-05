@@ -7,8 +7,8 @@
  */
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    type SocialCredentialMasked,
-    getSocialCredentialKeyLabel
+    getSocialCredentialKeyLabel,
+    type SocialCredentialMasked
 } from '@/features/social-credentials';
 import { DeleteCredentialDialog } from './DeleteCredentialDialog';
 import { EditCredentialDialog } from './EditCredentialDialog';

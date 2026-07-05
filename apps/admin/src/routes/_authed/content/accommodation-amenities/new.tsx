@@ -1,12 +1,12 @@
+import { AmenityCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import { createAmenityConsolidatedConfig } from '@/features/amenities/config';
 import { useCreateAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { AmenityCreateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/accommodation-amenities/new')({
     component: AmenityCreatePage,

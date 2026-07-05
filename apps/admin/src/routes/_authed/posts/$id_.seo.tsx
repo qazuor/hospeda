@@ -1,10 +1,10 @@
+import { createFileRoute } from '@tanstack/react-router';
 import { PageTabs, postTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
-import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
+import { buildSeoPreviewUrl, SEO_DEFAULT_LOCALE } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
 import { usePostQuery, useUpdatePostMutation } from '@/features/posts/hooks/usePostQuery';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/posts/$id_/seo')({
     component: PostSeoPage

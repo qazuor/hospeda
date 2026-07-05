@@ -13,10 +13,10 @@
  *     the API enforces ACCOMMODATION_GALLERY_MANAGE for write operations
  */
 
+import { createFileRoute } from '@tanstack/react-router';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { GalleryManager } from '@/features/accommodations/components/GalleryManager';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/gallery')({
     component: AccommodationGalleryPage

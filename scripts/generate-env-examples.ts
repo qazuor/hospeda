@@ -27,8 +27,8 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 import { ENV_REGISTRY } from '../packages/config/src/env-registry.js';
+import type { AppId, EnvVarDefinition } from '../packages/config/src/env-registry-types.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,7 +86,7 @@ function getVarsForApp(appId: AppId): readonly EnvVarDefinition[] {
     return ENV_REGISTRY.filter((entry) => (entry.apps as readonly string[]).includes(appId)).sort(
         (a, b) => {
             const catCmp = a.category.localeCompare(b.category);
-            return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name);
+            return catCmp === 0 ? a.name.localeCompare(b.name) : catCmp;
         }
     );
 }

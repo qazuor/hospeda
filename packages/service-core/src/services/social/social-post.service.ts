@@ -36,6 +36,8 @@ import type {
     SocialPublishLogModel as SocialPublishLogModelType
 } from '@repo/db';
 import {
+    gte,
+    lte,
     SocialAssetModel,
     SocialCampaignModel,
     SocialContentBatchModel,
@@ -46,11 +48,9 @@ import {
     SocialPostModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
-    gte,
-    lte,
     safeIlike,
-    socialPostTargets,
     socialPosts,
+    socialPostTargets,
     socialPublishLogs
 } from '@repo/db';
 import {
@@ -62,13 +62,10 @@ import {
     SocialPublishResultStatusEnum,
     SocialRecurrenceTypeEnum
 } from '@repo/schemas';
-import type { ServiceConfig, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
-import type { Actor } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { serviceLogger } from '../../utils/service-logger';
-import { SocialAuditEvent, SocialAuditLogService } from './social-audit-log.service';
-import type { SocialAuditLogService as SocialAuditLogServiceType } from './social-audit-log.service';
 import { normalizeHashtag } from './social.helpers';
 import {
     checkCanApprovePost,
@@ -79,6 +76,8 @@ import {
     checkCanUpdatePost,
     checkCanViewPost
 } from './social.permissions';
+import type { SocialAuditLogService as SocialAuditLogServiceType } from './social-audit-log.service';
+import { SocialAuditEvent, SocialAuditLogService } from './social-audit-log.service';
 
 // ---------------------------------------------------------------------------
 // Output types

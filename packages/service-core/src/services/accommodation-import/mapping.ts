@@ -356,7 +356,9 @@ function tryMapField<T>(
  * // methodsUsed = ['jsonld', 'text']
  * ```
  */
-export const mapRawToDraft = (input: { readonly raw: RawExtraction }): {
+export const mapRawToDraft = (input: {
+    readonly raw: RawExtraction;
+}): {
     draft: AccommodationImportDraft;
     methodsUsed: FieldSource[];
 } => {

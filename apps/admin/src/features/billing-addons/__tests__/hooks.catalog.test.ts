@@ -10,11 +10,11 @@
  * Uses the same renderHook pattern as the useFaqs regression tests.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import { useAddonCatalogQuery } from '../hooks';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));

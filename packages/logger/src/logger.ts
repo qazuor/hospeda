@@ -16,10 +16,10 @@ import { dispatchHooks, hasHooks } from './hooks.js';
 import { buildLogEntry } from './log-entry.js';
 import {
     type ILogger,
-    LogLevel,
-    type LogLevelType,
     type LoggerCategoryOptions,
-    type LoggerOptions
+    type LoggerOptions,
+    LogLevel,
+    type LogLevelType
 } from './types.js';
 
 /**
@@ -87,8 +87,8 @@ function logWithLevel(
     // Log to console based on level
     switch (level) {
         case LogLevel.LOG:
-            // biome-ignore lint/suspicious/noConsoleLog: Log method needs to use console.log
-            // biome-ignore lint/suspicious/noConsoleLog: Log method needs to use console.log
+            // biome-ignore lint/suspicious/noConsole: Log method needs to use console.log
+            // biome-ignore lint/suspicious/noConsole: Log method needs to use console.log
             console.log(...args);
             break;
         case LogLevel.INFO:

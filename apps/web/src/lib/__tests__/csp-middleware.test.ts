@@ -42,7 +42,7 @@
  * the prerendered path.
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCspHeader, generateCspNonce } from '../middleware-helpers';

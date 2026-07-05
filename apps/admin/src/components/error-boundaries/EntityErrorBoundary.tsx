@@ -8,11 +8,11 @@
  * - Logging and reporting
  */
 
+import { Component, type ReactNode } from 'react';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped';
 import { reportComponentError } from '@/lib/errors';
 import { t } from '@/lib/i18n';
-import { Component, type ReactNode } from 'react';
 
 /**
  * Entity Error Boundary Props

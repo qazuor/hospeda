@@ -4,19 +4,23 @@
  * Manages promotional discount codes for subscription plans.
  * Supports creating, editing, activating/deactivating, and deleting promo codes.
  */
+
+import { AddIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
-import { useToast } from '@/components/ui/ToastProvider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
     type CreatePromoCodePayload,
     type DiscountType,
+    getPromoCodeColumns,
     type PromoCode,
     type PromoCodeStatus,
-    getPromoCodeColumns,
     useCreatePromoCodeMutation,
     useDeletePromoCodeMutation,
     usePromoCodesQuery,
@@ -27,9 +31,6 @@ import { PromoCodeDeleteDialog } from '@/features/promo-codes/components/PromoCo
 import { PromoCodeFormDialog } from '@/features/promo-codes/components/PromoCodeFormDialog';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { AddIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/promo-codes')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

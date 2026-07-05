@@ -7,9 +7,11 @@
  * SUPER_ADMIN sees an additional admin escalation button.
  */
 
-import { translateApiError } from '@/lib/api-errors';
-import { billingApi, userApi } from '@/lib/api/endpoints-protected';
+import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
+import { useCallback, useEffect, useState } from 'react';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
+import { billingApi, userApi } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { getAdminUrl } from '@/lib/env';
 import { formatDate } from '@/lib/format-utils';
@@ -17,8 +19,6 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
-import { useCallback, useEffect, useState } from 'react';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
 import styles from './SubscriptionDashboard.module.css';
 
@@ -311,6 +311,7 @@ function CancelConfirmModal({
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
+        // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close is a mouse-only convenience; the Escape key handler above covers keyboard users
         <div
             className={styles.modalBackdrop}
             onClick={handleBackdropClick}
@@ -499,6 +500,7 @@ function PauseConfirmModal({
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
+        // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close is a mouse-only convenience; the Escape key handler above covers keyboard users
         <div
             className={styles.modalBackdrop}
             onClick={handleBackdropClick}
@@ -795,6 +797,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                     <h3 className={styles.planName}>{subscription.planName}</h3>
                     <span
                         className={`${styles.badge} ${badgeClass}`}
+                        role="img"
                         aria-label={`${t('account.pages.subscription.statusLabel', 'Estado')}: ${statusLabel}`}
                     >
                         {statusLabel}

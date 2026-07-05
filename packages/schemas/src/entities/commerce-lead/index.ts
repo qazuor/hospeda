@@ -5,11 +5,10 @@
  * via the "Sumar mi negocio" public form.
  */
 
-// Core schema + enums
-export * from './commerce-lead.schema.js';
+// Access level schemas (public response shapes)
+export * from './commerce-lead.access.schema.js';
 
 // CRUD input schemas (create, admin-update, delete)
 export * from './commerce-lead.crud.schema.js';
-
-// Access level schemas (public response shapes)
-export * from './commerce-lead.access.schema.js';
+// Core schema + enums
+export * from './commerce-lead.schema.js';

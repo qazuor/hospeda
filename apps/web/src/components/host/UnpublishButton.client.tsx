@@ -26,9 +26,9 @@
  * ```
  */
 
+import { type JSX, useState } from 'react';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
-import { type JSX, useState } from 'react';
 import styles from './UnpublishButton.module.css';
 
 // ---------------------------------------------------------------------------

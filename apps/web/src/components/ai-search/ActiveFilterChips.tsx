@@ -24,9 +24,9 @@
  * @module ActiveFilterChips
  */
 
+import type { SearchIntentEntities } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { SearchIntentEntities } from '@repo/schemas';
 import styles from './ActiveFilterChips.module.css';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

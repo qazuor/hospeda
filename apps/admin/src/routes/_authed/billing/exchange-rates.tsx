@@ -5,15 +5,25 @@
  * and historical data viewing. Provides three tabs for current rates, history,
  * and configuration management.
  */
+
+import { AddIcon, RefreshIcon, SettingsIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import type {
+    ExchangeRate,
+    ExchangeRateConfig,
+    ExchangeRateConfigUpdateInput,
+    ExchangeRateCreateInput
+} from '@/features/exchange-rates';
 import {
     FetchConfigForm,
+    getExchangeRateColumns,
     ManualOverrideDialog,
     RateHistoryView,
-    getExchangeRateColumns,
     useCreateManualOverrideMutation,
     useDeleteManualOverrideMutation,
     useExchangeRateConfigQuery,
@@ -21,18 +31,9 @@ import {
     useTriggerFetchNowMutation,
     useUpdateConfigMutation
 } from '@/features/exchange-rates';
-import type {
-    ExchangeRate,
-    ExchangeRateConfig,
-    ExchangeRateConfigUpdateInput,
-    ExchangeRateCreateInput
-} from '@/features/exchange-rates';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { AddIcon, RefreshIcon, SettingsIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/exchange-rates')({
     beforeLoad: ({ context }) => requireBillingAccess(context),

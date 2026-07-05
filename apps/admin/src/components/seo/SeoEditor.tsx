@@ -1,22 +1,22 @@
-import { useToast } from '@/components/ui/ToastProvider';
+import { type Seo, SeoSchema } from '@repo/schemas';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/ToastProvider';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { type Seo, SeoSchema } from '@repo/schemas';
-import { useEffect, useMemo, useState } from 'react';
 import {
-    SEO_LIMITS,
-    type SeoFormValues,
     buildSeoFormValues,
     buildSeoPayload,
     buildSeoPreviewDescription,
     buildSeoPreviewTitle,
     getSeoCounterTone,
+    SEO_LIMITS,
+    type SeoFormValues,
     truncateSeoPreview
 } from './seo-editor.utils';
 

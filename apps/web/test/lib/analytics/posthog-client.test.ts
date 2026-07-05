@@ -11,8 +11,8 @@
  *    when the stub is present.
  */
 
-import { trackEvent } from '@/lib/analytics/posthog-client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 
 afterEach(() => {
     // Reset window.posthog between tests so cross-test state doesn't leak.

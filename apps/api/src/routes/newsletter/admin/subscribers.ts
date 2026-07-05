@@ -19,13 +19,13 @@
  * Service-side soft-cap for query: 255-character `emailSearch`.
  */
 
+import type { NewsletterSubscriberAdminSearch } from '@repo/schemas';
 import {
     NewsletterSubscriberAdminSearchSchema,
     NewsletterSubscriberSchema,
     NewsletterSubscriberStatsResponseSchema,
     PermissionEnum
 } from '@repo/schemas';
-import type { NewsletterSubscriberAdminSearch } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';

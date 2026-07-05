@@ -12,6 +12,10 @@
  * the sticky header never appears with empty / placeholder data.
  */
 
+import { AlertCircleIcon, LoaderIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { useNavigate } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { EntityPageHeader } from '@/components/entity-header/EntityPageHeader';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
@@ -20,10 +24,6 @@ import { ImpersonateButton } from '@/features/users/components/ImpersonateButton
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
 import { useDeleteUserMutation, useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { AlertCircleIcon, LoaderIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import { useNavigate } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
 
 export interface UserSiblingPageShellProps {
     readonly userId: string;

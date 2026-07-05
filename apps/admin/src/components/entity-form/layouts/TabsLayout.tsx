@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 /**
  * Tab configuration

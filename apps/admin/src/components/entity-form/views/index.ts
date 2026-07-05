@@ -5,38 +5,29 @@
  * Each component handles displaying a specific field type from FieldConfig.
  */
 
-// Basic View Fields
-export { TextViewField } from './TextViewField';
-export type { TextViewFieldProps } from './TextViewField';
-
-export { SelectViewField } from './SelectViewField';
-export type { SelectViewFieldProps } from './SelectViewField';
-
-export { BooleanViewField } from './BooleanViewField';
 export type { BooleanViewFieldProps } from './BooleanViewField';
-
+export { BooleanViewField } from './BooleanViewField';
+export type { CurrencyViewFieldProps } from './CurrencyViewField';
+export { CurrencyViewField } from './CurrencyViewField';
+export type { EntitySelectViewFieldProps } from './EntitySelectViewField';
 // Advanced View Components
 export { EntitySelectViewField } from './EntitySelectViewField';
-export type { EntitySelectViewFieldProps } from './EntitySelectViewField';
-
-export { CurrencyViewField } from './CurrencyViewField';
-export type { CurrencyViewFieldProps } from './CurrencyViewField';
-
-export { RichTextViewField } from './RichTextViewField';
-export type { RichTextViewFieldProps } from './RichTextViewField';
-
-export { ImageViewField } from './ImageViewField';
-export type { ImageViewFieldProps } from './ImageViewField';
-
-export { GalleryViewField } from './GalleryViewField';
 export type { GalleryViewFieldProps } from './GalleryViewField';
-
-export { VideoGalleryViewField } from './VideoGalleryViewField';
-export type { VideoGalleryViewFieldProps } from './VideoGalleryViewField';
-
+export { GalleryViewField } from './GalleryViewField';
+export type { I18nTextViewFieldProps } from './I18nTextViewField';
 // Internationalized (i18n) Text View Fields
 export { I18nTextViewField } from './I18nTextViewField';
-export type { I18nTextViewFieldProps } from './I18nTextViewField';
+export type { ImageViewFieldProps } from './ImageViewField';
+export { ImageViewField } from './ImageViewField';
+export type { RichTextViewFieldProps } from './RichTextViewField';
+export { RichTextViewField } from './RichTextViewField';
+export type { SelectViewFieldProps } from './SelectViewField';
+export { SelectViewField } from './SelectViewField';
+export type { TextViewFieldProps } from './TextViewField';
+// Basic View Fields
+export { TextViewField } from './TextViewField';
+export type { VideoGalleryViewFieldProps } from './VideoGalleryViewField';
+export { VideoGalleryViewField } from './VideoGalleryViewField';
 
 // TODO: Implement additional view field types
 // export { NumberViewField } from './NumberViewField';

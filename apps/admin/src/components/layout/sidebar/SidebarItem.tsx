@@ -12,11 +12,11 @@
  * - Unread badge is injected via the `unreadCount` prop (not embedded in item shape).
  */
 
+import { Link, useLocation } from '@tanstack/react-router';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import type { VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
 import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import { Link, useLocation } from '@tanstack/react-router';
 
 export interface SidebarItemProps {
     /** The annotated link item from `useVisibleSidebarItems`. */
@@ -102,6 +102,7 @@ export function SidebarItem({ item, unreadCount = 0, onClick, className }: Sideb
             {unreadCount > 0 && (
                 <span
                     className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 font-semibold text-destructive-foreground text-xs"
+                    role="status"
                     aria-label={`${unreadCount} unread messages`}
                 >
                     {unreadCount > 99 ? '99+' : unreadCount}

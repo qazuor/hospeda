@@ -130,10 +130,7 @@ export function SocialPostPreviewCard({
 
             {/* Thumbnail gallery (additional media) */}
             {extraItems.length > 0 && (
-                <div
-                    className="flex gap-2 overflow-x-auto p-3"
-                    aria-label="Additional media"
-                >
+                <div className="flex gap-2 overflow-x-auto p-3">
                     {extraItems.map((item, idx) => {
                         const url = item.cloudinaryUrl ?? null;
                         return (

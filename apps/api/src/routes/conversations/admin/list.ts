@@ -19,8 +19,7 @@
  *   new service method and keeps the service interface stable (T-011 decision).
  */
 
-import { AccommodationModel, MessageModel, UserModel, getDb } from '@repo/db';
-import { accommodations } from '@repo/db';
+import { AccommodationModel, accommodations, getDb, MessageModel, UserModel } from '@repo/db';
 import {
     AdminConversationListItemSchema,
     ConversationAdminSearchSchema,

@@ -26,13 +26,13 @@
  * @module SearchChatPanel
  */
 
+import type { AccommodationPublic } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { AccommodationPublic } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import styles from './SearchChatPanel.module.css';
 import { useSearchChat } from './useSearchChat';
@@ -155,13 +155,13 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
 
     const priceValue = item.price?.price;
     const formattedPrice =
-        priceValue != null
-            ? formatPrice({
+        priceValue == null
+            ? null
+            : formatPrice({
                   amount: priceValue,
                   currency: item.price?.currency ?? 'ARS',
                   locale
-              })
-            : null;
+              });
 
     const rating = item.averageRating;
     const hasRating = typeof rating === 'number' && rating > 0;
@@ -199,6 +199,7 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
                 {hasRating && (
                     <div
                         className={styles.resultCardRating}
+                        role="img"
                         aria-label={`${rating?.toFixed(1)} stars`}
                     >
                         {'★'.repeat(Math.floor(rating ?? 0))}
@@ -428,6 +429,7 @@ export function SearchChatPanel({
                 {/* Message thread */}
                 <div
                     className={styles.messages}
+                    role="log"
                     aria-live="polite"
                     aria-atomic="false"
                     aria-label={t(

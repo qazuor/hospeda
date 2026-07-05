@@ -7,9 +7,9 @@
  * 3. Handles parameter interpolation
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { useTranslations } from '@/hooks/use-translations';
 
 // Undo the global mock from test/setup.tsx so we test the real implementation
 vi.unmock('@/hooks/use-translations');

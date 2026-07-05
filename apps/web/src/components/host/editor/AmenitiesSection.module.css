@@ -43,7 +43,9 @@
     border-radius: var(--radius-md, 10px);
     background-color: var(--core-card);
     cursor: pointer;
-    transition: border-color 150ms ease-out, background-color 150ms ease-out;
+    transition:
+        border-color 150ms ease-out,
+        background-color 150ms ease-out;
 }
 
 .checkboxLabel:hover {

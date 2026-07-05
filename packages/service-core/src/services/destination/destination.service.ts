@@ -1,11 +1,11 @@
+import type { DrizzleClient } from '@repo/db';
 import {
     AccommodationModel,
+    buildSearchCondition,
     DestinationFaqModel,
     DestinationModel,
-    buildSearchCondition,
     withTransaction
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -802,15 +802,15 @@ export class DestinationService extends BaseCrudService<
                 const { parentId, oldPath, newPath } = resolvedCtx.hookState.pendingPathUpdate;
                 // When resolvedCtx.tx is provided, use it for full atomicity.
                 // Without a transaction the cascade runs in a separate operation.
-                if (resolvedCtx.tx !== undefined) {
+                if (resolvedCtx.tx === undefined) {
+                    await this.model.updateDescendantPaths(parentId, oldPath, newPath);
+                } else {
                     await this.model.updateDescendantPaths(
                         parentId,
                         oldPath,
                         newPath,
                         resolvedCtx.tx
                     );
-                } else {
-                    await this.model.updateDescendantPaths(parentId, oldPath, newPath);
                 }
             }
 

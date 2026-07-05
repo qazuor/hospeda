@@ -340,7 +340,7 @@ export function reportNetworkError(error: unknown, context?: Record<string, unkn
         context: {
             ...context,
             errorType: 'network',
-            online: typeof navigator !== 'undefined' ? navigator.onLine : 'unknown'
+            online: typeof navigator === 'undefined' ? 'unknown' : navigator.onLine
         },
         source: 'Network',
         severity: 'warning',

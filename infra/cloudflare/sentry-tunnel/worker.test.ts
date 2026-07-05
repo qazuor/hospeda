@@ -1,4 +1,4 @@
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import worker, { resolveSentryUpstream } from './worker.js';
 
 /** A valid Sentry envelope header line for a US-cloud project. */

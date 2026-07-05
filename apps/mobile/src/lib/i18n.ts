@@ -6,8 +6,8 @@
  * @repo/schemas — main: dist/index.js → resolved from built dist (must be built)
  */
 
-import { defaultLocale, locales, trans } from '@repo/i18n';
 import type { Locale } from '@repo/i18n';
+import { defaultLocale, locales, trans } from '@repo/i18n';
 import { LifecycleStatusEnum } from '@repo/schemas';
 
 /**

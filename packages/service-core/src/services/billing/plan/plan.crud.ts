@@ -12,27 +12,27 @@
  */
 
 import {
-    type DrizzleClient,
-    type QZPayBillingPlan,
-    type QZPayBillingPrice,
-    type QueryContext,
     and,
     asc,
     billingPlans,
     billingPrices,
     billingSubscriptions,
     count,
+    type DrizzleClient,
     eq,
     getDb,
     isNull,
+    type QueryContext,
+    type QZPayBillingPlan,
+    type QZPayBillingPrice,
     sql,
     withTransaction
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
 import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
-import { findCapabilityFieldViolation } from './plan.types.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
+import { findCapabilityFieldViolation } from './plan.types.js';
 
 // ---------------------------------------------------------------------------
 // Mapping

@@ -31,7 +31,7 @@ import {
 import { die, log } from '../lib/log.ts';
 import { pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm, pickOne, resolveNumberArg } from '../lib/prompt.ts';
-import { type R2Object, createR2Client, humanSize, utcBackupTimestamp } from '../lib/r2.ts';
+import { createR2Client, humanSize, type R2Object, utcBackupTimestamp } from '../lib/r2.ts';
 import { getDbCredentials } from '../lib/target.ts';
 
 const HELP = `
@@ -46,7 +46,7 @@ Arguments:
 Flags:
   --target-db <name>         Restore into a different database (e.g.
                              postgres_restore_test) instead of the
-                             default (\$PG_DB).
+                             default ($PG_DB).
   --no-snapshot-first        Skip the automatic pre-restore snapshot.
                              Use ONLY when you have just taken one
                              yourself and want to save the few minutes.
@@ -142,7 +142,13 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     let chosen: R2Object;
-    if (parsed.indexHint !== null) {
+    if (parsed.indexHint === null) {
+        chosen = await pickOne(
+            `Pick a backup to restore into '${targetDb}' (newest first)`,
+            backups,
+            describeBackup
+        );
+    } else {
         const direct = resolveNumberArg([String(parsed.indexHint)], backups);
         if (!direct) {
             die(
@@ -150,17 +156,11 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
             );
         }
         chosen = direct;
-    } else {
-        chosen = await pickOne(
-            `Pick a backup to restore into '${targetDb}' (newest first)`,
-            backups,
-            describeBackup
-        );
     }
 
     log.info(`Selected : ${chosen.key} (${humanSize(chosen.size)})`);
     log.info(`Container: ${container}`);
-    log.info(`Target DB: ${targetDb}${targetDb !== db ? ' (override)' : ''}`);
+    log.info(`Target DB: ${targetDb}${targetDb === db ? '' : ' (override)'}`);
     log.info(
         `Snapshot : ${parsed.skipSnapshot ? 'SKIPPED (--no-snapshot-first)' : 'ON (auto pre-restore)'}`
     );

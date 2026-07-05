@@ -1,9 +1,9 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { reportComponentError } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import React from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { reportComponentError } from '@/lib/errors';
 
 /**
  * Error fallback component for entity-related errors

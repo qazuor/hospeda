@@ -20,6 +20,7 @@ export function UnreadBadge() {
     return (
         <span
             className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 font-semibold text-destructive-foreground text-xs"
+            role="status"
             aria-label={`${count} unread messages`}
         >
             {count > 99 ? '99+' : count}

@@ -33,16 +33,16 @@
  * @see SPEC-155 T-040
  */
 
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_STALE_TIME_MS,
     _clearRegistryForTesting,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     isSourceRegistered,
     registerDataSource,
     resolveDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // ============================================================================
 // HELPERS

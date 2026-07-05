@@ -6,6 +6,9 @@
  * will be implemented in a future spec.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { SearchIcon } from '@repo/icons';
+import { useCallback, useEffect, useState } from 'react';
 import {
     CommandDialog,
     CommandEmpty,
@@ -15,9 +18,6 @@ import {
     CommandList
 } from '@/components/ui/command';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { SearchIcon } from '@repo/icons';
-import { useCallback, useEffect, useState } from 'react';
 
 /**
  * CommandPalette provides a keyboard-accessible search dialog.

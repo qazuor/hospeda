@@ -12,10 +12,10 @@
  * - Streak 3 → terminal: cancelledAt = now, returns null
  */
 
-import { NotificationScheduleModel } from '@repo/db';
 import type { SelectConversationNotificationSchedule } from '@repo/db';
+import { NotificationScheduleModel } from '@repo/db';
 import { NotificationRecipientSideEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service';
 import { createActor } from '../../factories/actorFactory';
 import { expectForbiddenError, expectNotFoundError, expectSuccess } from '../../helpers/assertions';

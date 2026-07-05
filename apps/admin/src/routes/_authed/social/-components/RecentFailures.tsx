@@ -7,10 +7,9 @@
  * and retry count. Each row links to the parent post detail page.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-
 import type { SocialDashboardFailureItem } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** Props for {@link RecentFailures}. */
 export interface RecentFailuresProps {

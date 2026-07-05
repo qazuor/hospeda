@@ -1,6 +1,6 @@
-import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import type { ReactNode } from 'react';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
+import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
 
 /**
  * Props for AccommodationSubTabLayout.

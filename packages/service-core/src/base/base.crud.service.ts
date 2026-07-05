@@ -1,6 +1,5 @@
 import type { ZodObject } from 'zod';
-import type { ServiceConfig } from '../types';
-import type { BaseModel } from '../types';
+import type { BaseModel, ServiceConfig } from '../types';
 import { BaseCrudAdmin } from './base.crud.admin';
 
 /**

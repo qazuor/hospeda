@@ -377,8 +377,9 @@ describe('Plan Change Functionality', () => {
 
                 // Assert
                 expect(result.subscription.planId).toBe(premiumPlan.id);
+                expect(result.proration).toBeDefined();
                 expect(result.proration?.chargeAmount).toBeGreaterThan(
-                    result.proration?.creditAmount!
+                    result.proration?.creditAmount ?? 0
                 );
             });
         });

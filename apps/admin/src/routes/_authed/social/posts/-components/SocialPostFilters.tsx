@@ -7,10 +7,10 @@
  * Follows the same pattern as CommentsFilters.tsx.
  */
 
-import { useSocialBatchesList, useSocialCampaignsList } from '@/hooks/use-social-catalog';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { SocialApprovalStatusEnum, SocialPlatformEnum, SocialPostStatusEnum } from '@repo/schemas';
+import { useSocialBatchesList, useSocialCampaignsList } from '@/hooks/use-social-catalog';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** Shape of the filter state managed by the parent page. */
 export interface SocialPostFiltersValue {

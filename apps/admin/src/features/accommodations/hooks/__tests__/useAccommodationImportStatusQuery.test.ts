@@ -10,7 +10,6 @@
  *  - `computeImportStatusRefetchInterval` stops polling once settled
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     AccommodationImportAsyncStartResponse,
     AccommodationImportStatusResponse
@@ -19,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import {
     computeImportStatusRefetchInterval,
     useAccommodationImportStatusQuery

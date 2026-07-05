@@ -11,8 +11,8 @@
 import React, { useState } from 'react';
 import { useAuthTranslations } from './hooks/use-auth-translations';
 import { authLogger } from './logger';
-import { PasswordField } from './password-field';
 import type { PasswordFieldI18n } from './password-field';
+import { PasswordField } from './password-field';
 import type { SignInMethods, SignUpMethods } from './types';
 
 /**

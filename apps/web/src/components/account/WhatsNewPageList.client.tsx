@@ -1,9 +1,9 @@
+import { useEffect, useMemo } from 'react';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
-import { useEffect, useMemo } from 'react';
 
 interface WhatsNewPageListProps {
     readonly locale: SupportedLocale;
@@ -67,7 +67,7 @@ function WhatsNewCard({ item, locale }: WhatsNewCardProps) {
     }, [item.publishedAt, locale]);
 
     return (
-        <article className={`whats-new-card${item.seen ? ' whats-new-card--seen' : ''}`}>
+        <article className={`whats-new-card${item.seen ? 'whats-new-card--seen' : ''}`}>
             {item.image && (
                 <img
                     src={item.image}

@@ -40,7 +40,10 @@ vi.mock('../WhatsNewPanel', () => ({
     WhatsNewPanel: ({
         open,
         onOpenChange
-    }: { open: boolean; onOpenChange: (v: boolean) => void }) => (
+    }: {
+        open: boolean;
+        onOpenChange: (v: boolean) => void;
+    }) => (
         <button
             type="button"
             data-testid="whats-new-panel"

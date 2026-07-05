@@ -1,10 +1,10 @@
+import type { UpdatePostTagInput } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PostTagForm } from '@/components/tags/PostTagForm';
 import { usePostTag, useUpdatePostTag } from '@/hooks/use-post-tags';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import type { UpdatePostTagInput } from '@repo/schemas';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/tags/post-tags/$id_/edit')({
     component: PostTagEditPage,

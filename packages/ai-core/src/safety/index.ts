@@ -13,18 +13,18 @@
  */
 
 export {
-    guardPromptInjection,
     DEFAULT_MAX_INPUT_LENGTH,
     type GuardPromptInjectionInput,
     type GuardPromptInjectionResult,
+    guardPromptInjection,
     type InjectionMatch,
     type InjectionSeverity
 } from './injection-guard.js';
 
 export {
-    scrubPii,
+    type PiiKind,
+    type PiiRedaction,
     type ScrubPiiInput,
     type ScrubPiiResult,
-    type PiiRedaction,
-    type PiiKind
+    scrubPii
 } from './pii-scrubber.js';

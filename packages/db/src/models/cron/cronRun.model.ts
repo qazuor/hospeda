@@ -1,4 +1,4 @@
-import { type SQL, and, desc, eq, gte, inArray, lt, lte, or } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, lte, or, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { cronRuns } from '../../schemas/cron/cron_run.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';

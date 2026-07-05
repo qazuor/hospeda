@@ -8,9 +8,9 @@ import { createCRUDRoute, createListRoute } from './route-factory';
 
 export { createPaginatedResponse, createResponse } from './response-helpers';
 export {
+    type CreateOpenApiRouteInterface,
     createCRUDRoute,
-    createListRoute,
-    type CreateOpenApiRouteInterface
+    createListRoute
 } from './route-factory';
 
 /**

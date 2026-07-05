@@ -6,11 +6,11 @@
  * that redirects to the dashboard after successful OAuth authentication.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
-import { useSession } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { useSession } from '@/lib/auth-client';
 
 export const Route = createFileRoute('/auth/callback')({
     component: AuthCallbackPage

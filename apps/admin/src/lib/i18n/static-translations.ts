@@ -5,8 +5,8 @@
  * where React hooks are not available (e.g., error boundaries with getDerivedStateFromError).
  */
 
-import { defaultLocale, trans } from '@repo/i18n';
 import type { TranslationKey } from '@repo/i18n';
+import { defaultLocale, trans } from '@repo/i18n';
 import { adminLogger } from '../../utils/logger';
 
 /**

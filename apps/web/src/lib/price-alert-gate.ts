@@ -1,5 +1,5 @@
-import type { ApiResult } from '@/lib/api/types';
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import type { ApiResult } from '@/lib/api/types';
 
 /**
  * Resolved gate state for the accommodation-detail `PriceAlertButton` — kept
