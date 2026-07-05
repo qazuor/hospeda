@@ -180,6 +180,16 @@
                     }
                 }
             }
+        },
+        {
+            "includes": ["**/addon-lifecycle-cancellation.service.test.ts"],
+            "assist": {
+                "actions": {
+                    "source": {
+                        "organizeImports": "off"
+                    }
+                }
+            }
         }
     ]
 }
