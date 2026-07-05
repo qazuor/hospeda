@@ -5,7 +5,21 @@
             "remove": "Remover da comparação",
             "addAriaLabel": "Adicionar {{name}} à comparação",
             "removeAriaLabel": "Remover {{name}} da comparação",
-            "inListLabel": "Em comparação"
+            "inListLabel": "Em comparação",
+            "contextualAdd": "Adicionar",
+            "contextualAdded": "Adicionado"
+        },
+        "mode": {
+            "toggleLabel": "Comparar hospedagens",
+            "activeLabel": "Comparando",
+            "on": "Modo de comparação ativado",
+            "off": "Modo de comparação desativado",
+            "bannerHint": "Escolha as hospedagens que você quer comparar"
+        },
+        "gate": {
+            "authMessage": "Faça login para comparar hospedagens.",
+            "upsellMessage": "Seu plano não inclui a comparação de hospedagens.",
+            "upsellCta": "Ver planos"
         },
         "toast": {
             "added": "Adicionado à comparação",
@@ -29,7 +43,11 @@
             "compareNow": "Comparar agora",
             "clear": "Limpar",
             "removeItemAriaLabel": "Remover {{name}} da comparação",
-            "minRequired": "Escolha pelo menos {{min}} para comparar"
+            "minRequired": "Escolha pelo menos {{min}} para comparar",
+            "counter": "Comparando {{current}} de {{max}}",
+            "emptySlot": "Vazio",
+            "guidance": "Adicione pelo menos mais uma para comparar",
+            "viewComparison": "Ver comparação"
         },
         "page": {
             "metaTitle": "Comparar hospedagens",
@@ -59,7 +77,17 @@
             "featured": "Destaque",
             "summary": "Descrição",
             "viewDetails": "Ver detalhes",
-            "notAvailable": "N/D"
+            "notAvailable": "N/D",
+            "highlightDifferences": "Destacar diferenças",
+            "bestValue": "Melhor custo-benefício",
+            "bestValueAriaLabel": "Melhor custo-benefício em {{attribute}}",
+            "scrollHint": "Deslize para ver mais →"
+        },
+        "detail": {
+            "add": "Adicionar à comparação",
+            "added": "Em comparação",
+            "addAriaLabel": "Adicionar {{name}} à comparação",
+            "removeAriaLabel": "Remover {{name}} da comparação"
         }
     },
     "title": "Hospedagens",

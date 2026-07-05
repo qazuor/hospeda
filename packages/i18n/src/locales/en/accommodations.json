@@ -5,7 +5,21 @@
             "remove": "Remove from comparison",
             "addAriaLabel": "Add {{name}} to comparison",
             "removeAriaLabel": "Remove {{name}} from comparison",
-            "inListLabel": "In comparison"
+            "inListLabel": "In comparison",
+            "contextualAdd": "Add",
+            "contextualAdded": "Added"
+        },
+        "mode": {
+            "toggleLabel": "Compare accommodations",
+            "activeLabel": "Comparing",
+            "on": "Comparison mode on",
+            "off": "Comparison mode off",
+            "bannerHint": "Choose the accommodations you want to compare"
+        },
+        "gate": {
+            "authMessage": "Sign in to compare accommodations.",
+            "upsellMessage": "Your plan does not include accommodation comparison.",
+            "upsellCta": "View plans"
         },
         "toast": {
             "added": "Added to comparison",
@@ -29,7 +43,11 @@
             "compareNow": "Compare now",
             "clear": "Clear",
             "removeItemAriaLabel": "Remove {{name}} from comparison",
-            "minRequired": "Pick at least {{min}} to compare"
+            "minRequired": "Pick at least {{min}} to compare",
+            "counter": "Comparing {{current}} of {{max}}",
+            "emptySlot": "Empty",
+            "guidance": "Add at least one more to compare",
+            "viewComparison": "View comparison"
         },
         "page": {
             "metaTitle": "Compare accommodations",
@@ -59,7 +77,17 @@
             "featured": "Featured",
             "summary": "Description",
             "viewDetails": "View details",
-            "notAvailable": "N/A"
+            "notAvailable": "N/A",
+            "highlightDifferences": "Highlight differences",
+            "bestValue": "Best value",
+            "bestValueAriaLabel": "Best value for {{attribute}}",
+            "scrollHint": "Swipe to see more →"
+        },
+        "detail": {
+            "add": "Add to comparison",
+            "added": "In comparison",
+            "addAriaLabel": "Add {{name}} to comparison",
+            "removeAriaLabel": "Remove {{name}} from comparison"
         }
     },
     "title": "Accommodations",
