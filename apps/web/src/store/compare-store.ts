@@ -38,8 +38,25 @@
  *   );
  * }
  * ```
+ *
+ * Compare MODE (HOS-85):
+ * A second, independent sibling store tracks whether "compare mode" (the
+ * selecting UI shown on the accommodation listing) is currently active. It is
+ * kept separate from the selection state above — the two change for different
+ * reasons and at different rates, and consumers that only care about the
+ * selection (e.g. the floating compare bar) should not re-render every time
+ * mode toggles, and vice versa.
+ *
+ * Because `apps/web` is an Astro MPA (every navigation is a full page reload),
+ * compare mode is persisted to localStorage under {@link MODE_STORAGE_KEY} so
+ * it survives reloads while browsing the accommodation section. It must NOT
+ * leak into unrelated sections of the site, so {@link clearCompareModeIfOutsideSection}
+ * is provided for the listing/layout code to call on bootstrap: it turns mode
+ * OFF whenever the current path is not under `/{locale}/alojamientos/...`
+ * (for any supported locale), and leaves it untouched otherwise.
  */
 
+import { SUPPORTED_LOCALES } from '@/lib/i18n';
 import { useSyncExternalStore } from 'react';
 
 /**
@@ -79,6 +96,13 @@ export interface CompareState {
 const STORAGE_KEY = 'hospeda:compare:v1' as const;
 /** localStorage key for the per-ID display metadata map. */
 const META_STORAGE_KEY = 'hospeda:compare:meta:v1' as const;
+/** localStorage key for the compare-mode flag (namespaced and versioned). */
+const MODE_STORAGE_KEY = 'hospeda:compare:mode:v1' as const;
+/**
+ * The `/{locale}/{segment}/...` path segment that compare mode is scoped to.
+ * Mode stays on while browsing under this segment and turns off elsewhere.
+ */
+const COMPARE_MODE_SECTION_SEGMENT = 'alojamientos' as const;
 
 /** Canonical empty state. Used as the initial snapshot and the server snapshot. */
 const EMPTY_STATE: CompareState = { ids: [], items: [] };
@@ -95,6 +119,23 @@ const listeners = new Set<() => void>();
 /** Notify all registered listeners that the store state has changed. */
 function emitChange(): void {
     for (const listener of listeners) {
+        listener();
+    }
+}
+
+/**
+ * Current compare-mode flag. Kept as a plain module-level boolean (not part of
+ * {@link CompareState}) since it changes independently of the selection and
+ * has its own listener set — see the "Compare MODE" note in the file header.
+ */
+let compareModeEnabled = false;
+
+/** Registered compare-mode change listeners (separate from {@link listeners}). */
+const modeListeners = new Set<() => void>();
+
+/** Notify all registered compare-mode listeners that the flag has changed. */
+function emitModeChange(): void {
+    for (const listener of modeListeners) {
         listener();
     }
 }
@@ -220,8 +261,39 @@ function loadMetaFromStorage(): Map<string, CompareItemMeta> {
     return result;
 }
 
+/**
+ * Read the persisted compare-mode flag from localStorage and update the
+ * in-memory value. Called once automatically at module load time and
+ * exported so tests can simulate a fresh page load after pre-populating
+ * localStorage.
+ *
+ * Gracefully handles: missing key, malformed JSON, and any non-boolean value
+ * (treated as `false`, matching the SSR default).
+ */
+export function loadCompareModeFromStorage(): void {
+    if (typeof window === 'undefined') return;
+    let raw: string | null = null;
+    try {
+        raw = window.localStorage.getItem(MODE_STORAGE_KEY);
+    } catch {
+        compareModeEnabled = false;
+        return;
+    }
+    if (raw === null) {
+        compareModeEnabled = false;
+        return;
+    }
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        compareModeEnabled = parsed === true;
+    } catch {
+        compareModeEnabled = false;
+    }
+}
+
 // Initialise from localStorage once, immediately at module load.
 loadFromStorage();
+loadCompareModeFromStorage();
 
 /**
  * Subscribe to compare store state changes.
@@ -362,4 +434,155 @@ export function isInCompare(id: string): boolean {
  */
 export function useCompareStore(): CompareState {
     return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+// ---------------------------------------------------------------------------
+// Compare mode (HOS-85) — sibling store, see the file header note.
+// ---------------------------------------------------------------------------
+
+/**
+ * Persist the current compare-mode flag to localStorage. Safe in all
+ * environments — silently no-ops during SSR (no `window`) or when
+ * localStorage throws (private-browsing quota exhaustion).
+ */
+function persistCompareMode(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(MODE_STORAGE_KEY, JSON.stringify(compareModeEnabled));
+    } catch {
+        // localStorage throws in private mode or when the quota is exceeded.
+    }
+}
+
+/**
+ * Set the compare-mode flag, persist it, and notify compare-mode subscribers.
+ * No-op (no persistence, no notification) when the value is unchanged, matching
+ * the "no emit on no-op" contract of the selection mutators above.
+ *
+ * @param enabled - Whether compare mode should be active.
+ */
+export function setCompareMode(enabled: boolean): void {
+    if (compareModeEnabled === enabled) return;
+    compareModeEnabled = enabled;
+    persistCompareMode();
+    emitModeChange();
+}
+
+/**
+ * Toggle the compare-mode flag: on if currently off, off if currently on.
+ */
+export function toggleCompareMode(): void {
+    setCompareMode(!compareModeEnabled);
+}
+
+/**
+ * Determine whether a pathname falls under the accommodation listing section
+ * (`/{locale}/alojamientos/...`) for any supported locale.
+ *
+ * @param pathname - A URL pathname, e.g. `location.pathname` or `Astro.url.pathname`.
+ * @returns `true` when the first two non-empty path segments are a supported
+ *   locale followed by {@link COMPARE_MODE_SECTION_SEGMENT}.
+ */
+function isAccommodationSectionPath(pathname: string): boolean {
+    const [locale, section] = pathname.split('/').filter((segment) => segment.length > 0);
+    return (
+        (SUPPORTED_LOCALES as readonly string[]).includes(locale ?? '') &&
+        section === COMPARE_MODE_SECTION_SEGMENT
+    );
+}
+
+/**
+ * Reset the compare experience (mode flag AND the selected accommodations) when
+ * `pathname` is outside the accommodation listing section, leaving both
+ * untouched when inside it.
+ *
+ * The compare feature is deliberately scoped to `/{locale}/alojamientos/...`:
+ * since `apps/web` is an Astro MPA/ClientRouter app, both the mode flag and the
+ * selection persist in localStorage across navigations. Without this call they
+ * would leak into unrelated sections, so a user leaving the accommodation
+ * section and coming back would see a stale, previously-built selection reappear
+ * (confusing: "I just started comparing and it already shows 2"). Clearing the
+ * selection here — not just the mode — makes "start comparing" always begin from
+ * an empty state, while navigating between the listing and an accommodation
+ * detail page (both under `/alojamientos/`) preserves the in-progress selection.
+ *
+ * Intended to be called once on every page load by the base layout, passing the
+ * current pathname.
+ *
+ * @param pathname - The current pathname to check, e.g. `Astro.url.pathname`.
+ *
+ * @example
+ * ```ts
+ * clearCompareModeIfOutsideSection('/es/mi-cuenta/'); // clears mode + selection
+ * clearCompareModeIfOutsideSection('/es/alojamientos/'); // leaves both as-is
+ * clearCompareModeIfOutsideSection('/es/alojamientos/some-hotel/'); // leaves both as-is (detail is in-section)
+ * ```
+ */
+export function clearCompareModeIfOutsideSection(pathname: string): void {
+    if (isAccommodationSectionPath(pathname)) return;
+    setCompareMode(false);
+    clearCompare();
+}
+
+/**
+ * Subscribe to compare-mode changes.
+ *
+ * Signature is compatible with `useSyncExternalStore`'s first argument so
+ * island components can re-render whenever compare mode toggles. Kept
+ * separate from {@link subscribe} (selection changes) so consumers only
+ * re-render for the state they actually care about.
+ *
+ * @param listener - Invoked whenever the compare-mode flag changes.
+ * @returns Unsubscribe function.
+ */
+export function subscribeToCompareMode(listener: () => void): () => void {
+    modeListeners.add(listener);
+    return () => {
+        modeListeners.delete(listener);
+    };
+}
+
+/**
+ * Return the current compare-mode flag.
+ *
+ * @returns `true` if compare mode is currently active.
+ */
+export function getCompareModeSnapshot(): boolean {
+    return compareModeEnabled;
+}
+
+/**
+ * Return the compare-mode flag used during Astro SSR and hydration: always
+ * `false`, since mode is a client-only, section-scoped concept with no
+ * server-side equivalent.
+ *
+ * @returns `false`.
+ */
+export function getCompareModeServerSnapshot(): boolean {
+    return false;
+}
+
+/**
+ * React hook for subscribing to the compare-mode flag in island components.
+ *
+ * @example
+ * ```tsx
+ * function CompareModeToggle() {
+ *   const enabled = useCompareMode();
+ *   return (
+ *     <button onClick={toggleCompareMode}>
+ *       {enabled ? 'Exit compare mode' : 'Compare accommodations'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ *
+ * @returns `true` if compare mode is currently active, updated on every change.
+ */
+export function useCompareMode(): boolean {
+    return useSyncExternalStore(
+        subscribeToCompareMode,
+        getCompareModeSnapshot,
+        getCompareModeServerSnapshot
+    );
 }
