@@ -78,7 +78,14 @@ export default defineConfig({
         pool: 'forks',
         poolOptions: {
             forks: {
-                singleFork: true
+                singleFork: true,
+                // The whole suite runs in one long-lived fork (singleFork), so V8
+                // heap use accumulates across every test file. The default ~2 GB
+                // ceiling is exceeded partway through (observed OOM after ~11 files),
+                // so raise it here to make the suite reliably runnable without an
+                // external NODE_OPTIONS flag. This is a ceiling bump, not a leak fix —
+                // reducing the per-file native-memory growth is tracked in HOS-80.
+                execArgv: ['--max-old-space-size=8192']
             }
         },
         coverage: {
