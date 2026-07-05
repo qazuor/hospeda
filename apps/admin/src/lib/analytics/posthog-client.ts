@@ -33,9 +33,9 @@
  * ```
  */
 
+import posthog from 'posthog-js';
 import { env } from '@/env';
 import { adminLogger } from '@/utils/logger';
-import posthog from 'posthog-js';
 
 /**
  * Default PostHog Cloud ingestion endpoint when the env var is unset.

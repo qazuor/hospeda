@@ -76,25 +76,27 @@ describe('reconcileCommerceListingVisibility', () => {
     });
 
     describe('other statuses → PRIVATE + INACTIVE', () => {
-        it.each(['past_due', 'cancelled', 'expired', 'suspended'])(
-            'should set visibility=PRIVATE and lifecycleState=INACTIVE for status=%s',
-            async (status) => {
-                const model = makeModel({
-                    id: ENTITY_ID,
-                    visibility: VisibilityEnum.PUBLIC,
-                    lifecycleState: LifecycleStatusEnum.ACTIVE
-                });
+        it.each([
+            'past_due',
+            'cancelled',
+            'expired',
+            'suspended'
+        ])('should set visibility=PRIVATE and lifecycleState=INACTIVE for status=%s', async (status) => {
+            const model = makeModel({
+                id: ENTITY_ID,
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
 
-                const result = await reconcileCommerceListingVisibility(
-                    { entityType: ENTITY_TYPE, entityId: ENTITY_ID, subscriptionStatus: status },
-                    model
-                );
+            const result = await reconcileCommerceListingVisibility(
+                { entityType: ENTITY_TYPE, entityId: ENTITY_ID, subscriptionStatus: status },
+                model
+            );
 
-                expect(result.updated).toBe(true);
-                expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
-                expect(result.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
-            }
-        );
+            expect(result.updated).toBe(true);
+            expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
+            expect(result.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+        });
     });
 
     describe('idempotency', () => {

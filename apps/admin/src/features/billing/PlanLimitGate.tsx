@@ -12,10 +12,11 @@
  *
  * @module features/billing/PlanLimitGate
  */
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useTranslations } from '@/hooks/use-translations';
+
 import type { LimitKey } from '@repo/billing';
 import type * as React from 'react';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanLimitGateProps {
     /** The plan limit key to gate on (e.g., LimitKey.MAX_ACCOMMODATIONS). */

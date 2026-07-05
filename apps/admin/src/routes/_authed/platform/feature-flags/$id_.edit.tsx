@@ -1,19 +1,19 @@
-import { useToast } from '@/components/ui/ToastProvider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { fetchApi } from '@/lib/api/client';
-import { RoleEnum } from '@repo/schemas';
 import type { FeatureFlag } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 /**
  * Edit Feature Flag page — admin panel.
  */
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/ToastProvider';
+import { Textarea } from '@/components/ui/textarea';
+import { fetchApi } from '@/lib/api/client';
 
 export const Route = createFileRoute('/_authed/platform/feature-flags/$id_/edit')({
     component: EditFeatureFlag,

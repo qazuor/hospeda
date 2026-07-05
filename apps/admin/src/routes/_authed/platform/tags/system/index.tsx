@@ -1,3 +1,8 @@
+import { DeleteIcon, TagsIcon } from '@repo/icons';
+import type { Tag } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { AdminTagDeleteDialog } from '@/components/tags/AdminTagDeleteDialog';
 import { PostTagColorBadge } from '@/components/tags/PostTagColorBadge';
@@ -5,11 +10,6 @@ import { Button } from '@/components/ui/button';
 import { useDeleteSystemTag, useSystemTagImpact, useSystemTagsList } from '@/hooks/use-system-tags';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { DeleteIcon, TagsIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import type { Tag } from '@repo/schemas';
-import { Link, createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/tags/system/')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),
@@ -254,7 +254,7 @@ function SystemTagsListPage() {
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
-                    <div
+                    <nav
                         className="flex items-center justify-between text-sm"
                         aria-label="Paginación"
                     >
@@ -284,7 +284,7 @@ function SystemTagsListPage() {
                                 Siguiente
                             </Button>
                         </div>
-                    </div>
+                    </nav>
                 )}
             </div>
         </RoutePermissionGuard>

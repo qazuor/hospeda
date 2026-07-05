@@ -6,9 +6,9 @@
  * states using the Shadcn Badge component with appropriate variants.
  */
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 /** Props for {@link ModerationStateBadge}. */
 export interface ModerationStateBadgeProps {

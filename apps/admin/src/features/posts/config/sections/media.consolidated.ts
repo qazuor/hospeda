@@ -1,7 +1,7 @@
+import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
-import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated configuration for the Media section of post

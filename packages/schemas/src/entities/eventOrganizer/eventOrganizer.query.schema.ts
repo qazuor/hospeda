@@ -7,7 +7,7 @@ import {
 import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**

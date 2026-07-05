@@ -170,7 +170,7 @@ describe('SPEC-292 — httpToDomainAccommodationUpdate mapper', () => {
         const domain = httpToDomainAccommodationUpdate(httpData);
 
         // Assert — isFeatured is explicitly absent (not just undefined)
-        expect(Object.prototype.hasOwnProperty.call(domain, 'isFeatured')).toBe(false);
+        expect(Object.hasOwn(domain, 'isFeatured')).toBe(false);
     });
 });
 

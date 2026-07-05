@@ -1,7 +1,9 @@
 import type { BaseModel } from '@repo/db';
 import type { Mock } from 'vitest';
 import { createBaseModelMock } from '../../utils/modelMockFactory';
+
 const asMock = <T>(fn: T) => fn as unknown as Mock;
+
 /**
  * @fileoverview
  * Test suite for the `count` method of BaseService and its derivatives.

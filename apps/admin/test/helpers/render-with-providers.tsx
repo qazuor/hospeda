@@ -1,7 +1,7 @@
-import { ToastProvider } from '@/components/ui/ToastProvider';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { type RenderOptions, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { ToastProvider } from '@/components/ui/ToastProvider';
 import { createTestQueryClient } from './create-test-query-client';
 
 interface WrapperProps {

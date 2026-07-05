@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { getPostCategoryColorScheme, getPostCategoryIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 import type { Post } from '../schemas/posts.schemas';
 
 /**

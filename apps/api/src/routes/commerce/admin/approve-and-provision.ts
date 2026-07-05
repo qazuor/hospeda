@@ -117,7 +117,7 @@ export const adminApproveAndProvisionRoute = createAdminRoute({
             {
                 id: leadId,
                 handledById: actor.id,
-                ...(adminNote !== undefined ? { adminNote } : {})
+                ...(adminNote === undefined ? {} : { adminNote })
             },
             provisioner
         );

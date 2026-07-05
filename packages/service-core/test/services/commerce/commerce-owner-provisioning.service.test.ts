@@ -5,8 +5,8 @@
  * Better Auth interactions are mocked via the CreateUserPort.
  */
 
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { CommerceLead } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     CommerceOwnerProvisioningService,

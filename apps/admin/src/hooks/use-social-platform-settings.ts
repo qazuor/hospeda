@@ -12,13 +12,13 @@
  *   PATCH /settings/:key          — update value field by key
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     SocialPlatformFormat,
     SocialPlatformFormatUpdate,
     SocialSetting
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Shared types

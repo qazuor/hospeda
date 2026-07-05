@@ -6,17 +6,15 @@
  * permissions, and various display modes.
  */
 
+export type { EntityFormSectionProps } from '../EntityFormSection';
 // Form Section Components
 export { EntityFormSection } from '../EntityFormSection';
-export type { EntityFormSectionProps } from '../EntityFormSection';
-
+export type { EntityViewSectionProps } from '../EntityViewSection';
 // View Section Components
 export { EntityViewSection } from '../EntityViewSection';
-export type { EntityViewSectionProps } from '../EntityViewSection';
-
+export type { LazySectionWrapperProps } from './LazySectionWrapper';
 // Performance Components
 export { LazySectionWrapper } from './LazySectionWrapper';
-export type { LazySectionWrapperProps } from './LazySectionWrapper';
 
 // TODO: Add specialized section components
 // export { CollapsibleSection } from './CollapsibleSection';

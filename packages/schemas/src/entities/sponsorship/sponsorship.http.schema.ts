@@ -104,10 +104,9 @@ export type SponsorshipUpdateHttp = z.infer<typeof SponsorshipUpdateHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { SponsorshipStatusEnum } from '../../enums/sponsorship-status.enum.js';
 import type { SponsorshipQuerySearchInput } from './sponsorship.query.schema.js';
 import type { SponsorshipCreateInput, SponsorshipUpdateInput } from './sponsorship.schema.js';
-
-import { SponsorshipStatusEnum } from '../../enums/sponsorship-status.enum.js';
 
 /**
  * Convert HTTP sponsorship search parameters to domain search schema.

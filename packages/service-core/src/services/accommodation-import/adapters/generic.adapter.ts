@@ -386,22 +386,22 @@ export class GenericAdapter implements ImportSourceAdapter {
     ): RawExtraction {
         // name: JSON-LD `name` wins; fall back to OG `og:title`.
         const name =
-            jsonld.name !== undefined
-                ? { value: jsonld.name, source: 'jsonld' as const }
-                : og.title !== undefined
-                  ? { value: og.title.value, source: 'opengraph' as const }
-                  : undefined;
+            jsonld.name === undefined
+                ? og.title === undefined
+                    ? undefined
+                    : { value: og.title.value, source: 'opengraph' as const }
+                : { value: jsonld.name, source: 'jsonld' as const };
 
         // description: JSON-LD `description` wins; fall back to OG description,
         // then plain meta description.
         const description =
-            jsonld.description !== undefined
-                ? { value: jsonld.description, source: 'jsonld' as const }
-                : og.ogDescription !== undefined
-                  ? { value: og.ogDescription.value, source: 'opengraph' as const }
-                  : og.metaDescription !== undefined
-                    ? { value: og.metaDescription.value, source: 'meta' as const }
-                    : undefined;
+            jsonld.description === undefined
+                ? og.ogDescription === undefined
+                    ? og.metaDescription === undefined
+                        ? undefined
+                        : { value: og.metaDescription.value, source: 'meta' as const }
+                    : { value: og.ogDescription.value, source: 'opengraph' as const }
+                : { value: jsonld.description, source: 'jsonld' as const };
 
         // summary: use OG description as summary when JSON-LD already fills
         // `description` with the long-form text — keeps the two fields distinct.
@@ -430,9 +430,9 @@ export class GenericAdapter implements ImportSourceAdapter {
         }
 
         const locationStreet =
-            jsonld.address?.streetAddress !== undefined
-                ? { value: jsonld.address.streetAddress, source: 'jsonld' as const }
-                : undefined;
+            jsonld.address?.streetAddress === undefined
+                ? undefined
+                : { value: jsonld.address.streetAddress, source: 'jsonld' as const };
 
         const location =
             locationCoordinates !== undefined || locationStreet !== undefined
@@ -441,16 +441,16 @@ export class GenericAdapter implements ImportSourceAdapter {
 
         // contactInfo: telephone from JSON-LD; website from JSON-LD url or OG url.
         const mobilePhone =
-            jsonld.telephone !== undefined
-                ? { value: jsonld.telephone, source: 'jsonld' as const }
-                : undefined;
+            jsonld.telephone === undefined
+                ? undefined
+                : { value: jsonld.telephone, source: 'jsonld' as const };
 
         const website =
-            jsonld.url !== undefined
-                ? { value: jsonld.url, source: 'jsonld' as const }
-                : og.ogUrl !== undefined
-                  ? { value: og.ogUrl.value, source: 'opengraph' as const }
-                  : undefined;
+            jsonld.url === undefined
+                ? og.ogUrl === undefined
+                    ? undefined
+                    : { value: og.ogUrl.value, source: 'opengraph' as const }
+                : { value: jsonld.url, source: 'jsonld' as const };
 
         const contactInfo =
             mobilePhone !== undefined || website !== undefined
@@ -473,27 +473,27 @@ export class GenericAdapter implements ImportSourceAdapter {
         // Only set when a confident mapping is found; leave unset otherwise so
         // the host can pick the type manually without a wrong prefill.
         const type =
-            jsonld.lodgingType !== undefined
-                ? (() => {
+            jsonld.lodgingType === undefined
+                ? undefined
+                : (() => {
                       const mapped = mapAccommodationType(jsonld.lodgingType);
-                      return mapped !== undefined
-                          ? { value: mapped, source: 'jsonld' as const }
-                          : undefined;
-                  })()
-                : undefined;
+                      return mapped === undefined
+                          ? undefined
+                          : { value: mapped, source: 'jsonld' as const };
+                  })();
 
         // price.price: parse a numeric value from JSON-LD priceRange.
         // Non-numeric band strings (e.g. "$$", "$$$") are rejected — only real
         // numbers produce a candidate so the host is not misled.
         const pricePrice =
-            jsonld.priceRange !== undefined
-                ? (() => {
+            jsonld.priceRange === undefined
+                ? undefined
+                : (() => {
                       const n = parsePriceFromRange(jsonld.priceRange);
-                      return n !== undefined ? { value: n, source: 'jsonld' as const } : undefined;
-                  })()
-                : undefined;
+                      return n === undefined ? undefined : { value: n, source: 'jsonld' as const };
+                  })();
 
-        const price = pricePrice !== undefined ? { price: pricePrice } : undefined;
+        const price = pricePrice === undefined ? undefined : { price: pricePrice };
 
         return {
             sourcePlatform: 'generic',

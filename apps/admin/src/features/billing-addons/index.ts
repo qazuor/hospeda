@@ -1,11 +1,12 @@
 /**
  * Billing add-ons feature exports
  */
-export * from './hooks';
-export * from './types';
-export * from './columns';
-export * from './purchased-columns';
+
 export * from './catalog-columns';
+export * from './columns';
+export * from './components/AddonDeleteDialogs';
 export * from './components/AddonDialog';
 export * from './components/PurchasedAddonDetailsDialog';
-export * from './components/AddonDeleteDialogs';
+export * from './hooks';
+export * from './purchased-columns';
+export * from './types';

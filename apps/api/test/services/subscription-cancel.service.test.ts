@@ -515,20 +515,23 @@ describe('softCancelSubscription', () => {
     // ── 4. Non-active sub rejected ────────────────────────────────────────────
 
     describe('non-active subscription rejected', () => {
-        it.each(['cancelled', 'expired', 'paused', 'pending_provider', 'abandoned'])(
-            'throws ServiceError for status=%s',
-            async (status) => {
-                setupDbSelectRow(buildSubRow({ status }));
+        it.each([
+            'cancelled',
+            'expired',
+            'paused',
+            'pending_provider',
+            'abandoned'
+        ])('throws ServiceError for status=%s', async (status) => {
+            setupDbSelectRow(buildSubRow({ status }));
 
-                await expect(
-                    softCancelSubscription({
-                        billing: billing as never,
-                        subscriptionId: SUB_ID,
-                        customerId: CUSTOMER_ID
-                    })
-                ).rejects.toThrow(ServiceError);
-            }
-        );
+            await expect(
+                softCancelSubscription({
+                    billing: billing as never,
+                    subscriptionId: SUB_ID,
+                    customerId: CUSTOMER_ID
+                })
+            ).rejects.toThrow(ServiceError);
+        });
 
         it('accepts trialing status (soft-cancellable)', async () => {
             setupDbSelectRow(buildSubRow({ status: 'trialing' }));

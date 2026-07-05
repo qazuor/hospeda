@@ -12,11 +12,11 @@
  * first row (or null when the user has never subscribed).
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMySubscription } from '@/hooks/use-my-billing';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 const KNOWN_STATUS_KEYS: ReadonlyArray<string> = [
     'active',
@@ -144,4 +144,4 @@ export function SubscriptionSummarySection() {
     );
 }
 
-export { statusBadgeVariant, statusTranslationKey, formatPeriodEnd };
+export { formatPeriodEnd, statusBadgeVariant, statusTranslationKey };

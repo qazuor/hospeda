@@ -8,6 +8,7 @@
  * Hydration: client:load (page needs to be interactive immediately).
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import type {
     PublicSearchGroup,
@@ -16,7 +17,6 @@ import type {
 } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './SearchResultsLive.module.css';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ export function SearchResultsLive({
     const abortRef = useRef<AbortController | null>(null);
     // Track the last query for which we already have results (SSR-populated).
     // Skip the initial fetch when results were pre-loaded server-side.
-    const lastFetchedQuery = useRef(initialResults != null ? initialQuery : '');
+    const lastFetchedQuery = useRef(initialResults == null ? '' : initialQuery);
 
     const debouncedQuery = useDebounce(query, 300);
 

@@ -7,6 +7,9 @@
  * Surfaces a friendly 409/CONFLICT message when a duplicate normalizedHashtag is detected.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { type SocialHashtag, SocialHashtagCreateSchema, SocialPlatformEnum } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,9 +28,6 @@ import {
     useUpdateSocialHashtag
 } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { type SocialHashtag, SocialHashtagCreateSchema, SocialPlatformEnum } from '@repo/schemas';
-import { useState } from 'react';
 
 /** Props for {@link HashtagFormModal}. */
 export interface HashtagFormModalProps {

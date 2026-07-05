@@ -1,6 +1,5 @@
 import { TagModel, UserModel } from '@repo/db';
-import { TagColorEnum, TagTypeEnum } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, TagColorEnum, TagTypeEnum } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import { summaryTracker } from '../utils/summaryTracker.js';

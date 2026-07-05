@@ -1,3 +1,5 @@
+import { SparkleIcon } from '@repo/icons';
+import { useCallback, useEffect, useRef } from 'react';
 import { AI_TEXT_IMPROVE_ERROR_CODES, useAiTextImprove } from '@/hooks/useAiTextImprove';
 /**
  * @file AiTextImprovePanel.client.tsx
@@ -47,8 +49,6 @@ import { AI_TEXT_IMPROVE_ERROR_CODES, useAiTextImprove } from '@/hooks/useAiText
  */
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { SparkleIcon } from '@repo/icons';
-import { useCallback, useEffect, useRef } from 'react';
 import styles from './AiTextImprovePanel.module.css';
 
 // ---------------------------------------------------------------------------

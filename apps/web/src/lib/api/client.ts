@@ -161,7 +161,10 @@ export const apiClient = {
     get<T>({
         path,
         params
-    }: { path: string; params?: Record<string, unknown> }): Promise<ApiResult<T>> {
+    }: {
+        path: string;
+        params?: Record<string, unknown>;
+    }): Promise<ApiResult<T>> {
         return request<T>({ method: 'GET', path, params });
     },
 

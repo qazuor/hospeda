@@ -1,3 +1,5 @@
+import { LoaderIcon } from '@repo/icons';
+import type { ReactNode } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,8 +12,6 @@ import {
     AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import { useOwnTagImpact } from '@/hooks/use-own-tags';
-import { LoaderIcon } from '@repo/icons';
-import type { ReactNode } from 'react';
 
 interface DeleteOwnTagDialogProps {
     /** UUID of the own USER tag to delete. */

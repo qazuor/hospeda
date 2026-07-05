@@ -9,6 +9,10 @@
  * from `@/features/experience`, not from sub-paths.
  */
 
+// Column factory
+export { createExperienceColumns } from './config/experience.columns';
+
+export type { ExperienceListItem } from './config/experience.config';
 // List config + entity-list page (route + component)
 export {
     EXPERIENCE_VIEW_PERMISSION,
@@ -17,14 +21,9 @@ export {
     experienceListConfig
 } from './config/experience.config';
 
-export type { ExperienceListItem } from './config/experience.config';
-
-// Column factory
-export { createExperienceColumns } from './config/experience.columns';
-
 // Consolidated form config
 export { createExperienceConsolidatedConfig } from './config/experience-consolidated.config';
-
+export { useExperiencePage } from './hooks/useExperiencePage';
 // Hooks
 export {
     experienceHooks,
@@ -38,12 +37,10 @@ export {
     useUpdateExperienceMutation
 } from './hooks/useExperienceQuery';
 
-export { useExperiencePage } from './hooks/useExperiencePage';
-
 // Canonical hooks re-export (mirrors gastronomy pattern)
 export {
     useCreateExperienceMutation as useExperienceCreate,
-    useUpdateExperienceMutation as useExperienceUpdate,
     useDeleteExperienceMutation as useExperienceDelete,
-    useRestoreExperienceMutation as useExperienceRestore
+    useRestoreExperienceMutation as useExperienceRestore,
+    useUpdateExperienceMutation as useExperienceUpdate
 } from './hooks/useExperiences';

@@ -13,14 +13,14 @@
  * instance.
  */
 
+import { DeleteIcon } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import { useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
-import { DeleteIcon } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import { useState } from 'react';
 
 interface DeleteMutationLike {
     readonly mutateAsync: (id: string) => Promise<unknown>;

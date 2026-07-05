@@ -16,8 +16,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { eq, getDb } from '@repo/db';
-import { commerceListingSubscriptions } from '@repo/db';
+import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
 import { LifecycleStatusEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
@@ -214,5 +213,5 @@ export async function getCommerceListingSubscriptionStatus(
         .limit(1);
 
     const row = rows[0];
-    return row !== undefined ? row.status : null;
+    return row === undefined ? null : row.status;
 }

@@ -74,8 +74,10 @@
     flex: 0 0 88%;
     padding-left: 0.625rem;
     padding-right: 0.625rem;
-    transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease, filter
-        var(--duration-normal) ease;
+    transition:
+        opacity var(--duration-normal) ease,
+        transform var(--duration-normal) ease,
+        filter var(--duration-normal) ease;
     /* Non-active (peek) slides are dimmed, scaled down, and blurred */
     opacity: 0.35;
     transform: scale(0.95);
@@ -153,7 +155,9 @@
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: width var(--duration-normal) ease, opacity var(--duration-normal) ease,
+    transition:
+        width var(--duration-normal) ease,
+        opacity var(--duration-normal) ease,
         background-color var(--duration-normal) ease;
 }
 

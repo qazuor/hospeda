@@ -3,15 +3,15 @@
  *
  * Manages sponsorships, sponsorship levels, and sponsorship packages in a tabbed interface.
  */
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useTranslations } from '@/hooks/use-translations';
-import { requireBillingAccess } from '@/lib/billing-access';
+
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SponsorshipLevelsTab } from '@/features/sponsorships/components/SponsorshipLevelsTab';
 import { SponsorshipPackagesTab } from '@/features/sponsorships/components/SponsorshipPackagesTab';
 import { SponsorshipsTab } from '@/features/sponsorships/components/SponsorshipsTab';
+import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 
 export const Route = createFileRoute('/_authed/billing/sponsorships')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
@@ -39,7 +39,7 @@ function BillingSponsorshipsPage() {
 
                 {/* Tabs */}
                 <div className="border-b">
-                    <nav
+                    <div
                         className="flex gap-4"
                         role="tablist"
                     >
@@ -61,7 +61,7 @@ function BillingSponsorshipsPage() {
                             isActive={activeTab === 'packages'}
                             onClick={() => setActiveTab('packages')}
                         />
-                    </nav>
+                    </div>
                 </div>
 
                 {/* Tab content */}

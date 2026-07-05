@@ -44,11 +44,11 @@ export * from './tokens/z-index.js';
 // Themes
 // ============================================================================
 
-export * from './themes/types.js';
-export { webLight } from './themes/web-light.js';
-export { webDark } from './themes/web-dark.js';
-export { adminLight } from './themes/admin-light.js';
 export { adminDark } from './themes/admin-dark.js';
+export { adminLight } from './themes/admin-light.js';
+export * from './themes/types.js';
+export { webDark } from './themes/web-dark.js';
+export { webLight } from './themes/web-light.js';
 
 // ============================================================================
 // Package metadata

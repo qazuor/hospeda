@@ -615,23 +615,23 @@ export function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
     // -- extraInfo (capacity, bedrooms, bathrooms) -----------------------------
     const capacityRaw = raw.maxGuests ?? raw.personCapacity ?? raw.guests;
     const capacity =
-        capacityRaw != null
-            ? typeof capacityRaw === 'number'
-                ? capacityRaw
-                : Number(capacityRaw)
-            : null;
+        capacityRaw == null
+            ? null
+            : typeof capacityRaw === 'number'
+              ? capacityRaw
+              : Number(capacityRaw);
     const bedrooms =
-        raw.bedrooms != null
-            ? typeof raw.bedrooms === 'number'
-                ? raw.bedrooms
-                : Number(raw.bedrooms)
-            : null;
+        raw.bedrooms == null
+            ? null
+            : typeof raw.bedrooms === 'number'
+              ? raw.bedrooms
+              : Number(raw.bedrooms);
     const bathrooms =
-        raw.bathrooms != null
-            ? typeof raw.bathrooms === 'number'
-                ? raw.bathrooms
-                : Number(raw.bathrooms)
-            : null;
+        raw.bathrooms == null
+            ? null
+            : typeof raw.bathrooms === 'number'
+              ? raw.bathrooms
+              : Number(raw.bathrooms);
 
     const hasCapacity = capacity !== null && Number.isFinite(capacity);
     const hasBedrooms = bedrooms !== null && Number.isFinite(bedrooms);

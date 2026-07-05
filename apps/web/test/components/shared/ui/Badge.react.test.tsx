@@ -4,10 +4,10 @@
  * Renders the component under jsdom and asserts on rendered DOM output.
  */
 
-import { Badge } from '@/components/shared/ui/Badge';
-import type { BadgeColorScheme } from '@/components/shared/ui/badge.types';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { Badge } from '@/components/shared/ui/Badge';
+import type { BadgeColorScheme } from '@/components/shared/ui/badge.types';
 
 vi.mock('@/components/shared/ui/Badge.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })

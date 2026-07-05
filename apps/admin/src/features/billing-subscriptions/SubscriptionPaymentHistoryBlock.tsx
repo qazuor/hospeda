@@ -7,9 +7,9 @@
  * @module features/billing-subscriptions/SubscriptionPaymentHistoryBlock
  */
 
+import { LoaderIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
 import type { PaymentHistory } from './types';
 import { formatArs, formatDate } from './utils';
 

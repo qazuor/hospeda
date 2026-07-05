@@ -12,12 +12,12 @@
  * that funnels in PostHog can filter against without parsing the URL.
  */
 
+import { EntityTypeEnum } from '@repo/schemas';
+import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
-import { EntityTypeEnum } from '@repo/schemas';
-import { useEffect } from 'react';
 
 interface AccommodationViewTrackerProps {
     readonly slug: string;

@@ -19,16 +19,15 @@ import type {
     AccommodationModel
 } from '@repo/db';
 import { withTransaction } from '@repo/db';
-import type { AccommodationExternalListing } from '@repo/schemas';
+import type { AccommodationExternalListing, ExternalReputationBlock } from '@repo/schemas';
 import {
+    buildExternalReputationBlock,
     type ExternalFetchStatus,
     type ExternalPlatformEnum,
     type ExternalReputationRunStatus,
     PermissionEnum,
-    ServiceErrorCode,
-    buildExternalReputationBlock
+    ServiceErrorCode
 } from '@repo/schemas';
-import type { ExternalReputationBlock } from '@repo/schemas';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { hasPermission } from '../../utils/permission.js';

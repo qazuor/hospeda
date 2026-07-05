@@ -110,9 +110,9 @@ class HospedaApiClient {
             headers: {
                 Cookie: this.cookie,
                 Accept: 'application/json',
-                ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {})
+                ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' })
             },
-            body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+            body: init.body === undefined ? undefined : JSON.stringify(init.body),
             // Better Auth uses SameSite=Lax; an explicit Origin header
             // mirrors what a browser would send so origin-check
             // middleware does not bounce us.

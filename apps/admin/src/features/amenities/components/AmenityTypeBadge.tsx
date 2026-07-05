@@ -1,6 +1,6 @@
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { getAmenityTypeColorScheme, getAmenityTypeIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 import type { Amenity } from '../schemas/amenities.schemas';
 
 /**

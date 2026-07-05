@@ -12,20 +12,19 @@
  * @module env-registry
  */
 
-export type { AppId, EnvVarDefinition, EnvVarType } from './env-registry-types.js';
-
 export { API_CONFIG_ENV_VARS } from './env-registry.api-config.js';
 export { CLIENT_ADMIN_ENV_VARS, CLIENT_WEB_ENV_VARS } from './env-registry.client.js';
 export { DOCKER_ENV_VARS, SYSTEM_ENV_VARS } from './env-registry.docker-system.js';
 export { HOSPEDA_ENV_VARS } from './env-registry.hospeda.js';
 export { MOBILE_ENV_VARS } from './env-registry.mobile.js';
+export type { AppId, EnvVarDefinition, EnvVarType } from './env-registry-types.js';
 
-import type { EnvVarDefinition } from './env-registry-types.js';
 import { API_CONFIG_ENV_VARS } from './env-registry.api-config.js';
 import { CLIENT_ADMIN_ENV_VARS, CLIENT_WEB_ENV_VARS } from './env-registry.client.js';
 import { DOCKER_ENV_VARS, SYSTEM_ENV_VARS } from './env-registry.docker-system.js';
 import { HOSPEDA_ENV_VARS } from './env-registry.hospeda.js';
 import { MOBILE_ENV_VARS } from './env-registry.mobile.js';
+import type { EnvVarDefinition } from './env-registry-types.js';
 
 /**
  * Canonical registry of every environment variable used across the

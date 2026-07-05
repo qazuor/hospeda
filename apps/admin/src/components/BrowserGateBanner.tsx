@@ -19,9 +19,9 @@
  * @module BrowserGateBanner
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 
 /** sessionStorage flag key for a within-session dismissal. */
 const DISMISS_KEY = 'browserGateDismissed';

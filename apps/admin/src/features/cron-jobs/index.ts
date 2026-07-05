@@ -4,6 +4,11 @@
  * Barrel exports for cron job management functionality (SPEC-161 enriched shape).
  */
 
+// Components
+export { CronJobCard } from './components/CronJobCard';
+export { CronJobsPanel } from './components/CronJobsPanel';
+// Hooks
+export { cronJobQueryKeys, useCronJobsQuery, useTriggerCronJobMutation } from './hooks';
 // Types (CronJobAdmin + CronJobsAdminList come from @repo/schemas via types.ts)
 export type {
     CronJobAdmin,
@@ -13,10 +18,3 @@ export type {
     TriggerCronJobError,
     TriggerCronJobResponse
 } from './types';
-
-// Hooks
-export { cronJobQueryKeys, useCronJobsQuery, useTriggerCronJobMutation } from './hooks';
-
-// Components
-export { CronJobCard } from './components/CronJobCard';
-export { CronJobsPanel } from './components/CronJobsPanel';

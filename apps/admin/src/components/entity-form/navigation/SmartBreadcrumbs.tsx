@@ -1,7 +1,7 @@
-import { Icon } from '@/components/icons/Icon';
-import { cn } from '@/lib/utils';
 import { useTranslations } from '@repo/i18n';
 import React from 'react';
+import { Icon } from '@/components/icons/Icon';
+import { cn } from '@/lib/utils';
 import type { SectionProgress } from '../../../hooks/useSectionProgress';
 
 /**

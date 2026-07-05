@@ -12,8 +12,8 @@
  * References: D-005, D-007, D-008, D-009
  */
 import { REntityTagModel, TagModel } from '@repo/db';
-import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, TagTypeEnum } from '@repo/schemas';
 import type { EntityTag } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, TagTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
     TagAssignInput,

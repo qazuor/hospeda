@@ -40,7 +40,7 @@ import { adminLight } from '../themes/admin-light.js';
 import type { Theme, ThemeValue } from '../themes/types.js';
 import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
-import { type OKLCH, SHADES, formatOKLCH, palettes } from '../tokens/colors.js';
+import { formatOKLCH, type OKLCH, palettes, SHADES } from '../tokens/colors.js';
 import { layoutMediaOverrides } from '../tokens/layout.js';
 import { emitVariantDarkFallback, emitVariantTokens } from './emit-variant-tokens.js';
 

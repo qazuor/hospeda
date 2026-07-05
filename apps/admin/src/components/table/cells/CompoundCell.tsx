@@ -1,7 +1,7 @@
+import type { ReactNode } from 'react';
 import type { CompoundOption } from '@/components/table/DataTable';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { ReactNode } from 'react';
 import { BadgeCell } from './BadgeCell';
 import { BooleanCell } from './BooleanCell';
 import { DateCell } from './DateCell';

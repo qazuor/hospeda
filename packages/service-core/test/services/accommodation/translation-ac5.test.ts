@@ -9,7 +9,7 @@
 
 import type { AccommodationModel } from '@repo/db';
 import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import {
     _resetTranslationService,

@@ -4,7 +4,7 @@
  */
 
 import { getConfigFromEnv } from './environment.js';
-import { type BaseLoggerConfig, LogFormat, LogLevel, type LoggerConfig } from './types.js';
+import { type BaseLoggerConfig, LogFormat, type LoggerConfig, LogLevel } from './types.js';
 
 /**
  * Default logger configuration

@@ -23,13 +23,13 @@
  * Hydration strategy: client:idle (same as the old FeedbackFABClient).
  */
 
+import type { SentryFeedbackBridgePayload } from '@repo/feedback';
 import {
     FeedbackModal,
     installRuntimeTrackers,
     useConsoleCapture,
     useKeyboardShortcut
 } from '@repo/feedback';
-import type { SentryFeedbackBridgePayload } from '@repo/feedback';
 import * as Sentry from '@sentry/astro';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';

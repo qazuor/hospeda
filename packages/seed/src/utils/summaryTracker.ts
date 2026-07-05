@@ -1,4 +1,4 @@
-import { STATUS_ICONS, getEntityIcon, getStatusIcon } from './icons.js';
+import { getEntityIcon, getStatusIcon, STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 
 /**
@@ -158,7 +158,7 @@ class SummaryTracker {
         // Stop the timer before printing
         this.stopTimer();
 
-        // biome-ignore lint/suspicious/noConsoleLog: summary tracker uses console.log for visual spacing in terminal output
+        // biome-ignore lint/suspicious/noConsole: summary tracker uses console.log for visual spacing in terminal output
         console.log('\n');
         logger.info(`${STATUS_ICONS.Info}  FINAL SUMMARY`);
         logger.info(`${subSeparator}`);

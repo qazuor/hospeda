@@ -46,12 +46,12 @@ import type {
     RevalidatePathResult,
     RevalidationAdapter
 } from '../../src/revalidation/adapters/revalidation.adapter.js';
+import { RevalidationService } from '../../src/revalidation/revalidation.service.js';
 import {
     _resetRevalidationService,
     getRevalidationService,
     initializeRevalidationService
 } from '../../src/revalidation/revalidation-init.js';
-import { RevalidationService } from '../../src/revalidation/revalidation.service.js';
 
 // ---------------------------------------------------------------------------
 // Test constants

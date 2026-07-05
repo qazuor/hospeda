@@ -39,16 +39,16 @@
  * @see SPEC-155 T-036
  */
 
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_STALE_TIME_MS,
     _clearRegistryForTesting,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     isSourceRegistered,
     registerDataSource,
     resolveDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // ============================================================================
 // CONSTANTS — mirroring the two implementations exactly
@@ -209,15 +209,14 @@ describe('T-036 — admin.entities.counts parity with useDashboardStats', () => 
             }
         });
 
-        it.each(SHARED_ENTITY_NAMES)(
-            '%s — present in BOTH old and new endpoint lists',
-            (entityName) => {
-                const oldEntry = OLD_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
-                const newEntry = NEW_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
-                expect(oldEntry).toBeDefined();
-                expect(newEntry).toBeDefined();
-            }
-        );
+        it.each(
+            SHARED_ENTITY_NAMES
+        )('%s — present in BOTH old and new endpoint lists', (entityName) => {
+            const oldEntry = OLD_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
+            const newEntry = NEW_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
+            expect(oldEntry).toBeDefined();
+            expect(newEntry).toBeDefined();
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -233,16 +232,15 @@ describe('T-036 — admin.entities.counts parity with useDashboardStats', () => 
          * We verify the path segments are identical for each shared entity.
          */
 
-        it.each(SHARED_ENTITY_NAMES)(
-            '%s — OLD and NEW use the same admin endpoint path segment',
-            (entityName) => {
-                const oldEntry = OLD_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
-                const newEntry = NEW_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
+        it.each(
+            SHARED_ENTITY_NAMES
+        )('%s — OLD and NEW use the same admin endpoint path segment', (entityName) => {
+            const oldEntry = OLD_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
+            const newEntry = NEW_ENTITY_ENDPOINTS.find((e) => e.name === entityName);
 
-                // OLD uses `.endpoint`, NEW uses `.path` — both must be the same value.
-                expect(oldEntry?.endpoint).toBe(newEntry?.path);
-            }
-        );
+            // OLD uses `.endpoint`, NEW uses `.path` — both must be the same value.
+            expect(oldEntry?.endpoint).toBe(newEntry?.path);
+        });
 
         it('OLD and NEW build identical full URLs for each shared entity', () => {
             // Verify the documented URL pattern is consistent:

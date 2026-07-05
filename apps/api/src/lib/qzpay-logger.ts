@@ -8,7 +8,7 @@
  * `console.*`.
  */
 
-import type { QZPayLogMeta, QZPayLogger } from '@qazuor/qzpay-core';
+import type { QZPayLogger, QZPayLogMeta } from '@qazuor/qzpay-core';
 import { apiLogger } from '../utils/logger';
 
 export const qzpayLogger: QZPayLogger = {

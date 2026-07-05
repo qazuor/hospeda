@@ -15,8 +15,8 @@
  * @module lib/api/hooks/use-patch-accommodation
  */
 import { AccommodationProtectedSchema, AccommodationUpdateHttpSchema } from '@repo/schemas';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
 import { apiFetch } from '../client';
 import { hostDashboardQueryKey } from './use-host-dashboard';

@@ -30,8 +30,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
-import { billingPlans } from '../../src/billing/index.ts';
 import type { QZPayBillingPlanInsert } from '../../src/billing/index.ts';
+import { billingPlans } from '../../src/billing/index.ts';
 import { closeTestPool, getTestDb, withCleanSlate } from './helpers.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -358,39 +358,41 @@ describe('SPEC-211 T-012 — extras/014-spec211-ai-monetization.data.sql (real P
 
     // ── Step 2 (AC-1.4): ai_chat removed from tourist plans ──────────────────
     describe('Step 2 — ai_chat removed from tourist plans (AC-1.4)', () => {
-        it.each(['tourist-free', 'tourist-plus', 'tourist-vip'] as const)(
-            '%s: no ai_chat entitlement after migration',
-            async (planName) => {
-                await withCleanSlate(async () => {
-                    const db = getTestDb();
-                    await db.insert(billingPlans).values([...ALL_PRE_ROWS]);
+        it.each([
+            'tourist-free',
+            'tourist-plus',
+            'tourist-vip'
+        ] as const)('%s: no ai_chat entitlement after migration', async (planName) => {
+            await withCleanSlate(async () => {
+                const db = getTestDb();
+                await db.insert(billingPlans).values([...ALL_PRE_ROWS]);
 
-                    await applyMigration();
+                await applyMigration();
 
-                    const row = await fetchPlan(planName);
-                    const entitlements = toEntitlementArray(row.entitlements);
+                const row = await fetchPlan(planName);
+                const entitlements = toEntitlementArray(row.entitlements);
 
-                    expect(entitlements).not.toContain('ai_chat');
-                });
-            }
-        );
+                expect(entitlements).not.toContain('ai_chat');
+            });
+        });
 
-        it.each(['tourist-free', 'tourist-plus', 'tourist-vip'] as const)(
-            '%s: no max_ai_chat_per_month limit key after migration',
-            async (planName) => {
-                await withCleanSlate(async () => {
-                    const db = getTestDb();
-                    await db.insert(billingPlans).values([...ALL_PRE_ROWS]);
+        it.each([
+            'tourist-free',
+            'tourist-plus',
+            'tourist-vip'
+        ] as const)('%s: no max_ai_chat_per_month limit key after migration', async (planName) => {
+            await withCleanSlate(async () => {
+                const db = getTestDb();
+                await db.insert(billingPlans).values([...ALL_PRE_ROWS]);
 
-                    await applyMigration();
+                await applyMigration();
 
-                    const row = await fetchPlan(planName);
-                    const limits = toLimitsObject(row.limits);
+                const row = await fetchPlan(planName);
+                const limits = toLimitsObject(row.limits);
 
-                    expect('max_ai_chat_per_month' in limits).toBe(false);
-                });
-            }
-        );
+                expect('max_ai_chat_per_month' in limits).toBe(false);
+            });
+        });
 
         it('tourist-plus retains non-AI entitlement some_other_cap after ai_chat removal', async () => {
             await withCleanSlate(async () => {

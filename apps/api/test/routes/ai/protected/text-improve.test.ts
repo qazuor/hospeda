@@ -104,11 +104,7 @@ vi.mock('../../../../src/middlewares/ai-quota', () => ({
  */
 vi.mock('../../../../src/services/ai-service.factory.js', () => ({
     createConfiguredAiService: async () => ({
-        streamText: async (args: {
-            feature: string;
-            prompt: string;
-            locale: string;
-        }) => {
+        streamText: async (args: { feature: string; prompt: string; locale: string }) => {
             streamTextCalls.push({
                 feature: args.feature,
                 prompt: args.prompt,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { EnvValidationError, commonEnvSchemas, validateEnv } from '../env.js';
+import { commonEnvSchemas, EnvValidationError, validateEnv } from '../env.js';
 
 describe('EnvValidationError', () => {
     it('should include context and formatted error messages', () => {

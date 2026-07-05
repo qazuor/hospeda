@@ -39,14 +39,6 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import {
-    type ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent
-} from '@/components/ui/chart';
-import type { Widget } from '@/config/ia/schema';
-import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useQuery } from '@tanstack/react-query';
 import {
     Area,
@@ -59,6 +51,14 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
+import {
+    type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent
+} from '@/components/ui/chart';
+import type { Widget } from '@/config/ia/schema';
+import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
@@ -449,9 +449,8 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
         <span
             className="sr-only"
             data-testid="chart-type-badge"
-            aria-label={`Chart type: ${chartType}`}
         >
-            {chartType}
+            Chart type: {chartType}
         </span>
     );
 

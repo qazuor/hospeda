@@ -161,38 +161,35 @@ describe('ImportFromUrlSection — failureCode branch (SPEC-258 C.1)', () => {
         ['provider_error'],
         ['timeout'],
         ['nothing_found']
-    ])(
-        'renders an error alert for failureCode "%s" and does NOT prefill the form',
-        async (failureCode) => {
-            // Arrange
-            mockMutateAsync.mockResolvedValueOnce({
-                draft: {},
-                source: 'generic',
-                methodsUsed: [],
-                partial: false,
-                failureCode
-            });
+    ])('renders an error alert for failureCode "%s" and does NOT prefill the form', async (failureCode) => {
+        // Arrange
+        mockMutateAsync.mockResolvedValueOnce({
+            draft: {},
+            source: 'generic',
+            methodsUsed: [],
+            partial: false,
+            failureCode
+        });
 
-            // Act
-            await renderAndSubmit();
+        // Act
+        await renderAndSubmit();
 
-            // Assert: error alert is shown with the i18n key path
-            const alert = await screen.findByRole('alert');
-            expect(alert).toBeInTheDocument();
-            // The mock t() returns the key as-is; confirm the key path is used
-            const expectedKey = `host.importFromUrl.errors.failure.${failureCode.replace(
-                /_([a-z])/g,
-                (_: string, letter: string) => letter.toUpperCase()
-            )}`;
-            expect(alert.textContent).toContain(expectedKey);
+        // Assert: error alert is shown with the i18n key path
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+        // The mock t() returns the key as-is; confirm the key path is used
+        const expectedKey = `host.importFromUrl.errors.failure.${failureCode.replace(
+            /_([a-z])/g,
+            (_: string, letter: string) => letter.toUpperCase()
+        )}`;
+        expect(alert.textContent).toContain(expectedKey);
 
-            // Assert: setFieldValue was NOT called (no form prefill)
-            expect(mockSetFieldValue).not.toHaveBeenCalled();
+        // Assert: setFieldValue was NOT called (no form prefill)
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
 
-            // Assert: review notice was NOT shown
-            expect(screen.queryByTestId('import-review-notice')).not.toBeInTheDocument();
-        }
-    );
+        // Assert: review notice was NOT shown
+        expect(screen.queryByTestId('import-review-notice')).not.toBeInTheDocument();
+    });
 
     it('shows the review notice (not an alert) on successful import with no failureCode', async () => {
         // Arrange

@@ -137,7 +137,7 @@ export const protectedPatchUserRoute = createProtectedRoute({
         // safety net — it currently cannot fire because Zod would have
         // rejected an admin key earlier, but it documents the contract for
         // future readers and guards against a schema regression.
-        if (body && Object.prototype.hasOwnProperty.call(body, 'settings')) {
+        if (body && Object.hasOwn(body, 'settings')) {
             validateProtectedSettings((body as { settings?: unknown }).settings);
         }
 

@@ -5,14 +5,14 @@
  * @module audit-logger
  */
 
-import { AuditEventType, LoggerColors, logger } from '@repo/logger';
 import type { AuditEventTypeValue } from '@repo/logger';
+import { AuditEventType, LoggerColors, logger } from '@repo/logger';
 import type { AuditLogType, CreateAuditLogEntry } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 
+export type { AuditEventTypeValue };
 // Re-export so existing callers that import from this module are unaffected.
 export { AuditEventType };
-export type { AuditEventTypeValue };
 
 /** Dedicated AUDIT logger category */
 const auditLogger = logger.registerCategory('AUDIT', 'AUDIT', {

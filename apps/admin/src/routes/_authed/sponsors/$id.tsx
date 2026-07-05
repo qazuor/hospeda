@@ -1,8 +1,8 @@
+import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { useSponsorPage } from '@/features/sponsors/hooks/useSponsorPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Sponsor View Route Configuration

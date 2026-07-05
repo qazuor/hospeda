@@ -9,13 +9,13 @@
  * Only renders when accommodation.lifecycleState === 'ACTIVE' && !accommodation.deletedAt.
  */
 
+import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { useEffect, useRef, useState } from 'react';
 import styles from './ContactHost.module.css';
 
 /**

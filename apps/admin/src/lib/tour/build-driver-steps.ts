@@ -27,8 +27,8 @@
  * @see SPEC-174 §7.3, §7.2
  */
 
-import type { Tour } from '@/config/ia/tour.schema';
 import type { PermissionEnum } from '@repo/schemas';
+import type { Tour } from '@/config/ia/tour.schema';
 import { isPermissionGateGranted } from '../nav/permission-visibility';
 import { resolveStepText } from './resolve-step-text';
 

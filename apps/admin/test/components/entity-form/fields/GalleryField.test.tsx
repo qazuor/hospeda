@@ -21,10 +21,7 @@ vi.mock('@dnd-kit/core', async () => {
     const actual = await vi.importActual<typeof import('@dnd-kit/core')>('@dnd-kit/core');
     return {
         ...actual,
-        DndContext: (props: {
-            accessibility?: unknown;
-            children: React.ReactNode;
-        }) => {
+        DndContext: (props: { accessibility?: unknown; children: React.ReactNode }) => {
             dndContextSpy(props);
             const Real = actual.DndContext;
             return <Real {...(props as React.ComponentProps<typeof Real>)} />;
@@ -32,10 +29,10 @@ vi.mock('@dnd-kit/core', async () => {
     };
 });
 
+import { ModerationStatusEnum } from '@repo/schemas';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { GalleryField, type GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers

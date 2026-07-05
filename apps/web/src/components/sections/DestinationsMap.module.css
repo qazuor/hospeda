@@ -104,8 +104,11 @@
     border: 2px solid var(--core-card);
     box-shadow: 0 1px 4px var(--core-foreground-a20);
     transition:
-        width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
-        var(--duration-fast) ease, transform var(--duration-fast) ease, opacity var(--duration-fast) ease;
+        width var(--duration-fast) ease,
+        height var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        transform var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
     flex-shrink: 0;
     /* Inactive pins fade back hard so the active one can dominate. */
     opacity: 0.35;
@@ -122,7 +125,9 @@
     height: 30px;
     background-color: var(--brand-accent);
     border: 4px solid var(--core-card);
-    box-shadow: 0 0 0 6px var(--brand-accent-a30), 0 6px 20px var(--brand-accent-a70);
+    box-shadow:
+        0 0 0 6px var(--brand-accent-a30),
+        0 6px 20px var(--brand-accent-a70);
     opacity: 1;
 }
 
@@ -188,8 +193,10 @@
         1px 1px 0 var(--core-card),
         0 0 3px var(--core-card-a90);
     pointer-events: none;
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, font-weight
-        var(--duration-fast) ease;
+    transition:
+        color var(--duration-fast) ease,
+        opacity var(--duration-fast) ease,
+        font-weight var(--duration-fast) ease;
     max-width: 90px;
     /* Inactive labels fade back so the active one dominates,
        but stay readable against the route layer. */
@@ -286,8 +293,11 @@
     border: 1.5px solid var(--core-card);
     flex-shrink: 0;
     opacity: 0.3;
-    transition: background-color var(--duration-fast) ease, opacity var(--duration-fast) ease, width
-        var(--duration-fast) ease, height var(--duration-fast) ease;
+    transition:
+        background-color var(--duration-fast) ease,
+        opacity var(--duration-fast) ease,
+        width var(--duration-fast) ease,
+        height var(--duration-fast) ease;
 }
 
 .secondaryDotHovered {
@@ -300,7 +310,9 @@
     background-color: var(--brand-accent);
     border: 3px solid var(--core-card);
     opacity: 1;
-    box-shadow: 0 0 0 5px var(--brand-accent-a30), 0 5px 14px var(--brand-accent-a55);
+    box-shadow:
+        0 0 0 5px var(--brand-accent-a30),
+        0 5px 14px var(--brand-accent-a55);
 }
 
 .secondaryDotActive::before {
@@ -334,7 +346,9 @@
     white-space: normal;
     text-align: center;
     pointer-events: none;
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    transition:
+        color var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
 }
 
 .secondaryLabelActive {

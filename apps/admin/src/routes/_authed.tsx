@@ -1,3 +1,4 @@
+import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { env } from '@/env';
@@ -7,7 +8,6 @@ import { fetchAuthSession } from '@/lib/auth-session';
 import { decideAuthedGuard } from '@/lib/authed-guard';
 import { fetchPreferredLocale } from '@/lib/locale';
 import { adminLogger } from '@/utils/logger';
-import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
  * NotFoundComponent for authenticated routes

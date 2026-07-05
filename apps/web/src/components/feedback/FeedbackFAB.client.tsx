@@ -9,8 +9,8 @@
  * Hydration strategy: client:idle (mounted in BaseLayout after all other islands)
  */
 
-import { FeedbackFAB as FeedbackFABBase } from '@repo/feedback';
 import type { SentryFeedbackBridgePayload } from '@repo/feedback';
+import { FeedbackFAB as FeedbackFABBase } from '@repo/feedback';
 import * as Sentry from '@sentry/astro';
 
 // ---------------------------------------------------------------------------

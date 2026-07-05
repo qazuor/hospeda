@@ -12,10 +12,10 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    InvalidTokenError,
-    TokenExpiredError,
     generateUnsubscribeToken,
     generateVerificationToken,
+    InvalidTokenError,
+    TokenExpiredError,
     verifyUnsubscribeToken,
     verifyVerificationToken
 } from '../../../src/services/newsletter/newsletter-token.helpers.js';

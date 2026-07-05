@@ -9,7 +9,11 @@
  * enforces server-side, so the UI gate mirrors the API gate.
  */
 
-import { useToast } from '@/components/ui/ToastProvider';
+import { AddIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,16 +25,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { fetchApi } from '@/lib/api/client';
 import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 import { adminLogger } from '@/utils/logger';
-import { AddIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { z } from 'zod';
 
 interface FormState {
     readonly name: string;

@@ -3,14 +3,15 @@
  *
  * @module routes/_authed/revalidation/components/revalidation-shared
  */
+
+import { LoaderIcon } from '@repo/icons';
+import type { RevalidationResponse } from '@repo/schemas';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
-import type { RevalidationResponse } from '@repo/schemas';
-import { useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // InlineNumberField
@@ -257,9 +258,9 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                 <CardDescription>
                     {t('revalidation.result.cardDescription', {
                         succeeded,
-                        succeededSuffix: succeeded !== 1 ? 's' : '',
+                        succeededSuffix: succeeded === 1 ? '' : 's',
                         failed,
-                        failedSuffix: failed !== 1 ? 's' : '',
+                        failedSuffix: failed === 1 ? '' : 's',
                         duration: result.duration
                     })}
                 </CardDescription>

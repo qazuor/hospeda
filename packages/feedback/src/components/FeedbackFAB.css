@@ -58,8 +58,10 @@
     padding: 0 1.5rem 0 1.25rem;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
-    box-shadow: var(--fb-shadow-fab), 0 0 0 4px rgba(255, 255, 255, 0.1), inset 0 1px 0
-        rgba(255, 255, 255, 0.2);
+    box-shadow:
+        var(--fb-shadow-fab),
+        0 0 0 4px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     font-family: var(--fb-font-family);
     font-size: var(--fb-font-size-lg);
     font-weight: var(--fb-font-weight-semibold);
@@ -120,8 +122,9 @@
     max-width: 12rem;
     opacity: 1;
     overflow: hidden;
-    transition: max-width var(--fb-duration-fast) var(--fb-easing), opacity var(--fb-duration-fast)
-        var(--fb-easing);
+    transition:
+        max-width var(--fb-duration-fast) var(--fb-easing),
+        opacity var(--fb-duration-fast) var(--fb-easing);
 }
 
 /* ------------------------------------------------------------------ */
@@ -174,8 +177,10 @@
    stronger glow with no perceived motion. */
 .feedback-root .fab:hover {
     background-color: var(--fb-primary-hover);
-    box-shadow: 0 8px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)), 0 0 0 4px
-        rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    box-shadow:
+        0 8px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)),
+        0 0 0 4px rgba(255, 255, 255, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .feedback-root .fab:focus-visible {

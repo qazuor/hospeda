@@ -80,7 +80,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { randomUUID } from 'node:crypto';
-import { billingPromoCodeUsage, billingPromoCodes, eq, sql } from '@repo/db';
+import { billingPromoCodes, billingPromoCodeUsage, eq, sql } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

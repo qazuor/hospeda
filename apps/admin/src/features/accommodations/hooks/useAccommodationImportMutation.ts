@@ -14,12 +14,12 @@
  * @module useAccommodationImportMutation
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse
 } from '@repo/schemas';
 import { useMutation } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Input payload for the import mutation.

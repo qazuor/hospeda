@@ -160,11 +160,7 @@ export async function resetPassword({
  * @param params.token - The verification token extracted from the email link
  * @returns `AuthResult` with empty data on success or an error message on failure
  */
-export async function verifyEmail({
-    token
-}: {
-    readonly token: string;
-}): Promise<AuthResult> {
+export async function verifyEmail({ token }: { readonly token: string }): Promise<AuthResult> {
     const baseURL = getAuthBaseUrl();
     try {
         const response = await fetch(`${baseURL}/api/auth/verify-email`, {

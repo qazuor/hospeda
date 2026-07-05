@@ -6,13 +6,13 @@
  * function so headers are localised at render time.
  */
 
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
-import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
-import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { EditIcon } from '@repo/icons';
 import { GastronomyTypeEnum, PermissionEnum, PriceRangeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
+import { createElement, Fragment } from 'react';
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { useDeleteGastronomyMutation } from '../hooks/useGastronomyQuery';
 import type { GastronomyListItem } from './gastronomy.config';
 

@@ -21,10 +21,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    SubscriptionDowngradeError,
     _internals,
     clearPendingScheduledPlanChange,
     getKeepSelectionsForChange,
+    SubscriptionDowngradeError,
     scheduleSubscriptionDowngrade
 } from '../../src/services/subscription-downgrade.service';
 

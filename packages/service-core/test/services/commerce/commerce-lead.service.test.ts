@@ -7,8 +7,8 @@
 
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommerceLeadService } from '../../../src/services/commerce/commerce-lead.service';
 import type { LeadNotificationPort } from '../../../src/services/commerce/commerce-lead.service';
+import { CommerceLeadService } from '../../../src/services/commerce/commerce-lead.service';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 

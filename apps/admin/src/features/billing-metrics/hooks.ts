@@ -1,5 +1,5 @@
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type {
     ApproachingLimitsResponse,
     CustomerSearchResult,
@@ -29,12 +29,7 @@ export const metricsQueryKeys = {
 /**
  * Fetch billing metrics (overview + revenue series + breakdown)
  */
-async function fetchBillingMetrics(
-    options: {
-        livemode?: boolean;
-        months?: number;
-    } = {}
-) {
+async function fetchBillingMetrics(options: { livemode?: boolean; months?: number } = {}) {
     const params = new URLSearchParams();
 
     if (options.livemode !== undefined) {
@@ -53,12 +48,7 @@ async function fetchBillingMetrics(
 /**
  * Fetch recent billing activity
  */
-async function fetchRecentActivity(
-    options: {
-        livemode?: boolean;
-        limit?: number;
-    } = {}
-) {
+async function fetchRecentActivity(options: { livemode?: boolean; limit?: number } = {}) {
     const params = new URLSearchParams();
 
     if (options.livemode !== undefined) {
@@ -89,12 +79,7 @@ async function fetchRecentActivity(
 /**
  * Hook to fetch billing metrics
  */
-export const useBillingMetricsQuery = (
-    options: {
-        livemode?: boolean;
-        months?: number;
-    } = {}
-) => {
+export const useBillingMetricsQuery = (options: { livemode?: boolean; months?: number } = {}) => {
     return useQuery({
         queryKey: metricsQueryKeys.metrics.overview(options),
         queryFn: () => fetchBillingMetrics(options),
@@ -106,12 +91,7 @@ export const useBillingMetricsQuery = (
 /**
  * Hook to fetch recent billing activity
  */
-export const useRecentActivityQuery = (
-    options: {
-        livemode?: boolean;
-        limit?: number;
-    } = {}
-) => {
+export const useRecentActivityQuery = (options: { livemode?: boolean; limit?: number } = {}) => {
     return useQuery({
         queryKey: metricsQueryKeys.metrics.activity(options),
         queryFn: () => fetchRecentActivity(options),

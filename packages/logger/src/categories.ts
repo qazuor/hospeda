@@ -40,20 +40,20 @@ export function registerCategoryInternal(
         key,
         options: {
             ...options,
-            save: options.save !== undefined ? options.save : envConfig.SAVE,
+            save: options.save === undefined ? envConfig.SAVE : options.save,
             expandObjectLevels:
-                options.expandObjectLevels !== undefined
-                    ? options.expandObjectLevels
-                    : envConfig.EXPAND_OBJECT_LEVELS,
+                options.expandObjectLevels === undefined
+                    ? envConfig.EXPAND_OBJECT_LEVELS
+                    : options.expandObjectLevels,
             truncateLongText:
-                options.truncateLongText !== undefined
-                    ? options.truncateLongText
-                    : envConfig.TRUNCATE_LONG_TEXT,
+                options.truncateLongText === undefined
+                    ? envConfig.TRUNCATE_LONG_TEXT
+                    : options.truncateLongText,
             truncateLongTextAt:
-                options.truncateLongTextAt !== undefined
-                    ? options.truncateLongTextAt
-                    : envConfig.TRUNCATE_LONG_TEXT_AT,
-            level: options.level !== undefined ? options.level : envConfig.LEVEL,
+                options.truncateLongTextAt === undefined
+                    ? envConfig.TRUNCATE_LONG_TEXT_AT
+                    : options.truncateLongTextAt,
+            level: options.level === undefined ? envConfig.LEVEL : options.level,
             stringifyObj: options.stringifyObj
         }
     };

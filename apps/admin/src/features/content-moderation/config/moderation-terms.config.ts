@@ -1,8 +1,8 @@
+import { type ContentModerationTerm, contentModerationTermSchema } from '@repo/schemas';
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import { type ContentModerationTerm, contentModerationTermSchema } from '@repo/schemas';
-import type { z } from 'zod';
 import { createModerationTermColumns } from './moderation-terms.columns';
 
 /**

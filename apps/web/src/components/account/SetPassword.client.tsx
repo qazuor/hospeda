@@ -12,6 +12,8 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH, StrongPasswordRegex } from '@repo/schemas';
+import { useState } from 'react';
 import {
     Dialog,
     DialogBody,
@@ -22,10 +24,8 @@ import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { queueToastForNextPage } from '@/store/toast-store';
-import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH, StrongPasswordRegex } from '@repo/schemas';
-import { useState } from 'react';
-import { PasswordField } from '../ui/PasswordField.client';
 import type { PasswordFieldI18n } from '../ui/PasswordField.client';
+import { PasswordField } from '../ui/PasswordField.client';
 import styles from './SetPassword.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

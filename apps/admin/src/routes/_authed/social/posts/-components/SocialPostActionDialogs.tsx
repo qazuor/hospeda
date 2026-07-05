@@ -8,6 +8,8 @@
  * - Schedule: requires a datetime and timezone before confirming.
  */
 
+import { SocialRecurrenceTypeEnum } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,8 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
-import { SocialRecurrenceTypeEnum } from '@repo/schemas';
-import { useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Reject dialog

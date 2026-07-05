@@ -66,9 +66,9 @@ vi.mock('../../src/utils/env', () => {
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    type SlidingWindowStore,
     clearSlidingWindowStore,
-    createSlidingWindowPerUserRateLimit
+    createSlidingWindowPerUserRateLimit,
+    type SlidingWindowStore
 } from '../../src/middlewares/rate-limit';
 import type { AppBindings } from '../../src/types';
 

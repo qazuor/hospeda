@@ -1,7 +1,7 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
-import { BadgeColor } from '@/components/table/DataTable';
 import type { TranslationKey } from '@repo/i18n';
 import type { ContentModerationTerm } from '@repo/schemas';
+import type { ColumnConfig } from '@/components/entity-list/types';
+import { BadgeColor } from '@/components/table/DataTable';
 
 /**
  * Column definitions for the moderation terms data table.

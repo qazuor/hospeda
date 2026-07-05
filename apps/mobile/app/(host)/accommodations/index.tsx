@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import type { ListRenderItemInfo } from 'react-native';
 import {
     ActivityIndicator,
     FlatList,
@@ -7,10 +8,9 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import type { ListRenderItemInfo } from 'react-native';
 import { theme } from '../../../src/design';
-import { useOwnAccommodations } from '../../../src/lib/api/hooks/use-own-accommodations';
 import type { OwnAccommodationsList } from '../../../src/lib/api/hooks/use-own-accommodations';
+import { useOwnAccommodations } from '../../../src/lib/api/hooks/use-own-accommodations';
 import { getTranslation } from '../../../src/lib/i18n';
 import { useLocale } from '../../../src/lib/locale-context';
 import { logger } from '../../../src/lib/logger';

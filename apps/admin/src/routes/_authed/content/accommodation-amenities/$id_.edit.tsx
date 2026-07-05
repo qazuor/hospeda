@@ -1,10 +1,10 @@
+import { AmenityUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useAmenityPage } from '@/features/amenities/hooks/useAmenityPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { AmenityUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Amenity Edit Route Configuration

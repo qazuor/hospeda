@@ -3,12 +3,13 @@
  *
  * Admin panel for managing and monitoring scheduled cron jobs
  */
+
+import { ClockIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { CronJobsPanel } from '@/features/cron-jobs';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { ClockIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/cron')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),

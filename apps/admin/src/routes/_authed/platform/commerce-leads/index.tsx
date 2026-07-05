@@ -11,10 +11,10 @@
  * COMMERCE_EDIT_ALL gates via the handle/provision dialog buttons.
  */
 
-import { CommerceLeadInbox } from '@/features/commerce-leads/components/CommerceLeadInbox';
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { CommerceLeadInbox } from '@/features/commerce-leads/components/CommerceLeadInbox';
+import type { AuthState } from '@/lib/auth-session';
 
 export const Route = createFileRoute('/_authed/platform/commerce-leads/')({
     beforeLoad: ({ context }) => {

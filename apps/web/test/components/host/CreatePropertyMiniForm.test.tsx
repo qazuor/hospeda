@@ -229,11 +229,7 @@ const DEFAULT_PROPS = {
 } as const;
 
 /** Build a mock Response-like object that `fetch` can resolve to. */
-function buildFetchResponse(opts: {
-    ok?: boolean;
-    status?: number;
-    body?: unknown;
-}): Response {
+function buildFetchResponse(opts: { ok?: boolean; status?: number; body?: unknown }): Response {
     const { ok = true, status = 200, body = {} } = opts;
     return {
         ok,

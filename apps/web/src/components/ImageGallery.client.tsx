@@ -12,6 +12,10 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
+import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
+import type { MediaPreset } from '@repo/media';
+import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import {
     Dialog,
@@ -20,10 +24,6 @@ import {
 } from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
-import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
-import type { MediaPreset } from '@repo/media';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styles from './ImageGallery.module.css';
 
 /**

@@ -11,7 +11,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { usePlansQuery } from '../../../src/features/billing-plans/hooks';
 import { createTestWrapper } from '../../helpers/create-test-wrapper';

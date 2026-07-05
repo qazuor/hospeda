@@ -111,8 +111,8 @@ vi.mock('../../src/utils/logger', () => ({
 
 import * as billingModule from '@repo/billing';
 import { type DrizzleClient, getDb, withTransaction } from '@repo/db';
-import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { AdminAddonService } from '../../src/services/addon.admin';
+import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 
 // ─── Typed mock references ────────────────────────────────────────────────────
 

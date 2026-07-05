@@ -11,8 +11,8 @@
  * @module test/middlewares/billing-ownership.middleware
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks

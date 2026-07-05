@@ -1,10 +1,10 @@
+import { PermissionEnum, PostSponsorUpdateInputSchema } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useSponsorPage } from '@/features/sponsors/hooks/useSponsorPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, PostSponsorUpdateInputSchema } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Sponsor Edit Route Configuration

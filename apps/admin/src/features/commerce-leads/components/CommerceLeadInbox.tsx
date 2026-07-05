@@ -17,6 +17,8 @@
  * @module features/commerce-leads/components/CommerceLeadInbox
  */
 
+import type { CommerceLead } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,8 +33,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import type { CommerceLead } from '@repo/schemas';
-import { useState } from 'react';
 import {
     type CommerceLeadsQueryParams,
     useApproveAndProvisionMutation,

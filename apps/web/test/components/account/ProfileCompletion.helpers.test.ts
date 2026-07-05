@@ -8,10 +8,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     COUNTRY_CODES,
-    LOCATION_COUNTRIES,
-    SOCIAL_PLATFORMS,
     computeDisplayName,
     computeInitialDisplayNameOverride,
+    LOCATION_COUNTRIES,
+    SOCIAL_PLATFORMS,
     splitFullName,
     validateProfileCompletionFields
 } from '../../../src/components/account/ProfileCompletion.helpers';

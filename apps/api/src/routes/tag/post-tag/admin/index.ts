@@ -64,4 +64,4 @@ assignmentApp.route('/', adminSetPostTagsRoute);
 // DELETE /:postId/tags/:tagId - Remove single PostTag from post
 assignmentApp.route('/', adminRemovePostTagRoute);
 
-export { crudApp as adminPostTagCrudRoutes, assignmentApp as adminPostTagAssignmentRoutes };
+export { assignmentApp as adminPostTagAssignmentRoutes, crudApp as adminPostTagCrudRoutes };

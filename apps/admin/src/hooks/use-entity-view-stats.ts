@@ -12,9 +12,9 @@
  * @module use-entity-view-stats
  */
 
+import { useQuery } from '@tanstack/react-query';
 import type { ViewsBatchEntityType } from '@/hooks/use-views-batch';
 import { fetchApi } from '@/lib/api/client';
-import { useQuery } from '@tanstack/react-query';
 
 /** Supported time windows for the admin batch endpoint. */
 export type ViewWindow = '7d' | '30d';

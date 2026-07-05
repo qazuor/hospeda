@@ -1,7 +1,7 @@
-import { useTranslations } from '@/hooks/use-translations';
 import { defaultIntlLocale, formatNumber } from '@repo/i18n';
 import type { PriceCurrencyEnum, PriceType } from '@repo/schemas';
 import type { ReactNode } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 
 type PriceCellProps = {
     readonly value: unknown;

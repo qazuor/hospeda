@@ -6,7 +6,9 @@
  * optional slug + linkUrl. Status defaults server-side to PENDING.
  */
 
-import { useToast } from '@/components/ui/ToastProvider';
+import type { ApiErrorShape } from '@repo/i18n';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,13 +27,11 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import { translateAdminApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import type { ApiErrorShape } from '@repo/i18n';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { useCreateSponsorshipMutation } from '../hooks/useSponsorshipQueries';
 
 interface CreateSponsorshipDialogProps {

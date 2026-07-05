@@ -33,7 +33,7 @@
  * `env` object.
  */
 import { resolve } from 'node:path';
-import { UserModel, eq, getDb, initializeDb, socialSettings } from '@repo/db';
+import { eq, getDb, initializeDb, socialSettings, UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';

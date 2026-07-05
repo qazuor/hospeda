@@ -1,7 +1,6 @@
-import { fetchApi } from '@/lib/api/client';
-import type { Tag } from '@repo/schemas';
-import type { EntityTypeEnum } from '@repo/schemas';
+import type { EntityTypeEnum, Tag } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query key factory for entity tag assignment queries.

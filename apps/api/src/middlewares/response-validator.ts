@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { paginationMetadataSchema } from '../schemas/response-schemas';
 import { env, validateApiEnv } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+
 validateApiEnv();
 
 /**
@@ -229,8 +230,8 @@ export const responseValidatorMiddleware = createResponseValidatorMiddleware();
  */
 export {
     apiResponseSchema,
-    successResponseSchema,
     errorResponseSchema,
     paginatedResponseSchema,
-    paginationSchema
+    paginationSchema,
+    successResponseSchema
 };

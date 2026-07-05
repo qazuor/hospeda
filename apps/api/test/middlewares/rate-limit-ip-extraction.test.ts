@@ -115,19 +115,26 @@ const makeContext = ({ socketIp, headers = {} }: FakeContextOpts): Context => {
 // ─── isLoopbackIp ─────────────────────────────────────────────────────────────
 
 describe('isLoopbackIp', () => {
-    it.each(['127.0.0.1', '127.1.2.3', '127.255.255.255', '::1', '::ffff:127.0.0.1'])(
-        'returns true for loopback %s',
-        (ip) => {
-            expect(isLoopbackIp(ip)).toBe(true);
-        }
-    );
+    it.each([
+        '127.0.0.1',
+        '127.1.2.3',
+        '127.255.255.255',
+        '::1',
+        '::ffff:127.0.0.1'
+    ])('returns true for loopback %s', (ip) => {
+        expect(isLoopbackIp(ip)).toBe(true);
+    });
 
-    it.each(['10.0.0.1', '172.16.0.1', '192.168.1.1', '8.8.8.8', '::', '2001:db8::1'])(
-        'returns false for non-loopback %s',
-        (ip) => {
-            expect(isLoopbackIp(ip)).toBe(false);
-        }
-    );
+    it.each([
+        '10.0.0.1',
+        '172.16.0.1',
+        '192.168.1.1',
+        '8.8.8.8',
+        '::',
+        '2001:db8::1'
+    ])('returns false for non-loopback %s', (ip) => {
+        expect(isLoopbackIp(ip)).toBe(false);
+    });
 });
 
 // ─── isPrivateIp ──────────────────────────────────────────────────────────────

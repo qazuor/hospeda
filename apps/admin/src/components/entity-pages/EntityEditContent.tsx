@@ -1,23 +1,23 @@
+import { useTranslations } from '@repo/i18n';
+import { AlertCircleIcon } from '@repo/icons';
+import * as React from 'react';
 import { EntityFormSection, useEntityForm } from '@/components/entity-form';
-import type { FieldMediaHandlers } from '@/components/entity-form/EntityFormSection';
 import {
     SectionAccordion,
     SectionAccordionItem
 } from '@/components/entity-form/accordion/SectionAccordion';
+import type { FieldMediaHandlers } from '@/components/entity-form/EntityFormSection';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { ENTITY_EDIT_FORM_ID } from '@/components/entity-header/EntityPageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
-import { useToast } from '@/components/ui/ToastProvider';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/ToastProvider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { env } from '@/env';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-import { useTranslations } from '@repo/i18n';
-import { AlertCircleIcon } from '@repo/icons';
-import * as React from 'react';
-import { type SectionSortOptions, filterAndSortSections } from './utils/section-sorter';
-import { type SectionSummaryFn, computeSectionSummary } from './utils/section-summarizer';
+import { filterAndSortSections, type SectionSortOptions } from './utils/section-sorter';
+import { computeSectionSummary, type SectionSummaryFn } from './utils/section-summarizer';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -8,11 +8,11 @@
  * Tasks: T-072
  */
 
+import { toBcp47Locale } from '@repo/i18n/web';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveStatsIcon } from '@/lib/stats-icons';
-import { toBcp47Locale } from '@repo/i18n/web';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
 /** Easing function: easeOutQuart. */
@@ -155,9 +155,11 @@ export function AnimatedCounter({
 
     if (variant === 'badge') {
         return (
+            // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the animated value + label text; a real <fieldset> would inherit user-agent border/padding/margin that fight this badge layout
             <div
                 ref={containerRef}
                 className={styles.badge}
+                role="group"
                 aria-label={ariaLabel}
             >
                 <span className={styles.badgeValue}>
@@ -174,9 +176,11 @@ export function AnimatedCounter({
     const IconComponent = icon ? resolveStatsIcon({ iconName: icon }) : undefined;
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the animated value + icon + label; a real <fieldset> would inherit user-agent border/padding/margin that fight this counter layout
         <div
             ref={containerRef}
             className={styles.counter}
+            role="group"
             aria-label={ariaLabel}
         >
             {/* Icon circle */}

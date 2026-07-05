@@ -1,6 +1,6 @@
-import { fetchApi } from '@/lib/api/client';
 import { type PromoEffect, PromoEffectKindEnum, ValueKindEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type {
     CreatePromoCodePayload,
     PromoCode,

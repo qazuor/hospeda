@@ -35,7 +35,7 @@
 import type { Theme } from '../themes/types.js';
 import { webLight } from '../themes/web-light.js';
 import type { OKLCH, Shade } from '../tokens/colors.js';
-import { SHADES, palettes } from '../tokens/colors.js';
+import { palettes, SHADES } from '../tokens/colors.js';
 
 // ============================================================================
 // Internal helpers

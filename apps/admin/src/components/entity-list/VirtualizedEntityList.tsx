@@ -1,5 +1,3 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import {
     AlertTriangleIcon,
     ChevronDownIcon,
@@ -10,7 +8,9 @@ import {
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { ReactNode } from 'react';
 import React from 'react';
-import { type VirtualizedListConfig, useVirtualizedList } from './hooks/useVirtualizedList';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
+import { useVirtualizedList, type VirtualizedListConfig } from './hooks/useVirtualizedList';
 
 /**
  * Props for VirtualizedEntityList component

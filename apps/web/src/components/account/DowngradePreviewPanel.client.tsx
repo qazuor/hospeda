@@ -11,10 +11,10 @@
  * parent flow.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import type { DowngradePreview, KeepSelections } from '@repo/schemas';
 import { useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './DowngradePreviewPanel.module.css';
 
 // ---------------------------------------------------------------------------

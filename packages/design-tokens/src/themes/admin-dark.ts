@@ -17,11 +17,11 @@
  */
 
 import {
-    type OKLCH,
     accent,
     danger,
     info,
     neutral,
+    type OKLCH,
     river,
     success,
     warning

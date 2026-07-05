@@ -14,8 +14,8 @@
  * @module services/notification-retention
  */
 
-import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
 import { lt } from 'drizzle-orm';
 import { withServiceTransaction } from '../../../utils/transaction.js';
 

@@ -33,8 +33,13 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type { PaginatedListOutput } from '../../types';
-import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 
@@ -356,7 +361,7 @@ export class CommerceLeadService extends BaseService {
                     status: validated.status,
                     handledAt: new Date(),
                     handledById: validated.handledById,
-                    ...(validated.adminNote !== undefined ? { adminNote: validated.adminNote } : {})
+                    ...(validated.adminNote === undefined ? {} : { adminNote: validated.adminNote })
                 };
 
                 // Validate through the admin update schema for consistency
@@ -466,7 +471,7 @@ export class CommerceLeadService extends BaseService {
                     handledAt: new Date(),
                     handledById: validated.handledById,
                     provisionedUserId: userId,
-                    ...(validated.adminNote !== undefined ? { adminNote: validated.adminNote } : {})
+                    ...(validated.adminNote === undefined ? {} : { adminNote: validated.adminNote })
                 };
                 const parsed = CommerceLeadAdminUpdateInputSchema.safeParse(updatePayload);
                 if (!parsed.success) {

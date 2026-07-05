@@ -34,8 +34,8 @@ import {
     View
 } from 'react-native';
 import { theme } from '../../design';
-import { UserPatchBodySchema, usePatchUser } from '../../lib/api/hooks/use-patch-user';
 import type { UserPatchBody } from '../../lib/api/hooks/use-patch-user';
+import { UserPatchBodySchema, usePatchUser } from '../../lib/api/hooks/use-patch-user';
 import { useSelfProfile } from '../../lib/api/hooks/use-self-profile';
 import { signOut, useSession } from '../../lib/auth-client';
 import { getTranslation } from '../../lib/i18n';

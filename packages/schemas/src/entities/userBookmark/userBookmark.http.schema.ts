@@ -218,14 +218,13 @@ export type UserBookmarksCheckBulkResponse = z.infer<typeof UserBookmarksCheckBu
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { UserBookmarkSearchInput } from './userBookmark.query.schema.js';
+import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 
 import type {
     UserBookmarkCreateInput,
     UserBookmarkUpdateInput
 } from './userBookmark.crud.schema.js';
-
-import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
+import type { UserBookmarkSearchInput } from './userBookmark.query.schema.js';
 
 /**
  * Convert HTTP user bookmark search parameters to domain search schema

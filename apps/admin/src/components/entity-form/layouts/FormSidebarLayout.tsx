@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
 import { useTranslations } from '@repo/i18n';
 import { ChevronDownIcon } from '@repo/icons';
 import type * as React from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Props for FormSidebarLayout component.

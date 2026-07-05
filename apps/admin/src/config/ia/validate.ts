@@ -29,8 +29,8 @@
  */
 
 import { rawConfig } from './index';
-import { AdminIAConfigSchema } from './schema';
 import type { AdminIAConfig } from './schema';
+import { AdminIAConfigSchema } from './schema';
 
 /**
  * The validated and defaults-applied Admin IA configuration.

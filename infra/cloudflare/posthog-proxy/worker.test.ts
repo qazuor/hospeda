@@ -1,4 +1,4 @@
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import worker, { resolveUpstream } from './worker.js';
 
 describe('resolveUpstream (path rewriting)', () => {

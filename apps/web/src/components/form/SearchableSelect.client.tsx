@@ -19,12 +19,12 @@
  * and ARIA-correct (combobox + listbox + option roles, aria-activedescendant).
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import type { IconProps } from '@repo/icons';
 import { StarIcon } from '@repo/icons';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
 // Types

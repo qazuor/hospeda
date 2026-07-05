@@ -19,10 +19,10 @@
  * The component renders nothing.
  */
 
+import { useEffect } from 'react';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { getApiUrl } from '@/lib/env';
 import { addToast } from '@/store/toast-store';
-import { useEffect } from 'react';
 
 interface AuthMeSnapshot {
     readonly isAuthenticated: boolean;

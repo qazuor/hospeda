@@ -23,6 +23,7 @@ vi.mock('@/lib/api/client', () => ({
     fetchApi: (...args: unknown[]) => fetchApiMock(...args)
 }));
 
+import { EntityTypeEnum, ModerationStatusEnum } from '@repo/schemas';
 import {
     commentModerationQueryKeys,
     useComment,
@@ -32,7 +33,6 @@ import {
     useRestoreComment,
     useSoftDeleteComment
 } from '@/hooks/use-comment-moderation';
-import { EntityTypeEnum, ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Test helpers

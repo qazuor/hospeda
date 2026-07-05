@@ -16,10 +16,10 @@ import { describe, expect, it } from 'vitest';
 import {
     type AccommodationImportAiOutput,
     type AiGateState,
-    MSG_AI_ENTITLEMENT,
-    MSG_AI_QUOTA,
     applyAiGateNotice,
     buildImportAiPrompt,
+    MSG_AI_ENTITLEMENT,
+    MSG_AI_QUOTA,
     mapAiOutputToRawExtraction
 } from '../../../../src/routes/accommodation/protected/import-from-url.ai';
 

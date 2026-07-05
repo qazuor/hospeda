@@ -3,11 +3,11 @@
  * Requires authentication
  */
 import {
+    httpToDomainPostCreate,
     PermissionEnum,
     type PostCreateHttp,
     PostCreateHttpSchema,
-    PostProtectedSchema,
-    httpToDomainPostCreate
+    PostProtectedSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

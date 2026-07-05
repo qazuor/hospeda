@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 /**
@@ -12,7 +13,6 @@ import { accommodationsApi } from '@/lib/api/endpoints';
 import { getInitialsFromName } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './ReviewsModal.module.css';
 
 interface ReviewItem {
@@ -43,7 +43,11 @@ function ReviewAvatar({
     url,
     alt,
     initials
-}: { readonly url: string | null; readonly alt: string; readonly initials: string }) {
+}: {
+    readonly url: string | null;
+    readonly alt: string;
+    readonly initials: string;
+}) {
     const [broken, setBroken] = useState(false);
     return (
         <div className={styles.avatarWrapper}>

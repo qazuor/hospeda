@@ -7,9 +7,9 @@
  * - Additional functionality like icons and validation states
  */
 
-import { cn } from '@/lib/utils';
 import { LoaderIcon } from '@repo/icons';
 import { forwardRef, useId } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Enhanced Input Props with additional functionality
@@ -98,7 +98,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
                 <div className="relative">
                     {leftIcon && (
-                        <div className="-translate-y-1/2 absolute top-1/2 left-3 text-muted-foreground">
+                        <div className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
                             {leftIcon}
                         </div>
                     )}
@@ -125,7 +125,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     />
 
                     {(rightIcon || loading) && (
-                        <div className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground">
+                        <div className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground">
                             {loading ? (
                                 <LoaderIcon className="h-4 w-4 animate-spin text-current" />
                             ) : (

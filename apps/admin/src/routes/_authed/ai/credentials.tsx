@@ -8,6 +8,10 @@
  * Uses Card-based layout instead of DataTable since the list is bounded
  * to 3 providers max.
  */
+
+import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,9 +46,6 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/ai/credentials')({
     component: AiCredentialsPage
@@ -608,11 +609,7 @@ function RotateCredentialDialog({
 }
 
 /** Edit credential metadata dialog. */
-function EditCredentialDialog({
-    credential
-}: {
-    readonly credential: AiCredentialMasked;
-}) {
+function EditCredentialDialog({ credential }: { readonly credential: AiCredentialMasked }) {
     const { addToast } = useToast();
     const updateMutation = useUpdateAiCredentialMutation();
     const [open, setOpen] = useState(false);
@@ -926,11 +923,7 @@ function DeleteCredentialDialog({
 // Credential card
 // ---------------------------------------------------------------------------
 
-function CredentialCard({
-    credential
-}: {
-    readonly credential: AiCredentialMasked;
-}) {
+function CredentialCard({ credential }: { readonly credential: AiCredentialMasked }) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">

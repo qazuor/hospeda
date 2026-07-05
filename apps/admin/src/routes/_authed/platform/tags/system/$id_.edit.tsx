@@ -1,10 +1,10 @@
+import type { TagUpdateInput } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { AdminTagForm } from '@/components/tags/AdminTagForm';
 import { useSystemTag, useUpdateSystemTag } from '@/hooks/use-system-tags';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import type { TagUpdateInput } from '@repo/schemas';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/tags/system/$id_/edit')({
     component: SystemTagEditPage,

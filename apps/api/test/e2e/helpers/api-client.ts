@@ -117,7 +117,7 @@ export class E2EApiClient {
         return await this.app.request(path, {
             method: 'DELETE',
             headers: headers.headers,
-            body: body !== undefined ? JSON.stringify(body) : undefined
+            body: body === undefined ? undefined : JSON.stringify(body)
         });
     }
 

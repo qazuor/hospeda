@@ -1,6 +1,6 @@
+import { HostTradeCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
-import { HostTradeCategoryEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated field configuration for the basic-info section of a host-trade entry.

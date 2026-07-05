@@ -32,9 +32,7 @@
  * @module accommodation.media-sync
  */
 
-import type { AccommodationMediaModel } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
-import type { InsertAccommodationMedia } from '@repo/db';
+import type { AccommodationMediaModel, DrizzleClient, InsertAccommodationMedia } from '@repo/db';
 import type { Image, Media } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------

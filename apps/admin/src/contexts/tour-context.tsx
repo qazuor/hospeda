@@ -26,6 +26,16 @@
  * @see SPEC-174 §7.4
  */
 
+import {
+    createContext,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
 import { TourWelcomeModal } from '@/components/tour/TourWelcomeModal';
 import type { Tour } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
@@ -36,16 +46,6 @@ import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { buildDriverSteps } from '@/lib/tour/build-driver-steps';
 import { adminLogger } from '@/utils/logger';
-import {
-    type ReactNode,
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState
-} from 'react';
 
 // ============================================================================
 // Types

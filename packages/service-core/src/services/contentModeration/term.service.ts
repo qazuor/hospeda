@@ -3,8 +3,8 @@ import {
     invalidateModerationCacheByTermPattern
 } from '@repo/content-moderation';
 import {
-    ContentModerationTermModel,
     and,
+    ContentModerationTermModel,
     contentModerationTerms,
     count,
     eq,
@@ -16,10 +16,10 @@ import {
 import {
     type ContentModerationTermAdminSearch,
     type CreateContentModerationTerm,
-    ModerationCategoryEnum,
-    ServiceErrorCode,
     contentModerationTermAdminSearchSchema,
     createContentModerationTermSchema,
+    ModerationCategoryEnum,
+    ServiceErrorCode,
     updateContentModerationTermSchema
 } from '@repo/schemas';
 import { z } from 'zod';

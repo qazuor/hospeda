@@ -9,6 +9,10 @@
  *   GET  /api/v1/admin/ai/prompts?feature=<AiFeature>  — list versions
  *   POST /api/v1/admin/ai/prompts                      — create + optionally activate
  */
+
+import { AlertCircleIcon, CheckCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,9 +27,6 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { AlertCircleIcon, CheckCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/ai/prompts')({
     component: AiPromptsPage

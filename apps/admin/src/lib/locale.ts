@@ -7,9 +7,9 @@
  * @module locale
  */
 
-import { env } from '@/env';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { env } from '@/env';
 
 /**
  * Arguments for {@link pickLocaleFromAcceptLanguage}.

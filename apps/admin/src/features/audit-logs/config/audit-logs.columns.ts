@@ -6,10 +6,11 @@
  * `severity` are sortable (the only fields whitelisted by the API routes); all
  * other columns explicitly set `enableSorting: false`.
  */
-import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
-import { ColumnType } from '@/components/table/DataTable';
+
 import type { AuditLogEntry } from '@repo/schemas';
 import { createElement } from 'react';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { ColumnType } from '@/components/table/DataTable';
 import { AuditMessageCell } from '../components/AuditMessageCell';
 import { AuditSeverityBadge } from '../components/AuditSeverityBadge';
 

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
@@ -6,7 +7,6 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 /**
  * Props for TextareaField component
@@ -88,7 +88,7 @@ export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaField
                 hasError={hasError}
                 errorMessage={errorMessage}
                 mode="edit"
-                charCount={maxLength !== undefined ? (value ?? '').length : undefined}
+                charCount={maxLength === undefined ? undefined : (value ?? '').length}
                 maxLength={maxLength}
                 className={className}
             >

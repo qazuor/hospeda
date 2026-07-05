@@ -6,12 +6,12 @@
  * and verifies that list-cache invalidation is triggered on successful mutations.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { HostTradeCategoryEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import {
     hostTradeQueryKeys,
     useCreateHostTradeMutation,

@@ -4,13 +4,13 @@
  * Handles file validation, preview, upload to the media endpoint, and profile update.
  */
 
+import { ImageIcon, UploadIcon } from '@repo/icons';
+import { getMediaUrl } from '@repo/media';
+import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ImageIcon, UploadIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
-import { useRef, useState } from 'react';
 import styles from './AvatarUpload.module.css';
 
 /** Accepted image MIME types */

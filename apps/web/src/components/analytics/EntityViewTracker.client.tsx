@@ -27,12 +27,12 @@
  * In production builds StrictMode is disabled, so the effect runs once only.
  */
 
+import { EntityTypeEnum } from '@repo/schemas';
+import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
-import { EntityTypeEnum } from '@repo/schemas';
-import { useEffect } from 'react';
 
 /**
  * The entity types this tracker currently supports.

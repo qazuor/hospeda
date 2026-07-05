@@ -97,8 +97,8 @@ export function createQZPayTestControl(baseUrl: string = DEFAULT_API_BASE_URL): 
     async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
         const response = await fetch(`${endpoint}${path}`, {
             method,
-            headers: body !== undefined ? { 'content-type': 'application/json' } : undefined,
-            body: body !== undefined ? JSON.stringify(body) : undefined
+            headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+            body: body === undefined ? undefined : JSON.stringify(body)
         });
         if (response.status === 404) {
             throw new Error(

@@ -1,8 +1,7 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { reportComponentError } from '@/lib/errors';
-import { showErrorToast, showInfoToast } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
 import React from 'react';
+import { useTranslations } from '@/hooks/use-translations';
+import { reportComponentError, showErrorToast, showInfoToast } from '@/lib/errors';
 
 /**
  * Global error fallback component

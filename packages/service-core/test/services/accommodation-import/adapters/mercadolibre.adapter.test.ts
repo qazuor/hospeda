@@ -37,7 +37,7 @@ function makeCtx(token?: string): ImportContext {
         maxBytes: 1_000_000,
         aiMaxChars: 4_000,
         credentials: {},
-        ...(token !== undefined ? { mercadoLibreTokenProvider: async () => token } : {})
+        ...(token === undefined ? {} : { mercadoLibreTokenProvider: async () => token })
     };
 }
 

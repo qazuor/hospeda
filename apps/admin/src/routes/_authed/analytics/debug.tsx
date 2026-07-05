@@ -1,11 +1,11 @@
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/analytics/debug')({
     component: AnalyticsDebugPage
@@ -141,7 +141,7 @@ function AnalyticsDebugPage() {
                                     {t('admin-pages.analytics.debug.nodeVersion')}
                                 </span>
                                 <span className="font-mono">
-                                    {typeof process !== 'undefined' ? process.version : 'N/A'}
+                                    {typeof process === 'undefined' ? 'N/A' : process.version}
                                 </span>
                             </div>
                             <div className="flex justify-between">

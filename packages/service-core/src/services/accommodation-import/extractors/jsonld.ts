@@ -203,7 +203,7 @@ export interface JsonLdResult {
  */
 function stripRatingFields(node: JsonLdNode): JsonLdNode {
     for (const key of RATING_FIELDS) {
-        if (Object.prototype.hasOwnProperty.call(node, key)) {
+        if (Object.hasOwn(node, key)) {
             // We must ensure these keys are entirely absent (not just undefined).
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete (node as Record<string, unknown>)[key];

@@ -783,7 +783,22 @@ export function PlanPurchaseButton({
                 <div className={styles.promoSection}>
                     {promo.expanded ? (
                         <div className={styles.promoField}>
-                            {promo.status !== 'valid' ? (
+                            {promo.status === 'valid' ? (
+                                /* Valid code — show preview */
+                                <div className={styles.promoSuccess}>
+                                    {/* <output> carries an implicit role="status" */}
+                                    <output className={styles.promoPreviewText}>
+                                        {promo.preview ? buildPreviewText(promo.preview) : ''}
+                                    </output>
+                                    <button
+                                        type="button"
+                                        className={styles.promoRemoveButton}
+                                        onClick={handleRemovePromo}
+                                    >
+                                        {promoRemoveButton}
+                                    </button>
+                                </div>
+                            ) : (
                                 <>
                                     <label
                                         htmlFor={promoInputId}
@@ -843,21 +858,6 @@ export function PlanPurchaseButton({
                                         </p>
                                     )}
                                 </>
-                            ) : (
-                                /* Valid code — show preview */
-                                <div className={styles.promoSuccess}>
-                                    {/* <output> carries an implicit role="status" */}
-                                    <output className={styles.promoPreviewText}>
-                                        {promo.preview ? buildPreviewText(promo.preview) : ''}
-                                    </output>
-                                    <button
-                                        type="button"
-                                        className={styles.promoRemoveButton}
-                                        onClick={handleRemovePromo}
-                                    >
-                                        {promoRemoveButton}
-                                    </button>
-                                </div>
                             )}
                         </div>
                     ) : (

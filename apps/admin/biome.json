@@ -1,12 +1,14 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+    "root": false,
+    "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
     "extends": ["../../packages/biome-config/biome.json"],
     "files": {
-        "ignore": ["docs/development/examples/**", "docs/examples/**"]
+        "includes": ["!**/docs/development/examples", "!**/docs/examples"]
     },
     "linter": {
         "rules": {
-            "nursery": {
+            "nursery": {},
+            "style": {
                 "noRestrictedImports": {
                     "level": "error",
                     "options": {

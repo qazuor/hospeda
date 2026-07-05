@@ -3,10 +3,10 @@
  */
 
 export {
-    EntityFormContext,
-    useEntityFormContext,
     type EntityFormActions,
+    EntityFormContext,
     type EntityFormContextValue,
     type EntityFormProviderProps,
-    type EntityFormState
+    type EntityFormState,
+    useEntityFormContext
 } from './EntityFormContext';

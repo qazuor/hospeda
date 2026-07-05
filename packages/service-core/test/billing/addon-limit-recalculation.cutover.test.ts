@@ -269,81 +269,78 @@ describe('addon-limit-recalculation cutover parity (SPEC-192 T-008)', () => {
             ['extra-photos-20', 'max_photos_per_accommodation', 20, 10],
             ['extra-accommodations-5', 'max_accommodations', 5, 5],
             ['extra-properties-5', 'max_properties', 5, 3]
-        ])(
-            'slug "%s": resolves affectsLimitKey=%s, limitIncrease=%d, basePlan=%d → success',
-            async (slug, limitKey, limitIncrease, basePlanLimit) => {
-                // Arrange
-                wireCatalog(slug);
-                wirePlan(limitKey, basePlanLimit);
+        ])('slug "%s": resolves affectsLimitKey=%s, limitIncrease=%d, basePlan=%d → success', async (slug, limitKey, limitIncrease, basePlanLimit) => {
+            // Arrange
+            wireCatalog(slug);
+            wirePlan(limitKey, basePlanLimit);
 
-                // Step 6 reads increment from purchase.limitAdjustments (JSONB), not catalog
-                const purchaseRow = {
-                    addonSlug: slug,
-                    id: `purchase-${slug}`,
-                    status: 'active',
-                    limitAdjustments: [{ limitKey, increase: limitIncrease }]
-                };
-                wireTxWithRows([purchaseRow]);
+            // Step 6 reads increment from purchase.limitAdjustments (JSONB), not catalog
+            const purchaseRow = {
+                addonSlug: slug,
+                id: `purchase-${slug}`,
+                status: 'active',
+                limitAdjustments: [{ limitKey, increase: limitIncrease }]
+            };
+            wireTxWithRows([purchaseRow]);
 
-                const billing = buildBilling();
+            const billing = buildBilling();
 
-                // Act
-                const result = await recalculateAddonLimitsForCustomer({
+            // Act
+            const result = await recalculateAddonLimitsForCustomer({
+                customerId: 'cust-uuid',
+                limitKey,
+                billing: billing as never,
+                db: {} as never
+            });
+
+            // Assert
+            expect(result.outcome).toBe('success');
+            expect(result.limitKey).toBe(limitKey);
+            expect(result.addonCount).toBe(1);
+            // newMaxValue = basePlanLimit + limitIncrease
+            expect(result.newMaxValue).toBe(basePlanLimit + limitIncrease);
+            expect(result.oldMaxValue).toBe(basePlanLimit);
+
+            // billing.limits.set was called with the correct values
+            expect(billing.limits.set).toHaveBeenCalledWith(
+                expect.objectContaining({
                     customerId: 'cust-uuid',
                     limitKey,
-                    billing: billing as never,
-                    db: {} as never
-                });
-
-                // Assert
-                expect(result.outcome).toBe('success');
-                expect(result.limitKey).toBe(limitKey);
-                expect(result.addonCount).toBe(1);
-                // newMaxValue = basePlanLimit + limitIncrease
-                expect(result.newMaxValue).toBe(basePlanLimit + limitIncrease);
-                expect(result.oldMaxValue).toBe(basePlanLimit);
-
-                // billing.limits.set was called with the correct values
-                expect(billing.limits.set).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        customerId: 'cust-uuid',
-                        limitKey,
-                        maxValue: basePlanLimit + limitIncrease
-                    })
-                );
-            }
-        );
+                    maxValue: basePlanLimit + limitIncrease
+                })
+            );
+        });
     });
 
     describe('entitlement-only addons (no affectsLimitKey)', () => {
-        it.each(['visibility-boost-7d', 'visibility-boost-30d'])(
-            'slug "%s": not relevant to any limitKey → addonCount=0, removeBySource called',
-            async (slug) => {
-                // Arrange — the query is for a limit key the entitlement addon doesn't affect
-                wireCatalog(slug);
-                wirePlan('max_accommodations', 5);
+        it.each([
+            'visibility-boost-7d',
+            'visibility-boost-30d'
+        ])('slug "%s": not relevant to any limitKey → addonCount=0, removeBySource called', async (slug) => {
+            // Arrange — the query is for a limit key the entitlement addon doesn't affect
+            wireCatalog(slug);
+            wirePlan('max_accommodations', 5);
 
-                const purchaseRow = { addonSlug: slug, id: `purchase-${slug}`, status: 'active' };
-                wireTxWithRows([purchaseRow]);
+            const purchaseRow = { addonSlug: slug, id: `purchase-${slug}`, status: 'active' };
+            wireTxWithRows([purchaseRow]);
 
-                const billing = buildBilling();
+            const billing = buildBilling();
 
-                // Act
-                const result = await recalculateAddonLimitsForCustomer({
-                    customerId: 'cust-uuid',
-                    limitKey: 'max_accommodations',
-                    billing: billing as never,
-                    db: {} as never
-                });
+            // Act
+            const result = await recalculateAddonLimitsForCustomer({
+                customerId: 'cust-uuid',
+                limitKey: 'max_accommodations',
+                billing: billing as never,
+                db: {} as never
+            });
 
-                // Assert — no relevant purchases, so removeBySource is called
-                expect(result.outcome).toBe('success');
-                expect(result.addonCount).toBe(0);
-                expect(result.newMaxValue).toBe(5); // basePlanLimit + 0
-                expect(billing.limits.set).not.toHaveBeenCalled();
-                expect(billing.limits.removeBySource).toHaveBeenCalledOnce();
-            }
-        );
+            // Assert — no relevant purchases, so removeBySource is called
+            expect(result.outcome).toBe('success');
+            expect(result.addonCount).toBe(0);
+            expect(result.newMaxValue).toBe(5); // basePlanLimit + 0
+            expect(billing.limits.set).not.toHaveBeenCalled();
+            expect(billing.limits.removeBySource).toHaveBeenCalledOnce();
+        });
     });
 
     describe('when catalog returns NOT_FOUND for a purchase slug', () => {

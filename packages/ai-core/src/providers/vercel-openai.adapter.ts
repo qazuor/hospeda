@@ -177,7 +177,7 @@ export class OpenAiAdapter implements AiProvider {
     constructor({ apiKey, baseURL }: OpenAiAdapterOptions) {
         this.apiKey = apiKey;
         this.hasCustomBaseUrl = baseURL !== undefined;
-        this.provider = createOpenAI({ apiKey, ...(baseURL !== undefined ? { baseURL } : {}) });
+        this.provider = createOpenAI({ apiKey, ...(baseURL === undefined ? {} : { baseURL }) });
     }
 
     // -------------------------------------------------------------------------
@@ -241,9 +241,9 @@ export class OpenAiAdapter implements AiProvider {
         // TypeScript infers from `{...prompt} | {...messages}` — the SDK's
         // generateText() overload does not accept a union, only a concrete shape.
         const sdkResult =
-            input.prompt !== undefined
-                ? await generateText({ ...baseParams, prompt: input.prompt })
-                : await generateText({ ...baseParams, messages: input.messages ?? [] });
+            input.prompt === undefined
+                ? await generateText({ ...baseParams, messages: input.messages ?? [] })
+                : await generateText({ ...baseParams, prompt: input.prompt });
 
         return {
             text: sdkResult.text,
@@ -291,9 +291,9 @@ export class OpenAiAdapter implements AiProvider {
         // distinct SDK calls to avoid the spread-union type issue (same as in
         // generateText — the SDK overload won't accept a union shape).
         const sdkResult =
-            input.prompt !== undefined
-                ? streamText({ ...baseParams, prompt: input.prompt })
-                : streamText({ ...baseParams, messages: input.messages ?? [] });
+            input.prompt === undefined
+                ? streamText({ ...baseParams, messages: input.messages ?? [] })
+                : streamText({ ...baseParams, prompt: input.prompt });
 
         // Wrap the SDK's AsyncIterableStream<string> in our chunk shape.
         const sdkTextStream = sdkResult.textStream;
@@ -396,7 +396,7 @@ export class OpenAiAdapter implements AiProvider {
      */
     async extractIntent(input: ExtractIntentRequest): Promise<AiIntent> {
         const localeHint =
-            input.locale !== undefined ? ` The user query is in locale: ${input.locale}.` : '';
+            input.locale === undefined ? '' : ` The user query is in locale: ${input.locale}.`;
 
         const prompt = `Extract the intent from the following user query.${localeHint} Return a JSON object with: kind (string describing intent type), confidence (number 0-1), entities (object with extracted slots), rawQuery (the original query unchanged). Query: "${input.query}"`;
 

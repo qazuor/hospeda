@@ -11,14 +11,14 @@
  * Extracted from CreateEditCollectionModal.client.tsx to keep that file under 500 lines.
  */
 
-import { translateApiError } from '@/lib/api-errors';
+import { useCallback, useState } from 'react';
 import {
     type BookmarkCollectionItem,
     userBookmarkCollectionsApi
 } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useState } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,12 +95,12 @@ export function useCollectionMutation({
                 };
 
                 const result =
-                    collectionId !== undefined
-                        ? await userBookmarkCollectionsApi.update({
+                    collectionId === undefined
+                        ? await userBookmarkCollectionsApi.create(trimmedInput)
+                        : await userBookmarkCollectionsApi.update({
                               id: collectionId,
                               input: trimmedInput
-                          })
-                        : await userBookmarkCollectionsApi.create(trimmedInput);
+                          });
 
                 if (result.ok) {
                     const saved: BookmarkCollectionItem = result.data;

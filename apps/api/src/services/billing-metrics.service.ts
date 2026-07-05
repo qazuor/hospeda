@@ -11,8 +11,8 @@
  * @module services/billing-metrics
  */
 
-import { getDb, sql } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ServiceResult } from '@repo/service-core';
 import { env } from '../utils/env';

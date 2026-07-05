@@ -1,16 +1,17 @@
 /**
  * Feature Flags list page — admin panel for managing feature flags (dark launch + kill switch).
  */
+
+import { AddIcon } from '@repo/icons';
+import type { FeatureFlag } from '@repo/schemas';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api/client';
-import { AddIcon } from '@repo/icons';
-import type { FeatureFlag } from '@repo/schemas';
-import { useQuery } from '@tanstack/react-query';
-import { Link, createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 type FeatureFlagListResponse = {
     items: FeatureFlag[];

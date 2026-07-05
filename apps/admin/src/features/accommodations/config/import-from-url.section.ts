@@ -11,10 +11,10 @@
  * @module import-from-url.section
  */
 
-import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { ImportFromUrlSection } from '@/features/accommodations/components/ImportFromUrlSection';
 import type { useTranslations } from '@repo/i18n';
 import { createElement } from 'react';
+import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { ImportFromUrlSection } from '@/features/accommodations/components/ImportFromUrlSection';
 import type { ConsolidatedSectionConfig } from '../types/consolidated-config.types';
 
 /**

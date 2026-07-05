@@ -13,10 +13,11 @@
  *
  * @see apps/admin/src/features/tags/internal/config/internal-tags.config.ts
  */
+
+import { createFileRoute } from '@tanstack/react-router';
 import { InternalTagsPageComponent } from '@/features/tags/internal/config/internal-tags.config';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/tags/internal/')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),

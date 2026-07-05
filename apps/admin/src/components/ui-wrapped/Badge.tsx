@@ -7,9 +7,9 @@
  * - Additional variants and functionality
  */
 
+import { forwardRef } from 'react';
 import { Badge as ShadcnBadge, type BadgeProps as ShadcnBadgeProps } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { forwardRef } from 'react';
 
 /**
  * Enhanced Badge Props with additional variants

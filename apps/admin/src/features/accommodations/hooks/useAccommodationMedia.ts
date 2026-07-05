@@ -18,9 +18,9 @@
  *   PUT  → { success: true, data: { media: AccommodationMedia } }
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { AccommodationMedia, AccommodationMediaAddPayload } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Query key factory

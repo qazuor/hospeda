@@ -14,7 +14,7 @@
 
 import type { DestinationModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import {
     _resetTranslationService,

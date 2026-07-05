@@ -19,7 +19,9 @@
     background-color: var(--core-card, #ffffff);
     box-shadow: var(--shadow-card, 0 4px 24px rgba(0, 0, 0, 0.15));
     overflow: hidden;
-    transition: width 0.2s ease, height 0.2s ease;
+    transition:
+        width 0.2s ease,
+        height 0.2s ease;
 }
 
 .panelExpanded {
@@ -158,9 +160,14 @@
     color: var(--brand-accent, #ea580c);
     /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
     background-color: #fef3ec;
-    background-color: color-mix(in srgb, var(--brand-accent, #ea580c) 10%, transparent);
     border-radius: var(--radius-md, 10px);
     border-left: 3px solid var(--brand-accent, #ea580c);
+}
+
+@supports (background-color: color-mix(in srgb, red 10%, transparent)) {
+    .priceNotice {
+        background-color: color-mix(in srgb, var(--brand-accent, #ea580c) 10%, transparent);
+    }
 }
 
 .errorBubble {
@@ -239,7 +246,12 @@
     border-color: var(--brand-primary, #2563eb);
     /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #2563eb) 20%, transparent);
+}
+
+@supports (box-shadow: 0 0 0 2px color-mix(in srgb, red 20%, transparent)) {
+    .textarea:focus-visible {
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #2563eb) 20%, transparent);
+    }
 }
 
 .textarea:disabled {
@@ -271,7 +283,12 @@
 .sendButton:hover:not(:disabled) {
     /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
     background-color: #1d4ed8;
-    background-color: color-mix(in srgb, var(--brand-primary, #2563eb) 90%, black);
+}
+
+@supports (background-color: color-mix(in srgb, red 90%, black)) {
+    .sendButton:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--brand-primary, #2563eb) 90%, black);
+    }
 }
 
 .sendButton:disabled {

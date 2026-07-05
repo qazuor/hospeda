@@ -15,11 +15,11 @@
  * Hydration: caller MUST use `client:visible`.
  */
 
+import { useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useState } from 'react';
 
 // API base URL — must be absolute (web app on host A, API on host B)
 const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');

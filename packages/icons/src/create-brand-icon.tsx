@@ -26,8 +26,8 @@
  * ```
  */
 import type { ReactNode } from 'react';
-import { ICON_SIZES } from './types';
 import type { IconProps } from './types';
+import { ICON_SIZES } from './types';
 
 /** Options for customizing a brand-icon wrapper. */
 interface CreateBrandIconOptions {

@@ -5,11 +5,9 @@
  * system (SPEC-154).
  */
 
-export { Sidebar } from './Sidebar';
 export type { SidebarProps } from './Sidebar';
-
-export { SidebarGroup } from './SidebarGroup';
+export { Sidebar } from './Sidebar';
 export type { SidebarGroupProps } from './SidebarGroup';
-
-export { SidebarItem } from './SidebarItem';
+export { SidebarGroup } from './SidebarGroup';
 export type { SidebarItemProps } from './SidebarItem';
+export { SidebarItem } from './SidebarItem';

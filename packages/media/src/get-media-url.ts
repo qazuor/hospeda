@@ -1,5 +1,5 @@
-import { MEDIA_PRESETS } from './presets.js';
 import type { MediaPreset } from './presets.js';
+import { MEDIA_PRESETS } from './presets.js';
 
 /** Default fallback placeholder for missing images. */
 const FALLBACK_PLACEHOLDER = '/images/placeholder.svg';

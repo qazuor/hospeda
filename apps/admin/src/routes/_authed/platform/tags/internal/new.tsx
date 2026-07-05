@@ -1,10 +1,10 @@
+import type { TagCreateInput } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { AdminTagForm } from '@/components/tags/AdminTagForm';
 import { useCreateInternalTag } from '@/hooks/use-internal-tags';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import type { TagCreateInput } from '@repo/schemas';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/tags/internal/new')({
     component: InternalTagNewPage,

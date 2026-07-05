@@ -1,7 +1,7 @@
-import { fetchApi } from '@/lib/api/client';
 import { type ExchangeRate, ExchangeRateSchema } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import { fetchApi } from '@/lib/api/client';
 import type {
     ExchangeRateConfigUpdateInput,
     ExchangeRateCreateInput,

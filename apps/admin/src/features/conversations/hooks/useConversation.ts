@@ -5,8 +5,8 @@
  * Supports cursor-based pagination for older messages (scroll-up pattern).
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { ConversationThread } from '../types';
 import { conversationQueryKeys } from './useConversations';
 

@@ -24,6 +24,7 @@ const UserProtectedUpdateInputSchema = UserUpdateInputSchema.omit({
 }).extend({
     settings: UserSettingsWebPatchSchema.optional()
 });
+
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -97,7 +98,7 @@ export const protectedUpdateUserRoute = createProtectedRoute({
         // Zod rejects admin keys with 400 before this handler runs. The
         // post-parse check below is kept as defence-in-depth only.
         // SPEC-096 / REQ-096-05 / T-032.
-        if (body && Object.prototype.hasOwnProperty.call(body, 'settings')) {
+        if (body && Object.hasOwn(body, 'settings')) {
             validateProtectedSettings((body as { settings?: unknown }).settings);
         }
 

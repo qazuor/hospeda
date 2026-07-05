@@ -139,10 +139,10 @@ const buildAdminMultipartBody = (
     const fd = new FormData();
     if (overrides.entityType !== undefined) fd.append('entityType', overrides.entityType);
     else if (overrides.entityType !== null) fd.append('entityType', 'accommodation');
-    if (overrides.entityId !== undefined) fd.append('entityId', overrides.entityId);
-    else fd.append('entityId', ADMIN_ENTITY_ID);
-    if (overrides.role !== undefined) fd.append('role', overrides.role);
-    else fd.append('role', 'featured');
+    if (overrides.entityId === undefined) fd.append('entityId', ADMIN_ENTITY_ID);
+    else fd.append('entityId', overrides.entityId);
+    if (overrides.role === undefined) fd.append('role', 'featured');
+    else fd.append('role', overrides.role);
     if (overrides.file !== null && overrides.file !== undefined) {
         fd.append('file', overrides.file);
     } else if (overrides.file === undefined) {

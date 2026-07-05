@@ -30,18 +30,18 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
-import { translateApiError } from '@/lib/api-errors';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BookmarkItem, BookmarksApiResponse, DeleteApiResponse } from './BookmarkGrid';
 import { BookmarkGrid, EmptyFavorites } from './BookmarkGrid';
 import { CollectionCard } from './CollectionCard';
-import { MoveToCollectionModal } from './MoveToCollectionModal.client';
 import type { CollectionOption } from './MoveToCollectionModal.client';
+import { MoveToCollectionModal } from './MoveToCollectionModal.client';
 import styles from './UserFavoritesList.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -566,14 +566,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             onClick={() => handleTabChange(tab.key)}
                         >
                             {tabLabel(tab)}
-                            {count > 0 && (
-                                <span
-                                    className={styles.tabBadge}
-                                    aria-label={`(${count})`}
-                                >
-                                    {count}
-                                </span>
-                            )}
+                            {count > 0 && <span className={styles.tabBadge}>{count}</span>}
                         </button>
                     );
                 })}
@@ -752,6 +745,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 {loading && (
                     <div
                         className={styles.loadingWrap}
+                        role="status"
                         aria-live="polite"
                         aria-busy="true"
                         aria-label={t('common.loading', 'Cargando…')}

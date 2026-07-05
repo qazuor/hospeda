@@ -11,12 +11,12 @@
  * No real API is hit.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type { CommerceLead } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '@/lib/api/client';
 import { CommerceLeadInbox } from '../components/CommerceLeadInbox';
 
 // ---------------------------------------------------------------------------

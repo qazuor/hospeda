@@ -7,8 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { streamSearchChat } from '../../../src/lib/api/search-chat-stream';
 import type { SearchChatSseEvent } from '../../../src/lib/api/search-chat-stream';
+import { streamSearchChat } from '../../../src/lib/api/search-chat-stream';
 
 // --- Helpers ------------------------------------------------------------------
 

@@ -181,81 +181,84 @@ describe('SPEC-145 T-020 — stale-cache canary: clearEntitlementCache is the in
     // The three-step canary.
     // =========================================================================
 
-    it('warm → stale (200 without cache clear) → invalidate → 403: ' +
-        'pins that cache is the only thing between a lifecycle bug and wrong access', async () => {
-        // ── Arrange ─────────────────────────────────────────────────────────
+    it(
+        'warm → stale (200 without cache clear) → invalidate → 403: ' +
+            'pins that cache is the only thing between a lifecycle bug and wrong access',
+        async () => {
+            // ── Arrange ─────────────────────────────────────────────────────────
 
-        const user = await createTestUser({
-            email: `stale-cache-canary-${randomUUID().slice(0, 8)}@example.com`
-        });
-        const customer = await createTestBillingCustomer({
-            externalId: user.id,
-            email: user.email
-        });
-        const sub = await createTestSubscription({
-            customerId: customer.customerId,
-            planId: ownerProPlanId,
-            status: 'active',
-            billingInterval: 'month',
-            intervalCount: 1,
-            metadata: { source: 'stale-cache-canary-test' }
-        });
+            const user = await createTestUser({
+                email: `stale-cache-canary-${randomUUID().slice(0, 8)}@example.com`
+            });
+            const customer = await createTestBillingCustomer({
+                externalId: user.id,
+                email: user.email
+            });
+            const sub = await createTestSubscription({
+                customerId: customer.customerId,
+                planId: ownerProPlanId,
+                status: 'active',
+                billingInterval: 'month',
+                intervalCount: 1,
+                metadata: { source: 'stale-cache-canary-test' }
+            });
 
-        // Cold-start: ensure no pre-existing stale entry.
-        clearEntitlementCache(customer.customerId);
+            // Cold-start: ensure no pre-existing stale entry.
+            clearEntitlementCache(customer.customerId);
 
-        const actor = makeAccommodationCreateActor(user.id);
-        const client = new E2EApiClient(app, actor);
+            const actor = makeAccommodationCreateActor(user.id);
+            const client = new E2EApiClient(app, actor);
 
-        // Minimal valid draft body (name + summary + type are required by the Zod schema).
-        const draftBody = {
-            name: 'Stale Cache Canary Draft',
-            summary: 'Test accommodation for stale cache canary',
-            type: 'APARTMENT',
-            destinationId: randomUUID() // FK will fail post-gate — that is acceptable
-        };
+            // Minimal valid draft body (name + summary + type are required by the Zod schema).
+            const draftBody = {
+                name: 'Stale Cache Canary Draft',
+                summary: 'Test accommodation for stale cache canary',
+                type: 'APARTMENT',
+                destinationId: randomUUID() // FK will fail post-gate — that is acceptable
+            };
 
-        // ── Step 1: WARM — gate passes, cache is now warm ──────────────────
+            // ── Step 1: WARM — gate passes, cache is now warm ──────────────────
 
-        const warmRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
-        // The gate passes (PUBLISH_ACCOMMODATIONS is in owner-pro).
-        // The handler may return 4xx for missing FK — irrelevant; we only care the
-        // gate did NOT fire ENTITLEMENT_REQUIRED.
-        await expectGatePassed(warmRes);
+            const warmRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
+            // The gate passes (PUBLISH_ACCOMMODATIONS is in owner-pro).
+            // The handler may return 4xx for missing FK — irrelevant; we only care the
+            // gate did NOT fire ENTITLEMENT_REQUIRED.
+            await expectGatePassed(warmRes);
 
-        // ── Step 2: STALE — mutate DB directly WITHOUT clearEntitlementCache ─
-        //
-        // This is the DOCUMENTED FAILURE MODE: the cache holds the owner-pro
-        // entitlements even though the subscription is now cancelled in the DB.
-        // The middleware reads the cache → returns the pre-mutation value → gate
-        // STILL passes (200). This is exactly what happens when a lifecycle handler
-        // forgets to call clearEntitlementCache.
-        //
-        // INTENTIONAL assertion: step 2 MUST return non-403 (stale serve).
-        // If it returns 403 without a cache clear, the cache layer was removed or
-        // the TTL is too short for this test — this change must be made consciously.
+            // ── Step 2: STALE — mutate DB directly WITHOUT clearEntitlementCache ─
+            //
+            // This is the DOCUMENTED FAILURE MODE: the cache holds the owner-pro
+            // entitlements even though the subscription is now cancelled in the DB.
+            // The middleware reads the cache → returns the pre-mutation value → gate
+            // STILL passes (200). This is exactly what happens when a lifecycle handler
+            // forgets to call clearEntitlementCache.
+            //
+            // INTENTIONAL assertion: step 2 MUST return non-403 (stale serve).
+            // If it returns 403 without a cache clear, the cache layer was removed or
+            // the TTL is too short for this test — this change must be made consciously.
 
-        await testDb.getDb().execute(sql`
+            await testDb.getDb().execute(sql`
                 UPDATE billing_subscriptions
                    SET status = 'cancelled'
                  WHERE id = ${sub.subscriptionId}
             `);
 
-        // Hit the same route WITHOUT clearing the cache.
-        const staleRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
-        // STALE SERVE: cache still has owner-pro entitlements → gate passes.
-        // This assertion documents the failure mode: a lifecycle handler that skips
-        // clearEntitlementCache would leave the customer with stale access.
-        await expectGatePassed(staleRes);
+            // Hit the same route WITHOUT clearing the cache.
+            const staleRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
+            // STALE SERVE: cache still has owner-pro entitlements → gate passes.
+            // This assertion documents the failure mode: a lifecycle handler that skips
+            // clearEntitlementCache would leave the customer with stale access.
+            await expectGatePassed(staleRes);
 
-        // ── Step 3: INVALIDATE — clear the cache → gate fires correctly ─────
+            // ── Step 3: INVALIDATE — clear the cache → gate fires correctly ─────
 
-        clearEntitlementCache(customer.customerId);
+            clearEntitlementCache(customer.customerId);
 
-        const freshRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
-        // After cache invalidation the middleware re-reads from the billing layer.
-        // The subscription is cancelled → no active subscription → no entitlements
-        // → ENTITLEMENT_REQUIRED 403.
-        await expectEntitlementBlock(freshRes);
-    });
+            const freshRes = await client.post('/api/v1/protected/accommodations/draft', draftBody);
+            // After cache invalidation the middleware re-reads from the billing layer.
+            // The subscription is cancelled → no active subscription → no entitlements
+            // → ENTITLEMENT_REQUIRED 403.
+            await expectEntitlementBlock(freshRes);
+        }
+    );
 });

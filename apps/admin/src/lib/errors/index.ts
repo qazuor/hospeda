@@ -40,47 +40,44 @@ export {
     ApiError,
     type ApiErrorCode,
     type ApiErrorConfig,
+    createApiError,
+    isAbortError,
     isApiError,
     isNetworkError,
-    isAbortError,
-    isTimeoutError,
-    createApiError
+    isTimeoutError
 } from './api-error';
 
 // Error reporter
 export {
-    type ErrorSeverity,
     type ErrorReportInput,
-    reportError,
+    type ErrorSeverity,
     reportApiError,
-    reportNetworkError,
-    reportComponentError
+    reportComponentError,
+    reportError,
+    reportNetworkError
 } from './error-reporter';
-
+// API validation error parser (GAP-032)
+export {
+    type ApiValidationDetail,
+    ApiValidationDetailSchema,
+    type ApiValidationError,
+    ApiValidationErrorBodySchema,
+    ApiValidationErrorSchema,
+    ApiValidationSummarySchema,
+    type ParseApiValidationErrorsInput,
+    parseApiValidationErrors
+} from './parse-api-validation-errors';
 // Toast utilities
 export {
+    getFriendlyErrorInfo,
     type ShowErrorToastInput,
     setToastFunction,
     showErrorToast,
-    showSuccessToast,
     showInfoToast,
-    getFriendlyErrorInfo
+    showSuccessToast
 } from './toast-error';
-
 // Admin-side adapter for translateApiError (SPEC-183)
 export {
     type TranslateAdminApiErrorInput,
     translateAdminApiError
 } from './translate-api-error';
-
-// API validation error parser (GAP-032)
-export {
-    ApiValidationDetailSchema,
-    ApiValidationSummarySchema,
-    ApiValidationErrorBodySchema,
-    ApiValidationErrorSchema,
-    type ApiValidationDetail,
-    type ApiValidationError,
-    type ParseApiValidationErrorsInput,
-    parseApiValidationErrors
-} from './parse-api-validation-errors';

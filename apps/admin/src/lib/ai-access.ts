@@ -25,9 +25,9 @@
  * @module ai-access
  */
 
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { redirect } from '@tanstack/react-router';
+import type { AuthState } from '@/lib/auth-session';
 
 /**
  * Assert that the given route context includes `AI_SETTINGS_MANAGE`.

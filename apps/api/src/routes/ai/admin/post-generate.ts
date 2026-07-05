@@ -46,13 +46,13 @@
  */
 
 import type { AiService } from '@repo/ai-core';
+import type { AiPostGenerateDraft, AiPostGenerateRequest } from '@repo/schemas';
 import {
     AiPostGenerateDraftGenerationSchema,
     AiPostGenerateDraftSchema,
     AiPostGenerateRequestSchema,
     PermissionEnum
 } from '@repo/schemas';
-import type { AiPostGenerateDraft, AiPostGenerateRequest } from '@repo/schemas';
 import { adminAuthMiddleware } from '../../../middlewares/authorization.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';

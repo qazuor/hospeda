@@ -28,6 +28,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         })
     };
 });
+
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';

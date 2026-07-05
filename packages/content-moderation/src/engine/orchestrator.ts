@@ -5,9 +5,9 @@ import {
 } from './cache.js';
 import {
     type InternalModerationResult,
+    isFallbackEligibleError,
     type ModerationProvider,
-    type ModerationProviderName,
-    isFallbackEligibleError
+    type ModerationProviderName
 } from './provider.js';
 import { createModerationResult, createZeroCategories } from './shared.js';
 

@@ -22,11 +22,11 @@
  *   as `description`.
  */
 
-import type { AiTextImprovePanelProps } from '@/components/host/editor/AiTextImprovePanel.client';
-import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.client';
-import type { BasicInfoSectionProps } from '@/components/host/editor/BasicInfoSection.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AiTextImprovePanelProps } from '@/components/host/editor/AiTextImprovePanel.client';
+import type { BasicInfoSectionProps } from '@/components/host/editor/BasicInfoSection.client';
+import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.client';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -164,17 +164,14 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         [false, true],
         [true, false],
         [true, true]
-    ])(
-        'renders without crashing for can_use_rich_description=%s, ai_text_improve=%s',
-        (canUseRichDescription, aiTextImprove) => {
-            entitlements = {
-                can_use_rich_description: canUseRichDescription,
-                ai_text_improve: aiTextImprove
-            };
+    ])('renders without crashing for can_use_rich_description=%s, ai_text_improve=%s', (canUseRichDescription, aiTextImprove) => {
+        entitlements = {
+            can_use_rich_description: canUseRichDescription,
+            ai_text_improve: aiTextImprove
+        };
 
-            expect(() => render(<BasicInfoSection {...buildProps()} />)).not.toThrow();
-        }
-    );
+        expect(() => render(<BasicInfoSection {...buildProps()} />)).not.toThrow();
+    });
 
     it('calls onFieldChange("description", suggestion) on Accept when rendered as plain textarea', () => {
         entitlements = { can_use_rich_description: false, ai_text_improve: true };

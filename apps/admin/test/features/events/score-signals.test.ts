@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { computeScore } from '@/components/quality-score';
 import { createEventSignals } from '@/features/events/config/score-signals';
-import { describe, expect, it } from 'vitest';
 
 const signalsUnlocked = createEventSignals({ hasVideoGalleryFeature: true });
 const signalsGated = createEventSignals({ hasVideoGalleryFeature: false });

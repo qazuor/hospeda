@@ -30,8 +30,7 @@
  * @module services/accommodation-external-reputation/adapters/google-reputation
  */
 
-import type { AccommodationExternalListing } from '@repo/schemas';
-import type { ExternalReviewSnippet } from '@repo/schemas';
+import type { AccommodationExternalListing, ExternalReviewSnippet } from '@repo/schemas';
 import type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
 import { emptyReputationResult } from './adapter.types.js';
 
@@ -168,7 +167,7 @@ function resolveGooglePlaceId(rawUrl: string): string | null {
     }
 
     // Strategy 2: scan the full URL for a ChIJ-prefixed token
-    const match = /ChIJ[A-Za-z0-9_\-]{10,50}/.exec(parsed.href);
+    const match = /ChIJ[A-Za-z0-9_-]{10,50}/.exec(parsed.href);
     if (match?.[0]) {
         return match[0];
     }

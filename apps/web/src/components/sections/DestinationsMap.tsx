@@ -10,10 +10,10 @@
  * inside the DestinationsIsland which is already a React island).
  */
 
-import type { DestinationCardData } from '@/data/types';
-import { cn } from '@/lib/cn';
 import { BridgeIcon } from '@repo/icons';
 import { type MouseEvent as ReactMouseEvent, useCallback, useRef, useState } from 'react';
+import type { DestinationCardData } from '@/data/types';
+import { cn } from '@/lib/cn';
 import styles from './DestinationsMap.module.css';
 
 // ---------------------------------------------------------------------------
@@ -342,6 +342,7 @@ export function DestinationsMap({
                 wrappers are pointer-events:none so mouse/touch fall through to
                 this handler; the buttons stay keyboard-focusable for a11y. */}
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: this div is a pointer-only proximity hit-surface; keyboard users tab to and activate the focusable <button> pins inside it, which carry their own keyboard handling. A key handler here would be meaningless (proximity needs pointer coordinates). */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: this is a pointer proximity hit-surface, not a single semantic control; the real controls are the focusable <button> pins nested inside it, and the parent map already carries role="group". */}
             <div
                 ref={pinsLayerRef}
                 className={cn(styles.pinsLayer, hoveredSlug && styles.pinsLayerInteractive)}

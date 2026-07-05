@@ -151,7 +151,7 @@ export const newsletterPublicRoutes = createRouter()
     .route('/', newsletterGuestSubscribeRoute)
     .route('/', newsletterGuestResendRoute);
 
-// Re-exports for tests.
-export { verifyHandler as _verifyHandler, unsubscribeHandler as _unsubscribeHandler };
-export { guestSubscribeHandler } from './subscribe';
 export { guestResendHandler } from './resend';
+export { guestSubscribeHandler } from './subscribe';
+// Re-exports for tests.
+export { unsubscribeHandler as _unsubscribeHandler, verifyHandler as _verifyHandler };

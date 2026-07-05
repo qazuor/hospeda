@@ -5,6 +5,9 @@
  * the only mutable metadata field the social vault has: `label`. Never
  * touches the encrypted secret.
  */
+
+import { EditIcon, LoaderIcon } from '@repo/icons';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -18,13 +21,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    type SocialCredentialMasked,
     getSocialCredentialKeyLabel,
+    type SocialCredentialMasked,
     useUpdateSocialCredentialMutation
 } from '@/features/social-credentials';
 import { useToast } from '@/hooks/use-toast';
-import { EditIcon, LoaderIcon } from '@repo/icons';
-import { useState } from 'react';
 
 /** Dialog for editing a social credential's label metadata. */
 export function EditCredentialDialog({
