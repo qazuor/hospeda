@@ -186,6 +186,51 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
 });
 
 // ---------------------------------------------------------------------------
+// buildCspHeader — HOS-91 dev-only style-src relaxation
+// ---------------------------------------------------------------------------
+
+/**
+ * Isolates the `style-src` directive from `style-src-attr` by matching the
+ * exact directive name followed by a space (`style-src-attr` also starts
+ * with `style-src` but not `style-src `, so the trailing space disambiguates).
+ */
+const findStyleSrcDirective = (header: string): string =>
+    header.split('; ').find((d) => /^style-src /.test(d)) ?? '';
+
+describe('buildCspHeader — HOS-91 dev-only style-src relaxation', () => {
+    it('keeps the strict nonce-based style-src in prod (isDev: false)', () => {
+        const nonce = 'prod-nonce-abc';
+
+        const header = buildCspHeader({ nonce, isDev: false });
+
+        const styleSrc = findStyleSrcDirective(header);
+        expect(styleSrc).toContain(`'nonce-${nonce}'`);
+        expect(styleSrc).not.toContain("'unsafe-inline'");
+    });
+
+    it('keeps the strict nonce-based style-src by default (isDev omitted)', () => {
+        const nonce = 'default-nonce-abc';
+
+        const header = buildCspHeader({ nonce });
+
+        const styleSrc = findStyleSrcDirective(header);
+        expect(styleSrc).toContain(`'nonce-${nonce}'`);
+        expect(styleSrc).not.toContain("'unsafe-inline'");
+    });
+
+    it('relaxes style-src to unsafe-inline with no nonce/hash in dev (isDev: true)', () => {
+        const nonce = 'dev-nonce-abc';
+
+        const header = buildCspHeader({ nonce, isDev: true });
+
+        const styleSrc = findStyleSrcDirective(header);
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'nonce-");
+        expect(styleSrc).not.toContain("'sha256-");
+    });
+});
+
+// ---------------------------------------------------------------------------
 // generateCspNonce — per-request randomness
 // ---------------------------------------------------------------------------
 
