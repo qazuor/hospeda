@@ -2,8 +2,10 @@
  * Whole-card compare-selection overlay (HOS-85 post-review fix). Shown only
  * while compare mode is active — see CompareCardSelect.client.tsx. Draws the
  * selected-state border + tint directly on the overlay itself (rather than by
- * mutating the card's own markup, which lives in a separate island) plus a
- * corner check badge.
+ * mutating the card's own markup, which lives in a separate island). When
+ * selected, a large check is centered over the card's photo (`.selectedCheck`
+ * below) instead of a small corner badge — the corner is reserved for the
+ * card's own FavoriteButton and must never be covered.
  * All values use CSS custom properties from global.css — never hardcode.
  */
 
@@ -11,10 +13,6 @@
     position: absolute;
     inset: 0;
     z-index: 5;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding: 12px;
     box-sizing: border-box;
     border-radius: var(--radius-md, 12px);
     border: 2px solid transparent;
@@ -51,23 +49,36 @@
     cursor: progress;
 }
 
-/* --- Check badge (top-right corner) --- */
-.badge {
+/* --- Selected check (large, centered over the photo) ---
+ * Rendered ONLY when selected — see CompareCardSelect.client.tsx, which
+ * omits this element entirely while unselected so nothing ever overlaps the
+ * card's top-right FavoriteButton.
+ *
+ * Positioned in the upper band of the overlay (which spans the whole card,
+ * `inset: 0`) so it lands on the photo rather than the dead center of the
+ * whole card. The accommodation card's image area occupies roughly the top
+ * ~40-50% of the card height (`.acc-card__image-area` in
+ * AccommodationCard.astro); `top: 22%` approximates the vertical middle of
+ * that band across the card's responsive height range, clear of the
+ * top-right actions column (horizontally separated, since this is
+ * horizontally centered) and of the wave separator near the bottom of the
+ * image.
+ */
+.selectedCheck {
+    position: absolute;
+    top: 22%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    flex-shrink: 0;
+    width: 4rem;
+    height: 4rem;
     border-radius: var(--radius-pill);
-    background-color: var(--core-card-a85);
-    color: var(--core-muted-foreground);
-    box-shadow: var(--shadow-card);
-}
-
-.overlay[aria-checked='true'] .badge {
-    color: var(--brand-primary);
-    background-color: var(--core-card);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    box-shadow: var(--shadow-card-hover);
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

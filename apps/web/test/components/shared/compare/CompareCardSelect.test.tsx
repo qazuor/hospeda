@@ -8,6 +8,9 @@
  *   original bug where the contextual CompareButton never hydrated.
  * - Renders the overlay (role="checkbox") while compare mode is on, with
  *   `aria-checked` reflecting whether the accommodation is selected.
+ * - Unselected renders NO check icon at all (so nothing covers the card's
+ *   FavoriteButton); selected renders a large, centered check icon
+ *   (post-review fix, HOS-85 — replaces the old always-present corner badge).
  * - Activating the overlay (click or Enter/Space) toggles the selection and
  *   blocks the click from reaching an ancestor `<a>` (no navigation) via
  *   `preventDefault` + `stopPropagation`.
@@ -50,14 +53,6 @@ vi.mock('@repo/icons', () => ({
     CheckCircleIcon: ({ weight, size }: { weight?: string; size?: number }) => (
         <svg
             data-testid="check-circle-icon"
-            data-weight={weight}
-            width={size}
-            aria-hidden="true"
-        />
-    ),
-    CircleIcon: ({ weight, size }: { weight?: string; size?: number }) => (
-        <svg
-            data-testid="circle-icon"
             data-weight={weight}
             width={size}
             aria-hidden="true"
@@ -155,7 +150,7 @@ describe('CompareCardSelect — compare mode gating', () => {
 // ---------------------------------------------------------------------------
 
 describe('CompareCardSelect — selected state', () => {
-    it('has aria-checked=false and shows the empty circle icon when not selected', () => {
+    it('has aria-checked=false and renders no check icon when not selected', () => {
         setCompareMode(true);
         setGuard({ isInList: () => false });
 
@@ -163,11 +158,12 @@ describe('CompareCardSelect — selected state', () => {
 
         const overlay = screen.getByRole('checkbox');
         expect(overlay).toHaveAttribute('aria-checked', 'false');
-        expect(screen.getByTestId('circle-icon')).toBeInTheDocument();
+        // Post-review fix (HOS-85): unselected renders NO icon/badge at all —
+        // nothing may cover the card's FavoriteButton in the same corner.
         expect(screen.queryByTestId('check-circle-icon')).not.toBeInTheDocument();
     });
 
-    it('has aria-checked=true and shows the filled check icon when selected', () => {
+    it('has aria-checked=true and shows a large, centered check icon when selected', () => {
         setCompareMode(true);
         setGuard({ isInList: () => true });
 
@@ -175,8 +171,13 @@ describe('CompareCardSelect — selected state', () => {
 
         const overlay = screen.getByRole('checkbox');
         expect(overlay).toHaveAttribute('aria-checked', 'true');
-        expect(screen.getByTestId('check-circle-icon')).toBeInTheDocument();
-        expect(screen.queryByTestId('circle-icon')).not.toBeInTheDocument();
+        const icon = screen.getByTestId('check-circle-icon');
+        expect(icon).toBeInTheDocument();
+        expect(icon).toHaveAttribute('width', '48');
+        // The icon's wrapping span carries the "centered over the photo"
+        // positioning class from the CSS module (mocked to the literal
+        // class-name string).
+        expect(icon.parentElement).toHaveClass('selectedCheck');
     });
 
     it('is keyboard-focusable (tabIndex=0)', () => {

@@ -22,6 +22,14 @@
  * empty-slot strip and the counter. Renders nothing when the selection is
  * empty.
  *
+ * Post-review fix (HOS-85): while visible, this bar publishes a
+ * `data-compare-bar-visible` flag on `<html>` (cleared on unmount / when the
+ * selection empties) so unrelated global UI can react without importing the
+ * compare store directly. Mirrors the existing `data-mobile-menu-open` /
+ * `data-filters-drawer-open` conventions in `feedback-overrides.css`. Today
+ * only `ToastViewport.module.css` reacts to it — moving the toast viewport to
+ * the top of the screen so this bottom-anchored bar never covers a toast.
+ *
  * @module components/shared/compare/CompareBar
  */
 
@@ -32,7 +40,11 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import { ArrowRightIcon, XIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
+import { useEffect } from 'react';
 import styles from './CompareBar.module.css';
+
+/** `<html>` dataset flag published while the bar is visible. See the file header. */
+const COMPARE_BAR_VISIBLE_ATTR = 'compareBarVisible';
 
 /** Minimum number of selected accommodations required to open the comparison. */
 const MIN_TO_COMPARE = 2;
@@ -106,9 +118,25 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
     const { items } = useCompareStore();
     const { maxItems, isLoading } = useCompareGuard();
     const { t, tPlural } = createTranslations(locale);
+    const isVisible = items.length > 0;
+
+    // Publish/clear the `<html>` flag whenever visibility changes, and clean
+    // up on unmount so a stale flag never survives this island going away
+    // (e.g. navigating off an accommodation page while the selection is
+    // non-empty is not possible today — selection persists across the
+    // section — but the cleanup keeps the contract correct regardless).
+    useEffect(() => {
+        if (!isVisible) {
+            return;
+        }
+        document.documentElement.dataset[COMPARE_BAR_VISIBLE_ATTR] = '';
+        return () => {
+            delete document.documentElement.dataset[COMPARE_BAR_VISIBLE_ATTR];
+        };
+    }, [isVisible]);
 
     // Hidden entirely when nothing is selected.
-    if (items.length === 0) {
+    if (!isVisible) {
         return null;
     }
 

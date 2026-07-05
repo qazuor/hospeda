@@ -39,8 +39,18 @@
  *   accommodation via {@link useCompareGuard}, surfacing the same
  *   added/removed/upsell/limit toasts as {@link CompareButton}. Because the
  *   overlay and the card live in separate DOM subtrees (this is its own
- *   island), the selected-state border/tint/check-badge are drawn on the
- *   overlay itself rather than by mutating the card's own markup.
+ *   island), the selected-state border/tint are drawn on the overlay itself
+ *   rather than by mutating the card's own markup.
+ *
+ * Visual affordance (post-review fix, HOS-85):
+ * - Unselected: no icon/badge is rendered at all. The overlay is fully
+ *   transparent except for the hover border/tint, so nothing sits on top of
+ *   the card's `FavoriteButton`, which lives in the same top-right corner a
+ *   small corner badge used to occupy.
+ * - Selected: the brand border + tint on the whole card (`data-selected`)
+ *   PLUS a large check icon centered over the card's photo (not a small
+ *   corner badge, and not the dead center of the whole card — see
+ *   `.selectedCheck` in the CSS module).
  *
  * @module components/shared/compare/CompareCardSelect
  */
@@ -51,7 +61,7 @@ import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { useCompareMode } from '@/store/compare-store';
 import { addToast } from '@/store/toast-store';
-import { CheckCircleIcon, CircleIcon } from '@repo/icons';
+import { CheckCircleIcon } from '@repo/icons';
 import type { FC, KeyboardEvent, MouseEvent } from 'react';
 import styles from './CompareCardSelect.module.css';
 
@@ -210,21 +220,23 @@ export const CompareCardSelect: FC<CompareCardSelectProps> = ({
             onClick={handleClick}
             onKeyDown={handleKeyDown}
         >
-            <span className={styles.badge}>
-                {selected ? (
+            {/* Unselected: render nothing here — no badge, no icon — so the
+                card's FavoriteButton (same top-right corner) is never
+                covered. Selected: a large check, centered over the photo,
+                on top of the border/tint already applied to `.overlay`
+                above via `[aria-checked='true']`. */}
+            {selected && (
+                <span
+                    className={styles.selectedCheck}
+                    aria-hidden="true"
+                >
                     <CheckCircleIcon
-                        size={22}
+                        size={48}
                         weight="fill"
                         aria-hidden="true"
                     />
-                ) : (
-                    <CircleIcon
-                        size={22}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                )}
-            </span>
+                </span>
+            )}
         </div>
     );
 };

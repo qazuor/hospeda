@@ -295,6 +295,35 @@ describe('CompareBar — mobile z-index (HOS-85 post-review fix)', () => {
     });
 });
 
+describe('CompareBar — data-compare-bar-visible flag (HOS-85 post-review fix)', () => {
+    afterEach(() => {
+        // Guard against a failing assertion leaving the flag set for later
+        // test files that share the same jsdom `document`.
+        delete document.documentElement.dataset.compareBarVisible;
+    });
+
+    it('does not set the flag when the selection is empty', () => {
+        render(<CompareBar locale="es" />);
+        expect(document.documentElement.dataset.compareBarVisible).toBeUndefined();
+    });
+
+    it('sets data-compare-bar-visible on <html> once an item is selected', () => {
+        setItems([{ id: 'a', name: 'Cabaña A' }]);
+        render(<CompareBar locale="es" />);
+        expect(document.documentElement.dataset.compareBarVisible).toBe('');
+    });
+
+    it('clears the flag on unmount', () => {
+        setItems([{ id: 'a', name: 'Cabaña A' }]);
+        const { unmount } = render(<CompareBar locale="es" />);
+        expect(document.documentElement.dataset.compareBarVisible).toBe('');
+
+        unmount();
+
+        expect(document.documentElement.dataset.compareBarVisible).toBeUndefined();
+    });
+});
+
 describe('CompareBar — CTA', () => {
     it('enables the CTA linking to the comparison page when >= 2 items', () => {
         setItems([
