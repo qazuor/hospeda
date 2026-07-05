@@ -5,6 +5,15 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'node',
+        // Pin NODE_ENV=test authoritatively (mirrors vitest.config.e2e.ts). A
+        // developer's apps/api/.env.local carries NODE_ENV=development, which
+        // src/utils/logger.ts eagerly dotenv-loads at import time; this env block
+        // is applied by vitest before those imports run, so runtime helpers like
+        // resolveEnvironment() (packages/media) resolve to 'test' locally as they
+        // already do in CI (no .env.local there).
+        env: {
+            NODE_ENV: 'test'
+        },
         setupFiles: ['./test/setup.ts'],
         // Default 5s is too tight under parallel load (3 forks + concurrent monorepo
         // packages). A handful of tests cold-import and instantiate Hono apps. 15s held
