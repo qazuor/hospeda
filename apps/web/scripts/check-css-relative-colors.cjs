@@ -97,7 +97,13 @@ const ALLOWLIST = Object.freeze({
     'src/components/account/PlanPicker.module.css': 4,
     // 500 error page: SVG fill uses `oklch(from ${destructiveColor} ...)` where
     // destructiveColor is interpolated in the Astro frontmatter at runtime.
-    'src/pages/500.astro': 1
+    'src/pages/500.astro': 1,
+    // HOS-84: compact wave-header bottom edge uses
+    // oklch(from var(--core-foreground) l c h / 0.18) for a theme-adaptive
+    // drop-shadow that separates the sticky band from content scrolling under
+    // it (replaces the old wave-SVG shadow). No precomputed foreground-alpha
+    // token exists, so it follows the same residual pattern as the entries above.
+    'src/components/shared/ui/WaveHeader.astro': 1
 });
 
 // ============================================================================
