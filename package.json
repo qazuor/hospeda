@@ -77,6 +77,7 @@
         "env:check:local": "tsx scripts/check-env-local.ts",
         "env:check:rules": "tsx scripts/check-env-rules.ts",
         "env:doctor": "tsx scripts/env-doctor.ts",
+        "env:set": "tsx scripts/env-set-wizard.ts",
         "gen:env-examples": "tsx scripts/generate-env-examples.ts",
         "gen:env-registry-json": "tsx scripts/generate-env-registry-json.ts",
         "cli": "tsx scripts/cli.ts",

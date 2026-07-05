@@ -86,6 +86,23 @@ export interface RegistryEnvVarDefinition {
     readonly secret: boolean;
     readonly apps: readonly RegistryAppId[];
     readonly category: string;
+    /**
+     * True when the value is injected by the platform/CI and must NOT be
+     * set by hand (e.g. `NODE_ENV`, `CI`). Mirrors `EnvVarDefinition.platformInjected`
+     * in `packages/config/src/env-registry-types.ts`. Used by `env-set --wizard
+     * --review-all` (HOS-79 T-019) to skip prompting for these entries.
+     */
+    readonly platformInjected?: boolean;
+    /**
+     * Free-form instructions for obtaining a valid value, shown before a
+     * secret's password prompt. Mirrors `EnvVarDefinition.howToObtain`.
+     */
+    readonly howToObtain?: string;
+    /**
+     * URL to the provider's docs/dashboard for obtaining a value. Mirrors
+     * `EnvVarDefinition.helpUrl`.
+     */
+    readonly helpUrl?: string;
 }
 
 /** One side of a cross-check comparison — mirrors `CrossCheckCompareTarget`. */
