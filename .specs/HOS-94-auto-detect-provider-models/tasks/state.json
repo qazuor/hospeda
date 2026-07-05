@@ -1,0 +1,285 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-94",
+    "title": "Auto-detect provider models (sync model catalog from provider API) — hybrid",
+    "created": "2026-07-05T16:20:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add Zod schemas for detected models + sync result in @repo/schemas",
+            "description": "Add AiProviderModelSchema ({ id, source: 'detected'|'curated'|'both', label?, capabilityHint?, deprecated? }) and AiSyncModelsResultSchema ({ providerId, models: AiProviderModel[], fetchedAt, warnings? }) in packages/schemas/src/entities/ai/. Export from the ai entity barrel. Tests: packages/schemas/src/entities/ai/test/ai-sync-models.schema.test.ts — valid/invalid shapes, source enum, warnings optional.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "AiProviderModelSchema + AiSyncModelsResultSchema", "completed": false },
+                { "title": "Export from @repo/schemas ai barrel", "completed": false },
+                { "title": "Schema unit tests", "completed": false }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Extract curated provider catalog (KNOWN_PROVIDERS) into a shared module",
+            "description": "Move/mirror the hardcoded KNOWN_PROVIDERS catalog (currently inline in apps/admin/src/routes/_authed/ai/credentials.tsx: providerId → { models[], baseURL, keyUrl }) into a shared module reachable by BOTH apps/api and apps/admin (e.g. @repo/schemas or @repo/config). Keep admin behavior identical (import from the shared source). This unblocks the backend-side merge (T-007). Tests: snapshot the catalog shape; assert admin still resolves the same providers.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Define shared curated-catalog module + type", "completed": false },
+                { "title": "Re-point admin credentials.tsx to the shared source", "completed": false },
+                { "title": "Catalog shape test", "completed": false }
+            ],
+            "tags": ["refactor", "config", "admin"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Standalone listProviderModels() fetcher — OpenAI + OpenAI-compatible",
+            "description": "Create packages/ai-core/src/providers/list-models.ts exporting listProviderModels({ providerId, apiKey, baseURL? }): Promise<{ ids: string[]; warnings?: string[] }>. Plain REST fetch, NO @ai-sdk imports, NO edit to vercel-openai.adapter.ts (OQ-4 → zero HOS-88 conflict). Implement OpenAI + OpenAI-compatible: GET {baseURL|https://api.openai.com/v1}/models with Authorization: Bearer, parse data[].id. Export from providers/index.ts. Tests: test/providers/list-models.test.ts with a fetch mock + fixture — parses ids, handles empty, maps HTTP 401/429/5xx to typed errors.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-008", "T-014"],
+            "subtasks": [
+                { "title": "list-models.ts module + provider dispatch skeleton", "completed": false },
+                { "title": "OpenAI + compatible (/v1/models, Bearer) parser", "completed": false },
+                { "title": "Typed error mapping (auth/rate-limit/upstream)", "completed": false },
+                { "title": "Unit tests with fetch mock + fixture", "completed": false }
+            ],
+            "tags": ["ai-core", "providers"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Fetcher: Anthropic + Google Gemini cases",
+            "description": "Extend list-models.ts: Anthropic GET https://api.anthropic.com/v1/models with headers x-api-key + anthropic-version, parse data[].id. Gemini GET https://generativelanguage.googleapis.com/v1beta/models?key=<key>, parse models[].name and strip the 'models/' prefix. Tests: fixtures for both providers assert correct headers/URL and parsed ids (incl. Gemini prefix strip).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Anthropic case (x-api-key + anthropic-version)", "completed": false },
+                { "title": "Gemini case (query key + models/ prefix strip)", "completed": false },
+                { "title": "Fixture tests for both", "completed": false }
+            ],
+            "tags": ["ai-core", "providers"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Fetcher: Ollama case + per-provider baseURL convention",
+            "description": "Extend list-models.ts: Ollama GET {baseURL}/api/tags (no auth), parse models[].name. Implement the OQ-5 per-provider path convention: openai-compatible → {baseURL}/v1/models, ollama → {baseURL}/api/tags, gemini → /v1beta/models. No per-credential path override in v1. Tests: Ollama fixture; convention resolves the right URL per providerId.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Ollama /api/tags parser", "completed": false },
+                { "title": "Per-provider path convention resolver", "completed": false },
+                { "title": "Tests (Ollama + convention)", "completed": false }
+            ],
+            "tags": ["ai-core", "providers"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Chat-capability filter (denylist + 'uncertain' bucket)",
+            "description": "Implement the OQ-1 filter in apps/api (provider-agnostic classifier): hide known non-chat families (text-embedding, whisper, tts, dall-e, *-moderation, deprecated); anything not confidently classified is tagged 'uncertain' (surfaced, not dropped). Pure function over raw ids. Tests: embeddings/tts/dall-e/moderation hidden; gpt-*/claude-* pass; unknown id → uncertain.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Denylist families + classifier", "completed": false },
+                { "title": "'uncertain' bucket handling", "completed": false },
+                { "title": "Unit tests (hidden / pass / uncertain)", "completed": false }
+            ],
+            "tags": ["api", "logic"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Merge detected ∪ curated (source annotation)",
+            "description": "Implement the merge in apps/api using the shared curated catalog (T-002): model in both → source 'both' (curated metadata wins); detected-only → 'detected'; curated-only → 'curated'. De-dup by id. Pure function. Tests: all three source outcomes; de-dup; empty detected → curated only.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Merge function with source tagging", "completed": false },
+                { "title": "De-dup + curated-metadata-wins", "completed": false },
+                { "title": "Unit tests (detected/curated/both)", "completed": false }
+            ],
+            "tags": ["api", "logic"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Sync-models orchestration service in apps/api",
+            "description": "Add a service (apps/api/src/services/ai-sync-models.service.ts) that: resolves the actor, calls getDecryptedAiProviderCredential(providerId), invokes listProviderModels (with metadata.baseURL), applies the filter (T-006) then the merge (T-007), and returns AiSyncModelsResultSchema. Typed errors: invalid key → PROVIDER_UNCONFIGURED/auth; upstream failure → SYNC_MODELS_FAILED. Never logs/returns the key. Tests: mock vault + fetcher — happy path, bad key, provider down.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-006", "T-007"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                { "title": "Service: decrypt → fetch → filter → merge", "completed": false },
+                { "title": "Typed error mapping + secret hygiene", "completed": false },
+                { "title": "Unit tests (happy / bad key / provider down)", "completed": false }
+            ],
+            "tags": ["api", "service"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Admin route POST /credentials/{providerId}/sync-models",
+            "description": "Add an action-POST route in apps/api/src/routes/ai/credentials/index.ts via createAdminRoute: path '/{providerId}/sync-models', requiredPermissions [AI_SETTINGS_MANAGE], requestParams { providerId }, responseSchema AiSyncModelsResultSchema, calling the T-008 service. Register in the router assembly. Add the endpoint-gate-matrix row + OpenAPI metadata. Tests: 403 for non-super-admin, 200 happy path (service mocked), 4xx on bad key.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-008"],
+            "blocks": ["T-011", "T-013"],
+            "subtasks": [
+                { "title": "createAdminRoute action-POST + register", "completed": false },
+                { "title": "Gate-matrix row + OpenAPI", "completed": false },
+                { "title": "Route tests (403 / 200 / 4xx)", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Auto-sync on credential create/rotate (fail-open)",
+            "description": "Wire the T-008 service into createAiProviderCredential and rotateAiProviderCredential (ai-credential-vault.service.ts) so a sync runs after a successful create/rotate — but FAIL-OPEN (OQ-2 hard req): any list-models failure must NOT break the credential save; it is swallowed into a non-blocking warning, the credential is still persisted. Tests: credential save succeeds even when the fetcher throws; success path populates suggestions.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Hook sync into create + rotate", "completed": false },
+                { "title": "Fail-open wrapper (never break save)", "completed": false },
+                { "title": "Tests: save survives sync failure", "completed": false }
+            ],
+            "tags": ["api", "service"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Admin UI — 'Sync models' button + mutation + detected/curated render",
+            "description": "In apps/admin/src/routes/_authed/ai/credentials.tsx add a per-provider 'Sync models' button; add a TanStack Query mutation in features/ai-settings/hooks.ts calling the new endpoint. Render results grouped/badged by source (Detected/Curated/Both, highlight new detected). Preserve the existing enable-toggle + custom-add UX; confirming persists the enabled set to metadata.models via the existing update mutation. i18n all new strings.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "useSyncModelsMutation hook", "completed": false },
+                { "title": "Sync button + source-badged list render", "completed": false },
+                { "title": "Persist enabled set via existing update mutation", "completed": false }
+            ],
+            "tags": ["admin", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Admin UI — loading / empty / error states for sync",
+            "description": "Add explicit states to the sync flow in credentials.tsx: loading spinner during sync, 'No chat models detected for this key' empty state, and an inline error banner for auth/network/rate-limit with a retry. i18n all strings. Tests: component/behavior tests for the three states (mocked mutation).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Loading + empty states", "completed": false },
+                { "title": "Error banner + retry", "completed": false },
+                { "title": "State tests", "completed": false }
+            ],
+            "tags": ["admin", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Integration tests — sync-models endpoint across all providers",
+            "description": "End-to-end integration tests for POST /credentials/{providerId}/sync-models using fixtures per provider (OpenAI, Anthropic, Gemini, Ollama, and an OpenAI-compatible via baseURL). Assert filter (non-chat hidden), merge (source tagging), and the fail-open create/rotate path. Follow ai-core testing rules (StubProvider / mocked fetch, NO real provider calls).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005", "T-009", "T-010"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Per-provider fixture integration tests", "completed": false },
+                { "title": "Filter + merge assertions", "completed": false },
+                { "title": "Fail-open create/rotate assertion", "completed": false }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Isolation guard — fetcher stays SDK-free and env-free",
+            "description": "Confirm/extend the ac4 isolation guard so the new list-models.ts does not import ai/@ai-sdk/* outside the allowed providers/ boundary (it uses plain fetch) and reads no process.env. Verify @repo/db is not imported. Tests: assert the guard passes with the new module present.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Verify guard covers list-models.ts", "completed": false },
+                { "title": "No @ai-sdk / no process.env / no @repo/db", "completed": false }
+            ],
+            "tags": ["ai-core", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Docs + gate-matrix + i18n finalization",
+            "description": "Document the feature: update apps/api/CLAUDE.md AI section and/or packages/ai-core/README.md with the list-models fetcher + sync-models endpoint (note: no migration, ephemeral suggestions, fail-open auto-sync). Confirm the endpoint-gate-matrix row and that all new admin strings have i18n keys (es/en/pt). No env var added.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update api/ai-core docs", "completed": false },
+                { "title": "Gate-matrix + i18n keys check", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-07-05T16:20:00.000Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}
