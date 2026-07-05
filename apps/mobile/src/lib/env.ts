@@ -19,7 +19,7 @@
  * @module env
  */
 import Constants from 'expo-constants';
-import { EnvSchema } from './env-schema.js';
+import { EnvSchema } from './env-schema';
 
 /** Supported app environments, injected via `EXPO_PUBLIC_APP_ENV` (eas.json). */
 export type AppEnv = 'development' | 'staging' | 'production';
