@@ -15,8 +15,9 @@
  *     popover and does NOT toggle the mode.
  *   - Authenticated click without the entitlement opens the upsell popover
  *     and does NOT toggle the mode.
- *   - While entitlements are loading, the button is disabled and a click is a
- *     no-op (neither popover opens nor does the mode toggle).
+ *   - While entitlements are loading, the button stays enabled (aria-busy) and a
+ *     click activates compare mode optimistically (the per-card guard still gates
+ *     selection) — a stuck isLoading must never permanently disable the toggle.
  *
  * The compare-store and useCompareGuard hook are mocked so the test drives
  * state directly without touching localStorage or the network.
@@ -316,7 +317,7 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
     });
 
-    it('disables the button while entitlements are loading', () => {
+    it('keeps the button enabled while entitlements are loading (never permanently disabled)', () => {
         mockGuard.value = { canCompare: false, isLoading: true };
         render(
             <CompareModeToggle
@@ -324,11 +325,12 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
                 isAuthenticated={true}
             />
         );
-        expect(screen.getByRole('button')).toBeDisabled();
+        // A stuck isLoading must never disable this primary control.
+        expect(screen.getByRole('button')).toBeEnabled();
         expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
     });
 
-    it('does nothing on click while entitlements are loading (fails closed, no popover, no toggle)', () => {
+    it('activates compare mode optimistically on click while entitlements are loading (per-card guard still gates)', () => {
         mockGuard.value = { canCompare: false, isLoading: true };
         render(
             <CompareModeToggle
@@ -337,7 +339,9 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
             />
         );
         fireEvent.click(screen.getByRole('button'));
-        expect(mockToggleCompareMode).not.toHaveBeenCalled();
+        // Optimistic activation instead of a no-op; the CompareCardSelect guard
+        // still gates actual selection, so no gate popover flashes here.
+        expect(mockToggleCompareMode).toHaveBeenCalledTimes(1);
         expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
     });

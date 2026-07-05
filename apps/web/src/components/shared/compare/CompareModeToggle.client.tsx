@@ -22,9 +22,10 @@
  * unconditionally. It now gates on the comparison entitlement via
  * {@link useCompareGuard} BEFORE turning the mode on:
  * - While entitlements are still resolving ({@link useCompareGuard.isLoading}),
- *   the button is disabled — mirroring the existing `FavoriteButton`
- *   disabled-while-hydrating convention — so a guest/free click can never
- *   race ahead of the fail-closed default.
+ *   the button stays enabled and a click activates compare mode optimistically
+ *   (the per-card {@link CompareCardSelect} guard still gates actual selection).
+ *   The toggle is deliberately NOT `disabled` while loading: a stuck `isLoading`
+ *   must never permanently disable this primary control.
  * - A guest (no session) click opens {@link AuthRequiredPopover}, reusing the
  *   same component `FavoriteButton` uses for its own guest gate.
  * - An authenticated click without the entitlement opens
@@ -138,15 +139,20 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
     const returnUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     const handleClick = (): void => {
-        // Entitlements not resolved yet: fail closed without opening either
-        // popover. The button is also `disabled` in this state (see below),
-        // so this is a defensive no-op rather than the primary guard — chosen
-        // over "assume denied" so a user who clicks the instant the page
-        // loads never sees an incorrect gate popover flash before the real
-        // (often allowed) state resolves a moment later.
-        if (isLoading) return;
-
         if (canCompare) {
+            toggleCompareMode();
+            return;
+        }
+
+        // Entitlements not resolved yet (transient — or, in the worst case, a
+        // hung fetch): never leave this primary control unusable. Activate
+        // compare mode optimistically instead of blocking. The real entitlement
+        // gate still applies per-card — CompareCardSelect uses the same
+        // fail-closed guard — so a user without the entitlement hits the upsell
+        // when they try to actually select an accommodation. This is why the
+        // button is NOT `disabled` while loading: a stuck `isLoading` must never
+        // permanently disable the toggle.
+        if (isLoading) {
             toggleCompareMode();
             return;
         }
@@ -170,7 +176,6 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
                 data-active={mode ? 'true' : undefined}
                 className={cn(styles.toggle, className)}
                 onClick={handleClick}
-                disabled={isLoading}
             >
                 <ColumnIcon
                     size={20}
