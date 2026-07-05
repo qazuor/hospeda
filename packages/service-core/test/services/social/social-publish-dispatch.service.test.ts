@@ -1890,6 +1890,131 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
     });
 
     // -------------------------------------------------------------------------
+    // AC-3: cross-target isolation (HOS-65 T-022)
+    // -------------------------------------------------------------------------
+
+    describe('AC-3: cross-target isolation (HOS-65 T-022)', () => {
+        it('leaves each sibling target independently correct after one PUBLISHES and the other FAILS (no cross-contamination)', async () => {
+            // Arrange — two sibling targets on the same post. TARGET_ID dispatches
+            // successfully; TARGET_ID_2 is already at the exhaustion threshold and
+            // fails on this attempt.
+            const successBody = {
+                status: 'SUCCESS',
+                externalPostId: 'ext-id-published',
+                externalPostUrl: 'https://instagram.com/p/published'
+            };
+            let fetchCallCount = 0;
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+                fetchCallCount += 1;
+                return fetchCallCount === 1
+                    ? buildFetchResponse(200, true, successBody)
+                    : buildFetchResponse(503, false);
+            });
+
+            const targetA = buildTarget({ id: TARGET_ID, retryCount: 0 });
+            const targetB = buildTarget({ id: TARGET_ID_2, retryCount: 3 });
+            const post = buildPost();
+
+            // cascadePostStatus (targetA's success path) needs postModel.findOne +
+            // targetModel.findAll. checkAndCascadePostFailure (targetB's exhaustion
+            // path) also calls targetModel.findAll — mock each dispatch's call in order.
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        }
+                    ],
+                    total: 1
+                })
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        },
+                        {
+                            id: TARGET_ID_2,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.FAILED
+                        }
+                    ],
+                    total: 2
+                });
+
+            // Act — dispatch each target independently (never concurrently)
+            const resultA = await service.dispatchTarget({
+                target: targetA,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+            const resultB = await service.dispatchTarget({
+                target: targetB,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — outcomes
+            expect(resultA.outcome).toBe('published');
+            expect(resultB.outcome).toBe('exhausted');
+
+            // Assert — TARGET_ID was updated to PUBLISHED and NEVER to FAILED
+            const updateCalls = (mocks.targetModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const targetAUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID
+            );
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(true);
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID_2 was updated to FAILED and NEVER to PUBLISHED
+            const targetBUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID_2
+            );
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(true);
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID's publishedAt/externalPostId never leaked into TARGET_ID_2's updates
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).externalPostId ===
+                        successBody.externalPostId
+                )
+            ).toBe(false);
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // Settings-driven max_retry_count (HOS-64 G-2, risk item R-1)
     // -------------------------------------------------------------------------
 

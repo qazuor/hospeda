@@ -813,6 +813,42 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
 
             expect(postTargetModel.create).toHaveBeenCalledOnce();
         });
+
+        it('should create exactly 3 social_post_targets rows for a draft with 3 valid targets (AC-3 fan-out, HOS-65 T-022)', async () => {
+            const postTargetModel = createModelMock();
+            let callCount = 0;
+            postTargetModel.create.mockImplementation(async () => {
+                callCount += 1;
+                return { id: `target-${callCount}` };
+            });
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(buildPlatformFormatRow());
+
+            const service = buildService({ postTargetModel, platformFormatModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ]
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.targetsCreated).toBe(3);
+            expect(postTargetModel.create).toHaveBeenCalledTimes(3);
+        });
     });
 
     // --- Campaign/batch resolve-or-create (HOS-66 T-001, G-4/G-5) ---
