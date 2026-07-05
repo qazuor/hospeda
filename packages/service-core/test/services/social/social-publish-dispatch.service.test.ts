@@ -1154,6 +1154,68 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
     });
 
     // -------------------------------------------------------------------------
+    // AC-4: override inheritance across sibling targets (HOS-65 T-025)
+    // -------------------------------------------------------------------------
+
+    describe('AC-4: override inheritance across sibling targets (HOS-65 T-025)', () => {
+        it('resolves each sibling target independently — overrides for one, inheritance for the other — with no cross-contamination', async () => {
+            // Arrange — two sibling targets on the SAME post: one carries all 3
+            // overrides, the other carries all 3 as null (inherit).
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const post = buildPost({
+                finalCaption: 'Post-level caption',
+                finalHashtagsText: '#post #level',
+                footerId: FOOTER_ID
+            });
+
+            const overriddenTarget = buildTarget({
+                id: TARGET_ID,
+                captionOverride: 'Overridden caption',
+                hashtagsOverrideText: '#overridden',
+                footerOverride: 'Overridden footer'
+            });
+            const inheritingTarget = buildTarget({
+                id: TARGET_ID_2,
+                captionOverride: null,
+                hashtagsOverrideText: null,
+                footerOverride: null
+            });
+
+            // Act — build both payloads via the SAME service instance
+            const { payload: overriddenPayload } = await service.buildMakePayload({
+                target: overriddenTarget,
+                post
+            });
+            const { payload: inheritingPayload } = await service.buildMakePayload({
+                target: inheritingTarget,
+                post
+            });
+
+            // Assert — the overridden target used its own values
+            expect(overriddenPayload.captionFinal).toBe('Overridden caption');
+            expect(overriddenPayload.hashtagsFinal).toBe('#overridden');
+            expect(overriddenPayload.footerFinal).toBe('Overridden footer');
+
+            // Assert — the inheriting sibling used the parent post's values —
+            // NEVER the overridden sibling's values (no cross-contamination
+            // between the two buildMakePayload calls)
+            expect(inheritingPayload.captionFinal).toBe('Post-level caption');
+            expect(inheritingPayload.hashtagsFinal).toBe('#post #level');
+            expect(inheritingPayload.footerFinal).toBe('Inherited footer content');
+            expect(inheritingPayload.captionFinal).not.toBe(overriddenPayload.captionFinal);
+            expect(inheritingPayload.hashtagsFinal).not.toBe(overriddenPayload.hashtagsFinal);
+            expect(inheritingPayload.footerFinal).not.toBe(overriddenPayload.footerFinal);
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // Scheduling fields
     // -------------------------------------------------------------------------
 
