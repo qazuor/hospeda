@@ -1361,6 +1361,7 @@ describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
     const STORY_PLATFORM_FORMAT_ID = 'pf-instagram-story';
     const FEED_PLATFORM_FORMAT_ID = 'pf-facebook-feed';
     const LINKEDIN_VIDEO_PLATFORM_FORMAT_ID = 'pf-linkedin-video';
+    const CAROUSEL_PLATFORM_FORMAT_ID = 'pf-instagram-carousel';
 
     // Mirrors the real seeded rows (T-010, packages/seed/src/required/socialAutomation.seed.ts).
     const PLATFORM_FORMAT_ROWS = [
@@ -1386,6 +1387,14 @@ describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
             publishFormat: 'VIDEO_POST',
             mediaType: 'VIDEO',
             makeChannelKey: 'linkedin_video_video',
+            enabled: true
+        },
+        {
+            id: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'instagram_carousel_image',
             enabled: true
         }
     ];
@@ -1632,5 +1641,211 @@ describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
         expect(payload.mediaUrls).toEqual([videoCloudinaryUrl]);
         expect(payload.makeChannelKey).toBe('linkedin_video_video');
         expect(payload.platform).toBe('LINKEDIN');
+    });
+
+    it('T-026: media isolation across co-targets of different formats (CAROUSEL N-assets vs STORY 1-asset)', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const CAROUSEL_URLS = [
+            'https://example.com/carousel-a.jpg',
+            'https://example.com/carousel-b.jpg',
+            'https://example.com/carousel-c.jpg'
+        ];
+        const STORY_URL = 'https://example.com/vertical-story.jpg';
+
+        // Act — ingest a draft with a CAROUSEL target (3 images) and a STORY
+        // co-target (1 vertical image) on the same post.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.CAROUSEL,
+                        assets: CAROUSEL_URLS.map((url) => ({
+                            image: { mode: 'public_url' as const, url }
+                        }))
+                    },
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.STORY,
+                        assets: [{ image: { mode: 'public_url', url: STORY_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+
+        const carouselTargetId = idByFormat.CAROUSEL;
+        const storyTargetId = idByFormat.STORY;
+        expect(carouselTargetId).toBeDefined();
+        expect(storyTargetId).toBeDefined();
+
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const carouselTargetRow = {
+            id: carouselTargetId,
+            platformFormatId: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL'
+        };
+        const storyTargetRow = {
+            id: storyTargetId,
+            platformFormatId: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY'
+        };
+
+        // Assert — the CAROUSEL target resolves exactly its own 3 URLs, in order,
+        // and none of the STORY sibling's asset.
+        const { payload: carouselPayload } = await harness.dispatchService.buildMakePayload({
+            target: carouselTargetRow,
+            post: postRow
+        });
+        expect(carouselPayload.mediaUrls).toHaveLength(3);
+
+        // Assert — the STORY target resolves exactly its own 1 URL, and none of
+        // the CAROUSEL sibling's assets.
+        const { payload: storyPayload } = await harness.dispatchService.buildMakePayload({
+            target: storyTargetRow,
+            post: postRow
+        });
+        expect(storyPayload.mediaUrls).toHaveLength(1);
+
+        // Cross-check by ORIGINAL source URL (originalUrl, preserved verbatim by
+        // the pipeline) rather than the synthesized Cloudinary URL, since the
+        // InMemoryImageProvider assigns cloudinary URLs by upload order, not by
+        // target — this is the only way to unambiguously attribute each
+        // resolved mediaUrl back to the asset it came from.
+        async function cloudinaryUrlForOriginal(originalUrl: string): Promise<string> {
+            const { items: assets } = await harness.assetModel.findAll({ originalUrl });
+            expect(assets).toHaveLength(1);
+            return assets[0]?.cloudinaryUrl as string;
+        }
+
+        const carouselCloudinaryUrls = await Promise.all(
+            CAROUSEL_URLS.map((url) => cloudinaryUrlForOriginal(url))
+        );
+        const storyCloudinaryUrl = await cloudinaryUrlForOriginal(STORY_URL);
+
+        expect(carouselPayload.mediaUrls).toEqual(carouselCloudinaryUrls);
+        expect(carouselPayload.mediaUrls).not.toContain(storyCloudinaryUrl);
+        expect(storyPayload.mediaUrls).toEqual([storyCloudinaryUrl]);
+        for (const url of carouselCloudinaryUrls) {
+            expect(storyPayload.mediaUrls).not.toContain(url);
+        }
+    });
+
+    it('T-026 follow-up: a partial mid-carousel upload failure leaves a position GAP that buildMakePayload still resolves correctly, in order (no crash, no off-by-one)', async () => {
+        // Arrange — this directly probes the position-gap concern: processImages
+        // (HOS-65 T-012) numbers `social_post_target_media.position` by each
+        // asset's ORIGINAL array index, not by a renumbered successful-only
+        // count. If the middle of 3 carousel assets fails to download, the
+        // surviving link rows land at position 0 and 2 (position 1 is a GAP,
+        // never created) — buildMakePayload's CAROUSEL resolution must still
+        // return exactly the 2 survivors, correctly ordered, unaffected by the gap.
+        const OK_URL_0 = 'https://example.com/gap-a.jpg';
+        const FAILING_URL_1 = 'https://example.com/gap-b-fails.jpg';
+        const OK_URL_2 = 'https://example.com/gap-c.jpg';
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            if (String(input) === FAILING_URL_1) {
+                throw new Error('simulated network failure for the middle carousel asset');
+            }
+            return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+        });
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        // Act
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.CAROUSEL,
+                        assets: [OK_URL_0, FAILING_URL_1, OK_URL_2].map((url) => ({
+                            image: { mode: 'public_url' as const, url }
+                        }))
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        // The overall draft still reports uploaded (2 of 3 assets succeeded) —
+        // graceful degradation, per the pipeline's per-asset isolation contract.
+        expect(result.data.assetStatus).toBe('uploaded');
+        // One warning surfaces for the failed middle asset.
+        expect(result.data.warnings.some((w) => w.field === 'image')).toBe(true);
+
+        const carouselTargetId = idByFormat.CAROUSEL;
+        expect(carouselTargetId).toBeDefined();
+
+        // Assert — exactly 2 link rows exist (position 1 is a genuine gap, never created)
+        const linkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: carouselTargetId })
+        ).items;
+        expect(linkRows).toHaveLength(2);
+        const positions = linkRows.map((row) => row.position).sort();
+        expect(positions).toEqual([0, 2]);
+
+        // Assert — buildMakePayload still resolves exactly the 2 survivors, in
+        // the correct relative order (position 0's asset before position 2's),
+        // despite the gap.
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const carouselTargetRow = {
+            id: carouselTargetId,
+            platformFormatId: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL'
+        };
+
+        const { payload } = await harness.dispatchService.buildMakePayload({
+            target: carouselTargetRow,
+            post: postRow
+        });
+
+        expect(payload.mediaUrls).toHaveLength(2);
+
+        const asset0 = (await harness.assetModel.findAll({ originalUrl: OK_URL_0 })).items[0];
+        const asset2 = (await harness.assetModel.findAll({ originalUrl: OK_URL_2 })).items[0];
+        expect(payload.mediaUrls).toEqual([asset0?.cloudinaryUrl, asset2?.cloudinaryUrl]);
     });
 });
