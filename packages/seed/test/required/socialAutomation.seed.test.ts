@@ -12,7 +12,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { PLATFORMS, PLATFORM_FORMATS, SETTINGS } from '../../src/required/socialAutomation.seed.js';
+import { PLATFORM_FORMATS, PLATFORMS, SETTINGS } from '../../src/required/socialAutomation.seed.js';
 
 describe('social automation settings seed (HOS-64 T-003)', () => {
     it('should include all 5 new operational settings with correct types and defaults', () => {
