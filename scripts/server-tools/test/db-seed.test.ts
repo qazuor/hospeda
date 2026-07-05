@@ -1,6 +1,9 @@
 /**
  * Unit tests for `src/commands/db-seed.ts` — pure argv parsing,
- * seed-args composition, flag summary, and repo-root resolution.
+ * seed-args composition, and flag summary.
+ *
+ * Repo-root resolution moved to `src/lib/repo-root.ts` (HOS-79 T-014) —
+ * see `test/repo-root.test.ts` for its tests.
  *
  * The destructive bits (git pull, pnpm seed) are not covered here — they
  * shell out to the runner and would need integration tests with mocked
@@ -9,14 +12,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import {
     buildSeedArgs,
     collectCloudinaryEnv,
     formatFlagSummary,
-    parseArgs,
-    resolveRepoRoot
+    parseArgs
 } from '../src/commands/db-seed.ts';
 
 const ENV_KEYS_TOUCHED = [
@@ -411,21 +411,5 @@ describe('collectCloudinaryEnv(cleanImages)', () => {
 
     it('returns an empty object when cleanImages is true but no creds are set', () => {
         expect(collectCloudinaryEnv(true)).toEqual({});
-    });
-});
-
-describe('resolveRepoRoot()', () => {
-    it('defaults to ~/hospeda when HOPS_REPO_ROOT is unset', () => {
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
-    });
-
-    it('honours HOPS_REPO_ROOT when set', () => {
-        process.env.HOPS_REPO_ROOT = '/opt/hospeda-staging';
-        expect(resolveRepoRoot()).toBe('/opt/hospeda-staging');
-    });
-
-    it('treats an empty HOPS_REPO_ROOT as unset', () => {
-        process.env.HOPS_REPO_ROOT = '';
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
     });
 });

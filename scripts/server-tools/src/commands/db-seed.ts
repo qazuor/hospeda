@@ -37,7 +37,6 @@
  */
 
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { get } from '../lib/env.ts';
@@ -45,6 +44,7 @@ import { die, log } from '../lib/log.ts';
 import { runMigrateSequence } from '../lib/migrate-core.ts';
 import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
+import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
 import { getDbCredentials } from '../lib/target.ts';
 
@@ -191,12 +191,6 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
-}
-
-export function resolveRepoRoot(): string {
-    const explicit = get('HOPS_REPO_ROOT');
-    if (explicit) return explicit;
-    return join(homedir(), 'hospeda');
 }
 
 export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
