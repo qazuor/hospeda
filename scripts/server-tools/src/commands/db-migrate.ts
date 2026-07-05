@@ -7,10 +7,11 @@
  *
  * Default behaviour (no flags):
  *   1. (optional) git pull in $HOPS_REPO_ROOT
- *   2. build @repo/db dependencies (turbo-cached)
- *   3. take a pre-migrate pg_dump backup (uploaded to R2)
- *   4. run `pnpm --filter @repo/db db:migrate`  (drizzle-kit migrate)
- *   5. run `pnpm db:apply-extras`               (triggers / extras)
+ *   2. (after pull) pnpm install --frozen-lockfile
+ *   3. build @repo/db dependencies (turbo-cached)
+ *   4. take a pre-migrate pg_dump backup (uploaded to R2)
+ *   5. run `pnpm --filter @repo/db db:migrate`  (drizzle-kit migrate)
+ *   6. run `pnpm db:apply-extras`               (triggers / extras)
  *
  * With --reset (DESTRUCTIVE):
  *   After the backup (step 3) and before migrate (step 4): apply
@@ -43,6 +44,7 @@ import { getDbCredentials } from '../lib/target.ts';
 const HELP = `
 hops db-migrate [--target=prod|staging]
                 [--pull | --no-pull]
+                [--no-install]
                 [--no-build]
                 [--no-backup]
                 [--no-apply-extras]
@@ -56,10 +58,11 @@ NOT \`drizzle-kit push\`. Never use push on staging or production.
 
 Default behaviour:
   1. (optional) git pull \\$HOPS_REPO_ROOT
-  2. pnpm turbo run build --filter=@repo/db        (turbo-cached)
-  3. pg_dump backup → R2 manual/ prefix
-  4. pnpm --filter @repo/db db:migrate             (drizzle-kit migrate)
-  5. pnpm db:apply-extras                          (triggers / extras)
+  2. (after pull) pnpm install --frozen-lockfile
+  3. pnpm turbo run build --filter=@repo/db        (turbo-cached)
+  4. pg_dump backup → R2 manual/ prefix
+  5. pnpm --filter @repo/db db:migrate             (drizzle-kit migrate)
+  6. pnpm db:apply-extras                          (triggers / extras)
 
 With --reset (applied AFTER the backup, before migrate):
   - Run packages/db/scripts/reset/000-reset-schema.sql
@@ -74,6 +77,9 @@ Flags:
   --pull              Always git pull \\$HOPS_REPO_ROOT first.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
+  --no-install        Skip \`pnpm install --frozen-lockfile\` after the pull.
+                      Only use when you are certain the pulled commits added
+                      no dependency. Has no effect when no pull happens.
   --no-build          Skip the turbo build step. Only use when @repo/db
                       dist/ outputs are already up to date.
   --no-backup         Skip the pre-migrate pg_dump. Only use when you are
@@ -107,6 +113,7 @@ const MIN_BACKUP_SIZE = 100 * 1024;
 
 export interface ParsedMigrateArgs {
     readonly reset: boolean;
+    readonly install: boolean;
     readonly build: boolean;
     readonly backup: boolean;
     readonly applyExtras: boolean;
@@ -125,6 +132,7 @@ export function parseMigrateArgs(argv: ReadonlyArray<string>): ParsedMigrateArgs
 
     return {
         reset: args.includes('--reset'),
+        install: !args.includes('--no-install'),
         build: !args.includes('--no-build'),
         backup: !args.includes('--no-backup'),
         applyExtras: !args.includes('--no-apply-extras'),
@@ -140,6 +148,30 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
         die(`git pull failed (exit ${result.exitCode}). Resolve manually before retrying.`);
     }
     log.ok('Repo updated.');
+}
+
+/**
+ * Run `pnpm install --frozen-lockfile` in the repo root after a git pull.
+ *
+ * Without this, a pulled commit that introduces a new dependency leaves
+ * node_modules stale, and the subsequent `buildDbDependencies` step fails
+ * (observed on the post-`e2fb184` staging deploy: the @repo/db build broke on
+ * `src/safe-fetch.ts` because a new transitive dep was missing). `--frozen-lockfile`
+ * is a near no-op when the tree is already in sync, so this stays cheap on
+ * re-runs. Skippable via `--no-install` (BETA-102).
+ */
+async function installDeps(repoRoot: string): Promise<void> {
+    log.info(`pnpm install --frozen-lockfile in ${repoRoot}`);
+    const result = await runner.run(['pnpm', 'install', '--frozen-lockfile'], {
+        cwd: repoRoot,
+        inherit: true
+    });
+    if (result.exitCode !== 0) {
+        die(
+            `pnpm install failed (exit ${result.exitCode}). Resolve dependency state before retrying, or pass --no-install to skip.`
+        );
+    }
+    log.ok('Dependencies installed.');
 }
 
 /**
@@ -231,6 +263,7 @@ export async function dbMigrate(argv: ReadonlyArray<string>): Promise<void> {
     log.info(
         `Flags   : ${[
             parsed.reset ? '+reset' : '',
+            parsed.install ? '+install' : '-install',
             parsed.build ? '+build' : '-build',
             parsed.backup ? '+backup' : '-backup',
             parsed.applyExtras ? '+apply-extras' : '-apply-extras'
@@ -251,6 +284,13 @@ export async function dbMigrate(argv: ReadonlyArray<string>): Promise<void> {
 
     if (shouldPull) {
         await gitPullRepo(repoRoot);
+        // A pulled commit may add a dependency; install before the schema build
+        // so buildDbDependencies doesn't fail against a stale node_modules (BETA-102).
+        if (parsed.install) {
+            await installDeps(repoRoot);
+        } else {
+            log.hint('Skipping pnpm install (--no-install).');
+        }
     } else {
         log.hint('Skipping git pull.');
     }

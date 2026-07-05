@@ -16,11 +16,12 @@
 // from other tests that share the same process.)
 process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';
 import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 /**
  * Maximum forgot-password attempts before lockout.
@@ -29,12 +30,18 @@ import { validateApiEnv } from '../../../src/utils/env';
 const MAX_ATTEMPTS = 5;
 
 /** Forgot-password endpoint path (Better Auth naming convention). */
-const FORGOT_PASSWORD_PATH = '/api/auth/forget-password';
+const FORGOT_PASSWORD_PATH = '/api/auth/request-password-reset';
+
+// Better Auth's CSRF protection (advanced.disableCSRFCheck: false) rejects
+// mutating requests without a trusted Origin header (MISSING_OR_NULL_ORIGIN).
+// Real browser clients always send one; tests must too. Matches HOSPEDA_SITE_URL.
+const TRUSTED_ORIGIN = 'http://localhost:4321';
 
 /** Shared request headers for all test requests. */
 const BASE_HEADERS: Record<string, string> = {
     'content-type': 'application/json',
     'user-agent': 'vitest',
+    origin: TRUSTED_ORIGIN,
     // Simulate a fixed IP so rate-limit keys are deterministic
     'x-forwarded-for': '10.0.0.1'
 };
@@ -73,6 +80,11 @@ describe('Auth Forgot-Password Lockout Integration', () => {
     beforeAll(async () => {
         validateApiEnv();
         app = initApp();
+        await testDb.setup();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     afterEach(async () => {
