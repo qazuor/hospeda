@@ -91,6 +91,28 @@ export const planQueryKeys = {
 };
 
 /**
+ * Build the query string for GET /admin/billing/plans from UI filters.
+ *
+ * Translates the client-side `isActive` filter to the server's `active` param
+ * name (BillingPlanSearchSchema). The admin list route rejects unknown params
+ * with 400 INVALID_PAGINATION_PARAMS, so a raw `isActive` key fails (BETA-97).
+ * This mirrors the toggle path, which already sends `body: { active: isActive }`.
+ * Empty and the `'all'` sentinel value are dropped.
+ */
+export function buildPlanQuery(filters: Record<string, unknown>): URLSearchParams {
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(filters)) {
+        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+            const paramKey = key === 'isActive' ? 'active' : key;
+            params.append(paramKey, String(value));
+        }
+    }
+
+    return params;
+}
+
+/**
  * Fetch plans with filters.
  *
  * Calls GET /api/v1/admin/billing/plans and transforms the items array using
@@ -98,13 +120,7 @@ export const planQueryKeys = {
  * mismatches.
  */
 async function fetchPlans(filters: Record<string, unknown> = {}) {
-    const params = new URLSearchParams();
-
-    for (const [key, value] of Object.entries(filters)) {
-        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-            params.append(key, String(value));
-        }
-    }
+    const params = buildPlanQuery(filters);
 
     const result = await fetchApi<{
         success: boolean;
