@@ -85,7 +85,7 @@
         "posthog-js": "^1.395.0",
         "react": "19.1.1",
         "react-dom": "19.1.1",
-        "react-leaflet": "^4.2.1",
+        "react-leaflet": "^5.0.0",
         "recharts": "^3.9.0",
         "solid-js": "1.9.14",
         "tailwind-merge": "3.6.0",
