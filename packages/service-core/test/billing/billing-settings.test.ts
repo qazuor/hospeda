@@ -187,9 +187,11 @@ describe('BillingSettingsService', () => {
             const valuesSpy = vi.fn().mockReturnValue({
                 onConflictDoUpdate: vi.fn().mockResolvedValue([])
             });
-            mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
-                fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) })
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) });
+            });
 
             await service.updateSettings({ taxRate: 10 });
 
@@ -335,9 +337,11 @@ describe('BillingSettingsService', () => {
                 };
                 const ctx = { tx: mockTx as unknown as DrizzleClient };
 
-                mockWithTransaction.mockImplementation(
-                    async (fn: (tx: unknown) => Promise<unknown>) => fn(mockTx)
-                );
+                mockWithTransaction.mockImplementation(async function (
+                    fn: (tx: unknown) => Promise<unknown>
+                ) {
+                    return fn(mockTx);
+                });
 
                 // Act
                 const result = await service.updateSettings({ taxRate: 10 }, undefined, ctx);

@@ -21,10 +21,12 @@ const { mockList, mockGetBySlug } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        list: mockList,
-        getBySlug: mockGetBySlug
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockList,
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 // Import after mocks

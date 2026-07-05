@@ -27,10 +27,12 @@ const { mockGetBySlug, mockGetDb } = vi.hoisted(() => ({
 
 // Mock AddonCatalogService — DB-backed catalog used after the cutover
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // Mock @repo/db — no real database

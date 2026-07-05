@@ -83,9 +83,9 @@ describe('AccommodationService.removeIAData', () => {
             accommodationId: accommodation.id as any,
             iaDataId: getMockIaDataId(iaData.id) as any
         };
-        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(
-            () => iaDataModelMock as unknown as db.AccommodationIaDataModel
-        );
+        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(function () {
+            return iaDataModelMock as unknown as db.AccommodationIaDataModel;
+        });
     });
 
     it('should remove AI data successfully', async () => {

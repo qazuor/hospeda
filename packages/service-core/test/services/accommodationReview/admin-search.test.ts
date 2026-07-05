@@ -16,9 +16,11 @@ import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types
 import { asMock } from '../../utils/test-utils';
 
 vi.mock('../../../src/services/accommodation/accommodation.service', () => ({
-    AccommodationService: vi.fn().mockImplementation(() => ({
-        updateStatsFromReview: vi.fn()
-    }))
+    AccommodationService: vi.fn().mockImplementation(function () {
+        return {
+            updateStatsFromReview: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -30,8 +32,12 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...original,
         buildSearchCondition: vi.fn(),
-        AccommodationModel: vi.fn().mockImplementation(() => ({ findById: vi.fn() })),
-        AccommodationReviewModel: vi.fn().mockImplementation(() => mockReviewModelInstance)
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return { findById: vi.fn() };
+        }),
+        AccommodationReviewModel: vi.fn().mockImplementation(function () {
+            return mockReviewModelInstance;
+        })
     };
 });
 

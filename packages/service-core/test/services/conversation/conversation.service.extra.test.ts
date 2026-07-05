@@ -50,11 +50,13 @@ vi.mock('jose', () => {
         }
     }
     return {
-        SignJWT: vi.fn().mockImplementation(() => ({
-            setProtectedHeader: vi.fn().mockReturnThis(),
-            setExpirationTime: vi.fn().mockReturnThis(),
-            sign: vi.fn().mockResolvedValue('mock.jwt.token')
-        })),
+        SignJWT: vi.fn().mockImplementation(function () {
+            return {
+                setProtectedHeader: vi.fn().mockReturnThis(),
+                setExpirationTime: vi.fn().mockReturnThis(),
+                sign: vi.fn().mockResolvedValue('mock.jwt.token')
+            };
+        }),
         jwtVerify: vi.fn(),
         errors: {
             JWTExpired: JWTExpiredError
@@ -67,22 +69,28 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...original,
         getDb: vi.fn(),
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn(),
-            findIdsByOwnerId: vi.fn()
-        })),
-        ConversationModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn(),
-            findByAnonymousEmailAndAccommodationId: vi.fn(),
-            findByUserIdAndAccommodationId: vi.fn(),
-            listByUserId: vi.fn(),
-            listByAccommodationIds: vi.fn(),
-            getResponseRateByOwnerId: vi.fn(),
-            getMonthlyInquiriesByOwnerId: vi.fn()
-        })),
-        MessageModel: vi.fn().mockImplementation(() => ({
-            findByConversationId: vi.fn()
-        }))
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn(),
+                findIdsByOwnerId: vi.fn()
+            };
+        }),
+        ConversationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn(),
+                findByAnonymousEmailAndAccommodationId: vi.fn(),
+                findByUserIdAndAccommodationId: vi.fn(),
+                listByUserId: vi.fn(),
+                listByAccommodationIds: vi.fn(),
+                getResponseRateByOwnerId: vi.fn(),
+                getMonthlyInquiriesByOwnerId: vi.fn()
+            };
+        }),
+        MessageModel: vi.fn().mockImplementation(function () {
+            return {
+                findByConversationId: vi.fn()
+            };
+        })
     };
 });
 

@@ -72,9 +72,9 @@ describe('AccommodationService.reorderFaqs', () => {
             ]
         };
 
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
+        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.AccommodationFaqModel;
+        });
         // withTransaction: execute callback immediately with a no-op tx
         vi.spyOn(db, 'withTransaction').mockImplementation(((
             fn: (tx: unknown) => Promise<unknown>
@@ -179,9 +179,9 @@ describe('AccommodationService.addFaq – displayOrder assignment', () => {
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
 
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
+        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.AccommodationFaqModel;
+        });
     });
 
     it('should assign displayOrder = max+1 when FAQs already exist', async () => {

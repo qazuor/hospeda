@@ -56,9 +56,9 @@ describe('DestinationService.updateFaq', () => {
                 answer: 'Por la Ruta Nacional 14, aproximadamente 4 horas de viaje.'
             }
         };
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
     });
 
     it('should update a FAQ successfully', async () => {

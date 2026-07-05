@@ -39,17 +39,21 @@ const { mockCatalogGetBySlug, mockWithTransaction, mockPlanGetById, mockPlanGetB
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockCatalogGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockCatalogGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    })
 }));
 
 vi.mock('@repo/db', () => ({

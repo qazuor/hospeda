@@ -33,10 +33,12 @@ const mockCreate = vi.fn();
 // constructs `new PromoCodeService()` at call time.
 
 vi.mock('../../../src/services/billing/promo-code/promo-code.service.js', () => ({
-    PromoCodeService: vi.fn().mockImplementation(() => ({
-        getByCode: mockGetByCode,
-        create: mockCreate
-    }))
+    PromoCodeService: vi.fn().mockImplementation(function () {
+        return {
+            getByCode: mockGetByCode,
+            create: mockCreate
+        };
+    })
 }));
 
 // ─── Imports after mocks ───────────────────────────────────────────────────

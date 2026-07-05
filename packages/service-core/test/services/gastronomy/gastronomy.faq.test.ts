@@ -29,7 +29,9 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        GastronomyFaqModel: vi.fn(() => mockFaqModel)
+        GastronomyFaqModel: vi.fn(function () {
+            return mockFaqModel;
+        })
     };
 });
 

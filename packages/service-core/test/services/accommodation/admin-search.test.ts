@@ -17,7 +17,9 @@ import { makeMediaModelStub } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
-    DestinationService: vi.fn().mockImplementation(() => ({}))
+    DestinationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -29,7 +31,9 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...original,
         buildSearchCondition: vi.fn(),
-        DestinationModel: vi.fn().mockImplementation(() => ({ findById: vi.fn() }))
+        DestinationModel: vi.fn().mockImplementation(function () {
+            return { findById: vi.fn() };
+        })
     };
 });
 

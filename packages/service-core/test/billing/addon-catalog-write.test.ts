@@ -290,9 +290,9 @@ describe('AddonCatalogService — write methods (T-018)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default: withTransaction calls the provided function with an empty select-only DB
-        mockWithTransaction.mockImplementation((fn: (db: unknown) => Promise<unknown>) =>
-            fn(buildSelectOnlyDb())
-        );
+        mockWithTransaction.mockImplementation(function (fn: (db: unknown) => Promise<unknown>) {
+            return fn(buildSelectOnlyDb());
+        });
     });
 
     // ── create() ───────────────────────────────────────────────────────────

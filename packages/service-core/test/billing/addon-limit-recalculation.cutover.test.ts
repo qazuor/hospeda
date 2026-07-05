@@ -39,10 +39,12 @@ const { mockGetBySlug, mockWithTransaction, mockPlanGetById, mockPlanGetBySlug }
 
 // Mock AddonCatalogService — DB-backed after cutover
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    })
 }));
 
 // Mock @repo/db — withTransaction must execute the callback synchronously
@@ -60,10 +62,12 @@ vi.mock('@repo/db', () => ({
 
 // Mock PlanService — DB-backed after T-027 cutover
 vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    })
 }));
 
 // Mock @repo/billing — getPlanBySlug no longer used after T-027 cutover
