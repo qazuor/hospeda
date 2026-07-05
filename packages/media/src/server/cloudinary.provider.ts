@@ -41,6 +41,13 @@ interface CloudinaryUploadResponse {
     height: number;
     format: string;
     bytes: number;
+    /**
+     * Video duration in seconds, reported by Cloudinary only for video uploads
+     * (`resource_type: 'video'`). Undefined for images. Surfaced up to
+     * {@link UploadResult.durationSeconds} so the social pipeline can enforce
+     * the VIDEO_POST duration limit (HOS-65).
+     */
+    duration?: number;
 }
 
 /**
@@ -264,7 +271,8 @@ export class CloudinaryProvider implements ImageProvider {
             url: result.secure_url,
             publicId: result.public_id,
             width: result.width,
-            height: result.height
+            height: result.height,
+            durationSeconds: result.duration
         };
     }
 
@@ -410,7 +418,8 @@ export class CloudinaryProvider implements ImageProvider {
                         width: result.width,
                         height: result.height,
                         format: result.format,
-                        bytes: result.bytes
+                        bytes: result.bytes,
+                        duration: result.duration
                     });
                 } else {
                     reject(new Error('Cloudinary returned no result'));
