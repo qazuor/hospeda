@@ -1205,6 +1205,75 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
         });
 
+        it('HOS-65 FIX 4: rejects a LINKEDIN draft that exceeds the default max of 5 hashtags', async () => {
+            // Before the fix, `maxByPlatform` was built from a hardcoded
+            // Instagram/Facebook/X literal, so LINKEDIN (and TIKTOK) had no
+            // configured max and `checkHashtagLimits` silently skipped them.
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'LINKEDIN',
+                    publishFormat: 'TEXT_POST',
+                    mediaType: 'NONE'
+                })
+            );
+            // Empty settings → LinkedIn falls back to the default max of 5.
+            const service = buildService({ platformFormatModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.LINKEDIN,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 total hashtags — one over LinkedIn's default max of 5.
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis'],
+                    customHashtagSuggestions: []
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            if (result.code !== 'HASHTAG_LIMIT_EXCEEDED') throw new Error('expected rejection');
+            expect(
+                result.error.violations.some((v) => v.platform === SocialPlatformEnum.LINKEDIN)
+            ).toBe(true);
+        });
+
+        it('HOS-65 FIX 4: rejects a TIKTOK draft that exceeds the default max of 5 hashtags', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'TIKTOK',
+                    publishFormat: 'VIDEO_POST',
+                    mediaType: 'VIDEO'
+                })
+            );
+            const service = buildService({ platformFormatModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.TIKTOK,
+                            publishFormat: SocialPublishFormatEnum.VIDEO_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis'],
+                    customHashtagSuggestions: []
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            if (result.code !== 'HASHTAG_LIMIT_EXCEEDED') throw new Error('expected rejection');
+            expect(
+                result.error.violations.some((v) => v.platform === SocialPlatformEnum.TIKTOK)
+            ).toBe(true);
+        });
+
         it('does not create any DB rows when the hashtag limit is exceeded', async () => {
             const settingModel = buildSettingModelWithMaxHashtagsX(5);
             const postModel = createModelMock();

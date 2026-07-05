@@ -427,20 +427,19 @@ export class SocialDraftIngestionService {
                 settingsResult.items.map((s) => [s.key as string, s.value as string])
             );
 
-            const maxByPlatform: MaxHashtagsByPlatform = {
-                [SocialPlatformEnum.INSTAGRAM]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.INSTAGRAM]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.INSTAGRAM]
-                ),
-                [SocialPlatformEnum.FACEBOOK]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.FACEBOOK]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.FACEBOOK]
-                ),
-                [SocialPlatformEnum.X]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.X]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.X]
-                )
-            };
+            // Build the per-platform max map by iterating EVERY platform in
+            // HASHTAG_LIMIT_SETTING_KEYS (all 5 — Instagram/Facebook/X plus
+            // LinkedIn/TikTok). A hardcoded 3-key literal silently left
+            // LinkedIn/TikTok with no configured max, so `checkHashtagLimits`
+            // never flagged them (HOS-65 fix).
+            const maxByPlatform: MaxHashtagsByPlatform = {};
+            for (const [platform, settingKey] of Object.entries(
+                HASHTAG_LIMIT_SETTING_KEYS
+            ) as Array<[SocialPlatformEnum, string]>) {
+                maxByPlatform[platform] = Number(
+                    settingsMap.get(settingKey) ?? DEFAULT_MAX_HASHTAGS[platform]
+                );
+            }
 
             const countsByPlatform: HashtagCountsByPlatform = {};
             for (const target of validTargets) {
