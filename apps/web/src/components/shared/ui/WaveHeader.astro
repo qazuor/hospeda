@@ -1,8 +1,8 @@
 ---
 /**
  * @file WaveHeader.astro
- * @description Reusable sticky wave header with smooth compact mode on scroll.
- * Used by ListingLayout and DetailLayout.
+ * @description Reusable sticky page header with a solid "band puro" surface and
+ * smooth compact mode on scroll. Used by ListingLayout and DetailLayout.
  *
  * IMPORTANT: This component wraps the ENTIRE page content (header + body)
  * so that the sticky bar has a tall-enough parent to stick for the full scroll.
@@ -15,8 +15,9 @@
  *     <body-content />  ← default slot
  *   </WaveHeader>
  *
- * Wave technique: SVG filled with --surface-warm hangs below the bar via
- * absolute positioning, creating a wavy overhang. Content scrolls behind it.
+ * Surface technique (HOS-84): a flat band filled with --surface-header. No SVG
+ * wave. In compact mode the band gains a theme-aware bottom edge shadow so it
+ * reads as a distinct sticky surface over the scrolling content below.
  */
 
 interface Props {
@@ -43,7 +44,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       When it scrolls out of view (past the navbar), compact mode activates. */}
   <div class="wave-header__sentinel" data-wave-sentinel></div>
 
-  {/* Sticky bar: sticks below navbar for the full page scroll */}
+  {/* Sticky band: sticks below navbar for the full page scroll */}
   <div class="wave-header__bar">
     <div class="wave-header__breadcrumbs">
       <div class="wave-header__container">
@@ -55,15 +56,6 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       <div class="wave-header__container">
         <slot name="content" />
       </div>
-    </div>
-
-    {/* Wave hangs below the bar via absolute positioning.
-        SVG fills the TOP with warm color, bottom is transparent.
-        Content scrolls behind the wave overhang. */}
-    <div class="wave-header__wave" aria-hidden="true">
-      <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-        <path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
-      </svg>
     </div>
   </div>
 
@@ -184,7 +176,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
   }
 
   /* =========================================================
-   * Expanded (default) state
+   * Expanded (default) state — "band puro"
    * ========================================================= */
   .wave-header {
     position: relative;
@@ -205,9 +197,6 @@ const { paddingTop = 'listing', class: className } = Astro.props;
        (publishNavbarHeight). 80px is a safe fallback before JS hydrates. */
     top: var(--navbar-height, 80px);
     z-index: calc(var(--z-nav, 50) - 1);
-    /* No background here: breadcrumbs + content have their own warm bg.
-       This lets the wave SVG sit on a transparent background so the
-       wavy edge reveals the page bg below. */
   }
 
   .wave-header__container {
@@ -221,7 +210,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
     padding-bottom: 0.75rem;
     overflow: hidden;
     max-height: 80px;
-    background-color: var(--surface-warm);
+    background-color: var(--surface-header);
     /* NOTE: no `opacity` transition. The bar wrapper has no background of its
        own, so fading the breadcrumbs would expose the page behind it during
        the compact transition. `overflow: hidden` + `max-height: 0` already
@@ -233,25 +222,10 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
   .wave-header__content {
     padding-bottom: 1.5rem;
-    background-color: var(--surface-warm);
-    transition: padding 0.3s ease;
-  }
-
-  /* Wave: in flow but with negative margin so content overlaps behind it.
-     SVG fills top with warm color, bottom is transparent.
-     This creates a seamless warm-to-content transition with no white gap. */
-  .wave-header__wave {
-    line-height: 0;
-    position: relative;
-    pointer-events: none;
-    transition: margin-bottom 0.3s ease;
-  }
-
-  .wave-header__wave svg {
-    width: 100%;
-    height: 80px;
-    display: block;
-    transition: height 0.3s ease;
+    background-color: var(--surface-header);
+    transition:
+      padding 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   /* =========================================================
@@ -266,22 +240,13 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
   .wave-header--compact .wave-header__content {
     padding-top: 1.7rem;
-    padding-bottom: 0;
+    padding-bottom: 1.1rem;
     position: relative;
     z-index: 2;
-  }
-
-  .wave-header--compact .wave-header__wave {
-    z-index: 1;
-    margin-bottom: -48px;
-  }
-
-  .wave-header--compact .wave-header__wave svg {
-    height: 48px;
-    margin-top: -10px;
-    /* Match the page canvas so the shadow blends in both themes (was a
-       hardcoded #fff that stayed white in dark mode). */
-    filter: drop-shadow(0px 15px 5px var(--core-background));
+    /* Theme-aware bottom edge: separates the sticky band from the content
+       scrolling underneath it. Derived from the page foreground so it reads in
+       both light and dark (replaces the old wave-SVG drop-shadow). */
+    box-shadow: 0 6px 12px -6px oklch(from var(--core-foreground) l c h / 0.18);
   }
 
   /* =========================================================
@@ -289,9 +254,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    * ========================================================= */
   @media (prefers-reduced-motion: reduce) {
     .wave-header__breadcrumbs,
-    .wave-header__content,
-    .wave-header__wave,
-    .wave-header__wave svg {
+    .wave-header__content {
       transition: none;
     }
   }
