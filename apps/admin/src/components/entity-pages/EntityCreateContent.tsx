@@ -1,3 +1,8 @@
+import { useTranslations } from '@repo/i18n';
+import { LoaderIcon } from '@repo/icons';
+import type { PermissionEnum } from '@repo/schemas';
+import { Suspense, useMemo, useState } from 'react';
+import type { ZodSchema } from 'zod';
 import { EntityFormProvider, EntityFormSection, FormModeEnum } from '@/components/entity-form';
 import { FormSidebarLayout } from '@/components/entity-form/layouts';
 import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
@@ -7,20 +12,15 @@ import { filterSectionsByMode } from '@/components/entity-form/utils/section-fil
 import { unflattenValues } from '@/components/entity-form/utils/unflatten-values.utils';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
+import { useToast } from '@/components/ui/ToastProvider';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
-import { useToast } from '@/components/ui/ToastProvider';
 import { env } from '@/env';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import { useTranslations } from '@repo/i18n';
-import { LoaderIcon } from '@repo/icons';
-import type { PermissionEnum } from '@repo/schemas';
-import { Suspense, useMemo, useState } from 'react';
-import type { ZodSchema } from 'zod';
 
 /**
  * Configuration for an entity create page

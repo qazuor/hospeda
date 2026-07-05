@@ -5,14 +5,14 @@ import {
     DeleteMediaResponseSchema,
     ENTITY_FOLDER_MAP,
     ENTITY_GALLERY_CAPS,
+    getGalleryCap,
     MAX_GALLERY_CAP_FALLBACK,
     MediaEntityTypeSchema,
     MediaRoleSchema,
     ProtectedUploadEntityRequestSchema,
+    resolveMediaFolder,
     UploadResponseDataSchema,
-    UploadResponseSchema,
-    getGalleryCap,
-    resolveMediaFolder
+    UploadResponseSchema
 } from '../media-upload.schema.js';
 
 // ============================================================================
@@ -58,13 +58,16 @@ describe('MediaEntityTypeSchema', () => {
 // ============================================================================
 
 describe('MediaRoleSchema', () => {
-    it.each(['featured', 'gallery', 'avatar', 'sponsorLogo', 'organizerLogo'])(
-        'should accept "%s"',
-        (role) => {
-            const result = MediaRoleSchema.safeParse(role);
-            expect(result.success).toBe(true);
-        }
-    );
+    it.each([
+        'featured',
+        'gallery',
+        'avatar',
+        'sponsorLogo',
+        'organizerLogo'
+    ])('should accept "%s"', (role) => {
+        const result = MediaRoleSchema.safeParse(role);
+        expect(result.success).toBe(true);
+    });
 
     it('should reject an unknown role', () => {
         const result = MediaRoleSchema.safeParse('thumbnail');

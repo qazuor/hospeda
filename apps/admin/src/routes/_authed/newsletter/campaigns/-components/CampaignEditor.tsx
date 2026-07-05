@@ -14,8 +14,15 @@
  * @module CampaignEditor
  */
 
-import { RichTextEditor } from '@/components/newsletter/RichTextEditor';
+import { LoaderIcon } from '@repo/icons';
+import type { NewsletterCampaign } from '@repo/schemas';
+import { NewsletterCampaignLocaleFilterEnum, NewsletterContentTypeEnum } from '@repo/schemas';
+import { renderTiptapContent } from '@repo/utils';
+import { useForm } from '@tanstack/react-form';
+import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TiptapDocument } from '@/components/newsletter/RichTextEditor';
+import { RichTextEditor } from '@/components/newsletter/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,13 +41,6 @@ import {
 } from '@/hooks/newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
-import type { NewsletterCampaign } from '@repo/schemas';
-import { NewsletterCampaignLocaleFilterEnum, NewsletterContentTypeEnum } from '@repo/schemas';
-import { renderTiptapContent } from '@repo/utils';
-import { useForm } from '@tanstack/react-form';
-import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { CampaignPreview } from './CampaignPreview';
 import { SendConfirmDialog } from './SendConfirmDialog';
 
@@ -710,7 +710,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
             </div>
 
             {/* ── Sticky action bar ── */}
-            <div className="-mx-4 sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-border border-t bg-background/95 px-4 py-3 backdrop-blur-sm">
+            <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center justify-between gap-3 border-border border-t bg-background/95 px-4 py-3 backdrop-blur-sm">
                 <div className="flex flex-wrap gap-2">
                     {/* Save draft — visible in create and edit modes */}
                     {!isReadOnly && (

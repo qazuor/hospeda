@@ -13,8 +13,8 @@
  * @module services/plan-upgrade-restoration.deps
  */
 
-import { LimitKey, getPlanBySlug } from '@repo/billing';
 import type { PlanDefinition } from '@repo/billing';
+import { getPlanBySlug, LimitKey } from '@repo/billing';
 import type {
     AccommodationWithArchivedPhotos,
     PlanCaps,

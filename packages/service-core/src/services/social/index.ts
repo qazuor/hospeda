@@ -3,101 +3,102 @@
  *
  * Exports catalog CRUD services for the social publishing feature set.
  */
+
+export {
+    checkCanUpdatePost,
+    checkCanViewPost
+} from './social.permissions';
 export { SocialAudienceService } from './social-audience.service';
-export { SocialCampaignService } from './social-campaign.service';
-export { SocialContentBatchService } from './social-content-batch.service';
-export { SocialHashtagService } from './social-hashtag.service';
-export { SocialHashtagSetService } from './social-hashtag-set.service';
-export { SocialPostFooterService } from './social-post-footer.service';
 export {
-    SocialPlatformFormatService,
-    type PlatformFormatUpdateResult
-} from './social-platform-format.service';
-export {
-    SocialSettingService,
-    type SocialSettingUpdateByKeyResult
-} from './social-setting.service';
-export {
-    SocialImagePipelineService,
-    type GptImagePayload,
-    type OpenAiFileIdRef,
-    type ProcessImageInput,
-    type ProcessImageResult
-} from './social-image-pipeline.service';
-export {
-    SocialDraftIngestionService,
-    type IngestDraftInput,
-    type IngestionResult,
-    type IngestionResultCode,
-    type IngestionSuccessData
-} from './social-draft-ingestion.service';
-export {
-    SocialAuditLogService,
+    type ListAuditLogsFilters,
+    type ListAuditLogsInput,
     SocialAuditEvent,
     type SocialAuditEventType,
     type SocialAuditLogInput,
+    type SocialAuditLogListResult,
     type SocialAuditLogResult,
-    type ListAuditLogsInput,
-    type ListAuditLogsFilters,
-    type SocialAuditLogListResult
+    SocialAuditLogService
 } from './social-audit-log.service';
-export {
-    SocialPostService,
-    type ApprovePostInput,
-    type RejectPostInput,
-    type RequestChangesInput,
-    type SocialPostTransitionData,
-    type SchedulePostInput,
-    type MarkReadyPostInput,
-    type PausePostInput,
-    type UnpausePostInput,
-    type ArchivePostInput,
-    type SocialPostScheduleData,
-    type SocialPostReadyData,
-    type SocialPostPauseData,
-    type SocialPostArchiveData,
-    type ListPostsInput,
-    type ListPostsFilters,
-    type SocialPostListItem,
-    type SocialPostListResult,
-    type GetPostDetailInput,
-    type SocialPostDetail,
-    type UpdatePostInput,
-    type UpdatePostData,
-    type PromoteHashtagInput,
-    type PromoteHashtagData,
-    type ServiceWarning,
-    type GetDashboardInput,
-    type SocialDashboardData,
-    type SocialDashboardKpis,
-    type SocialDashboardQueueItem,
-    type SocialDashboardFailureItem
-} from './social-post.service';
-export {
-    SocialPublishLogService,
-    type ListPublishLogsInput,
-    type ListPublishLogsFilters,
-    type SocialPublishLogListResult
-} from './social-publish-log.service';
-export {
-    checkCanViewPost,
-    checkCanUpdatePost
-} from './social.permissions';
-export {
-    SocialPublishDispatchService,
-    type EligibleTarget,
-    type FindEligibleTargetsResult,
-    type BuildMakePayloadInput,
-    type BuildMakePayloadResult
-} from './social-publish-dispatch.service';
+export { SocialCampaignService } from './social-campaign.service';
+export { SocialContentBatchService } from './social-content-batch.service';
 export {
     DEFAULT_DISPATCH_CRON_CADENCE,
     DISPATCH_CRON_CADENCE_KEY,
     isValidCronExpression,
-    resolveDispatchCronCadence,
-    type ResolveDispatchCronCadenceInput
+    type ResolveDispatchCronCadenceInput,
+    resolveDispatchCronCadence
 } from './social-dispatch-cron-config.util';
 export {
-    SocialPublicDataService,
-    type GetPublicDataInput
+    type IngestDraftInput,
+    type IngestionResult,
+    type IngestionResultCode,
+    type IngestionSuccessData,
+    SocialDraftIngestionService
+} from './social-draft-ingestion.service';
+export { SocialHashtagService } from './social-hashtag.service';
+export { SocialHashtagSetService } from './social-hashtag-set.service';
+export {
+    type GptImagePayload,
+    type OpenAiFileIdRef,
+    type ProcessImageInput,
+    type ProcessImageResult,
+    SocialImagePipelineService
+} from './social-image-pipeline.service';
+export {
+    type PlatformFormatUpdateResult,
+    SocialPlatformFormatService
+} from './social-platform-format.service';
+export {
+    type ApprovePostInput,
+    type ArchivePostInput,
+    type GetDashboardInput,
+    type GetPostDetailInput,
+    type ListPostsFilters,
+    type ListPostsInput,
+    type MarkReadyPostInput,
+    type PausePostInput,
+    type PromoteHashtagData,
+    type PromoteHashtagInput,
+    type RejectPostInput,
+    type RequestChangesInput,
+    type SchedulePostInput,
+    type ServiceWarning,
+    type SocialDashboardData,
+    type SocialDashboardFailureItem,
+    type SocialDashboardKpis,
+    type SocialDashboardQueueItem,
+    type SocialPostArchiveData,
+    type SocialPostDetail,
+    type SocialPostListItem,
+    type SocialPostListResult,
+    type SocialPostPauseData,
+    type SocialPostReadyData,
+    type SocialPostScheduleData,
+    SocialPostService,
+    type SocialPostTransitionData,
+    type UnpausePostInput,
+    type UpdatePostData,
+    type UpdatePostInput
+} from './social-post.service';
+export { SocialPostFooterService } from './social-post-footer.service';
+export {
+    type GetPublicDataInput,
+    SocialPublicDataService
 } from './social-public-data.service';
+export {
+    type BuildMakePayloadInput,
+    type BuildMakePayloadResult,
+    type EligibleTarget,
+    type FindEligibleTargetsResult,
+    SocialPublishDispatchService
+} from './social-publish-dispatch.service';
+export {
+    type ListPublishLogsFilters,
+    type ListPublishLogsInput,
+    type SocialPublishLogListResult,
+    SocialPublishLogService
+} from './social-publish-log.service';
+export {
+    SocialSettingService,
+    type SocialSettingUpdateByKeyResult
+} from './social-setting.service';

@@ -6,11 +6,11 @@
  * Permission-gated Edit + Delete actions (SOCIAL_CAMPAIGN_MANAGE).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialCampaign } from '@repo/schemas';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialCampaign } from '@repo/schemas';
 
 /** Props for {@link CampaignsTable}. */
 export interface CampaignsTableProps {

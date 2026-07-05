@@ -23,7 +23,7 @@
  *     keys missing from `es` (default: warn only).
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const LOCALES_DIR = resolve(import.meta.dirname, '../src/locales');

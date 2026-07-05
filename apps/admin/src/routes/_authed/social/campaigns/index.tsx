@@ -12,16 +12,16 @@
  * Pagination: page + pageSize (admin convention — NOT limit).
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialCampaign } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import type { CatalogListFilters } from '@/hooks/use-social-catalog';
 import { useDeleteSocialCampaign, useSocialCampaignsList } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialCampaign } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { CatalogDeleteConfirm } from '../catalog/-components/CatalogDeleteConfirm';
 import { CampaignFormModal } from './-components/CampaignFormModal';
 import { CampaignsTable } from './-components/CampaignsTable';

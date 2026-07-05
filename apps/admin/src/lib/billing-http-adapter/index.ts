@@ -43,7 +43,7 @@ import type {
     QZPayStorageAdapter
 } from '@qazuor/qzpay-core';
 
-import { type HttpAdapterConfig, billingFetch } from './billing-fetch';
+import { billingFetch, type HttpAdapterConfig } from './billing-fetch';
 
 export type { HttpAdapterConfig } from './billing-fetch';
 

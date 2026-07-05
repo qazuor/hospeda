@@ -5,8 +5,9 @@
  * Follows ADR-034: StyleSheet.create at module scope, design tokens only,
  * no hardcoded hex values.
  */
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
+
 import type { TouchableOpacityProps } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { theme } from '../../design';
 
 // ---------------------------------------------------------------------------

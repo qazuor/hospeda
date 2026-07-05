@@ -12,11 +12,6 @@
  * - Schema validation passes/fails as expected for create and update payloads.
  */
 
-import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { EntityType } from '@/components/table/DataTable';
-import { createGastronomyConsolidatedConfig } from '@/features/gastronomy/config/gastronomy-consolidated.config';
-import { createGastronomyColumns } from '@/features/gastronomy/config/gastronomy.columns';
-import { gastronomyListConfig } from '@/features/gastronomy/config/gastronomy.config';
 import {
     GastronomyAdminCreateInputSchema,
     GastronomyTypeEnum,
@@ -24,6 +19,11 @@ import {
     PriceRangeEnum
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { EntityType } from '@/components/table/DataTable';
+import { createGastronomyColumns } from '@/features/gastronomy/config/gastronomy.columns';
+import { gastronomyListConfig } from '@/features/gastronomy/config/gastronomy.config';
+import { createGastronomyConsolidatedConfig } from '@/features/gastronomy/config/gastronomy-consolidated.config';
 
 /** Minimal translation stub — returns the key as-is. */
 const t = (key: string): string => key;

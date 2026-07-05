@@ -11,8 +11,8 @@
  * @module services/billing-usage
  */
 
-import { getDb, sql } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';

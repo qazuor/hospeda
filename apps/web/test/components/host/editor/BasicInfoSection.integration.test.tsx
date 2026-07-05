@@ -44,10 +44,10 @@
  * verbatim since it already produces correctly-shaped SSE frames.
  */
 
-import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.client';
-import type { BasicInfoSectionProps } from '@/components/host/editor/BasicInfoSection.client';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { BasicInfoSectionProps } from '@/components/host/editor/BasicInfoSection.client';
+import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.client';
 
 // ---------------------------------------------------------------------------
 // Mocks

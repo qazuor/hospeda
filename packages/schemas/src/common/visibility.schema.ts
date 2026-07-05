@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { VisibilityEnum } from '../enums/index.js';
-import { VisibilityEnumSchema } from '../enums/index.js';
+import { VisibilityEnum, VisibilityEnumSchema } from '../enums/index.js';
 
 /**
  * Base visibility fields

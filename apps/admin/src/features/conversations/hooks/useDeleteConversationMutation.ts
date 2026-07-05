@@ -6,8 +6,8 @@
  * Invalidates the list on success.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import { conversationQueryKeys } from './useConversations';
 
 /**

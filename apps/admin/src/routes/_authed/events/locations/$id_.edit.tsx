@@ -1,10 +1,10 @@
+import { EventLocationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventLocationPage } from '@/features/event-locations/hooks/useEventLocationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { EventLocationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /**
  * Event Location Edit Route Configuration

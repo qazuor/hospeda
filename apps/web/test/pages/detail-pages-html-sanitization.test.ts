@@ -16,8 +16,8 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { renderContent } from '@/lib/render-content';
 import { describe, expect, it } from 'vitest';
+import { renderContent } from '@/lib/render-content';
 
 const SRC_DIR = resolve(__dirname, '../../src/pages/[lang]');
 

@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
 import type React from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Props for Progress component
@@ -60,7 +60,6 @@ export const Progress: React.FC<ProgressProps> = ({
                 className
             )}
             role="progressbar"
-            tabIndex={0}
             aria-label={label}
             aria-valuenow={clampedValue}
             aria-valuemin={0}

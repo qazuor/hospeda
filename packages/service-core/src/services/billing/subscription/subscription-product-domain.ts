@@ -20,7 +20,7 @@
  * @module services/billing/subscription/subscription-product-domain
  */
 
-import { type DrizzleClient, billingSubscriptions, eq, getDb } from '@repo/db';
+import { billingSubscriptions, type DrizzleClient, eq, getDb } from '@repo/db';
 
 /**
  * Discount-relevant state for a single subscription, as loaded by

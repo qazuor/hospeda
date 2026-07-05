@@ -8,6 +8,10 @@
  * implemented yet — see `99-future-enhancements.md` §3.2.
  */
 
+import { BellIcon } from '@repo/icons';
+import type { LanguageEnum, ThemeEnum, UserNotifications, UserSettings } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -19,10 +23,6 @@ import {
     useUpdateUserSettings,
     useUserProfile
 } from '@/hooks/use-user-profile';
-import { BellIcon } from '@repo/icons';
-import type { LanguageEnum, ThemeEnum, UserNotifications, UserSettings } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useCallback } from 'react';
 
 export const Route = createFileRoute('/_authed/account/notifications')({
     component: MyNotificationsPage

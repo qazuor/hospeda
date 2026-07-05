@@ -6,8 +6,8 @@ import {
     type EventCreateHttp,
     EventCreateHttpSchema,
     EventProtectedSchema,
-    PermissionEnum,
-    httpToDomainEventCreate
+    httpToDomainEventCreate,
+    PermissionEnum
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { supportsAsyncExtraction } from '../../../src/services/accommodation-import/adapter.types';
 import type {
     ImportContext,
     ImportSourceAdapter,
     RawExtraction
 } from '../../../src/services/accommodation-import/adapter.types';
+import { supportsAsyncExtraction } from '../../../src/services/accommodation-import/adapter.types';
 
 /**
  * Test suite for the HOS-50 (SPEC-277 R3) supportsAsyncExtraction type guard.

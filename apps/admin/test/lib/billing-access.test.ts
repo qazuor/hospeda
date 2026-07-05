@@ -13,9 +13,9 @@
  * SPEC-164 T-006 / AC-8 / AC-9.
  */
 
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AuthState } from '@/lib/auth-session';
 
 // ---------------------------------------------------------------------------
 // Mock @tanstack/react-router's `redirect` BEFORE importing the module under

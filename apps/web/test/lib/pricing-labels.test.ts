@@ -57,18 +57,17 @@ function resolveDiscountLabel({ locale, key }: { locale: string; key: string }):
 describe('PricingSidebar fee labels', () => {
     for (const locale of LOCALES) {
         describe(`locale: ${locale}`, () => {
-            it.each(FEE_KEYS)(
-                'resolves fee key "%s" to a translated string (not the raw key)',
-                (key) => {
-                    const label = resolveFeeLabel({ locale, key });
-                    expect(label).toBeTruthy();
-                    // The translated label should NOT equal the raw camelCase key —
-                    // that would indicate a missing translation fell back to the key.
-                    expect(label).not.toBe(key);
-                    // Must not contain the [MISSING:] sentinel from createT.
-                    expect(label).not.toMatch(/^\[MISSING:/);
-                }
-            );
+            it.each(
+                FEE_KEYS
+            )('resolves fee key "%s" to a translated string (not the raw key)', (key) => {
+                const label = resolveFeeLabel({ locale, key });
+                expect(label).toBeTruthy();
+                // The translated label should NOT equal the raw camelCase key —
+                // that would indicate a missing translation fell back to the key.
+                expect(label).not.toBe(key);
+                // Must not contain the [MISSING:] sentinel from createT.
+                expect(label).not.toMatch(/^\[MISSING:/);
+            });
         });
     }
 });
@@ -76,15 +75,14 @@ describe('PricingSidebar fee labels', () => {
 describe('PricingSidebar discount labels', () => {
     for (const locale of LOCALES) {
         describe(`locale: ${locale}`, () => {
-            it.each(DISCOUNT_KEYS)(
-                'resolves discount key "%s" to a translated string (not the raw key)',
-                (key) => {
-                    const label = resolveDiscountLabel({ locale, key });
-                    expect(label).toBeTruthy();
-                    expect(label).not.toBe(key);
-                    expect(label).not.toMatch(/^\[MISSING:/);
-                }
-            );
+            it.each(
+                DISCOUNT_KEYS
+            )('resolves discount key "%s" to a translated string (not the raw key)', (key) => {
+                const label = resolveDiscountLabel({ locale, key });
+                expect(label).toBeTruthy();
+                expect(label).not.toBe(key);
+                expect(label).not.toMatch(/^\[MISSING:/);
+            });
         });
     }
 });

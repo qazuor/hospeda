@@ -50,8 +50,8 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory.
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
-    type StreamTextChunk,
-    createProtectedStreamingRoute
+    createProtectedStreamingRoute,
+    type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {

@@ -93,12 +93,6 @@ export function LocationPickerField({
         enabled: pendingReverse != null
     });
 
-    useEffect(() => {
-        if (!reverseSuggestion) return;
-        applySuggestion(reverseSuggestion, { keepCoordinates: true });
-        setPendingReverse(null);
-    }, [reverseSuggestion]);
-
     const lat = value.coordinates?.lat ? Number.parseFloat(value.coordinates.lat) : Number.NaN;
     const lng = value.coordinates?.long ? Number.parseFloat(value.coordinates.long) : Number.NaN;
     const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lng);
@@ -123,6 +117,12 @@ export function LocationPickerField({
         },
         [value, onChange]
     );
+
+    useEffect(() => {
+        if (!reverseSuggestion) return;
+        applySuggestion(reverseSuggestion, { keepCoordinates: true });
+        setPendingReverse(null);
+    }, [reverseSuggestion, applySuggestion]);
 
     const handleSelectSuggestion = useCallback(
         (suggestion: GeocodingSuggestion) => {

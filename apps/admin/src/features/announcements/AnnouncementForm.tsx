@@ -11,18 +11,18 @@
  * @module features/announcements/AnnouncementForm
  */
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { useTranslations } from '@/hooks/use-translations';
 import {
     type AnnouncementItem,
     AnnouncementItemSchema,
     type AnnouncementVariant
 } from '@repo/schemas';
 import { useCallback, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/hooks/use-translations';
 
 const VARIANTS: ReadonlyArray<AnnouncementVariant> = ['info', 'warning', 'danger'];
 

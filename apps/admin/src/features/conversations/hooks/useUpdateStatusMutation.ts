@@ -5,8 +5,8 @@
  * Invalidates both the list and the thread on success.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 import type { ConversationStatus } from '../types';
 import { conversationQueryKeys } from './useConversations';
 

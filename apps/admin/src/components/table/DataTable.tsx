@@ -1,16 +1,16 @@
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import {
     type ColumnDef,
-    type SortingState,
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
+    type SortingState,
     useReactTable
 } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { useCallback, useMemo } from 'react';
+import { EmptyState } from '@/components/feedback/EmptyState';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import {
     BadgeCell,
     BooleanCell,

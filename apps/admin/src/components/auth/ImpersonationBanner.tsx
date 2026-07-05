@@ -7,12 +7,12 @@
  * @module ImpersonationBanner
  */
 
-import { useAuthContext } from '@/hooks/use-auth-context';
-import { useTranslations } from '@/hooks/use-translations';
-import { authClient } from '@/lib/auth-client';
 import type { TranslationKey } from '@repo/i18n';
 import { AlertTriangleIcon, CloseIcon } from '@repo/icons';
 import { useCallback, useState } from 'react';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useTranslations } from '@/hooks/use-translations';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Banner shown at the top of the layout when impersonation is active.

@@ -21,14 +21,14 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import type { OwnerPromotionListItem } from '@repo/schemas';
+import { TouristAudienceEnum } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
-import type { OwnerPromotionListItem } from '@repo/schemas';
-import { TouristAudienceEnum } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './ExclusiveDealsList.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -17,8 +17,8 @@
  * @module use-my-billing
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Response shapes (mirrored from host.ts — kept local to decouple from D5)

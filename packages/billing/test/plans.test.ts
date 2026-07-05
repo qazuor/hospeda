@@ -4,16 +4,16 @@ import {
     COMPLEX_BASICO_PLAN,
     COMPLEX_PREMIUM_PLAN,
     COMPLEX_PRO_PLAN,
+    getDefaultPlan,
+    getPlanBySlug,
+    getUnlimitedEntitlements,
     OWNER_BASICO_PLAN,
     OWNER_PREMIUM_PLAN,
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
     TOURIST_PLUS_PLAN,
-    TOURIST_VIP_PLAN,
-    getDefaultPlan,
-    getPlanBySlug,
-    getUnlimitedEntitlements
+    TOURIST_VIP_PLAN
 } from '../src/config/plans.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 import { LimitKey } from '../src/types/plan.types.js';

@@ -91,14 +91,13 @@ export type EventOrganizerGetHttp = z.infer<typeof EventOrganizerGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { EventOrganizerSearchInput } from './eventOrganizer.query.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 import type {
     EventOrganizerCreateInput,
     EventOrganizerUpdateInput
 } from './eventOrganizer.crud.schema.js';
-
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { EventOrganizerSearchInput } from './eventOrganizer.query.schema.js';
 
 /**
  * Convert HTTP event organizer search parameters to domain search schema

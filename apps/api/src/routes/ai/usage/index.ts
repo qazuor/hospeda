@@ -262,10 +262,7 @@ const listUsageByFeatureRoute = createAdminListRoute({
  *
  * @internal
  */
-const sinceUntilRefinePredicate = (v: {
-    since?: Date;
-    until?: Date;
-}): boolean => {
+const sinceUntilRefinePredicate = (v: { since?: Date; until?: Date }): boolean => {
     if (v.since !== undefined && v.until !== undefined) {
         return v.since <= v.until;
     }

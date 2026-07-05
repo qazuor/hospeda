@@ -14,6 +14,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import type { Gastronomy } from '@repo/schemas';
 import {
     GastronomyTypeEnum,
     LifecycleStatusEnum,
@@ -24,7 +25,6 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Gastronomy } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { Actor } from '../../../src/types';

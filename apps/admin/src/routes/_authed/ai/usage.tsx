@@ -15,6 +15,8 @@
  * i18n: all user-facing strings via admin-pages.ai.usage.* (T-018)
  */
 
+import { FilterIcon, RotateCcwIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import type { AiUsageDailySearch } from '@/features/ai-usage';
 import {
     AiUsageByFeatureModelTable,
     AiUsageByFeatureTable,
@@ -36,11 +39,8 @@ import {
     AiUsageFeatureModelChart,
     AiUsageTotalsCard
 } from '@/features/ai-usage';
-import type { AiUsageDailySearch } from '@/features/ai-usage';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireAiAccess } from '@/lib/ai-access';
-import { FilterIcon, RotateCcwIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 // ---------------------------------------------------------------------------
 // Route definition

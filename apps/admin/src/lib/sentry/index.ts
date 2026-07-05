@@ -5,11 +5,11 @@
  */
 
 export {
-    initSentry,
-    isSentryInitialized,
-    setSentryUser,
-    setSentryTags,
     captureError,
     captureMessage,
-    Sentry
+    initSentry,
+    isSentryInitialized,
+    Sentry,
+    setSentryTags,
+    setSentryUser
 } from './sentry.config';

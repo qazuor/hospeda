@@ -12,9 +12,9 @@
  * @module use-views-batch
  */
 
-import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { fetchApi } from '@/lib/api/client';
 
 /** Entity type values accepted by the admin batch endpoint. */
 export type ViewsBatchEntityType = 'ACCOMMODATION' | 'POST' | 'EVENT';

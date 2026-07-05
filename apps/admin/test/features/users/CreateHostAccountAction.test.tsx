@@ -10,13 +10,13 @@
  * @module test/features/users/CreateHostAccountAction
  */
 
-import { CreateHostAccountAction } from '@/features/users/components/CreateHostAccountAction';
-import { useHasPermission } from '@/hooks/use-user-permissions';
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CreateHostAccountAction } from '@/features/users/components/CreateHostAccountAction';
+import { useHasPermission } from '@/hooks/use-user-permissions';
+import { fetchApi } from '@/lib/api/client';
 
 vi.mock('@/hooks/use-user-permissions', () => ({
     useHasPermission: vi.fn()

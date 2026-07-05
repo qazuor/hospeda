@@ -1,7 +1,7 @@
-export { checkConfigDrift, formatDriftReport } from './config-drift-check.js';
 export type {
+    DatabaseState,
     DriftCheckResult,
     DriftItem,
-    DriftSeverity,
-    DatabaseState
+    DriftSeverity
 } from './config-drift-check.js';
+export { checkConfigDrift, formatDriftReport } from './config-drift-check.js';

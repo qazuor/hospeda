@@ -22,17 +22,15 @@
  * References: SPEC-098 T-S06, seedFactory-media-validation.test.ts (pattern)
  */
 
-import { readFileSync } from 'node:fs';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join as pathJoin, resolve } from 'node:path';
-import { join } from 'node:path';
+import { join, join as pathJoin, resolve } from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedUserBookmarkCollections } from '../../src/example/userBookmarkCollections.seed.js';
 import { IdMapper } from '../../src/utils/idMapper.js';
-import { type SeedContext, createImageProcessingCounters } from '../../src/utils/seedContext.js';
+import { createImageProcessingCounters, type SeedContext } from '../../src/utils/seedContext.js';
 import { createSeedFactory } from '../../src/utils/seedFactory.js';
 
 // ---------------------------------------------------------------------------
@@ -289,9 +287,7 @@ let fixtureDir: string;
  * Builds a SeedContext with an IdMapper pre-loaded with all test user mappings.
  * Optionally accepts overrides to simulate missing user mappings.
  */
-function buildContext(options?: {
-    readonly missingUserSeedIds?: readonly string[];
-}): SeedContext {
+function buildContext(options?: { readonly missingUserSeedIds?: readonly string[] }): SeedContext {
     const idMapper = new IdMapper(true /* dontLoadSavedMappings */);
 
     for (const [seedId, realId] of Object.entries(FAKE_USER_IDS)) {

@@ -25,10 +25,10 @@ import { OwnerPromotionUpdateInputSchema } from '../../src/entities/ownerPromoti
 import { PostUpdateInputSchema } from '../../src/entities/post/post.crud.schema.js';
 import { PostUpdateHttpSchema } from '../../src/entities/post/post.http.schema.js';
 import { PostSponsorshipUpdateInputSchema } from '../../src/entities/postSponsorship/postSponsorship.crud.schema.js';
-import { SponsorshipLevelUpdateInputSchema } from '../../src/entities/sponsorship/sponsorship-level.schema.js';
-import { SponsorshipPackageUpdateInputSchema } from '../../src/entities/sponsorship/sponsorship-package.schema.js';
 import { SponsorshipUpdateHttpSchema } from '../../src/entities/sponsorship/sponsorship.http.schema.js';
 import { SponsorshipUpdateInputSchema } from '../../src/entities/sponsorship/sponsorship.schema.js';
+import { SponsorshipLevelUpdateInputSchema } from '../../src/entities/sponsorship/sponsorship-level.schema.js';
+import { SponsorshipPackageUpdateInputSchema } from '../../src/entities/sponsorship/sponsorship-package.schema.js';
 import { UpdatePostTagSchema } from '../../src/entities/tag/post-tag.crud.schema.js';
 import { TagUpdateInputSchema } from '../../src/entities/tag/tag.crud.schema.js';
 import { UserUpdateInputSchema } from '../../src/entities/user/user.crud.schema.js';
@@ -276,18 +276,18 @@ describe('Update/Patch schemas — no default injection (SPEC-217 repo-wide)', (
         expect(CASES).toHaveLength(32);
     });
 
-    it.each(CASES)(
-        '$name parses an empty patch without injecting defaults',
-        ({ schema, defaulted }) => {
-            const result = schema.safeParse({});
-            expect(result.success).toBe(true);
-            if (result.success) {
-                for (const field of defaulted) {
-                    expect(result.data).not.toHaveProperty(field);
-                }
+    it.each(CASES)('$name parses an empty patch without injecting defaults', ({
+        schema,
+        defaulted
+    }) => {
+        const result = schema.safeParse({});
+        expect(result.success).toBe(true);
+        if (result.success) {
+            for (const field of defaulted) {
+                expect(result.data).not.toHaveProperty(field);
             }
         }
-    );
+    });
 
     it.each(CASES)('$name parses an empty patch to an empty object', ({ schema }) => {
         expect(schema.parse({})).toEqual({});

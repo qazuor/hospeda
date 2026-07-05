@@ -77,8 +77,8 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 // ---------------------------------------------------------------------------
 
 import * as contentModeration from '@repo/content-moderation';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { DestinationReview } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';

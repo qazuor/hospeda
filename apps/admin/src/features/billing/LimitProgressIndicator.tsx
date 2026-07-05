@@ -1,9 +1,9 @@
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import type { LimitKey } from '@repo/billing';
 import { CrownIcon } from '@repo/icons';
 import * as React from 'react';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 
 export interface LimitProgressIndicatorProps {
     /** Plan limit key to read from the user's entitlements. */

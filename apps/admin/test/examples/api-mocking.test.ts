@@ -5,7 +5,7 @@
  * Use these patterns when testing components or hooks that make API calls.
  */
 
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import {
     mockData,

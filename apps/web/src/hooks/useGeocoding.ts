@@ -1,4 +1,3 @@
-import { getApiUrl } from '@/lib/env';
 /**
  * @file useGeocoding.ts
  * @description Fetch-based hooks for the protected geocoding proxy (SPEC-208, Phase C PR2).
@@ -10,6 +9,7 @@ import { getApiUrl } from '@/lib/env';
  * - useGeocodingReverse: reverse geocode after pin drop
  */
 import { useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '@/lib/env';
 
 /** Geocoding suggestion shape — matches the API response. */
 export interface GeocodingSuggestion {

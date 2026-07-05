@@ -27,8 +27,7 @@ import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
-import type { ZodObject, ZodRawShape } from 'zod';
-import type { z } from 'zod';
+import type { ZodObject, ZodRawShape, z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,

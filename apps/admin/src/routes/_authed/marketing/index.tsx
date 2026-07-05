@@ -10,11 +10,11 @@
  * its own routes independently.
  */
 
+import { NewsletterIcon, PostIcon } from '@repo/icons';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { NewsletterIcon, PostIcon } from '@repo/icons';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/marketing/')({
     component: MarketingHubPage

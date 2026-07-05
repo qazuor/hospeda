@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    UserBookmarkCollectionSearchHttpSchema,
     httpToDomainUserBookmarkCollectionCreate,
     httpToDomainUserBookmarkCollectionSearch,
-    httpToDomainUserBookmarkCollectionUpdate
+    httpToDomainUserBookmarkCollectionUpdate,
+    UserBookmarkCollectionSearchHttpSchema
 } from '../../../src/entities/userBookmarkCollection/userBookmarkCollection.http.schema.js';
 
 // ---------------------------------------------------------------------------

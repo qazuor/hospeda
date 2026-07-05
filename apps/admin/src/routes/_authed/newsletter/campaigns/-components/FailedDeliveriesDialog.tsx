@@ -9,6 +9,7 @@
  * address (AC-101-11.3). The dialog paginates 20 rows at a time.
  */
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -18,7 +19,6 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { useCampaignErrors } from '@/hooks/newsletter';
-import { useState } from 'react';
 
 export interface FailedDeliveriesDialogProps {
     /** Campaign UUID. */

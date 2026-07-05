@@ -119,16 +119,17 @@ describe('AdminEnvSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it.each(['VITE_SITE_URL', 'VITE_ADMIN_URL', 'HOSPEDA_API_URL'])(
-            'rejects a placeholder %s when the flag is unset',
-            (field) => {
-                delete process.env[FLAG];
-                const result = AdminEnvSchema.safeParse(
-                    createValidEnv({ [field]: 'https://example.invalid' })
-                );
-                expect(result.success).toBe(false);
-            }
-        );
+        it.each([
+            'VITE_SITE_URL',
+            'VITE_ADMIN_URL',
+            'HOSPEDA_API_URL'
+        ])('rejects a placeholder %s when the flag is unset', (field) => {
+            delete process.env[FLAG];
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({ [field]: 'https://example.invalid' })
+            );
+            expect(result.success).toBe(false);
+        });
 
         it('accepts placeholder URLs when ALLOW_PLACEHOLDER_ENV_URLS=true (CI build context)', () => {
             process.env[FLAG] = 'true';

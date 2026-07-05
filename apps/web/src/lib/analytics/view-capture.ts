@@ -34,8 +34,8 @@
  * production pages stay noise-free.
  */
 
-import { isLoggingEnabled } from '@/lib/env';
 import type { TrackableEntityType } from '@repo/schemas';
+import { isLoggingEnabled } from '@/lib/env';
 
 /**
  * Entity types accepted by `POST /api/v1/public/views`.

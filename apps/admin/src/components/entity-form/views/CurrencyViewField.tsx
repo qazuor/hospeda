@@ -1,3 +1,5 @@
+import { formatNumber } from '@repo/i18n';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type {
@@ -7,9 +9,6 @@ import type {
 import { Badge, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { formatNumber } from '@repo/i18n';
-
-import * as React from 'react';
 
 /**
  * Props for CurrencyViewField component

@@ -9,8 +9,9 @@
  * are NOT included in the eager island bundle. The actual implementation lives
  * in `LocationMapInner.client.tsx` which becomes a separate async chunk.
  */
+
+import { lazy, Suspense } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
-import { Suspense, lazy } from 'react';
 import styles from './LocationMap.module.css';
 
 // ---------------------------------------------------------------------------

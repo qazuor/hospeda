@@ -1,3 +1,6 @@
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createElement } from 'react';
 import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
 import {
     type InlineStateOption,
@@ -6,16 +9,13 @@ import {
 import { InlineVerifiedCell } from '@/components/entity-list/InlineVerifiedCell';
 import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
-import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import type {
     ColumnConfig,
     ColumnTFunction,
     CreateColumnsOptions
 } from '@/components/entity-list/types';
+import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
-import { createElement } from 'react';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
 import {
     useAccommodationQuery,

@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    PermissionSearchHttpSchema,
-    httpToDomainPermissionSearch
+    httpToDomainPermissionSearch,
+    PermissionSearchHttpSchema
 } from '../../../src/entities/permission/permission.http.schema.js';
 
 // ---------------------------------------------------------------------------

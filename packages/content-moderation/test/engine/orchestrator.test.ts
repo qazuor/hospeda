@@ -5,19 +5,19 @@ import {
     invalidateModerationCache
 } from '../../src/engine/cache.js';
 import {
-    ModerationOrchestrator,
     getModerationEngineHealth,
+    ModerationOrchestrator,
     registerModerationMonitoringHooks,
     resetModerationEngineHealth,
     setModerationEngineProvider
 } from '../../src/engine/orchestrator.js';
+import type { ModerationProvider } from '../../src/engine/provider.js';
 import {
+    isFallbackEligibleError,
     ProviderError,
     ProviderRateLimitedError,
-    ProviderTimeoutError,
-    isFallbackEligibleError
+    ProviderTimeoutError
 } from '../../src/engine/provider.js';
-import type { ModerationProvider } from '../../src/engine/provider.js';
 
 function createProvider(overrides: Partial<ModerationProvider>): ModerationProvider {
     return {

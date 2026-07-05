@@ -14,13 +14,13 @@
  */
 
 import type { AccommodationModel } from '@repo/db';
+import type { Media, Video } from '@repo/schemas';
 import {
     AccommodationUpdateInputSchema,
     DestinationTypeEnum,
     ModerationStatusEnum
 } from '@repo/schemas';
-import type { Media, Video } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { z } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';

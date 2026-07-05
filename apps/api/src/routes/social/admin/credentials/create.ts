@@ -10,8 +10,8 @@ import { ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getClientIp } from '../../../../middlewares/rate-limit';
 import {
-    SOCIAL_CREDENTIAL_KEYS,
-    createSocialCredential
+    createSocialCredential,
+    SOCIAL_CREDENTIAL_KEYS
 } from '../../../../services/social-credential-vault.service';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createAdminRoute } from '../../../../utils/route-factory';

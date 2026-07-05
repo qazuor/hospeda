@@ -22,8 +22,8 @@
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FavoriteButton } from '../../../../src/components/shared/favorite/FavoriteButton.client';
 import type { FavoriteButtonProps } from '../../../../src/components/shared/favorite/FavoriteButton.client';
+import { FavoriteButton } from '../../../../src/components/shared/favorite/FavoriteButton.client';
 
 // ---------------------------------------------------------------------------
 // Module mocks

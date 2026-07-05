@@ -3,9 +3,10 @@
  *
  * Displays overview cards with system-wide metrics
  */
+
+import { AlertTriangleIcon, TrendingUpIcon, UsersIcon } from '@repo/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { AlertTriangleIcon, TrendingUpIcon, UsersIcon } from '@repo/icons';
 import type { SystemUsageStats } from '../types';
 
 interface SystemStatsCardsProps {

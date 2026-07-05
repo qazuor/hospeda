@@ -99,56 +99,6 @@ export function flattenObject(
 }
 
 // ---------------------------------------------------------------------------
-// Spanish — shared namespaces only
-// ---------------------------------------------------------------------------
-import aboutEs from './locales/es/about.json';
-import accommodationsEs from './locales/es/accommodations.json';
-import accountEs from './locales/es/account.json';
-import aiSearchEs from './locales/es/aiSearch.json';
-import apiEs from './locales/es/api.json';
-import authUiEs from './locales/es/auth-ui.json';
-import benefitsEs from './locales/es/benefits.json';
-import billingEs from './locales/es/billing.json';
-import blogEs from './locales/es/blog.json';
-import commentsEs from './locales/es/comments.json';
-import commerceEs from './locales/es/commerce.json';
-import commonEs from './locales/es/common.json';
-import contactEs from './locales/es/contact.json';
-import contentModerationEs from './locales/es/content-moderation.json';
-import contributionsEs from './locales/es/contributions.json';
-import conversationsEs from './locales/es/conversations.json';
-import cookieConsentEs from './locales/es/cookieConsent.json';
-import destinationEs from './locales/es/destination.json';
-import errorEs from './locales/es/error.json';
-import eventEs from './locales/es/event.json';
-import exchangeRateEs from './locales/es/exchange-rate.json';
-import experienceEs from './locales/es/experience.json';
-import externalReputationEs from './locales/es/external-reputation.json';
-import faqEs from './locales/es/faq.json';
-import fieldsEs from './locales/es/fields.json';
-import footerEs from './locales/es/footer.json';
-import gastronomyEs from './locales/es/gastronomy.json';
-import homeEs from './locales/es/home.json';
-import hostTradesEs from './locales/es/host-trades.json';
-import hostEs from './locales/es/host.json';
-import mapsEs from './locales/es/maps.json';
-import mobileEs from './locales/es/mobile.json';
-import navEs from './locales/es/nav.json';
-import newsletterEs from './locales/es/newsletter.json';
-import notificationsEs from './locales/es/notifications.json';
-import ownersEs from './locales/es/owners.json';
-import pricingEs from './locales/es/pricing.json';
-import privacyEs from './locales/es/privacy.json';
-import revalidationEs from './locales/es/revalidation.json';
-import reviewEs from './locales/es/review.json';
-import searchEs from './locales/es/search.json';
-import socialEs from './locales/es/social.json';
-import tagsEs from './locales/es/tags.json';
-import termsEs from './locales/es/terms.json';
-import uiEs from './locales/es/ui.json';
-import validationEs from './locales/es/validation.json';
-
-// ---------------------------------------------------------------------------
 // English — shared namespaces only
 // ---------------------------------------------------------------------------
 import aboutEn from './locales/en/about.json';
@@ -179,8 +129,8 @@ import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import gastronomyEn from './locales/en/gastronomy.json';
 import homeEn from './locales/en/home.json';
-import hostTradesEn from './locales/en/host-trades.json';
 import hostEn from './locales/en/host.json';
+import hostTradesEn from './locales/en/host-trades.json';
 import mapsEn from './locales/en/maps.json';
 import mobileEn from './locales/en/mobile.json';
 import navEn from './locales/en/nav.json';
@@ -197,6 +147,55 @@ import tagsEn from './locales/en/tags.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
 import validationEn from './locales/en/validation.json';
+// ---------------------------------------------------------------------------
+// Spanish — shared namespaces only
+// ---------------------------------------------------------------------------
+import aboutEs from './locales/es/about.json';
+import accommodationsEs from './locales/es/accommodations.json';
+import accountEs from './locales/es/account.json';
+import aiSearchEs from './locales/es/aiSearch.json';
+import apiEs from './locales/es/api.json';
+import authUiEs from './locales/es/auth-ui.json';
+import benefitsEs from './locales/es/benefits.json';
+import billingEs from './locales/es/billing.json';
+import blogEs from './locales/es/blog.json';
+import commentsEs from './locales/es/comments.json';
+import commerceEs from './locales/es/commerce.json';
+import commonEs from './locales/es/common.json';
+import contactEs from './locales/es/contact.json';
+import contentModerationEs from './locales/es/content-moderation.json';
+import contributionsEs from './locales/es/contributions.json';
+import conversationsEs from './locales/es/conversations.json';
+import cookieConsentEs from './locales/es/cookieConsent.json';
+import destinationEs from './locales/es/destination.json';
+import errorEs from './locales/es/error.json';
+import eventEs from './locales/es/event.json';
+import exchangeRateEs from './locales/es/exchange-rate.json';
+import experienceEs from './locales/es/experience.json';
+import externalReputationEs from './locales/es/external-reputation.json';
+import faqEs from './locales/es/faq.json';
+import fieldsEs from './locales/es/fields.json';
+import footerEs from './locales/es/footer.json';
+import gastronomyEs from './locales/es/gastronomy.json';
+import homeEs from './locales/es/home.json';
+import hostEs from './locales/es/host.json';
+import hostTradesEs from './locales/es/host-trades.json';
+import mapsEs from './locales/es/maps.json';
+import mobileEs from './locales/es/mobile.json';
+import navEs from './locales/es/nav.json';
+import newsletterEs from './locales/es/newsletter.json';
+import notificationsEs from './locales/es/notifications.json';
+import ownersEs from './locales/es/owners.json';
+import pricingEs from './locales/es/pricing.json';
+import privacyEs from './locales/es/privacy.json';
+import revalidationEs from './locales/es/revalidation.json';
+import reviewEs from './locales/es/review.json';
+import searchEs from './locales/es/search.json';
+import socialEs from './locales/es/social.json';
+import tagsEs from './locales/es/tags.json';
+import termsEs from './locales/es/terms.json';
+import uiEs from './locales/es/ui.json';
+import validationEs from './locales/es/validation.json';
 
 // ---------------------------------------------------------------------------
 // Portuguese — shared namespaces only
@@ -229,8 +228,8 @@ import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import gastronomyPt from './locales/pt/gastronomy.json';
 import homePt from './locales/pt/home.json';
-import hostTradesPt from './locales/pt/host-trades.json';
 import hostPt from './locales/pt/host.json';
+import hostTradesPt from './locales/pt/host-trades.json';
 import mapsPt from './locales/pt/maps.json';
 import mobilePt from './locales/pt/mobile.json';
 import navPt from './locales/pt/nav.json';

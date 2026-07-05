@@ -39,9 +39,10 @@
  * `@/lib/env` rather than a bare relative path, or the request would hit
  * the wrong origin.
  */
-import { getApiUrl } from '@/lib/env';
+
 import type { AiTextImprove, AiTextImproveFieldType, LanguageEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '@/lib/env';
 
 // ---------------------------------------------------------------------------
 // Public types

@@ -13,5 +13,5 @@
  *
  * @see SPEC-086 D-001, D-013, D-024
  */
-export { adminPostTagCrudRoutes, adminPostTagAssignmentRoutes } from './admin/index.js';
+export { adminPostTagAssignmentRoutes, adminPostTagCrudRoutes } from './admin/index.js';
 export { publicPostTagRoutes } from './public/index.js';

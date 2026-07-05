@@ -1,6 +1,5 @@
-import type { DrizzleClient } from '@repo/db';
+import type { DrizzleClient, SelectConversationNotificationSchedule } from '@repo/db';
 import { NotificationScheduleModel } from '@repo/db';
-import type { SelectConversationNotificationSchedule } from '@repo/db';
 import { NotificationRecipientSideEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';

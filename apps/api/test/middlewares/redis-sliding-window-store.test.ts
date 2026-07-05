@@ -94,9 +94,9 @@ vi.mock('../../src/utils/env', () => {
 });
 
 import {
-    RedisSlidingWindowStore,
     clearSlidingWindowStore,
     createSlidingWindowPerUserRateLimit,
+    RedisSlidingWindowStore,
     resetRedisSlidingWindowStore
 } from '../../src/middlewares/rate-limit';
 import type { AppBindings } from '../../src/types';

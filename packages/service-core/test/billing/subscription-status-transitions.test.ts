@@ -28,9 +28,9 @@
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
-    InvalidSubscriptionTransitionError,
     checkSubscriptionStatusTransition,
     getAllowedTransitions,
+    InvalidSubscriptionTransitionError,
     validateSubscriptionStatusTransition
 } from '../../src/services/billing/subscription/subscription-status-transitions.js';
 

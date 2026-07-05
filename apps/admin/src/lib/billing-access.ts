@@ -28,9 +28,9 @@
  * @module billing-access
  */
 
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { redirect } from '@tanstack/react-router';
+import type { AuthState } from '@/lib/auth-session';
 
 /**
  * Assert that the given route context includes `BILLING_READ_ALL`.

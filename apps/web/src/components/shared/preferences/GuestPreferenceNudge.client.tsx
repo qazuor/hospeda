@@ -19,8 +19,8 @@
  * via the global toast store. Mount it once per session in the layout.
  */
 
-import { addToast } from '@/store/toast-store';
 import { useEffect } from 'react';
+import { addToast } from '@/store/toast-store';
 
 const THROTTLE_MS = 8000;
 const TOAST_DURATION_MS = 6000;

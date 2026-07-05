@@ -79,7 +79,6 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-delivery.service.js';
 import type {
     BuildCampaignReactElementFn,
     DeliveryBatchPayload,
@@ -88,6 +87,7 @@ import type {
     NewsletterQueue,
     SingleEmailTransport
 } from '../../../src/services/newsletter/newsletter-delivery.service.js';
+import { NewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-delivery.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
 // ---------------------------------------------------------------------------

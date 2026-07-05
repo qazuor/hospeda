@@ -2,8 +2,8 @@
  * Admin update moderation term endpoint (full update)
  */
 import {
-    PermissionEnum,
     contentModerationTermSchema,
+    PermissionEnum,
     updateContentModerationTermSchema
 } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';

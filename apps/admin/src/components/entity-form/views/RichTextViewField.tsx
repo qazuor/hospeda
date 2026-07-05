@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     FieldConfig,
@@ -6,9 +8,6 @@ import type {
 import { Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import DOMPurify from 'dompurify';
-
-import * as React from 'react';
 
 /**
  * Props for RichTextViewField component

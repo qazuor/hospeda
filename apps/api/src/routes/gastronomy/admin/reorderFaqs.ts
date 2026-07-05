@@ -12,7 +12,7 @@ import {
     PermissionEnum,
     SuccessSchema
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, reorderGastronomyFaqs } from '@repo/service-core';
+import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';

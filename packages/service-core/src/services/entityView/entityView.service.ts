@@ -34,15 +34,15 @@
  * @see SPEC-197 §4.2
  */
 
+import type { AccommodationModel } from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
     type DailySeriesRow,
     type EntityViewModel,
-    type HostDailySeriesRow,
-    entityViewModel
+    entityViewModel,
+    type HostDailySeriesRow
 } from '@repo/db';
-import type { AccommodationModel } from '@repo/db';
 import {
     EntityTypeEnum,
     type EntityView,

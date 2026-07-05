@@ -9,10 +9,10 @@
  * Google Places display policy: "Powered by Google" link must appear.
  */
 
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { GoogleIcon, StarIcon } from '@repo/icons';
 import type { ExternalReviewSnippet } from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './ExternalReviews.module.css';
 
 /** Maximum snippets rendered per spec (AC snippet limit). */

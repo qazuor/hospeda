@@ -1,3 +1,7 @@
+import { PermissionEnum, updateContentModerationThresholdSchema } from '@repo/schemas';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,10 +15,6 @@ import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { fetchApi } from '@/lib/api/client';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, updateContentModerationThresholdSchema } from '@repo/schemas';
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/content/moderation-thresholds/')({
     component: ModerationThresholdsPage,

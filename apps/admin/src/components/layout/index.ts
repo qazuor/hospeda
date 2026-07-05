@@ -8,37 +8,30 @@
  * - Level 3: PageTabs (entity detail tabs)
  */
 
+export type { AppLayoutProps } from './AppLayout';
 // Main layouts
 export { AppLayout } from './AppLayout';
-export type { AppLayoutProps } from './AppLayout';
-
-export { BasePageLayout } from './BasePageLayout';
 export type { BasePageLayoutProps, EntityBreadcrumbContext } from './BasePageLayout';
-
-export { MainPageLayout } from './MainPageLayout';
-export type { MainPageLayoutProps } from './MainPageLayout';
-
-export { SidebarPageLayout } from './SidebarPageLayout';
-export type { SidebarPageLayoutProps } from './SidebarPageLayout';
-
+export { BasePageLayout } from './BasePageLayout';
 // Navigation components
 export { Breadcrumbs } from './Breadcrumbs';
-
-// Level 3: Page Tabs
-export { PageTabs } from './PageTabs';
+// Re-export header components
+export * from './header';
+export type { MainPageLayoutProps } from './MainPageLayout';
+export { MainPageLayout } from './MainPageLayout';
 export type { PageTabsProps } from './PageTabs';
-
+// Level 3: Page Tabs
 // Pre-defined tab configurations
 export {
     accommodationTabs,
     destinationTabs,
     eventTabs,
+    PageTabs,
     postTabs,
     userTabs
 } from './PageTabs';
-
-// Re-export header components
-export * from './header';
+export type { SidebarPageLayoutProps } from './SidebarPageLayout';
+export { SidebarPageLayout } from './SidebarPageLayout';
 
 // Re-export sidebar components
 export * from './sidebar';

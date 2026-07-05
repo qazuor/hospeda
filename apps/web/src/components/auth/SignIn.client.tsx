@@ -7,13 +7,13 @@
  * Shows a skeleton while hydrating to prevent layout shift.
  */
 
+import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useState } from 'react';
 import styles from './SignIn.module.css';
 
 /** Props for the SignIn component. */
@@ -258,6 +258,7 @@ export function SignIn({
         return (
             <div
                 className={styles.skeleton}
+                role="status"
                 aria-busy="true"
                 aria-label={t('auth-ui.loading', 'Loading form')}
             >
@@ -322,7 +323,6 @@ export function SignIn({
                     placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
                     required
                     autoComplete="current-password"
-                    aria-required="true"
                     disabled={isLoading}
                 />
             </div>

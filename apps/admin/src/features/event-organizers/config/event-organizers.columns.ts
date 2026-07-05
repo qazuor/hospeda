@@ -1,3 +1,7 @@
+import { EditIcon } from '@repo/icons';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { createElement, Fragment } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import {
     type InlineStateOption,
@@ -5,13 +9,9 @@ import {
 } from '@/components/entity-list/InlineStateSelectCell';
 import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import { SocialNetworksCell } from '@/components/entity-list/SocialNetworksCell';
-import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { EditIcon } from '@repo/icons';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
 import {
     useDeleteEventOrganizerMutation,
     useUpdateEventOrganizerMutation

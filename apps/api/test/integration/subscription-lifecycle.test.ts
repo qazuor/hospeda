@@ -28,11 +28,11 @@
 import {
     ALL_PLANS,
     EntitlementKey,
+    getPlanBySlug,
     LimitKey,
     OWNER_BASICO_PLAN,
     OWNER_PREMIUM_PLAN,
-    OWNER_PRO_PLAN,
-    getPlanBySlug
+    OWNER_PRO_PLAN
 } from '@repo/billing';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app';

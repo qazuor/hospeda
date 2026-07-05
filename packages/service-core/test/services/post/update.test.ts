@@ -7,7 +7,7 @@
  */
 import { PostModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';

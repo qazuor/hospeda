@@ -6,6 +6,7 @@ import { ExchangeRateModel } from '@repo/db';
  */
 import type {
     ExchangeRateConfig,
+    ExchangeRateConfigUpdateInput,
     ExchangeRateCreateInput,
     ExchangeRateSearchInput,
     ExchangeRateSourceEnum,
@@ -22,7 +23,7 @@ import {
     PermissionEnum,
     PriceCurrencyEnumSchema
 } from '@repo/schemas';
-import type { ExchangeRateConfigUpdateInput } from '@repo/schemas';
+import type { FetchAllResult } from '@repo/service-core';
 import {
     DolarApiClient,
     ExchangeRateApiClient,
@@ -31,7 +32,6 @@ import {
     ExchangeRateService,
     ServiceError
 } from '@repo/service-core';
-import type { FetchAllResult } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';

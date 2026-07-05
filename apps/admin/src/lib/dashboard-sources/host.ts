@@ -41,12 +41,12 @@ import {
     computeHostProfileHealth
 } from '@/components/dashboards/widgets/ChecklistWidget';
 import { fetchApi } from '@/lib/api/client';
+import type { ResolverContext } from '@/lib/dashboard-sources';
 import {
-    DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
+    DASHBOARD_STALE_TIME_MS,
     registerDataSource
 } from '@/lib/dashboard-sources';
-import type { ResolverContext } from '@/lib/dashboard-sources';
 import { buildMarketComparisonMetaLines } from '@/lib/dashboard-sources/host-market-comparison-meta';
 import { ApiError } from '@/lib/errors';
 
@@ -625,7 +625,7 @@ registerDataSource('host.reviews.latest', (ctx) => ({
             meta: review.createdAt
                 ? new Date(review.createdAt).toLocaleDateString('es-AR')
                 : undefined,
-            badge: review.rating !== undefined ? String(review.rating) : undefined
+            badge: review.rating === undefined ? undefined : String(review.rating)
         }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS

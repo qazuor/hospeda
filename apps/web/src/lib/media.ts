@@ -13,8 +13,8 @@
  * field entirely. See SPEC-078-GAPS T-049 (GAP-078-064).
  */
 
-import { getMediaUrl } from '@repo/media';
 import type { MediaPreset } from '@repo/media';
+import { getMediaUrl } from '@repo/media';
 
 const DEFAULT_PLACEHOLDER = '/images/placeholder.svg';
 

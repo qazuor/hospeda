@@ -8,8 +8,8 @@
  * @module features/billing-subscriptions/SubscriptionPromoEffectPanel
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
+import { useTranslations } from '@/hooks/use-translations';
 import { formatArs, formatDate } from './utils';
 
 /**
@@ -50,11 +50,11 @@ export function SubscriptionPromoEffectPanel({
     }
 
     const formattedValue =
-        effect.value !== null
-            ? effect.valueKind === 'percentage'
-                ? `${effect.value}%`
-                : formatArs(effect.value / 100, locale)
-            : null;
+        effect.value === null
+            ? null
+            : effect.valueKind === 'percentage'
+              ? `${effect.value}%`
+              : formatArs(effect.value / 100, locale);
 
     const renderMessage = () => {
         if (effect.exhausted) {

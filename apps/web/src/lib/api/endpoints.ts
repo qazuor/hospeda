@@ -267,7 +267,7 @@ export const accommodationsApi = {
     }): Promise<ApiResult<AccommodationPublic[]>> {
         return apiClient.get({
             path: `${BASE}/accommodations/${id}/similar`,
-            params: limit != null ? { limit } : undefined
+            params: limit == null ? undefined : { limit }
         });
     },
 
@@ -305,7 +305,9 @@ export const accommodationsApi = {
      */
     getExternalReputation({
         id
-    }: { readonly id: string }): Promise<ApiResult<ExternalReputationBlock>> {
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<ExternalReputationBlock>> {
         return apiClient.get({ path: `${BASE}/accommodations/${id}/external-reputation` });
     }
 };
@@ -468,7 +470,9 @@ export const destinationsApi = {
     /** Get direct children of a destination */
     getChildren({
         id
-    }: { id: string }): Promise<ApiResult<{ children: readonly DestinationPublic[] }>> {
+    }: {
+        id: string;
+    }): Promise<ApiResult<{ children: readonly DestinationPublic[] }>> {
         return apiClient.get({ path: `${BASE}/destinations/${id}/children` });
     },
 
@@ -526,7 +530,9 @@ export const destinationsApi = {
      */
     getAncestors({
         id
-    }: { readonly id: string }): Promise<ApiResult<readonly DestinationPublic[]>> {
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<readonly DestinationPublic[]>> {
         return apiClient.get({ path: `${BASE}/destinations/${id}/ancestors` });
     },
 
@@ -721,7 +727,9 @@ export const postsApi = {
     /** Get posts by category */
     getByCategory({
         category
-    }: { category: string }): Promise<ApiResult<PaginatedResponse<PostListItem>>> {
+    }: {
+        category: string;
+    }): Promise<ApiResult<PaginatedResponse<PostListItem>>> {
         return apiClient.getList({ path: `${BASE}/posts/category/${category}` });
     },
 
@@ -747,7 +755,9 @@ export const postsApi = {
      */
     getByRelatedDestination({
         destinationId
-    }: { readonly destinationId: string }): Promise<ApiResult<PaginatedResponse<PostListItem>>> {
+    }: {
+        readonly destinationId: string;
+    }): Promise<ApiResult<PaginatedResponse<PostListItem>>> {
         return apiClient.getList({
             path: `${BASE}/posts/related/destination/${destinationId}`
         });
@@ -1009,7 +1019,7 @@ export const searchApi = {
     }): Promise<ApiResult<PublicSearchResponse>> {
         return apiClient.get({
             path: `${BASE}/search`,
-            params: limit != null ? { q, limit } : { q }
+            params: limit == null ? { q } : { q, limit }
         });
     }
 };

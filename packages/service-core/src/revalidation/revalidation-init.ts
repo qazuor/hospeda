@@ -1,7 +1,7 @@
 import { createLogger } from '@repo/logger';
 import { createRevalidationAdapter } from './adapters/adapter-factory.js';
-import { RevalidationService } from './revalidation.service.js';
 import type { EntityResolver, RevalidationServiceConfig } from './revalidation.service.js';
+import { RevalidationService } from './revalidation.service.js';
 
 const logger = createLogger('revalidation-init');
 

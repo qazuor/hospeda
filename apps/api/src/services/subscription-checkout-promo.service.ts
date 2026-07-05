@@ -93,7 +93,7 @@ export async function resolveCheckoutPromoPlan(input: {
         const validationCtx: PromoCodeValidationContext = {
             userId,
             ...(planId ? { planId } : {}),
-            ...(amount !== undefined ? { amount } : {})
+            ...(amount === undefined ? {} : { amount })
         };
         const validationResult = await validatePromoCode(promoCode, validationCtx);
 

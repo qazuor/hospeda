@@ -5,6 +5,7 @@
  * and icon system in place of direct Shadcn imports.
  */
 
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { BaseLayout } from '@/components/layouts/BaseLayout';
 import {
@@ -16,7 +17,6 @@ import {
     CardTitle,
     Input
 } from '@/components/ui-wrapped';
-import { useState } from 'react';
 
 /**
  * Example component showing wrapped components usage

@@ -1,15 +1,3 @@
-import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
-import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
-import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
-import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
-import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
-import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
-import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
-import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
-import { TranslationSection } from '@/features/content/components/TranslationSection';
-import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import {
     AccommodationUpdateInputSchema,
     type AiTextImproveFieldType,
@@ -17,6 +5,18 @@ import {
 } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useMemo, useRef } from 'react';
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
+import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
+import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
+import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
+import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
+import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
+import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
  * Accommodation Edit Route Configuration

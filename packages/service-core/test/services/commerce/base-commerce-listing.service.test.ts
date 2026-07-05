@@ -17,14 +17,14 @@
  */
 
 import { DestinationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 import { z } from 'zod';
-import { BaseCommerceListingService } from '../../../src/services/commerce/base-commerce-listing.service';
 import type {
     CommerceCatalogModel,
     CommerceJunctionModel,
     CommerceListingEntity
 } from '../../../src/services/commerce/base-commerce-listing.service';
+import { BaseCommerceListingService } from '../../../src/services/commerce/base-commerce-listing.service';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -457,7 +457,7 @@ describe('BaseCommerceListingService — junction ID capture (_beforeCreate)', (
         await svc.testBeforeCreate({ name: 'Test', slug: 'test', type: 'RESTAURANT' }, actor, ctx);
 
         // Key is set to undefined (not missing), enabling the three-way contract
-        expect(Object.prototype.hasOwnProperty.call(ctx.hookState, 'pendingAmenityIds')).toBe(true);
+        expect(Object.hasOwn(ctx.hookState, 'pendingAmenityIds')).toBe(true);
         expect(ctx.hookState.pendingAmenityIds).toBeUndefined();
     });
 

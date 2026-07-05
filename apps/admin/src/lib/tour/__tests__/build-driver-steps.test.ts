@@ -17,10 +17,10 @@
  * @see SPEC-174 §7.3
  */
 
-import type { Tour } from '@/config/ia/tour.schema';
-import type { IsPermissionGateGrantedInput } from '@/lib/nav/permission-visibility';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Tour } from '@/config/ia/tour.schema';
+import type { IsPermissionGateGrantedInput } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // Mock isPermissionGateGranted — controls permission outcomes in tests.

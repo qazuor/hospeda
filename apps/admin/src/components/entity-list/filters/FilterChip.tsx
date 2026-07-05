@@ -5,10 +5,10 @@
  * its active value, and an optional "(default)" annotation.
  */
 
-import { Badge } from '@/components/ui-wrapped/Badge';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { CloseIcon } from '@repo/icons';
+import { Badge } from '@/components/ui-wrapped/Badge';
+import { useTranslations } from '@/hooks/use-translations';
 import type { FilterChipData } from './filter-types';
 
 type FilterChipProps = {

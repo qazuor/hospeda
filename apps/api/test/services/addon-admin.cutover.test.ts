@@ -245,38 +245,37 @@ describe('addon.admin cutover parity (SPEC-192 T-009)', () => {
     });
 
     describe('listCustomerAddons — catalog enrichment via AddonCatalogService.list()', () => {
-        it.each(CATALOG_STUBS)(
-            'slug "%s": addonName and priceArs come from DB catalog',
-            async (stub) => {
-                // Arrange — catalog returns all stubs for the list()
-                mockList.mockResolvedValue({ success: true, data: CATALOG_STUBS });
+        it.each(
+            CATALOG_STUBS
+        )('slug "%s": addonName and priceArs come from DB catalog', async (stub) => {
+            // Arrange — catalog returns all stubs for the list()
+            mockList.mockResolvedValue({ success: true, data: CATALOG_STUBS });
 
-                const purchaseRow = buildPurchaseRow(stub.slug);
-                const mockDb = buildListMockDb([purchaseRow]);
-                mockGetDb.mockReturnValue(mockDb);
+            const purchaseRow = buildPurchaseRow(stub.slug);
+            const mockDb = buildListMockDb([purchaseRow]);
+            mockGetDb.mockReturnValue(mockDb);
 
-                // Act
-                const result = await svc.listCustomerAddons({
-                    page: 1,
-                    pageSize: 10,
-                    status: 'all',
-                    includeDeleted: false
-                });
+            // Act
+            const result = await svc.listCustomerAddons({
+                page: 1,
+                pageSize: 10,
+                status: 'all',
+                includeDeleted: false
+            });
 
-                // Assert
-                expect(result.success).toBe(true);
-                if (!result.success) return;
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
 
-                const row = result.data.data[0];
-                expect(row).toBeDefined();
-                if (!row) return;
+            const row = result.data.data[0];
+            expect(row).toBeDefined();
+            if (!row) return;
 
-                // Parity: catalog fields match config values
-                expect(row.addonSlug).toBe(stub.slug);
-                expect(row.addonName).toBe(stub.name);
-                expect(row.priceArs).toBe(stub.priceArs);
-            }
-        );
+            // Parity: catalog fields match config values
+            expect(row.addonSlug).toBe(stub.slug);
+            expect(row.addonName).toBe(stub.name);
+            expect(row.priceArs).toBe(stub.priceArs);
+        });
 
         it('should use null addonName and priceArs when slug is not in DB catalog', async () => {
             // Arrange — catalog returns empty list (slug not found)

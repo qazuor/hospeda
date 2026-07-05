@@ -1,8 +1,8 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
 
 // EntityViewSection pulls in a lot of i18n + table cells; stub it for the
 // shell-level assertions. EntitlementGatedSection is irrelevant when no

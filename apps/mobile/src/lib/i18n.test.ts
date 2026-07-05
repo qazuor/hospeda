@@ -9,7 +9,7 @@ import type { Locale } from '@repo/i18n';
  * behaviour instead.
  */
 import { describe, expect, it } from 'vitest';
-import { LifecycleStatusEnum, appDefaultLocale, getTranslation, supportedLocales } from './i18n';
+import { appDefaultLocale, getTranslation, LifecycleStatusEnum, supportedLocales } from './i18n';
 
 const MISSING_SENTINEL = (key: string): string => `[MISSING: ${key}]`;
 

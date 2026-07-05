@@ -1,3 +1,5 @@
+import { PermissionEnum, UserUpdateInputSchema } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
@@ -10,8 +12,6 @@ import { useUserPage } from '@/features/users/hooks/useUserPage';
 import { useDeleteUserMutation } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum, UserUpdateInputSchema } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 /**
  * User Edit Route Configuration

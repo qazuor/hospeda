@@ -219,7 +219,7 @@ export function buildOgImagePath(input: OgImageUrlInput): string {
 }
 
 function node(type: string, style: Record<string, unknown>, children?: unknown): SatoriNode {
-    return { type, props: { style, ...(children !== undefined ? { children } : {}) } };
+    return { type, props: { style, ...(children === undefined ? {} : { children }) } };
 }
 
 function img(src: string, style: Record<string, unknown>): SatoriNode {

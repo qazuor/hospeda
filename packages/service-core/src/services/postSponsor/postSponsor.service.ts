@@ -1,5 +1,5 @@
 import type { PostSponsorModel } from '@repo/db';
-import { PostSponsorModel as RealPostSponsorModel, or, postSponsors, safeIlike } from '@repo/db';
+import { or, postSponsors, PostSponsorModel as RealPostSponsorModel, safeIlike } from '@repo/db';
 import type {
     PostSponsor,
     PostSponsorCreateInput,

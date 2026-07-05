@@ -142,19 +142,19 @@ function extractFromAggregateRating(raw: JsonLdAggregateRating): {
 } {
     const ratingRaw = raw.ratingValue;
     const rating =
-        ratingRaw !== undefined
-            ? typeof ratingRaw === 'number'
-                ? ratingRaw
-                : Number.parseFloat(String(ratingRaw))
-            : null;
+        ratingRaw === undefined
+            ? null
+            : typeof ratingRaw === 'number'
+              ? ratingRaw
+              : Number.parseFloat(String(ratingRaw));
 
     const countRaw = raw.reviewCount ?? raw.ratingCount;
     const reviewsCount =
-        countRaw !== undefined
-            ? typeof countRaw === 'number'
-                ? countRaw
-                : Number.parseInt(String(countRaw), 10)
-            : null;
+        countRaw === undefined
+            ? null
+            : typeof countRaw === 'number'
+              ? countRaw
+              : Number.parseInt(String(countRaw), 10);
 
     return {
         rating: rating !== null && Number.isFinite(rating) ? rating : null,

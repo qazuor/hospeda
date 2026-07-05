@@ -85,8 +85,8 @@ export function DualRangeFilter({
 }: DualRangeFilterProps) {
     const { t } = createTranslations(locale);
 
-    const currentMin = value.min !== '' ? Number(value.min) : config.min;
-    const currentMax = value.max !== '' ? Number(value.max) : config.max;
+    const currentMin = value.min === '' ? config.min : Number(value.min);
+    const currentMax = value.max === '' ? config.max : Number(value.max);
 
     const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newMin = Math.min(Number(e.target.value), currentMax - (config.step ?? 1));

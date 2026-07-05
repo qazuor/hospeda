@@ -31,8 +31,12 @@
  * @see tech-analysis §4.3 for the 8-step processBatch() flow specification.
  */
 
-import { getDb } from '@repo/db';
-import { newsletterCampaignDeliveries, newsletterCampaigns, newsletterSubscribers } from '@repo/db';
+import {
+    getDb,
+    newsletterCampaignDeliveries,
+    newsletterCampaigns,
+    newsletterSubscribers
+} from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';

@@ -8,8 +8,7 @@
  * Actors with VIEW_ANY bypass the accommodation scope check.
  */
 
-import { AccommodationModel, MessageModel, UserModel, getDb } from '@repo/db';
-import { accommodations } from '@repo/db';
+import { AccommodationModel, accommodations, getDb, MessageModel, UserModel } from '@repo/db';
 import {
     AdminThreadResponseSchema,
     PermissionEnum,

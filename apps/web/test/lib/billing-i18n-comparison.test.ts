@@ -1,6 +1,6 @@
-import { getComparisonGroupLabel, getEntitlementName, getLimitName } from '@/lib/billing-i18n';
-import type { EntitlementKey } from '@/lib/billing-i18n';
 import { describe, expect, it } from 'vitest';
+import type { EntitlementKey } from '@/lib/billing-i18n';
+import { getComparisonGroupLabel, getEntitlementName, getLimitName } from '@/lib/billing-i18n';
 
 function makeTranslator(map: Record<string, string>): (key: string, fallback?: string) => string {
     return (key: string, fallback?: string) => map[key] ?? fallback ?? key;

@@ -1,9 +1,9 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { breadcrumbLabels, breadcrumbSegmentLabels } from '@/lib/breadcrumb-labels';
-import { menuTree } from '@/lib/menu';
 import type { TranslationKey } from '@repo/i18n';
 import { BreadcrumbsIcon } from '@repo/icons';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useTranslations } from '@/hooks/use-translations';
+import { breadcrumbLabels, breadcrumbSegmentLabels } from '@/lib/breadcrumb-labels';
+import { menuTree } from '@/lib/menu';
 
 /**
  * Entity context for breadcrumb customization

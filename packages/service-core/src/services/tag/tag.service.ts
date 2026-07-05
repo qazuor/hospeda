@@ -21,7 +21,7 @@
  * - D-021: Quota default 50, overrideable via HOSPEDA_TAG_USER_QUOTA_PER_USER env var.
  * - D-022: listOwnTags returns all lifecycle states (ACTIVE + INACTIVE + ARCHIVED).
  */
-import { type DrizzleClient, REntityTagModel, TagModel, sql, withTransaction } from '@repo/db';
+import { type DrizzleClient, REntityTagModel, sql, TagModel, withTransaction } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { EntityTag, Tag } from '@repo/schemas';
 import {

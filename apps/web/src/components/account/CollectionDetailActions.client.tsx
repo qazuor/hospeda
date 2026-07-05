@@ -11,12 +11,12 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useState } from 'react';
 import styles from './CollectionDetailActions.module.css';
 import type { CollectionForEdit } from './CreateEditCollectionModal.client';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';

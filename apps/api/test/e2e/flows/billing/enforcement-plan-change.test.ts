@@ -169,9 +169,10 @@ async function expectGatePassed(res: Response): Promise<void> {
 // Mirrors the same pattern used by plan-upgrade.test.ts sub-commit 3.
 // ---------------------------------------------------------------------------
 
-function buildSignedWebhookRequest(opts: {
-    readonly providerPaymentId: string;
-}): { readonly body: string; readonly headers: Record<string, string> } {
+function buildSignedWebhookRequest(opts: { readonly providerPaymentId: string }): {
+    readonly body: string;
+    readonly headers: Record<string, string>;
+} {
     const body = JSON.stringify({
         id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
         type: 'payment',

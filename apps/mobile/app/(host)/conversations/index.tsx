@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import type { ListRenderItemInfo } from 'react-native';
 import {
     ActivityIndicator,
     FlatList,
@@ -8,7 +9,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import type { ListRenderItemInfo } from 'react-native';
 import { theme } from '../../../src/design';
 import {
     type OwnerConversationItem,

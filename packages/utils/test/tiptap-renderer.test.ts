@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type TiptapDocument, renderTiptapContent } from '../src/tiptap-renderer';
+import { renderTiptapContent, type TiptapDocument } from '../src/tiptap-renderer';
 
 describe('renderTiptapContent', () => {
     describe('empty / nullish input', () => {

@@ -14,7 +14,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { server } from '../mocks/server';
 
@@ -37,8 +37,8 @@ import { server } from '../mocks/server';
 // the real hooks and the real API call shape.
 // ---------------------------------------------------------------------------
 
-import { useAiPromptsQuery, useCreateAiPromptMutation } from '@/features/ai-settings';
 import { useEffect, useState } from 'react';
+import { useAiPromptsQuery, useCreateAiPromptMutation } from '@/features/ai-settings';
 
 // ---------------------------------------------------------------------------
 // Harness component (mirrors FeaturePromptEditor logic)

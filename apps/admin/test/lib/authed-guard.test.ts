@@ -5,9 +5,9 @@
  * branches without spinning up TanStack Router or mocking `redirect()`.
  */
 
-import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import type { AuthState } from '@/lib/auth-session';
 import { decideAuthedGuard } from '../../src/lib/authed-guard';
 
 const SITE_URL = 'https://hospeda.com.ar';

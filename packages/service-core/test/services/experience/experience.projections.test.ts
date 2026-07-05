@@ -12,6 +12,7 @@
  * Pure function tests — no DB, no service instances.
  */
 
+import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
@@ -19,7 +20,6 @@ import {
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Experience } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectExperienceOwnerAvatar,

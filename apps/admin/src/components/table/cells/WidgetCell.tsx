@@ -1,6 +1,6 @@
+import type { ReactNode } from 'react';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
-import type { ReactNode } from 'react';
 
 type WidgetCellProps<TData> = {
     readonly row: TData;

@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { CreateHostAccountAction } from '../components/CreateHostAccountAction';
 import { type User, UserListItemWithComputedFieldsSchema } from '../schemas/users.schemas';
 import { createUsersColumns } from './users.columns';
@@ -187,4 +187,5 @@ export const usersConfig: EntityConfig<User> = {
 };
 
 const { component, route } = createEntityListPage(usersConfig);
+
 export { component as UsersPageComponent, route as UsersRoute };

@@ -33,8 +33,8 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import {
-    type SocialCredentialKey,
-    getDecryptedSocialCredential
+    getDecryptedSocialCredential,
+    type SocialCredentialKey
 } from '../../../src/services/social-credential-vault.service';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';

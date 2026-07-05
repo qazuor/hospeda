@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { WeatherCondition } from '../../../src/components/destination/weather-icons';
 import {
     getWeatherConditionKey,
     getWeatherIcon
 } from '../../../src/components/destination/weather-icons';
-import type { WeatherCondition } from '../../../src/components/destination/weather-icons';
 
 const ALL_CONDITIONS: ReadonlyArray<WeatherCondition> = [
     'clear',

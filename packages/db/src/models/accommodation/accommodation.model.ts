@@ -1248,14 +1248,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 accommodationType: row.accommodationType as string,
                 destinationId: row.destinationId,
                 destinationName: row.destinationName ?? null,
-                yourRating: row.yourRating !== null ? Number(row.yourRating) : null,
+                yourRating: row.yourRating === null ? null : Number(row.yourRating),
                 yourReviews: Number(row.yourReviews ?? 0),
                 destinationAvgRating:
-                    row.destinationAvgRating !== null ? Number(row.destinationAvgRating) : null,
+                    row.destinationAvgRating === null ? null : Number(row.destinationAvgRating),
                 destinationReviewsTotal: Number(row.destinationReviewsTotal ?? 0),
-                yourPrice: row.yourPrice !== null ? Number(row.yourPrice) : null,
+                yourPrice: row.yourPrice === null ? null : Number(row.yourPrice),
                 destinationAvgPrice:
-                    row.destinationAvgPrice !== null ? Number(row.destinationAvgPrice) : null
+                    row.destinationAvgPrice === null ? null : Number(row.destinationAvgPrice)
             }));
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

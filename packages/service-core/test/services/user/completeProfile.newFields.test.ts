@@ -9,7 +9,7 @@
 
 import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';

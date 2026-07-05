@@ -1,6 +1,6 @@
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import {
-    UserModel,
     accounts,
     and,
     billingAddonPurchases,
@@ -9,9 +9,9 @@ import {
     billingSubscriptions,
     eq,
     getDb,
-    sql
+    sql,
+    UserModel
 } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { hash } from 'bcryptjs';

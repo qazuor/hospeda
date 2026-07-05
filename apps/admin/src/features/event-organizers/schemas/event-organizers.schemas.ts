@@ -9,11 +9,10 @@
  */
 
 // Re-export base schemas - no admin extensions needed
-export {
-    EventOrganizerListItemSchema,
-    type EventOrganizer,
-    type EventOrganizerListItem
-} from '@repo/schemas';
-
 // Client schema is identical to base - re-export for compatibility
-export { EventOrganizerListItemSchema as EventOrganizerListItemClientSchema } from '@repo/schemas';
+export {
+    type EventOrganizer,
+    type EventOrganizerListItem,
+    EventOrganizerListItemSchema,
+    EventOrganizerListItemSchema as EventOrganizerListItemClientSchema
+} from '@repo/schemas';

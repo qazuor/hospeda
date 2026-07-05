@@ -16,10 +16,11 @@
  * - Success shows pendingNotice (review starts PENDING moderation).
  * - 409 ALREADY_EXISTS → specific "alreadyReviewed" copy.
  */
+
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { DestinationReviewRatingFields } from './DestinationReviewRatingFields';
 import styles from './DestinationReviewSidebarCard.module.css';
 import {

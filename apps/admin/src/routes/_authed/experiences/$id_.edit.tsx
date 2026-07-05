@@ -7,6 +7,8 @@
  * Mirrors the gastronomy edit page pattern (SPEC-240 T-028).
  */
 
+import { ExperienceUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -15,8 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrappe
 import { useExperiencePage } from '@/features/experience';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { ExperienceUpdateInputSchema, PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
 
 /** Route configuration for the experience edit page. */
 export const Route = createFileRoute('/_authed/experiences/$id_/edit')({

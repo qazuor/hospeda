@@ -11,9 +11,9 @@
  * rotation/queue UI (SPEC-309 OQ-4).
  */
 
+import { useCallback, useEffect, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useState } from 'react';
 import styles from './FeaturedToggleSection.module.css';
 
 // ---------------------------------------------------------------------------

@@ -1,10 +1,10 @@
+import { TagsIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityAttributionList } from '@/components/tags/EntityAttributionList';
 import { useEntityAttribution } from '@/hooks/use-entity-attribution';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { TagsIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/tags/entity-attribution/$type/$id')({
     component: EntityAttributionPage,

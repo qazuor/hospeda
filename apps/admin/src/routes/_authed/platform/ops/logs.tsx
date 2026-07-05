@@ -9,9 +9,10 @@
  *
  * Auth guard: requireAdminApiAccess — identical to the original route.
  */
+
+import { createFileRoute } from '@tanstack/react-router';
 import { AppLogsPageComponent, AppLogsRoute } from '@/features/app-logs/config/app-logs.config';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/logs')({
     // Mirror the validateSearch from the factory route (same pattern as

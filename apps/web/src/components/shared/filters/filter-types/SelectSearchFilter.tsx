@@ -4,10 +4,10 @@
  * selected chips, and "show more/less" collapse for large option sets.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './SelectSearchFilter.module.css';
 
 /** Configuration for a select-search filter group. */
@@ -70,8 +70,10 @@ export function SelectSearchFilter({ config, value, onChange, locale }: SelectSe
     return (
         <div className={styles.selectSearch}>
             {selectedOptions.length > 0 && (
+                // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the selected-option chip buttons; a real <fieldset> would inherit user-agent border/padding/margin that fight this chip row layout
                 <div
                     className={styles.selectSearchChips}
+                    role="group"
                     aria-label={t('ui.filter.selected', 'seleccionados')}
                 >
                     {selectedOptions.map((opt) => (

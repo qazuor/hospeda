@@ -42,8 +42,8 @@
  * @module services/accommodation/sync-featured-by-entitlement
  */
 
-import { accommodations, and, eq, getDb, isNull } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { accommodations, and, eq, getDb, isNull } from '@repo/db';
 import { notInArray } from 'drizzle-orm';
 import type { EntityChangeData } from '../../revalidation/entity-path-mapper.js';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';

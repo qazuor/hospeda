@@ -28,15 +28,13 @@
  * @module test/integration/models
  */
 
-import { AiFeatureSchema, AiProviderIdSchema } from '@repo/schemas';
 import type { AiFeatureConfig } from '@repo/schemas';
+import { AiFeatureSchema, AiProviderIdSchema } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAiEngine } from '../../src/engine/index.js';
 import type { AiEngineEvent } from '../../src/engine/index.js';
+import { createAiEngine } from '../../src/engine/index.js';
 import type { AiProvider } from '../../src/providers/ai-provider.interface.js';
-import { AnthropicAdapter } from '../../src/providers/index.js';
-import { OpenAiAdapter } from '../../src/providers/index.js';
-import { StubProvider } from '../../src/providers/index.js';
+import { AnthropicAdapter, OpenAiAdapter, StubProvider } from '../../src/providers/index.js';
 import { calculateCostMicroUsd } from '../../src/usage/cost-calculator.js';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
 

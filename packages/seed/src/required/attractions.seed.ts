@@ -1,6 +1,6 @@
 import { AttractionService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { STATUS_ICONS, createSeedFactory } from '../utils/index.js';
+import { createSeedFactory, STATUS_ICONS } from '../utils/index.js';
 
 /**
  * Seed factory for attractions

@@ -34,13 +34,12 @@ describe('resolvePostCategorySlug', () => {
         expect(resolvePostCategorySlug({ slug })).toBe(value);
     });
 
-    it.each(enumValues)(
-        'resolves UPPERCASE slug for %s (case-insensitive)',
-        (value: PostCategoryEnum) => {
-            // The enum value itself is already uppercase — pass it directly.
-            expect(resolvePostCategorySlug({ slug: value })).toBe(value);
-        }
-    );
+    it.each(
+        enumValues
+    )('resolves UPPERCASE slug for %s (case-insensitive)', (value: PostCategoryEnum) => {
+        // The enum value itself is already uppercase — pass it directly.
+        expect(resolvePostCategorySlug({ slug: value })).toBe(value);
+    });
 
     it('returns undefined for an unknown slug', () => {
         expect(resolvePostCategorySlug({ slug: 'unknown' })).toBeUndefined();

@@ -32,6 +32,8 @@ import {
     success,
     warning
 } from './colors';
+// Barrel (index.ts)
+import * as design from './index';
 import {
     radius,
     base as radiusBase,
@@ -49,9 +51,6 @@ import {
     semanticSize,
     typography
 } from './typography';
-
-// Barrel (index.ts)
-import * as design from './index';
 
 // ---------------------------------------------------------------------------
 // Helpers

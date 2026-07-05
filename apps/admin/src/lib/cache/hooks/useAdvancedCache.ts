@@ -1,21 +1,21 @@
-import { adminLogger } from '@/utils/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
+import { adminLogger } from '@/utils/logger';
 import {
     type CacheWarmingManager,
-    type WarmingContext,
-    getWarmingManager
+    getWarmingManager,
+    type WarmingContext
 } from '../strategies/cacheWarming';
 import {
     type CacheStats,
+    getMemoryManager,
     type MemoryOptimizationConfig,
-    type MemoryOptimizationManager,
-    getMemoryManager
+    type MemoryOptimizationManager
 } from '../strategies/memoryOptimization';
 import {
+    getInvalidationManager,
     type InvalidationContext,
-    type SmartInvalidationManager,
-    getInvalidationManager
+    type SmartInvalidationManager
 } from '../strategies/smartInvalidation';
 
 /**

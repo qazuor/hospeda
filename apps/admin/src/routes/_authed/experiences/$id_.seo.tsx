@@ -1,10 +1,10 @@
-import { PageTabs, experienceTabs } from '@/components/layout/PageTabs';
+import { createFileRoute } from '@tanstack/react-router';
+import { experienceTabs, PageTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
-import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
+import { buildSeoPreviewUrl, SEO_DEFAULT_LOCALE } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
 import { useExperienceQuery, useUpdateExperienceMutation } from '@/features/experience';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/experiences/$id_/seo')({
     component: ExperienceSeoPage

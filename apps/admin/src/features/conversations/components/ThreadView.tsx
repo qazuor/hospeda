@@ -8,9 +8,9 @@
  * Auto-scrolls to bottom on first load and when new owner messages arrive.
  */
 
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import { useEffect, useRef, useState } from 'react';
 import { useConversation } from '../hooks/useConversation';
 import type { MessageWithSender } from '../types';
 import { MessageBubble } from './MessageBubble';

@@ -55,10 +55,7 @@ Object.defineProperty(window, 'matchMedia', {
 // dialogRef.current.showModal() and dialogRef.current.close() directly.
 // ---------------------------------------------------------------------------
 
-if (typeof HTMLDialogElement !== 'undefined') {
-    HTMLDialogElement.prototype.showModal = vi.fn();
-    HTMLDialogElement.prototype.close = vi.fn();
-} else {
+if (typeof HTMLDialogElement === 'undefined') {
     // jsdom may not define HTMLDialogElement at all in some versions
     Object.defineProperty(globalThis, 'HTMLDialogElement', {
         writable: true,
@@ -67,6 +64,9 @@ if (typeof HTMLDialogElement !== 'undefined') {
             close = vi.fn();
         }
     });
+} else {
+    HTMLDialogElement.prototype.showModal = vi.fn();
+    HTMLDialogElement.prototype.close = vi.fn();
 }
 
 // ---------------------------------------------------------------------------

@@ -13,6 +13,10 @@
  * mutation's onSuccess invalidates the list query cache.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import type { EntityCommentAdminItem } from '@repo/schemas';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,10 +28,6 @@ import {
     useSoftDeleteComment
 } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import type { EntityCommentAdminItem } from '@repo/schemas';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 import { ModerationStateBadge } from './ModerationStateBadge';
 
 /** Props for {@link CommentDetailPanel}. */

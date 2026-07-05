@@ -3,11 +3,11 @@
  */
 
 export {
-    EntityViewContext,
-    useEntityViewContext,
     type EntityViewActions,
+    EntityViewContext,
     type EntityViewContextValue,
     type EntityViewProviderProps,
     type EntityViewState,
+    useEntityViewContext,
     type ViewDisplayMode
 } from './EntityViewContext';

@@ -22,11 +22,13 @@
  * before marking T-020 as completed in the spec tracker.
  */
 
-import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import type { FilterSidebarProps } from '@/components/shared/filters/FilterSidebar.client';
-import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import type {
+    FilterGroup,
+    FilterSidebarProps
+} from '@/components/shared/filters/FilterSidebar.client';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 
 // ---------------------------------------------------------------------------
 // Browser API mocks (jsdom does not implement these by default)

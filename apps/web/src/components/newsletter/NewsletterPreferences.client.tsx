@@ -25,11 +25,11 @@
  * All copy comes from `account.newsletter.*` keys via `@repo/i18n`.
  */
 
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { NewsletterContentTypeToggles } from './NewsletterContentTypeToggles.client';
 import styles from './NewsletterPreferences.module.css';
 import { NewsletterStatusBadge } from './NewsletterStatusBadge';

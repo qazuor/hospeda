@@ -11,9 +11,8 @@
  * @module ai-core/storage/settings
  */
 
+import type { DrizzleClient, SelectAiSettings } from '@repo/db';
 import { aiSettings, eq, getDb } from '@repo/db';
-import type { DrizzleClient } from '@repo/db';
-import type { SelectAiSettings } from '@repo/db';
 import { AiSettingsKeySchema, type AiSettingsValue, AiSettingsValueSchema } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------

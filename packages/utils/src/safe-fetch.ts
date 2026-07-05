@@ -36,8 +36,8 @@
  */
 
 import { lookup } from 'node:dns/promises';
-import { Agent, request as undiciRequest } from 'undici';
 import type { Dispatcher } from 'undici';
+import { Agent, request as undiciRequest } from 'undici';
 import { isBlockedAddress } from './safe-fetch-ip';
 
 // ---------------------------------------------------------------------------

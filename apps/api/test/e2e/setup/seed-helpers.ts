@@ -1,12 +1,12 @@
 import {
-    DestinationModel,
-    type DrizzleClient,
-    UserModel,
     and,
     billingPlans,
     billingPrices,
+    DestinationModel,
+    type DrizzleClient,
     eq,
-    getDb
+    getDb,
+    UserModel
 } from '@repo/db';
 import type { Destination, RoleEnum, User } from '@repo/schemas';
 

@@ -44,6 +44,7 @@ export function SocialPostPlatformIcons({ platforms }: SocialPostPlatformIconsPr
                 return (
                     <span
                         key={platform}
+                        role="img"
                         aria-label={label}
                         title={label}
                         className="text-muted-foreground"

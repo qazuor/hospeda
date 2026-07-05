@@ -6,17 +6,17 @@
  * the existing mocked tests under `test/integration/`.
  */
 import {
-    events,
-    type DrizzleClient,
     accommodationReviews,
     accommodations,
     commerceLeads,
     commerceListingSubscriptions,
+    type DrizzleClient,
     destinationReviews,
     destinations,
     eq,
     eventLocations,
     eventOrganizers,
+    events,
     gastronomies,
     gastronomyReviews,
     ownerPromotions,

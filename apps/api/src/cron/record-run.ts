@@ -54,13 +54,13 @@ export const recordCronRun = async (input: {
         let status: 'success' | 'failed' | 'timeout';
         let errorMessage: string | null = null;
 
-        if (input.error !== undefined) {
+        if (input.error === undefined) {
+            status = input.result?.success ? 'success' : 'failed';
+        } else {
             const message =
                 input.error instanceof Error ? input.error.message : String(input.error);
             status = message.toLowerCase().includes(TIMEOUT_MARKER) ? 'timeout' : 'failed';
             errorMessage = message;
-        } else {
-            status = input.result?.success ? 'success' : 'failed';
         }
 
         await cronRunService.recordRun({

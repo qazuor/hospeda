@@ -20,13 +20,13 @@
  * before mounting this component.
  */
 
+import type { SentryFeedbackBridgePayload } from '@repo/feedback';
 import {
     FeedbackModal,
     installRuntimeTrackers,
     useConsoleCapture,
     useKeyboardShortcut
 } from '@repo/feedback';
-import type { SentryFeedbackBridgePayload } from '@repo/feedback';
 import * as Sentry from '@sentry/react';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';

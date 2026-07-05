@@ -6,6 +6,9 @@
  * restrictions are selected from the real billing plans (plan IDs), not
  * hard-coded categories.
  */
+
+import { PromoEffectSchema } from '@repo/schemas';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -27,15 +30,13 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { usePlansQuery } from '@/features/billing-plans';
 import {
+    buildEffect,
     type CreatePromoCodePayload,
     type DiscountType,
     type EffectKind,
-    type PromoCode,
-    buildEffect
+    type PromoCode
 } from '@/features/promo-codes';
 import { useTranslations } from '@/hooks/use-translations';
-import { PromoEffectSchema } from '@repo/schemas';
-import { useState } from 'react';
 
 interface PromoCodeFormDialogProps {
     readonly promoCode: PromoCode | null;

@@ -8,14 +8,14 @@
 import { DestinationModel } from '@repo/db';
 import type { DestinationUpdateInput } from '@repo/schemas';
 import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as destinationHelpers from '../../../src/services/destination/destination.helpers';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import {
-    DestinationFactoryBuilder,
-    createMockDestinationCreateInput
+    createMockDestinationCreateInput,
+    DestinationFactoryBuilder
 } from '../../factories/destinationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {

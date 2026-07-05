@@ -7,11 +7,11 @@
  * Permission-gated Edit action only (SOCIAL_PLATFORM_MANAGE). No delete, no create.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialPlatformFormat } from '@repo/schemas';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialPlatformFormat } from '@repo/schemas';
 
 /** Props for {@link PlatformFormatsTable}. */
 export interface PlatformFormatsTableProps {

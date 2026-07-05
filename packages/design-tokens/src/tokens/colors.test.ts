@@ -7,8 +7,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    type OKLCH,
-    SHADES,
     accent,
     accommodationTypePalettes,
     avatarGradients,
@@ -24,11 +22,13 @@ import {
     formatOKLCH,
     info,
     neutral,
+    type OKLCH,
     palettes,
     purple,
     ratingStar,
     river,
     rose,
+    SHADES,
     sand,
     semanticPalettes,
     sky,

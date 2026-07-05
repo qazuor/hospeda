@@ -199,7 +199,7 @@ function mapMlItemToRawExtraction(item: MlItem): RawExtraction {
     // -- price ----------------------------------------------------------------
     if (item.price != null || item.currency_id) {
         result.price = {
-            ...(item.price != null ? { price: { value: item.price, source: 'official_api' } } : {}),
+            ...(item.price == null ? {} : { price: { value: item.price, source: 'official_api' } }),
             ...(item.currency_id
                 ? { currency: { value: item.currency_id, source: 'official_api' } }
                 : {})
@@ -259,15 +259,15 @@ function mapMlItemToRawExtraction(item: MlItem): RawExtraction {
         const hasExtra = bedrooms !== null || bathrooms !== null || capacity !== null;
         if (hasExtra) {
             result.extraInfo = {
-                ...(bedrooms !== null
-                    ? { bedrooms: { value: bedrooms, source: 'official_api' } }
-                    : {}),
-                ...(bathrooms !== null
-                    ? { bathrooms: { value: bathrooms, source: 'official_api' } }
-                    : {}),
-                ...(capacity !== null
-                    ? { capacity: { value: capacity, source: 'official_api' } }
-                    : {})
+                ...(bedrooms === null
+                    ? {}
+                    : { bedrooms: { value: bedrooms, source: 'official_api' } }),
+                ...(bathrooms === null
+                    ? {}
+                    : { bathrooms: { value: bathrooms, source: 'official_api' } }),
+                ...(capacity === null
+                    ? {}
+                    : { capacity: { value: capacity, source: 'official_api' } })
             };
         }
     }

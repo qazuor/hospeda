@@ -13,17 +13,7 @@
  * } from '@repo/feedback/schemas';
  * ```
  */
-export {
-    APP_SOURCE_IDS,
-    COLOR_SCHEME_IDS,
-    DEVICE_TYPE_IDS,
-    REPORT_TYPE_IDS,
-    SEVERITY_IDS,
-    feedbackEnvironmentSchema,
-    feedbackErrorInfoSchema,
-    feedbackFormSchema,
-    feedbackInteractionSchema
-} from '@repo/schemas';
+
 export type {
     AppSourceId,
     ColorSchemeId,
@@ -34,4 +24,15 @@ export type {
     FeedbackInteraction,
     ReportTypeId,
     SeverityId
+} from '@repo/schemas';
+export {
+    APP_SOURCE_IDS,
+    COLOR_SCHEME_IDS,
+    DEVICE_TYPE_IDS,
+    feedbackEnvironmentSchema,
+    feedbackErrorInfoSchema,
+    feedbackFormSchema,
+    feedbackInteractionSchema,
+    REPORT_TYPE_IDS,
+    SEVERITY_IDS
 } from '@repo/schemas';

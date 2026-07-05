@@ -1,7 +1,8 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CacheEntry, ImageCache } from '../../src/utils/cloudinary-cache.js';
 import {
     CLOUDINARY_CACHE_VERSION,
     deleteCache,
@@ -12,7 +13,6 @@ import {
     validateCacheEntries,
     writeCache
 } from '../../src/utils/cloudinary-cache.js';
-import type { CacheEntry, ImageCache } from '../../src/utils/cloudinary-cache.js';
 import { logger } from '../../src/utils/logger.js';
 
 // ---------------------------------------------------------------------------

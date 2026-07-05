@@ -11,15 +11,15 @@
  * via Astro View Transitions. No apply button required.
  */
 
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import styles from './FilterSidebar.module.css';
 import { FilterGroup } from './components/FilterGroup';
 import { MobileDrawer } from './components/MobileDrawer';
 import { SectionHeader } from './components/SectionHeader';
 import { SortPopover } from './components/SortPopover';
+import styles from './FilterSidebar.module.css';
 import {
     buildParamsFromState,
     computeInitialCollapsed,
@@ -201,6 +201,7 @@ function SidebarPanel({
                         {activeCount > 0 && (
                             <span
                                 className={styles.titleBadge}
+                                role="img"
                                 aria-label={
                                     activeCount === 1
                                         ? t(
@@ -496,17 +497,6 @@ export function FilterSidebar({
                 {activeCount > 0 && (
                     <span
                         className={styles.floatingBadge}
-                        aria-label={
-                            activeCount === 1
-                                ? t(
-                                      'ui.filter.activeCount',
-                                      `${activeCount} filtro activo`
-                                  ).replace('{{count}}', String(activeCount))
-                                : t(
-                                      'ui.filter.activeCountPlural',
-                                      `${activeCount} filtros activos`
-                                  ).replace('{{count}}', String(activeCount))
-                        }
                         aria-hidden="true"
                     >
                         {activeCount}

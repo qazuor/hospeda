@@ -14,11 +14,11 @@
  * is only meaningful after the user reads the surrounding copy.
  */
 
+import { useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useId, useState } from 'react';
 import styles from './NewsletterResendButton.module.css';
 
 const COOLDOWN_SECONDS = 60;

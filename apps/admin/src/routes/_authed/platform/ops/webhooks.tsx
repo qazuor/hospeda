@@ -3,23 +3,7 @@
  *
  * Displays webhook events with filtering, detail view, and dead letter queue management.
  */
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useToast } from '@/components/ui/ToastProvider';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-    type WebhookEvent,
-    type WebhookEventStatus,
-    type WebhookEventType,
-    useDeadLetterEventsQuery,
-    useRetryWebhookEventMutation,
-    useWebhookEventsQuery
-} from '@/features/billing-webhook-events';
-import { useTranslations } from '@/hooks/use-translations';
-import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { formatDateWithSeconds } from '@/lib/format-helpers';
+
 import {
     AlertCircleIcon,
     CalendarIcon,
@@ -30,13 +14,29 @@ import {
 } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/ToastProvider';
 import {
-    WebhookEventDetailDialog,
+    useDeadLetterEventsQuery,
+    useRetryWebhookEventMutation,
+    useWebhookEventsQuery,
+    type WebhookEvent,
+    type WebhookEventStatus,
+    type WebhookEventType
+} from '@/features/billing-webhook-events';
+import {
     getStatusLabel,
     getStatusVariant,
-    getTypeLabel
+    getTypeLabel,
+    WebhookEventDetailDialog
 } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
+import { useTranslations } from '@/hooks/use-translations';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
+import { formatDateWithSeconds } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/platform/ops/webhooks')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),

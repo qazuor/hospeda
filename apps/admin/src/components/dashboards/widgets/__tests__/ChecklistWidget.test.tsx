@@ -25,11 +25,11 @@
  * References: SPEC-155 T-026
  */
 
-import type { Widget } from '@/config/ia/schema';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Widget } from '@/config/ia/schema';
 import type {
     AccommodationEntity,
     EventEntity,
@@ -66,7 +66,10 @@ vi.mock('@repo/icons', async (importOriginal) => ({
     CheckCircleIcon: ({
         className,
         'data-testid': dtid
-    }: { className?: string; 'data-testid'?: string }) => (
+    }: {
+        className?: string;
+        'data-testid'?: string;
+    }) => (
         <svg
             data-testid={dtid ?? 'check-circle-icon'}
             className={className}
@@ -76,7 +79,10 @@ vi.mock('@repo/icons', async (importOriginal) => ({
     AlertCircleIcon: ({
         className,
         'data-testid': dtid
-    }: { className?: string; 'data-testid'?: string }) => (
+    }: {
+        className?: string;
+        'data-testid'?: string;
+    }) => (
         <svg
             data-testid={dtid ?? 'alert-circle-icon'}
             className={className}

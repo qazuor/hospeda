@@ -5,8 +5,8 @@
  * @module services/billing-settings
  */
 export {
+    type BillingSettings,
     BillingSettingsService,
     getBillingSettingsService,
-    resetBillingSettingsService,
-    type BillingSettings
+    resetBillingSettingsService
 } from '@repo/service-core';

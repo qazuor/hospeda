@@ -1,3 +1,5 @@
+import { LoaderIcon } from '@repo/icons';
+import type { ReactNode } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -9,8 +11,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import { LoaderIcon } from '@repo/icons';
-import type { ReactNode } from 'react';
 
 /** Tag type label for copy variation. */
 type AdminTagType = 'SYSTEM' | 'INTERNAL';

@@ -1,4 +1,4 @@
-import { type VirtualItem, useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer, type VirtualItem } from '@tanstack/react-virtual';
 import { useMemo, useRef } from 'react';
 
 /**

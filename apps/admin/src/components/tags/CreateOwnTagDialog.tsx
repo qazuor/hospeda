@@ -1,3 +1,6 @@
+import type { TagCreateInput } from '@repo/schemas';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -8,9 +11,6 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import { useCreateOwnTag } from '@/hooks/use-own-tags';
-import type { TagCreateInput } from '@repo/schemas';
-import type { ReactNode } from 'react';
-import { useState } from 'react';
 import { OwnTagForm } from './OwnTagForm';
 
 interface CreateOwnTagDialogProps {

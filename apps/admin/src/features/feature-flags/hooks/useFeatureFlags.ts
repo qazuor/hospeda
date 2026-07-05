@@ -1,5 +1,5 @@
-import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag, FeatureFlagAdminSearch } from '@repo/schemas';
+import { fetchApi } from '@/lib/api/client';
 
 export interface FeatureFlagListResponse {
     items: FeatureFlag[];

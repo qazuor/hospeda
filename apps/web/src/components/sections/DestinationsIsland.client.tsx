@@ -10,6 +10,9 @@
  * - Mobile: Only the carousel column (map is hidden via CSS)
  */
 
+import { LocationIcon, StarIcon } from '@repo/icons';
+import useEmblaCarousel from 'embla-carousel-react';
+import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import type { DestinationCardData } from '@/data/types';
@@ -18,9 +21,6 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { LocationIcon, StarIcon } from '@repo/icons';
-import useEmblaCarousel from 'embla-carousel-react';
-import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import styles from './DestinationsIsland.module.css';
 import { DestinationsMap } from './DestinationsMap';
 
@@ -397,6 +397,7 @@ function DestinationsIslandInner({
                                                 {destination.averageRating > 0 && (
                                                     <div
                                                         className={styles.cardRating}
+                                                        role="img"
                                                         aria-label={ratingAriaLabel}
                                                     >
                                                         <div className={styles.cardStars}>
@@ -465,6 +466,7 @@ function DestinationsIslandInner({
 
                     <span
                         className={styles.slideCounter}
+                        role="status"
                         aria-live="polite"
                         aria-atomic="true"
                         aria-label={t(

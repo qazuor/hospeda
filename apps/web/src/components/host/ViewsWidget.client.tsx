@@ -11,9 +11,6 @@
  * ```
  */
 
-import type { AccommodationViewsData, HostViewDailySeriesData } from '@/lib/api/types';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { type JSX, useMemo } from 'react';
 import {
     CartesianGrid,
@@ -24,6 +21,9 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
+import type { AccommodationViewsData, HostViewDailySeriesData } from '@/lib/api/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './ViewsWidget.module.css';
 
 // ---------------------------------------------------------------------------
@@ -175,6 +175,7 @@ export function ViewsWidget({
                 <div
                     className={styles.chartContainer}
                     data-testid="views-daily-chart"
+                    role="img"
                     aria-label={t(
                         'host.dashboard.analytics.views.chart.ariaLabel',
                         'Tendencia diaria de vistas'

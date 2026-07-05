@@ -245,8 +245,9 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }
@@ -275,8 +276,9 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }
@@ -305,8 +307,9 @@
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        color var(--duration-normal, 0.4s) ease;
     min-height: 40px;
     white-space: nowrap;
 }

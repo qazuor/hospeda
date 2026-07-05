@@ -301,7 +301,7 @@ export async function scheduleSubscriptionDowngrade(
         targetTransactionAmountMajor,
         applyAt: sub.currentPeriodEnd.toISOString(),
         requestedAt: now.toISOString(),
-        ...(requestedBy !== undefined ? { requestedBy } : {}),
+        ...(requestedBy === undefined ? {} : { requestedBy }),
         status: 'pending',
         attemptCount: 0,
         metadata: {
@@ -312,9 +312,9 @@ export async function scheduleSubscriptionDowngrade(
             // QZPayMetadataValue (scalar types — string | number | boolean).
             // The read-back helper `getKeepSelectionsForChange` parses it
             // back into a KeepSelections object.
-            ...(keepSelections !== undefined
-                ? { keepSelections: JSON.stringify(keepSelections) }
-                : {})
+            ...(keepSelections === undefined
+                ? {}
+                : { keepSelections: JSON.stringify(keepSelections) })
         }
     };
 

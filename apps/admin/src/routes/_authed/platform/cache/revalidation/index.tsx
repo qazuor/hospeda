@@ -6,9 +6,16 @@
  * - Logs tab: Browse recent revalidation log entries
  * - Manual tab: Trigger revalidation for specific paths
  */
+
+import type { TranslationKey } from '@repo/i18n';
+import { LoaderIcon } from '@repo/icons';
+import type { RevalidationConfig, RevalidationEntityType, RevalidationStats } from '@repo/schemas';
+import { PermissionEnum, RevalidationEntityTypeEnum } from '@repo/schemas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped/Tabs';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -29,6 +36,17 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped/Tabs';
+import { LogsTab } from '@/features/revalidation/components/LogsTab';
+import {
+    EmptyState,
+    ErrorState,
+    InlineNumberField,
+    LoadingState,
+    ManualForm,
+    RevalidationResultTable,
+    StatCard
+} from '@/features/revalidation/components/revalidation-shared';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { REVALIDATION_QUERY_KEYS } from '@/hooks/useRevalidation';
@@ -40,25 +58,6 @@ import {
     revalidateByType,
     updateRevalidationConfig
 } from '@/lib/revalidation-http-adapter';
-import type { TranslationKey } from '@repo/i18n';
-import { LoaderIcon } from '@repo/icons';
-import type { RevalidationConfig, RevalidationStats } from '@repo/schemas';
-import { PermissionEnum, RevalidationEntityTypeEnum } from '@repo/schemas';
-import type { RevalidationEntityType } from '@repo/schemas';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-
-import { LogsTab } from '@/features/revalidation/components/LogsTab';
-import {
-    EmptyState,
-    ErrorState,
-    InlineNumberField,
-    LoadingState,
-    ManualForm,
-    RevalidationResultTable,
-    StatCard
-} from '@/features/revalidation/components/revalidation-shared';
 
 export const Route = createFileRoute('/_authed/platform/cache/revalidation/')({
     beforeLoad: ({ context }) => requireAdminApiAccess(context),
@@ -299,9 +298,9 @@ function ManualTab() {
             addToast({
                 message: t('revalidation.manual.successToast', {
                     succeeded,
-                    succeededSuffix: succeeded !== 1 ? 's' : '',
+                    succeededSuffix: succeeded === 1 ? '' : 's',
                     failed,
-                    failedSuffix: failed !== 1 ? 's' : ''
+                    failedSuffix: failed === 1 ? '' : 's'
                 }),
                 variant: failed > 0 ? 'error' : 'success'
             });

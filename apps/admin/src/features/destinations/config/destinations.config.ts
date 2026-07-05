@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { BadgeColor, EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Destination, DestinationListItemSchema } from '../schemas/destinations.schemas';
 import { createDestinationsColumns } from './destinations.columns';
 

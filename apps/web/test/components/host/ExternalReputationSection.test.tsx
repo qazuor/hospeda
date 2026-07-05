@@ -13,9 +13,9 @@
  * - Rate-limit (429): shows rate-limit message with computed minutes
  */
 
-import { ExternalReputationSection } from '@/components/host/ExternalReputationSection.client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExternalReputationSection } from '@/components/host/ExternalReputationSection.client';
 
 // ─── Module mocks ──────────────────────────────────────────────────────────
 
