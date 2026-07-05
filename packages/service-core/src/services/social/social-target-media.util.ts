@@ -41,8 +41,47 @@ function sortByPosition(rows: MediaRow[]): MediaRow[] {
 }
 
 /**
+ * Publish formats that resolve to a SINGLE asset (the first one, by
+ * `position` order) — mirrors {@link SocialPublishFormatEnum.STORY}.
+ * `IMAGE_POST`'s own doc comment is explicit: "a single image" (HOS-65 T-019).
+ */
+const SINGLE_ASSET_FORMATS: readonly string[] = [
+    SocialPublishFormatEnum.STORY,
+    SocialPublishFormatEnum.IMAGE_POST
+];
+
+/**
+ * Publish formats that resolve to a SINGLE video asset (the first `VIDEO`-type
+ * row, by `position` order) — mirrors {@link SocialPublishFormatEnum.VIDEO_POST}.
+ * `REEL`'s own doc comment is explicit: "short-form vertical video" (HOS-65 T-019).
+ */
+const SINGLE_VIDEO_FORMATS: readonly string[] = [
+    SocialPublishFormatEnum.VIDEO_POST,
+    SocialPublishFormatEnum.REEL
+];
+
+/**
+ * Publish formats that resolve to ALL assets, ordered by `position` — mirrors
+ * {@link SocialPublishFormatEnum.CAROUSEL}. `FEED_POST`/`PHOTO_POST` are
+ * generic feed posts with no single-vs-multi distinction of their own, so they
+ * inherit the "return everything" rule that predates per-format awareness
+ * (HOS-65 T-019) rather than silently dropping media for the majority of real
+ * seeded platform-formats (Instagram FEED_POST, Facebook PHOTO_POST).
+ */
+const ALL_ASSETS_FORMATS: readonly string[] = [
+    SocialPublishFormatEnum.CAROUSEL,
+    SocialPublishFormatEnum.FEED_POST,
+    SocialPublishFormatEnum.PHOTO_POST
+];
+
+/**
  * Applies the format-aware media-selection rule to an already-ordered set of
  * rows for one format, returning the resolved Cloudinary URLs.
+ *
+ * Every {@link SocialPublishFormatEnum} value has an explicit rule here — see
+ * {@link SINGLE_ASSET_FORMATS}, {@link SINGLE_VIDEO_FORMATS}, and
+ * {@link ALL_ASSETS_FORMATS} for the groupings beyond the 4 originally
+ * distinguished formats (STORY/VIDEO_POST/CAROUSEL/TEXT_POST).
  */
 function selectUrlsForFormat(publishFormat: string, rows: MediaRow[]): string[] {
     if (publishFormat === SocialPublishFormatEnum.TEXT_POST) {
@@ -51,22 +90,22 @@ function selectUrlsForFormat(publishFormat: string, rows: MediaRow[]): string[] 
 
     const ordered = sortByPosition(rows);
 
-    if (publishFormat === SocialPublishFormatEnum.STORY) {
+    if (SINGLE_ASSET_FORMATS.includes(publishFormat)) {
         const first = ordered[0];
         return first ? [first.url] : [];
     }
 
-    if (publishFormat === SocialPublishFormatEnum.VIDEO_POST) {
+    if (SINGLE_VIDEO_FORMATS.includes(publishFormat)) {
         const firstVideo = ordered.find((row) => row.mediaType === SocialMediaTypeEnum.VIDEO);
         return firstVideo ? [firstVideo.url] : [];
     }
 
-    if (publishFormat === SocialPublishFormatEnum.CAROUSEL) {
+    if (ALL_ASSETS_FORMATS.includes(publishFormat)) {
         return ordered.map((row) => row.url);
     }
 
-    // Unrecognized/other formats: no format-specific narrowing rule defined
-    // yet — fall back to returning nothing rather than guessing.
+    // No remaining SocialPublishFormatEnum value reaches here in practice —
+    // kept as a defensive fallback for an unrecognized/future format string.
     return [];
 }
 
@@ -80,10 +119,13 @@ function selectUrlsForFormat(publishFormat: string, rows: MediaRow[]): string[] 
  * Selection rule (operates on `targetMediaRows`; when that array is EMPTY the
  * exact same rule is re-applied to `postMediaRowsFallback` instead):
  * - `TEXT_POST` — always `[]`, even when rows exist.
- * - `STORY` — the first asset only (by `position` order), max 1 URL.
- * - `VIDEO_POST` — the first `VIDEO`-type asset only (by `position` order), max 1 URL.
- * - `CAROUSEL` — all assets, ordered by `position`.
- * - Any other format — `[]` (no selection rule defined).
+ * - `STORY`, `IMAGE_POST` — the first asset only (by `position` order), max 1 URL.
+ * - `VIDEO_POST`, `REEL` — the first `VIDEO`-type asset only (by `position` order), max 1 URL.
+ * - `CAROUSEL`, `FEED_POST`, `PHOTO_POST` — all assets, ordered by `position`.
+ *
+ * Every {@link SocialPublishFormatEnum} value maps to one of the groups above
+ * (HOS-65 T-019) — see {@link SINGLE_ASSET_FORMATS}, {@link SINGLE_VIDEO_FORMATS},
+ * and {@link ALL_ASSETS_FORMATS} for the grouping rationale.
  *
  * @param input - The target's publish format, its own media rows, and the
  *   post-level fallback rows.

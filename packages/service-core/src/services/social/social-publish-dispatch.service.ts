@@ -45,6 +45,7 @@ import type {
     SocialPostFooterModel as SocialPostFooterModelType,
     SocialPostMediaModel as SocialPostMediaModelType,
     SocialPostModel as SocialPostModelType,
+    SocialPostTargetMediaModel as SocialPostTargetMediaModelType,
     SocialPostTargetModel as SocialPostTargetModelType,
     SocialPublishLogModel as SocialPublishLogModelType,
     SocialSettingModel as SocialSettingModelType
@@ -55,6 +56,7 @@ import {
     SocialPostFooterModel,
     SocialPostMediaModel,
     SocialPostModel,
+    SocialPostTargetMediaModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
     SocialSettingModel
@@ -80,6 +82,8 @@ import {
     MAX_RETRY_COUNT_KEY,
     resolveBoundedNumericSetting
 } from './social-dispatch-config.util';
+import type { MediaRow } from './social-target-media.util';
+import { resolveTargetMediaUrls } from './social-target-media.util';
 
 // ---------------------------------------------------------------------------
 // Domain types
@@ -488,6 +492,7 @@ export class SocialPublishDispatchService {
     private readonly publishLogModel: SocialPublishLogModelType;
     private readonly settingModel: SocialSettingModelType;
     private readonly auditLog: SocialAuditLogService;
+    private readonly postTargetMediaModel: SocialPostTargetMediaModelType;
 
     constructor(
         config: ServiceConfig,
@@ -499,7 +504,8 @@ export class SocialPublishDispatchService {
         assetModel?: SocialAssetModelType,
         publishLogModel?: SocialPublishLogModelType,
         settingModel?: SocialSettingModelType,
-        auditLog?: SocialAuditLogService
+        auditLog?: SocialAuditLogService,
+        postTargetMediaModel?: SocialPostTargetMediaModelType
     ) {
         this.postModel = postModel ?? new SocialPostModel();
         this.targetModel = targetModel ?? new SocialPostTargetModel();
@@ -510,6 +516,7 @@ export class SocialPublishDispatchService {
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
         this.settingModel = settingModel ?? new SocialSettingModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
+        this.postTargetMediaModel = postTargetMediaModel ?? new SocialPostTargetMediaModel();
     }
 
     // ---------------------------------------------------------------------------
@@ -696,9 +703,14 @@ export class SocialPublishDispatchService {
      * - `hashtagsFinal` — `post.final_hashtags_text ?? ''`.
      * - `footerFinal` — resolved from `social_post_footers.content` via
      *   `post.footer_id`; empty string when `footer_id` is null.
-     * - `mediaUrls` — Cloudinary URLs of the post's `social_post_media` rows
-     *   ordered by `position` ASC; non-null URLs only.
+     * - `mediaUrls` — resolved PER-TARGET and FORMAT-AWARE (HOS-65 T-019) via
+     *   {@link resolveTargetMediaUrls}: `social_post_target_media` link rows
+     *   scoped to this target (ordered by the link table's `position`), joined
+     *   to `social_post_media` -> `social_assets` for the Cloudinary URL and
+     *   media type; falls back to the post-level `social_post_media` rows
+     *   (legacy, pre-HOS-65 G-3) ONLY when the target has zero link rows.
      *
+
      * The async callback fields (`callbackClaimUrl`, `callbackResultUrl`) have been
      * removed: Make.com now responds synchronously and Hospeda no longer needs to
      * receive callbacks.
@@ -743,24 +755,19 @@ export class SocialPublishDispatchService {
             footerFinal = (footer?.content as string | null | undefined) ?? '';
         }
 
-        // -- Media URLs ------------------------------------------------------------
-        // Fetch all media rows for this post ordered by position ASC,
-        // then resolve each assetId to its Cloudinary URL.
-        const { items: mediaRows } = await this.postMediaModel.findAll(
-            { socialPostId: postId },
-            { page: 1, pageSize: 100, sortBy: 'position', sortOrder: 'asc' }
-        );
+        // -- Media URLs (HOS-65 T-019 — per-target, format-aware resolution) -------
+        // The post-level fallback query only runs when the target has zero
+        // `social_post_target_media` link rows (legacy/not-yet-migrated posts),
+        // avoiding an unnecessary query for the common per-target-media case.
+        const targetMediaRows = await this.resolveTargetScopedMediaRows(targetId);
+        const postMediaRowsFallback =
+            targetMediaRows.length > 0 ? [] : await this.resolvePostLevelMediaRows(postId);
 
-        const mediaUrls: string[] = [];
-        for (const mediaRow of mediaRows) {
-            const assetId = mediaRow.assetId as string | undefined;
-            if (!assetId) continue;
-            const asset = await this.assetModel.findOne({ id: assetId });
-            const url = asset?.cloudinaryUrl as string | null | undefined;
-            if (url) {
-                mediaUrls.push(url);
-            }
-        }
+        const mediaUrls = resolveTargetMediaUrls({
+            publishFormat,
+            targetMediaRows,
+            postMediaRowsFallback
+        });
 
         // -- Scheduling fields -----------------------------------------------------
         const scheduledAt = (post.scheduledAt as Date | null | undefined) ?? null;
@@ -781,6 +788,80 @@ export class SocialPublishDispatchService {
         };
 
         return { payload };
+    }
+
+    // ---------------------------------------------------------------------------
+    // buildMakePayload private helpers (HOS-65 T-019)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Resolves the target-scoped `MediaRow[]` for {@link resolveTargetMediaUrls},
+     * joining `social_post_target_media` (ordered by the LINK TABLE's `position`)
+     * -> `social_post_media` -> `social_assets`.
+     *
+     * Rows that fail to resolve at any join step (missing media row, missing
+     * asset, missing `cloudinaryUrl`, or missing `mediaType`) are silently
+     * skipped — the resulting array may be shorter than the link-row count.
+     *
+     * @param targetId - The `social_post_targets.id` to scope the link rows to.
+     * @returns Ordered `MediaRow[]` for this target's own media, `[]` when it
+     *   has no link rows.
+     */
+    private async resolveTargetScopedMediaRows(targetId: string): Promise<MediaRow[]> {
+        const { items: linkRows } = await this.postTargetMediaModel.findAll(
+            { socialPostTargetId: targetId },
+            { page: 1, pageSize: 100, sortBy: 'position', sortOrder: 'asc' }
+        );
+
+        const rows: MediaRow[] = [];
+        for (const linkRow of linkRows) {
+            const socialPostMediaId = linkRow.socialPostMediaId as string | undefined;
+            if (!socialPostMediaId) continue;
+
+            const mediaRow = await this.postMediaModel.findOne({ id: socialPostMediaId });
+            const assetId = mediaRow?.assetId as string | undefined;
+            if (!assetId) continue;
+
+            const asset = await this.assetModel.findOne({ id: assetId });
+            const url = asset?.cloudinaryUrl as string | null | undefined;
+            const mediaType = asset?.mediaType as MediaRow['mediaType'] | undefined;
+            if (!url || !mediaType) continue;
+
+            rows.push({ url, position: linkRow.position as number, mediaType });
+        }
+        return rows;
+    }
+
+    /**
+     * Resolves the post-level `MediaRow[]` fallback for
+     * {@link resolveTargetMediaUrls}, joining `social_post_media` (ordered by
+     * `position`) -> `social_assets`. Used ONLY when a target has zero
+     * `social_post_target_media` link rows (legacy, pre-HOS-65 G-3 posts, or
+     * targets not yet migrated to per-target media).
+     *
+     * @param postId - The `social_posts.id` whose media pool to resolve.
+     * @returns Ordered `MediaRow[]` for the post's shared media pool, `[]` when
+     *   the post has no media rows.
+     */
+    private async resolvePostLevelMediaRows(postId: string): Promise<MediaRow[]> {
+        const { items: mediaRows } = await this.postMediaModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 100, sortBy: 'position', sortOrder: 'asc' }
+        );
+
+        const rows: MediaRow[] = [];
+        for (const mediaRow of mediaRows) {
+            const assetId = mediaRow.assetId as string | undefined;
+            if (!assetId) continue;
+
+            const asset = await this.assetModel.findOne({ id: assetId });
+            const url = asset?.cloudinaryUrl as string | null | undefined;
+            const mediaType = asset?.mediaType as MediaRow['mediaType'] | undefined;
+            if (!url || !mediaType) continue;
+
+            rows.push({ url, position: mediaRow.position as number, mediaType });
+        }
+        return rows;
     }
 
     /**

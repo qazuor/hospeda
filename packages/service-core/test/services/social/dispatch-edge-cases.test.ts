@@ -37,6 +37,7 @@ import type {
     SocialPostFooterModel,
     SocialPostMediaModel,
     SocialPostModel,
+    SocialPostTargetMediaModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
     SocialSettingModel
@@ -160,6 +161,7 @@ type Mocks = {
     publishLogModel: StandardModelMock;
     settingModel: StandardModelMock;
     auditLogMock: SocialAuditLogService;
+    postTargetMediaModel: StandardModelMock;
 };
 
 // ---------------------------------------------------------------------------
@@ -175,6 +177,11 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
     const assetModel = createModelMock();
     const publishLogModel = createModelMock();
     const settingModel = createModelMock();
+    const postTargetMediaModel = createModelMock();
+    // HOS-65 T-019: default to zero target-scoped link rows so buildMakePayload
+    // (called internally by dispatchTarget) falls back to the post-level
+    // social_post_media query already mocked by every test in this file.
+    postTargetMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
     const auditLogMock = {
         log: vi.fn().mockResolvedValue({ logged: true }),
@@ -191,7 +198,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
         assetModel as unknown as SocialAssetModel,
         publishLogModel as unknown as SocialPublishLogModel,
         settingModel as unknown as SocialSettingModel,
-        auditLogMock
+        auditLogMock,
+        postTargetMediaModel as unknown as SocialPostTargetMediaModel
     );
 
     return {
@@ -205,7 +213,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
             assetModel,
             publishLogModel,
             settingModel,
-            auditLogMock
+            auditLogMock,
+            postTargetMediaModel
         }
     };
 }

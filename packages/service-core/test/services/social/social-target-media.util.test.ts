@@ -88,4 +88,64 @@ describe('resolveTargetMediaUrls', () => {
             'https://example.com/post-b.jpg'
         ]);
     });
+
+    // -------------------------------------------------------------------------
+    // HOS-65 T-019 follow-up: the remaining 4 SocialPublishFormatEnum values
+    // (FEED_POST, PHOTO_POST, IMAGE_POST, REEL) were previously unhandled and
+    // fell into the "unrecognized format -> []" branch, which would silently
+    // strip media from real seeded platform-formats (Instagram FEED_POST,
+    // Facebook PHOTO_POST, REEL). Every enum value now has an explicit rule.
+    // -------------------------------------------------------------------------
+
+    it('returns all assets ordered by position for FEED_POST (same rule as CAROUSEL)', () => {
+        const result = resolveTargetMediaUrls({
+            publishFormat: SocialPublishFormatEnum.FEED_POST,
+            targetMediaRows: [
+                imageRow('https://example.com/b.jpg', 1),
+                imageRow('https://example.com/a.jpg', 0)
+            ],
+            postMediaRowsFallback: []
+        });
+
+        expect(result).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+    });
+
+    it('returns all assets ordered by position for PHOTO_POST (same rule as CAROUSEL)', () => {
+        const result = resolveTargetMediaUrls({
+            publishFormat: SocialPublishFormatEnum.PHOTO_POST,
+            targetMediaRows: [
+                imageRow('https://example.com/b.jpg', 1),
+                imageRow('https://example.com/a.jpg', 0)
+            ],
+            postMediaRowsFallback: []
+        });
+
+        expect(result).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+    });
+
+    it('returns only the first asset by position for IMAGE_POST (same rule as STORY)', () => {
+        const result = resolveTargetMediaUrls({
+            publishFormat: SocialPublishFormatEnum.IMAGE_POST,
+            targetMediaRows: [
+                imageRow('https://example.com/second.jpg', 1),
+                imageRow('https://example.com/first.jpg', 0)
+            ],
+            postMediaRowsFallback: []
+        });
+
+        expect(result).toEqual(['https://example.com/first.jpg']);
+    });
+
+    it('returns only the first VIDEO-type asset for REEL (same rule as VIDEO_POST)', () => {
+        const result = resolveTargetMediaUrls({
+            publishFormat: SocialPublishFormatEnum.REEL,
+            targetMediaRows: [
+                imageRow('https://example.com/image.jpg', 0),
+                videoRow('https://example.com/first.mp4', 1)
+            ],
+            postMediaRowsFallback: []
+        });
+
+        expect(result).toEqual(['https://example.com/first.mp4']);
+    });
 });
