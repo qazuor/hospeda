@@ -3,7 +3,7 @@
  * @description Unit tests for formatting utilities.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { formatDate, formatPrice } from '../../src/lib/format-utils';
 
 describe('formatPrice', () => {
@@ -78,5 +78,31 @@ describe('formatDate', () => {
         const result = formatDate({ date: new Date('2026-03-15T12:00:00Z'), locale: 'pt' });
         expect(result).toBeTruthy();
         expect(result).toContain('15');
+    });
+
+    describe('date-only values under a non-UTC runtime timezone (BETA-88)', () => {
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('shifts a UTC-midnight date-only value back a day when no timeZone is forced', () => {
+            // Reproduces the bug: a date-only value like '2026-12-01' parses to
+            // UTC midnight. Without an explicit timeZone, Intl.DateTimeFormat
+            // renders it in the runtime-local zone, which for Argentina (UTC-3)
+            // shows the previous calendar day.
+            vi.stubEnv('TZ', 'America/Argentina/Buenos_Aires');
+            const result = formatDate({ date: '2026-12-01', locale: 'es' });
+            expect(result).toContain('30 de noviembre');
+        });
+
+        it('renders the correct calendar day when timeZone: "UTC" is forced (BETA-88 fix)', () => {
+            vi.stubEnv('TZ', 'America/Argentina/Buenos_Aires');
+            const result = formatDate({
+                date: '2026-12-01',
+                locale: 'es',
+                options: { dateStyle: 'long', timeZone: 'UTC' }
+            });
+            expect(result).toContain('1 de diciembre');
+        });
     });
 });
