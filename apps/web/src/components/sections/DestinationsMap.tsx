@@ -126,7 +126,17 @@ const CITIES: readonly City[] = [
         size: 'secondary',
         labelPosition: 'left'
     },
-    { slug: 'liebig', name: 'Liebig', x: 351, y: 337, size: 'secondary', labelPosition: 'left' },
+    // Destination slug is `pueblo-liebig` (derived from the name "Pueblo
+    // Liebig"), NOT `liebig` — the pin stayed unclickable until this matched
+    // the real slug (BETA-109). The short label "Liebig" is kept for the map.
+    {
+        slug: 'pueblo-liebig',
+        name: 'Liebig',
+        x: 351,
+        y: 337,
+        size: 'secondary',
+        labelPosition: 'left'
+    },
     {
         slug: 'rosario-del-tala',
         name: 'Rosario del Tala',

@@ -6,6 +6,11 @@
  * overlapped, and the higher z-index main pin swallowed the smaller pin's
  * clicks. The fix resolves every pointer event to the NEAREST clickable dot via
  * a single handler on the pins layer, so overlaps can no longer steal a click.
+ *
+ * A second root cause: the Liebig pin used slug `liebig`, but its destination's
+ * real slug is `pueblo-liebig` (derived from "Pueblo Liebig"), so the pin never
+ * matched a destination and stayed unclickable regardless of the overlap. These
+ * tests bind the pin to the `pueblo-liebig` destination to guard both fixes.
  */
 import { fireEvent, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,10 +27,12 @@ vi.mock('@repo/icons', () => ({ BridgeIcon: () => null }));
 
 // Only Colón and Liebig carry destination data → only those two are clickable,
 // which isolates the exact overlap the bug was about. Order fixes the indices:
-// colón = 0, liebig = 1.
+// colón = 0, liebig = 1. Liebig's slug MUST be `pueblo-liebig` to match the map
+// pin — using `liebig` here (the old, mismatched value) would leave the pin
+// unclickable and fail the selection assertions below.
 const destinations = [
     { slug: 'colon', name: 'Colón' },
-    { slug: 'liebig', name: 'Liebig' }
+    { slug: 'pueblo-liebig', name: 'Liebig' }
 ] as unknown as DestinationCardData[];
 
 /**
