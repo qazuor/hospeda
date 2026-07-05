@@ -40,10 +40,6 @@ const { paddingTop = 'listing', class: className } = Astro.props;
   data-wave-padding={paddingTop}
   data-wave-header
 >
-  {/* Sentinel: sits at the top of the wrapper in normal flow.
-      When it scrolls out of view (past the navbar), compact mode activates. */}
-  <div class="wave-header__sentinel" data-wave-sentinel></div>
-
   {/* Sticky band: sticks below navbar for the full page scroll */}
   <div class="wave-header__bar">
     <div class="wave-header__breadcrumbs">
@@ -66,70 +62,73 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
 <script>
   /**
-   * WaveHeader compact-mode toggle, driven by scroll position with HYSTERESIS.
+   * WaveHeader behavior wiring (HOS-84). The decision logic lives in the pure,
+   * unit-tested `waveHeaderState.ts` module; this script only owns the DOM side:
+   * reading `window.scrollY`, feeding the state machine, and toggling classes.
    *
-   * The header expands only near the very top of the page and compacts once
-   * you have scrolled clearly past it, with a wide dead zone between the two
-   * thresholds. That dead zone is the whole point: collapsing/expanding the
-   * sticky bar near the top shifts the scroll position by a few dozen px
-   * (the breadcrumbs grow/shrink on-screen and the sticky bar re-lays-out
-   * right at its pinning boundary). The previous `IntersectionObserver` used a
-   * single crossing line, so that scroll shift re-crossed the line and toggled
-   * the header straight back — it trembled when scrolling UP into the top
-   * (measured: expanding bounced scrollY from ~10 back to ~55, re-compacting).
-   * Two thresholds wider apart than that bounce absorb it.
+   * Three-state model on DETAIL surfaces (data-wave-padding="detail"):
+   *   expanded → compact → hidden, with scroll-up revealing back to compact.
+   * LISTING surfaces render a STATIC band — no scroll machine is attached at all.
    *
-   * Still only toggles a CSS class — all visual changes remain CSS
-   * transitions. Compatible with Astro View Transitions.
+   * `overflow-anchor: none` (see <style>) + the position hysteresis in the pure
+   * module are the anti-trembling fix; the direction-delta dead-zone is the
+   * anti-jitter guard for the new hide/reveal layer. Only toggles CSS classes —
+   * all motion stays in CSS transitions. Compatible with Astro View Transitions.
    */
+  import {
+    DEFAULT_WAVE_HEADER_CONFIG,
+    nextWaveHeaderState,
+    type WaveHeaderState
+  } from './waveHeaderState.ts';
+
   function initWaveHeaders(): void {
     const headers = document.querySelectorAll<HTMLElement>('[data-wave-header]');
-
-    // Scroll offsets (px) for the two trigger lines. The gap (COMPACT_AT minus
-    // EXPAND_AT) must exceed the scroll bounce that toggling near the top
-    // induces (~45px measured; ~80px worst case if the breadcrumbs are tall).
-    const EXPAND_AT = 8;
-    const COMPACT_AT = 96;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     for (const header of headers) {
-      const sentinel = header.querySelector<HTMLElement>('[data-wave-sentinel]');
       const bar = header.querySelector<HTMLElement>('.wave-header__bar');
-      if (!sentinel || !bar) continue;
+      if (!bar) continue;
+
+      // Static band on listing surfaces: no scroll state machine. The header
+      // stays expanded. The mobile fullscreen map manages its own locked
+      // compact class directly (see mapa.astro), so it is not driven here.
+      if (header.dataset.wavePadding !== 'detail') continue;
 
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
 
-      let compact = false;
-      const setCompact = (next: boolean): void => {
-        if (next === compact) return;
-        compact = next;
-        header.classList.toggle('wave-header--compact', next);
-      };
+      let state: WaveHeaderState = 'expanded';
+      let accumulator = 0;
+      let prevScrollY = window.scrollY;
 
-      // Opt-in lock: a page can keep the wave header permanently compact by
-      // setting `data-locked-compact="true"` on the root .wave-header element.
-      // Used by the mobile fullscreen map view so the bar doesn't expand back
-      // out when the auto-scroll lands at the top of the map.
-      if (header.dataset.lockedCompact === 'true') {
-        setCompact(true);
-        continue;
-      }
+      const apply = (next: WaveHeaderState): void => {
+        if (next === state) return;
+        state = next;
+        // `hidden` is `compact` styling PLUS a translate-out; keep --compact on
+        // in both so the slide-out animates from the compact band, not the tall
+        // expanded one.
+        header.classList.toggle('wave-header--compact', next === 'compact' || next === 'hidden');
+        header.classList.toggle('wave-header--hidden', next === 'hidden');
+      };
 
       let ticking = false;
       const evaluate = (): void => {
         ticking = false;
-        // Respect a lock applied after init (e.g. the mobile map view sets it
-        // on astro:page-load). Don't fight a deliberate lock.
-        if (header.dataset.lockedCompact === 'true') {
-          setCompact(true);
-          return;
-        }
-        const y = window.scrollY;
-        if (!compact && y >= COMPACT_AT) {
-          setCompact(true);
-        } else if (compact && y <= EXPAND_AT) {
-          setCompact(false);
-        }
+        const scrollY = window.scrollY;
+        const delta = scrollY - prevScrollY;
+        prevScrollY = scrollY;
+        const result = nextWaveHeaderState({
+          scrollY,
+          delta,
+          accumulator,
+          currentState: state,
+          config: DEFAULT_WAVE_HEADER_CONFIG,
+          // Respect a lock applied after init (e.g. the mobile map view).
+          lockedCompact: header.dataset.lockedCompact === 'true',
+          reducedMotion
+        });
+        accumulator = result.accumulator;
+        apply(result.state);
       };
 
       const onScroll = (): void => {
@@ -182,21 +181,21 @@ const { paddingTop = 'listing', class: className } = Astro.props;
     position: relative;
   }
 
-  .wave-header__sentinel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 20px;
-    pointer-events: none;
-  }
-
   .wave-header__bar {
     position: sticky;
     /* Pin flush against the navbar — the var is published by Header.astro
        (publishNavbarHeight). 80px is a safe fallback before JS hydrates. */
     top: var(--navbar-height, 80px);
     z-index: calc(var(--z-nav, 50) - 1);
+    transition: transform 0.3s ease;
+  }
+
+  /* Hidden state: on a sustained scroll-down the whole band slides up behind
+     the navbar (opaque, higher z-index), freeing reading height. Scroll-up
+     reveals it back to compact (never straight to expanded) — the state machine
+     in waveHeaderState.ts owns that decision. */
+  .wave-header--hidden .wave-header__bar {
+    transform: translateY(-100%);
   }
 
   .wave-header__container {
@@ -253,6 +252,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    * Reduced motion
    * ========================================================= */
   @media (prefers-reduced-motion: reduce) {
+    .wave-header__bar,
     .wave-header__breadcrumbs,
     .wave-header__content {
       transition: none;
