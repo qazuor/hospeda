@@ -78,6 +78,30 @@ instead of the old hardcoded `+105px`.
 3. **`--surface-warm` mislabel cleanup** — the token is named "warm" but is a pale blue
    (`spec.md` §5.3). Left untouched per OQ-3; a separate future cleanup.
 
+## Pre-PR code review (fresh context)
+
+A fresh-context review of the full diff was run before the PR. One **High** was fixed
+before merge; the rest are non-blocking and recorded here:
+
+- **[FIXED] High — collapsed header elements stayed keyboard-focusable in compact.**
+  `wh-compact-hide` only hid them visually; the new back button was focusable-but-invisible
+  and announced to screen readers on all 6 detail pages. Fixed by toggling `inert` on the
+  collapsed elements (and the whole bar when `hidden`) from the state machine's `apply()`
+  in `WaveHeader.astro`. Verified live: back-button container `inert` in compact/hidden,
+  not in expanded. Commit `d42379da1`.
+- **Medium — `EXPAND_AT=0`** removes the small margin back to `expanded`; confirm on real
+  mobile Safari/Chrome (URL-bar collapse / rubber-banding) that the header doesn't get
+  stuck in compact near the top. Deliberate owner tuning; validate in the mobile smoke.
+- **Medium — `ListingLayout` fires synthetic `astro:after-swap`** on filter partial-swaps;
+  `WaveHeader.astro` re-init is a no-op only thanks to the `waveInitialized` guard. Implicit
+  cross-file coupling — document or make it explicit before either side is "simplified".
+- **Medium — `mapa.astro` writes `--compact`/`lockedCompact` directly**, independent of the
+  state machine's `state` closure (two writers of the same visual state). Harmless today.
+- **Low — `--surface-header-foreground` token is defined but unused** (headers use
+  `--core-foreground`). Wire it where contrast vs `--surface-header` matters, or drop (YAGNI).
+- **Low — `EventDetailHeader` `.event-header__meta` uses `max-height:12em`** vs 3-6em on
+  siblings; visual-check longer `en`/`pt` date strings on narrow viewports.
+
 ## Implementation notes / decisions
 
 - `WaveHeader.astro` uses a theme-adaptive `oklch(from var(--core-foreground) l c h / 0.18)`
