@@ -2,7 +2,7 @@
 title: Wave Header Rework (Detail & Listing Pages)
 linear: HOS-84
 statusSource: linear
-status: in-implementation
+status: implemented
 decision: "Opt-B band puro (both surfaces) + HYBRID 3-state behavior on detail (expanded/compact/hidden) + static band on listing; shared-component rework with per-page compact override preserved; dedicated --surface-header token; back button added"
 created: 2026-07-04
 type: feature
