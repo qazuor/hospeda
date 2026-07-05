@@ -16,7 +16,7 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
-import { getApiUrl, getNoindexHosts } from './lib/env';
+import { getApiUrl, getNoindexHosts, isDevelopment } from './lib/env';
 import {
     buildChangePasswordRedirect,
     buildCspHeader,
@@ -140,7 +140,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
                 sentryReportUri,
                 // Drop the external *.sentry.io connect-src when the first-party
                 // Sentry tunnel is active (SPEC-181 follow-up).
-                sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
+                sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
+                // HOS-91: relax style-src in dev only (see buildCspHeader JSDoc).
+                isDev: isDevelopment()
             });
             betaResponse.headers.set(CSP_HEADER_NAME, directives);
         }
@@ -325,7 +327,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
             sentryReportUri,
             // Drop the external *.sentry.io connect-src when the first-party
             // Sentry tunnel is active (SPEC-181 follow-up).
-            sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
+            sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
+            // HOS-91: relax style-src in dev only (see buildCspHeader JSDoc).
+            isDev: isDevelopment()
         });
 
         if (!context.isPrerendered) {
