@@ -711,7 +711,14 @@ export class SocialPublishDispatchService {
      *   scoped to this target (ordered by the link table's `position`), joined
      *   to `social_post_media` -> `social_assets` for the Cloudinary URL and
      *   media type; falls back to the post-level `social_post_media` rows
-     *   (legacy, pre-HOS-65 G-3) ONLY when the target has zero link rows.
+     *   (legacy, pre-HOS-65 G-3) ONLY when the ENTIRE POST has zero link rows
+     *   across ALL its media (HOS-65 FIX 6) — NOT merely when this specific
+     *   target has zero link rows of its own. A media-capable co-target that
+     *   itself carries no assets (a valid, optional per-target config) must
+     *   publish `[]` rather than inherit a SIBLING target's media once the
+     *   post has been migrated to per-target linking (i.e. at least one of
+     *   the post's own media rows already has a link row anywhere). See
+     *   {@link postHasAnyTargetMediaLink}.
      *
 
      * The async callback fields (`callbackClaimUrl`, `callbackResultUrl`) have been
@@ -772,13 +779,28 @@ export class SocialPublishDispatchService {
             }
         }
 
-        // -- Media URLs (HOS-65 T-019 — per-target, format-aware resolution) -------
-        // The post-level fallback query only runs when the target has zero
-        // `social_post_target_media` link rows (legacy/not-yet-migrated posts),
-        // avoiding an unnecessary query for the common per-target-media case.
+        // -- Media URLs (HOS-65 T-019 — per-target, format-aware resolution;
+        //    HOS-65 FIX 6 — post-level fallback gate) -------------------------
+        // The post-level fallback query only runs when the ENTIRE POST has zero
+        // `social_post_target_media` link rows across ALL its media (genuinely
+        // legacy/not-yet-migrated). Gating on `targetMediaRows.length === 0`
+        // ALONE (this target's own count) would also fire the fallback for a
+        // media-capable co-target that simply has no assets of its own — a
+        // valid, optional per-target config — leaking a SIBLING target's media
+        // into it. The extra `postHasAnyTargetMediaLink` check is skipped
+        // entirely (and its query never issued) whenever this target already
+        // has its own link rows, keeping the common per-target-media case at
+        // its original query cost.
         const targetMediaRows = await this.resolveTargetScopedMediaRows(targetId);
-        const postMediaRowsFallback =
-            targetMediaRows.length > 0 ? [] : await this.resolvePostLevelMediaRows(postId);
+
+        let postMediaRowsFallback: MediaRow[] = [];
+        if (targetMediaRows.length === 0) {
+            const postMediaRowIds = await this.fetchPostMediaRowIds(postId);
+            const postIsMigrated = await this.postHasAnyTargetMediaLink(postMediaRowIds);
+            if (!postIsMigrated) {
+                postMediaRowsFallback = await this.resolvePostLevelMediaRows(postId);
+            }
+        }
 
         const mediaUrls = resolveTargetMediaUrls({
             publishFormat,
@@ -850,11 +872,71 @@ export class SocialPublishDispatchService {
     }
 
     /**
+     * Fetches ONLY the `id` column of the post's own `social_post_media` rows
+     * (HOS-65 FIX 6) — a cheap precursor query for {@link postHasAnyTargetMediaLink},
+     * kept separate from {@link resolvePostLevelMediaRows} so the (comparatively
+     * expensive, per-row asset join) fallback-row resolution is skipped entirely
+     * when the post turns out to already be migrated.
+     *
+     * @param postId - The `social_posts.id` whose media row ids to fetch.
+     * @returns The post's `social_post_media.id` values, `[]` when it has none.
+     */
+    private async fetchPostMediaRowIds(postId: string): Promise<string[]> {
+        const { items: mediaRows } = await this.postMediaModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 100 }
+        );
+        return mediaRows
+            .map((row) => row.id as string | undefined)
+            .filter((id): id is string => typeof id === 'string');
+    }
+
+    /**
+     * Determines whether the POST (not just a single target) has already been
+     * migrated to per-target media — i.e. whether ANY of its own
+     * `social_post_media` rows has AT LEAST ONE `social_post_target_media`
+     * link row, from ANY target (HOS-65 FIX 6).
+     *
+     * `social_post_target_media` has no `socialPostId` column of its own (only
+     * `socialPostTargetId`), so a direct "any link row for this post" query
+     * isn't possible without a raw SQL join through `social_post_targets` —
+     * which this codebase's model layer does not support (see
+     * {@link findEligibleTargets}'s doc comment). Instead, this checks the
+     * inverse join that IS available: every link row references a
+     * `social_post_media` row, and that media row is always scoped to the
+     * SAME post as the target that links to it (the per-target ingestion
+     * pipeline only ever creates a media row for a post before linking it to
+     * one of that post's own targets — see `SocialImagePipelineService`).
+     * So "does any of THIS POST's media rows have a link row" is equivalent
+     * to "has this post ever had a per-target link row created".
+     *
+     * Short-circuits on the first media row id that has a link row — in the
+     * common already-migrated case (a sibling target already linked to the
+     * post's first media row) this costs exactly one query.
+     *
+     * @param postMediaRowIds - IDs of the post's own `social_post_media` rows
+     *   (from {@link fetchPostMediaRowIds}).
+     * @returns `true` when at least one of those rows has a link row anywhere.
+     */
+    private async postHasAnyTargetMediaLink(postMediaRowIds: readonly string[]): Promise<boolean> {
+        for (const postMediaRowId of postMediaRowIds) {
+            const { items } = await this.postTargetMediaModel.findAll(
+                { socialPostMediaId: postMediaRowId },
+                { page: 1, pageSize: 1 }
+            );
+            if (items.length > 0) return true;
+        }
+        return false;
+    }
+
+    /**
      * Resolves the post-level `MediaRow[]` fallback for
      * {@link resolveTargetMediaUrls}, joining `social_post_media` (ordered by
-     * `position`) -> `social_assets`. Used ONLY when a target has zero
-     * `social_post_target_media` link rows (legacy, pre-HOS-65 G-3 posts, or
-     * targets not yet migrated to per-target media).
+     * `position`) -> `social_assets`. Used ONLY when the ENTIRE POST has zero
+     * `social_post_target_media` link rows across ALL its media (HOS-65 FIX 6)
+     * — i.e. it is genuinely legacy (pre-HOS-65 G-3) or has never been
+     * migrated to per-target media at all. See {@link postHasAnyTargetMediaLink}
+     * for how that post-level signal is computed.
      *
      * @param postId - The `social_posts.id` whose media pool to resolve.
      * @returns Ordered `MediaRow[]` for the post's shared media pool, `[]` when

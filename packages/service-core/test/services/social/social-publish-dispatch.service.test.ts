@@ -1062,6 +1062,125 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
     });
 
     // -------------------------------------------------------------------------
+    // HOS-65 FIX 6 — post-level fallback gated on POST-level (not per-target)
+    // link rows
+    // -------------------------------------------------------------------------
+    //
+    // Uses STATEFUL mock implementations (keyed by the actual `where` filter
+    // passed to each call) rather than a single static `mockResolvedValue`,
+    // because a static mock cannot distinguish "target A's own link rows" from
+    // "target B's own link rows" from "does media row X have ANY link
+    // anywhere" — and the whole point of these tests is to prove the
+    // link-row-count query is actually consulted per distinct filter.
+
+    describe('HOS-65 FIX 6 — post-level fallback gated on POST-level link rows', () => {
+        it('does NOT leak a sibling target’s media into a co-target that itself has zero link rows, once the post is migrated', async () => {
+            // Arrange — the post has exactly ONE `social_post_media` row
+            // ("media-0"), already linked to target A. Co-target B is a valid,
+            // media-capable FEED_POST target that simply has no assets of its
+            // own — a legitimate per-target config, not an error state.
+            const OWN_MEDIA_ROW_ID = 'media-0';
+            const TARGET_A_URL = 'https://res.cloudinary.com/demo/target-a-own.jpg';
+
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0)],
+                total: 1
+            });
+            mocks.postMediaModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) =>
+                    where.id === OWN_MEDIA_ROW_ID ? buildMediaRow(ASSET_ID_1, 0) : null
+            );
+            mocks.assetModel.findOne.mockResolvedValue(buildAsset(ASSET_ID_1, TARGET_A_URL));
+
+            mocks.postTargetMediaModel.findAll.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.socialPostTargetId === TARGET_ID) {
+                        // Target A has its OWN link row to the post's only media row.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    if (where.socialPostTargetId === TARGET_ID_2) {
+                        // Co-target B has NO link rows of its own.
+                        return { items: [], total: 0 };
+                    }
+                    if (where.socialPostMediaId === OWN_MEDIA_ROW_ID) {
+                        // Post-level migration check: media row "media-0" DOES
+                        // have a link row (target A's) — the post IS migrated.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    return { items: [], total: 0 };
+                }
+            );
+
+            const post = buildPost();
+            const targetA = buildTarget({ id: TARGET_ID, publishFormat: 'FEED_POST' });
+            const targetB = buildTarget({ id: TARGET_ID_2, publishFormat: 'FEED_POST' });
+
+            // Act
+            const { payload: payloadA } = await service.buildMakePayload({ target: targetA, post });
+            const { payload: payloadB } = await service.buildMakePayload({ target: targetB, post });
+
+            // Assert — target A resolves its own media via its own link row.
+            expect(payloadA.mediaUrls).toEqual([TARGET_A_URL]);
+
+            // Assert — co-target B publishes [] — NOT target A's media. Before
+            // the fix, B's zero own link rows fired the post-level fallback
+            // and leaked A's media into B's payload.
+            expect(payloadB.mediaUrls).toEqual([]);
+            expect(payloadB.mediaUrls).not.toContain(TARGET_A_URL);
+        });
+
+        it('still falls back to the post-level social_post_media pool for a genuinely legacy post (zero link rows anywhere)', async () => {
+            // Arrange — NO target, anywhere, has EVER linked to any of the
+            // post's media rows, whether queried by this target's own rows
+            // (`socialPostTargetId`) or the post-level migration check
+            // (`socialPostMediaId`) — a truly pre-HOS-65-G-3 (legacy) post.
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0), buildMediaRow(ASSET_ID_2, 1)],
+                total: 2
+            });
+            mocks.assetModel.findOne.mockImplementation(async (where: Record<string, unknown>) => {
+                if (where.id === ASSET_ID_1) {
+                    return buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/legacy-a.jpg');
+                }
+                if (where.id === ASSET_ID_2) {
+                    return buildAsset(ASSET_ID_2, 'https://res.cloudinary.com/demo/legacy-b.jpg');
+                }
+                return null;
+            });
+            mocks.postTargetMediaModel.findAll.mockImplementation(async () => ({
+                items: [],
+                total: 0
+            }));
+
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert — the post-level migration check was actually consulted
+            // (not skipped) and correctly found no link rows anywhere.
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostMediaId: 'media-0' },
+                expect.objectContaining({ pageSize: 1 })
+            );
+
+            // Assert — T-019 legacy fallback behavior is preserved.
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/legacy-a.jpg',
+                'https://res.cloudinary.com/demo/legacy-b.jpg'
+            ]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // Per-target caption/hashtags/footer overrides (HOS-65 T-020)
     // -------------------------------------------------------------------------
 
