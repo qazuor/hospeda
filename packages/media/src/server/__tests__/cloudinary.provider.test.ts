@@ -84,7 +84,7 @@ function setupUploadStream(error: Error | null, result: typeof MOCK_UPLOAD_RESPO
  * handler. Mirrors the silent-hang scenario GAP-078-027 protects against.
  */
 function setupUploadStreamWithTransportError(error: Error) {
-    mockUploadStream.mockImplementation(() => {
+    mockUploadStream.mockImplementation(function () {
         const listeners = new Map<string, (err: Error) => void>();
         return {
             on: vi.fn((event: string, handler: (err: Error) => void) => {

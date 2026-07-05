@@ -82,7 +82,7 @@ describe('scroll-reveal', () => {
         let capturedOptions: IntersectionObserverInit | undefined;
         vi.stubGlobal(
             'IntersectionObserver',
-            vi.fn((_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) => {
+            vi.fn(function (_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) {
                 capturedOptions = opts;
                 return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
             })

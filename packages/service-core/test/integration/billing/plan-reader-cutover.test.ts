@@ -492,7 +492,7 @@ describe('plan reader cutover — T-025 regression: dual-resolve (T-033)', () =>
 
         // First call (getById) returns nothing, second call (getBySlug) returns the plan
         let dbCallCount = 0;
-        mockGetDb.mockImplementation(() => {
+        mockGetDb.mockImplementation(function () {
             return dbCallCount++ === 0 ? idMissDb : slugFoundDb;
         });
 

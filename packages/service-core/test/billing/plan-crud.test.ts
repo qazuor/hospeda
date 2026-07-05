@@ -255,7 +255,9 @@ describe('plan.crud', () => {
         vi.clearAllMocks();
 
         // Default withTransaction: runs the callback synchronously with a fake db
-        mockWithTransaction.mockImplementation(async (fn: (db: unknown) => Promise<unknown>) => {
+        mockWithTransaction.mockImplementation(async function (
+            fn: (db: unknown) => Promise<unknown>
+        ) {
             const db = buildMockDb([], [], [], []);
             return fn(db);
         });
@@ -652,18 +654,18 @@ describe('plan.crud', () => {
             // Arrange
             const planRow = makePlanRow();
             const priceRow = makePriceRow();
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [], // no duplicate check (empty)
-                            [priceRow]
-                        ], // price rows after insert
-                        [[planRow]] // insert plan returns
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [], // no duplicate check (empty)
+                        [priceRow]
+                    ], // price rows after insert
+                    [[planRow]] // insert plan returns
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await createPlan(baseInput);
@@ -701,12 +703,12 @@ describe('plan.crud', () => {
             const planRow = makePlanRow();
             const priceRow = makePriceRow();
             let insertedDb: ReturnType<typeof buildMockDb> | undefined;
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
-                    return fn(insertedDb);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
 
             // Act
             await createPlan(baseInput);
@@ -724,12 +726,12 @@ describe('plan.crud', () => {
 
         it('should return ALREADY_EXISTS when slug is duplicate', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[{ id: 'existing-uuid' }]]); // duplicate found
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[{ id: 'existing-uuid' }]]); // duplicate found
+                return fn(db);
+            });
 
             // Act
             const result = await createPlan(baseInput);
@@ -771,11 +773,11 @@ describe('plan.crud', () => {
                 update: vi.fn().mockImplementation(() => makeChain([planRow]))
             };
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    return fn(mockTx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                return fn(mockTx);
+            });
 
             // Act
             const inputWithAnnual = { ...baseInput, annualPriceArs: 5000000 };
@@ -847,12 +849,12 @@ describe('plan.crud', () => {
     describe('updatePlan()', () => {
         it('should return NOT_FOUND when plan does not exist', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[]]); // getPlanByIdInternal returns nothing
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[]]); // getPlanByIdInternal returns nothing
+                return fn(db);
+            });
 
             // Act
             const result = await updatePlan('missing-uuid', { isActive: false });
@@ -869,19 +871,19 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow({ description: 'Updated description' });
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [priceRow]
-                        ], // final price fetch
-                        [],
-                        [[updatedPlan]] // update returning
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [priceRow]
+                    ], // final price fetch
+                    [],
+                    [[updatedPlan]] // update returning
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await updatePlan('plan-uuid-1', { description: 'Updated description' });
@@ -903,21 +905,21 @@ describe('plan.crud', () => {
             const priceRow = makePriceRow();
             let updatedDb: ReturnType<typeof buildMockDb> | undefined;
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    updatedDb = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [existingMonthlyPrice], // monthly price lookup
-                            [existingAnnualPrice], // annual price lookup
-                            [priceRow] // final price fetch
-                        ],
-                        [],
-                        [[updatedPlan], [], []] // plan update / monthly update / annual update
-                    );
-                    return fn(updatedDb);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                updatedDb = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [existingMonthlyPrice], // monthly price lookup
+                        [existingAnnualPrice], // annual price lookup
+                        [priceRow] // final price fetch
+                    ],
+                    [],
+                    [[updatedPlan], [], []] // plan update / monthly update / annual update
+                );
+                return fn(updatedDb);
+            });
 
             // Act
             await updatePlan('plan-uuid-1', {
@@ -947,12 +949,12 @@ describe('plan.crud', () => {
         // `finally` so no other test in this file observes the flip.
         it('HOS-39 T-027: rejects a mapped field with VALIDATION_ERROR if it were still capability', async () => {
             const existingPlan = makePlanRow();
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[existingPlan]]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[existingPlan]]);
+                return fn(db);
+            });
 
             const original = MODEL_C_FIELD_SPLIT.entitlements;
             (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
@@ -969,12 +971,12 @@ describe('plan.crud', () => {
 
         it('HOS-39 T-027: rejects update BEFORE touching the DB when a capability field is present', async () => {
             // The guard must run before any DB read/write — no partial side effects.
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([]);
+                return fn(db);
+            });
 
             const original = MODEL_C_FIELD_SPLIT.entitlements;
             (MODEL_C_FIELD_SPLIT as Record<string, string>).entitlements = 'capability';
@@ -995,12 +997,12 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow();
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan], []]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan], []]);
+                return fn(db);
+            });
 
             const result = await updatePlan('plan-uuid-1', {
                 name: 'New Display Name',
@@ -1024,23 +1026,23 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow();
             const priceRow = makePriceRow({ unitAmount: 600000 });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [existingMonthlyPrice], // monthly price lookup
-                            [priceRow]
-                        ], // final price fetch
-                        [],
-                        [
-                            [updatedPlan], // plan update
-                            []
-                        ] // price update (no returning needed)
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [existingMonthlyPrice], // monthly price lookup
+                        [priceRow]
+                    ], // final price fetch
+                    [],
+                    [
+                        [updatedPlan], // plan update
+                        []
+                    ] // price update (no returning needed)
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await updatePlan('plan-uuid-1', { monthlyPriceArs: 600000 });
@@ -1059,23 +1061,23 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow();
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [existingAnnualPrice], // annual price lookup
-                            [priceRow]
-                        ], // final price fetch
-                        [],
-                        [
-                            [updatedPlan], // plan update
-                            []
-                        ] // price deactivation
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [existingAnnualPrice], // annual price lookup
+                        [priceRow]
+                    ], // final price fetch
+                    [],
+                    [
+                        [updatedPlan], // plan update
+                        []
+                    ] // price deactivation
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await updatePlan('plan-uuid-1', { annualPriceArs: null });
@@ -1124,12 +1126,12 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow({ active: true });
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
+                return fn(db);
+            });
 
             // Act
             const result = await togglePlanActive('plan-uuid-1', true);
@@ -1150,12 +1152,12 @@ describe('plan.crud', () => {
             const updatedPlan = makePlanRow({ active: false });
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[existingPlan], [priceRow]], [], [[updatedPlan]]);
+                return fn(db);
+            });
 
             // Act
             const result = await togglePlanActive('plan-uuid-1', false);
@@ -1170,12 +1172,12 @@ describe('plan.crud', () => {
 
         it('should return NOT_FOUND when plan does not exist', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[]]); // no plan
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[]]); // no plan
+                return fn(db);
+            });
 
             // Act
             const result = await togglePlanActive('missing-uuid', true);
@@ -1222,16 +1224,16 @@ describe('plan.crud', () => {
             // Arrange
             const existingPlan = makePlanRow({ active: true, deletedAt: null });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [[existingPlan]],
-                        [],
-                        [[]] // update (soft-delete)
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [[existingPlan]],
+                    [],
+                    [[]] // update (soft-delete)
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await softDeletePlan('plan-uuid-1');
@@ -1246,12 +1248,12 @@ describe('plan.crud', () => {
 
         it('should return NOT_FOUND when plan does not exist', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[]]); // no plan
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[]]); // no plan
+                return fn(db);
+            });
 
             // Act
             const result = await softDeletePlan('missing-uuid');
@@ -1299,12 +1301,12 @@ describe('plan.crud', () => {
             const restoredPlan = makePlanRow({ deletedAt: null, active: true });
             const priceRow = makePriceRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[softDeletedPlan], [priceRow]], [], [[restoredPlan]]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[softDeletedPlan], [priceRow]], [], [[restoredPlan]]);
+                return fn(db);
+            });
 
             // Act
             const result = await restorePlan('plan-uuid-1');
@@ -1319,12 +1321,12 @@ describe('plan.crud', () => {
 
         it('should return NOT_FOUND when plan does not exist', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[]]); // no plan
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[]]); // no plan
+                return fn(db);
+            });
 
             // Act
             const result = await restorePlan('missing-uuid');
@@ -1339,12 +1341,12 @@ describe('plan.crud', () => {
             // Arrange
             const activePlan = makePlanRow({ deletedAt: null, active: true });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[activePlan]]);
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[activePlan]]);
+                return fn(db);
+            });
 
             // Act
             const result = await restorePlan('plan-uuid-1');
@@ -1392,20 +1394,20 @@ describe('plan.crud', () => {
             // Arrange
             const existingPlan = makePlanRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [{ value: 0 }]
-                        ], // subscription count = 0
-                        [],
-                        [],
-                        [[], []] // delete billingPrices, delete billingPlans
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [{ value: 0 }]
+                    ], // subscription count = 0
+                    [],
+                    [],
+                    [[], []] // delete billingPrices, delete billingPlans
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await hardDeletePlan('plan-uuid-1');
@@ -1420,12 +1422,12 @@ describe('plan.crud', () => {
 
         it('should return NOT_FOUND when plan does not exist', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb([[]]); // no plan
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb([[]]); // no plan
+                return fn(db);
+            });
 
             // Act
             const result = await hardDeletePlan('missing-uuid');
@@ -1440,17 +1442,17 @@ describe('plan.crud', () => {
             // Arrange
             const existingPlan = makePlanRow();
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (db: unknown) => Promise<unknown>) => {
-                    const db = buildMockDb(
-                        [
-                            [existingPlan], // getPlanByIdInternal
-                            [{ value: 3 }]
-                        ] // subscription count = 3
-                    );
-                    return fn(db);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                const db = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [{ value: 3 }]
+                    ] // subscription count = 3
+                );
+                return fn(db);
+            });
 
             // Act
             const result = await hardDeletePlan('plan-uuid-1');

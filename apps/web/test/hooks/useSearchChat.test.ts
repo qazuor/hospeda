@@ -119,14 +119,14 @@ describe('useSearchChat', () => {
     it('fires accommodations GET with params from the filters event', async () => {
         const filtersEvent = makeFiltersEvent();
 
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(filtersEvent);
-                p.onEvent({ type: 'token', delta: 'Encontré ' });
-                p.onEvent({ type: 'token', delta: '3 opciones.' });
-                p.onEvent({ type: 'done', conversationId: CONV_ID });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(filtersEvent);
+            p.onEvent({ type: 'token', delta: 'Encontré ' });
+            p.onEvent({ type: 'token', delta: '3 opciones.' });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -144,14 +144,14 @@ describe('useSearchChat', () => {
     // ── tokens accumulate into currentReply; done finalizes ─────────────────
 
     it('token deltas accumulate into currentReply; done finalizes assistant message', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'token', delta: 'Encontré ' });
-                p.onEvent({ type: 'token', delta: '3 opciones.' });
-                p.onEvent({ type: 'done', conversationId: CONV_ID });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'token', delta: 'Encontré ' });
+            p.onEvent({ type: 'token', delta: '3 opciones.' });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -177,12 +177,12 @@ describe('useSearchChat', () => {
     // ── conversationId stored and threaded ───────────────────────────────────
 
     it('stores conversationId from done and passes it on next turn', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'done', conversationId: CONV_ID });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -206,12 +206,12 @@ describe('useSearchChat', () => {
     // ── null conversationId is handled and NOT forwarded on next turn ────────
 
     it('handles null conversationId from done without crashing, does not send it next turn', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -241,20 +241,20 @@ describe('useSearchChat', () => {
         const firstIntent = makeIntent({ minGuests: 2, hasPool: false });
         const firstParams = makeSearchParams({ minGuests: 2, hasPool: false });
 
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent({
-                    type: 'filters',
-                    filters: {
-                        params: firstParams as unknown as ReturnType<
-                            typeof makeFiltersEvent
-                        >['filters']['params'],
-                        intent: firstIntent
-                    }
-                });
-                p.onEvent({ type: 'done', conversationId: CONV_ID });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'filters',
+                filters: {
+                    params: firstParams as unknown as ReturnType<
+                        typeof makeFiltersEvent
+                    >['filters']['params'],
+                    intent: firstIntent
+                }
+            });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -292,7 +292,9 @@ describe('useSearchChat', () => {
             .mockResolvedValueOnce(respWith('acc-B', 'b'));
 
         mockStreamSearchChat
-            .mockImplementationOnce(async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+            .mockImplementationOnce(async function (p: {
+                onEvent: (e: SearchChatSseEvent) => void;
+            }) {
                 p.onEvent(makeFiltersEvent({ minGuests: 2, hasPool: false }));
                 p.onEvent({ type: 'done', conversationId: CONV_ID });
             })
@@ -323,13 +325,13 @@ describe('useSearchChat', () => {
     // ── error event ──────────────────────────────────────────────────────────
 
     it('error event sets error state and stops streaming without throwing', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'token', delta: 'Partial' });
-                p.onEvent({ type: 'error', code: 'MODERATION_BLOCKED', message: 'Content policy' });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'token', delta: 'Partial' });
+            p.onEvent({ type: 'error', code: 'MODERATION_BLOCKED', message: 'Content policy' });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -348,16 +350,16 @@ describe('useSearchChat', () => {
     // ── stream_error ─────────────────────────────────────────────────────────
 
     it('stream_error sets error state and stops streaming without throwing', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'token', delta: 'Partial' });
-                p.onEvent({
-                    type: 'stream_error',
-                    error: new Error('Network failure')
-                });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'token', delta: 'Partial' });
+            p.onEvent({
+                type: 'stream_error',
+                error: new Error('Network failure')
+            });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -374,13 +376,13 @@ describe('useSearchChat', () => {
     // ── reset ────────────────────────────────────────────────────────────────
 
     it('reset clears all state back to initial', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'token', delta: 'OK' });
-                p.onEvent({ type: 'done', conversationId: CONV_ID });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'token', delta: 'OK' });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -408,12 +410,12 @@ describe('useSearchChat', () => {
     // ── results stored from accommodations GET ───────────────────────────────
 
     it('stores accommodation results from the GET triggered by the filters event', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -434,12 +436,12 @@ describe('useSearchChat', () => {
         });
         mockAccommodationsList.mockReturnValueOnce(listPromise);
 
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent());
-                // Do NOT emit done yet — let the list fetch be in-flight.
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            // Do NOT emit done yet — let the list fetch be in-flight.
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -461,12 +463,12 @@ describe('useSearchChat', () => {
     // ── removeFilter re-runs accommodations search ───────────────────────────
 
     it('removeFilter drops the key from filters and re-runs accommodations search', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent({ minGuests: 4, hasPool: true, hasWifi: true }));
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent({ minGuests: 4, hasPool: true, hasWifi: true }));
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -495,22 +497,22 @@ describe('useSearchChat', () => {
     // ── confidence forwarded from the filters event (SPEC-265 A1) ─────────────
 
     it('exposes the confidence carried by the filters event', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent({
-                    type: 'filters',
-                    filters: {
-                        params: makeSearchParams() as unknown as Extract<
-                            SearchChatSseEvent,
-                            { type: 'filters' }
-                        >['filters']['params'],
-                        intent: makeIntent(),
-                        confidence: 0.3
-                    }
-                } as SearchChatSseEvent);
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'filters',
+                filters: {
+                    params: makeSearchParams() as unknown as Extract<
+                        SearchChatSseEvent,
+                        { type: 'filters' }
+                    >['filters']['params'],
+                    intent: makeIntent(),
+                    confidence: 0.3
+                }
+            } as SearchChatSseEvent);
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -524,22 +526,22 @@ describe('useSearchChat', () => {
     });
 
     it('flags lastTurnHadEntities as false when the model extracts no slots', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent({
-                    type: 'filters',
-                    filters: {
-                        params: {} as unknown as Extract<
-                            SearchChatSseEvent,
-                            { type: 'filters' }
-                        >['filters']['params'],
-                        intent: {},
-                        confidence: 0.9
-                    }
-                } as SearchChatSseEvent);
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'filters',
+                filters: {
+                    params: {} as unknown as Extract<
+                        SearchChatSseEvent,
+                        { type: 'filters' }
+                    >['filters']['params'],
+                    intent: {},
+                    confidence: 0.9
+                }
+            } as SearchChatSseEvent);
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -553,12 +555,12 @@ describe('useSearchChat', () => {
     });
 
     it('keeps lastTurnHadEntities true after removing all chips (snapshot, not live)', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent(makeFiltersEvent({ minGuests: 4 }));
-                p.onEvent({ type: 'done', conversationId: null });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent({ minGuests: 4 }));
+            p.onEvent({ type: 'done', conversationId: null });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -579,15 +581,15 @@ describe('useSearchChat', () => {
     // ── stream_error stores the HTTP status (SPEC-265 C3) ─────────────────────
 
     it('stores the HTTP status and message from a stream_error event', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                p.onEvent({
-                    type: 'stream_error',
-                    status: 429,
-                    error: new Error('Too many requests')
-                });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'stream_error',
+                status: 429,
+                error: new Error('Too many requests')
+            });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 
@@ -603,13 +605,13 @@ describe('useSearchChat', () => {
     // ── abort preserves the partial reply (SPEC-265 C1) ───────────────────────
 
     it('abort stops streaming and commits the partial reply to the thread', async () => {
-        mockStreamSearchChat.mockImplementation(
-            async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
-                // Stream two tokens but never emit `done` — the turn stays open.
-                p.onEvent({ type: 'token', delta: 'Buscando ' });
-                p.onEvent({ type: 'token', delta: 'opciones' });
-            }
-        );
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            // Stream two tokens but never emit `done` — the turn stays open.
+            p.onEvent({ type: 'token', delta: 'Buscando ' });
+            p.onEvent({ type: 'token', delta: 'opciones' });
+        });
 
         const { result } = renderHook(() => useSearchChat(baseParams));
 

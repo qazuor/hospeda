@@ -78,7 +78,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('transitions to streaming on sendMessage', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Hola'));
         });
 
@@ -97,7 +99,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('accumulates tokens and sets hasPartialContent', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Hola'));
             params.onEvent(createTokenEvent(', tenés parking.'));
         });
@@ -114,7 +118,9 @@ describe('useAccommodationChat', () => {
 
     it('done event appends assistant message, stores conversationId, transitions to idle', async () => {
         const convId = '660e8400-e29b-41d4-a716-446655440001';
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Sí'));
             params.onEvent(createDoneEvent({ conversationId: convId }));
         });
@@ -141,7 +147,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('strips ---price-disclaimer--- marker and sets showPriceDisclaimer', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('El precio es $100.\n---price-disclaimer---'));
             params.onEvent(createDoneEvent());
         });
@@ -157,7 +165,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('error after tokens clears partial content, sets status to error (AC-6.2)', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Partial'));
             params.onEvent(createErrorEvent());
         });
@@ -177,7 +187,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('stream_error sets status to error with message', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent({
                 type: 'stream_error',
                 error: new Error('Network failure')
@@ -196,7 +208,9 @@ describe('useAccommodationChat', () => {
 
     it('stream_error after partial tokens clears partial content (FIX-1 regression guard)', async () => {
         // Arrange: stream emits two tokens then hits a mid-stream network drop
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Partial'));
             params.onEvent(createTokenEvent(' content'));
             params.onEvent({
@@ -223,7 +237,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('sets at_cap when messages.length >= 20 after done', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('OK'));
             params.onEvent(createDoneEvent());
         });
@@ -248,7 +264,9 @@ describe('useAccommodationChat', () => {
     });
 
     it('reset clears all state back to idle', async () => {
-        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
             params.onEvent(createTokenEvent('Hi'));
             params.onEvent(createDoneEvent());
         });

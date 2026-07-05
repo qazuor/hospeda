@@ -146,7 +146,9 @@ function buildBilling(planId: string) {
 }
 
 function wireTxWithRows(rows: unknown[]) {
-    mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+    mockWithTransaction.mockImplementation(async function (
+        callback: (tx: unknown) => Promise<unknown>
+    ) {
         const fakeTx = { execute: vi.fn().mockResolvedValue({ rows }) };
         return callback(fakeTx);
     });
