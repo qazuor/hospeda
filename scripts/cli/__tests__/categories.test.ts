@@ -8,8 +8,8 @@ import {
 import type { CommandCategory } from '../types.js';
 
 describe('CATEGORY_DISPLAY_ORDER', () => {
-    it('should have exactly 9 entries', () => {
-        expect(CATEGORY_DISPLAY_ORDER).toHaveLength(9);
+    it('should have exactly 10 entries', () => {
+        expect(CATEGORY_DISPLAY_ORDER).toHaveLength(10);
     });
 
     it('should contain all expected categories', () => {
@@ -22,7 +22,8 @@ describe('CATEGORY_DISPLAY_ORDER', () => {
             'environment',
             'documentation',
             'infrastructure',
-            'package-tools'
+            'package-tools',
+            'worktree'
         ];
         expect([...CATEGORY_DISPLAY_ORDER]).toEqual(expected);
     });
@@ -37,8 +38,8 @@ describe('CATEGORY_LABELS', () => {
         }
     });
 
-    it('should have exactly 9 label entries', () => {
-        expect(Object.keys(CATEGORY_LABELS)).toHaveLength(9);
+    it('should have exactly 10 label entries', () => {
+        expect(Object.keys(CATEGORY_LABELS)).toHaveLength(10);
     });
 });
 
