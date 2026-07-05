@@ -80,7 +80,6 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
-        "@better-auth/core": "1.6.23",
         "@repo/typescript-config": "workspace:*",
         "@sentry/esbuild-plugin": "^5.1.1",
         "@types/bcryptjs": "^3.0.0",
