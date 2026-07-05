@@ -1347,13 +1347,22 @@ function buildFullChainHarness(platformFormatRows: Array<Record<string, unknown>
         postTargetMediaModel as never
     );
 
-    return { realPipeline, dispatchService, assetModel, postMediaModel, postTargetMediaModel };
+    return {
+        realPipeline,
+        dispatchService,
+        assetModel,
+        postMediaModel,
+        postTargetMediaModel,
+        mediaProvider
+    };
 }
 
 describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
     const STORY_PLATFORM_FORMAT_ID = 'pf-instagram-story';
     const FEED_PLATFORM_FORMAT_ID = 'pf-facebook-feed';
+    const LINKEDIN_VIDEO_PLATFORM_FORMAT_ID = 'pf-linkedin-video';
 
+    // Mirrors the real seeded rows (T-010, packages/seed/src/required/socialAutomation.seed.ts).
     const PLATFORM_FORMAT_ROWS = [
         {
             id: STORY_PLATFORM_FORMAT_ID,
@@ -1369,6 +1378,14 @@ describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
             publishFormat: 'FEED_POST',
             mediaType: 'IMAGE',
             makeChannelKey: 'facebook_feed_image',
+            enabled: true
+        },
+        {
+            id: LINKEDIN_VIDEO_PLATFORM_FORMAT_ID,
+            platform: 'LINKEDIN',
+            publishFormat: 'VIDEO_POST',
+            mediaType: 'VIDEO',
+            makeChannelKey: 'linkedin_video_video',
             enabled: true
         }
     ];
@@ -1515,5 +1532,105 @@ describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
         });
         expect(feedPayload.mediaUrls).toEqual([feedCloudinaryUrl]);
         expect(feedPayload.mediaUrls).not.toContain(storyCloudinaryUrl);
+    });
+
+    it('T-024: VIDEO_POST end-to-end publish on LinkedIn', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3, 4, 5]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        // Cloudinary reports a duration WITHIN the VIDEO_POST limit (60s) — this
+        // exercises the actual preset-consultation path (HOS-65 T-021) rather
+        // than merely asserting a hardcoded value; a duration OVER the limit is
+        // already covered as a dedicated rejection test in
+        // social-image-pipeline.service.test.ts (HOS-65 T-021).
+        const VIDEO_DURATION_SECONDS = 45;
+        vi.spyOn(harness.mediaProvider, 'upload').mockResolvedValue({
+            url: 'https://res.cloudinary.com/test-cloud/video/upload/v1/linkedin-clip',
+            publicId: 'linkedin-clip',
+            width: 1920,
+            height: 1080,
+            durationSeconds: VIDEO_DURATION_SECONDS
+        });
+
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const VIDEO_URL = 'https://example.com/linkedin-clip.mp4';
+
+        // Act — ingest a draft with a single VIDEO_POST target on LinkedIn
+        // carrying its own video asset.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.LINKEDIN,
+                        publishFormat: SocialPublishFormatEnum.VIDEO_POST,
+                        assets: [{ video: { mode: 'public_url', url: VIDEO_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        expect(result.data.assetStatus).toBe('uploaded');
+
+        const videoTargetId = idByFormat.VIDEO_POST;
+        expect(videoTargetId).toBeDefined();
+
+        // Assert — processVideo persisted the asset with mediaType=VIDEO and the
+        // duration reported from the (mocked) Cloudinary response — proving the
+        // VIDEO_POST preset was consulted (HOS-65 T-021) and did not incorrectly
+        // reject a within-limits video.
+        const linkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: videoTargetId })
+        ).items;
+        expect(linkRows).toHaveLength(1);
+        const mediaRow = await harness.postMediaModel.findOne({
+            id: linkRows[0]?.socialPostMediaId
+        });
+        expect(mediaRow).not.toBeNull();
+        const asset = await harness.assetModel.findOne({ id: mediaRow?.assetId });
+        expect(asset?.mediaType).toBe(SocialMediaTypeEnum.VIDEO);
+        expect(asset?.durationSeconds).toBe(VIDEO_DURATION_SECONDS);
+        expect(asset?.originalUrl).toBe(VIDEO_URL);
+        const videoCloudinaryUrl = asset?.cloudinaryUrl as string;
+        expect(videoCloudinaryUrl).toBeTruthy();
+
+        // Assert — buildMakePayload resolves exactly 1 mediaUrl (the video),
+        // and the target resolves against the LinkedIn VIDEO_POST platform-format
+        // row (T-010) via its makeChannelKey.
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const videoTargetRow = {
+            id: videoTargetId,
+            platformFormatId: LINKEDIN_VIDEO_PLATFORM_FORMAT_ID,
+            platform: 'LINKEDIN',
+            publishFormat: 'VIDEO_POST'
+        };
+
+        const { payload } = await harness.dispatchService.buildMakePayload({
+            target: videoTargetRow,
+            post: postRow
+        });
+
+        expect(payload.mediaUrls).toEqual([videoCloudinaryUrl]);
+        expect(payload.makeChannelKey).toBe('linkedin_video_video');
+        expect(payload.platform).toBe('LINKEDIN');
     });
 });
