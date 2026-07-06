@@ -10,6 +10,7 @@ import { BaseSearchSchema, PaginationResultSchema } from '../../common/paginatio
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
+import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -333,7 +334,14 @@ export const AccommodationSummarySchema = AccommodationSchema.pick({
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: createAverageRatingField({ optional: true, default: 0 }),
     /** SPEC-097 — Privacy-aware obfuscated coordinates for public listing maps. */
-    approximateLocation: ApproximateLocationSchema.optional()
+    approximateLocation: ApproximateLocationSchema.optional(),
+    /**
+     * City projection of the linked destination (SPEC-095), same shape as the
+     * `cityDestination` field on the list/detail access schemas. Added for
+     * HOS-85: the comparison matrix needs the accommodation's city, which is
+     * NOT stored on `location` — it only exists via the `destination` relation.
+     */
+    cityDestination: CityDestinationRefSchema.optional()
 });
 // Type: Summary
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;

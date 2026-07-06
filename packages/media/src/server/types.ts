@@ -1,3 +1,5 @@
+import type { UploadApiOptions } from 'cloudinary';
+
 /**
  * Result of a successful image upload.
  */
@@ -31,6 +33,30 @@ export interface UploadOptions {
     readonly tags?: readonly string[];
     /** Whether to overwrite existing asset at the same public ID. Default: true for signed uploads. */
     readonly overwrite?: boolean;
+    /**
+     * Optional Cloudinary transformation applied to the upload (e.g. a fixed
+     * crop/aspect-ratio preset for Stories, size limits for videos).
+     *
+     * Typed via `UploadApiOptions['transformation']` so it stays in lockstep
+     * with whatever shape the underlying `cloudinary` SDK's own `upload`/
+     * `upload_stream` `transformation` param accepts (a string, a single
+     * image/video transform object, or an array of either) — rather than
+     * re-declaring a parallel type that can drift from the SDK.
+     *
+     * Purely additive: omitting it preserves current behavior exactly (HOS-65 T-016).
+     */
+    readonly transformation?: UploadApiOptions['transformation'];
+    /**
+     * Cloudinary `resource_type` for the upload. Controls whether Cloudinary
+     * treats the bytes as an image, a video, or auto-detects the kind.
+     *
+     * Defaults to `'image'` when omitted, preserving the historical behavior
+     * for every existing image caller (backward compatible). Video callers
+     * (e.g. the social pipeline's `processVideo`) MUST pass `'video'` so that
+     * Cloudinary processes the file as a video and reports video-only metadata
+     * such as `duration` (HOS-65 — video upload fix).
+     */
+    readonly resourceType?: 'image' | 'video' | 'auto';
 }
 
 /**

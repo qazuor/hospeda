@@ -58,7 +58,9 @@ describe('DetailHeader.astro — type badge unification', () => {
         });
 
         it('renders status pills as inline spans sized to match the type badge', () => {
-            expect(src).toMatch(/<span[^>]*class="detail-header__status-pill"/);
+            // HOS-84 appended the shared `wh-compact-badge` utility class, so the
+            // element carries additional classes after the base name.
+            expect(src).toMatch(/<span[^>]*class="[^"]*\bdetail-header__status-pill\b/);
         });
 
         it('applies status-pill colours from getBadgeStatusColor via inline style', () => {
@@ -173,7 +175,9 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
 
     describe('Layout', () => {
         it('wraps the textual content in a detail-header__main container', () => {
-            expect(src).toMatch(/class="detail-header__main"/);
+            // HOS-84 appended the shared `wh-compact-row` utility class, so the
+            // container carries additional classes after the base name.
+            expect(src).toMatch(/class="[^"]*\bdetail-header__main\b/);
         });
 
         it('puts the FavoriteButton in a sibling detail-header__favorite container', () => {
@@ -186,6 +190,42 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
 
         it('has CSS for detail-header__bookmark-count', () => {
             expect(src).toContain('.detail-header__bookmark-count');
+        });
+    });
+});
+
+describe('DetailHeader.astro — HOS-85 T-010: DetailCompareButton island', () => {
+    describe('imports', () => {
+        it('imports DetailCompareButton from components/accommodation', () => {
+            expect(src).toContain("from '@/components/accommodation/DetailCompareButton.client'");
+        });
+    });
+
+    describe('DetailCompareButton island', () => {
+        it('renders DetailCompareButton with client:load', () => {
+            expect(src).toMatch(/<DetailCompareButton[\s\S]*?client:load/);
+        });
+
+        it('passes accommodationId from the accommodationId prop', () => {
+            expect(src).toMatch(/<DetailCompareButton[\s\S]*?accommodationId=\{accommodationId\}/);
+        });
+
+        it('passes accommodationName from accommodation.name', () => {
+            expect(src).toMatch(
+                /<DetailCompareButton[\s\S]*?accommodationName=\{accommodation\.name\}/
+            );
+        });
+
+        it('passes accommodationThumbnailUrl from accommodation.featuredImage', () => {
+            expect(src).toMatch(
+                /<DetailCompareButton[\s\S]*?accommodationThumbnailUrl=\{accommodation\.featuredImage\}/
+            );
+        });
+
+        it('is placed inside the shared right-aligned detail-header__favorite container, before FavoriteButton', () => {
+            expect(src).toMatch(
+                /detail-header__favorite[\s\S]*?<DetailCompareButton[\s\S]*?<FavoriteButton/
+            );
         });
     });
 });

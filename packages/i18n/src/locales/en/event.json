@@ -166,7 +166,6 @@
         "month": "This month",
         "next60": "Next 60 days",
         "past": "Past events",
-        "ariaLabel": "Filter events by date",
         "freeToggle": "Free events only",
         "priceRange": "Price range"
     }

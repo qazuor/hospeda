@@ -11,6 +11,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import MapPlaceholder from '@/components/MapPlaceholder.astro';
@@ -376,6 +377,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		filterSummary={filterSummary}
 	/>
 
+	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+
 	<FilterSidebar
 		slot="filters"
 		client:load
@@ -605,12 +608,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			pointer-events: none;
 		}
 
-		/* Hide the decorative wave SVG on the fullscreen-map view: its bottom
-		 * half is transparent and would reveal the page background between
-		 * the bar and the map. Booking/Airbnb-style flat handoff instead. */
-		:global(.wave-header__wave) {
-			display: none;
-		}
+		/* HOS-84: the decorative wave SVG is gone (Opt-B "band puro"), so the old
+		 * `:global(.wave-header__wave) { display: none }` rule for this view is
+		 * obsolete and has been removed. The flat band already hands off cleanly
+		 * to the map. */
 	}
 </style>
 
@@ -619,10 +620,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	 * Mobile fullscreen-map setup. On narrow viewports the map page collapses
 	 * to: navbar + compact wave header + map filling the rest of the viewport.
 	 * Steps on every astro:page-load (so View Transitions still trigger it):
-	 *   1. Tag the wave header with `data-locked-compact` so the observer in
-	 *      WaveHeader.astro keeps the bar permanently compact for this page.
-	 *      Without this lock, scrolling back near the top would expand the bar
-	 *      and reveal the breadcrumbs row that we want hidden.
+	 *   1. Add `data-locked-compact` + the compact class directly. The wave state
+	 *      machine honors data-locked-compact (pins compact, suppresses hidden),
+	 *      and on listing the --hidden translate is suppressed anyway, so the bar
+	 *      can't expand back out or slide away near the top.
 	 *   2. Wait one frame for the compact class + CSS transition to apply,
 	 *      then measure the bar and publish its height as
 	 *      `--wave-bar-compact`. The map's CSS uses that var to size itself
@@ -645,10 +646,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			history.scrollRestoration = 'manual';
 		}
 
-		// Lock the wave header in compact mode. The observer inside
-		// WaveHeader.astro respects this flag (it both bails on init and
-		// re-asserts compact on every intersection callback) so the bar can't
-		// expand back out when scrollY lands at the top.
+		// Lock the wave header in compact mode. The wave state machine honors
+		// data-locked-compact (pins compact, never hides), and on listing the
+		// --hidden translate is suppressed regardless, so nothing expands or
+		// slides the bar out. The manual compact class covers the pre-init frame.
 		waveHeader.dataset.lockedCompact = 'true';
 		waveHeader.classList.add('wave-header--compact');
 

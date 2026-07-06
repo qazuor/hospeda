@@ -8,6 +8,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
@@ -20,6 +21,9 @@ import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+// Forwarded to CompareModeControls so the compare-mode toggle can gate
+// on entitlements: guests get the auth popover, not the upsell one.
+const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
@@ -48,6 +52,7 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/caracteristicas/${slug}` 
 <ListingLayout locale={locale} title={`${featureName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.features', 'Características') }, { label: featureName }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byFeature.tagline', 'Característica')} title={featureName} totalCount={total} />
+	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />}
 	{!hasError && cards.length > 0 && (

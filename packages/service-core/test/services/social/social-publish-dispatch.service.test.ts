@@ -47,6 +47,7 @@ import type {
     SocialPostFooterModel,
     SocialPostMediaModel,
     SocialPostModel,
+    SocialPostTargetMediaModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
     SocialSettingModel
@@ -82,6 +83,10 @@ const ASSET_ID_1 = '00000000-0000-4000-8000-000000000005';
 const ASSET_ID_2 = '00000000-0000-4000-8000-000000000006';
 const WEBHOOK_URL = 'https://hook.make.com/abc123';
 const MAKE_API_KEY = 'test-make-api-key';
+const MEDIA_ROW_ID_1 = '00000000-0000-4000-8000-000000000010';
+const MEDIA_ROW_ID_2 = '00000000-0000-4000-8000-000000000011';
+const MEDIA_ROW_ID_3 = '00000000-0000-4000-8000-000000000012';
+const ASSET_ID_3 = '00000000-0000-4000-8000-000000000013';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -162,13 +167,34 @@ function buildMediaRow(assetId: string, position: number): Record<string, unknow
 /**
  * Builds a minimal asset row with a cloudinaryUrl.
  */
-function buildAsset(id: string, cloudinaryUrl: string): Record<string, unknown> {
+function buildAsset(
+    id: string,
+    cloudinaryUrl: string,
+    mediaType = 'IMAGE'
+): Record<string, unknown> {
     return {
         id,
         cloudinaryUrl,
         cloudinaryPublicId: `public-id-${id}`,
-        mediaType: 'IMAGE',
+        mediaType,
         source: 'CLOUDINARY',
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z')
+    };
+}
+
+/**
+ * Builds a minimal `social_post_target_media` link row (HOS-65 T-011/T-019).
+ */
+function buildTargetMediaLinkRow(
+    socialPostMediaId: string,
+    position: number
+): Record<string, unknown> {
+    return {
+        id: `link-${position}`,
+        socialPostTargetId: TARGET_ID,
+        socialPostMediaId,
+        position,
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z')
     };
@@ -239,6 +265,7 @@ type Mocks = {
     publishLogModel: StandardModelMock;
     settingModel: StandardModelMock;
     auditLogMock: SocialAuditLogService;
+    postTargetMediaModel: StandardModelMock;
 };
 
 // ---------------------------------------------------------------------------
@@ -254,6 +281,11 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
     const assetModel = createModelMock();
     const publishLogModel = createModelMock();
     const settingModel = createModelMock();
+    const postTargetMediaModel = createModelMock();
+    // Default: zero target-scoped link rows, so every pre-existing test (which
+    // never mocks this model) transparently falls back to the post-level
+    // social_post_media query — same as pre-HOS-65 T-019 behavior.
+    postTargetMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
     const auditLogMock = {
         log: vi.fn().mockResolvedValue({ logged: true }),
@@ -270,7 +302,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
         assetModel as unknown as SocialAssetModel,
         publishLogModel as unknown as SocialPublishLogModel,
         settingModel as unknown as SocialSettingModel,
-        auditLogMock
+        auditLogMock,
+        postTargetMediaModel as unknown as SocialPostTargetMediaModel
     );
 
     return {
@@ -284,7 +317,8 @@ function buildService(): { service: SocialPublishDispatchService; mocks: Mocks }
             assetModel,
             publishLogModel,
             settingModel,
-            auditLogMock
+            auditLogMock,
+            postTargetMediaModel
         }
     };
 }
@@ -834,6 +868,469 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
 
             // Assert
             expect(payload.mediaUrls).toEqual([]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Per-target, format-aware media resolution via link table (HOS-65 T-019)
+    // -------------------------------------------------------------------------
+
+    describe('per-target media resolution via social_post_target_media (HOS-65 T-019)', () => {
+        /**
+         * Wires postMediaModel.findOne + assetModel.findOne so a target-scoped
+         * link row resolves through media-row -> asset, exactly as buildMakePayload
+         * must join them.
+         */
+        function wireTargetScopedJoin(
+            entries: Array<{ mediaRowId: string; assetId: string; url: string; mediaType?: string }>
+        ) {
+            mocks.postMediaModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    const match = entries.find((e) => e.mediaRowId === where.id);
+                    return match ? { id: match.mediaRowId, assetId: match.assetId } : null;
+                }
+            );
+            mocks.assetModel.findOne.mockImplementation(async (where: Record<string, unknown>) => {
+                const match = entries.find((e) => e.assetId === where.id);
+                return match
+                    ? buildAsset(match.assetId, match.url, match.mediaType ?? 'IMAGE')
+                    : null;
+            });
+        }
+
+        it('resolves a single URL for STORY via target-scoped link rows (first by link position)', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0)
+                ],
+                total: 2
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/first.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/second.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'STORY' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual(['https://res.cloudinary.com/demo/first.jpg']);
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostTargetId: TARGET_ID },
+                expect.objectContaining({ sortBy: 'position', sortOrder: 'asc' })
+            );
+        });
+
+        it('resolves a single VIDEO url for VIDEO_POST via target-scoped link rows (skips images)', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1)
+                ],
+                total: 2
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/image.jpg',
+                    mediaType: 'IMAGE'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/video.mp4',
+                    mediaType: 'VIDEO'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'VIDEO_POST' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual(['https://res.cloudinary.com/demo/video.mp4']);
+        });
+
+        it('resolves all URLs ordered by link position for CAROUSEL via target-scoped link rows', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_3, 2),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0),
+                    buildTargetMediaLinkRow(MEDIA_ROW_ID_2, 1)
+                ],
+                total: 3
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/a.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_2,
+                    assetId: ASSET_ID_2,
+                    url: 'https://res.cloudinary.com/demo/b.jpg'
+                },
+                {
+                    mediaRowId: MEDIA_ROW_ID_3,
+                    assetId: ASSET_ID_3,
+                    url: 'https://res.cloudinary.com/demo/c.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/a.jpg',
+                'https://res.cloudinary.com/demo/b.jpg',
+                'https://res.cloudinary.com/demo/c.jpg'
+            ]);
+        });
+
+        it('resolves zero URLs for TEXT_POST even when target-scoped link rows exist', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postTargetMediaModel.findAll.mockResolvedValue({
+                items: [buildTargetMediaLinkRow(MEDIA_ROW_ID_1, 0)],
+                total: 1
+            });
+            wireTargetScopedJoin([
+                {
+                    mediaRowId: MEDIA_ROW_ID_1,
+                    assetId: ASSET_ID_1,
+                    url: 'https://res.cloudinary.com/demo/ignored.jpg'
+                }
+            ]);
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'TEXT_POST' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.mediaUrls).toEqual([]);
+        });
+
+        it('falls back to the post-level social_post_media query when the target has zero link rows', async () => {
+            // Arrange — postTargetMediaModel.findAll defaults to empty (buildService())
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0), buildMediaRow(ASSET_ID_2, 1)],
+                total: 2
+            });
+            mocks.assetModel.findOne
+                .mockResolvedValueOnce(
+                    buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/post-a.jpg')
+                )
+                .mockResolvedValueOnce(
+                    buildAsset(ASSET_ID_2, 'https://res.cloudinary.com/demo/post-b.jpg')
+                );
+
+            // Act
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostTargetId: TARGET_ID },
+                expect.objectContaining({ sortBy: 'position', sortOrder: 'asc' })
+            );
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/post-a.jpg',
+                'https://res.cloudinary.com/demo/post-b.jpg'
+            ]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-65 FIX 6 — post-level fallback gated on POST-level (not per-target)
+    // link rows
+    // -------------------------------------------------------------------------
+    //
+    // Uses STATEFUL mock implementations (keyed by the actual `where` filter
+    // passed to each call) rather than a single static `mockResolvedValue`,
+    // because a static mock cannot distinguish "target A's own link rows" from
+    // "target B's own link rows" from "does media row X have ANY link
+    // anywhere" — and the whole point of these tests is to prove the
+    // link-row-count query is actually consulted per distinct filter.
+
+    describe('HOS-65 FIX 6 — post-level fallback gated on POST-level link rows', () => {
+        it('does NOT leak a sibling target’s media into a co-target that itself has zero link rows, once the post is migrated', async () => {
+            // Arrange — the post has exactly ONE `social_post_media` row
+            // ("media-0"), already linked to target A. Co-target B is a valid,
+            // media-capable FEED_POST target that simply has no assets of its
+            // own — a legitimate per-target config, not an error state.
+            const OWN_MEDIA_ROW_ID = 'media-0';
+            const TARGET_A_URL = 'https://res.cloudinary.com/demo/target-a-own.jpg';
+
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0)],
+                total: 1
+            });
+            mocks.postMediaModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) =>
+                    where.id === OWN_MEDIA_ROW_ID ? buildMediaRow(ASSET_ID_1, 0) : null
+            );
+            mocks.assetModel.findOne.mockResolvedValue(buildAsset(ASSET_ID_1, TARGET_A_URL));
+
+            mocks.postTargetMediaModel.findAll.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.socialPostTargetId === TARGET_ID) {
+                        // Target A has its OWN link row to the post's only media row.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    if (where.socialPostTargetId === TARGET_ID_2) {
+                        // Co-target B has NO link rows of its own.
+                        return { items: [], total: 0 };
+                    }
+                    if (where.socialPostMediaId === OWN_MEDIA_ROW_ID) {
+                        // Post-level migration check: media row "media-0" DOES
+                        // have a link row (target A's) — the post IS migrated.
+                        return {
+                            items: [buildTargetMediaLinkRow(OWN_MEDIA_ROW_ID, 0)],
+                            total: 1
+                        };
+                    }
+                    return { items: [], total: 0 };
+                }
+            );
+
+            const post = buildPost();
+            const targetA = buildTarget({ id: TARGET_ID, publishFormat: 'FEED_POST' });
+            const targetB = buildTarget({ id: TARGET_ID_2, publishFormat: 'FEED_POST' });
+
+            // Act
+            const { payload: payloadA } = await service.buildMakePayload({ target: targetA, post });
+            const { payload: payloadB } = await service.buildMakePayload({ target: targetB, post });
+
+            // Assert — target A resolves its own media via its own link row.
+            expect(payloadA.mediaUrls).toEqual([TARGET_A_URL]);
+
+            // Assert — co-target B publishes [] — NOT target A's media. Before
+            // the fix, B's zero own link rows fired the post-level fallback
+            // and leaked A's media into B's payload.
+            expect(payloadB.mediaUrls).toEqual([]);
+            expect(payloadB.mediaUrls).not.toContain(TARGET_A_URL);
+        });
+
+        it('still falls back to the post-level social_post_media pool for a genuinely legacy post (zero link rows anywhere)', async () => {
+            // Arrange — NO target, anywhere, has EVER linked to any of the
+            // post's media rows, whether queried by this target's own rows
+            // (`socialPostTargetId`) or the post-level migration check
+            // (`socialPostMediaId`) — a truly pre-HOS-65-G-3 (legacy) post.
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({
+                items: [buildMediaRow(ASSET_ID_1, 0), buildMediaRow(ASSET_ID_2, 1)],
+                total: 2
+            });
+            mocks.assetModel.findOne.mockImplementation(async (where: Record<string, unknown>) => {
+                if (where.id === ASSET_ID_1) {
+                    return buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/legacy-a.jpg');
+                }
+                if (where.id === ASSET_ID_2) {
+                    return buildAsset(ASSET_ID_2, 'https://res.cloudinary.com/demo/legacy-b.jpg');
+                }
+                return null;
+            });
+            mocks.postTargetMediaModel.findAll.mockImplementation(async () => ({
+                items: [],
+                total: 0
+            }));
+
+            const input = buildMinimalInput({ publishFormat: 'CAROUSEL' });
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert — the post-level migration check was actually consulted
+            // (not skipped) and correctly found no link rows anywhere.
+            expect(mocks.postTargetMediaModel.findAll).toHaveBeenCalledWith(
+                { socialPostMediaId: 'media-0' },
+                expect.objectContaining({ pageSize: 1 })
+            );
+
+            // Assert — T-019 legacy fallback behavior is preserved.
+            expect(payload.mediaUrls).toEqual([
+                'https://res.cloudinary.com/demo/legacy-a.jpg',
+                'https://res.cloudinary.com/demo/legacy-b.jpg'
+            ]);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Per-target caption/hashtags/footer overrides (HOS-65 T-020)
+    // -------------------------------------------------------------------------
+
+    describe('per-target caption/hashtags/footer overrides (HOS-65 T-020)', () => {
+        it('uses all 3 overrides when set on the target', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Target-specific caption',
+                    hashtagsOverrideText: '#target #override',
+                    footerOverride: 'Target-specific footer'
+                },
+                { finalCaption: 'Post caption', finalHashtagsText: '#post', footerId: FOOTER_ID }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Target-specific caption');
+            expect(payload.hashtagsFinal).toBe('#target #override');
+            expect(payload.footerFinal).toBe('Target-specific footer');
+            // The footer row lookup is skipped entirely when an override is set
+            expect(mocks.footerModel.findOne).not.toHaveBeenCalled();
+        });
+
+        it('inherits post-level values when all 3 overrides are null', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                { captionOverride: null, hashtagsOverrideText: null, footerOverride: null },
+                {
+                    finalCaption: 'Post caption',
+                    finalHashtagsText: '#post #hashtags',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Post caption');
+            expect(payload.hashtagsFinal).toBe('#post #hashtags');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+            expect(mocks.footerModel.findOne).toHaveBeenCalledWith({ id: FOOTER_ID });
+        });
+
+        it('applies a partial override (caption only) while hashtags/footer inherit', async () => {
+            // Arrange
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const input = buildMinimalInput(
+                {
+                    captionOverride: 'Only caption is overridden',
+                    hashtagsOverrideText: null,
+                    footerOverride: null
+                },
+                {
+                    finalCaption: 'Post caption (should NOT be used)',
+                    finalHashtagsText: '#inherited',
+                    footerId: FOOTER_ID
+                }
+            );
+
+            // Act
+            const { payload } = await service.buildMakePayload(input);
+
+            // Assert
+            expect(payload.captionFinal).toBe('Only caption is overridden');
+            expect(payload.hashtagsFinal).toBe('#inherited');
+            expect(payload.footerFinal).toBe('Inherited footer content');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // AC-4: override inheritance across sibling targets (HOS-65 T-025)
+    // -------------------------------------------------------------------------
+
+    describe('AC-4: override inheritance across sibling targets (HOS-65 T-025)', () => {
+        it('resolves each sibling target independently — overrides for one, inheritance for the other — with no cross-contamination', async () => {
+            // Arrange — two sibling targets on the SAME post: one carries all 3
+            // overrides, the other carries all 3 as null (inherit).
+            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            mocks.footerModel.findOne.mockResolvedValue({
+                id: FOOTER_ID,
+                content: 'Inherited footer content',
+                active: true
+            });
+
+            const post = buildPost({
+                finalCaption: 'Post-level caption',
+                finalHashtagsText: '#post #level',
+                footerId: FOOTER_ID
+            });
+
+            const overriddenTarget = buildTarget({
+                id: TARGET_ID,
+                captionOverride: 'Overridden caption',
+                hashtagsOverrideText: '#overridden',
+                footerOverride: 'Overridden footer'
+            });
+            const inheritingTarget = buildTarget({
+                id: TARGET_ID_2,
+                captionOverride: null,
+                hashtagsOverrideText: null,
+                footerOverride: null
+            });
+
+            // Act — build both payloads via the SAME service instance
+            const { payload: overriddenPayload } = await service.buildMakePayload({
+                target: overriddenTarget,
+                post
+            });
+            const { payload: inheritingPayload } = await service.buildMakePayload({
+                target: inheritingTarget,
+                post
+            });
+
+            // Assert — the overridden target used its own values
+            expect(overriddenPayload.captionFinal).toBe('Overridden caption');
+            expect(overriddenPayload.hashtagsFinal).toBe('#overridden');
+            expect(overriddenPayload.footerFinal).toBe('Overridden footer');
+
+            // Assert — the inheriting sibling used the parent post's values —
+            // NEVER the overridden sibling's values (no cross-contamination
+            // between the two buildMakePayload calls)
+            expect(inheritingPayload.captionFinal).toBe('Post-level caption');
+            expect(inheritingPayload.hashtagsFinal).toBe('#post #level');
+            expect(inheritingPayload.footerFinal).toBe('Inherited footer content');
+            expect(inheritingPayload.captionFinal).not.toBe(overriddenPayload.captionFinal);
+            expect(inheritingPayload.hashtagsFinal).not.toBe(overriddenPayload.hashtagsFinal);
+            expect(inheritingPayload.footerFinal).not.toBe(overriddenPayload.footerFinal);
         });
     });
 
@@ -1570,6 +2067,131 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                     socialPostTargetId: TARGET_ID
                 })
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // AC-3: cross-target isolation (HOS-65 T-022)
+    // -------------------------------------------------------------------------
+
+    describe('AC-3: cross-target isolation (HOS-65 T-022)', () => {
+        it('leaves each sibling target independently correct after one PUBLISHES and the other FAILS (no cross-contamination)', async () => {
+            // Arrange — two sibling targets on the same post. TARGET_ID dispatches
+            // successfully; TARGET_ID_2 is already at the exhaustion threshold and
+            // fails on this attempt.
+            const successBody = {
+                status: 'SUCCESS',
+                externalPostId: 'ext-id-published',
+                externalPostUrl: 'https://instagram.com/p/published'
+            };
+            let fetchCallCount = 0;
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+                fetchCallCount += 1;
+                return fetchCallCount === 1
+                    ? buildFetchResponse(200, true, successBody)
+                    : buildFetchResponse(503, false);
+            });
+
+            const targetA = buildTarget({ id: TARGET_ID, retryCount: 0 });
+            const targetB = buildTarget({ id: TARGET_ID_2, retryCount: 3 });
+            const post = buildPost();
+
+            // cascadePostStatus (targetA's success path) needs postModel.findOne +
+            // targetModel.findAll. checkAndCascadePostFailure (targetB's exhaustion
+            // path) also calls targetModel.findAll — mock each dispatch's call in order.
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        }
+                    ],
+                    total: 1
+                })
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        },
+                        {
+                            id: TARGET_ID_2,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.FAILED
+                        }
+                    ],
+                    total: 2
+                });
+
+            // Act — dispatch each target independently (never concurrently)
+            const resultA = await service.dispatchTarget({
+                target: targetA,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+            const resultB = await service.dispatchTarget({
+                target: targetB,
+                post,
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — outcomes
+            expect(resultA.outcome).toBe('published');
+            expect(resultB.outcome).toBe('exhausted');
+
+            // Assert — TARGET_ID was updated to PUBLISHED and NEVER to FAILED
+            const updateCalls = (mocks.targetModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const targetAUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID
+            );
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(true);
+            expect(
+                targetAUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID_2 was updated to FAILED and NEVER to PUBLISHED
+            const targetBUpdates = updateCalls.filter(
+                (call) => (call[0] as Record<string, unknown>).id === TARGET_ID_2
+            );
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.FAILED
+                )
+            ).toBe(true);
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).status ===
+                        SocialPostStatusEnum.PUBLISHED
+                )
+            ).toBe(false);
+
+            // Assert — TARGET_ID's publishedAt/externalPostId never leaked into TARGET_ID_2's updates
+            expect(
+                targetBUpdates.some(
+                    (call) =>
+                        (call[1] as Record<string, unknown>).externalPostId ===
+                        successBody.externalPostId
+                )
+            ).toBe(false);
         });
     });
 

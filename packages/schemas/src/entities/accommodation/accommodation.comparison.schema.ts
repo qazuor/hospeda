@@ -12,7 +12,8 @@ import { AccommodationSummarySchema } from './accommodation.query.schema.js';
  *
  * Note on bounds: {@link AccommodationComparisonRequestSchema} validates
  * **shape** only (an array of UUIDs of a sane size). The real per-plan cap
- * (Plus = 2, VIP = 4) is enforced by `gateComparator()` on the route, not
+ * (Plus = 3, VIP = 5 — raised from the original Plus = 2 / VIP = 4 by HOS-16)
+ * is enforced by `gateComparator()` on the route, not
  * here — keeping the schema decoupled from billing config (D-2 / D-3). The
  * `max` below is just an anti-abuse ceiling.
  *

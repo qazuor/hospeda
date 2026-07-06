@@ -1,0 +1,395 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-85",
+    "title": "Accommodation comparison UI redesign",
+    "created": "2026-07-04T23:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add new comparison.* i18n sub-keys in es/en/pt",
+            "description": "Extend the existing comparison.* namespace in packages/i18n/src/locales/{es,en,pt}/accommodations.json with the NEW keys the redesign introduces: mode toggle label + banner text, contextual card button add/remove states (Agregar/Agregado), bar 'N de M' counter + empty-slot + guidance subtitle + 'Ver comparación' CTA, matrix 'Resaltar diferencias' toggle + best-value label, mobile scroll hint, and the detail-page 'Agregar a comparación' button states. Reuse pre-existing keys where they fit (comparison.bar.count_*, comparison.button.*). Tests: source-assert that every new key exists in all three locales (add to the comparison i18n presence test).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-006", "T-007", "T-008", "T-010"],
+            "subtasks": [
+                { "title": "Add mode toggle + banner keys (es/en/pt)", "completed": false },
+                {
+                    "title": "Add contextual button + bar counter/guidance keys",
+                    "completed": false
+                },
+                {
+                    "title": "Add matrix diff-toggle + best-value + mobile hint + detail button keys",
+                    "completed": false
+                },
+                { "title": "Extend i18n presence test to assert new keys", "completed": false }
+            ],
+            "tags": ["i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add compare-mode state to compare-store",
+            "description": "Extend apps/web/src/store/compare-store.ts with a client-side compare mode: mode:boolean state, setMode/toggleMode, subscribed via useSyncExternalStore (same pub/sub pattern as selection). Scope persistence to /alojamientos/*: mode turns OFF when leaving the accommodation section (do NOT persist mode across sections; selection persistence stays unchanged in localStorage). Keep getServerSnapshot SSR-safe (mode false). Tests (unit, apps/web/test/store/compare-store*.test): toggle flips mode, mode default false on SSR, mode clears on section-leave signal, selection persistence untouched.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-006"],
+            "subtasks": [
+                { "title": "Add mode state + toggle/set + subscribe wiring", "completed": false },
+                {
+                    "title": "Scope mode to /alojamientos/* (clear on leaving section)",
+                    "completed": false
+                },
+                { "title": "SSR-safe snapshot (mode false)", "completed": false },
+                { "title": "Unit tests for mode toggle/persistence/scope", "completed": false }
+            ],
+            "tags": ["store", "state", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Write computeBestValue pure helper",
+            "description": "Add a pure helper (apps/web/src/components/shared/compare/computeBestValue.ts or colocated) that, given the compared accommodations, returns which item id(s) hold the best value per comparable row: cheapest price and best (highest) average rating. Handle ties (multiple winners), missing values (no marker), and single-item (no marker). RO-RO, named export, JSDoc. Tests (unit): cheapest wins, highest rating wins, ties return all winners, missing/undefined excluded, single item yields no best value.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Implement computeBestValue (price + rating, ties, missing)",
+                    "completed": false
+                },
+                { "title": "Unit tests covering ties/missing/single-item", "completed": false }
+            ],
+            "tags": ["logic", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Build compare-mode toggle + banner component",
+            "description": "New React island: a prominent labeled 'Comparar alojamientos' toggle plus a mode banner ('Modo comparación activo · elegí los alojamientos que querés comparar'), reading/writing compare mode from the store (T-002) and i18n keys (T-001). Placement is next to the ListingPageHeader (decision: NOT inside FilterSidebar). CSS Modules + design tokens, no Tailwind. Tests (component, testing-library): toggle reflects and flips mode; banner shows only when mode ON; a11y (button role, aria-pressed).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Toggle island wired to store mode", "completed": false },
+                { "title": "Mode banner (visible only when mode ON)", "completed": false },
+                { "title": "CSS Modules + tokens styling", "completed": false },
+                { "title": "Component tests (toggle + banner + a11y)", "completed": false }
+            ],
+            "tags": ["component", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wire toggle + banner into all 6 accommodation listing pages",
+            "description": "Mount the toggle+banner island (T-004) next to ListingPageHeader on the six accommodation listing index pages: alojamientos/index.astro, tipo/[type]/index.astro, mapa.astro, caracteristicas/[slug]/index.astro, comodidades/[slug]/index.astro, destinos/[slug]/alojamientos/index.astro. NEVER edit the page/[page].astro rewrite shims. Use client:idle/visible consistently. Tests (source-assert): each of the 6 index pages renders the toggle island; shims untouched.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Mount on alojamientos/index + tipo + mapa", "completed": false },
+                {
+                    "title": "Mount on caracteristicas + comodidades + destinos listings",
+                    "completed": false
+                },
+                { "title": "Source-assert tests for all 6 pages", "completed": false }
+            ],
+            "tags": ["integration", "astro", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "CompareButton contextual variant + remove mute icon from card",
+            "description": "Add a contextual variant to CompareButton.client.tsx (+ .module.css): 'Agregar' <-> 'Agregado ✓' add/remove state, shown only when compare mode is ON (reads mode from store T-002, i18n T-001). Remove the standalone CompareButton (mute icon) from AccommodationCard.astro's .acc-card__actions column; render the contextual control in the card body (price+CTA row area) gated on mode. Keep event propagation guards (card is a wide <a>). Tests (component): hidden off-mode, add/remove toggles selection, selected affordance; source-assert card no longer has the mute compare icon in actions.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-011", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Contextual variant (Agregar/Agregado, mode-gated)",
+                    "completed": false
+                },
+                {
+                    "title": "Remove mute CompareButton from AccommodationCard actions",
+                    "completed": false
+                },
+                {
+                    "title": "Render contextual control in card body when mode ON",
+                    "completed": false
+                },
+                { "title": "Component tests (off-mode hidden, add/remove)", "completed": false }
+            ],
+            "tags": ["component", "astro", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Redesign CompareBar to educate",
+            "description": "Rework CompareBar.client.tsx (+ .module.css): 'Comparás N de M' counter (M from useCompareGuard maxItems), empty slots up to the plan cap, guidance subtitle when exactly 1 selected ('Sumá al menos uno más…'), explicit 'Ver comparación →' CTA disabled below MIN_TO_COMPARE, mobile bottom-anchored above navigation. i18n keys T-001. Tests (component): renders by count (0 hidden / 1 guidance+disabled CTA / N / at-cap), CTA enabled/disabled, mobile anchor class.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012", "T-014"],
+            "subtasks": [
+                { "title": "Counter 'N de M' + plan-cap empty slots", "completed": false },
+                { "title": "Guidance subtitle at count===1 + CTA gating", "completed": false },
+                { "title": "Mobile bottom anchor styling", "completed": false },
+                { "title": "Component tests by count + CTA state", "completed": false }
+            ],
+            "tags": ["component", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Desktop matrix: diff-highlight toggle + best-value marker",
+            "description": "In ComparisonMatrix.client.tsx (+ .module.css): add a 'Resaltar diferencias' toggle (default ON) that highlights rows whose values differ; add a per-row best-value amber marker for price (cheapest) and rating (best) using computeBestValue (T-003), colored via var(--rating-star) (decision: reuse rating-star token, never hardcode). Turning the toggle off removes diff highlighting but keeps best-value markers. i18n T-001. Tests (component): diff on/off behavior, best-value marker on cheapest price / best rating, markers persist when diff off.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Diff-highlight toggle (default ON)", "completed": false },
+                { "title": "Best-value amber marker via var(--rating-star)", "completed": false },
+                { "title": "Markers independent of diff toggle", "completed": false },
+                { "title": "Component tests (diff + best-value)", "completed": false }
+            ],
+            "tags": ["component", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Mobile matrix: sticky attribute column + scroll-snap",
+            "description": "Make the ComparisonMatrix mobile-usable: attribute column sticky-left (position:sticky;left:0), accommodation columns in a horizontal-scroll container with scroll-snap-type + scroll-snap-align, best value shown as an amber dot (var(--rating-star)). Headers must not scroll away from their values. Add the mobile scroll hint (i18n T-001). Tests (component/source-assert): sticky class on attribute cells, scroll-snap container present, amber dot renders on best value.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Sticky-left attribute column", "completed": false },
+                { "title": "Horizontal scroll-snap for accommodation columns", "completed": false },
+                { "title": "Amber best-value dot + mobile hint", "completed": false },
+                { "title": "Component/source-assert tests", "completed": false }
+            ],
+            "tags": ["component", "css", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Detail-page direct 'Agregar a comparación' button",
+            "description": "Add a direct, always-visible compare button island on the accommodation detail page — in DetailHeader.astro next to FavoriteButton (.detail-header__favorite). No compare mode here (single item): uses useCompareGuard.toggle + store. Button switches 'Agregar a comparación' <-> 'En comparación ✓'; tapping again removes. i18n T-001. Tests (component): toggle add/removes, label switches, upsell/limit outcomes surfaced like CompareButton.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Detail compare button island (guard-based, no mode)",
+                    "completed": false
+                },
+                {
+                    "title": "Mount in DetailHeader.astro next to FavoriteButton",
+                    "completed": false
+                },
+                { "title": "Component tests (add/remove/label switch)", "completed": false }
+            ],
+            "tags": ["component", "astro", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Align MapCardsSidebar compare usage",
+            "description": "Update MapCardsSidebar.client.tsx's CompareButton usage to match the new contextual behavior (T-006) for consistency — mode-gated contextual control instead of the always-on standalone mute icon, respecting that the sidebar is already a client component. Tests (component): sidebar compare control follows mode + add/remove.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Switch sidebar to contextual mode-gated control", "completed": false },
+                { "title": "Update MapCardsSidebar test", "completed": false }
+            ],
+            "tags": ["component", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Ensure global bar reflects selection on listing + detail",
+            "description": "Verify/adjust that the global CompareBar (mounted in ListingLayout.astro) reflects selection built from the detail page: detail uses DefaultLayout (no bar there — the detail button's 'En comparación ✓' is the feedback), but returning to any listing must show the bar already populated. Confirm the store is the single source and the bar picks up detail-added items. Tests (integration/component): add from detail store path -> bar shows item on a listing render.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-010"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Confirm bar mount coverage vs detail (DefaultLayout)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify detail-added items surface in bar on listing",
+                    "completed": false
+                },
+                { "title": "Integration test for cross-page selection", "completed": false }
+            ],
+            "tags": ["integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Cross-cutting component + source-assert tests",
+            "description": "Consolidate the remaining test coverage: AccommodationCard.astro no longer renders the mute compare icon in actions and renders the contextual control gated on mode; i18n comparison.* new keys present in es/en/pt; CompareButton contextual + MapCardsSidebar aligned. AAA pattern, testing-library + astro source-assert. Fill any gaps left by per-feature tasks.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-011"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "AccommodationCard source-assert (icon removed / contextual present)",
+                    "completed": false
+                },
+                { "title": "i18n presence tests (es/en/pt)", "completed": false },
+                { "title": "Fill coverage gaps", "completed": false }
+            ],
+            "tags": ["testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Manual desktop + mobile smoke",
+            "description": "Full manual flow, desktop + mobile (iOS Safari + Chrome Android): header toggle -> mode banner -> select cards -> bar 'N de M' -> comparison view diff toggle + best-value -> mobile sticky attribute column + scroll-snap; detail-page 'Agregar a comparación' -> return to listing -> bar reflects selection. Verify no broken horizontal scroll and attribute labels always visible on mobile. Record outcomes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-007", "T-009", "T-012", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Desktop flow (toggle -> banner -> select -> bar -> matrix)",
+                    "completed": false
+                },
+                {
+                    "title": "Mobile flow (sticky + scroll-snap, no broken scroll)",
+                    "completed": false
+                },
+                { "title": "Detail add -> bar reflects on listing", "completed": false }
+            ],
+            "tags": ["testing", "smoke"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Docs + dead-code cleanup",
+            "description": "Update apps/web docs / changelog for the redesigned comparison UX; remove dead compare-mute-icon styles/props left over from the old standalone-only usage (CompareButton unused variant paths, AccommodationCard actions styles). Ensure no orphaned i18n keys.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update apps/web docs/changelog", "completed": false },
+                { "title": "Remove dead compare-icon styles/props", "completed": false }
+            ],
+            "tags": ["docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-04T23:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 15,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

@@ -25,5 +25,11 @@ export enum SocialPlatformEnum {
     FACEBOOK = 'FACEBOOK',
 
     /** X (formerly Twitter) — supports TEXT_POST, IMAGE_POST, VIDEO_POST formats. */
-    X = 'X'
+    X = 'X',
+
+    /** LinkedIn — supports TEXT_POST, VIDEO_POST formats (no STORY — LinkedIn has no Stories). */
+    LINKEDIN = 'LINKEDIN',
+
+    /** TikTok — supports VIDEO_POST only (video-first platform, no STORY format). */
+    TIKTOK = 'TIKTOK'
 }

@@ -2381,6 +2381,8 @@ export class AccommodationService extends BaseCrudService<
      * (enforced by `gateComparator()` on the route before this method is reached).
      *
      * Projection pipeline (mirrors `_afterList`):
+     * - City destination batch-read + projection via {@link projectAccommodationCityDestinationList}
+     *   (adds `cityDestination` — HOS-85: needed by the comparison matrix's location row)
      * - Composed media batch-read via {@link attachComposedMediaList}
      * - Location privacy obfuscation via {@link applyAccommodationLocationPrivacyList}
      *   (adds `approximateLocation`, strips exact coordinates for non-owners/non-admin)
@@ -2420,9 +2422,38 @@ export class AccommodationService extends BaseCrudService<
                     }
                 }
 
+                // Batch-read destinations for the city projection (SPEC-095 parity
+                // with the list/search path). `findByIds` is a flat SELECT with no
+                // relations, so — unlike `_afterList`/`_afterSearch`, which get the
+                // `destination` relation eager-loaded by the model — this method
+                // must fetch destinations itself. HOS-85: without this, the
+                // comparison matrix's "Ubicación" row was always blank because
+                // `location` does not carry a city, only `cityDestination` does.
+                const destinationIds = Array.from(
+                    new Set(
+                        viewableRows
+                            .map((row) => row.destinationId)
+                            .filter((id): id is string => Boolean(id))
+                    )
+                );
+                const destinations =
+                    destinationIds.length > 0
+                        ? await this._destinationModel.findByIds(destinationIds, execCtx?.tx)
+                        : [];
+                const destinationById = new Map(
+                    destinations.map((destination) => [destination.id, destination])
+                );
+                const rowsWithDestination = viewableRows.map((row) => ({
+                    ...row,
+                    destination: row.destinationId
+                        ? destinationById.get(row.destinationId)
+                        : undefined
+                }));
+                const withCity = projectAccommodationCityDestinationList(rowsWithDestination);
+
                 // Batch-read composed media from the relational table (no N+1)
                 const withMedia = await attachComposedMediaList({
-                    items: viewableRows,
+                    items: withCity,
                     mediaModel: this._accommodationMediaModel,
                     tx: execCtx?.tx
                 });
@@ -2434,11 +2465,12 @@ export class AccommodationService extends BaseCrudService<
                     ? applyAccommodationLocationPrivacyList(withMedia, { actor, salt })
                     : withMedia;
 
-                // Cast to expose the dynamically-added `approximateLocation` field
-                // that `applyAccommodationLocationPrivacyList` injects at runtime but
-                // that the base `Accommodation` type does not declare.
+                // Cast to expose the dynamically-added `approximateLocation` and
+                // `cityDestination` fields that the projection helpers inject at
+                // runtime but that the base `Accommodation` type does not declare.
                 type WithApproxLocation = Accommodation & {
                     approximateLocation?: AccommodationSummary['approximateLocation'];
+                    cityDestination?: AccommodationSummary['cityDestination'];
                 };
                 const projectedItems = withPrivacy as WithApproxLocation[];
 
@@ -2462,6 +2494,9 @@ export class AccommodationService extends BaseCrudService<
                         averageRating: item.averageRating ?? 0,
                         ...(item.approximateLocation !== undefined && {
                             approximateLocation: item.approximateLocation
+                        }),
+                        ...(item.cityDestination !== undefined && {
+                            cityDestination: item.cityDestination
                         })
                     };
                     summaryMap.set(item.id, summary);

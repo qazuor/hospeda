@@ -1,21 +1,26 @@
 ---
 /**
  * @file DestinationDetailHeader.astro
- * @description Destination detail page header with name, attraction badges,
- * bookmark counter, and favorite button. Designed to live inside a
- * WaveHeader so it can collapse to a single row when the wave goes
- * compact on scroll (mirroring the accommodation DetailHeader pattern).
+ * @description Destination detail page header with a history-aware back
+ * button, name, attraction badges, bookmark counter, and favorite button.
  *
- * Layout: 2-column flex at all times — `.dest-header__main` on the left
- * (name + attractions + meta) and `.dest-header__favorite` on the right.
+ * Layout (HOS-84): a vertical stack — a back-button row on top, then a
+ * 2-column `.dest-header__body` row where `.dest-header__main` holds the
+ * name + attractions + meta and `.dest-header__favorite` anchors the heart
+ * button on the right. The favorite stays right-aligned regardless of
+ * viewport or compact mode.
  *
- * Compact mode: when the page-header is wrapped by a `.wave-header--compact`
- * ancestor (toggled by WaveHeader's IntersectionObserver), the inner main
- * flow collapses to a single wrapped row, fonts shrink, and the bookmark
- * meta + attractions are hidden so only the name remains visible.
+ * Compact behavior comes from the shared `.wh-compact-*` utility classes
+ * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
+ * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
+ * drops the back-button row + attractions + meta. There are no status badges
+ * on this header, so `wh-compact-badge` is not used. Only the genuinely
+ * destination-specific body cross-axis alignment override remains local
+ * below.
  */
 import { FavoriteIcon } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -67,55 +72,80 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 ---
 
 <header class="dest-header">
-	<div class="dest-header__main">
-		<h1 class="dest-header__name">{name}</h1>
-
-		{sortedAttractions.length > 0 && (
-			<ul class="dest-header__attractions" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
-				{sortedAttractions.map((a) => (
-					<li class="dest-header__attraction-badge">{a.name}</li>
-				))}
-				{remainingAttractions > 0 && (
-					<li class="dest-header__attraction-badge dest-header__attraction-badge--more">
-						+{remainingAttractions}
-					</li>
-				)}
-			</ul>
-		)}
-
-		{bookmarkCount !== undefined && (
-			<div class="dest-header__meta">
-				<span
-					class="dest-header__bookmark-count"
-					aria-label={bookmarkCount === 0
-						? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-						: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
-				>
-					<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
-					{bookmarkCount === 0
-						? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-						: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
-				</span>
-			</div>
-		)}
+	<div class="dest-header__back-row wh-compact-hide">
+		<HeaderBackButton href={`/${locale}/destinos/`} locale={locale} />
 	</div>
 
-	<div class="dest-header__favorite">
-		<FavoriteButton
-			client:load
-			entityId={destinationId}
-			entityType="DESTINATION"
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
-			isAuthenticated={isAuthenticated}
-			variant="standalone"
-			locale={locale}
-		/>
+	<div class="dest-header__body">
+		<div class="dest-header__main wh-compact-row">
+			<h1 class="dest-header__name wh-compact-title">{name}</h1>
+
+			{sortedAttractions.length > 0 && (
+				<ul class="dest-header__attractions wh-compact-hide" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
+					{sortedAttractions.map((a) => (
+						<li class="dest-header__attraction-badge">{a.name}</li>
+					))}
+					{remainingAttractions > 0 && (
+						<li class="dest-header__attraction-badge dest-header__attraction-badge--more">
+							+{remainingAttractions}
+						</li>
+					)}
+				</ul>
+			)}
+
+			{bookmarkCount !== undefined && (
+				<div class="dest-header__meta wh-compact-hide">
+					<span
+						class="dest-header__bookmark-count"
+						aria-label={bookmarkCount === 0
+							? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+							: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
+					>
+						<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
+						{bookmarkCount === 0
+							? t('destinations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+							: tPlural('destinations.detail.bookmark_count', bookmarkCount)}
+					</span>
+				</div>
+			)}
+		</div>
+
+		<div class="dest-header__favorite">
+			<FavoriteButton
+				client:load
+				entityId={destinationId}
+				entityType="DESTINATION"
+				initialIsFavorited={initialIsFavorited}
+				initialBookmarkId={initialBookmarkId}
+				isAuthenticated={isAuthenticated}
+				variant="standalone"
+				locale={locale}
+			/>
+		</div>
 	</div>
 </header>
 
 <style>
+	/* Vertical stack: back-button row on top, then the body row. */
 	.dest-header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	/* Back-button row — collapses out via `wh-compact-hide` in compact mode, so
+	   it needs its own max-height/opacity transition to animate. */
+	.dest-header__back-row {
+		overflow: hidden;
+		max-height: 3em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease;
+	}
+
+	/* Body: main content stretches, favorite stays right. */
+	.dest-header__body {
 		display: flex;
 		flex-direction: row;
 		align-items: flex-start;
@@ -128,7 +158,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		transition: flex-direction 0.3s ease, gap 0.3s ease;
+		transition: gap 0.3s ease;
 	}
 
 	.dest-header__favorite {
@@ -205,38 +235,18 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 	}
 
 	/* =========================================================
-	 * Compact state — collapses everything in __main to one row.
-	 * Only the type-badge and the name remain readable; meta hides.
+	 * Compact state — only the genuinely destination-specific body
+	 * cross-axis alignment override remains here; the row collapse, title
+	 * shrink, and attractions/meta/back hide all come from the shared
+	 * `.wh-compact-*` utilities applied in the markup (contract in
+	 * WaveHeader.astro).
 	 * ========================================================= */
-	:global(.wave-header--compact) .dest-header {
+	:global(.wave-header--compact) .dest-header__body {
 		align-items: center;
-	}
-
-	:global(.wave-header--compact) .dest-header__main {
-		flex-direction: row;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	:global(.wave-header--compact) .dest-header__attractions {
-		max-height: 0;
-		opacity: 0;
-		pointer-events: none;
-		overflow: hidden;
-	}
-
-	:global(.wave-header--compact) .dest-header__name {
-		font-size: clamp(1rem, 2vw, 1.25rem);
-	}
-
-	:global(.wave-header--compact) .dest-header__meta {
-		max-height: 0;
-		opacity: 0;
-		pointer-events: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.dest-header__back-row,
 		.dest-header__main,
 		.dest-header__attractions,
 		.dest-header__attraction-badge,

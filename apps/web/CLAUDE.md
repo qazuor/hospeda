@@ -811,6 +811,29 @@ React island at `src/components/account/MoveToCollectionModal.client.tsx`. Wired
 
 React island at `src/components/account/CollectionDetailActions.client.tsx`. Mounted with `client:load` from `pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro` to power the Edit + Delete buttons in the collection detail header. Edit reuses `CreateEditCollectionModal` in EDIT mode and reloads the page on save so the header reflects the new name/color/icon. Delete uses `window.confirm()` (MVP) and calls `userBookmarkCollectionsApi.delete`; on success it shows a success toast and redirects to `/{lang}/mi-cuenta/favoritos/`. Test selectors: `data-testid="collection-actions-edit"`, `collection-actions-delete`.
 
+### WaveHeader (detail + listing top band, HOS-84)
+
+`src/components/shared/ui/WaveHeader.astro` renders the solid `--surface-header` band at
+the top of detail and listing pages (the old "wave SVG" is gone — "band puro"). Scroll
+behavior is a pure, unit-tested state machine in
+`src/components/shared/ui/waveHeaderState.ts` (`nextWaveHeaderState`): detail runs the full
+3-state model (`expanded` → `compact` → `hidden`) with an anti-jitter accumulator
+dead-zone; listing compacts on scroll but never hides; the map (`mapa.astro`) is
+locked-compact. Tuning lives in two places:
+
+- **Thresholds** — `DEFAULT_WAVE_HEADER_CONFIG` in `waveHeaderState.ts`
+  (`EXPAND_AT`, `COMPACT_AT`, `HIDE_DELTA`, `REVEAL_DELTA`). The compact-visible window
+  widens by raising `HIDE_DELTA`. Tests derive from this config, so changing a value here
+  does not break them.
+- **Animation feel** — the heritable CSS vars `--wave-header-anim-duration` /
+  `--wave-header-anim-ease` on `.wave-header`. The 6 entity headers render inside the slot
+  and inherit them, so the band's motion is a one-line change (note: as of HOS-84 close,
+  the entity headers' own title/badge transitions still hardcode `0.3s` — a deferred polish).
+
+The 8 consumers (6 entity `*DetailHeader`/`ExperienceHero`, `ListingPageHeader.astro`,
+`mapa.astro`) opt into the shared compact contract via `wh-compact-row/title/badge/hide/demote`
+utility classes; `wh-compact-hide`'s `max-height:0` collapse is defined once in `WaveHeader.astro`.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`

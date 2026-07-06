@@ -28,7 +28,7 @@
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.4",
-        "@hono/node-server": "^1.19.10",
+        "@hono/node-server": "^2.0.6",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.4.0",
         "@linear/sdk": "^87.0.0",
@@ -36,7 +36,7 @@
         "@qazuor/qzpay-hono": "^1.6.1",
         "@qazuor/qzpay-mercadopago": "^2.2.1",
         "@react-email/components": "^1.0.12",
-        "@react-email/render": "^2.0.4",
+        "@react-email/render": "^2.0.10",
         "@repo/ai-core": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
@@ -74,7 +74,6 @@
         "posthog-node": "^5.38.6",
         "react": "19.1.1",
         "react-dom": "19.1.1",
-        "resend": "^4",
         "sanitize-html": "^2.17.5",
         "undici": ">=7.24.0 <8",
         "zod": "^4.0.8"

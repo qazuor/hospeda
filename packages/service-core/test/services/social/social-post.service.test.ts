@@ -2624,7 +2624,9 @@ describe('SocialPostService.getDashboard', () => {
                 const counts: Record<string, number> = {
                     [SocialPlatformEnum.INSTAGRAM]: 5,
                     [SocialPlatformEnum.FACEBOOK]: 3,
-                    [SocialPlatformEnum.X]: 2
+                    [SocialPlatformEnum.X]: 2,
+                    [SocialPlatformEnum.LINKEDIN]: 4,
+                    [SocialPlatformEnum.TIKTOK]: 1
                 };
                 return { items: [], total: counts[where.platform as string] ?? 0 };
             });
@@ -2637,12 +2639,14 @@ describe('SocialPostService.getDashboard', () => {
 
             expect(result.error).toBeUndefined();
             const breakdown = result.data?.platformBreakdown ?? [];
-            expect(breakdown).toHaveLength(3);
+            expect(breakdown).toHaveLength(5);
             expect(breakdown).toEqual(
                 expect.arrayContaining([
                     { platform: SocialPlatformEnum.INSTAGRAM, count: 5 },
                     { platform: SocialPlatformEnum.FACEBOOK, count: 3 },
-                    { platform: SocialPlatformEnum.X, count: 2 }
+                    { platform: SocialPlatformEnum.X, count: 2 },
+                    { platform: SocialPlatformEnum.LINKEDIN, count: 4 },
+                    { platform: SocialPlatformEnum.TIKTOK, count: 1 }
                 ])
             );
         });
@@ -2658,7 +2662,7 @@ describe('SocialPostService.getDashboard', () => {
 
             expect(result.error).toBeUndefined();
             const breakdown = result.data?.platformBreakdown ?? [];
-            expect(breakdown).toHaveLength(3);
+            expect(breakdown).toHaveLength(5);
             for (const entry of breakdown) {
                 expect(entry.count).toBe(0);
             }
@@ -2677,13 +2681,13 @@ describe('SocialPostService.getDashboard', () => {
                 dateTo: new Date('2026-06-30T23:59:59Z')
             });
 
-            // 3 platform-count calls (plus 1 for recentFailures), each scoped by
+            // 5 platform-count calls (plus 1 for recentFailures), each scoped by
             // the date range (gte + lte) — filter to the platform-count calls
             // by their distinguishing `where.platform` key.
             const platformCalls = postTargetModel.findAll.mock.calls.filter(
                 (call) => (call[0] as Record<string, unknown>).platform !== undefined
             );
-            expect(platformCalls).toHaveLength(3);
+            expect(platformCalls).toHaveLength(5);
             for (const call of platformCalls) {
                 expect(call[2]).toHaveLength(2);
             }
@@ -2702,12 +2706,14 @@ describe('SocialPostService.getDashboard', () => {
             const postTargetModel = createModelMock();
             const { service } = buildService({ postModel, postTargetModel, publishLogModel });
 
-            // Window A (June): 4 + 2 + 1 = 7 targets
+            // Window A (June): 4 + 2 + 1 + 0 + 0 = 7 targets
             postTargetModel.findAll.mockImplementation(async (where: Record<string, unknown>) => {
                 const counts: Record<string, number> = {
                     [SocialPlatformEnum.INSTAGRAM]: 4,
                     [SocialPlatformEnum.FACEBOOK]: 2,
-                    [SocialPlatformEnum.X]: 1
+                    [SocialPlatformEnum.X]: 1,
+                    [SocialPlatformEnum.LINKEDIN]: 0,
+                    [SocialPlatformEnum.TIKTOK]: 0
                 };
                 return { items: [], total: counts[where.platform as string] ?? 0 };
             });
@@ -2718,17 +2724,19 @@ describe('SocialPostService.getDashboard', () => {
                 dateTo: new Date('2026-06-30T23:59:59Z')
             });
             const breakdownA = resultA.data?.platformBreakdown ?? [];
-            expect(breakdownA).toHaveLength(3);
+            expect(breakdownA).toHaveLength(5);
             const totalA = breakdownA.reduce((sum, entry) => sum + entry.count, 0);
             expect(totalA).toBe(7);
 
-            // Window B (July): 10 + 0 + 3 = 13 targets — different fixture,
+            // Window B (July): 10 + 0 + 3 + 0 + 0 = 13 targets — different fixture,
             // independent of window A's mock/result.
             postTargetModel.findAll.mockImplementation(async (where: Record<string, unknown>) => {
                 const counts: Record<string, number> = {
                     [SocialPlatformEnum.INSTAGRAM]: 10,
                     [SocialPlatformEnum.FACEBOOK]: 0,
-                    [SocialPlatformEnum.X]: 3
+                    [SocialPlatformEnum.X]: 3,
+                    [SocialPlatformEnum.LINKEDIN]: 0,
+                    [SocialPlatformEnum.TIKTOK]: 0
                 };
                 return { items: [], total: counts[where.platform as string] ?? 0 };
             });
@@ -2739,7 +2747,7 @@ describe('SocialPostService.getDashboard', () => {
                 dateTo: new Date('2026-07-31T23:59:59Z')
             });
             const breakdownB = resultB.data?.platformBreakdown ?? [];
-            expect(breakdownB).toHaveLength(3);
+            expect(breakdownB).toHaveLength(5);
             const totalB = breakdownB.reduce((sum, entry) => sum + entry.count, 0);
             expect(totalB).toBe(13);
 

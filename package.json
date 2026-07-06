@@ -73,7 +73,13 @@
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
         "env:check:examples": "pnpm --filter @repo/config test src/__tests__/env-examples.guard.test.ts",
+        "env:check:usage": "tsx scripts/check-env-usage.ts",
+        "env:check:local": "tsx scripts/check-env-local.ts",
+        "env:check:rules": "tsx scripts/check-env-rules.ts",
+        "env:doctor": "tsx scripts/env-doctor.ts",
+        "env:set": "tsx scripts/env-set-wizard.ts",
         "gen:env-examples": "tsx scripts/generate-env-examples.ts",
+        "gen:env-registry-json": "tsx scripts/generate-env-registry-json.ts",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
     },

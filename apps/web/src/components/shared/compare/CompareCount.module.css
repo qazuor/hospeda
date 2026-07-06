@@ -1,0 +1,7 @@
+.count {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+}
