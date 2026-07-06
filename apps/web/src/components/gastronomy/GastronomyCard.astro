@@ -309,7 +309,7 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
     /* Open/closed badge */
     .gastro-card__open-badge {
         position: absolute;
-        top: 12px;
+        bottom: 48px;
         left: 12px;
         padding: 4px 10px;
         border-radius: var(--radius-pill, 9999px);
@@ -550,6 +550,13 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
             left: 12px;
             right: auto;
             top: auto;
+        }
+
+        /* On mobile the featured badge takes bottom-left, so the open/closed
+           badge moves to bottom-right to stay opposite it (BETA-117). */
+        .gastro-card__open-badge {
+            left: auto;
+            right: 12px;
         }
     }
 </style>
