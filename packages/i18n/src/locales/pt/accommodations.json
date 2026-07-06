@@ -88,7 +88,17 @@
         "price.desc": "Preco: Maior para menor",
         "rating": "Melhor avaliados",
         "recent": "Mais recentes",
-        "name": "Nome"
+        "name": "Nome",
+        "mostSaved": "Mais salvos",
+        "ratingDesc": "Melhor avaliados",
+        "mostReviewed": "Mais comentados",
+        "newest": "Mais recentes",
+        "nameAsc": "Nome A-Z",
+        "nameDesc": "Nome Z-A",
+        "priceAsc": "Preço: menor a maior",
+        "priceDesc": "Preço: maior a menor",
+        "distance": "Mais próximos",
+        "relevance": "Relevância"
     },
     "search": {
         "placeholder": "Buscar hospedagens...",
@@ -200,7 +210,29 @@
         "dates": "Datas",
         "checkInPlaceholder": "Entrada",
         "checkOutPlaceholder": "Saída",
-        "minCapacity": "Capacidade mínima"
+        "minCapacity": "Capacidade mínima",
+        "search": "Busca por texto",
+        "searchPlaceholder": "Buscar por nome ou descrição...",
+        "features": "Características",
+        "includeNoPrice": "Incluir sem preço",
+        "includeNoReviews": "Incluir sem avaliação",
+        "children.helper": "(menores de 5 anos)",
+        "dates.helper": "Por enquanto informativo: a disponibilidade em tempo real está em desenvolvimento e ainda não afeta os resultados.",
+        "geoRadius": "Perto de",
+        "geoRadius.browserCta": "Usar minha localização",
+        "geoRadius.browserMode": "Minha localização",
+        "geoRadius.browserPending": "Detectando…",
+        "geoRadius.browserError": "Não conseguimos detectar sua localização. Verifique as permissões do navegador.",
+        "geoRadius.destinationMode": "Um destino",
+        "geoRadius.destinationPlaceholder": "Escolha um destino",
+        "geoRadius.radiusUnit": "km",
+        "section": {
+            "location": "Localização",
+            "type": "Tipo e características",
+            "dates": "Datas",
+            "capacity": "Capacidade",
+            "priceAndQuality": "Preço e qualidade"
+        }
     },
     "faqs": "Perguntas frequentes",
     "contactTitle": "Contato",
@@ -750,6 +782,27 @@
         "viewMap": "Ver no mapa",
         "popular": "Mais salvos",
         "allDestinations": "Explorar destinos"
+    },
+    "typeChips": {
+        "ariaLabel": "Filtrar por tipo de hospedagem"
+    },
+    "header": {
+        "ariaLabel": "Controles da listagem"
+    },
+    "viewToggle": {
+        "ariaLabel": "Visualização",
+        "list": "Lista",
+        "map": "Mapa"
+    },
+    "contextBar": {
+        "checkIn": "Chegada",
+        "checkOut": "Saída"
+    },
+    "quickAmenity": {
+        "wifi": "WiFi",
+        "pool": "Piscina",
+        "parking": "Estacionamento",
+        "pets": "Aceita pets"
     },
     "aiChat": {
         "fabLabel": "Perguntar à IA sobre esta acomodação",

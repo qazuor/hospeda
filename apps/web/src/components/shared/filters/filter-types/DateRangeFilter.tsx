@@ -402,7 +402,7 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                 )}
                 <div className={styles.boundsRoot}>
                     <SingleBoundPicker
-                        label={`${config.label} desde`}
+                        label={`${config.label} ${t('ui.filter.dateRange.from', 'Desde').toLowerCase()}`}
                         placeholder={fromPlaceholder}
                         selected={fromDate}
                         onSelect={(date) =>
@@ -416,11 +416,12 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                         defaultMonth={fromDate ?? toDate ?? today}
                         clearLabel={t(
                             'ui.filter.dateRange.clearFrom',
-                            `Limpiar "${fromPlaceholder}"`
+                            `Limpiar "${fromPlaceholder}"`,
+                            { value: fromPlaceholder }
                         )}
                     />
                     <SingleBoundPicker
-                        label={`${config.label} hasta`}
+                        label={`${config.label} ${t('ui.filter.dateRange.to', 'Hasta').toLowerCase()}`}
                         placeholder={toPlaceholder}
                         selected={toDate}
                         onSelect={(date) =>
@@ -432,7 +433,9 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                         locale={locale}
                         disabledMatcher={toPickerDisabled}
                         defaultMonth={toDate ?? fromDate ?? today}
-                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`)}
+                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`, {
+                            value: toPlaceholder
+                        })}
                     />
                 </div>
                 {config.description && <p className={styles.description}>{config.description}</p>}

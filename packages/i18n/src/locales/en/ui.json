@@ -187,10 +187,25 @@
         "closeFilters": "Close filters",
         "activeCount": "{{count}} active filter",
         "activeCountPlural": "{{count}} active filters",
+        "activeSelections": "{{count}} active selections",
+        "featuredOption": "Featured",
+        "close": "Close",
+        "noResults": "No results",
+        "reset": "Clear",
+        "expand": "Expand",
+        "collapse": "Collapse",
         "dateRange": {
             "placeholder": "Pick your dates",
             "choose": "pick",
-            "clear": "Clear dates"
+            "clear": "Clear dates",
+            "from": "From",
+            "to": "To",
+            "clearFrom": "Clear \"{{value}}\"",
+            "clearTo": "Clear \"{{value}}\""
+        },
+        "dualRange": {
+            "noMin": "No minimum",
+            "noMax": "No maximum"
         }
     },
     "sort": {

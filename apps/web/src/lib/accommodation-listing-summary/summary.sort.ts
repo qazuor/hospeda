@@ -65,7 +65,8 @@ export interface BuildSortPhraseInput {
 export function buildSortPhrase({ sort, catalogs, locale }: BuildSortPhraseInput): string {
     if (!sort) return '';
 
-    const sortedByPhrase = locale === 'es' ? 'ordenados por' : 'sorted by';
+    const sortedByPhrase =
+        locale === 'es' ? 'ordenados por' : locale === 'pt' ? 'ordenados por' : 'sorted by';
 
     // Look up sort key in catalog, falling back to defaults
     const sortKeys = catalogs.sortKeys ?? DEFAULT_SORT_KEYS;
