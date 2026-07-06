@@ -64,6 +64,23 @@ export interface DateRangeFilterConfig {
      * dates here don't filter the result set").
      */
     readonly description?: string;
+    /**
+     * Optional preset pills rendered above the picker(s) in `mode='bounds'`
+     * (mirrors `GeoRadiusFilterConfig.radiusPresets` — see
+     * `GeoRadiusFilter.tsx`). Each preset carries its already-resolved
+     * `{ from, to }` bounds (ISO `YYYY-MM-DD`, empty string = unbounded)
+     * rather than a compute function: `DateRangeFilterConfig` flows through
+     * an Astro `client:*` prop boundary where functions do not survive
+     * serialization, so the caller resolves every preset's bounds once at
+     * build time (see `buildEventsFilterGroups` in
+     * `@/lib/filters/events-filter-groups`).
+     */
+    readonly presets?: readonly {
+        readonly value: string;
+        readonly label: string;
+        readonly from: string;
+        readonly to: string;
+    }[];
 }
 
 interface DateRangeFilterProps {
@@ -358,6 +375,31 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
         const toPlaceholder = config.checkOutPlaceholder ?? t('ui.filter.dateRange.to', 'Hasta');
         return (
             <>
+                {config.presets && config.presets.length > 0 && (
+                    // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the date preset toggle buttons; a real <fieldset> would inherit user-agent border/padding/margin that fight this row layout
+                    <div
+                        className={styles.presetRow}
+                        role="group"
+                        aria-label={config.label}
+                    >
+                        {config.presets.map((preset) => {
+                            const isActive = value.from === preset.from && value.to === preset.to;
+                            return (
+                                <button
+                                    key={preset.value}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    className={`${styles.presetChip} ${
+                                        isActive ? styles.presetChipActive : ''
+                                    }`}
+                                    onClick={() => onChange({ from: preset.from, to: preset.to })}
+                                >
+                                    {preset.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
                 <div className={styles.boundsRoot}>
                     <SingleBoundPicker
                         label={`${config.label} desde`}

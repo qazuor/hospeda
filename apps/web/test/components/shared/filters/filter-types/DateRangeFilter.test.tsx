@@ -146,4 +146,132 @@ describe('DateRangeFilter', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+
+    describe('bounds mode — date presets (BETA-115)', () => {
+        const BOUNDS_CONFIG = {
+            id: 'date',
+            label: 'Fecha',
+            type: 'date-range' as const,
+            mode: 'bounds' as const,
+            fromParam: 'startDateAfter',
+            toParam: 'startDateBefore',
+            allowPastDates: true,
+            presets: [
+                { value: 'all', label: 'Todos', from: '', to: '' },
+                { value: 'today', label: 'Hoy', from: '2026-07-15', to: '2026-07-15' },
+                { value: 'week', label: 'Esta semana', from: '2026-07-15', to: '2026-07-22' },
+                { value: 'past', label: 'Pasados', from: '', to: '2026-07-14' }
+            ]
+        };
+
+        it('does NOT render a preset row when no presets are configured (bounds mode)', () => {
+            const minimalBoundsConfig = {
+                id: 'date',
+                label: 'Fecha',
+                type: 'date-range' as const,
+                mode: 'bounds' as const
+            };
+            render(
+                <DateRangeFilter
+                    config={minimalBoundsConfig}
+                    value={{ from: '', to: '' }}
+                    onChange={() => {}}
+                    locale={LOCALE}
+                />
+            );
+            expect(screen.queryByRole('group', { name: /fecha/i })).not.toBeInTheDocument();
+        });
+
+        it('renders one pill per configured preset', () => {
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '', to: '' }}
+                    onChange={() => {}}
+                    locale={LOCALE}
+                />
+            );
+            const group = screen.getByRole('group', { name: /fecha/i });
+            expect(group.querySelectorAll('button')).toHaveLength(4);
+            expect(screen.getByRole('button', { name: 'Hoy' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Esta semana' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Pasados' })).toBeInTheDocument();
+        });
+
+        it('marks the preset matching the current value as active (aria-pressed)', () => {
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '2026-07-15', to: '2026-07-15' }}
+                    onChange={() => {}}
+                    locale={LOCALE}
+                />
+            );
+            expect(screen.getByRole('button', { name: 'Hoy' })).toHaveAttribute(
+                'aria-pressed',
+                'true'
+            );
+            expect(screen.getByRole('button', { name: 'Esta semana' })).toHaveAttribute(
+                'aria-pressed',
+                'false'
+            );
+        });
+
+        it('marks "Todos" as active when both bounds are empty', () => {
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '', to: '' }}
+                    onChange={() => {}}
+                    locale={LOCALE}
+                />
+            );
+            expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute(
+                'aria-pressed',
+                'true'
+            );
+        });
+
+        it('emits the preset bounds via onChange when a pill is clicked', () => {
+            const onChange = vi.fn();
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '', to: '' }}
+                    onChange={onChange}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'Esta semana' }));
+            expect(onChange).toHaveBeenCalledWith({ from: '2026-07-15', to: '2026-07-22' });
+        });
+
+        it('emits an only-upper-bound pair for "Pasados"', () => {
+            const onChange = vi.fn();
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '', to: '' }}
+                    onChange={onChange}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'Pasados' }));
+            expect(onChange).toHaveBeenCalledWith({ from: '', to: '2026-07-14' });
+        });
+
+        it('emits empty bounds (clears the filter) for "Todos"', () => {
+            const onChange = vi.fn();
+            render(
+                <DateRangeFilter
+                    config={BOUNDS_CONFIG}
+                    value={{ from: '2026-07-15', to: '2026-07-22' }}
+                    onChange={onChange}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+            expect(onChange).toHaveBeenCalledWith({ from: '', to: '' });
+        });
+    });
 });
