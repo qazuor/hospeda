@@ -16,6 +16,7 @@ import { flattenObject } from './config.shared';
 // Admin namespaces
 // ---------------------------------------------------------------------------
 export const adminNamespaces = [
+    'admin-ai',
     'admin-auth',
     'admin-billing',
     'admin-newsletter',
@@ -37,6 +38,7 @@ export type AdminNamespace = (typeof adminNamespaces)[number];
 // ---------------------------------------------------------------------------
 // English — admin namespaces only
 // ---------------------------------------------------------------------------
+import adminAiEn from './locales/en/admin-ai.json';
 import adminAuthEn from './locales/en/admin-auth.json';
 import adminBillingEn from './locales/en/admin-billing.json';
 import adminCommonEn from './locales/en/admin-common.json';
@@ -53,6 +55,7 @@ import adminWhatsNewEn from './locales/en/admin-whats-new.json';
 // ---------------------------------------------------------------------------
 // Spanish — admin namespaces only
 // ---------------------------------------------------------------------------
+import adminAiEs from './locales/es/admin-ai.json';
 import adminAuthEs from './locales/es/admin-auth.json';
 import adminBillingEs from './locales/es/admin-billing.json';
 import adminCommonEs from './locales/es/admin-common.json';
@@ -70,6 +73,7 @@ import adminWhatsNewEs from './locales/es/admin-whats-new.json';
 // ---------------------------------------------------------------------------
 // Portuguese — admin namespaces only
 // ---------------------------------------------------------------------------
+import adminAiPt from './locales/pt/admin-ai.json';
 import adminAuthPt from './locales/pt/admin-auth.json';
 import adminBillingPt from './locales/pt/admin-billing.json';
 import adminCommonPt from './locales/pt/admin-common.json';
@@ -90,6 +94,7 @@ import adminWhatsNewPt from './locales/pt/admin-whats-new.json';
 
 const rawAdminTranslations = {
     es: {
+        'admin-ai': adminAiEs,
         'admin-auth': adminAuthEs,
         'admin-billing': adminBillingEs,
         'admin-newsletter': adminNewsletterEs,
@@ -105,6 +110,7 @@ const rawAdminTranslations = {
         'admin-whats-new': adminWhatsNewEs
     },
     en: {
+        'admin-ai': adminAiEn,
         'admin-auth': adminAuthEn,
         'admin-billing': adminBillingEn,
         'admin-newsletter': adminNewsletterEn,
@@ -120,6 +126,7 @@ const rawAdminTranslations = {
         'admin-whats-new': adminWhatsNewEn
     },
     pt: {
+        'admin-ai': adminAiPt,
         'admin-auth': adminAuthPt,
         'admin-billing': adminBillingPt,
         'admin-newsletter': adminNewsletterPt,

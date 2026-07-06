@@ -1,0 +1,25 @@
+{
+    "credentials": {
+        "syncModels": {
+            "label": "Enabled models",
+            "hint": "Turn on the models you want to enable for this provider.",
+            "button": "Sync models",
+            "loading": "Checking available models…",
+            "empty": "No chat models detected for this key.",
+            "summary": "{{detected}} detected · {{new}} new",
+            "badgeDetected": "Detected",
+            "badgeCurated": "Curated",
+            "badgeBoth": "Detected & curated",
+            "uncertainChip": "uncertain",
+            "addCustomPlaceholder": "Add an unlisted model...",
+            "addButton": "Add",
+            "error": {
+                "invalidKey": "The API key was rejected; check or rotate the credential.",
+                "providerUnavailable": "The provider is unavailable right now (rate limit or outage). Retry.",
+                "notConfigured": "No credential is configured for this provider.",
+                "generic": "Could not sync the models. Try again.",
+                "retry": "Retry"
+            }
+        }
+    }
+}

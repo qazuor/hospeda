@@ -7,6 +7,14 @@
  * ceilings — matching `AiSettingsValueSchema` from `@repo/schemas`.
  */
 
+/**
+ * A single detected/curated model entry from the sync-models merge
+ * (HOS-94). Re-exported (not hand-mirrored) from `@repo/schemas` — this is
+ * the response shape of a live provider call, so it must stay byte-for-byte
+ * in sync with the API's `AiProviderModelSchema` (single source of truth).
+ */
+export type { AiProviderModel, AiSyncModelsResult } from '@repo/schemas';
+
 /** AI provider identifier — any non-empty string (e.g. 'openai', 'ollama', 'groq'). */
 export type AiProviderId = string;
 

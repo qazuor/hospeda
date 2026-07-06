@@ -1,0 +1,25 @@
+{
+    "credentials": {
+        "syncModels": {
+            "label": "Modelos habilitados",
+            "hint": "Activá los modelos que querés habilitar para este proveedor.",
+            "button": "Sincronizar modelos",
+            "loading": "Consultando modelos disponibles…",
+            "empty": "No se detectaron modelos de chat para esta key.",
+            "summary": "{{detected}} detectados · {{new}} nuevos",
+            "badgeDetected": "Detectado",
+            "badgeCurated": "Curado",
+            "badgeBoth": "Detectado y curado",
+            "uncertainChip": "incierto",
+            "addCustomPlaceholder": "Agregar modelo no listado...",
+            "addButton": "Agregar",
+            "error": {
+                "invalidKey": "La API key fue rechazada; revisá o rotá la credencial.",
+                "providerUnavailable": "El proveedor no está disponible ahora (límite o caído). Reintentá.",
+                "notConfigured": "No hay credencial configurada para este proveedor.",
+                "generic": "No se pudo sincronizar los modelos. Intentá nuevamente.",
+                "retry": "Reintentar"
+            }
+        }
+    }
+}

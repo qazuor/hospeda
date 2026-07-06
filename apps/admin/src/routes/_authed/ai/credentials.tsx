@@ -47,6 +47,7 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
+import { SyncModelsSection } from './-components/SyncModelsSection';
 
 export const Route = createFileRoute('/_authed/ai/credentials')({
     component: AiCredentialsPage
@@ -505,7 +506,6 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
     const [label, setLabel] = useState('');
     const [baseURL, setBaseURL] = useState('');
     const [selectedModels, setSelectedModels] = useState<string[]>([]);
-    const [newModel, setNewModel] = useState('');
 
     const known = getKnownProvider(credential.providerId);
 
@@ -518,19 +518,6 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
             setBaseURL(typeof meta.baseURL === 'string' ? meta.baseURL : '');
             setSelectedModels(Array.isArray(meta.models) ? (meta.models as string[]) : []);
         }
-    };
-
-    const toggleModel = (model: string) => {
-        setSelectedModels((prev) =>
-            prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model]
-        );
-    };
-
-    const addCustomModel = () => {
-        const m = newModel.trim();
-        if (!m || selectedModels.includes(m)) return;
-        setSelectedModels((prev) => [...prev, m]);
-        setNewModel('');
     };
 
     const handleSubmit = async () => {
@@ -609,103 +596,14 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
                         />
                     </div>
 
-                    {/* Model selector */}
+                    {/* Model selector — sync + curated/detected/both list (HOS-94) */}
                     {known && (
-                        <div className="border-t pt-4">
-                            <Label>Modelos habilitados</Label>
-                            <p className="mb-3 text-muted-foreground text-xs">
-                                Activá los modelos que querés habilitar para este proveedor.
-                            </p>
-                            <div className="grid gap-2">
-                                {/* Predefined models */}
-                                {known.models.map((model) => {
-                                    const isEnabled = selectedModels.includes(model);
-                                    return (
-                                        <div
-                                            key={model}
-                                            className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50"
-                                        >
-                                            <span className="font-mono text-xs">{model}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    checked={isEnabled}
-                                                    onCheckedChange={() => toggleModel(model)}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                        setSelectedModels((prev) =>
-                                                            prev.filter((m) => m !== model)
-                                                        )
-                                                    }
-                                                >
-                                                    <DeleteIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {/* Custom models (not in known list) */}
-                                {selectedModels
-                                    .filter((m) => !known.models.includes(m))
-                                    .map((model) => (
-                                        <div
-                                            key={model}
-                                            className="flex items-center justify-between rounded-md border border-dashed p-2"
-                                        >
-                                            <span className="font-mono text-xs">{model}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Switch
-                                                    checked={true}
-                                                    onCheckedChange={() => toggleModel(model)}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                        setSelectedModels((prev) =>
-                                                            prev.filter((m) => m !== model)
-                                                        )
-                                                    }
-                                                >
-                                                    <DeleteIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
-                            {/* Add custom model */}
-                            <div className="mt-3 flex items-end gap-2">
-                                <div className="flex-1">
-                                    <Input
-                                        value={newModel}
-                                        onChange={(e) => setNewModel(e.target.value)}
-                                        placeholder="Agregar modelo no listado..."
-                                        className="h-8 text-xs"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                addCustomModel();
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addCustomModel}
-                                    disabled={!newModel.trim()}
-                                >
-                                    Agregar
-                                </Button>
-                            </div>
-                        </div>
+                        <SyncModelsSection
+                            providerId={credential.providerId}
+                            curatedModels={known.models}
+                            selectedModels={selectedModels}
+                            onSelectedModelsChange={setSelectedModels}
+                        />
                     )}
                 </div>
                 <DialogFooter>
