@@ -357,6 +357,13 @@ export class ExperienceService extends BaseCommerceListingService<
         // the caller's scalar filters so no query param can widen the result set.
         // Relations (destination, owner) are loaded so the web card transform can
         // read destinationName without an N+1 query (Bug B3 fix).
+        //
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them via ctx.pagination — so `_sortBy`/`_sortOrder` destructured
+        // above are always undefined here. Forward the real sort from ctx.pagination
+        // (mirroring EventService/AccommodationService), otherwise findAllWithRelations
+        // builds no ORDER BY and the public listing's sort dropdown is a silent no-op
+        // (BETA-119).
         const result = await this.model.findAllWithRelations(
             { destination: true, owner: true },
             {
@@ -365,7 +372,12 @@ export class ExperienceService extends BaseCommerceListingService<
                 visibility: VisibilityEnum.PUBLIC,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             },
-            { page, pageSize },
+            {
+                page,
+                pageSize,
+                sortBy: ctx?.pagination?.sortBy,
+                sortOrder: ctx?.pagination?.sortOrder
+            },
             undefined,
             ctx?.tx
         );

@@ -577,3 +577,51 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// BETA-119 regression — _executeSearch forwards sort from ctx.pagination
+// Before the fix, sortBy/sortOrder were destructured out of params (to _sortBy/
+// _sortOrder) and discarded, so findAllWithRelations received only { page,
+// pageSize } and built no ORDER BY — the public listing's sort dropdown was a
+// silent no-op. BaseCrudRead.search republishes sort via ctx.pagination, so the
+// service must read it from there.
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService._executeSearch — BETA-119 regression (sort forwarded from ctx.pagination)', () => {
+    it('forwards ctx.pagination.sortBy/sortOrder into the findAllWithRelations pagination argument', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {
+            pagination: { sortBy: 'name', sortOrder: 'asc' }
+        });
+
+        // arg[2] is the pagination options object in findAllWithRelations
+        expect(mockFindAllWithRelations.mock.calls[0]?.[2]).toMatchObject({
+            page: 1,
+            pageSize: 10,
+            sortBy: 'name',
+            sortOrder: 'asc'
+        });
+    });
+
+    it('leaves sortBy/sortOrder undefined when ctx has no pagination (no ORDER BY forced)', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+
+        const paginationArg = mockFindAllWithRelations.mock.calls[0]?.[2] as {
+            sortBy?: unknown;
+            sortOrder?: unknown;
+        };
+        expect(paginationArg.sortBy).toBeUndefined();
+        expect(paginationArg.sortOrder).toBeUndefined();
+    });
+});
