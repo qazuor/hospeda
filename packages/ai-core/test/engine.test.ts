@@ -170,7 +170,9 @@ beforeEach(() => {
     });
     mockGetProviderOrder.mockImplementation(function ({
         featureConfig
-    }: { featureConfig: AiFeatureConfig }) {
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
         return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
         };

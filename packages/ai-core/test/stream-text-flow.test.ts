@@ -185,7 +185,9 @@ beforeEach(() => {
     });
     mockGetProviderOrder.mockImplementation(function ({
         featureConfig
-    }: { featureConfig: AiFeatureConfig }) {
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
         return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
         };
@@ -555,7 +557,9 @@ describe('when the primary provider streamText rejects with a retryable error', 
         mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_WITH_FALLBACK);
         mockGetProviderOrder.mockImplementation(function ({
             featureConfig
-        }: { featureConfig: AiFeatureConfig }) {
+        }: {
+            featureConfig: AiFeatureConfig;
+        }) {
             return {
                 providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
             };

@@ -151,7 +151,9 @@ beforeEach(() => {
     });
     mockGetProviderOrder.mockImplementation(function ({
         featureConfig
-    }: { featureConfig: AiFeatureConfig }) {
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
         return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
         };
@@ -169,7 +171,10 @@ beforeEach(() => {
     });
     mockComposeSystemPrompt.mockImplementation(function ({
         content
-    }: { content: string; rules: string | null }) {
+    }: {
+        content: string;
+        rules: string | null;
+    }) {
         return content;
     });
 });
