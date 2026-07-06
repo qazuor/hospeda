@@ -1,0 +1,972 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-65",
+    "title": "Social Posts — Publishing Engine Extension",
+    "created": "2026-07-04T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add LINKEDIN and TIKTOK to SocialPlatformEnum",
+            "description": "Add `LINKEDIN` and `TIKTOK` members to `SocialPlatformEnum` in packages/schemas/src/enums/social-platform.enum.ts with JSDoc describing each platform's supported formats (LinkedIn: TEXT_POST/VIDEO_POST; TikTok: VIDEO_POST only — no STORY for either, per owner decision). Fix the stale 'Accepts all 3 social platform values' comment in social-platform.schema.ts (z.nativeEnum derives automatically, no code change needed there beyond the comment). Verify: TypeScript compiles, the two new enum values are exported.\n\nTest requirements: extend packages/schemas/src/enums/__tests__/social-enums.test.ts to assert SocialPlatformEnum has exactly 5 members including LINKEDIN and TIKTOK, and that SocialPlatformEnumSchema.safeParse('LINKEDIN')/'TIKTOK' both succeed.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add LINKEDIN + TIKTOK enum members with JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Fix stale 'Accepts all 3' comment in social-platform.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Extend social-enums.test.ts for the 2 new values",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "enum", "social"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T21:18:33Z",
+                "completed": "2026-07-04T21:22:15Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate Drizzle migration for social_platform_enum ADD VALUE",
+            "description": "Run `pnpm --filter @repo/db db:generate` after T-001 lands to produce the structural migration adding LINKEDIN and TIKTOK to the Postgres `social_platform_enum` type (ALTER TYPE ... ADD VALUE, same pattern as packages/db/src/migrations/0033_gifted_screwball.sql and 0043_colorful_selene.sql for permission_enum). Review the generated .sql file matches the expected ADD VALUE statements and commit it. Do NOT hand-edit beyond verification — this is a pure enum widening, no data transformation needed.\n\nTest requirements: no new unit test (structural migration); verify via `pnpm --filter @repo/db db:migrate` succeeding locally against a dev DB and a manual `SELECT unnest(enum_range(NULL::social_platform_enum))` confirming both new values are present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009", "T-010", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Run db:generate and review the generated SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Apply locally with db:migrate and verify enum_range",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration", "social"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T21:27:20Z",
+                "completed": "2026-07-04T21:48:26Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create social_post_target_media link table schema",
+            "description": "Add a new dbschema file packages/db/src/schemas/social/social_post_target_media.dbschema.ts defining the `social_post_target_media` many-to-many link table: `id` uuid PK, `socialPostTargetId` uuid FK -> social_post_targets.id (onDelete: 'cascade'), `socialPostMediaId` uuid FK -> social_post_media.id (onDelete: 'cascade'), `position` integer (0-indexed ordering within the target, default 0), `createdAt`/`updatedAt`. Add a composite UNIQUE index on (socialPostTargetId, socialPostMediaId) to prevent duplicate links, plus a per-FK index for reverse lookups — follow the EXACT join-table convention already used by social_post_hashtags.dbschema.ts (id PK + 2 FKs + position + composite unique + one() relations both ways), NOT the discarded FK-column-on-social_post_media approach. Add `socialPostTargetMediaRelations` with one() to both social_post_targets and social_post_media, AND add the reciprocal `many(socialPostTargetMedia)` relation on BOTH social_post_targets.dbschema.ts's and social_post_media.dbschema.ts's existing relations blocks (mirrors how social_hashtags.dbschema.ts and social_posts.dbschema.ts each add many(socialPostHashtags) for their own join table). Register the new file in packages/db/src/schemas/social/index.ts's export * list. `social_post_media` itself is NOT altered beyond the added relation — its `socialPostId` column and existing UNIQUE(social_post_id, position) constraint stay exactly as they are; the post still owns its media pool, the link table adds per-target scoping on top.\n\nTest requirements: no dedicated unit test for a Drizzle table definition (project convention — schema files are exercised via db:generate + integration tests only); typecheck must pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Add social_post_target_media dbschema file (id, socialPostTargetId FK, socialPostMediaId FK, position)",
+                    "completed": true
+                },
+                {
+                    "title": "Add composite UNIQUE(socialPostTargetId, socialPostMediaId) + per-FK indexes",
+                    "completed": true
+                },
+                {
+                    "title": "Add one() relations both ways + reciprocal many(socialPostTargetMedia) on social_post_targets and social_post_media",
+                    "completed": true
+                },
+                {
+                    "title": "Register export in social/index.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema", "social", "media", "link-table"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T21:52:33Z",
+                "completed": "2026-07-04T21:57:50Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Generate Drizzle migration for social_post_target_media table",
+            "description": "Run `pnpm --filter @repo/db db:generate` after T-003 to produce the structural migration that CREATEs the `social_post_target_media` table (id, social_post_target_id FK, social_post_media_id FK, position, timestamps) plus the composite unique index and per-FK indexes. Review the generated CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements and commit the file. This is purely additive (a brand-new table, no alteration of `social_post_media` or `social_post_targets`), so no USING clause or data cast is needed.\n\nTest requirements: no new unit test; verify via `pnpm --filter @repo/db db:migrate` locally and a manual `\\d social_post_target_media` (or information_schema query) confirming the table, both FKs, and the composite unique index exist.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Run db:generate and review the generated SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Apply locally and verify table + FKs + unique index via information_schema",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration", "social", "media"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:00:46Z",
+                "completed": "2026-07-04T22:08:24Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write fan-out backfill script for social_post_target_media",
+            "description": "Hand-edit the migration from T-004 (or add a follow-up data-migration statement in the same file) to backfill `social_post_target_media` for EXISTING `social_post_media` rows, following the precedent of packages/db/src/migrations/extras/010-abandoned-status.data-migration.sql. Rule: for each existing `social_post_media` row, INSERT one `social_post_target_media` link row PER `social_post_targets` row belonging to that media's post (`INSERT ... SELECT ... FROM social_post_media spm JOIN social_post_targets spt ON spt.social_post_id = spm.social_post_id`), preserving `spm.position` as the link row's initial `position`, with `ON CONFLICT (social_post_target_id, social_post_media_id) DO NOTHING` for idempotency. This is a genuine fan-out (1 media row -> N link rows for an N-target post) — unlike the old single-FK-column model, there is no more special-casing between single-target and multi-target posts: every existing target belonging to the post gets its own link row. Split out of the original single-task backfill because the fan-out INSERT...SELECT plus idempotency/verification needs its own task; T-006 covers actually running and verifying it.\n\nTest requirements: add a verification query/assertion in a new or existing packages/db integration test (test/integration/) that seeds a multi-target post with media, runs the fan-out backfill SQL (or asserts its effect against a freshly migrated test DB), and confirms one `social_post_target_media` row exists per (target, media) pair with the correct preserved position.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Write the fan-out INSERT...SELECT...JOIN with ON CONFLICT DO NOTHING",
+                    "completed": true
+                },
+                {
+                    "title": "Preserve social_post_media.position as the link row's initial position",
+                    "completed": true
+                },
+                {
+                    "title": "Add integration verification test/assertion for the fan-out",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration", "data-migration", "social", "media"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:15:27Z",
+                "completed": "2026-07-04T22:20:29Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Run and verify the social_post_target_media backfill on local/staging data",
+            "description": "Apply the fan-out backfill migration written in T-005 against a real dataset: run `pnpm --filter @repo/db db:migrate` locally first (dev DB), then confirm row counts make sense (`SELECT count(*) FROM social_post_target_media` should equal the sum, over all existing `social_post_media` rows, of the number of targets on that row's post) and spot-check a known multi-target post to confirm it now has one link row per (target, media) pair with position preserved. Re-run the migration a second time (or re-invoke the INSERT...SELECT manually) to confirm the `ON CONFLICT DO NOTHING` guard makes it idempotent (no duplicate rows, no unique-constraint violation). Record any anomalies found (e.g. orphaned media with zero targets) as a follow-up note rather than silently reconciling them.\n\nTest requirements: no new unit test (this is a data-verification/ops task); the integration test added in T-005 is the automated check — this task is the manual run + spot-check confirmation against actual local/staging data before the schema is considered backfilled.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run db:migrate locally and confirm the fan-out INSERT applied",
+                    "completed": false
+                },
+                {
+                    "title": "Verify row counts and spot-check a known multi-target post",
+                    "completed": false
+                },
+                {
+                    "title": "Re-run to confirm ON CONFLICT DO NOTHING idempotency",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration", "data-migration", "social", "media", "verification"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add GptVideoPayloadSchema for video ingestion",
+            "description": "Add a new `GptVideoPayloadSchema` (Zod) mirroring the shape of `GptImagePayloadSchema` in packages/schemas/src/entities/social/social-draft.http.schema.ts (or a new colocated social-video-payload.schema.ts file): `{ mode: 'public_url', url: string, mimeType?: string, altText?: string }`. Public-URL mode only for phase 1 (no openai_file_refs — video files are too large for that path). Export the inferred `GptVideoPayload` type alongside the existing `GptImagePayload` type in social-image-pipeline.service.ts (or a shared location both files import from).\n\nTest requirements: new packages/schemas test file (or extend an existing social-draft schema test) asserting GptVideoPayloadSchema accepts a valid public_url payload and rejects a payload missing `url`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Define GptVideoPayloadSchema (public_url mode only)",
+                    "completed": true
+                },
+                {
+                    "title": "Export inferred GptVideoPayload type",
+                    "completed": true
+                },
+                {
+                    "title": "Add schema unit tests (valid/invalid payload)",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "social", "video"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:00:46Z",
+                "completed": "2026-07-04T22:09:26Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Extend SocialDraftTargetSchema with optional per-target assets field",
+            "description": "Add an optional `assets` array field to `SocialDraftTargetSchema` in packages/schemas/src/entities/social/social-draft.http.schema.ts: `assets: z.array(z.object({ image: GptImagePayloadSchema.optional(), video: GptVideoPayloadSchema.optional() })).optional()`. This is purely additive per the schema compatibility policy (packages/schemas/CLAUDE.md) — the existing root-level `image` field is untouched and remains the legacy fallback (applied to every target needing IMAGE media when a target's own `assets` is absent), preserving full backward compatibility for existing GPT Action callers.\n\nTest requirements: extend the existing SocialDraftTargetSchema test coverage (wherever CreateSocialDraftSchema/SocialDraftTargetSchema tests live under packages/schemas) to assert a target with `assets: [{ image: {...} }]` parses successfully, a target with `assets: [{ video: {...} }]` parses successfully, and omitting `assets` entirely still parses (backward compat).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Add optional assets field to SocialDraftTargetSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Add/extend tests for assets present and absent",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "social", "media"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:15:27Z",
+                "completed": "2026-07-04T22:22:55Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Seed social_platforms rows for LinkedIn and TikTok",
+            "description": "In packages/seed/src/required/socialAutomation.seed.ts, add `{ platform: 'LINKEDIN', label: 'LinkedIn', enabled: true }` and `{ platform: 'TIKTOK', label: 'TikTok', enabled: true }` to the `PLATFORMS` array. Update the `InsertSocialPlatform.platform` union type to include the 2 new literals. seedSocialPlatforms() is already idempotent (findOne-by-platform guard) — no logic change needed, only data.\n\nTest requirements: if packages/seed has an existing test asserting PLATFORMS row count or idempotency, update it to expect 5 platforms; otherwise add a minimal test asserting PLATFORMS contains LINKEDIN and TIKTOK entries.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Add LINKEDIN + TIKTOK rows to PLATFORMS",
+                    "completed": true
+                },
+                {
+                    "title": "Widen InsertSocialPlatform.platform union type",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "database", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:26:05Z",
+                "completed": "2026-07-04T22:38:43Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed social_platform_formats rows for LinkedIn and TikTok",
+            "description": "In packages/seed/src/required/socialAutomation.seed.ts, add to `PLATFORM_FORMATS`: LinkedIn TEXT_POST (mediaType NONE) + LinkedIn VIDEO_POST (mediaType VIDEO), and TikTok VIDEO_POST (mediaType VIDEO) — no STORY row for either platform per owner decision (neither supports it). Widen `InsertSocialPlatformFormat.platform` union to include LINKEDIN/TIKTOK. While touching this file, fix the stale doc comments (module docstring line 6 and the PLATFORM_FORMATS block comment) that say '13 rows' when the array actually has 12 — update both to the new accurate count (12 existing + 3 new = 15).\n\nTest requirements: update/extend the seed test that asserts PLATFORM_FORMATS row count or per-platform coverage to include the 3 new (platform, publishFormat) combos; assert the unique-key idempotency guard still matches on (platform, publishFormat) for the new rows.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-024", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Add LinkedIn TEXT_POST + VIDEO_POST rows",
+                    "completed": true
+                },
+                {
+                    "title": "Add TikTok VIDEO_POST row",
+                    "completed": true
+                },
+                {
+                    "title": "Widen InsertSocialPlatformFormat.platform union type",
+                    "completed": true
+                },
+                {
+                    "title": "Fix stale '13 rows' doc comments to accurate count",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "database", "social"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:26:05Z",
+                "completed": "2026-07-04T22:38:43Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Link processed images to their target via social_post_target_media",
+            "description": "In packages/service-core/src/services/social/social-image-pipeline.service.ts, add an optional `socialPostTargetId?: string` field to `ProcessImageInput`. Instead of writing it onto the `social_post_media` row being created (that column no longer exists — see T-003), keep the existing `this.postMediaModel.create({ socialPostId, assetId, position })` call unchanged, and AFTER it succeeds, when `socialPostTargetId` is provided, ALSO call the new `postTargetMediaModel.create({ socialPostTargetId, socialPostMediaId: createdMedia.id, position })` to insert the corresponding `social_post_target_media` link row (same `position` as the media row). When `socialPostTargetId` is undefined, behavior is unchanged (backward compatible for any caller not yet passing it) — no link row is created.\n\nTest requirements: extend packages/service-core/test/services/social/social-image-pipeline.service.test.ts to assert that when `socialPostTargetId` is provided, a `social_post_target_media` link row is created with the correct `socialPostTargetId`/`socialPostMediaId`/`position` (not a column value on `social_post_media`), and that omitting it preserves the current (no-link-row) behavior.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Add socialPostTargetId to ProcessImageInput interface",
+                    "completed": true
+                },
+                {
+                    "title": "Keep postMediaModel.create call unchanged; add link-row insert after it",
+                    "completed": true
+                },
+                {
+                    "title": "Add/extend unit test asserting the link row (not a column) is created",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "link-table"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:53:18Z",
+                "completed": "2026-07-04T23:12:45Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add processImages N-asset method to SocialImagePipelineService",
+            "description": "Add a new `processImages(inputs: ProcessImageInput[]): Promise<ProcessImageResult[]>` method to SocialImagePipelineService (packages/service-core/src/services/social/social-image-pipeline.service.ts) that reuses the existing single-asset download/upload/persist logic (extract into a private per-asset helper if needed, per T-011) and writes each `social_post_media` row at sequential `position` 0..N-1, for CAROUSEL targets. Since the per-asset helper now also inserts a `social_post_target_media` link row (T-011) when a `socialPostTargetId` is given, `processImages` naturally produces one link row per asset too, using the SAME sequential position on both the media row and its link row. Each call still fails gracefully per-asset (existing `gracefulFail()` contract), independent of siblings.\n\nTest requirements: add test cases to social-image-pipeline.service.test.ts covering: N=1 (single asset, position 0, one link row), N=3 (sequential positions 0/1/2 on both media rows and link rows), and one asset failing mid-array while the others still succeed (partial-failure isolation, no orphaned link row for the failed asset).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Extract single-asset download/upload/persist into a reusable private helper",
+                    "completed": true
+                },
+                {
+                    "title": "Add processImages looping the helper with sequential position (media row + link row)",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests: N=1, N=3, partial-failure isolation (no orphaned link rows)",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "carousel"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:53:18Z",
+                "completed": "2026-07-04T23:12:45Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add processVideo method to SocialImagePipelineService",
+            "description": "Add a `processVideo(input: { video: GptVideoPayload; socialPostTargetId?: string; socialPostId?: string; actorId?: string }): Promise<ProcessImageResult>` method to SocialImagePipelineService, reusing the same download (fetch + AbortController timeout), `uploadToCloudinary`, and persist-plus-link-row steps as `processImage` (T-011) — including the `social_post_target_media` link-row insertion when `socialPostTargetId` is provided — but setting `mediaType: SocialMediaTypeEnum.VIDEO` and persisting `durationSeconds` (already returned by UploadResult, currently unused for the video path). Graceful-failure contract identical to processImage.\n\nTest requirements: add test cases asserting a successful video upload persists a social_assets row with mediaType=VIDEO and durationSeconds set, AND (when socialPostTargetId is provided) a social_post_target_media link row for the target; and that a download/upload failure returns the graceful-fail shape without throwing and without creating a link row.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-007"],
+            "blocks": ["T-018", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Add processVideo method reusing download/upload/link-row helpers",
+                    "completed": true
+                },
+                {
+                    "title": "Persist mediaType=VIDEO and durationSeconds",
+                    "completed": true
+                },
+                {
+                    "title": "Add success (incl. link row) + graceful-failure tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "video"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:53:18Z",
+                "completed": "2026-07-04T23:12:45Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add resolveTargetAssets pure helper",
+            "description": "Add a pure function `resolveTargetAssets(input: { target: { assets?: TargetAsset[] }; legacyImage?: GptImagePayload; targetMediaType: SocialMediaTypeEnum }): TargetAsset[]` (new file or in social-image-pipeline-config.util.ts style location) that returns: the target's own `assets` array when present; otherwise, when `targetMediaType !== 'NONE'`, a single-item array wrapping `legacyImage` (backward-compat fallback); otherwise an empty array (TEXT_POST needs no media). No DB access — pure logic, easy to exhaustively unit test.\n\nTest requirements: new test file (e.g. social-target-assets.util.test.ts) covering: target with own assets (returned as-is), target without assets + IMAGE mediaType + legacyImage present (legacy fallback wrapped), target without assets + NONE mediaType (empty array), target without assets and no legacyImage (empty array).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Implement resolveTargetAssets pure function",
+                    "completed": true
+                },
+                {
+                    "title": "Write exhaustive unit tests for all 4 branches",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "util"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:41:17Z",
+                "completed": "2026-07-04T22:50:52Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add resolveTargetMediaUrls pure helper (format-aware media selection)",
+            "description": "Add a pure function `resolveTargetMediaUrls(input: { publishFormat: string; targetMediaRows: MediaRow[]; postMediaRowsFallback: MediaRow[] }): string[]` (new util file alongside social-publish-dispatch.service.ts, e.g. social-target-media.util.ts) implementing the format-aware selection rule: TEXT_POST -> []; STORY -> first target-scoped asset only (max 1); VIDEO_POST -> first target-scoped video only (max 1); CAROUSEL -> all target-scoped assets ordered by position. When `targetMediaRows` is empty, fall back to `postMediaRowsFallback` (posts whose targets have zero social_post_target_media link rows yet, per T-006) applying the same per-format selection rule to it. No DB access — pure logic.\n\nTest requirements: new test file covering all 4 publishFormat branches with target-scoped rows present, plus the fallback-to-post-level branch when target-scoped rows are empty, plus the TEXT_POST-always-empty case even when rows exist.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement resolveTargetMediaUrls with TEXT_POST/STORY/VIDEO_POST/CAROUSEL branches",
+                    "completed": true
+                },
+                {
+                    "title": "Implement post-level fallback branch",
+                    "completed": true
+                },
+                {
+                    "title": "Write exhaustive unit tests per format + fallback",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "util", "dispatch"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T22:41:17Z",
+                "completed": "2026-07-04T22:50:52Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Extend UploadOptions with an optional transform preset param",
+            "description": "Add an optional `transformation?: Record<string, unknown>` (or a narrower typed preset object — pick whichever matches the underlying Cloudinary SDK's eager-transform param shape) field to `UploadOptions` in packages/media/src/server/types.ts, and apply it in the concrete implementation (packages/media/src/server/cloudinary.provider.ts) by passing it through to the Cloudinary upload call. This is purely additive and optional — existing callers (accommodation image uploads, current social image pipeline) that omit it see zero behavior change.\n\nTest requirements: add/extend a cloudinary.provider.test.ts (or equivalent) unit test asserting that when `transformation` is provided, it is forwarded to the underlying Cloudinary SDK call, and that omitting it preserves current upload behavior (no regression for existing callers).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Add optional transformation field to UploadOptions",
+                    "completed": true
+                },
+                {
+                    "title": "Forward it in CloudinaryProvider.upload()",
+                    "completed": true
+                },
+                {
+                    "title": "Add/extend provider unit test for the new option",
+                    "completed": true
+                }
+            ],
+            "tags": ["media", "video", "cloudinary"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T23:14:15Z",
+                "completed": "2026-07-04T23:25:44Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add video and story Cloudinary preset constants config util",
+            "description": "Add a new social-video-pipeline-config.util.ts (mirroring the pattern of social-image-pipeline-config.util.ts) in packages/service-core/src/services/social/, exporting preset constants for: VIDEO_POST duration/size limits (R-2 — pick reasonable platform-safe defaults, e.g. max 60s / max 100MB, admin-tunable later via social_settings if needed) and STORY 9:16 aspect-ratio transform. Pure constants + a small resolver function, no DB access in this task (DB-driven overrides are out of scope — YAGNI until a real need appears).\n\nTest requirements: new social-video-pipeline-config.util.test.ts asserting the exported preset constants have the expected shape/values and the resolver function returns the correct preset per format (STORY vs VIDEO_POST).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Define VIDEO_POST duration/size preset constants",
+                    "completed": true
+                },
+                {
+                    "title": "Define STORY 9:16 aspect preset constant",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for the config util",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "video", "config"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T23:14:15Z",
+                "completed": "2026-07-04T23:25:44Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Wire ingestion service to process assets per-target through the pipeline",
+            "description": "In social-draft-ingestion.service.ts, replace the single `imagePipeline.processImage({ image, socialPostId, actorId })` call (lines ~598-623) with a loop over `validTargets`: for each target, call `resolveTargetAssets` (T-014) to get its asset list, then dispatch each image asset through `processImage`/`processImages` (T-012) and each video asset through `processVideo` (T-013), passing `socialPostTargetId: target's id` alongside `socialPostId`. Each dispatched asset persists its `social_post_media` row exactly as before AND now also creates a `social_post_target_media` link row scoped to that target (T-011/T-012/T-013) — 'no cross-contamination between targets' now means correct link rows exist per target with no leaked link to a sibling target, not a column value. Follows the existing per-target loop precedent already used for social_post_targets row creation (lines ~540-549 in the same file). Aggregate warnings across all targets the same way the current single-call path does.\n\nTest requirements: extend social-draft-ingestion.service.test.ts to cover: a draft with 2 targets each carrying their own `assets` (verify each target's media has a correct, target-scoped `social_post_target_media` link row and no cross-target leak), a draft using only the legacy root `image` field with multiple targets (verify fallback applies to every IMAGE-needing target, each getting its own link row), and a TEXT_POST target receiving zero media calls and zero link rows.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-013", "T-014"],
+            "blocks": ["T-023", "T-024", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Replace single processImage call with per-target loop",
+                    "completed": true
+                },
+                {
+                    "title": "Dispatch images via processImage/processImages, videos via processVideo",
+                    "completed": true
+                },
+                {
+                    "title": "Pass socialPostTargetId per target so each asset gets its own link row; aggregate warnings",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests: per-target link rows with no leak, legacy fallback, TEXT_POST no-media",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "media", "ingestion", "link-table"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T23:29:35Z",
+                "completed": "2026-07-04T23:42:09Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Rewrite buildMakePayload media resolution to be per-target and format-aware",
+            "description": "In social-publish-dispatch.service.ts::buildMakePayload (lines ~746-763), replace the flat post-level `postMediaModel.findAll({ socialPostId: postId }, ...)` loop with: JOIN through `social_post_target_media` by `socialPostTargetId: targetId` to fetch that target's linked `social_post_media` rows, ordered by the link table's `position` column, for target-scoped rows; ALSO query the existing post-level `social_post_media` rows (by `socialPostId`, no link) as `postMediaRowsFallback` for the case where the post has ZERO link rows (pre-migration or partially-migrated posts); then call `resolveTargetMediaUrls` (T-015) with `target.publishFormat` to get the final `mediaUrls` array. This closes the core gap: TEXT_POST gets 0 media, STORY gets 1 vertical asset, VIDEO_POST gets 1 video, CAROUSEL gets N assets, all scoped to the specific target (no more identical array leaking to every target on the post) — only the resolution mechanism changed from a column filter to a link-table join, the per-format branching logic itself (T-015) is unchanged.\n\nTest requirements: extend social-publish-dispatch.service.test.ts's buildMakePayload test suite to cover all 4 publishFormat branches with target-scoped `social_post_target_media` rows present (ordered by the link table's position), and the fallback-to-post-level branch for a post whose targets have zero link rows (per T-006's backfill verification).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-023", "T-024", "T-026", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Join through social_post_target_media by targetId for target-scoped rows, ordered by position",
+                    "completed": true
+                },
+                {
+                    "title": "Query post-level fallback rows for posts with zero link rows",
+                    "completed": true
+                },
+                {
+                    "title": "Call resolveTargetMediaUrls to build mediaUrls",
+                    "completed": true
+                },
+                {
+                    "title": "Extend buildMakePayload tests for all formats + zero-link-row fallback",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "dispatch", "media", "link-table"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T23:49:46Z",
+                "completed": "2026-07-05T00:23:21Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Wire caption/hashtags/footer override columns into buildMakePayload",
+            "description": "In social-publish-dispatch.service.ts::buildMakePayload (the captionFinal/hashtagsFinal/footerFinal resolution block, lines ~733-744), read `target.captionOverride`/`target.hashtagsOverrideText`/`target.footerOverride` first and use them when non-null; fall back to the existing post-level resolution (`post.finalCaption ?? post.captionBase`, etc.) when the override is null (AC-4: null = inherit). These columns already exist in social_post_targets (nullable, SPEC-254) but have zero readers today — this task wires the reader only, no schema change.\n\nTest requirements: extend buildMakePayload tests to cover: a target with all 3 overrides set (payload uses the overridden values), a target with all 3 null (payload uses the inherited post-level values), and a target with a partial override (e.g. only captionOverride set, hashtags/footer still inherit).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-025", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Read captionOverride/hashtagsOverrideText/footerOverride with null-inherit fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests: all-overridden, all-null, partial-override",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "dispatch"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-04T23:49:46Z",
+                "completed": "2026-07-05T00:23:21Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Apply video and story Cloudinary presets in the upload paths",
+            "description": "Wire the preset constants from T-017 into the T-016 `transformation` param at the two call sites that need it: SocialImagePipelineService.processVideo (T-013) applies the VIDEO_POST duration/size preset, and the CAROUSEL/STORY image path (processImage/processImages, T-012) applies the STORY 9:16 preset when the target's publishFormat is STORY. Resolve which preset to apply from the target's publishFormat, passed down from the T-018 per-target loop.\n\nTest requirements: extend social-image-pipeline.service.test.ts to assert processVideo forwards the video preset transformation to uploadToCloudinary, and that a STORY-format image upload forwards the 9:16 preset while a non-STORY image upload does not.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017", "T-013"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Apply video preset in processVideo's upload call",
+                    "completed": true
+                },
+                {
+                    "title": "Apply STORY 9:16 preset in the image upload path when format is STORY",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests for both preset application paths",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "social", "video", "cloudinary"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T00:24:32Z",
+                "completed": "2026-07-05T00:51:20Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Write AC-3 regression test for N independently-trackable targets",
+            "description": "G-8 (platform multi-select fan-out) is ALREADY IMPLEMENTED in the baseline — POST /api/v1/ai/social/drafts already accepts targets: SocialDraftTargetSchema[] and SocialDraftIngestionService.ingestDraft already creates one social_post_targets row per valid target (social-draft-ingestion.service.ts:539-549). This task adds ONLY the missing regression test proving AC-3: creating a post with N targets produces exactly N social_post_targets rows, and each is independently trackable (one can be set to PUBLISHED while a sibling is FAILED without affecting each other). Do NOT modify the fan-out implementation itself — it needs no changes.\n\nTest requirements: extend social-draft-ingestion.service.test.ts (fan-out creation count assertion for N=3 targets) and social-publish-dispatch.service.test.ts (or a new focused test) asserting that updating one target's status to PUBLISHED and a sibling's to FAILED leaves both rows independently correct with no cross-contamination of status/timestamps.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert N targets created from N-target draft submission",
+                    "completed": true
+                },
+                {
+                    "title": "Assert independent status tracking across siblings (PUBLISHED vs FAILED)",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "social", "regression", "fan-out"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T01:52:36Z",
+                "completed": "2026-07-05T02:32:28Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Integration test: STORY format end-to-end publish (AC-2 part 1)",
+            "description": "Write an integration-style test (service-level, mocked Make.com HTTP) exercising the full STORY flow: ingest a draft with a STORY target carrying one image asset -> verify the image pipeline persists the `social_post_media` row with the correct `mediaType` AND a `social_post_target_media` link row scoped to that target -> verify buildMakePayload returns exactly 1 mediaUrl for that target -> verify a co-target on the SAME post with a different format (e.g. FEED_POST) has NO link row to the STORY target's asset and does NOT receive it in its own payload (no leak). Covers AC-2's Instagram/Facebook STORY validation and the AC-3 media-isolation requirement for this specific format pair.\n\nTest requirements: new or extended test in social-publish-dispatch.service.test.ts (or a dedicated integration test file) covering the full ingest -> pipeline -> buildMakePayload chain for STORY, asserting exactly 1 mediaUrl, a correctly-scoped `social_post_target_media` link row, and no cross-target link/leak.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed a draft with a STORY target + 1 image asset and a sibling FEED_POST target",
+                    "completed": true
+                },
+                {
+                    "title": "Assert the STORY target has its own social_post_target_media link row and buildMakePayload returns exactly 1 mediaUrl",
+                    "completed": true
+                },
+                {
+                    "title": "Assert the sibling target has no link to the STORY asset and its payload does not include it",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "social", "story", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T01:54:07Z",
+                "completed": "2026-07-05T02:32:28Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Integration test: VIDEO_POST format end-to-end publish on LinkedIn/TikTok (AC-2 part 2)",
+            "description": "Write an integration-style test exercising the full VIDEO_POST flow on a LinkedIn (or TikTok) target: ingest a draft with a VIDEO_POST target carrying one video asset -> verify processVideo persists it with mediaType=VIDEO and the video Cloudinary preset applied -> verify buildMakePayload returns exactly 1 mediaUrl (the video) for that target, sourced from the newly-seeded LinkedIn/TikTok platform-format row (T-010).\n\nTest requirements: new or extended test covering the full ingest -> pipeline -> buildMakePayload chain for VIDEO_POST on LINKEDIN, asserting exactly 1 mediaUrl, mediaType=VIDEO, and that the target resolves to the LinkedIn VIDEO_POST platform-format row seeded in T-010.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-019", "T-021", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed a draft with a LinkedIn VIDEO_POST target + 1 video asset",
+                    "completed": true
+                },
+                {
+                    "title": "Assert processVideo output has mediaType=VIDEO and preset applied",
+                    "completed": true
+                },
+                {
+                    "title": "Assert buildMakePayload returns exactly 1 video mediaUrl for the target",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "social", "video", "linkedin", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T01:54:07Z",
+                "completed": "2026-07-05T02:32:28Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Integration test: AC-4 override inheritance",
+            "description": "Write a test proving AC-4: a target with captionOverride/hashtagsOverrideText/footerOverride all set publishes (via buildMakePayload) with the overridden values, while a sibling target on the same post with all 3 fields null inherits the parent post's finalCaption/finalHashtagsText/footer content.\n\nTest requirements: extend social-publish-dispatch.service.test.ts's buildMakePayload suite with a two-target scenario (one overridden, one inheriting) asserting both payloads independently.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed a post with one overridden target and one inheriting target",
+                    "completed": true
+                },
+                {
+                    "title": "Assert each target's payload resolves correctly and independently",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "social", "overrides", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T01:54:07Z",
+                "completed": "2026-07-05T02:32:28Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Integration test: media isolation across co-targets on one post (AC-3 media scoping)",
+            "description": "Write a test proving the AC-3 media-isolation clause generally (beyond the STORY-specific case in T-023): a post with a CAROUSEL target (N image assets) and a STORY target (1 vertical asset) sharing the same social_posts row must NOT leak media between them — each target's buildMakePayload output contains only its own format-appropriate, target-scoped assets.\n\nTest requirements: new or extended test seeding one post with 2 targets of different formats and different asset sets, asserting each target's resolved mediaUrls array contains exactly its own assets and none of the sibling's.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed one post with a CAROUSEL target and a STORY target, distinct asset sets",
+                    "completed": true
+                },
+                {
+                    "title": "Assert each target's mediaUrls contains only its own assets",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "social", "media", "isolation", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T01:54:07Z",
+                "completed": "2026-07-05T02:32:28Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Document the per-target media model and override wiring",
+            "description": "Add a short section to packages/service-core/CLAUDE.md (and/or packages/db/CLAUDE.md, wherever the social automation notes already live per HOS-64) documenting: the new `social_post_target_media` many-to-many link table (targetId x mediaId + position) that associates media to `social_post_targets` instead of a column on `social_post_media`, why a link table was chosen over a nullable FK column (one asset shareable across multiple targets without row duplication, per spec.md §7/§11), the fan-out backfill behavior for pre-existing posts (T-005/T-006), and the fallback-to-post-level-media semantics in buildMakePayload for posts with zero link rows (T-019). Also document that `captionOverride`/`hashtagsOverrideText`/`footerOverride` are now live-wired into buildMakePayload (no longer dead code) — following the existing convention of documenting non-obvious schema/service decisions in these files.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document the social_post_target_media link table + why a link table was chosen over a column",
+                    "completed": true
+                },
+                {
+                    "title": "Document override columns now being live-read",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "social"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "n/a",
+                "typecheck": "n/a",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": "2026-07-05T02:32:55Z",
+                "completed": "2026-07-05T02:39:04Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Configure Make.com scenarios for LinkedIn/TikTok and run AC-1 staging smoke",
+            "description": "External/manual task, NOT code: configure the 2 new Make.com scenarios (one per platform) per R-1 (confirm Make.com has a mature connector for LinkedIn before committing scenario-build time), wire each scenario's webhook + make_channel_key to match the seeded platform-format rows (T-009, T-010), and run the AC-1 staging smoke test confirming both LinkedIn and TikTok publish successfully end-to-end via their Make.com scenario. Record the smoke result per this repo's smoke-gate convention (apply a status-needs-smoke-staging label on the HOS-65 issue if not already applied, and file the sign-off once run).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Confirm Make.com has mature LinkedIn/TikTok connectors (R-1)",
+                    "completed": false
+                },
+                {
+                    "title": "Build the 2 Make.com scenarios and wire webhook/channel keys",
+                    "completed": false
+                },
+                {
+                    "title": "Run AC-1 staging smoke and record sign-off",
+                    "completed": false
+                }
+            ],
+            "tags": ["manual", "smoke", "social", "make.com"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-07-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 26,
+        "blocked": 0,
+        "averageComplexity": 2.18
+    }
+}

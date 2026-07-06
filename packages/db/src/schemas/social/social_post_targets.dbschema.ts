@@ -7,6 +7,7 @@ import {
     SocialPublishFormatPgEnum
 } from '../enums.dbschema.ts';
 import { socialPlatformFormats } from './social_platform_formats.dbschema.ts';
+import { socialPostTargetMedia } from './social_post_target_media.dbschema.ts';
 import { socialPosts } from './social_posts.dbschema.ts';
 import { socialPublishLogs } from './social_publish_logs.dbschema.ts';
 
@@ -80,7 +81,8 @@ export const socialPostTargetsRelations = relations(socialPostTargets, ({ one, m
         fields: [socialPostTargets.platformFormatId],
         references: [socialPlatformFormats.id]
     }),
-    publishLogs: many(socialPublishLogs)
+    publishLogs: many(socialPublishLogs),
+    media: many(socialPostTargetMedia)
 }));
 
 export type InsertSocialPostTarget = typeof socialPostTargets.$inferInsert;

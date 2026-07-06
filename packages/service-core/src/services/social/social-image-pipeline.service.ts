@@ -1,11 +1,18 @@
-import type { SocialAssetModel, SocialPostMediaModel, SocialSettingModel } from '@repo/db';
+import type {
+    SocialAssetModel,
+    SocialPostMediaModel,
+    SocialPostTargetMediaModel,
+    SocialSettingModel
+} from '@repo/db';
 import {
     SocialAssetModel as RealSocialAssetModel,
     SocialPostMediaModel as RealSocialPostMediaModel,
+    SocialPostTargetMediaModel as RealSocialPostTargetMediaModel,
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
-import type { ImageProvider } from '@repo/media/server';
+import type { ImageProvider, UploadOptions } from '@repo/media/server';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
+import type { SocialPublishFormatEnum } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
 import { isUuid } from '../../utils/identifier';
 import type { ServiceLogger } from '../../utils/service-logger';
@@ -18,6 +25,7 @@ import {
     SOCIAL_ASSETS_FOLDER_FALLBACK,
     SOCIAL_ASSETS_FOLDER_KEY
 } from './social-image-pipeline-config.util';
+import { resolveVideoPipelinePreset } from './social-video-pipeline-config.util';
 
 // ---------------------------------------------------------------------------
 // Image payload types
@@ -82,6 +90,26 @@ export interface GptImagePayload {
     readonly altText?: string;
 }
 
+/**
+ * Flat GPT video payload type — mirrors the `GptVideoPayloadSchema` in
+ * `@repo/schemas/social-draft.http.schema` (HOS-65 T-007).
+ *
+ * Unlike {@link GptImagePayload}, `mode` has a single variant (`'public_url'`):
+ * video files are too large for OpenAI's `openai_file_refs` injection path, so
+ * phase 1 requires a direct HTTPS URL. `mode` stays a single-variant literal
+ * (not a bare string) so a future mode can be added without a breaking change.
+ */
+export interface GptVideoPayload {
+    /** Mode discriminant — currently only `'public_url'` is supported. */
+    readonly mode: 'public_url';
+    /** Direct HTTPS URL of the video to download and re-upload to Cloudinary. */
+    readonly url?: string;
+    /** Optional MIME type hint (e.g., "video/mp4"). */
+    readonly mimeType?: string;
+    /** Optional alt text for accessibility. */
+    readonly altText?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Input / output
 // ---------------------------------------------------------------------------
@@ -102,6 +130,72 @@ export interface ProcessImageInput {
      * ID of the acting user / system actor. Stored in `social_assets.created_by_id`.
      */
     readonly actorId?: string;
+    /**
+     * ID of the `social_post_targets` row this asset should be scoped to
+     * (HOS-65 G-3 per-target/per-format publishing). When provided (and
+     * `socialPostId` is also provided, so a `social_post_media` row was
+     * actually created), a `social_post_target_media` link row is created
+     * pointing at the newly created media row. When `undefined`, no link row
+     * is created — this keeps pre-HOS-65 G-3 callers backward compatible.
+     */
+    readonly socialPostTargetId?: string;
+    /**
+     * The target's publish format (HOS-65 T-021). When it resolves to a
+     * `STORY` preset via {@link resolveVideoPipelinePreset}, the 9:16
+     * Cloudinary transform is applied to the upload. `undefined` (pre-HOS-65
+     * T-021 callers) applies no transformation — fully backward compatible.
+     */
+    readonly publishFormat?: SocialPublishFormatEnum;
+    /**
+     * Post-global base offset for the `social_post_media.position` column
+     * (HOS-65 per-target collision fix). `social_post_media` has a
+     * `UNIQUE(social_post_id, position)` index, so when a post fans out to
+     * multiple targets that EACH carry media, every target's inserts must
+     * occupy a DISTINCT position slice of the post. The caller
+     * (`SocialDraftIngestionService`) threads a running count of media rows
+     * already created for the post as this offset; the pipeline adds the
+     * per-asset index on top. The `social_post_target_media` link row keeps a
+     * PER-TARGET position (0..N-1 within the target) so per-target ordering is
+     * unaffected. Defaults to `0` (single-target / standalone callers).
+     */
+    readonly mediaPositionOffset?: number;
+}
+
+/**
+ * Input for {@link SocialImagePipelineService.processVideo} (HOS-65 T-013).
+ */
+export interface ProcessVideoInput {
+    /** GPT video payload (`public_url` mode only in phase 1). */
+    readonly video: GptVideoPayload;
+    /**
+     * ID of the `social_posts` row to link the asset to via `social_post_media`.
+     * When `undefined` no `social_post_media` row is created.
+     */
+    readonly socialPostId?: string;
+    /**
+     * ID of the `social_post_targets` row this asset should be scoped to
+     * (HOS-65 G-3). Same semantics as {@link ProcessImageInput.socialPostTargetId}.
+     */
+    readonly socialPostTargetId?: string;
+    /**
+     * ID of the acting user / system actor. Stored in `social_assets.created_by_id`.
+     */
+    readonly actorId?: string;
+    /**
+     * The target's publish format (HOS-65 T-021). When it resolves to a
+     * `VIDEO_POST` preset via {@link resolveVideoPipelinePreset}, the
+     * resolved duration/size limits are enforced as pre-persist validation
+     * (see {@link SocialImagePipelineService.processVideo} for the exact
+     * rejection points). `undefined` applies no limit — fully backward compatible.
+     */
+    readonly publishFormat?: SocialPublishFormatEnum;
+    /**
+     * Post-global base offset for the `social_post_media.position` column.
+     * See {@link ProcessImageInput.mediaPositionOffset}. A standalone video is
+     * always its own single asset, so the pipeline adds `0` on top of this
+     * offset. Defaults to `0`.
+     */
+    readonly mediaPositionOffset?: number;
 }
 
 /**
@@ -136,6 +230,39 @@ export interface ProcessImageResult {
 /** Warning message returned when media download or upload fails. */
 const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
 
+/**
+ * Warning returned when the Cloudinary upload + `social_assets` insert succeeded
+ * but persisting the `social_post_media` / `social_post_target_media` link row
+ * failed (HOS-65). This is surfaced (not silently swallowed) so the failure
+ * cannot masquerade as a green `assetStatus` while the media is missing from
+ * the post/target — which previously caused a silent fall-back to post-level
+ * media and cross-target media leaks.
+ */
+const MEDIA_LINK_FAILURE_WARNING =
+    'Media uploaded but could not be linked to the post/target; manual review required';
+
+/**
+ * Builds the rejection warning for a video whose downloaded byte size exceeds
+ * the resolved VIDEO_POST limit (HOS-65 T-021). Checked BEFORE the Cloudinary
+ * upload call — cheap, since the bytes are already in memory from the download
+ * step, and avoids uploading an asset that will be rejected anyway.
+ */
+function buildVideoSizeLimitWarning(maxSizeBytes: number): string {
+    return `Video exceeds the maximum allowed size of ${maxSizeBytes} bytes for VIDEO_POST; manual upload required`;
+}
+
+/**
+ * Builds the rejection warning for a video whose Cloudinary-reported duration
+ * exceeds the resolved VIDEO_POST limit (HOS-65 T-021). Checked AFTER the
+ * Cloudinary upload call — duration is only known once Cloudinary has
+ * processed the file, so the asset is already stored there when this check
+ * runs; the `social_assets` row is simply never created (same orphaned-asset
+ * precedent as an `assetModel.create` failure elsewhere in this class).
+ */
+function buildVideoDurationLimitWarning(maxDurationSeconds: number): string {
+    return `Video exceeds the maximum allowed duration of ${maxDurationSeconds}s for VIDEO_POST; manual upload required`;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -151,7 +278,9 @@ const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
  *    timeout (default 15 s, `download_timeout_ms` social setting — HOS-64 G-2).
  * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`.
  * 5. Persist a `social_assets` row with the Cloudinary fields + metadata.
- * 6. Optionally create a `social_post_media` link row at `position = 0`.
+ * 6. Optionally create a `social_post_media` link row at `position = 0`, and
+ *    (HOS-65 G-3) optionally a `social_post_target_media` link row scoping
+ *    that media row to a specific `social_post_targets` row.
  *
  * ## Graceful failure
  * If any step from (3) onward fails (network timeout, non-2xx HTTP response,
@@ -165,6 +294,7 @@ export class SocialImagePipelineService {
     private readonly assetModel: SocialAssetModel;
     private readonly postMediaModel: SocialPostMediaModel;
     private readonly settingModel: SocialSettingModel;
+    private readonly postTargetMediaModel: SocialPostTargetMediaModel;
     private readonly mediaProvider: ImageProvider;
     private readonly logger: ServiceLogger;
 
@@ -173,12 +303,14 @@ export class SocialImagePipelineService {
         mediaProvider: ImageProvider,
         assetModel?: SocialAssetModel,
         postMediaModel?: SocialPostMediaModel,
-        settingModel?: SocialSettingModel
+        settingModel?: SocialSettingModel,
+        postTargetMediaModel?: SocialPostTargetMediaModel
     ) {
         this.mediaProvider = mediaProvider;
         this.assetModel = assetModel ?? new RealSocialAssetModel();
         this.postMediaModel = postMediaModel ?? new RealSocialPostMediaModel();
         this.settingModel = settingModel ?? new RealSocialSettingModel();
+        this.postTargetMediaModel = postTargetMediaModel ?? new RealSocialPostTargetMediaModel();
         this.logger = serviceLogger;
     }
 
@@ -239,7 +371,66 @@ export class SocialImagePipelineService {
      * ```
      */
     public async processImage(input: ProcessImageInput): Promise<ProcessImageResult> {
-        const { image, socialPostId, actorId } = input;
+        return this.processSingleImage(input, 0);
+    }
+
+    /**
+     * Downloads and persists N image assets sequentially, assigning each one a
+     * 0-indexed `position` matching its index in `inputs` (HOS-65 G-3 carousel
+     * support).
+     *
+     * Each asset is processed independently via {@link processSingleImage} with
+     * the same graceful-failure contract as {@link processImage}: one asset
+     * failing does NOT abort its siblings, and a failed asset never produces an
+     * orphaned `social_post_media` or `social_post_target_media` row — both link
+     * rows are only created after a successful upload + `social_assets` insert
+     * for that specific asset.
+     *
+     * Assets are processed sequentially (not in parallel) so `position` values
+     * stay deterministic and DB writes for the same post do not race on the
+     * composite `(social_post_id, position)` unique index.
+     *
+     * @param inputs - One `ProcessImageInput` per asset, in the desired display order.
+     * @returns One {@link ProcessImageResult} per input, in the same order.
+     *
+     * @example
+     * ```ts
+     * const results = await pipeline.processImages([
+     *   { image: imageA, socialPostId, socialPostTargetId },
+     *   { image: imageB, socialPostId, socialPostTargetId },
+     * ]);
+     * // results[0] -> position 0, results[1] -> position 1
+     * ```
+     */
+    public async processImages(inputs: ProcessImageInput[]): Promise<ProcessImageResult[]> {
+        const results: ProcessImageResult[] = [];
+        for (let position = 0; position < inputs.length; position++) {
+            const input = inputs[position];
+            if (!input) continue;
+            const result = await this.processSingleImage(input, position);
+            results.push(result);
+        }
+        return results;
+    }
+
+    /**
+     * Downloads the image from the GPT payload and re-uploads it to Cloudinary,
+     * then persists a `social_assets` row and (optionally) `social_post_media` /
+     * `social_post_target_media` link rows at the given `position`.
+     *
+     * Shared implementation behind {@link processImage} (always `position = 0`)
+     * and {@link processImages} (sequential `position` per input index).
+     *
+     * @param input - Image payload, optional post/target IDs to link, optional actor ID.
+     * @param position - 0-indexed display/carousel position for this asset.
+     * @returns Result with `assetId`, `cloudinaryUrl` (nullable), and `warnings`.
+     */
+    private async processSingleImage(
+        input: ProcessImageInput,
+        position: number
+    ): Promise<ProcessImageResult> {
+        const { image, socialPostId, actorId, socialPostTargetId, publishFormat } = input;
+        const mediaPositionOffset = input.mediaPositionOffset ?? 0;
 
         // Step 1: Extract the download URL and any metadata from the payload.
         const { downloadUrl, openaiFileRef, mimeType, altText } = this.extractPayloadFields(image);
@@ -254,8 +445,16 @@ export class SocialImagePipelineService {
             return this.gracefulFail();
         }
 
-        // Step 3: Upload to Cloudinary.
-        const uploadResult = await this.uploadToCloudinary(downloadResult.buffer, mimeType);
+        // Step 3: Upload to Cloudinary. STORY targets get the 9:16 aspect-ratio
+        // transform preset (HOS-65 T-021); every other format uploads untouched.
+        const preset = publishFormat ? resolveVideoPipelinePreset(publishFormat) : null;
+        const transformation = preset?.kind === 'story' ? preset.transformation : undefined;
+
+        const uploadResult = await this.uploadToCloudinary(
+            downloadResult.buffer,
+            mimeType,
+            transformation
+        );
         if (!uploadResult.success) {
             this.logger.warn({ error: uploadResult.error }, 'Cloudinary upload failed');
             return this.gracefulFail();
@@ -300,22 +499,178 @@ export class SocialImagePipelineService {
             return this.gracefulFail();
         }
 
-        // Step 6: Optionally link to the social post.
-        if (socialPostId && assetId) {
-            try {
-                await this.postMediaModel.create({
-                    socialPostId,
-                    assetId,
-                    position: 0
-                });
-            } catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                // Linking failure is non-fatal: the asset exists, but the link did not.
-                // This is logged as a warning but does not cause the whole pipeline to fail.
-                this.logger.warn(
-                    { error: message, assetId, socialPostId },
-                    'Failed to create social_post_media link'
-                );
+        // Step 6: Optionally link to the social post (+ target, HOS-65 G-3).
+        // `social_post_media.position` is POST-GLOBAL (offset + per-asset index)
+        // so multiple targets never collide on UNIQUE(social_post_id, position);
+        // the `social_post_target_media` link row keeps the PER-TARGET position.
+        if (assetId) {
+            const linkResult = await this.createMediaLinks({
+                assetId,
+                mediaPosition: mediaPositionOffset + position,
+                targetPosition: position,
+                socialPostId,
+                socialPostTargetId
+            });
+            if (!linkResult.ok) {
+                return this.gracefulFail(linkResult.warning);
+            }
+        }
+
+        return { assetId, cloudinaryUrl: url, warnings: [] };
+    }
+
+    /**
+     * Downloads the video from the GPT payload and re-uploads it to Cloudinary,
+     * then persists a `social_assets` row (with `mediaType` forced to `VIDEO`
+     * and `durationSeconds` set from the upload result) and optionally
+     * `social_post_media` / `social_post_target_media` link rows.
+     *
+     * Reuses the same download (fetch + `AbortController` timeout) and
+     * `uploadToCloudinary` steps as {@link processSingleImage}, and the same
+     * graceful-failure contract: on any error after argument parsing it
+     * returns `cloudinaryUrl: null` + a warning string instead of throwing,
+     * and never creates an orphaned link row.
+     *
+     * Video only supports `mode: 'public_url'` in phase 1 (HOS-65 T-013) — no
+     * `openai_file_refs` extraction is needed.
+     *
+     * When `publishFormat` resolves to the `VIDEO_POST` preset (HOS-65 T-021,
+     * see {@link resolveVideoPipelinePreset}), its duration/size limits are
+     * enforced as graceful-failure VALIDATION (not a Cloudinary transform —
+     * there is no non-destructive way to "cap" a video via a transform param):
+     * an oversized download is rejected BEFORE the Cloudinary upload call; an
+     * over-duration video (only knowable from Cloudinary's own response) is
+     * rejected AFTER upload, by simply never persisting the `social_assets` row.
+     *
+     * @param input - Video payload, optional post/target IDs to link, optional actor ID.
+     * @returns Result with `assetId`, `cloudinaryUrl` (nullable), and `warnings`.
+     *
+     * @example
+     * ```ts
+     * const result = await pipeline.processVideo({
+     *   video: { mode: 'public_url', url: 'https://example.com/clip.mp4' },
+     *   socialPostId: 'post-uuid',
+     *   socialPostTargetId: 'target-uuid',
+     * });
+     * ```
+     */
+    public async processVideo(input: ProcessVideoInput): Promise<ProcessImageResult> {
+        const { video, socialPostId, socialPostTargetId, actorId, publishFormat } = input;
+        const mediaPositionOffset = input.mediaPositionOffset ?? 0;
+
+        const downloadUrl = video.url ?? '';
+        const mimeType = video.mimeType ?? null;
+        const altText = video.altText ?? null;
+
+        // Resolve the VIDEO_POST preset (HOS-65 T-021). This preset is DURATION/
+        // SIZE LIMITS, not a Cloudinary transform — there is no meaningful
+        // Cloudinary transform for "cap this video's duration/size" that doesn't
+        // silently mutate (e.g. truncate) the uploaded content, which the pipeline
+        // must not do without the caller asking for it. Limits are therefore
+        // enforced as pre/post-upload VALIDATION using the existing
+        // graceful-failure contract, at the earliest point each value is known:
+        // size is known immediately after download (checked BEFORE uploading,
+        // to avoid uploading an asset that will be rejected anyway); duration is
+        // only reported by Cloudinary AFTER upload completes (checked before the
+        // `social_assets` row is persisted).
+        const preset = publishFormat ? resolveVideoPipelinePreset(publishFormat) : null;
+        const videoLimits = preset?.kind === 'video_post' ? preset.limits : null;
+        // STORY targets get the 9:16 aspect-ratio transform, mirroring the
+        // image path (HOS-65 T-021) — a STORY video must be cropped to 9:16
+        // exactly like a STORY image, not uploaded untouched.
+        const transformation = preset?.kind === 'story' ? preset.transformation : undefined;
+
+        // Step 1: Download the video bytes with a timeout.
+        const downloadResult = await this.downloadImage(downloadUrl);
+        if (!downloadResult.success) {
+            this.logger.warn(
+                { url: downloadUrl, error: downloadResult.error },
+                'Video download failed'
+            );
+            return this.gracefulFail();
+        }
+
+        if (videoLimits && downloadResult.buffer.byteLength > videoLimits.maxSizeBytes) {
+            this.logger.warn(
+                {
+                    sizeBytes: downloadResult.buffer.byteLength,
+                    maxSizeBytes: videoLimits.maxSizeBytes
+                },
+                'Video exceeds VIDEO_POST max size limit; upload skipped'
+            );
+            return this.gracefulFail(buildVideoSizeLimitWarning(videoLimits.maxSizeBytes));
+        }
+
+        // Step 2: Upload to Cloudinary. Force `resource_type: 'video'` so
+        // Cloudinary processes the file as a video and reports `duration`
+        // (HOS-65), and apply the STORY 9:16 transform when applicable.
+        const uploadResult = await this.uploadToCloudinary(
+            downloadResult.buffer,
+            mimeType,
+            transformation,
+            'video'
+        );
+        if (!uploadResult.success) {
+            this.logger.warn({ error: uploadResult.error }, 'Cloudinary upload failed');
+            return this.gracefulFail();
+        }
+
+        const { url, publicId, width, height, durationSeconds } = uploadResult.data;
+
+        if (
+            videoLimits &&
+            durationSeconds !== undefined &&
+            durationSeconds > videoLimits.maxDurationSeconds
+        ) {
+            this.logger.warn(
+                { durationSeconds, maxDurationSeconds: videoLimits.maxDurationSeconds },
+                'Video exceeds VIDEO_POST max duration limit; social_assets row not persisted'
+            );
+            return this.gracefulFail(
+                buildVideoDurationLimitWarning(videoLimits.maxDurationSeconds)
+            );
+        }
+
+        // Step 3: Persist the social_assets row. mediaType is always VIDEO here
+        // (unlike processSingleImage, which infers it from a MIME hint) and
+        // durationSeconds is persisted from the upload result.
+        let assetId: string | null = null;
+        try {
+            const asset = await this.assetModel.create({
+                source: SocialAssetSourceEnum.EXTERNAL_URL,
+                cloudinaryUrl: url,
+                cloudinaryPublicId: publicId,
+                originalUrl: downloadUrl,
+                openaiFileRef: undefined,
+                mimeType: mimeType ?? undefined,
+                mediaType: SocialMediaTypeEnum.VIDEO,
+                width: width ?? undefined,
+                height: height ?? undefined,
+                durationSeconds: durationSeconds ?? undefined,
+                altText: altText ?? undefined,
+                createdById: actorId && isUuid(actorId) ? actorId : undefined
+            });
+            assetId = asset.id;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.warn({ error: message }, 'Failed to persist social_assets row');
+            return this.gracefulFail();
+        }
+
+        // Step 4: Optionally link to the social post (+ target, HOS-65 G-3).
+        // A standalone video is always its own single asset, so the per-target
+        // position is 0; the post-global media position is the caller-provided
+        // offset (post-global collision fix).
+        if (assetId) {
+            const linkResult = await this.createMediaLinks({
+                assetId,
+                mediaPosition: mediaPositionOffset,
+                targetPosition: 0,
+                socialPostId,
+                socialPostTargetId
+            });
+            if (!linkResult.ok) {
+                return this.gracefulFail(linkResult.warning);
             }
         }
 
@@ -325,6 +680,115 @@ export class SocialImagePipelineService {
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
+
+    /**
+     * Creates the `social_post_media` link row (and, in turn, the
+     * `social_post_target_media` link row when `socialPostTargetId` is given)
+     * for an already-persisted `social_assets` row.
+     *
+     * A failure of EITHER insert is now SURFACED (HOS-65): it is logged at
+     * `error` level and returned as `{ ok: false, warning }` so the caller can
+     * degrade the result to a graceful failure rather than reporting a green
+     * `assetStatus` with no backing media row. Previously these failures were
+     * silently swallowed, which let a `UNIQUE(social_post_id, position)`
+     * collision (from per-target position reuse) drop the media row and link
+     * row unnoticed — the dispatch then leaked one target's media to another.
+     *
+     * No-ops entirely (returns `{ ok: true }`) when `socialPostId` is absent —
+     * this keeps standalone/re-upload callers (no post to link to yet) working.
+     *
+     * ORPHAN CLEANUP (HOS-65 FIX 7): the `social_post_media` insert and the
+     * `social_post_target_media` insert are two separate statements with no
+     * surrounding DB transaction — this class is constructed with directly
+     * injected models (no `ServiceContext`/`ctx.tx` propagation convention,
+     * unlike `BaseCrudService`-derived services), so wrapping both in a real
+     * transaction is not available here without a larger structural change.
+     * If the SECOND insert (the target link) throws, the already-committed
+     * `social_post_media` row from the first insert is explicitly deleted via
+     * `hardDelete` as a best-effort compensating action, so it never lingers
+     * as an orphan with zero link rows. A failure of that compensating delete
+     * is logged but does not change the already-decided graceful-fail outcome.
+     *
+     * @param params - The persisted asset ID, the POST-GLOBAL `mediaPosition`
+     *   for the `social_post_media` row, the PER-TARGET `targetPosition` for
+     *   the `social_post_target_media` link row, and the optional post/target
+     *   IDs to link.
+     * @returns `{ ok: true }` on success (or when nothing to link), or
+     *   `{ ok: false, warning }` when an insert failed.
+     */
+    private async createMediaLinks(params: {
+        readonly assetId: string;
+        readonly mediaPosition: number;
+        readonly targetPosition: number;
+        readonly socialPostId?: string;
+        readonly socialPostTargetId?: string;
+    }): Promise<{ readonly ok: boolean; readonly warning?: string }> {
+        const { assetId, mediaPosition, targetPosition, socialPostId, socialPostTargetId } = params;
+
+        if (!socialPostId) {
+            return { ok: true };
+        }
+
+        let postMediaId: string;
+        try {
+            const postMedia = await this.postMediaModel.create({
+                socialPostId,
+                assetId,
+                position: mediaPosition
+            });
+            postMediaId = postMedia.id;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.error(
+                { error: message, assetId, socialPostId, position: mediaPosition },
+                'Failed to create social_post_media link'
+            );
+            return { ok: false, warning: MEDIA_LINK_FAILURE_WARNING };
+        }
+
+        // Optionally link the newly created media row to a specific target
+        // (HOS-65 G-3 per-target/per-format publishing).
+        if (socialPostTargetId) {
+            try {
+                await this.postTargetMediaModel.create({
+                    socialPostTargetId,
+                    socialPostMediaId: postMediaId,
+                    position: targetPosition
+                });
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                this.logger.error(
+                    {
+                        error: message,
+                        assetId,
+                        socialPostMediaId: postMediaId,
+                        socialPostTargetId
+                    },
+                    'Failed to create social_post_target_media link'
+                );
+
+                // HOS-65 FIX 7: the social_post_media row above is already
+                // committed (no surrounding transaction) — delete it so it
+                // does not linger as an orphan with zero link rows. Best
+                // effort: a failure here is logged but does not change the
+                // already-decided graceful-fail outcome below.
+                try {
+                    await this.postMediaModel.hardDelete({ id: postMediaId });
+                } catch (deleteErr) {
+                    const deleteMessage =
+                        deleteErr instanceof Error ? deleteErr.message : String(deleteErr);
+                    this.logger.error(
+                        { error: deleteMessage, socialPostMediaId: postMediaId },
+                        'Failed to delete orphaned social_post_media row after link-insert failure'
+                    );
+                }
+
+                return { ok: false, warning: MEDIA_LINK_FAILURE_WARNING };
+            }
+        }
+
+        return { ok: true };
+    }
 
     /**
      * Extracts the download URL and relevant metadata from the GPT image payload.
@@ -415,11 +879,20 @@ export class SocialImagePipelineService {
      *
      * @param buffer - Raw image bytes.
      * @param _mimeType - Optional MIME type hint (currently unused — Cloudinary auto-detects).
+     * @param transformation - Optional Cloudinary transform preset forwarded
+     *   to `UploadOptions.transformation` (HOS-65 T-016/T-021 — e.g. the
+     *   STORY 9:16 crop). `undefined` applies no transformation.
+     * @param resourceType - Optional Cloudinary `resource_type` forwarded to
+     *   `UploadOptions.resourceType`. Defaults to `'image'` at the provider
+     *   level when omitted; video callers pass `'video'` so Cloudinary
+     *   processes the file as a video and reports `duration` (HOS-65).
      * @returns Upload result or failure.
      */
     private async uploadToCloudinary(
         buffer: Buffer,
-        _mimeType: string | null
+        _mimeType: string | null,
+        transformation?: UploadOptions['transformation'],
+        resourceType?: UploadOptions['resourceType']
     ): Promise<
         | {
               success: true;
@@ -438,7 +911,9 @@ export class SocialImagePipelineService {
             const result = await this.mediaProvider.upload({
                 file: buffer,
                 folder: assetsFolder,
-                tags: ['social', 'gpt-ingestion']
+                tags: ['social', 'gpt-ingestion'],
+                transformation,
+                resourceType
             });
             return {
                 success: true,
@@ -461,9 +936,14 @@ export class SocialImagePipelineService {
      *
      * Called whenever a recoverable error occurs so that the upstream
      * draft ingestion service can still persist the post.
+     *
+     * @param message - Warning message to surface. Defaults to the generic
+     *   {@link MEDIA_FAILURE_WARNING}; callers with a more specific reason
+     *   (e.g. a VIDEO_POST duration/size limit violation, HOS-65 T-021) pass
+     *   their own message instead.
      */
-    private gracefulFail(): ProcessImageResult {
-        return { assetId: null, cloudinaryUrl: null, warnings: [MEDIA_FAILURE_WARNING] };
+    private gracefulFail(message: string = MEDIA_FAILURE_WARNING): ProcessImageResult {
+        return { assetId: null, cloudinaryUrl: null, warnings: [message] };
     }
 
     /**
