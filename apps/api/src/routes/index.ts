@@ -105,10 +105,6 @@ import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
 import {
-    makeClaimCallbackRoute,
-    makeResultCallbackRoute
-} from './integrations/make/social/jobs/index.js';
-import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
@@ -582,7 +578,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // `feature: 'social-automation'` tag is set in ONE place, not on each of
         // the 60+ social route files.
         app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
-        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
         app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
 
         // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
@@ -596,12 +591,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social public-data pull (HOS-66 T-023): API-key gated, read-only.
         // Custom GPT pulls public accommodations/destinations to enrich a draft.
         app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
-
-        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
-        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
-        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
-        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
-        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
         app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
