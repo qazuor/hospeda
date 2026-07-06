@@ -684,7 +684,7 @@ describe('dunningJob', () => {
     describe('error handling', () => {
         it('should return failure result when an unexpected error occurs', async () => {
             // Arrange
-            mockGetQZPayBilling.mockImplementation(() => {
+            mockGetQZPayBilling.mockImplementation(function () {
                 throw new Error('Database connection lost');
             });
             const ctx = makeCronContext();
@@ -704,7 +704,7 @@ describe('dunningJob', () => {
 
         it('should handle non-Error thrown values', async () => {
             // Arrange
-            mockGetQZPayBilling.mockImplementation(() => {
+            mockGetQZPayBilling.mockImplementation(function () {
                 throw 'string error';
             });
             const ctx = makeCronContext();
@@ -750,16 +750,14 @@ describe('dunningJob', () => {
             mockGetQZPayBilling.mockReturnValue(billing);
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);
@@ -790,16 +788,14 @@ describe('dunningJob', () => {
             mockGetQZPayBilling.mockReturnValue(billing);
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);
@@ -841,16 +837,14 @@ describe('dunningJob', () => {
             mockGetQZPayBilling.mockReturnValue(billingWithCustomer);
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);
@@ -874,16 +868,14 @@ describe('dunningJob', () => {
             mockGetQZPayBilling.mockReturnValue(billing);
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);
@@ -912,16 +904,14 @@ describe('dunningJob', () => {
             });
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);
@@ -950,16 +940,14 @@ describe('dunningJob', () => {
             mockGetQZPayBilling.mockReturnValue(billing);
 
             let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
-            mockCreateSubscriptionLifecycle.mockImplementation(
-                (
-                    _b: unknown,
-                    _s: unknown,
-                    config: { onEvent?: (event: unknown) => Promise<void> }
-                ) => {
-                    capturedOnEvent = config.onEvent;
-                    return makeLifecycleMock();
-                }
-            );
+            mockCreateSubscriptionLifecycle.mockImplementation(function (
+                _b: unknown,
+                _s: unknown,
+                config: { onEvent?: (event: unknown) => Promise<void> }
+            ) {
+                capturedOnEvent = config.onEvent;
+                return makeLifecycleMock();
+            });
 
             const ctx = makeCronContext();
             await dunningJob.handler(ctx);

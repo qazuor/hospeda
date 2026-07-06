@@ -29,9 +29,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            getById: mockGetById
-        })),
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockGetById
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             public readonly code: string;
 

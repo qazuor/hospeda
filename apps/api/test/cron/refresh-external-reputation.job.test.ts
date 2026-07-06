@@ -67,9 +67,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationExternalReputationService: vi.fn().mockImplementation(() => ({
-            refresh: mockRefresh
-        }))
+        AccommodationExternalReputationService: vi.fn().mockImplementation(function () {
+            return {
+                refresh: mockRefresh
+            };
+        })
     };
 });
 
@@ -222,7 +224,7 @@ describe('Refresh External Reputation Cron Job', () => {
             );
 
             const callOrder: string[] = [];
-            mockRefresh.mockImplementation(async (accId: string) => {
+            mockRefresh.mockImplementation(async function (accId: string) {
                 callOrder.push(accId);
                 return {
                     data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }

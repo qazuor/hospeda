@@ -19,13 +19,14 @@
  */
 
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable reference holding the captured mock for listForModeration.
  * Stored on an object to dodge the vi.mock() hoisting temporal-dead-zone.
  */
-const mockRef: { listForModeration: ReturnType<typeof vi.fn> } = {
+const mockRef: { listForModeration: Mock } = {
     listForModeration: vi.fn()
 };
 
@@ -33,9 +34,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        GastronomyReviewService: vi.fn().mockImplementation(() => ({
-            listForModeration: (...args: unknown[]) => mockRef.listForModeration(...args)
-        })),
+        GastronomyReviewService: vi.fn().mockImplementation(function () {
+            return {
+                listForModeration: (...args: unknown[]) => mockRef.listForModeration(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

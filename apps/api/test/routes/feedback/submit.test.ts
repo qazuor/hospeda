@@ -70,9 +70,11 @@ const { mockCreateIssue, mockSendNotification, mockGetTurnstileSecret, mockVerif
  * Individual tests override `mockCreateIssue` to control the outcome.
  */
 vi.mock('../../../src/services/feedback/linear.service.js', () => ({
-    LinearFeedbackService: vi.fn().mockImplementation(() => ({
-        createIssue: mockCreateIssue
-    }))
+    LinearFeedbackService: vi.fn().mockImplementation(function () {
+        return {
+            createIssue: mockCreateIssue
+        };
+    })
 }));
 
 /**

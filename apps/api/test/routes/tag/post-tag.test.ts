@@ -50,7 +50,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        PostTagService: vi.fn().mockImplementation(() => mockPostTagService)
+        PostTagService: vi.fn().mockImplementation(function () {
+            return mockPostTagService;
+        })
     };
 });
 
@@ -60,7 +62,9 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        PostTagModel: vi.fn().mockImplementation(() => mockPostTagModel)
+        PostTagModel: vi.fn().mockImplementation(function () {
+            return mockPostTagModel;
+        })
     };
 });
 

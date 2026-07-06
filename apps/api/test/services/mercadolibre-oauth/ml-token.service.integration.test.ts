@@ -302,7 +302,7 @@ describe('ml-token.service (integration — real repository + real vault)', () =
             const gate = new Promise<void>((resolve) => {
                 releaseRefresh = resolve;
             });
-            mockRefreshAccessToken.mockImplementation(async () => {
+            mockRefreshAccessToken.mockImplementation(async function () {
                 await gate;
                 return {
                     accessToken: 'concurrent-new-access',

@@ -74,9 +74,11 @@ vi.mock('../../src/utils/route-factory', () => ({
 }));
 
 vi.mock('../../src/services/trial.service', () => ({
-    TrialService: vi.fn().mockImplementation(() => ({
-        reactivateFromTrial: mockReactivateFromTrial
-    }))
+    TrialService: vi.fn().mockImplementation(function () {
+        return {
+            reactivateFromTrial: mockReactivateFromTrial
+        };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({

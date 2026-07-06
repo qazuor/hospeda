@@ -35,10 +35,12 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            addMedia: mockAddMedia,
-            getById: mockGetById
-        }))
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                addMedia: mockAddMedia,
+                getById: mockGetById
+            };
+        })
     };
 });
 

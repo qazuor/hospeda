@@ -64,28 +64,34 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 // Mock service layer: these classes encapsulate all data fetching and storage.
 vi.mock('@repo/service-core', () => ({
-    DolarApiClient: vi.fn().mockImplementation(() => ({
-        fetchAll: vi.fn().mockResolvedValue({
-            rates: [],
-            errors: []
-        })
-    })),
-    ExchangeRateApiClient: vi.fn().mockImplementation(() => ({
-        fetchLatestRates: vi.fn().mockResolvedValue({
-            rates: [],
-            errors: []
-        })
-    })),
-    ExchangeRateFetcher: vi.fn().mockImplementation(() => ({
-        fetchAndStore: vi.fn().mockResolvedValue({
-            stored: 0,
-            errors: [],
-            fromManualOverride: 0,
-            fromDolarApi: 0,
-            fromExchangeRateApi: 0,
-            fromDbFallback: 0
-        })
-    }))
+    DolarApiClient: vi.fn().mockImplementation(function () {
+        return {
+            fetchAll: vi.fn().mockResolvedValue({
+                rates: [],
+                errors: []
+            })
+        };
+    }),
+    ExchangeRateApiClient: vi.fn().mockImplementation(function () {
+        return {
+            fetchLatestRates: vi.fn().mockResolvedValue({
+                rates: [],
+                errors: []
+            })
+        };
+    }),
+    ExchangeRateFetcher: vi.fn().mockImplementation(function () {
+        return {
+            fetchAndStore: vi.fn().mockResolvedValue({
+                stored: 0,
+                errors: [],
+                fromManualOverride: 0,
+                fromDolarApi: 0,
+                fromExchangeRateApi: 0,
+                fromDbFallback: 0
+            })
+        };
+    })
 }));
 
 describe('Exchange Rate Fetch Cron Job', () => {
@@ -170,9 +176,11 @@ describe('Exchange Rate Fetch Cron Job', () => {
             const { ExchangeRateFetcher } = await import('@repo/service-core');
 
             // Mock the fetcher to throw an error
-            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
-                fetchAndStore: vi.fn().mockRejectedValue(new Error('API error'))
-            }));
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(function () {
+                return {
+                    fetchAndStore: vi.fn().mockRejectedValue(new Error('API error'))
+                };
+            });
 
             const result = await exchangeRateFetchJob.handler(mockContext);
 
@@ -197,18 +205,20 @@ describe('Exchange Rate Fetch Cron Job', () => {
             const { ExchangeRateFetcher } = await import('@repo/service-core');
 
             // DolarAPI stored 5 rates; ExchangeRate-API hit a 429.
-            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
-                fetchAndStore: vi.fn().mockResolvedValue({
-                    stored: 5,
-                    errors: [
-                        { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
-                    ],
-                    fromManualOverride: 0,
-                    fromDolarApi: 5,
-                    fromExchangeRateApi: 0,
-                    fromDbFallback: 0
-                })
-            }));
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(function () {
+                return {
+                    fetchAndStore: vi.fn().mockResolvedValue({
+                        stored: 5,
+                        errors: [
+                            { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
+                        ],
+                        fromManualOverride: 0,
+                        fromDolarApi: 5,
+                        fromExchangeRateApi: 0,
+                        fromDbFallback: 0
+                    })
+                };
+            });
 
             const result = await exchangeRateFetchJob.handler(mockContext);
 
@@ -221,19 +231,21 @@ describe('Exchange Rate Fetch Cron Job', () => {
         it('reports failure when no rates were stored and providers errored', async () => {
             const { ExchangeRateFetcher } = await import('@repo/service-core');
 
-            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
-                fetchAndStore: vi.fn().mockResolvedValue({
-                    stored: 0,
-                    errors: [
-                        { source: 'DolarAPI', error: 'network down' },
-                        { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
-                    ],
-                    fromManualOverride: 0,
-                    fromDolarApi: 0,
-                    fromExchangeRateApi: 0,
-                    fromDbFallback: 0
-                })
-            }));
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(function () {
+                return {
+                    fetchAndStore: vi.fn().mockResolvedValue({
+                        stored: 0,
+                        errors: [
+                            { source: 'DolarAPI', error: 'network down' },
+                            { source: 'ExchangeRate-API', error: 'HTTP 429: Rate limit exceeded' }
+                        ],
+                        fromManualOverride: 0,
+                        fromDolarApi: 0,
+                        fromExchangeRateApi: 0,
+                        fromDbFallback: 0
+                    })
+                };
+            });
 
             const result = await exchangeRateFetchJob.handler(mockContext);
 
@@ -270,9 +282,11 @@ describe('Exchange Rate Fetch Cron Job', () => {
 
             // Mock the fetcher to throw an error
             const testError = new Error('Test API failure');
-            (ExchangeRateFetcher as Mock).mockImplementationOnce(() => ({
-                fetchAndStore: vi.fn().mockRejectedValue(testError)
-            }));
+            (ExchangeRateFetcher as Mock).mockImplementationOnce(function () {
+                return {
+                    fetchAndStore: vi.fn().mockRejectedValue(testError)
+                };
+            });
 
             await exchangeRateFetchJob.handler(mockContext);
 

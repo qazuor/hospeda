@@ -160,14 +160,14 @@ describe('publicGetSimilarRoute — SPEC-187 richDescription must be absent', ()
 
     it('excludes richDescription from the response when a DB row contains it', async () => {
         // First select() call: fetch source accommodation (type + destinationId)
-        mockSelect.mockImplementationOnce(() =>
-            buildSelectChain([
+        mockSelect.mockImplementationOnce(function () {
+            return buildSelectChain([
                 {
                     type: 'CABIN',
                     destinationId: 'dddddddd-0000-4000-8000-000000000001'
                 }
-            ])
-        );
+            ]);
+        });
 
         // findMany() returns a row that includes richDescription
         mockFindMany.mockResolvedValue([ACCOMMODATION_WITH_RICH]);
@@ -187,14 +187,14 @@ describe('publicGetSimilarRoute — SPEC-187 richDescription must be absent', ()
     });
 
     it('returns slug, name, summary, and other public card fields without richDescription', async () => {
-        mockSelect.mockImplementationOnce(() =>
-            buildSelectChain([
+        mockSelect.mockImplementationOnce(function () {
+            return buildSelectChain([
                 {
                     type: 'CABIN',
                     destinationId: 'dddddddd-0000-4000-8000-000000000001'
                 }
-            ])
-        );
+            ]);
+        });
 
         mockFindMany.mockResolvedValue([ACCOMMODATION_WITH_RICH]);
 

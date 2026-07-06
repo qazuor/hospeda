@@ -49,12 +49,14 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...original,
-        ConversationService: vi.fn().mockImplementation(() => ({
-            // The route handler calls requestAccessByEmail(email).
-            // Anti-enumeration: this method NEVER throws — it silently handles
-            // not-found / errors and returns void.
-            requestAccessByEmail: mockRequestAccessByEmail
-        }))
+        ConversationService: vi.fn().mockImplementation(function () {
+            return {
+                // The route handler calls requestAccessByEmail(email).
+                // Anti-enumeration: this method NEVER throws — it silently handles
+                // not-found / errors and returns void.
+                requestAccessByEmail: mockRequestAccessByEmail
+            };
+        })
     };
 });
 

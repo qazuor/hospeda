@@ -26,9 +26,11 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        PlatformSettingsService: vi.fn().mockImplementation(() => ({
-            findActiveAnnouncements: mockFindActiveAnnouncements
-        }))
+        PlatformSettingsService: vi.fn().mockImplementation(function () {
+            return {
+                findActiveAnnouncements: mockFindActiveAnnouncements
+            };
+        })
     };
 });
 

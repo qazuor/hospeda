@@ -137,7 +137,9 @@ describe('Trial Middleware', () => {
                 getTrialStatus: vi.fn()
             };
 
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -161,7 +163,9 @@ describe('Trial Middleware', () => {
                 getTrialStatus: vi.fn()
             };
 
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -347,7 +351,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert
             await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
@@ -394,7 +400,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert
             try {
@@ -426,7 +434,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -456,7 +466,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -485,7 +497,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -520,7 +534,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -555,7 +571,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -583,7 +601,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -612,7 +632,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert
             await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
@@ -635,7 +657,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -667,7 +691,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -699,7 +725,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -736,7 +764,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -768,7 +798,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -805,7 +837,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert
             await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
@@ -840,7 +874,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -898,7 +934,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -933,7 +971,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             await middleware(ctx, next);
@@ -968,7 +1008,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert — PUT must be blocked with 402
             await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
@@ -1007,7 +1049,9 @@ describe('Trial Middleware', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act & Assert — POST must be blocked with 402
             await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);

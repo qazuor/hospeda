@@ -67,9 +67,9 @@ describe('AccommodationService.addFaq', () => {
             }
         };
         // Mock AccommodationFaqModel for this test
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
+        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.AccommodationFaqModel;
+        });
         // addFaq now reads the current max displayOrder (SPEC-177) — default to empty.
         faqModelMock.findAll.mockResolvedValue({ items: [] });
     });

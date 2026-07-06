@@ -33,14 +33,18 @@ import { makeMediaModelStub } from '../../utils/modelMockFactory';
 // Mock the DestinationService to prevent constructor side-effects.
 // ---------------------------------------------------------------------------
 vi.mock('../../../src/services/destination/destination.service', () => ({
-    DestinationService: vi.fn().mockImplementation(() => ({}))
+    DestinationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 // ---------------------------------------------------------------------------
 // Mock the ConversationService to prevent constructor side-effects.
 // ---------------------------------------------------------------------------
 vi.mock('../../../src/services/conversation/conversation.service', () => ({
-    ConversationService: vi.fn().mockImplementation(() => ({}))
+    ConversationService: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));
 
 // ---------------------------------------------------------------------------

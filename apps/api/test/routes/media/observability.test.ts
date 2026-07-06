@@ -18,6 +18,7 @@
  * @module test/routes/media/observability
  */
 import { PermissionEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/auth';
 
@@ -127,7 +128,7 @@ const createDeleteReadyActor = () =>
 
 describe('Media route observability (SPEC-078-GAPS T-056)', () => {
     let app: AppOpenAPI;
-    let infoSpy: ReturnType<typeof vi.spyOn>;
+    let infoSpy: Mock;
 
     beforeAll(() => {
         app = initApp();

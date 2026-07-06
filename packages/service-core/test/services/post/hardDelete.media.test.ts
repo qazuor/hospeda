@@ -61,9 +61,9 @@ describe('PostService.hardDelete — media cleanup (T-065)', () => {
     it('captures deletedEntityId on hookState during _beforeHardDelete and consumes it in _afterHardDelete', async () => {
         const afterSpy = vi.spyOn(
             service as unknown as {
-                _afterHardDelete: PostService['_afterHardDelete' extends never ? never : never];
+                _afterHardDelete: PostService['_afterHardDelete'];
             },
-            '_afterHardDelete' as never
+            '_afterHardDelete'
         );
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 

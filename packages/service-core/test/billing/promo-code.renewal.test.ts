@@ -26,7 +26,7 @@
  * @module test/billing/promo-code.renewal
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks that need to be referenced at mock-factory call sites.
@@ -108,8 +108,8 @@ const mockGetPromoCodeById = promoCrudModule.getPromoCodeById as ReturnType<type
 function buildDbMock(options: {
     subRow: Record<string, unknown> | null;
     unitAmount?: number;
-    executeSpy?: ReturnType<typeof vi.fn>;
-    updateSetSpy?: ReturnType<typeof vi.fn>;
+    executeSpy?: Mock;
+    updateSetSpy?: Mock;
 }) {
     const { subRow, unitAmount, executeSpy, updateSetSpy } = options;
     const execute = executeSpy ?? vi.fn();

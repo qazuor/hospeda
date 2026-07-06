@@ -74,9 +74,9 @@ describe('AccommodationService.addIAData', () => {
             }
         };
         // Mock AccommodationIaDataModel for this test
-        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(
-            () => iaDataModelMock as unknown as db.AccommodationIaDataModel
-        );
+        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(function () {
+            return iaDataModelMock as unknown as db.AccommodationIaDataModel;
+        });
     });
 
     it('should add AI data successfully', async () => {

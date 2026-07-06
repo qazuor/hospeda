@@ -201,7 +201,7 @@ function resetAllMocks(): void {
         update: mockDbUpdate
     });
 
-    mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+    mockWithTransaction.mockImplementation(async function (cb: (tx: unknown) => Promise<void>) {
         const tx = {
             insert: mockDbInsert,
             update: mockDbUpdate,
@@ -251,17 +251,19 @@ describe('getActiveMLCredential', () => {
     describe('when an active row exists', () => {
         beforeEach(() => {
             mockDbSelectLimit.mockResolvedValue([ENCRYPTED_ROW]);
-            mockDecryptSecret.mockImplementation(
-                (input: { ciphertext: string; iv: string; authTag: string }) => {
-                    if (input.ciphertext === ENCRYPTED_ROW.accessTokenCiphertext) {
-                        return { plaintext: ACCESS_TOKEN };
-                    }
-                    if (input.ciphertext === ENCRYPTED_ROW.refreshTokenCiphertext) {
-                        return { plaintext: REFRESH_TOKEN };
-                    }
-                    throw new Error(`Unexpected decryptSecret input: ${JSON.stringify(input)}`);
+            mockDecryptSecret.mockImplementation(function (input: {
+                ciphertext: string;
+                iv: string;
+                authTag: string;
+            }) {
+                if (input.ciphertext === ENCRYPTED_ROW.accessTokenCiphertext) {
+                    return { plaintext: ACCESS_TOKEN };
                 }
-            );
+                if (input.ciphertext === ENCRYPTED_ROW.refreshTokenCiphertext) {
+                    return { plaintext: REFRESH_TOKEN };
+                }
+                throw new Error(`Unexpected decryptSecret input: ${JSON.stringify(input)}`);
+            });
         });
 
         it('should call decryptSecret with the correct access-token ciphertext/iv/authTag triplet', async () => {
@@ -347,7 +349,7 @@ describe('upsertMLCredential', () => {
         it('should insert a new row with ciphertext, never plaintext', async () => {
             // Arrange
             const capturedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 capturedValues.push(vals);
                 return Promise.resolve(undefined);
             });
@@ -379,7 +381,7 @@ describe('upsertMLCredential', () => {
         it('should update the existing row in place, not insert a new one', async () => {
             // Arrange
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -407,7 +409,7 @@ describe('upsertMLCredential', () => {
         it('should fall back to an UPDATE instead of throwing', async () => {
             // Arrange — the transactional path throws a unique-violation,
             // simulating a second caller's insert winning the race.
-            mockWithTransaction.mockImplementation(async () => {
+            mockWithTransaction.mockImplementation(async function () {
                 const pgError = new Error('duplicate key value violates unique constraint');
                 (pgError as unknown as { code: string }).code = '23505';
                 throw pgError;
@@ -418,7 +420,7 @@ describe('upsertMLCredential', () => {
             mockDbSelectLimit.mockResolvedValue([ACTIVE_ROW_ID]);
 
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -443,7 +445,7 @@ describe('upsertMLCredential', () => {
         it('should re-throw the original error when no row is found on re-check', async () => {
             // Arrange — race error thrown, but the post-race re-check finds
             // nothing (pathological case: row deleted mid-race).
-            mockWithTransaction.mockImplementation(async () => {
+            mockWithTransaction.mockImplementation(async function () {
                 const pgError = new Error('duplicate key value violates unique constraint');
                 (pgError as unknown as { code: string }).code = '23505';
                 throw pgError;
@@ -462,7 +464,7 @@ describe('upsertMLCredential', () => {
 
         it('should re-throw non-unique-violation errors without a fallback update', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(async () => {
+            mockWithTransaction.mockImplementation(async function () {
                 throw new Error('connection reset');
             });
 
@@ -487,11 +489,11 @@ describe('no plaintext token leakage (regression)', () => {
         // Arrange — capture every insert().values() and update().set() payload
         const capturedInsertValues: unknown[] = [];
         const capturedUpdateValues: unknown[] = [];
-        mockDbInsertValues.mockImplementation((vals: unknown) => {
+        mockDbInsertValues.mockImplementation(function (vals: unknown) {
             capturedInsertValues.push(vals);
             return Promise.resolve(undefined);
         });
-        mockDbUpdateSet.mockImplementation((vals: unknown) => {
+        mockDbUpdateSet.mockImplementation(function (vals: unknown) {
             capturedUpdateValues.push(vals);
             return { where: mockDbUpdateSetWhere };
         });

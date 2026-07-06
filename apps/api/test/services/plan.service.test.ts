@@ -187,6 +187,15 @@ const mockAnnualPrice = {
 /** Make all mockDb methods return mockDb by default (enables chaining). */
 function setupChain() {
     for (const key of Object.keys(mockDb)) {
+        // Vitest 4: `vi.restoreAllMocks()` (afterEach) no longer clears the
+        // `mockReturnValueOnce`/`mockResolvedValueOnce` queues of standalone
+        // `vi.fn()` mocks (it only restores `vi.spyOn` mocks now), and
+        // `vi.clearAllMocks()` never cleared those queues. Without an explicit
+        // reset, an unconsumed `*Once` value from an earlier test leaks into a
+        // later one (e.g. `.where()` returns a stale array, so `.limit` is not a
+        // function). `mockReset()` drains those queues; the base chaining
+        // implementation is re-established immediately below.
+        mockDb[key]!.mockReset();
         mockDb[key]!.mockReturnValue(mockDb);
     }
 }

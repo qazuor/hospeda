@@ -66,7 +66,9 @@ vi.mock('../../../../src/utils/logger', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    UserService: vi.fn(() => ({})),
+    UserService: vi.fn(function () {
+        return {};
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

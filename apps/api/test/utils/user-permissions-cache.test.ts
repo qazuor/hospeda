@@ -11,7 +11,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { findAllMock } = vi.hoisted(() => ({ findAllMock: vi.fn() }));
 
 vi.mock('@repo/db', () => ({
-    RUserPermissionModel: vi.fn(() => ({ findAll: findAllMock }))
+    RUserPermissionModel: vi.fn(function () {
+        return { findAll: findAllMock };
+    })
 }));
 
 vi.mock('../../src/utils/logger', () => ({

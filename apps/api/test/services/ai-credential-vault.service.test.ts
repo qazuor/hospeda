@@ -22,6 +22,17 @@
  *  10. Returns NOT_FOUND when no active credential exists.
  *  11. Plaintext is NOT present in any apiLogger call (security check).
  *
+ * auto-sync on create/rotate (HOS-94 T-010, OQ-2 — fail-open, key validation only):
+ *  12. create: does NOT write metadata.models when sync succeeds — the
+ *      credential's metadata is left untouched (owner decision 2026-07-06).
+ *  13. create: still succeeds (result unchanged) when syncAiProviderModels
+ *      throws — a warning is logged, no metadata write happens.
+ *  14. create: still succeeds (result unchanged) when syncAiProviderModels
+ *      resolves to `{ error }` — a warning is logged, no metadata write happens.
+ *  15. rotate: does NOT write metadata.models the same way as create.
+ *  16. rotate: still succeeds when syncAiProviderModels throws / returns
+ *      `{ error }` (fail-open, mirrors create).
+ *
  * @module test/services/ai-credential-vault.service
  */
 
@@ -44,7 +55,8 @@ const {
     mockDbUpdateSetWhere,
     mockDbSelectWhere,
     mockDbSelectLimit,
-    mockApiLogger
+    mockApiLogger,
+    mockSyncAiProviderModels
 } = vi.hoisted(() => {
     // ---- insert chain: .values().returning() ----
     const mockDbInsertValuesReturning = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
@@ -103,6 +115,18 @@ const {
         error: vi.fn()
     };
 
+    // Default: sync succeeds but detects nothing — this is the "neutral"
+    // default so every pre-existing (non-auto-sync) test is unaffected: the
+    // auto-sync helper short-circuits before touching the DB again when
+    // there are zero confidently-detected models.
+    const mockSyncAiProviderModels = vi.fn().mockResolvedValue({
+        data: {
+            providerId: 'openai',
+            models: [],
+            fetchedAt: '2026-07-05T00:00:00.000Z'
+        }
+    });
+
     return {
         mockEncryptSecret,
         mockDecryptSecret,
@@ -117,6 +141,7 @@ const {
         mockDbSelectWhere,
         mockDbSelectLimit,
         mockApiLogger,
+        mockSyncAiProviderModels,
         mockDbInsertValuesReturning: mockDbInsertValuesReturning
     };
 });
@@ -167,6 +192,10 @@ vi.mock('../../src/utils/ai-vault.js', () => ({
 
 vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: mockApiLogger
+}));
+
+vi.mock('../../src/services/ai-sync-models.service.js', () => ({
+    syncAiProviderModels: mockSyncAiProviderModels
 }));
 
 // ---------------------------------------------------------------------------
@@ -227,7 +256,7 @@ function resetAllMocks(): void {
     });
 
     // Default withTransaction: calls callback with tx that has insert/update
-    mockWithTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+    mockWithTransaction.mockImplementation(async function (cb: (tx: unknown) => Promise<void>) {
         const tx = {
             insert: mockDbInsert,
             update: mockDbUpdate,
@@ -255,6 +284,16 @@ function resetAllMocks(): void {
     mockDbUpdateSetWhere.mockResolvedValue({ rowCount: 1 });
     mockDbUpdateSet.mockReturnValue({ where: mockDbUpdateSetWhere });
     mockDbUpdate.mockReturnValue({ set: mockDbUpdateSet });
+
+    // Default auto-sync: succeeds, detects nothing (neutral — no extra
+    // DB calls triggered). Individual auto-sync tests override this.
+    mockSyncAiProviderModels.mockResolvedValue({
+        data: {
+            providerId: PROVIDER_ID,
+            models: [],
+            fetchedAt: '2026-07-05T00:00:00.000Z'
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -289,7 +328,7 @@ describe('createAiProviderCredential', () => {
 
             // Capture what was passed to insert().values()
             const capturedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 capturedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -319,7 +358,7 @@ describe('createAiProviderCredential', () => {
             mockDbSelectLimit.mockResolvedValue([]);
 
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([{ id: 'new-cred-uuid' }]);
                 return { returning: returningMock };
@@ -413,7 +452,7 @@ describe('rotateAiProviderCredential', () => {
         it('should update ciphertext in-place on the existing row', async () => {
             // Arrange — capture what was passed to update().set()
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -437,7 +476,7 @@ describe('rotateAiProviderCredential', () => {
         it('should insert an audit row with action "rotated"', async () => {
             // Arrange — capture all insert().values() calls
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([]);
                 return { returning: returningMock };
@@ -511,7 +550,7 @@ describe('deleteAiProviderCredential', () => {
         it('should set deletedAt and deletedById on the credential row', async () => {
             // Arrange — capture update().set() payload
             const capturedSetValues: unknown[] = [];
-            mockDbUpdateSet.mockImplementation((vals: unknown) => {
+            mockDbUpdateSet.mockImplementation(function (vals: unknown) {
                 capturedSetValues.push(vals);
                 return { where: mockDbUpdateSetWhere };
             });
@@ -532,7 +571,7 @@ describe('deleteAiProviderCredential', () => {
         it('should insert an audit row with action "deleted"', async () => {
             // Arrange — capture insert().values() calls
             const allInsertedValues: unknown[] = [];
-            mockDbInsertValues.mockImplementation((vals: unknown) => {
+            mockDbInsertValues.mockImplementation(function (vals: unknown) {
                 allInsertedValues.push(vals);
                 const returningMock = vi.fn().mockResolvedValue([]);
                 return { returning: returningMock };
@@ -654,5 +693,210 @@ describe('getDecryptedAiProviderCredential', () => {
             expect(result.data).toBeUndefined();
             expect(mockDecryptSecret).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-94 T-010 — auto-sync on create/rotate (OQ-2, fail-open, key validation
+// only — owner decision 2026-07-06: no metadata pre-population)
+// ---------------------------------------------------------------------------
+
+/** A confidently-detected model — must NOT be auto-written to metadata anymore. */
+const DETECTED_BOTH_MODEL = { id: 'gpt-4o', source: 'both' as const };
+/** Another confidently-detected model, detected-only. */
+const DETECTED_ONLY_MODEL = { id: 'gpt-5-preview', source: 'detected' as const };
+/** Curated-only entry. */
+const CURATED_ONLY_MODEL = { id: 'gpt-4o-mini', source: 'curated' as const };
+/** Uncertain detected entry. */
+const UNCERTAIN_MODEL = {
+    id: 'weird-model-x',
+    source: 'detected' as const,
+    capabilityHint: 'uncertain'
+};
+
+const SYNC_MODELS_SUCCESS = {
+    data: {
+        providerId: PROVIDER_ID,
+        models: [DETECTED_BOTH_MODEL, CURATED_ONLY_MODEL, DETECTED_ONLY_MODEL, UNCERTAIN_MODEL],
+        fetchedAt: '2026-07-05T00:00:00.000Z'
+    }
+};
+
+describe('createAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('should NOT write metadata.models when sync succeeds — the operator enables models manually', async () => {
+        // Arrange — select returns no active credential (create path).
+        mockDbSelectLimit.mockResolvedValueOnce([]);
+        mockSyncAiProviderModels.mockResolvedValueOnce(SYNC_MODELS_SUCCESS);
+
+        // Act
+        const result = await createAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert — create result is unaffected
+        expect(result.data).toBeDefined();
+        expect(result.data?.id).toBe('new-cred-uuid');
+        expect(result.error).toBeUndefined();
+
+        // Assert — sync was invoked for this providerId (key-validation call)
+        expect(mockSyncAiProviderModels).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
+
+        // Assert — no metadata write of any kind happened as a side effect of
+        // the sync (mockDbUpdateSet is only ever hit by rotate's ciphertext
+        // update or an explicit updateCredentialMetadata call — neither ran here).
+        expect(mockDbUpdateSet).not.toHaveBeenCalled();
+
+        // Assert — no warning was logged for the happy path
+        expect(mockApiLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should still succeed (result unchanged) when syncAiProviderModels throws', async () => {
+        // Arrange
+        mockDbSelectLimit.mockResolvedValueOnce([]);
+        mockSyncAiProviderModels.mockRejectedValueOnce(new Error('provider unreachable'));
+
+        // Act
+        const result = await createAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert — create still succeeds, identical to the no-sync-failure case
+        expect(result.data).toBeDefined();
+        expect(result.data?.id).toBe('new-cred-uuid');
+        expect(result.data?.providerId).toBe(PROVIDER_ID);
+        expect(result.error).toBeUndefined();
+
+        // Assert — a non-blocking warning was logged
+        expect(mockApiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ providerId: PROVIDER_ID }),
+            expect.stringContaining('auto-sync after credential change threw')
+        );
+
+        // Assert — no metadata write was attempted (fail-open, not a retry)
+        expect(mockDbUpdateSet).not.toHaveBeenCalled();
+    });
+
+    it('should still succeed (result unchanged) when syncAiProviderModels resolves { error }', async () => {
+        // Arrange
+        mockDbSelectLimit.mockResolvedValueOnce([]);
+        mockSyncAiProviderModels.mockResolvedValueOnce({
+            error: { code: 'CONFIGURATION_ERROR', message: 'stored key rejected by provider' }
+        });
+
+        // Act
+        const result = await createAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            plaintextKey: PLAINTEXT_KEY
+        });
+
+        // Assert — create still succeeds
+        expect(result.data).toBeDefined();
+        expect(result.error).toBeUndefined();
+
+        // Assert — a non-blocking warning was logged, carrying the sync error code
+        expect(mockApiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ providerId: PROVIDER_ID, code: 'CONFIGURATION_ERROR' }),
+            expect.stringContaining('auto-sync after credential change failed')
+        );
+
+        // Assert — no metadata write was attempted
+        expect(mockDbUpdateSet).not.toHaveBeenCalled();
+    });
+});
+
+describe('rotateAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
+    beforeEach(resetAllMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('should NOT write metadata.models when sync succeeds — the operator enables models manually', async () => {
+        // Arrange — select returns the active credential (rotate path).
+        mockDbSelectLimit.mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
+        mockSyncAiProviderModels.mockResolvedValueOnce(SYNC_MODELS_SUCCESS);
+
+        // Act
+        const result = await rotateAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            newPlaintextKey: NEW_PLAINTEXT_KEY
+        });
+
+        // Assert — rotate result is unaffected
+        expect(result.data).toBeDefined();
+        expect(result.data?.id).toBe(ACTIVE_CREDENTIAL_ROW.id);
+        expect(result.error).toBeUndefined();
+
+        // Assert — set() was called exactly once: rotate's own ciphertext
+        // update. The auto-sync never issues a second metadata write anymore.
+        expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+
+        // Assert — sync was invoked for this providerId (key-validation call)
+        expect(mockSyncAiProviderModels).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
+
+        expect(mockApiLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should still succeed (result unchanged) when syncAiProviderModels throws', async () => {
+        // Arrange
+        mockDbSelectLimit.mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
+        mockSyncAiProviderModels.mockRejectedValueOnce(new Error('rate limited'));
+
+        // Act
+        const result = await rotateAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            newPlaintextKey: NEW_PLAINTEXT_KEY
+        });
+
+        // Assert — rotate still succeeds
+        expect(result.data).toBeDefined();
+        expect(result.data?.id).toBe(ACTIVE_CREDENTIAL_ROW.id);
+        expect(result.error).toBeUndefined();
+
+        // Assert — warning logged, only the ciphertext update happened (no
+        // metadata write attempted)
+        expect(mockApiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ providerId: PROVIDER_ID }),
+            expect.stringContaining('auto-sync after credential change threw')
+        );
+        expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still succeed (result unchanged) when syncAiProviderModels resolves { error }', async () => {
+        // Arrange
+        mockDbSelectLimit.mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
+        mockSyncAiProviderModels.mockResolvedValueOnce({
+            error: { code: 'SERVICE_UNAVAILABLE', message: 'provider unreachable' }
+        });
+
+        // Act
+        const result = await rotateAiProviderCredential({
+            actor: MOCK_ACTOR,
+            ipAddress: IP_ADDRESS,
+            providerId: PROVIDER_ID,
+            newPlaintextKey: NEW_PLAINTEXT_KEY
+        });
+
+        // Assert — rotate still succeeds
+        expect(result.data).toBeDefined();
+        expect(result.error).toBeUndefined();
+
+        expect(mockApiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ providerId: PROVIDER_ID, code: 'SERVICE_UNAVAILABLE' }),
+            expect.stringContaining('auto-sync after credential change failed')
+        );
+        expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
     });
 });

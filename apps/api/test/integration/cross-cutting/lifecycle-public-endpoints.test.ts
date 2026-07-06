@@ -18,17 +18,18 @@
  * until then, per-handler strip is the standing decision.
  */
 
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const accommodationReviewMock: { listByAccommodation: ReturnType<typeof vi.fn> } = {
+const accommodationReviewMock: { listByAccommodation: Mock } = {
     listByAccommodation: vi.fn()
 };
 
-const destinationReviewMock: { listByDestination: ReturnType<typeof vi.fn> } = {
+const destinationReviewMock: { listByDestination: Mock } = {
     listByDestination: vi.fn()
 };
 
-const ownerPromotionMock: { getById: ReturnType<typeof vi.fn> } = {
+const ownerPromotionMock: { getById: Mock } = {
     getById: vi.fn()
 };
 
@@ -36,17 +37,23 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            listByAccommodation: (...args: unknown[]) =>
-                accommodationReviewMock.listByAccommodation(...args)
-        })),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            listByDestination: (...args: unknown[]) =>
-                destinationReviewMock.listByDestination(...args)
-        })),
-        OwnerPromotionService: vi.fn().mockImplementation(() => ({
-            getById: (...args: unknown[]) => ownerPromotionMock.getById(...args)
-        })),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                listByAccommodation: (...args: unknown[]) =>
+                    accommodationReviewMock.listByAccommodation(...args)
+            };
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                listByDestination: (...args: unknown[]) =>
+                    destinationReviewMock.listByDestination(...args)
+            };
+        }),
+        OwnerPromotionService: vi.fn().mockImplementation(function () {
+            return {
+                getById: (...args: unknown[]) => ownerPromotionMock.getById(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,

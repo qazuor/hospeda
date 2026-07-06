@@ -104,10 +104,12 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        PlatformSettingsModel: vi.fn().mockImplementation(() => ({
-            upsertByKey: mockUpsertByKey,
-            findByKey: mockFindByKey
-        }))
+        PlatformSettingsModel: vi.fn().mockImplementation(function () {
+            return {
+                upsertByKey: mockUpsertByKey,
+                findByKey: mockFindByKey
+            };
+        })
     };
 });
 

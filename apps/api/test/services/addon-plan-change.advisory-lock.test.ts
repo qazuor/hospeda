@@ -110,14 +110,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
             mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>)),
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: mockAddonCatalogGetBySlug,
-            list: vi.fn().mockResolvedValue({ success: true, data: [] })
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: mockPlanServiceGetById,
-            getBySlug: mockPlanServiceGetBySlug
-        }))
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockAddonCatalogGetBySlug,
+                list: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: mockPlanServiceGetById,
+                getBySlug: mockPlanServiceGetBySlug
+            };
+        })
     };
 });
 
@@ -395,7 +399,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             success: false,
             error: { code: 'NOT_FOUND', message: 'Plan not found' }
         });
-        mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
+        mockPlanServiceGetBySlug.mockImplementation(function (slug: string) {
             if (slug === OLD_PLAN_SLUG)
                 return Promise.resolve({ success: true, data: mockOldPlan });
             if (slug === NEW_PLAN_SLUG)
@@ -407,7 +411,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         });
 
         // DB-backed addon catalog (SPEC-192 T-013 cutover).
-        mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+        mockAddonCatalogGetBySlug.mockImplementation(function (slug: string) {
             if (slug === 'extra-accommodations-5')
                 return Promise.resolve({ success: true, data: mockAddonDef });
             return Promise.resolve({
@@ -424,12 +428,12 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         );
 
         // Reset withServiceTransaction to default passthrough
-        mockWithServiceTransaction.mockImplementation(
-            async (cb: (ctx: unknown) => Promise<unknown>) => {
-                const tx = buildFullTxMock({ purchaseRows: [] });
-                return cb({ tx, hookState: {} });
-            }
-        );
+        mockWithServiceTransaction.mockImplementation(async function (
+            cb: (ctx: unknown) => Promise<unknown>
+        ) {
+            const tx = buildFullTxMock({ purchaseRows: [] });
+            return cb({ tx, hookState: {} });
+        });
     });
 
     // ── unit: Advisory lock is acquired before business logic ─────────────────
@@ -440,35 +444,35 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             // tx that records the order of execute() and limits.set() calls.
             const callOrder: string[] = [];
 
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const executeWithOrder = vi.fn().mockImplementation((sqlExpr: unknown) => {
-                        const sqlStr = extractSqlText(sqlExpr);
-                        if (sqlStr.includes('pg_advisory_xact_lock')) {
-                            callOrder.push('advisory_lock');
-                        }
-                        return Promise.resolve([]);
-                    });
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const executeWithOrder = vi.fn().mockImplementation((sqlExpr: unknown) => {
+                    const sqlStr = extractSqlText(sqlExpr);
+                    if (sqlStr.includes('pg_advisory_xact_lock')) {
+                        callOrder.push('advisory_lock');
+                    }
+                    return Promise.resolve([]);
+                });
 
-                    const tx = buildFullTxMock({
-                        overrideExecute: executeWithOrder,
-                        purchaseRows: [activePurchaseRow]
-                    });
+                const tx = buildFullTxMock({
+                    overrideExecute: executeWithOrder,
+                    purchaseRows: [activePurchaseRow]
+                });
 
-                    // Wrap billing.limits.set to record when it fires
-                    const originalImpl = (
-                        billing.limits.set as unknown as MockInstance
-                    ).getMockImplementation();
-                    (billing.limits.set as unknown as MockInstance).mockImplementation(
-                        async (...args: unknown[]) => {
-                            callOrder.push('limits_set');
-                            return originalImpl ? originalImpl(...args) : undefined;
-                        }
-                    );
+                // Wrap billing.limits.set to record when it fires
+                const originalImpl = (
+                    billing.limits.set as unknown as MockInstance
+                ).getMockImplementation();
+                (billing.limits.set as unknown as MockInstance).mockImplementation(
+                    async (...args: unknown[]) => {
+                        callOrder.push('limits_set');
+                        return originalImpl ? originalImpl(...args) : undefined;
+                    }
+                );
 
-                    return cb({ tx, hookState: {} });
-                }
-            );
+                return cb({ tx, hookState: {} });
+            });
 
             const db = {
                 select: vi.fn(),
@@ -500,20 +504,20 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             // Arrange — capture all SQL strings passed to tx.execute()
             const executedSqlStrings: string[] = [];
 
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const captureExecute = vi.fn().mockImplementation((sqlExpr: unknown) => {
-                        executedSqlStrings.push(extractSqlText(sqlExpr));
-                        return Promise.resolve([]);
-                    });
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const captureExecute = vi.fn().mockImplementation((sqlExpr: unknown) => {
+                    executedSqlStrings.push(extractSqlText(sqlExpr));
+                    return Promise.resolve([]);
+                });
 
-                    const tx = buildFullTxMock({
-                        overrideExecute: captureExecute,
-                        purchaseRows: []
-                    });
-                    return cb({ tx, hookState: {} });
-                }
-            );
+                const tx = buildFullTxMock({
+                    overrideExecute: captureExecute,
+                    purchaseRows: []
+                });
+                return cb({ tx, hookState: {} });
+            });
 
             const db = {
                 select: vi.fn(),
@@ -544,20 +548,20 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             const capturedLockIds: number[] = [];
 
             const makeCapturingMock = () =>
-                mockWithServiceTransaction.mockImplementation(
-                    async (cb: (ctx: unknown) => Promise<unknown>) => {
-                        const captureExecute = vi.fn().mockImplementation((sqlExpr: unknown) => {
-                            const s = extractSqlText(sqlExpr);
-                            const m = s.match(/pg_advisory_xact_lock\((\d+)\)/);
-                            if (m?.[1]) {
-                                capturedLockIds.push(Number(m[1]));
-                            }
-                            return Promise.resolve([]);
-                        });
-                        const tx = buildFullTxMock({ overrideExecute: captureExecute });
-                        return cb({ tx, hookState: {} });
-                    }
-                );
+                mockWithServiceTransaction.mockImplementation(async function (
+                    cb: (ctx: unknown) => Promise<unknown>
+                ) {
+                    const captureExecute = vi.fn().mockImplementation((sqlExpr: unknown) => {
+                        const s = extractSqlText(sqlExpr);
+                        const m = s.match(/pg_advisory_xact_lock\((\d+)\)/);
+                        if (m?.[1]) {
+                            capturedLockIds.push(Number(m[1]));
+                        }
+                        return Promise.resolve([]);
+                    });
+                    const tx = buildFullTxMock({ overrideExecute: captureExecute });
+                    return cb({ tx, hookState: {} });
+                });
 
             const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
 
@@ -596,16 +600,16 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
     describe('unit: transaction callback errors propagate out of withServiceTransaction', () => {
         it('should propagate when tx.execute() throws during lock acquisition', async () => {
             // Arrange — tx.execute() rejects, simulating a DB failure when acquiring the lock
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const failingExecute = vi
-                        .fn()
-                        .mockRejectedValue(new Error('DB connection lost mid-transaction'));
-                    const tx = buildFullTxMock({ overrideExecute: failingExecute });
-                    // The callback propagates the error — withServiceTransaction does not swallow it
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const failingExecute = vi
+                    .fn()
+                    .mockRejectedValue(new Error('DB connection lost mid-transaction'));
+                const tx = buildFullTxMock({ overrideExecute: failingExecute });
+                // The callback propagates the error — withServiceTransaction does not swallow it
+                return cb({ tx, hookState: {} });
+            });
 
             const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
 
@@ -624,12 +628,12 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         it('should record per-key failure outcome when billing.limits.set rejects', async () => {
             // Arrange — the service catches per-key errors and continues processing
             // other keys (resilient design). This test verifies that behaviour.
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
+                return cb({ tx, hookState: {} });
+            });
 
             (billing.limits.set as unknown as MockInstance).mockRejectedValue(
                 new Error('QZPay service temporarily unavailable')
@@ -667,7 +671,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             };
 
             // Configure DB-backed catalog and plan mocks for two-key scenario
-            mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+            mockAddonCatalogGetBySlug.mockImplementation(function (slug: string) {
                 if (slug === 'extra-accommodations-5')
                     return Promise.resolve({ success: true, data: mockAddonDef });
                 if (slug === 'extra-featured-3') {
@@ -686,7 +690,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                     error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
                 });
             });
-            mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
+            mockPlanServiceGetBySlug.mockImplementation(function (slug: string) {
                 if (slug === OLD_PLAN_SLUG) {
                     return Promise.resolve({
                         success: true,
@@ -717,14 +721,14 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 });
             });
 
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const tx = buildFullTxMock({
-                        purchaseRows: [activePurchaseRow, secondKeyPurchase]
-                    });
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildFullTxMock({
+                    purchaseRows: [activePurchaseRow, secondKeyPurchase]
+                });
+                return cb({ tx, hookState: {} });
+            });
 
             (billing.limits.set as unknown as MockInstance)
                 .mockResolvedValueOnce(undefined)
@@ -805,12 +809,12 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 entitlementAdjustments: []
             };
 
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const tx = buildFullTxMock({ purchaseRows: [purchaseForDedup] });
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildFullTxMock({ purchaseRows: [purchaseForDedup] });
+                return cb({ tx, hookState: {} });
+            });
 
             const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
 
@@ -862,21 +866,21 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
 
             // Track Phase 1 completion — first call to withServiceTransaction is Phase 1
             let phase1Done = false;
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    if (!phase1Done) {
-                        // Phase 1: data read phase
-                        const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
-                        const result = await cb({ tx, hookState: {} });
-                        phase1CallbackReturned = true;
-                        phase1Done = true;
-                        return result;
-                    }
-                    // Phase 3: dedup event write phase
-                    const tx = buildFullTxMock({ purchaseRows: [] });
-                    return cb({ tx, hookState: {} });
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                if (!phase1Done) {
+                    // Phase 1: data read phase
+                    const tx = buildFullTxMock({ purchaseRows: [activePurchaseRow] });
+                    const result = await cb({ tx, hookState: {} });
+                    phase1CallbackReturned = true;
+                    phase1Done = true;
+                    return result;
                 }
-            );
+                // Phase 3: dedup event write phase
+                const tx = buildFullTxMock({ purchaseRows: [] });
+                return cb({ tx, hookState: {} });
+            });
 
             const originalLimitsSetImpl = (
                 billing.limits.set as unknown as MockInstance
@@ -910,15 +914,15 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             // Arrange
             mockWithServiceTransaction.mockClear();
             let phase1Done = false;
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const tx = buildFullTxMock({
-                        purchaseRows: phase1Done ? [] : [activePurchaseRow]
-                    });
-                    phase1Done = true;
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildFullTxMock({
+                    purchaseRows: phase1Done ? [] : [activePurchaseRow]
+                });
+                phase1Done = true;
+                return cb({ tx, hookState: {} });
+            });
 
             const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
 
@@ -943,12 +947,12 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
             // Arrange
             mockWithServiceTransaction.mockClear();
 
-            mockWithServiceTransaction.mockImplementation(
-                async (cb: (ctx: unknown) => Promise<unknown>) => {
-                    const tx = buildFullTxMock({ purchaseRows: [] });
-                    return cb({ tx, hookState: {} });
-                }
-            );
+            mockWithServiceTransaction.mockImplementation(async function (
+                cb: (ctx: unknown) => Promise<unknown>
+            ) {
+                const tx = buildFullTxMock({ purchaseRows: [] });
+                return cb({ tx, hookState: {} });
+            });
 
             const db = { select: vi.fn(), execute: vi.fn().mockResolvedValue([]) };
 

@@ -36,12 +36,16 @@ import {
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => ({
-    RevalidationConfigModel: vi.fn().mockImplementation(() => ({
-        findByEntityType: vi.fn().mockResolvedValue(undefined)
-    })),
-    RevalidationLogModel: vi.fn().mockImplementation(() => ({
-        create: vi.fn().mockResolvedValue(undefined)
-    }))
+    RevalidationConfigModel: vi.fn().mockImplementation(function () {
+        return {
+            findByEntityType: vi.fn().mockResolvedValue(undefined)
+        };
+    }),
+    RevalidationLogModel: vi.fn().mockImplementation(function () {
+        return {
+            create: vi.fn().mockResolvedValue(undefined)
+        };
+    })
 }));
 
 vi.mock('@repo/logger', () => ({

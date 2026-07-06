@@ -73,10 +73,12 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialSettingService: vi.fn(() => ({
-        adminList: mockAdminList,
-        updateByKey: mockUpdateByKey
-    })),
+    SocialSettingService: vi.fn(function () {
+        return {
+            adminList: mockAdminList,
+            updateByKey: mockUpdateByKey
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

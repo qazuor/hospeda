@@ -324,7 +324,9 @@ describe('FavoriteButton — guest click', () => {
 describe('FavoriteButton — authenticated click (success)', () => {
     it('flips aria-pressed optimistically before the API responds', async () => {
         // Arrange — never-resolving promise so we can catch the in-flight state.
-        mockToggle.mockImplementation(() => new Promise(() => undefined));
+        mockToggle.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
@@ -666,7 +668,9 @@ describe('FavoriteButton — API 403 LIMIT_REACHED', () => {
 describe('FavoriteButton — isPending state', () => {
     it('disables the button while API request is in-flight', async () => {
         // Arrange — never resolves so button stays pending
-        mockToggle.mockImplementation(() => new Promise(() => undefined));
+        mockToggle.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
@@ -681,7 +685,9 @@ describe('FavoriteButton — isPending state', () => {
 
     it('sets aria-busy=true while API request is in-flight', async () => {
         // Arrange
-        mockToggle.mockImplementation(() => new Promise(() => undefined));
+        mockToggle.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
@@ -696,7 +702,9 @@ describe('FavoriteButton — isPending state', () => {
 
     it('sets data-pending=true while API request is in-flight', async () => {
         // Arrange
-        mockToggle.mockImplementation(() => new Promise(() => undefined));
+        mockToggle.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
@@ -728,12 +736,11 @@ describe('FavoriteButton — isPending state', () => {
     it('ignores double-click while pending', async () => {
         // Arrange — first click is in-flight
         let resolveToggle: (value: unknown) => void = () => undefined;
-        mockToggle.mockImplementation(
-            () =>
-                new Promise((resolve) => {
-                    resolveToggle = resolve;
-                })
-        );
+        mockToggle.mockImplementation(function () {
+            return new Promise((resolve) => {
+                resolveToggle = resolve;
+            });
+        });
         render(
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
@@ -824,7 +831,9 @@ describe('FavoriteButton — single-check hydration (T-039b)', () => {
 
     it('sets aria-busy=true and data-hydrating=true during the check', async () => {
         // Arrange — never resolves so we can inspect the hydrating state
-        mockCheckStatus.mockImplementation(() => new Promise(() => undefined));
+        mockCheckStatus.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton
                 {...buildProps({
@@ -842,7 +851,9 @@ describe('FavoriteButton — single-check hydration (T-039b)', () => {
 
     it('disables the button during the hydration check', async () => {
         // Arrange
-        mockCheckStatus.mockImplementation(() => new Promise(() => undefined));
+        mockCheckStatus.mockImplementation(function () {
+            return new Promise(() => undefined);
+        });
         render(
             <FavoriteButton
                 {...buildProps({

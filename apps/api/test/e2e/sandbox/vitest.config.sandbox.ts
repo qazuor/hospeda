@@ -39,12 +39,10 @@ export default defineConfig({
             concurrent: false // Run tests one at a time
         },
 
-        // Pool options (single thread for sandbox tests)
-        poolOptions: {
-            threads: {
-                singleThread: true // Avoid concurrent API calls
-            }
-        },
+        // Run one test file at a time to avoid concurrent API calls.
+        // Vitest 4 (HOS-28): `fileParallelism: false` replaces the removed
+        // `poolOptions.threads.singleThread: true`.
+        fileParallelism: false,
 
         // Coverage (optional for sandbox tests)
         coverage: {

@@ -56,12 +56,16 @@ vi.mock('@repo/db', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/db')>();
     return {
         ...original,
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: mockFindAccommodation
-        })),
-        UserModel: vi.fn().mockImplementation(() => ({
-            findById: mockFindUser
-        }))
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: mockFindAccommodation
+            };
+        }),
+        UserModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: mockFindUser
+            };
+        })
     };
 });
 
@@ -74,12 +78,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...original,
-        AccessTokenService: vi.fn().mockImplementation(() => ({
-            validateToken: mockValidateToken
-        })),
-        ConversationService: vi.fn().mockImplementation(() => ({
-            getThread: mockGetThread
-        }))
+        AccessTokenService: vi.fn().mockImplementation(function () {
+            return {
+                validateToken: mockValidateToken
+            };
+        }),
+        ConversationService: vi.fn().mockImplementation(function () {
+            return {
+                getThread: mockGetThread
+            };
+        })
     };
 });
 

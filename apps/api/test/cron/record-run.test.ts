@@ -6,7 +6,9 @@ const { mockCaptureException } = vi.hoisted(() => ({ mockCaptureException: vi.fn
 
 // Intercept `new CronRunService(...)` created at module load in record-run.ts.
 vi.mock('@repo/service-core', () => ({
-    CronRunService: vi.fn(() => ({ recordRun: mockRecordRun }))
+    CronRunService: vi.fn(function () {
+        return { recordRun: mockRecordRun };
+    })
 }));
 
 vi.mock('@sentry/node', () => ({ captureException: mockCaptureException }));

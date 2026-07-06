@@ -57,9 +57,11 @@ vi.mock('../../../src/utils/actor', () => ({
 
 // Mock ModerationAggregationService so no real DB calls happen.
 vi.mock('@repo/service-core', () => ({
-    ModerationAggregationService: vi.fn(() => ({
-        getPendingCount: mockGetPendingCount
-    })),
+    ModerationAggregationService: vi.fn(function () {
+        return {
+            getPendingCount: mockGetPendingCount
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

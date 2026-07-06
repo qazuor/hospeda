@@ -31,9 +31,11 @@ vi.mock('../../../src/utils/route-factory', () => ({
 vi.mock('../../../src/utils/actor', () => ({ getActorFromContext: () => mockActor }));
 
 vi.mock('@repo/service-core', () => ({
-    AppLogEntryService: vi.fn(() => ({
-        listEntries: mockListEntries
-    })),
+    AppLogEntryService: vi.fn(function () {
+        return {
+            listEntries: mockListEntries
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

@@ -70,9 +70,11 @@ const { mockGetBySlug } = vi.hoisted(() => {
     return { mockGetBySlug: vi.fn() };
 });
 vi.mock('../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 // Mock logger

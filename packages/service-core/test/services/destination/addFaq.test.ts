@@ -44,9 +44,9 @@ describe('DestinationService.addFaq', () => {
                 category: 'Cómo llegar'
             }
         };
-        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.DestinationFaqModel
-        );
+        vi.spyOn(db, 'DestinationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.DestinationFaqModel;
+        });
         // addFaq now reads the current max displayOrder (SPEC-177) — default to empty.
         (faqModelMock.findAll as Mock).mockResolvedValue({ items: [] });
     });

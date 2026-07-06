@@ -24,14 +24,18 @@ const { mockCatalogGetBySlug, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(
 // ─── Service-core mock (DB-backed catalog + plan services, SPEC-192 T-012/T-025) ──
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockCatalogGetBySlug,
-        list: vi.fn()
-    })),
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockCatalogGetBySlug,
+            list: vi.fn()
+        };
+    }),
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    }),
     // SPEC-239 T-034: isAccommodationSubscription filters out commerce-domain
     // subscriptions. All test stubs here are accommodation subs (no productDomain),
     // so this should always return true — matching the real function's no-op behaviour
@@ -175,7 +179,7 @@ describe('AddonEntitlementService', () => {
         service = new AddonEntitlementService(mockBilling);
 
         // Default: catalog returns the stub for known slugs, NOT_FOUND for unknown
-        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+        mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
             const stub = ADDON_STUBS[slug];
             if (stub) return { success: true, data: stub };
             return {
@@ -191,7 +195,7 @@ describe('AddonEntitlementService', () => {
         });
 
         // Default: plan getBySlug returns stub for known slugs
-        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+        mockPlanGetBySlug.mockImplementation(async function (slug: string) {
             const stub = PLAN_STUBS[slug];
             if (stub) return { success: true, data: stub };
             return {

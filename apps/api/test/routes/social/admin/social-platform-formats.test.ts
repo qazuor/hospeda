@@ -75,11 +75,13 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialPlatformFormatService: vi.fn(() => ({
-        adminList: mockAdminList,
-        update: mockUpdate,
-        countActiveTargetsForFormat: mockCountActiveTargets
-    })),
+    SocialPlatformFormatService: vi.fn(function () {
+        return {
+            adminList: mockAdminList,
+            update: mockUpdate,
+            countActiveTargetsForFormat: mockCountActiveTargets
+        };
+    }),
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,

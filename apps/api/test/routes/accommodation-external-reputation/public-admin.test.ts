@@ -62,22 +62,28 @@ vi.mock('@repo/db', async (importActual) => {
     const actual = await importActual<typeof import('@repo/db')>();
     return {
         ...actual,
-        AccommodationExternalListingModel: vi.fn().mockImplementation(() => ({
-            findByAccommodation: vi.fn().mockResolvedValue([]),
-            findById: vi.fn(),
-            create: vi.fn(),
-            update: vi.fn(),
-            softDelete: vi.fn()
-        })),
-        AccommodationExternalReputationModel: vi.fn().mockImplementation(() => ({
-            findAll: vi.fn().mockResolvedValue({ items: [] }),
-            findForDisplay: vi.fn().mockResolvedValue([]),
-            upsertReputation: vi.fn()
-        })),
-        AccommodationModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn(),
-            update: vi.fn()
-        }))
+        AccommodationExternalListingModel: vi.fn().mockImplementation(function () {
+            return {
+                findByAccommodation: vi.fn().mockResolvedValue([]),
+                findById: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                softDelete: vi.fn()
+            };
+        }),
+        AccommodationExternalReputationModel: vi.fn().mockImplementation(function () {
+            return {
+                findAll: vi.fn().mockResolvedValue({ items: [] }),
+                findForDisplay: vi.fn().mockResolvedValue([]),
+                upsertReputation: vi.fn()
+            };
+        }),
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+        })
     };
 });
 
@@ -86,10 +92,12 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationExternalReputationService: vi.fn().mockImplementation(() => ({
-            listForDisplay: mockListForDisplay,
-            disableReputation: mockDisableReputation
-        }))
+        AccommodationExternalReputationService: vi.fn().mockImplementation(function () {
+            return {
+                listForDisplay: mockListForDisplay,
+                disableReputation: mockDisableReputation
+            };
+        })
     };
 });
 

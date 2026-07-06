@@ -35,14 +35,18 @@ const { mockCatalogGetBySlug } = vi.hoisted(() => ({
 // PlanService is required by addon-plan-change.service.ts (imported transitively via
 // addon-lifecycle.service.ts).
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockCatalogGetBySlug,
-        list: vi.fn()
-    })),
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: vi.fn(),
-        getBySlug: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockCatalogGetBySlug,
+            list: vi.fn()
+        };
+    }),
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: vi.fn(),
+            getBySlug: vi.fn()
+        };
+    }),
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
     }
@@ -261,7 +265,7 @@ describe('handleSubscriptionCancellationAddons', () => {
         it('should revoke and cancel both addons, returning succeeded list', async () => {
             // Arrange
             // After SPEC-192 T-014 cutover, catalog resolves via AddonCatalogService.getBySlug
-            mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            mockCatalogGetBySlug.mockImplementation(async function (slug: string) {
                 if (slug === PURCHASE_ENT.addonSlug) return { success: true, data: ENT_ADDON_DEF };
                 if (slug === PURCHASE_LIMIT.addonSlug)
                     return { success: true, data: LIMIT_ADDON_DEF };

@@ -80,9 +80,9 @@ describe('AccommodationService.updateFaq', () => {
                 answer: updateData.answer
             }
         };
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
+        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(function () {
+            return faqModelMock as unknown as db.AccommodationFaqModel;
+        });
     });
 
     it('should update a FAQ successfully', async () => {

@@ -81,17 +81,21 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AddonCatalogService: vi.fn().mockImplementation(() => ({
-            getBySlug: vi.fn().mockResolvedValue({
-                success: false,
-                error: { code: 'NOT_FOUND', message: 'addon not found' }
-            }),
-            list: vi.fn()
-        })),
-        PlanService: vi.fn().mockImplementation(() => ({
-            getById: vi.fn(),
-            getBySlug: vi.fn()
-        })),
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: vi.fn().mockResolvedValue({
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: 'addon not found' }
+                }),
+                list: vi.fn()
+            };
+        }),
+        PlanService: vi.fn().mockImplementation(function () {
+            return {
+                getById: vi.fn(),
+                getBySlug: vi.fn()
+            };
+        }),
         BILLING_EVENT_TYPES: {
             ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
         },

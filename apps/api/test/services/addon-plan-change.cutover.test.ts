@@ -39,15 +39,19 @@ const { mockGetBySlug, mockWarn, mockGetAddonBySlug, mockPlanGetById, mockPlanGe
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: mockGetBySlug,
-        list: vi.fn()
-    })),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: mockGetBySlug,
+            list: vi.fn()
+        };
+    }),
     // PlanService added for T-026 plan-reads cutover
-    PlanService: vi.fn().mockImplementation(() => ({
-        getById: mockPlanGetById,
-        getBySlug: mockPlanGetBySlug
-    })),
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            getById: mockPlanGetById,
+            getBySlug: mockPlanGetBySlug
+        };
+    }),
     ADDON_RECALC_SOURCE_ID: 'addon-recalc',
     BILLING_EVENT_TYPES: {
         ADDON_RECALC_COMPLETED: 'ADDON_RECALC_COMPLETED'

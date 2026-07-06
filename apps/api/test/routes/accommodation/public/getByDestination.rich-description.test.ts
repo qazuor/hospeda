@@ -51,9 +51,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            getByDestination: mockGetByDestination
-        })),
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                getByDestination: mockGetByDestination
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             public readonly code: string;
             constructor(code: string, message: string) {

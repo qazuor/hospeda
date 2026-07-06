@@ -5,26 +5,58 @@ import { validateApiEnv } from '../../../src/utils/env';
 // Mock all services to avoid dependency issues
 vi.mock('@repo/service-core', () => {
     return {
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            list: vi.fn()
-        })),
-        UserService: vi.fn().mockImplementation(() => ({
-            findById: vi.fn()
-        })),
-        EventService: vi.fn().mockImplementation(() => ({})),
-        PostService: vi.fn().mockImplementation(() => ({})),
-        DestinationService: vi.fn().mockImplementation(() => ({})),
-        AttractionService: vi.fn().mockImplementation(() => ({})),
-        TagService: vi.fn().mockImplementation(() => ({})),
-        AmenityService: vi.fn().mockImplementation(() => ({})),
-        FeatureService: vi.fn().mockImplementation(() => ({})),
-        PostSponsorService: vi.fn().mockImplementation(() => ({})),
-        PostSponsorshipService: vi.fn().mockImplementation(() => ({})),
-        EventOrganizerService: vi.fn().mockImplementation(() => ({})),
-        EventLocationService: vi.fn().mockImplementation(() => ({})),
-        UserBookmarkService: vi.fn().mockImplementation(() => ({})),
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({})),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({}))
+        AccommodationService: vi.fn().mockImplementation(function () {
+            return {
+                list: vi.fn()
+            };
+        }),
+        UserService: vi.fn().mockImplementation(function () {
+            return {
+                findById: vi.fn()
+            };
+        }),
+        EventService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        PostService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        DestinationService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        AttractionService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        TagService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        AmenityService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        FeatureService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        PostSponsorService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        PostSponsorshipService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        EventOrganizerService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        EventLocationService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        UserBookmarkService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {};
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {};
+        })
     };
 });
 

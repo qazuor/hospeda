@@ -36,7 +36,9 @@ vi.mock('@repo/db', () => ({
         select: mockSelect
     }),
     // EntityViewService singleton (service-core barrel) dereferences these at import.
-    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    AccommodationModel: vi.fn(function () {
+        return { findIdsByOwnerId: vi.fn(async () => []) };
+    }),
     entityViewModel: {
         insertView: vi.fn(),
         getStatsForEntities: vi.fn(async () => []),

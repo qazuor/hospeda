@@ -168,16 +168,16 @@ vi.mock('@repo/db', async (importOriginal) => {
     // the mocked db (same insert/update/select handles so existing assertions
     // still work). The second argument (existingTx/db) is intentionally ignored
     // in the mock — all operations go through the shared mock stubs.
-    mockWithTransaction.mockImplementation(
-        async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
-            const tx = {
-                select: mockDbSelectChain,
-                update: mockDbUpdate,
-                insert: mockDbInsert
-            };
-            return fn(tx);
-        }
-    );
+    mockWithTransaction.mockImplementation(async function (
+        fn: (tx: Record<string, unknown>) => Promise<unknown>
+    ) {
+        const tx = {
+            select: mockDbSelectChain,
+            update: mockDbUpdate,
+            insert: mockDbInsert
+        };
+        return fn(tx);
+    });
 
     return {
         ...actual,
@@ -285,7 +285,9 @@ beforeEach(() => {
 
     // Re-set defaults after reset
     mockGetQZPayBilling.mockReturnValue(makeBilling());
-    mockValidateTransition.mockImplementation(() => undefined); // no throw = valid
+    mockValidateTransition.mockImplementation(function () {
+        return undefined;
+    }); // no throw = valid
     mockSyncFeaturedByEntitlementForOwner.mockResolvedValue({ updated: 0, rows: [] });
     mockHandleSubscriptionCancellationAddons.mockResolvedValue({
         subscriptionId: SUB_ID_1,
@@ -295,7 +297,9 @@ beforeEach(() => {
         failed: [],
         elapsedMs: 10
     });
-    mockClearEntitlementCache.mockImplementation(() => undefined);
+    mockClearEntitlementCache.mockImplementation(function () {
+        return undefined;
+    });
     mockSendNotification.mockResolvedValue(undefined);
 
     // Rebuild insert and update return values
@@ -318,16 +322,16 @@ beforeEach(() => {
 
     // Re-wire withTransaction: execute the callback with a tx that mirrors the
     // mocked db handles so all existing assertions continue to work.
-    mockWithTransaction.mockImplementation(
-        async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
-            const tx = {
-                select: mockDbSelectChain,
-                update: mockDbUpdate,
-                insert: mockDbInsert
-            };
-            return fn(tx);
-        }
-    );
+    mockWithTransaction.mockImplementation(async function (
+        fn: (tx: Record<string, unknown>) => Promise<unknown>
+    ) {
+        const tx = {
+            select: mockDbSelectChain,
+            update: mockDbUpdate,
+            insert: mockDbInsert
+        };
+        return fn(tx);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -636,7 +640,7 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
         // The mock returns empty rows (no-op) — we only care about the predicate shape.
         const capturedPredicates: unknown[] = [];
 
-        mockDbSelectChain.mockImplementation(() => {
+        mockDbSelectChain.mockImplementation(function () {
             const chain = {
                 from: () => chain,
                 where: (predicate: unknown) => {
@@ -822,17 +826,17 @@ describe('handler: addon revocation failure', () => {
         // Override withTransaction to propagate the error (simulating rollback):
         // the callback is invoked but if it throws, withTransaction re-throws and
         // no write is considered committed.
-        mockWithTransaction.mockImplementation(
-            async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
-                const tx = {
-                    select: mockDbSelectChain,
-                    update: mockDbUpdate,
-                    insert: mockDbInsert
-                };
-                // Run the callback — if it throws, re-throw (simulates rollback).
-                return fn(tx);
-            }
-        );
+        mockWithTransaction.mockImplementation(async function (
+            fn: (tx: Record<string, unknown>) => Promise<unknown>
+        ) {
+            const tx = {
+                select: mockDbSelectChain,
+                update: mockDbUpdate,
+                insert: mockDbInsert
+            };
+            // Run the callback — if it throws, re-throw (simulates rollback).
+            return fn(tx);
+        });
 
         const ctx = makeCronCtx();
         const result = await finalizeCancelledSubsJob.handler(ctx);
@@ -910,7 +914,7 @@ describe('handler: featuredByEntitlement revoke (SPEC-309 T-024, Step 3c)', () =
 describe('handler: transition guard failure', () => {
     it('skips the sub and marks it as error when validateTransition throws', async () => {
         dueRowsState.rows = [makeDueRow()];
-        mockValidateTransition.mockImplementation(() => {
+        mockValidateTransition.mockImplementation(function () {
             throw new Error('Invalid transition');
         });
 
@@ -931,7 +935,7 @@ describe('handler: transition guard failure', () => {
 describe('handler: due-query failure', () => {
     it('returns success=false when the initial query throws', async () => {
         const queryErr = new Error('DB unavailable');
-        mockDbSelectChain.mockImplementation(() => {
+        mockDbSelectChain.mockImplementation(function () {
             throw queryErr;
         });
 
@@ -981,7 +985,7 @@ describe('_internals.sendAccessEndingReminders', () => {
         dedupBySubId: Record<string, boolean> = {}
     ) {
         let callCount = 0;
-        mockDbSelectChain.mockImplementation(() => {
+        mockDbSelectChain.mockImplementation(function () {
             const thisCall = callCount++;
             const chain = {
                 from: () => chain,

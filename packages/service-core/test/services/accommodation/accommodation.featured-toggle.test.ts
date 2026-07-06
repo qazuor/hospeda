@@ -60,10 +60,12 @@ const {
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => ({
-    AccommodationModel: vi.fn().mockImplementation(() => ({
-        findById: mockFindById,
-        update: mockUpdate
-    }))
+    AccommodationModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: mockFindById,
+            update: mockUpdate
+        };
+    })
 }));
 
 // Mock the T-004/T-021 resolver module at its own relative path — this is a

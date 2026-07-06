@@ -52,9 +52,11 @@ vi.mock('../../../src/utils/turnstile.js', () => ({
 }));
 
 vi.mock('../../../src/services/feedback/linear.service.js', () => ({
-    LinearFeedbackService: vi.fn().mockImplementation(() => ({
-        createIssue: mockCreateIssue
-    }))
+    LinearFeedbackService: vi.fn().mockImplementation(function () {
+        return {
+            createIssue: mockCreateIssue
+        };
+    })
 }));
 
 vi.mock('../../../src/utils/notification-helper.js', () => ({

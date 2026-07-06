@@ -15,29 +15,38 @@
  */
 
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const accomMock: { adminList: ReturnType<typeof vi.fn> } = { adminList: vi.fn() };
-const destMock: { adminList: ReturnType<typeof vi.fn> } = { adminList: vi.fn() };
-const ownerMock: { adminList: ReturnType<typeof vi.fn> } = { adminList: vi.fn() };
-const sponsorMock: { adminList: ReturnType<typeof vi.fn> } = { adminList: vi.fn() };
+const accomMock: { adminList: Mock } = { adminList: vi.fn() };
+const destMock: { adminList: Mock } = { adminList: vi.fn() };
+const ownerMock: { adminList: Mock } = { adminList: vi.fn() };
+const sponsorMock: { adminList: Mock } = { adminList: vi.fn() };
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => accomMock.adminList(...args)
-        })),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => destMock.adminList(...args)
-        })),
-        OwnerPromotionService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => ownerMock.adminList(...args)
-        })),
-        SponsorshipService: vi.fn().mockImplementation(() => ({
-            adminList: (...args: unknown[]) => sponsorMock.adminList(...args)
-        })),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => accomMock.adminList(...args)
+            };
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => destMock.adminList(...args)
+            };
+        }),
+        OwnerPromotionService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => ownerMock.adminList(...args)
+            };
+        }),
+        SponsorshipService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: (...args: unknown[]) => sponsorMock.adminList(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,
@@ -70,7 +79,7 @@ type Case = {
     label: string;
     path: string;
     permissions: PermissionEnum[];
-    serviceMock: { adminList: ReturnType<typeof vi.fn> };
+    serviceMock: { adminList: Mock };
 };
 
 const cases: ReadonlyArray<Case> = [

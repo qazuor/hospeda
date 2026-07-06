@@ -38,10 +38,12 @@ const { mockGetQZPayBilling } = vi.hoisted(() => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: vi.fn(),
-        getBySlug: mockGetBySlug
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: vi.fn(),
+            getBySlug: mockGetBySlug
+        };
+    })
 }));
 
 vi.mock('@repo/billing', () => ({

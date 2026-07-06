@@ -112,7 +112,7 @@ describe('BillingSettingsService', () => {
         mockValues = vi.fn();
 
         // values() can either resolve directly (audit log insert) or return onConflictDoUpdate chain (upsert)
-        mockValues.mockImplementation((valuesArg: unknown) => {
+        mockValues.mockImplementation(function (valuesArg: unknown) {
             // Record the insert call
             const lastTable = insertCalls.length > 0 ? insertCalls[insertCalls.length - 1] : null;
             if (lastTable && lastTable.values === null) {

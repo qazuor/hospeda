@@ -23,12 +23,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => ({
-    RevalidationConfigModel: vi.fn().mockImplementation(() => ({
-        findByEntityType: vi.fn()
-    })),
-    RevalidationLogModel: vi.fn().mockImplementation(() => ({
-        create: vi.fn().mockResolvedValue(undefined)
-    }))
+    RevalidationConfigModel: vi.fn().mockImplementation(function () {
+        return {
+            findByEntityType: vi.fn()
+        };
+    }),
+    RevalidationLogModel: vi.fn().mockImplementation(function () {
+        return {
+            create: vi.fn().mockResolvedValue(undefined)
+        };
+    })
 }));
 
 vi.mock('@repo/logger', () => ({
@@ -138,12 +142,16 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         vi.useFakeTimers();
         vi.clearAllMocks();
         // Re-mock implementations after clearAllMocks
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -204,13 +212,15 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
     });
 
     it('creates separate debounce entries for different entity keys', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi
-                .fn()
-                .mockImplementation((entityType: string) =>
-                    Promise.resolve(makeEnabledConfig(entityType, 1))
-                )
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi
+                    .fn()
+                    .mockImplementation((entityType: string) =>
+                        Promise.resolve(makeEnabledConfig(entityType, 1))
+                    )
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -229,13 +239,15 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
     });
 
     it('uses entity-level debounce key (entityType:entityId) for slug-bearing events', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi
-                .fn()
-                .mockImplementation((entityType: string) =>
-                    Promise.resolve(makeEnabledConfig(entityType, 1))
-                )
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi
+                    .fn()
+                    .mockImplementation((entityType: string) =>
+                        Promise.resolve(makeEnabledConfig(entityType, 1))
+                    )
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -262,13 +274,15 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         // type don't collapse into one shared bucket and reset each other's timer.
         // This asserts timer ISOLATION, which the path-accumulation test above cannot:
         // a collapsed bucket would still revalidate both paths, just on a reset timer.
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi
-                .fn()
-                .mockImplementation((entityType: string) =>
-                    Promise.resolve(makeEnabledConfig(entityType, 1))
-                )
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi
+                    .fn()
+                    .mockImplementation((entityType: string) =>
+                        Promise.resolve(makeEnabledConfig(entityType, 1))
+                    )
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -308,9 +322,11 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
             info: vi.fn(),
             debug: vi.fn()
         });
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
     });
 
     afterEach(() => {
@@ -319,9 +335,11 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
     });
 
     it('does NOT revalidate when config is missing (no DB record)', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -332,12 +350,14 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
     });
 
     it('does NOT revalidate when enabled === false', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue({
-                ...makeEnabledConfig('tag'),
-                enabled: false
-            })
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue({
+                    ...makeEnabledConfig('tag'),
+                    enabled: false
+                })
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -348,12 +368,14 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
     });
 
     it('does NOT revalidate when autoRevalidateOnChange === false', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue({
-                ...makeEnabledConfig('tag'),
-                autoRevalidateOnChange: false
-            })
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue({
+                    ...makeEnabledConfig('tag'),
+                    autoRevalidateOnChange: false
+                })
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -364,9 +386,11 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
     });
 
     it('uses debounceSeconds from config', async () => {
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 2))
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 2))
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -384,9 +408,11 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
 
     it('refetches config after cache expires (60s TTL)', async () => {
         const mockFindByEntityType = vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1));
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: mockFindByEntityType
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: mockFindByEntityType
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -417,9 +443,11 @@ describe('RevalidationService.scheduleRevalidation -- config gating', () => {
 
     it('caches config -- does not call DB again within 60 s for the same entity type', async () => {
         const mockFindByEntityType = vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1));
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: mockFindByEntityType
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: mockFindByEntityType
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -446,12 +474,16 @@ describe('RevalidationService.scheduleRevalidation -- error isolation', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -505,12 +537,16 @@ describe('RevalidationService.scheduleRevalidation -- error isolation', () => {
 describe('RevalidationService.revalidateByEntityType', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -537,9 +573,11 @@ describe('RevalidationService.revalidateByEntityType', () => {
 
     it('passes entityType to log entries', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -574,12 +612,16 @@ describe('RevalidationService.revalidateByEntityType', () => {
 describe('RevalidationService.revalidatePaths', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -644,9 +686,11 @@ describe('RevalidationService.revalidatePaths', () => {
 
     it('writes a log entry to DB for each revalidated path', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -661,9 +705,11 @@ describe('RevalidationService.revalidatePaths', () => {
 
     it('threads entityType through to log entries', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -687,9 +733,11 @@ describe('RevalidationService.revalidatePaths', () => {
 
     it('defaults entityType to "manual" when not provided', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -710,12 +758,16 @@ describe('RevalidationService.revalidatePaths', () => {
 describe('RevalidationService config getters', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(undefined)
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(undefined)
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -779,12 +831,16 @@ describe('singleton management', () => {
     beforeEach(() => {
         _resetRevalidationService();
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi.fn().mockResolvedValue(undefined)
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(undefined)
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -923,16 +979,20 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi
-                .fn()
-                .mockImplementation((entityType: string) =>
-                    Promise.resolve(makeEnabledConfig(entityType, 1))
-                )
-        }));
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: vi.fn().mockResolvedValue(undefined)
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi
+                    .fn()
+                    .mockImplementation((entityType: string) =>
+                        Promise.resolve(makeEnabledConfig(entityType, 1))
+                    )
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -1016,9 +1076,11 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
 
     it('reason is propagated to each scheduled event', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -1068,13 +1130,15 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
-        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            findByEntityType: vi
-                .fn()
-                .mockImplementation((entityType: string) =>
-                    Promise.resolve(makeEnabledConfig(entityType, 1))
-                )
-        }));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi
+                    .fn()
+                    .mockImplementation((entityType: string) =>
+                        Promise.resolve(makeEnabledConfig(entityType, 1))
+                    )
+            };
+        });
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
@@ -1092,9 +1156,11 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
         // Arrange
         const knownUuid = '550e8400-e29b-41d4-a716-446655440001';
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -1122,9 +1188,11 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
     it('scheduleRevalidation without id leaves entityId null in logModel.create', async () => {
         // Arrange — call site omits `id` (slug-only, as legacy hooks do)
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -1152,9 +1220,11 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
         // id-less second call must NOT overwrite it to null.
         const knownUuid = '550e8400-e29b-41d4-a716-446655440099';
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -1182,9 +1252,11 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
         // brings the UUID. The bucket should adopt it (first non-undefined wins).
         const knownUuid = '550e8400-e29b-41d4-a716-446655440077';
         const mockCreate = vi.fn().mockResolvedValue(undefined);
-        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-            create: mockCreate
-        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: mockCreate
+            };
+        });
 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);

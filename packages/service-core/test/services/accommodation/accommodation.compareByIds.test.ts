@@ -37,7 +37,14 @@ const { destinationFindByIdsMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
-    DestinationService: vi.fn().mockImplementation(() => ({}))
+    // Vitest 4: `new DestinationService(ctx)` forwards straight to
+    // mockImplementation via Reflect.construct, so the implementation must
+    // itself be constructible — an arrow function throws "is not a
+    // constructor". A regular function expression works and still returns
+    // an empty stub.
+    DestinationService: vi.fn().mockImplementation(function DestinationServiceStub() {
+        return {};
+    })
 }));
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -49,10 +56,14 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...original,
         buildSearchCondition: vi.fn(),
-        DestinationModel: vi.fn().mockImplementation(() => ({
-            findById: vi.fn(),
-            findByIds: destinationFindByIdsMock
-        }))
+        // Vitest 4: `new DestinationModel()` requires a constructible
+        // implementation (see the DestinationService mock above for why).
+        DestinationModel: vi.fn().mockImplementation(function DestinationModelStub() {
+            return {
+                findById: vi.fn(),
+                findByIds: destinationFindByIdsMock
+            };
+        })
     };
 });
 

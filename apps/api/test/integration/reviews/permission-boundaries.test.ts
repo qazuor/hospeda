@@ -18,12 +18,13 @@
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const accomMockRef: { update: ReturnType<typeof vi.fn> } = {
+const accomMockRef: { update: Mock } = {
     update: vi.fn()
 };
-const destMockRef: { update: ReturnType<typeof vi.fn> } = {
+const destMockRef: { update: Mock } = {
     update: vi.fn()
 };
 
@@ -31,12 +32,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        AccommodationReviewService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => accomMockRef.update(...args)
-        })),
-        DestinationReviewService: vi.fn().mockImplementation(() => ({
-            update: (...args: unknown[]) => destMockRef.update(...args)
-        })),
+        AccommodationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => accomMockRef.update(...args)
+            };
+        }),
+        DestinationReviewService: vi.fn().mockImplementation(function () {
+            return {
+                update: (...args: unknown[]) => destMockRef.update(...args)
+            };
+        }),
         ServiceError: class ServiceError extends Error {
             constructor(
                 public readonly code: string,
@@ -70,7 +75,7 @@ type Case = {
     path: string;
     updatePerm: PermissionEnum;
     moderatePerm: PermissionEnum;
-    serviceMock: { update: ReturnType<typeof vi.fn> };
+    serviceMock: { update: Mock };
 };
 
 const cases: ReadonlyArray<Case> = [

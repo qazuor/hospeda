@@ -89,9 +89,9 @@ describe('AccommodationService.getAllIAData', () => {
                 accommodationId: accommodation.id as any
             }
         ];
-        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(
-            () => iaDataModelMock as unknown as db.AccommodationIaDataModel
-        );
+        vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(function () {
+            return iaDataModelMock as unknown as db.AccommodationIaDataModel;
+        });
     });
 
     it('should return AI data for an accommodation', async () => {

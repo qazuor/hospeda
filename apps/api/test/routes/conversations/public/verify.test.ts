@@ -51,9 +51,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...original,
-        ConversationService: vi.fn().mockImplementation(() => ({
-            verifyEmailToken: mockVerifyEmailToken
-        }))
+        ConversationService: vi.fn().mockImplementation(function () {
+            return {
+                verifyEmailToken: mockVerifyEmailToken
+            };
+        })
     };
 });
 

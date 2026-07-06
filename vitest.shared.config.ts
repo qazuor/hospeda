@@ -79,28 +79,31 @@ export const sharedTestConfig = {
          *   Keep forks as the safe default until each package is validated.
          */
         pool: 'forks' as const,
-        poolOptions: {
-            forks: {
-                /**
-                 * Env-driven fork count. Default 3 locally (safe for 16c machine).
-                 * CI overrides to 1 via VITEST_MAX_FORKS env var in ci.yml (see
-                 * that file's test-unit job comment for the OOM incident history).
-                 *
-                 * Combined with turbo concurrency 4, local peak = 4 × 3 = 12 forks.
-                 * CI peak per shard = 1 package at a time × 1 fork.
-                 */
-                maxForks: resolveMaxForks(),
-                /**
-                 * Extra V8 heap headroom per forked worker. Raised after
-                 * apps/admin's test suite OOM-crashed in native V8 memory
-                 * (RegExpCompiler Zone allocator) on CI's default ubuntu-latest
-                 * runner after accumulating ~45 sequential test files reused
-                 * within the same forked process. Node's default old-space size
-                 * on a 7GB CI runner is conservative; this gives more slack
-                 * without changing test behavior.
-                 */
-                execArgv: ['--max-old-space-size=4096']
-            }
-        }
+        /**
+         * Env-driven fork count. Default 3 locally (safe for 16c machine).
+         * CI overrides to 1 via VITEST_MAX_FORKS env var in ci.yml (see
+         * that file's test-unit job comment for the OOM incident history).
+         *
+         * Combined with turbo concurrency 4, local peak = 4 × 3 = 12 forks.
+         * CI peak per shard = 1 package at a time × 1 fork.
+         *
+         * Vitest 4 (HOS-28) removed `poolOptions` — the per-pool `maxForks`
+         * setting is now the top-level `maxWorkers` option (with `pool: 'forks'`
+         * it caps the number of forked workers). See the pool-rework migration:
+         * https://vitest.dev/guide/migration#pool-rework
+         */
+        maxWorkers: resolveMaxForks(),
+        /**
+         * Extra V8 heap headroom per forked worker. Raised after apps/admin's
+         * test suite OOM-crashed in native V8 memory (RegExpCompiler Zone
+         * allocator) on CI's default ubuntu-latest runner after accumulating
+         * ~45 sequential test files reused within the same forked process.
+         * Node's default old-space size on a 7GB CI runner is conservative;
+         * this gives more slack without changing test behavior.
+         *
+         * Vitest 4 (HOS-28): `execArgv` moved from `poolOptions.forks.execArgv`
+         * to the top-level `execArgv` option as part of the pool rework.
+         */
+        execArgv: ['--max-old-space-size=4096']
     }
 } as const;

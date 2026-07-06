@@ -183,24 +183,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -243,24 +244,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -299,24 +301,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -357,24 +360,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -407,18 +411,19 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -455,18 +460,19 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -500,24 +506,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -552,19 +559,20 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue(null); // Lookup failed
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -606,20 +614,21 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue(mockCustomerDetails);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -655,24 +664,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -705,24 +715,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -758,7 +769,9 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -793,7 +806,9 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -821,18 +836,19 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -868,7 +884,9 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails)
                 .mockResolvedValueOnce({
                     email: 'user1@example.com',
@@ -886,17 +904,16 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
                 .mockRejectedValueOnce(new Error('Email service down'))
                 .mockResolvedValueOnce(undefined);
 
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -931,24 +948,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
-            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'User',
                 userId: 'user-123'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as any
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -995,26 +1013,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'owner@example.com',
                 name: 'Owner Test',
                 userId: 'user-price-1'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -1061,26 +1078,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-price-2'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);
@@ -1119,26 +1135,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
             );
-            vi.mocked(TrialService).mockImplementation(
-                () => mockTrialService as unknown as InstanceType<typeof TrialService>
-            );
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as unknown as InstanceType<typeof TrialService>;
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'user@example.com',
                 name: 'Test User',
                 userId: 'user-price-3'
             });
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(
-                () =>
-                    ({
-                        processRetries: vi.fn().mockResolvedValue({
-                            processed: 0,
-                            succeeded: 0,
-                            failed: 0,
-                            permanentlyFailed: 0
-                        })
-                    }) as unknown as InstanceType<typeof RetryService>
-            );
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as unknown as InstanceType<typeof RetryService>;
+            });
 
             // Act
             await notificationScheduleJob.handler(ctx);

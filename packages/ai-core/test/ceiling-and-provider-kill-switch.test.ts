@@ -146,12 +146,18 @@ beforeEach(() => {
     // Default: empty providers map (no kill-switches active), feature enabled.
     mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
-    mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
-    mockGetProviderOrder.mockImplementation(
-        ({ featureConfig }: { featureConfig: AiFeatureConfig }) => ({
+    mockIsFeatureKillSwitched.mockImplementation(function (cfg: AiFeatureConfig) {
+        return !cfg.enabled;
+    });
+    mockGetProviderOrder.mockImplementation(function ({
+        featureConfig
+    }: {
+        featureConfig: AiFeatureConfig;
+    }) {
+        return {
             providers: [featureConfig.primaryProvider, ...featureConfig.fallbackChain]
-        })
-    );
+        };
+    });
 
     // Default: aggregateAiUsageByMonth returns no rows (zero spend).
     mockAggregateByMonth.mockResolvedValue([]);
@@ -163,9 +169,14 @@ beforeEach(() => {
         rules: '',
         source: 'default'
     });
-    mockComposeSystemPrompt.mockImplementation(
-        ({ content }: { content: string; rules: string | null }) => content
-    );
+    mockComposeSystemPrompt.mockImplementation(function ({
+        content
+    }: {
+        content: string;
+        rules: string | null;
+    }) {
+        return content;
+    });
 });
 
 // ---------------------------------------------------------------------------

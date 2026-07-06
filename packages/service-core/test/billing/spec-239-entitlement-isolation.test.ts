@@ -51,9 +51,11 @@ vi.mock('drizzle-orm', () => ({
 // AddonCatalogService: return null for every slug (we only need the find() behaviour,
 // not the catalog content, for these regression tests)
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(() => ({
-        getBySlug: vi.fn().mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } })
-    }))
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return {
+            getBySlug: vi.fn().mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } })
+        };
+    })
 }));
 
 import { queryUserAddons } from '../../src/services/billing/addon/addon-user-addons.js';

@@ -13,9 +13,10 @@ import { defineConfig } from 'vitest/config';
  *   (`hospeda_service_integration_test`) so the suite is independent of
  *   `packages/db`'s SPEC-061 run, which would otherwise drop its DB and
  *   leave nothing for service-core to connect to.
- * - Uses `pool: 'forks'` with `maxForks: 3` and `singleFork: false` so
- *   tests run in parallel; each test wraps its body in a rollback-isolated
- *   transaction.
+ * - Uses `pool: 'forks'` with `maxWorkers: 3` so tests run in parallel; each
+ *   test wraps its body in a rollback-isolated transaction. (Vitest 4 / HOS-28:
+ *   the old `poolOptions.forks.maxForks` is now top-level `maxWorkers`, and the
+ *   default `singleFork: false` no longer needs to be stated.)
  */
 export default defineConfig({
     plugins: [tsconfigPaths()],
@@ -23,12 +24,7 @@ export default defineConfig({
         globals: false,
         environment: 'node',
         pool: 'forks',
-        poolOptions: {
-            forks: {
-                singleFork: false,
-                maxForks: 3
-            }
-        },
+        maxWorkers: 3,
         include: ['test/integration/services/**/*.test.ts'],
         globalSetup: [path.resolve(__dirname, 'test/integration/services/global-setup.ts')],
         testTimeout: 30_000,

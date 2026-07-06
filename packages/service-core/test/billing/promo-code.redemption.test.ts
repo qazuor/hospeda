@@ -67,21 +67,21 @@ describe('promo-code.redemption', () => {
                 maxUses: 10,
                 active: true
             };
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockReturnValue({
-                                    returning: vi.fn().mockResolvedValue([updatedCode])
-                                })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([{ id: 'pc1', usedCount: 0, maxUses: 10 }]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                returning: vi.fn().mockResolvedValue([updatedCode])
                             })
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await tryRedeemAtomically('pc1');
@@ -93,12 +93,12 @@ describe('promo-code.redemption', () => {
 
         it('should return failure when promo code is not found', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = selectForUpdateMock([]);
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = selectForUpdateMock([]);
+                return fn(tx);
+            });
 
             // Act
             const result = await tryRedeemAtomically('pc-missing');
@@ -110,12 +110,12 @@ describe('promo-code.redemption', () => {
 
         it('should return failure when max uses is reached', async () => {
             // Arrange
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = selectForUpdateMock([{ id: 'pc1', usedCount: 5, maxUses: 5 }]);
-                    return fn(tx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = selectForUpdateMock([{ id: 'pc1', usedCount: 5, maxUses: 5 }]);
+                return fn(tx);
+            });
 
             // Act
             const result = await tryRedeemAtomically('pc1');
@@ -140,21 +140,21 @@ describe('promo-code.redemption', () => {
         it('should succeed when maxUses is null (unlimited)', async () => {
             // Arrange
             const updatedCode = { id: 'pc1', code: 'FREE', usedCount: 1, maxUses: null };
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        ...selectForUpdateMock([{ id: 'pc1', usedCount: 99, maxUses: null }]),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockReturnValue({
-                                    returning: vi.fn().mockResolvedValue([updatedCode])
-                                })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([{ id: 'pc1', usedCount: 99, maxUses: null }]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                returning: vi.fn().mockResolvedValue([updatedCode])
                             })
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await tryRedeemAtomically('pc1');
@@ -452,24 +452,24 @@ describe('promo-code.redemption', () => {
                     expiresAt: null
                 }
             });
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        ...selectForUpdateMock([
-                            { id: 'pc1', usedCount: 0, maxUses: null, expiresAt: null }
-                        ]),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
-                            })
-                        }),
-                        insert: vi.fn().mockReturnValue({
-                            values: vi.fn().mockResolvedValue([])
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([
+                        { id: 'pc1', usedCount: 0, maxUses: null, expiresAt: null }
+                    ]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    }),
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockResolvedValue([])
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('SAVE10', 'cust1', 5000);
@@ -496,24 +496,24 @@ describe('promo-code.redemption', () => {
                     expiresAt: null
                 }
             });
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        ...selectForUpdateMock([
-                            { id: 'pc2', usedCount: 0, maxUses: null, expiresAt: null }
-                        ]),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
-                            })
-                        }),
-                        insert: vi.fn().mockReturnValue({
-                            values: vi.fn().mockResolvedValue([])
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([
+                        { id: 'pc2', usedCount: 0, maxUses: null, expiresAt: null }
+                    ]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue([])
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    }),
+                    insert: vi.fn().mockReturnValue({
+                        values: vi.fn().mockResolvedValue([])
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await applyPromoCode('FLAT200', 'cust1', 100);

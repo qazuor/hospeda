@@ -1,5 +1,5 @@
 import { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ExchangeRateApiClient } from '../../../../src/services/exchange-rate/clients/exchange-rate-api.client.js';
 
 const mockLoggerInstance = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ vi.mock('@repo/logger', () => ({
 
 describe('ExchangeRateApiClient', () => {
     let client: ExchangeRateApiClient;
-    let fetchMock: ReturnType<typeof vi.fn>;
+    let fetchMock: Mock;
 
     beforeEach(() => {
         client = new ExchangeRateApiClient({ apiKey: 'test-api-key' });

@@ -155,7 +155,9 @@ function buildSelectForUpdateMock(rows: unknown[]) {
  * applyPromoCode after the SPEC-064 over-redemption fix.
  */
 function setupSuccessfulRedemption() {
-    mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+    mockWithTransaction.mockImplementation(async function (
+        callback: (tx: unknown) => Promise<unknown>
+    ) {
         // lockedRow returned by SELECT ... FOR UPDATE — usedCount < maxUses so redemption succeeds
         const lockedRow = { id: 'promo-123', usedCount: 0, maxUses: null };
         const mockTx = {
@@ -184,7 +186,9 @@ function setupSuccessfulRedemption() {
  * applyPromoCode returns VALIDATION_ERROR without incrementing.
  */
 function setupMaxUsesExceeded({ usedCount, maxUses }: { usedCount: number; maxUses: number }) {
-    mockWithTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+    mockWithTransaction.mockImplementation(async function (
+        callback: (tx: unknown) => Promise<unknown>
+    ) {
         const lockedRow = { id: 'promo-123', usedCount, maxUses };
         const mockTx = {
             select: buildSelectForUpdateMock([lockedRow]),
@@ -462,31 +466,29 @@ describe('Promo Code Apply Functionality', () => {
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promo });
 
             let capturedInsertValues: Record<string, unknown> | null = null;
-            mockWithTransaction.mockImplementation(
-                async (callback: (tx: unknown) => Promise<unknown>) => {
-                    // Drizzle typed chain: tx.select().from().where().for('update')
-                    const lockedRow = { id: 'promo-record', usedCount: 0, maxUses: null };
-                    const mockTx = {
-                        select: buildSelectForUpdateMock([lockedRow]),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue(undefined)
-                            })
-                        }),
-                        insert: vi.fn().mockImplementation(() => ({
-                            values: vi
-                                .fn()
-                                .mockImplementation((values: Record<string, unknown>) => {
-                                    capturedInsertValues = values;
-                                    return {
-                                        returning: vi.fn().mockResolvedValue([{}])
-                                    };
-                                })
-                        }))
-                    };
-                    return callback(mockTx);
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                callback: (tx: unknown) => Promise<unknown>
+            ) {
+                // Drizzle typed chain: tx.select().from().where().for('update')
+                const lockedRow = { id: 'promo-record', usedCount: 0, maxUses: null };
+                const mockTx = {
+                    select: buildSelectForUpdateMock([lockedRow]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({
+                            where: vi.fn().mockResolvedValue(undefined)
+                        })
+                    }),
+                    insert: vi.fn().mockImplementation(() => ({
+                        values: vi.fn().mockImplementation((values: Record<string, unknown>) => {
+                            capturedInsertValues = values;
+                            return {
+                                returning: vi.fn().mockResolvedValue([{}])
+                            };
+                        })
+                    }))
+                };
+                return callback(mockTx);
+            });
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
             const amount = 5000;

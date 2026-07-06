@@ -24,9 +24,11 @@ const { mockPlanList, mockCreateSimpleRoute } = vi.hoisted(() => ({
 
 // Mock PlanService
 vi.mock('../../../../src/services/plan.service', () => ({
-    PlanService: vi.fn().mockImplementation(() => ({
-        list: mockPlanList
-    }))
+    PlanService: vi.fn().mockImplementation(function () {
+        return {
+            list: mockPlanList
+        };
+    })
 }));
 
 // Capture route factory calls

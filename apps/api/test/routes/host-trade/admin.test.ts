@@ -45,15 +45,17 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        HostTradeService: vi.fn().mockImplementation(() => ({
-            adminList: mockAdminList,
-            getById: mockGetById,
-            create: mockCreate,
-            update: mockUpdate,
-            softDelete: mockSoftDelete,
-            restore: mockRestore,
-            hardDelete: mockHardDelete
-        }))
+        HostTradeService: vi.fn().mockImplementation(function () {
+            return {
+                adminList: mockAdminList,
+                getById: mockGetById,
+                create: mockCreate,
+                update: mockUpdate,
+                softDelete: mockSoftDelete,
+                restore: mockRestore,
+                hardDelete: mockHardDelete
+            };
+        })
     };
 });
 

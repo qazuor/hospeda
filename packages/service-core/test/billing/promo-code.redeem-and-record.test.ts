@@ -135,11 +135,11 @@ describe('redeemAndRecordUsage()', () => {
             const updatedCode = makePromoCodeRow({ usedCount: 3, maxUses: 10 });
             const usageRecord = { id: 'usage-uuid-1' };
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    return fn(buildHappyPathTx({ lockedRow, updatedCode, usageRecord }));
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn(buildHappyPathTx({ lockedRow, updatedCode, usageRecord }));
+            });
 
             // Act
             const result = await redeemAndRecordUsage({
@@ -160,20 +160,20 @@ describe('redeemAndRecordUsage()', () => {
 
         it('should return NOT_FOUND when promo code does not exist', async () => {
             // Arrange — FOR UPDATE returns empty array
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        select: vi.fn().mockReturnValue({
-                            from: vi.fn().mockReturnValue({
-                                where: vi.fn().mockReturnValue({
-                                    for: vi.fn().mockResolvedValue([]) // empty
-                                })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                for: vi.fn().mockResolvedValue([]) // empty
                             })
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await redeemAndRecordUsage({
@@ -193,20 +193,20 @@ describe('redeemAndRecordUsage()', () => {
             // Arrange — usedCount is already at the limit
             const lockedRow = makePromoCodeRow({ usedCount: 5, maxUses: 5 });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    const tx = {
-                        select: vi.fn().mockReturnValue({
-                            from: vi.fn().mockReturnValue({
-                                where: vi.fn().mockReturnValue({
-                                    for: vi.fn().mockResolvedValue([lockedRow])
-                                })
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    select: vi.fn().mockReturnValue({
+                        from: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                for: vi.fn().mockResolvedValue([lockedRow])
                             })
                         })
-                    };
-                    return fn(tx);
-                }
-            );
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await redeemAndRecordUsage({
@@ -228,11 +228,11 @@ describe('redeemAndRecordUsage()', () => {
             const updatedCode = makePromoCodeRow({ usedCount: 10000, maxUses: null });
             const usageRecord = { id: 'usage-uuid-2' };
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    return fn(buildHappyPathTx({ lockedRow, updatedCode, usageRecord }));
-                }
-            );
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn(buildHappyPathTx({ lockedRow, updatedCode, usageRecord }));
+            });
 
             // Act
             const result = await redeemAndRecordUsage({
@@ -250,33 +250,33 @@ describe('redeemAndRecordUsage()', () => {
             // Arrange — customer already used the code once, maxPerCustomer = 1
             const lockedRow = makePromoCodeRow({ usedCount: 3, maxUses: null, maxPerCustomer: 1 });
 
-            mockWithTransaction.mockImplementation(
-                async (fn: (tx: unknown) => Promise<unknown>) => {
-                    let selectCallIdx = 0;
-                    const tx = {
-                        select: vi.fn().mockImplementation(() => {
-                            const idx = selectCallIdx++;
-                            if (idx === 0) {
-                                // First call: FOR UPDATE lock
-                                return {
-                                    from: vi.fn().mockReturnValue({
-                                        where: vi.fn().mockReturnValue({
-                                            for: vi.fn().mockResolvedValue([lockedRow])
-                                        })
-                                    })
-                                };
-                            }
-                            // Second call: per-customer count — customer already used once
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                let selectCallIdx = 0;
+                const tx = {
+                    select: vi.fn().mockImplementation(() => {
+                        const idx = selectCallIdx++;
+                        if (idx === 0) {
+                            // First call: FOR UPDATE lock
                             return {
                                 from: vi.fn().mockReturnValue({
-                                    where: vi.fn().mockResolvedValue([{ total: 1 }])
+                                    where: vi.fn().mockReturnValue({
+                                        for: vi.fn().mockResolvedValue([lockedRow])
+                                    })
                                 })
                             };
-                        })
-                    };
-                    return fn(tx);
-                }
-            );
+                        }
+                        // Second call: per-customer count — customer already used once
+                        return {
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockResolvedValue([{ total: 1 }])
+                            })
+                        };
+                    })
+                };
+                return fn(tx);
+            });
 
             // Act
             const result = await redeemAndRecordUsage({
