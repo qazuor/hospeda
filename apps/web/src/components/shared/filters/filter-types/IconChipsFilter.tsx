@@ -137,10 +137,13 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
                     type="button"
                     className={styles.showMoreBtn}
                     onClick={openDialog}
-                    aria-label={t('ui.filter.showMore', `Ver más (+${hiddenCount})`).replace(
-                        '{{count}}',
-                        String(hiddenCount)
-                    )}
+                    // BETA-125: the `ui.filter.showMore` value ("Ver más") carries no
+                    // `{{count}}` placeholder — a prior `.replace('{{count}}', …)` silently
+                    // dropped the hidden count from the accessible name. Reuse the shared
+                    // (plain) label and append the count directly so the count can never be
+                    // lost, matching the visible "+N" affordance. `ui.filter.showMore` stays
+                    // placeholder-free for its other consumer (SelectSearchFilter).
+                    aria-label={`${t('ui.filter.showMore', 'Ver más')} (+${hiddenCount})`}
                 >
                     +{hiddenCount}
                 </button>
