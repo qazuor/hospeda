@@ -5,7 +5,21 @@
             "remove": "Quitar de comparación",
             "addAriaLabel": "Agregar {{name}} a la comparación",
             "removeAriaLabel": "Quitar {{name}} de la comparación",
-            "inListLabel": "En comparación"
+            "inListLabel": "En comparación",
+            "contextualAdd": "Agregar",
+            "contextualAdded": "Agregado"
+        },
+        "mode": {
+            "toggleLabel": "Comparar alojamientos",
+            "activeLabel": "Comparando",
+            "on": "Modo comparación activado",
+            "off": "Modo comparación desactivado",
+            "bannerHint": "Elegí los alojamientos que querés comparar"
+        },
+        "gate": {
+            "authMessage": "Iniciá sesión para comparar alojamientos.",
+            "upsellMessage": "Tu plan no incluye la comparación de alojamientos.",
+            "upsellCta": "Ver planes"
         },
         "toast": {
             "added": "Agregado a la comparación",
@@ -29,13 +43,22 @@
             "compareNow": "Comparar ahora",
             "clear": "Limpiar",
             "removeItemAriaLabel": "Quitar {{name}} de la comparación",
-            "minRequired": "Elegí al menos {{min}} para comparar"
+            "minRequired": "Elegí al menos {{min}} para comparar",
+            "counter": "Comparás {{current}} de {{max}}",
+            "emptySlot": "Vacío",
+            "guidance": "Sumá al menos uno más para comparar",
+            "viewComparison": "Ver comparación"
         },
         "page": {
             "metaTitle": "Comparar alojamientos",
             "metaDescription": "Compará alojamientos lado a lado: precio, ubicación, calificación y más.",
+            "tagline": "Compará mejor",
             "heading": "Comparación de alojamientos",
-            "backToListing": "Volver a alojamientos"
+            "subtitle": "Resaltamos las diferencias para que decidas más fácil",
+            "breadcrumbLabel": "Comparar",
+            "backToListing": "Volver a alojamientos",
+            "count_one": "Comparás {{count}} alojamiento",
+            "count_other": "Comparás {{count}} alojamientos"
         },
         "empty": {
             "title": "No hay alojamientos para comparar",
@@ -59,7 +82,17 @@
             "featured": "Destacado",
             "summary": "Descripción",
             "viewDetails": "Ver detalle",
-            "notAvailable": "N/D"
+            "notAvailable": "N/D",
+            "highlightDifferences": "Resaltar diferencias",
+            "bestValue": "Mejor valor",
+            "bestValueAriaLabel": "Mejor valor en {{attribute}}",
+            "scrollHint": "Deslizá para ver más →"
+        },
+        "detail": {
+            "add": "Agregar a comparación",
+            "added": "En comparación",
+            "addAriaLabel": "Agregar {{name}} a la comparación",
+            "removeAriaLabel": "Quitar {{name}} de la comparación"
         }
     },
     "amenityNames": {

@@ -1,0 +1,134 @@
+/* CompareModeToggle.module.css
+ * Scoped styles for the CompareModeToggle React island (HOS-85).
+ * All values use CSS custom properties from global.css — never hardcode.
+ * This is a PRIMARY affordance (the discoverability fix for compare mode), so
+ * unlike CompareButton (a mute circular icon) it renders as a labeled,
+ * pill-shaped button with visible text at rest, not just on hover/selection.
+ *
+ * Post-review fix: the separate `CompareModeBanner` explainer was removed —
+ * the toggle now communicates the active state itself (filled/solid style +
+ * an inline guidance line inside `.labelGroup`), so `[data-active="true"]`
+ * allows the button to grow into two lines instead of staying `nowrap`.
+ */
+
+/* Wraps the button + (when open) the gate popovers. `inline-flex` keeps the
+ * wrapper's box identical in flow to the bare button it replaces, so the
+ * parent `.compare-mode-controls` flex layout in CompareModeControls.astro
+ * is unaffected. `position: relative` matches the FavoriteButton wrapper
+ * convention, even though the popovers themselves are portal-rendered with
+ * `position: fixed` and do not depend on it for placement. */
+.wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+/* --- Base toggle --- */
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.75rem;
+    padding: 0 1.125rem;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--brand-primary-a35);
+    background-color: var(--brand-primary-a08);
+    color: var(--brand-primary);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: left;
+
+    transition:
+        color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease,
+        transform var(--duration-fast) var(--ease-bounce);
+}
+
+.toggle:hover {
+    border-color: var(--brand-primary-a40);
+    background-color: var(--brand-primary-a12);
+    box-shadow: var(--shadow-card);
+}
+
+.toggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Brief disabled window while entitlements are still resolving
+ * (useCompareGuard.isLoading) — the gate must not react to a click before
+ * it knows whether to allow, prompt sign-in, or upsell. */
+.toggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.toggle:active {
+    transform: scale(0.97);
+}
+
+.label {
+    display: inline-block;
+}
+
+/* Wraps the label + (when active) the inline hint, stacked vertically. */
+.labelGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.0625rem;
+}
+
+/* Secondary guidance line, only rendered while compare mode is active —
+ * replaces the copy the removed `CompareModeBanner` used to show. Uses
+ * `color: inherit` (not a muted token) so it stays readable against the
+ * solid `--brand-primary` fill the active toggle switches to. */
+.hint {
+    display: block;
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: inherit;
+}
+
+/* --- Active (compare mode ON) --- */
+.toggle[data-active="true"] {
+    color: var(--primary-foreground);
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    /* The active label + hint can wrap to two lines — let the button grow
+     * instead of clipping/overflowing like the single-line "off" state. */
+    height: auto;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.125rem;
+    white-space: normal;
+}
+
+.toggle[data-active="true"]:hover {
+    background-color: var(--brand-primary);
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+    .toggle,
+    .toggle:active {
+        transform: none;
+        transition:
+            color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
+    }
+}
+
+/* --- Small screens: icon-forward, tighter padding --- */
+@media (max-width: 480px) {
+    .toggle {
+        padding: 0 0.875rem;
+        font-size: 0.875rem;
+    }
+}

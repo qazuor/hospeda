@@ -7,9 +7,12 @@
  *
  * Layout (HOS-84): a vertical stack — a back-button row on top, then a 2-column
  * `.detail-header__body` row where `.detail-header__main` holds badges + name +
- * destination + rating and `.detail-header__favorite` anchors the heart button
- * on the right. The favorite stays right-aligned regardless of viewport or
- * compact mode.
+ * destination + rating and `.detail-header__favorite` on the right anchors the
+ * compare button (HOS-85 T-010) and the heart button, in that order. The action
+ * cluster stays right-aligned regardless of viewport or compact mode; below
+ * 768px the compare button collapses to an icon-only circle
+ * (DetailCompareButton.module.css) matching the FavoriteButton's diameter so
+ * the pair fits without overflowing the header row on mobile.
  *
  * Compact behavior comes from the shared `.wh-compact-*` utility classes
  * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
@@ -32,6 +35,7 @@ import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadg
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
 import { CheckCircleIcon, StarIcon } from '@repo/icons';
 
 interface Props {
@@ -146,6 +150,14 @@ const newStyle =
     </div>
 
     <div class="detail-header__favorite">
+      <DetailCompareButton
+        client:load
+        accommodationId={accommodationId}
+        accommodationName={accommodation.name}
+        accommodationThumbnailUrl={accommodation.featuredImage}
+        locale={locale}
+        className="detail-header__compare-btn"
+      />
       <FavoriteButton
         client:load
         entityId={accommodationId}
@@ -200,6 +212,9 @@ const newStyle =
   .detail-header__favorite {
     flex-shrink: 0;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
   }
 
   .detail-header__badges {

@@ -1,0 +1,167 @@
+/**
+ * Styles for the CompareUpsellPopover island.
+ * Mirrors `AuthRequiredPopover.module.css` (same positioning/box treatment),
+ * with a single full-width CTA action instead of the two-button sign-in/
+ * register row. All values use CSS custom properties from global.css — never
+ * hardcoded.
+ */
+
+/* ---- Container ---- */
+
+.popover {
+    position: fixed;
+    z-index: 1000;
+    width: 17.5rem;
+    max-width: calc(100vw - 16px);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--brand-primary-a20);
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-card);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+.popoverHidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.popover[data-placement="bottom"].popoverHidden {
+    transform: translateY(-0.25rem) scale(0.97);
+}
+.popover[data-placement="top"].popoverHidden {
+    transform: translateY(0.25rem) scale(0.97);
+}
+
+.popoverVisible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* ---- Arrow ---- */
+
+.arrow {
+    position: absolute;
+    width: 0.75rem;
+    height: 0.75rem;
+    transform: translateX(-50%) rotate(45deg);
+    background-color: var(--brand-primary-a05);
+    pointer-events: none;
+}
+
+.popover[data-placement="bottom"] .arrow {
+    top: -0.375rem;
+    border-top: 1px solid var(--brand-primary-a20);
+    border-left: 1px solid var(--brand-primary-a20);
+}
+
+.popover[data-placement="top"] .arrow {
+    bottom: -0.375rem;
+    background-color: var(--core-card);
+    border-bottom: 1px solid var(--brand-primary-a20);
+    border-right: 1px solid var(--brand-primary-a20);
+}
+
+/* ---- Close button ---- */
+
+.closeButton {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+    display: flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: none;
+    color: var(--brand-primary);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.closeButton:hover {
+    background-color: var(--brand-primary-a10);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ---- Header strip ---- */
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    padding-right: 2.5rem; /* room for close button */
+    border-bottom: 1px solid var(--brand-primary-a20);
+    background-color: var(--brand-primary-a05);
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
+}
+
+.iconWrapper {
+    flex-shrink: 0;
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background-color: var(--brand-primary-a10);
+    color: var(--brand-primary);
+}
+
+.message {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--brand-primary);
+    line-height: 1.4;
+}
+
+/* ---- Action ---- */
+
+.actions {
+    display: flex;
+    padding: 0.875rem 1rem;
+    background-color: var(--core-card);
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
+}
+
+.ctaButton {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-button);
+    background-color: var(--brand-primary);
+    color: var(--core-card);
+    font-size: 0.8125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        filter var(--duration-fast) ease,
+        transform var(--duration-fast) ease;
+}
+
+.ctaButton:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.ctaButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
