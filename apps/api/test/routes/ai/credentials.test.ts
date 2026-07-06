@@ -1,11 +1,14 @@
 /**
- * Tests for admin AI credentials routes (SPEC-173 T-026).
+ * Tests for admin AI credentials routes (SPEC-173 T-026; sync-models: HOS-94 T-009).
  *
  * Uses the handler-capture-via-mock pattern (matches list.test.ts in app-logs):
  * - Mock `createAdminRoute` / `createAdminListRoute` to capture handlers by path.
  * - Mock `getActorFromContext` as SUPER_ADMIN.
- * - Mock the credential vault service functions.
+ * - Mock the credential vault service functions and `syncAiProviderModels`.
  * - Assert service is called with the right args; response never contains secrets.
+ * - Non-admin actor → the route factory enforces the permission guard (tested via
+ *   the route-factory mock asserting `requiredPermissions` config, same pattern as
+ *   `apps/api/test/routes/ai/usage.test.ts`).
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,13 +36,25 @@ const { capturedListHandlers } = vi.hoisted(() => ({
     capturedListHandlers: new Map<string, CapturedHandler>()
 }));
 
-const { mockListCredentials, mockCreateCredential, mockRotateCredential, mockDeleteCredential } =
-    vi.hoisted(() => ({
-        mockListCredentials: vi.fn(),
-        mockCreateCredential: vi.fn(),
-        mockRotateCredential: vi.fn(),
-        mockDeleteCredential: vi.fn()
-    }));
+// Capture `requiredPermissions` config to verify permission guard wiring
+// (mirrors apps/api/test/routes/ai/usage.test.ts).
+const { capturedPermissions } = vi.hoisted(() => ({
+    capturedPermissions: new Map<string, string[]>()
+}));
+
+const {
+    mockListCredentials,
+    mockCreateCredential,
+    mockRotateCredential,
+    mockDeleteCredential,
+    mockSyncAiProviderModels
+} = vi.hoisted(() => ({
+    mockListCredentials: vi.fn(),
+    mockCreateCredential: vi.fn(),
+    mockRotateCredential: vi.fn(),
+    mockDeleteCredential: vi.fn(),
+    mockSyncAiProviderModels: vi.fn()
+}));
 
 const { mockActor } = vi.hoisted(() => ({
     mockActor: {
@@ -54,10 +69,15 @@ const { mockActor } = vi.hoisted(() => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../src/utils/route-factory', () => ({
-    createAdminRoute: vi.fn((config: { path: string; handler: CapturedHandler }) => {
-        capturedAdminHandlers.set(config.path, config.handler);
-        return config.handler;
-    }),
+    createAdminRoute: vi.fn(
+        (config: { path: string; handler: CapturedHandler; requiredPermissions?: string[] }) => {
+            capturedAdminHandlers.set(config.path, config.handler);
+            if (config.requiredPermissions) {
+                capturedPermissions.set(config.path, config.requiredPermissions);
+            }
+            return config.handler;
+        }
+    ),
     createAdminListRoute: vi.fn((config: { path: string; handler: CapturedHandler }) => {
         capturedListHandlers.set(config.path, config.handler);
         return config.handler;
@@ -83,6 +103,10 @@ vi.mock('../../../src/services/ai-credential-vault.service', () => ({
     createAiProviderCredential: mockCreateCredential,
     rotateAiProviderCredential: mockRotateCredential,
     deleteAiProviderCredential: mockDeleteCredential
+}));
+
+vi.mock('../../../src/services/ai-sync-models.service', () => ({
+    syncAiProviderModels: mockSyncAiProviderModels
 }));
 
 vi.mock('@repo/service-core', () => ({
@@ -252,6 +276,56 @@ describe('admin AI credentials routes (SPEC-173 T-026)', () => {
             );
             expect(res.id).toBe('new-id');
             expect('newPlaintextKey' in res).toBe(false);
+        });
+    });
+
+    // ---- Sync models (HOS-94 T-009) -----------------------------------------
+
+    describe('POST /{providerId}/sync-models', () => {
+        it('registers the sync-models route', () => {
+            expect(capturedAdminHandlers.has('/{providerId}/sync-models')).toBe(true);
+        });
+
+        it('requires AI_SETTINGS_MANAGE permission', () => {
+            expect(capturedPermissions.get('/{providerId}/sync-models')).toContain(
+                'ai.settings.manage'
+            );
+        });
+
+        it('calls syncAiProviderModels with the providerId and returns the result', async () => {
+            const expectedResult = {
+                providerId: 'openai',
+                models: [
+                    { id: 'gpt-4o', source: 'both' },
+                    { id: 'gpt-5-preview', source: 'detected' }
+                ],
+                fetchedAt: '2026-07-05T00:00:00.000Z'
+            };
+            mockSyncAiProviderModels.mockResolvedValue({ data: expectedResult });
+
+            const handler = capturedAdminHandlers.get(
+                '/{providerId}/sync-models'
+            ) as CapturedHandler;
+            const res = await handler(fakeCtx, { providerId: 'openai' });
+
+            expect(mockSyncAiProviderModels).toHaveBeenCalledWith({ providerId: 'openai' });
+            expect(res).toEqual(expectedResult);
+        });
+
+        it('throws when the service returns an error (e.g. bad key)', async () => {
+            mockSyncAiProviderModels.mockResolvedValue({
+                error: {
+                    code: 'CONFIGURATION_ERROR',
+                    message: 'Provider rejected the stored credential'
+                }
+            });
+
+            const handler = capturedAdminHandlers.get(
+                '/{providerId}/sync-models'
+            ) as CapturedHandler;
+            await expect(handler(fakeCtx, { providerId: 'openai' })).rejects.toThrow(
+                'Provider rejected the stored credential'
+            );
         });
     });
 
