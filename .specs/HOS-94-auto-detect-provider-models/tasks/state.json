@@ -13,13 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-006", "T-007", "T-008", "T-009"],
             "subtasks": [
-                { "title": "AiProviderModelSchema + AiSyncModelsResultSchema", "completed": true },
-                { "title": "Export from @repo/schemas ai barrel", "completed": true },
-                { "title": "Schema unit tests", "completed": true }
+                {
+                    "title": "AiProviderModelSchema + AiSyncModelsResultSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Export from @repo/schemas ai barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Schema unit tests",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "zod"],
             "phase": "setup",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:20:00.000Z",
@@ -35,16 +48,26 @@
             "blockedBy": [],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Define shared curated-catalog module + type", "completed": true },
+                {
+                    "title": "Define shared curated-catalog module + type",
+                    "completed": true
+                },
                 {
                     "title": "Re-point admin credentials.tsx to the shared source",
                     "completed": true
                 },
-                { "title": "Catalog shape test", "completed": true }
+                {
+                    "title": "Catalog shape test",
+                    "completed": true
+                }
             ],
             "tags": ["refactor", "config", "admin"],
             "phase": "setup",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:20:00.000Z",
@@ -64,13 +87,26 @@
                     "title": "list-models.ts module + provider dispatch skeleton",
                     "completed": true
                 },
-                { "title": "OpenAI + compatible (/v1/models, Bearer) parser", "completed": true },
-                { "title": "Typed error mapping (auth/rate-limit/upstream)", "completed": true },
-                { "title": "Unit tests with fetch mock + fixture", "completed": true }
+                {
+                    "title": "OpenAI + compatible (/v1/models, Bearer) parser",
+                    "completed": true
+                },
+                {
+                    "title": "Typed error mapping (auth/rate-limit/upstream)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests with fetch mock + fixture",
+                    "completed": true
+                }
             ],
             "tags": ["ai-core", "providers"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:20:00.000Z",
@@ -86,13 +122,26 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Anthropic case (x-api-key + anthropic-version)", "completed": true },
-                { "title": "Gemini case (query key + models/ prefix strip)", "completed": true },
-                { "title": "Fixture tests for both", "completed": true }
+                {
+                    "title": "Anthropic case (x-api-key + anthropic-version)",
+                    "completed": true
+                },
+                {
+                    "title": "Gemini case (query key + models/ prefix strip)",
+                    "completed": true
+                },
+                {
+                    "title": "Fixture tests for both",
+                    "completed": true
+                }
             ],
             "tags": ["ai-core", "providers"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:32:00.000Z",
@@ -108,13 +157,26 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Ollama /api/tags parser", "completed": true },
-                { "title": "Per-provider path convention resolver", "completed": true },
-                { "title": "Tests (Ollama + convention)", "completed": true }
+                {
+                    "title": "Ollama /api/tags parser",
+                    "completed": true
+                },
+                {
+                    "title": "Per-provider path convention resolver",
+                    "completed": true
+                },
+                {
+                    "title": "Tests (Ollama + convention)",
+                    "completed": true
+                }
             ],
             "tags": ["ai-core", "providers"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:32:00.000Z",
@@ -130,13 +192,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Denylist families + classifier", "completed": true },
-                { "title": "'uncertain' bucket handling", "completed": true },
-                { "title": "Unit tests (hidden / pass / uncertain)", "completed": true }
+                {
+                    "title": "Denylist families + classifier",
+                    "completed": true
+                },
+                {
+                    "title": "'uncertain' bucket handling",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (hidden / pass / uncertain)",
+                    "completed": true
+                }
             ],
             "tags": ["api", "logic"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:32:00.000Z",
@@ -152,13 +227,26 @@
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Merge function with source tagging", "completed": true },
-                { "title": "De-dup + curated-metadata-wins", "completed": true },
-                { "title": "Unit tests (detected/curated/both)", "completed": true }
+                {
+                    "title": "Merge function with source tagging",
+                    "completed": true
+                },
+                {
+                    "title": "De-dup + curated-metadata-wins",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (detected/curated/both)",
+                    "completed": true
+                }
             ],
             "tags": ["api", "logic"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:32:00.000Z",
@@ -174,13 +262,26 @@
             "blockedBy": ["T-001", "T-003", "T-006", "T-007"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
-                { "title": "Service: decrypt → fetch → filter → merge", "completed": true },
-                { "title": "Typed error mapping + secret hygiene", "completed": true },
-                { "title": "Unit tests (happy / bad key / provider down)", "completed": true }
+                {
+                    "title": "Service: decrypt → fetch → filter → merge",
+                    "completed": true
+                },
+                {
+                    "title": "Typed error mapping + secret hygiene",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (happy / bad key / provider down)",
+                    "completed": true
+                }
             ],
             "tags": ["api", "service"],
             "phase": "core",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": "2026-07-05T16:47:00.000Z",
@@ -191,44 +292,70 @@
             "id": "T-009",
             "title": "Admin route POST /credentials/{providerId}/sync-models",
             "description": "action-POST in apps/api/src/routes/ai/credentials/index.ts via createAdminRoute: path '/{providerId}/sync-models', AI_SETTINGS_MANAGE, responseSchema AiSyncModelsResultSchema, calls syncAiProviderModels. Register + gate-matrix row + OpenAPI. Tests: 403 non-super-admin, 200 happy (service mocked), 4xx bad key.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-008"],
             "blocks": ["T-011", "T-013"],
             "subtasks": [
-                { "title": "createAdminRoute action-POST + register", "completed": false },
-                { "title": "Gate-matrix row + OpenAPI", "completed": false },
-                { "title": "Route tests (403 / 200 / 4xx)", "completed": false }
+                {
+                    "title": "createAdminRoute action-POST + register",
+                    "completed": true
+                },
+                {
+                    "title": "Gate-matrix row + OpenAPI",
+                    "completed": true
+                },
+                {
+                    "title": "Route tests (403 / 200 / 4xx)",
+                    "completed": true
+                }
             ],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T17:05:00.000Z",
+                "completed": "2026-07-05T17:20:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Auto-sync on credential create/rotate (fail-open)",
             "description": "Wire syncAiProviderModels into createAiProviderCredential + rotateAiProviderCredential (ai-credential-vault.service.ts) — FAIL-OPEN (OQ-2): sync failure must NOT break the save; swallow to non-blocking warning. Tests: save succeeds even when fetcher throws.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Hook sync into create + rotate", "completed": false },
-                { "title": "Fail-open wrapper (never break save)", "completed": false },
-                { "title": "Tests: save survives sync failure", "completed": false }
+                {
+                    "title": "Hook sync into create + rotate",
+                    "completed": true
+                },
+                {
+                    "title": "Fail-open wrapper (never break save)",
+                    "completed": true
+                },
+                {
+                    "title": "Tests: save survives sync failure",
+                    "completed": true
+                }
             ],
             "tags": ["api", "service"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-05T17:05:00.000Z",
+                "completed": "2026-07-05T17:20:00.000Z"
             }
         },
         {
@@ -240,13 +367,26 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "useSyncModelsMutation hook", "completed": false },
-                { "title": "Sync button + source-badged list render", "completed": false },
-                { "title": "Persist enabled set via existing update mutation", "completed": false }
+                {
+                    "title": "useSyncModelsMutation hook",
+                    "completed": false
+                },
+                {
+                    "title": "Sync button + source-badged list render",
+                    "completed": false
+                },
+                {
+                    "title": "Persist enabled set via existing update mutation",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": null,
@@ -262,13 +402,26 @@
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
-                { "title": "Loading + empty states", "completed": false },
-                { "title": "Error banner + retry", "completed": false },
-                { "title": "State tests", "completed": false }
+                {
+                    "title": "Loading + empty states",
+                    "completed": false
+                },
+                {
+                    "title": "Error banner + retry",
+                    "completed": false
+                },
+                {
+                    "title": "State tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": null,
@@ -284,13 +437,26 @@
             "blockedBy": ["T-004", "T-005", "T-009", "T-010"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Per-provider fixture integration tests", "completed": false },
-                { "title": "Filter + merge assertions", "completed": false },
-                { "title": "Fail-open create/rotate assertion", "completed": false }
+                {
+                    "title": "Per-provider fixture integration tests",
+                    "completed": false
+                },
+                {
+                    "title": "Filter + merge assertions",
+                    "completed": false
+                },
+                {
+                    "title": "Fail-open create/rotate assertion",
+                    "completed": false
+                }
             ],
             "tags": ["api", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": null,
@@ -306,12 +472,22 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Verify guard covers list-models.ts", "completed": false },
-                { "title": "No @ai-sdk / no process.env / no @repo/db", "completed": false }
+                {
+                    "title": "Verify guard covers list-models.ts",
+                    "completed": false
+                },
+                {
+                    "title": "No @ai-sdk / no process.env / no @repo/db",
+                    "completed": false
+                }
             ],
             "tags": ["ai-core", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": null,
@@ -327,12 +503,22 @@
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update api/ai-core docs", "completed": false },
-                { "title": "Gate-matrix + i18n keys check", "completed": false }
+                {
+                    "title": "Update api/ai-core docs",
+                    "completed": false
+                },
+                {
+                    "title": "Gate-matrix + i18n keys check",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
                 "started": null,
@@ -342,9 +528,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 7,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.6
     }
