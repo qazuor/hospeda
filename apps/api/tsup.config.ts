@@ -51,7 +51,6 @@ export default defineConfig({
         'react-dom/server',
         '@react-email/components',
         '@react-email/render',
-        'resend',
         'ioredis',
         'node-cron',
         // @vercel/oidc uses dynamic require("path")/require("fs") which esbuild's
