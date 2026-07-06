@@ -136,6 +136,24 @@ const { ariaLabel, innerClass } = Astro.props;
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
+		/* Small vertical breathing room so hover-lift / box-shadow / focus
+		 * rings on the slotted items aren't cut by `overflow-y: hidden`
+		 * below. The negative margin cancels the extra height so this
+		 * doesn't shift surrounding layout rhythm. */
+		padding-block: var(--space-1, 0.25rem);
+		margin-block: calc(var(--space-1, 0.25rem) * -1);
+	}
+
+	/* Centering an OVERFLOWING row pushes its leading items into negative
+	 * scroll offset that `scrollLeft` (min 0) can never reach, permanently
+	 * clipping them on the left. Consumers may set `justify-content: center`
+	 * on the inner element (via `innerClass`) for the "everything fits"
+	 * look — that's fine when there's no overflow, but once the content
+	 * overflows this override always wins so every item stays reachable.
+	 * Applies at every viewport (this used to be a mobile-only fix
+	 * duplicated per consumer; centralized here so all consumers benefit). */
+	.scrollable-nav[data-overflow='true'] .scrollable-nav__inner {
+		justify-content: flex-start;
 	}
 
 	/* ============================================================
@@ -227,6 +245,15 @@ const { ariaLabel, innerClass } = Astro.props;
 
 		.scrollable-nav__inner::-webkit-scrollbar {
 			display: none;
+		}
+
+		/* Reserve a gutter matching the arrow footprint (36px button + a
+		 * small gap) so the first/last chip never renders underneath a
+		 * visible arrow. Only reserved when the row actually overflows —
+		 * when everything fits (no arrows), no gutter is added and the
+		 * row keeps its normal centered layout untouched. */
+		.scrollable-nav[data-overflow='true'] .scrollable-nav__inner {
+			padding-inline: calc(36px + var(--space-2, 0.5rem));
 		}
 
 		.scrollable-nav__arrow {
