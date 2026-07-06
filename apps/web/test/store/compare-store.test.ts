@@ -32,6 +32,9 @@ import {
 
 const STORAGE_KEY = 'hospeda:compare:v1';
 const MODE_STORAGE_KEY = 'hospeda:compare:mode:v1';
+const EXPIRY_STORAGE_KEY = 'hospeda:compare:savedAt:v1';
+/** 7-day TTL mirrored from the store, for building fresh/stale timestamps. */
+const COMPARE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 describe('compare-store', () => {
     beforeEach(() => {
@@ -370,8 +373,10 @@ describe('compare-store', () => {
         });
 
         it('loadFromStorage reads pre-populated localStorage (simulates page reload)', () => {
-            // Arrange: pre-populate localStorage directly (simulates a previous session)
+            // Arrange: pre-populate localStorage directly (simulates a previous
+            // session — a real selection always carries a fresh TTL anchor)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(['id-a', 'id-b', 'id-c']));
+            localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(Date.now()));
 
             // Act: simulate module initialisation
             loadFromStorage();
@@ -408,6 +413,7 @@ describe('compare-store', () => {
         it('filters out non-string entries from a mixed array', () => {
             // Arrange
             localStorage.setItem(STORAGE_KEY, JSON.stringify(['id-1', 42, null, true, 'id-2']));
+            localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(Date.now()));
 
             // Act
             loadFromStorage();
@@ -424,6 +430,81 @@ describe('compare-store', () => {
 
             // Assert
             expect(getSnapshot().ids).toHaveLength(0);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // TTL / expiry (HOS-85 follow-up)
+    // -----------------------------------------------------------------------
+
+    describe('selection TTL', () => {
+        it('restores a selection whose timestamp is within the TTL', () => {
+            // Arrange — persisted one hour ago, well inside the 7-day window
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(['id-a', 'id-b']));
+            localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(Date.now() - 60 * 60 * 1000));
+
+            // Act
+            loadFromStorage();
+
+            // Assert
+            expect(getSnapshot().ids).toEqual(['id-a', 'id-b']);
+        });
+
+        it('discards a selection older than the TTL and clears its keys', () => {
+            // Arrange — persisted 8 days ago (past the 7-day TTL)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(['stale-1', 'stale-2']));
+            localStorage.setItem(
+                EXPIRY_STORAGE_KEY,
+                JSON.stringify(Date.now() - (COMPARE_TTL_MS + 60_000))
+            );
+
+            // Act
+            loadFromStorage();
+
+            // Assert — in-memory reset AND persisted keys removed
+            expect(getSnapshot().ids).toHaveLength(0);
+            expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+            expect(localStorage.getItem(EXPIRY_STORAGE_KEY)).toBeNull();
+        });
+
+        it('discards a selection that carries no timestamp (unknown age)', () => {
+            // Arrange — ids present but no TTL anchor (pre-TTL / legacy blob)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(['legacy-1']));
+
+            // Act
+            loadFromStorage();
+
+            // Assert
+            expect(getSnapshot().ids).toHaveLength(0);
+            expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+        });
+
+        it('writes a TTL anchor whenever the selection is mutated', () => {
+            // Arrange / Act
+            addToCompare('acc-1');
+
+            // Assert — a numeric, recent timestamp was persisted
+            const raw = localStorage.getItem(EXPIRY_STORAGE_KEY);
+            expect(raw).not.toBeNull();
+            const savedAt = JSON.parse(raw ?? 'null');
+            expect(typeof savedAt).toBe('number');
+            expect(Date.now() - savedAt).toBeLessThan(5_000);
+        });
+
+        it('refreshes the TTL anchor on every change (sliding window)', () => {
+            // Arrange
+            addToCompare('acc-1');
+            const first = JSON.parse(localStorage.getItem(EXPIRY_STORAGE_KEY) ?? 'null') as number;
+
+            // Act — a later mutation must push the anchor forward
+            vi.spyOn(Date, 'now').mockReturnValue(first + 10_000);
+            addToCompare('acc-2');
+
+            // Assert
+            const second = JSON.parse(localStorage.getItem(EXPIRY_STORAGE_KEY) ?? 'null') as number;
+            expect(second).toBeGreaterThan(first);
+
+            vi.restoreAllMocks();
         });
     });
 

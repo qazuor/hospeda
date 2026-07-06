@@ -19,7 +19,10 @@
  *
  * Features:
  * - Insertion-order-preserving, deduplicated ID set.
- * - localStorage persistence so the selection survives page navigation.
+ * - localStorage persistence so the selection survives page navigation, with a
+ *   sliding {@link COMPARE_TTL_MS} time-to-live: a selection left untouched
+ *   past the TTL is discarded on the next load, so an abandoned comparison
+ *   does not silently reappear weeks later.
  * - SSR-safe: {@link getServerSnapshot} returns a stable empty state for
  *   Astro island rendering, preventing hydration mismatches.
  * - React hook {@link useCompareStore} for island components.
@@ -98,6 +101,18 @@ const STORAGE_KEY = 'hospeda:compare:v1' as const;
 const META_STORAGE_KEY = 'hospeda:compare:meta:v1' as const;
 /** localStorage key for the compare-mode flag (namespaced and versioned). */
 const MODE_STORAGE_KEY = 'hospeda:compare:mode:v1' as const;
+/** localStorage key for the selection's last-touched timestamp (TTL anchor). */
+const EXPIRY_STORAGE_KEY = 'hospeda:compare:savedAt:v1' as const;
+/**
+ * Time-to-live for a persisted comparison selection: 7 days of inactivity.
+ *
+ * Refreshed on every selection change (sliding window), so the window counts
+ * from the last time the user touched the comparison. On load, a selection
+ * older than this — or one carrying no timestamp at all (unknown age, e.g. a
+ * pre-TTL selection) — is discarded, so a comparison started and abandoned long
+ * ago never silently reappears when the user returns straight to the section.
+ */
+const COMPARE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * The `/{locale}/{segment}/...` path segment that compare mode is scoped to.
  * Mode stays on while browsing under this segment and turns off elsewhere.
@@ -166,8 +181,55 @@ function persist(): void {
     try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot.ids));
         window.localStorage.setItem(META_STORAGE_KEY, JSON.stringify(Object.fromEntries(metaById)));
+        // Sliding TTL anchor: refresh on every change so the window counts from
+        // the last time the user touched the comparison (see COMPARE_TTL_MS).
+        window.localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(Date.now()));
     } catch {
         // localStorage throws in private mode or when the quota is exceeded.
+    }
+}
+
+/**
+ * Read the persisted TTL anchor (epoch millis), or `null` when the key is
+ * absent or malformed.
+ */
+function readSavedAt(): number | null {
+    try {
+        const raw = window.localStorage.getItem(EXPIRY_STORAGE_KEY);
+        if (raw === null) return null;
+        const parsed: unknown = JSON.parse(raw);
+        return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Whether a persisted selection exists but is stale: older than
+ * {@link COMPARE_TTL_MS}, or carrying no valid timestamp at all (unknown age).
+ * Returns `false` when nothing is stored, so a fresh visitor is never affected.
+ */
+function isPersistedSelectionExpired(): boolean {
+    let hasStoredIds = false;
+    try {
+        hasStoredIds = window.localStorage.getItem(STORAGE_KEY) !== null;
+    } catch {
+        return false;
+    }
+    if (!hasStoredIds) return false;
+    const savedAt = readSavedAt();
+    if (savedAt === null) return true;
+    return Date.now() - savedAt > COMPARE_TTL_MS;
+}
+
+/** Remove every persisted selection key (ids, metadata, and the TTL anchor). */
+function clearPersistedSelection(): void {
+    try {
+        window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(META_STORAGE_KEY);
+        window.localStorage.removeItem(EXPIRY_STORAGE_KEY);
+    } catch {
+        // Nothing we can do if storage is unavailable — the in-memory reset stands.
     }
 }
 
@@ -200,6 +262,15 @@ function setState(ids: readonly string[]): void {
  */
 export function loadFromStorage(): void {
     if (typeof window === 'undefined') return;
+    // TTL: discard a stale selection (older than COMPARE_TTL_MS, or of unknown
+    // age) before restoring it, so a comparison abandoned long ago does not
+    // silently reappear when the user returns directly to the section.
+    if (isPersistedSelectionExpired()) {
+        clearPersistedSelection();
+        metaById = new Map();
+        snapshot = EMPTY_STATE;
+        return;
+    }
     metaById = loadMetaFromStorage();
     let raw: string | null = null;
     try {
