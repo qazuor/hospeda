@@ -179,8 +179,27 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * removed alongside the dead Make.com inbound callback routes it gated — those
  * routes were superseded by the synchronous "Webhook Response" model and only
  * that env var read them; 250 - 1 = 249.
+ *
+ * 250 (2026-07-06, env-registry-hygiene follow-up to HOS-79): +1
+ * WEEKLY_RESTART_HEARTBEAT_URL (monitoring category, apps: ['api']) — a real,
+ * legitimately-used var (scripts/server-tools/weekly-restart.sh), previously
+ * missing from the registry entirely. Read directly by the crontab-run bash
+ * script on the VPS host, NOT by the api Node process itself; registered
+ * under 'api' as the closest fit since the registry has no host/ops app id.
+ * `hops env-doctor` also reported several OTHER vars as "present on Coolify,
+ * absent from registry" that turned out on investigation to be either (a)
+ * already-obsolete vars hard-cut-removed by earlier specs (HOSPEDA_AI_SOCIAL_KEY,
+ * HOSPEDA_MAKE_API_KEY, HOSPEDA_OPERATOR_PIN, HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID
+ * — see the 244/HOS-64 T-042 and 244/NOSPEC:remove-landing entries above) that
+ * must be deleted from Coolify rather than re-registered, or (b) naming
+ * mismatches where the claimed app reads a different, already-registered
+ * sibling var (HOSPEDA_SENTRY_ENVIRONMENT vs web's own PUBLIC_SENTRY_ENVIRONMENT;
+ * HOSPEDA_POSTHOG_KEY vs admin's own VITE_POSTHOG_KEY; HOSPEDA_SITE_URL vs
+ * admin's own VITE_SITE_URL; HOSPEDA_CLOUDINARY_ENV vs the already-registered
+ * HOSPEDA_DEPLOY_ENV) — none of these needed a registry change, only a
+ * Coolify-side cleanup/rename. 249 + 1 = 250.
  */
-const EXPECTED_VAR_COUNT = 249;
+const EXPECTED_VAR_COUNT = 250;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

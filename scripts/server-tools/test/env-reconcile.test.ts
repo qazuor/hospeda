@@ -155,4 +155,34 @@ describe('diffRegistryVsCoolify()', () => {
         const result = diffRegistryVsCoolify({ registry: [], app: 'admin', coolifyKeys: [] });
         expect(result).toEqual({ missing: [], unexpected: [], conditionalUnset: [] });
     });
+
+    describe('platform-injected keys (env-registry-hygiene, follow-up to HOS-79)', () => {
+        it('excludes HOST/PORT/HUSKY/NITRO_PRESET/HOSPEDA_GIT_SHA from "unexpected", never registered', () => {
+            const registry = [makeEntry({ name: 'HOSPEDA_API_URL', apps: ['api'], required: true })];
+            const result = diffRegistryVsCoolify({
+                registry,
+                app: 'api',
+                coolifyKeys: [
+                    'HOSPEDA_API_URL',
+                    'HOST',
+                    'PORT',
+                    'HUSKY',
+                    'NITRO_PRESET',
+                    'HOSPEDA_GIT_SHA'
+                ]
+            });
+            expect(result.missing).toEqual([]);
+            expect(result.unexpected).toEqual([]);
+        });
+
+        it('still reports a genuine registry gap alongside platform-injected keys', () => {
+            const registry = [makeEntry({ name: 'HOSPEDA_API_URL', apps: ['api'], required: true })];
+            const result = diffRegistryVsCoolify({
+                registry,
+                app: 'api',
+                coolifyKeys: ['HOSPEDA_API_URL', 'HOST', 'SOME_LEGACY_VAR_NOBODY_REMOVED']
+            });
+            expect(result.unexpected).toEqual(['SOME_LEGACY_VAR_NOBODY_REMOVED']);
+        });
+    });
 });
