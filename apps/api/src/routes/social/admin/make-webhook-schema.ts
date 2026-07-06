@@ -34,13 +34,57 @@
  */
 
 import { z } from '@hono/zod-openapi';
-import { MakeWebhookResponseSchema, PermissionEnum, SocialMakePayloadSchema } from '@repo/schemas';
+import {
+    MakeWebhookResponseSchema,
+    PermissionEnum,
+    ServiceErrorCode,
+    SocialMakePayloadSchema
+} from '@repo/schemas';
 import { z as zodCore } from 'zod';
 import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 /** Outbound auth header Hospeda sends on every Make.com dispatch POST. */
 const MAKE_AUTH_HEADER_NAME = 'x-make-apikey';
+
+/**
+ * Resolution state of a vault-backed credential field.
+ * - `ok`      — the credential exists and was decrypted; `value` holds it.
+ * - `missing` — no credential is configured for this key (`NOT_FOUND`).
+ * - `error`   — the credential exists but could not be read (decryption/DB
+ *   failure, e.g. a misconfigured vault master key); `value` is `null` and the
+ *   UI must show an error rather than the misleading "not configured" state.
+ */
+type CredentialFieldStatus = 'ok' | 'missing' | 'error';
+
+/** A vault-backed credential value plus its resolution state. */
+interface CredentialField {
+    /** Plaintext secret when `status === 'ok'`, otherwise `null`. */
+    readonly value: string | null;
+    /** Resolution state — lets the UI distinguish "missing" from "error". */
+    readonly status: CredentialFieldStatus;
+}
+
+/** Result shape of {@link getDecryptedSocialCredential} (inferred, no internal import). */
+type VaultReadResult = Awaited<ReturnType<typeof getDecryptedSocialCredential>>;
+
+/**
+ * Maps a vault read result to a {@link CredentialField}, distinguishing a
+ * genuinely-unconfigured credential (`NOT_FOUND` → `missing`) from a read/decrypt
+ * failure (`error`). Never surfaces the two as the same state.
+ *
+ * @param result - The `getDecryptedSocialCredential` output for one key.
+ * @returns The credential value + resolution state (never the raw error).
+ */
+function toCredentialField(result: VaultReadResult): CredentialField {
+    if (result.data) {
+        return { value: result.data.plaintext, status: 'ok' };
+    }
+    if (result.error?.code === ServiceErrorCode.NOT_FOUND) {
+        return { value: null, status: 'missing' };
+    }
+    return { value: null, status: 'error' };
+}
 
 /**
  * Builds the schema-documentation portion of the export (no secrets, no DB).
@@ -95,15 +139,23 @@ export const adminGetMakeWebhookSchemaRoute = createAdminRoute({
     responseSchema: z.object({
         payloadSchema: z.object({}).passthrough(),
         responseSchema: z.object({}).passthrough(),
-        webhookUrl: z.string().nullable(),
-        makeApiKey: z.string().nullable(),
+        webhookUrl: z.object({
+            value: z.string().nullable(),
+            status: z.enum(['ok', 'missing', 'error'])
+        }),
+        makeApiKey: z.object({
+            value: z.string().nullable(),
+            status: z.enum(['ok', 'missing', 'error'])
+        }),
         headerName: z.literal(MAKE_AUTH_HEADER_NAME)
     }),
     handler: async () => {
         const doc = buildMakeWebhookSchemaDoc();
 
         // Read the outbound webhook URL + API key from the encrypted vault
-        // (HOS-64). Missing credentials (never configured) surface as null.
+        // (HOS-64). A missing credential and a read/decrypt failure are mapped
+        // to distinct states so the UI never shows a vault error as "not
+        // configured" (see toCredentialField).
         const [urlResult, keyResult] = await Promise.all([
             getDecryptedSocialCredential({ key: 'make_webhook_url' }),
             getDecryptedSocialCredential({ key: 'make_api_key' })
@@ -112,8 +164,8 @@ export const adminGetMakeWebhookSchemaRoute = createAdminRoute({
         return {
             payloadSchema: doc.payloadSchema,
             responseSchema: doc.responseSchema,
-            webhookUrl: urlResult.data?.plaintext ?? null,
-            makeApiKey: keyResult.data?.plaintext ?? null,
+            webhookUrl: toCredentialField(urlResult),
+            makeApiKey: toCredentialField(keyResult),
             headerName: doc.headerName
         };
     }

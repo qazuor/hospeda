@@ -34,6 +34,23 @@ export type GptActionSchemaResponse = Record<string, unknown>;
 export const MAKE_WEBHOOK_HEADER_NAME = 'x-make-apikey' as const;
 
 /**
+ * Resolution state of a vault-backed credential field.
+ * - `ok`      — configured and readable; `value` holds the plaintext.
+ * - `missing` — not configured (no credential for this key).
+ * - `error`   — configured but could not be read (vault decrypt/DB failure);
+ *   the UI shows an error rather than the misleading "not configured" state.
+ */
+export type CredentialFieldStatus = 'ok' | 'missing' | 'error';
+
+/** A vault-backed credential value plus its resolution state. */
+export interface CredentialField {
+    /** Plaintext secret when `status === 'ok'`, otherwise `null`. */
+    readonly value: string | null;
+    /** Resolution state — distinguishes "missing" from "error". */
+    readonly status: CredentialFieldStatus;
+}
+
+/**
  * Response shape of `GET /api/v1/admin/social/make-webhook-schema`.
  * Mirrors the authoritative API contract in
  * `apps/api/src/routes/social/admin/make-webhook-schema.ts` — not currently a
@@ -44,10 +61,10 @@ export interface MakeWebhookSchemaResponse {
     readonly payloadSchema: Record<string, unknown>;
     /** Live JSON Schema of the Make.com webhook response. */
     readonly responseSchema: Record<string, unknown>;
-    /** Outbound Make.com webhook URL, or `null` if unconfigured. */
-    readonly webhookUrl: string | null;
-    /** Value sent in the outbound auth header, or `null` if unconfigured. */
-    readonly makeApiKey: string | null;
+    /** Outbound Make.com webhook URL + its vault resolution state. */
+    readonly webhookUrl: CredentialField;
+    /** Outbound auth-header value + its vault resolution state. */
+    readonly makeApiKey: CredentialField;
     /** The outbound auth header name. */
     readonly headerName: typeof MAKE_WEBHOOK_HEADER_NAME;
 }

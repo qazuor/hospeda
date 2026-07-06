@@ -163,8 +163,11 @@ describe('adminGetMakeWebhookSchemaRoute — config + handler', () => {
         const result = (await handler({}, {}, {})) as Record<string, unknown>;
 
         // Assert
-        expect(result.webhookUrl).toBe('https://hook.eu1.make.test/abc123');
-        expect(result.makeApiKey).toBe('make-secret-key-xyz');
+        expect(result.webhookUrl).toEqual({
+            value: 'https://hook.eu1.make.test/abc123',
+            status: 'ok'
+        });
+        expect(result.makeApiKey).toEqual({ value: 'make-secret-key-xyz', status: 'ok' });
         expect(result.headerName).toBe('x-make-apikey');
         expect(result.payloadSchema).toBeDefined();
         expect(result.responseSchema).toBeDefined();
@@ -173,8 +176,8 @@ describe('adminGetMakeWebhookSchemaRoute — config + handler', () => {
         expect(mockGetDecrypted).toHaveBeenCalledWith({ key: 'make_api_key' });
     });
 
-    it('returns null for webhookUrl / makeApiKey when the credential is unconfigured', async () => {
-        // Arrange — vault returns an error output (no data) for every key
+    it('marks credentials as "missing" when the vault has no credential (NOT_FOUND)', async () => {
+        // Arrange — vault returns NOT_FOUND (never configured) for every key
         mockGetDecrypted.mockResolvedValue({
             error: { code: 'NOT_FOUND', message: 'no credential' }
         });
@@ -183,11 +186,26 @@ describe('adminGetMakeWebhookSchemaRoute — config + handler', () => {
         // Act
         const result = (await handler({}, {}, {})) as Record<string, unknown>;
 
-        // Assert — missing credentials surface as null, never as undefined or a throw
-        expect(result.webhookUrl).toBeNull();
-        expect(result.makeApiKey).toBeNull();
+        // Assert — a genuinely-unconfigured credential is 'missing', value null
+        expect(result.webhookUrl).toEqual({ value: null, status: 'missing' });
+        expect(result.makeApiKey).toEqual({ value: null, status: 'missing' });
         // The generated schemas are still present even without credentials
         expect(result.payloadSchema).toBeDefined();
         expect(result.responseSchema).toBeDefined();
+    });
+
+    it('marks credentials as "error" (not "missing") when the vault read fails', async () => {
+        // Arrange — decrypt/DB failure (e.g. misconfigured vault master key)
+        mockGetDecrypted.mockResolvedValue({
+            error: { code: 'INTERNAL_ERROR', message: 'decrypt failed' }
+        });
+        const handler = getHandler('get', '/');
+
+        // Act
+        const result = (await handler({}, {}, {})) as Record<string, unknown>;
+
+        // Assert — a read failure must NOT be conflated with "not configured"
+        expect(result.webhookUrl).toEqual({ value: null, status: 'error' });
+        expect(result.makeApiKey).toEqual({ value: null, status: 'error' });
     });
 });

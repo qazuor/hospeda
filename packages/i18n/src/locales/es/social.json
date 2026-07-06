@@ -722,6 +722,7 @@
             "headerNameLabel": "Nombre del encabezado",
             "apiKeyLabel": "Clave de API",
             "notConfigured": "No configurado",
+            "credentialError": "No se pudo leer la credencial del vault. Revisá la configuración de la clave maestra del vault.",
             "payloadSchemaLabel": "JSON Schema del payload",
             "responseSchemaLabel": "JSON Schema de la respuesta",
             "error": "Error al cargar la configuración del webhook de Make.com"

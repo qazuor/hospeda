@@ -722,6 +722,7 @@
             "headerNameLabel": "Header name",
             "apiKeyLabel": "API key",
             "notConfigured": "Not configured",
+            "credentialError": "Could not read the credential from the vault. Check the vault master key configuration.",
             "payloadSchemaLabel": "Payload JSON Schema",
             "responseSchemaLabel": "Response JSON Schema",
             "error": "Error loading the Make.com webhook config"

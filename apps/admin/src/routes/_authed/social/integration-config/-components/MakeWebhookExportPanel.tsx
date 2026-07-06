@@ -3,17 +3,19 @@
  * @description Panel 2 — Make.com webhook export (HOS-67 G-6, T-008).
  *
  * Read-only display of `GET /api/v1/admin/social/make-webhook-schema`: the
- * outbound webhook URL, the auth header name + masked API key
- * (reveal-on-click), and copy-to-clipboard blocks for the payload/response
- * JSON Schemas. Shows a "not configured" state for `webhookUrl` / `makeApiKey`
- * when the vault has no value for those keys (`null`).
+ * outbound webhook URL and API key (both vault secrets — masked with
+ * reveal-on-click), the auth header name, and copy-to-clipboard blocks for the
+ * payload/response JSON Schemas. Each credential renders one of three states
+ * from its vault resolution status: the masked value (`ok`), a "not configured"
+ * note (`missing`), or an error note (`error` — vault read/decrypt failure),
+ * so a vault error is never shown as a misleading "not configured".
  */
 
 import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import type { MakeWebhookSchemaResponse } from '../-hooks/use-integration-config';
+import type { CredentialField, MakeWebhookSchemaResponse } from '../-hooks/use-integration-config';
 import { CopyButton } from './CopyButton';
 import { JsonCodeBlock } from './JsonCodeBlock';
 import { MaskedSecretField } from './MaskedSecretField';
@@ -23,6 +25,51 @@ export interface MakeWebhookExportPanelProps {
     readonly data: MakeWebhookSchemaResponse | undefined;
     readonly isLoading: boolean;
     readonly error: unknown;
+}
+
+/** Props for {@link CredentialFieldDisplay}. */
+interface CredentialFieldDisplayProps {
+    readonly field: CredentialField;
+    /** `data-testid` prefix for the masked value / not-configured / error nodes. */
+    readonly testId: string;
+}
+
+/**
+ * Renders a vault-backed credential in one of its three resolution states:
+ * masked value (`ok`), "not configured" (`missing`), or an error note (`error`).
+ */
+function CredentialFieldDisplay({ field, testId }: CredentialFieldDisplayProps) {
+    const { t } = useTranslations();
+
+    if (field.status === 'ok' && field.value !== null) {
+        return (
+            <MaskedSecretField
+                value={field.value}
+                testId={testId}
+            />
+        );
+    }
+
+    if (field.status === 'error') {
+        return (
+            <p
+                className="text-destructive text-sm"
+                role="alert"
+                data-testid={`${testId}-error`}
+            >
+                {t('social.integrationConfig.makeWebhook.credentialError' as TranslationKey)}
+            </p>
+        );
+    }
+
+    return (
+        <p
+            className="text-muted-foreground text-sm italic"
+            data-testid={`${testId}-not-configured`}
+        >
+            {t('social.integrationConfig.makeWebhook.notConfigured' as TranslationKey)}
+        </p>
+    );
 }
 
 /** Panel showing the Make.com webhook config export. */
@@ -61,36 +108,17 @@ export function MakeWebhookExportPanel({ data, isLoading, error }: MakeWebhookEx
 
                 {!isLoading && !error && data && (
                     <>
-                        {/* Webhook URL */}
+                        {/* Webhook URL (vault secret — masked) */}
                         <div className="space-y-1">
                             <p className="font-medium text-sm">
                                 {t(
                                     'social.integrationConfig.makeWebhook.webhookUrlLabel' as TranslationKey
                                 )}
                             </p>
-                            {data.webhookUrl ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <code
-                                        className="rounded bg-muted px-2 py-1 font-mono text-xs"
-                                        data-testid="make-webhook-export-url-value"
-                                    >
-                                        {data.webhookUrl}
-                                    </code>
-                                    <CopyButton
-                                        value={data.webhookUrl}
-                                        testId="make-webhook-export-url-copy"
-                                    />
-                                </div>
-                            ) : (
-                                <p
-                                    className="text-muted-foreground text-sm italic"
-                                    data-testid="make-webhook-export-url-not-configured"
-                                >
-                                    {t(
-                                        'social.integrationConfig.makeWebhook.notConfigured' as TranslationKey
-                                    )}
-                                </p>
-                            )}
+                            <CredentialFieldDisplay
+                                field={data.webhookUrl}
+                                testId="make-webhook-export-url"
+                            />
                         </div>
 
                         {/* Header name */}
@@ -114,28 +142,17 @@ export function MakeWebhookExportPanel({ data, isLoading, error }: MakeWebhookEx
                             </div>
                         </div>
 
-                        {/* API key (masked, reveal-on-click) */}
+                        {/* API key (vault secret — masked, reveal-on-click) */}
                         <div className="space-y-1">
                             <p className="font-medium text-sm">
                                 {t(
                                     'social.integrationConfig.makeWebhook.apiKeyLabel' as TranslationKey
                                 )}
                             </p>
-                            {data.makeApiKey ? (
-                                <MaskedSecretField
-                                    value={data.makeApiKey}
-                                    testId="make-webhook-export-api-key"
-                                />
-                            ) : (
-                                <p
-                                    className="text-muted-foreground text-sm italic"
-                                    data-testid="make-webhook-export-api-key-not-configured"
-                                >
-                                    {t(
-                                        'social.integrationConfig.makeWebhook.notConfigured' as TranslationKey
-                                    )}
-                                </p>
-                            )}
+                            <CredentialFieldDisplay
+                                field={data.makeApiKey}
+                                testId="make-webhook-export-api-key"
+                            />
                         </div>
 
                         {/* Payload schema */}
