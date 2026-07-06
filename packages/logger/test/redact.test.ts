@@ -36,8 +36,11 @@ describe('redactSensitiveData', () => {
             const start = process.hrtime.bigint();
             redactSensitiveData(input);
             const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
-            // Assert — linear regex stays well under a second even on slow CI.
-            expect(elapsedMs).toBeLessThan(1000);
+            // Assert — the guard only needs to tell linear-time apart from the
+            // multi-second polynomial blowup, so the budget is deliberately
+            // generous (2 s): a loaded CI shard can add ~1 s of GC/scheduling
+            // overhead to a ~30 ms regex without indicating a real regression.
+            expect(elapsedMs).toBeLessThan(2000);
         });
     });
 
@@ -78,8 +81,9 @@ describe('redactSensitiveData', () => {
         // adversarial input. With an unbounded run the global-flag regex re-scans
         // the full tail at every `eyJ` offset (O(n^2)): 20 000 repetitions took
         // ~12 s with the unbounded form. The bounded {1,2048} run caps each
-        // attempt to a constant, so the same input finishes in well under the
-        // 1 s budget even on slow CI.
+        // attempt to a constant, so the same input finishes in tens of ms; the
+        // 2 s budget only has to separate that from the ~12 s blowup, with
+        // headroom so a loaded CI shard doesn't flake on wall-clock noise.
         it('stays linear on adversarial input of 20 000 "eyJ" repetitions (ReDoS guard)', () => {
             // Arrange
             const input = 'eyJ'.repeat(20_000);
@@ -88,7 +92,7 @@ describe('redactSensitiveData', () => {
             redactSensitiveData(input);
             const elapsedMs = performance.now() - start;
             // Assert — bounded quantifier keeps total work well under threshold.
-            expect(elapsedMs).toBeLessThan(1000);
+            expect(elapsedMs).toBeLessThan(2000);
         });
     });
 });

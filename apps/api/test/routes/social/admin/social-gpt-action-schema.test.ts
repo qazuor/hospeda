@@ -258,7 +258,7 @@ describe('buildGptActionSchema() — unit', () => {
     // where invented platform/format/mediaType values slipped into the doc.
     // -----------------------------------------------------------------------
 
-    it('platform enum is EXACTLY [INSTAGRAM, FACEBOOK, X] — no invented values', () => {
+    it('platform enum is EXACTLY [INSTAGRAM, FACEBOOK, X, LINKEDIN, TIKTOK] — no invented values', () => {
         // Arrange / Act
         const doc = buildGptActionSchema('https://api.example.com');
 
@@ -268,27 +268,25 @@ describe('buildGptActionSchema() — unit', () => {
         // Assert — at least one enum array found
         expect(platformEnums.length).toBeGreaterThan(0);
 
-        // Every platform enum array must be exactly these 3 values (order-independent).
+        // Every platform enum array must be exactly these 5 values (order-independent).
         // Catalog response schemas expose `platform` as nullable (a global hashtag,
         // hashtag-set or footer has no specific platform), so the generated enum may
         // include a trailing `null` marker. That is the nullability signal, not an
         // invented platform value — strip it before asserting the real values.
-        const expected = ['INSTAGRAM', 'FACEBOOK', 'X'];
+        const expected = ['INSTAGRAM', 'FACEBOOK', 'X', 'LINKEDIN', 'TIKTOK'];
         for (const enumArray of platformEnums) {
             const realValues = enumArray.filter((value) => value !== null);
             expect(realValues.slice().sort()).toEqual(expected.slice().sort());
         }
     });
 
-    it('platform enum does NOT contain TWITTER, TIKTOK, or LINKEDIN', () => {
+    it('platform enum does NOT contain TWITTER (invented value — the real value is X)', () => {
         // Arrange / Act
         const doc = buildGptActionSchema('https://api.example.com');
 
         const platformEnums = collectEnumArrays(doc, 'INSTAGRAM');
         for (const enumArray of platformEnums) {
             expect(enumArray).not.toContain('TWITTER');
-            expect(enumArray).not.toContain('TIKTOK');
-            expect(enumArray).not.toContain('LINKEDIN');
         }
     });
 

@@ -40,11 +40,11 @@ const countLabel = filterSummary
 <div class:list={['listing-page-header', className]}>
 	<div class="listing-page-header__text">
 		{tagline && (
-			<p class="listing-page-header__tagline">{tagline}</p>
+			<p class="listing-page-header__tagline wh-compact-hide">{tagline}</p>
 		)}
-		<h1 class="listing-page-header__title">{title}</h1>
+		<h1 class="listing-page-header__title wh-compact-title">{title}</h1>
 		{subtitle && (
-			<p class="listing-page-header__subtitle">{subtitle}</p>
+			<p class="listing-page-header__subtitle wh-compact-hide">{subtitle}</p>
 		)}
 	</div>
 
@@ -119,28 +119,15 @@ const countLabel = filterSummary
 		}
 	}
 
-	/* Compact state: triggered by .wave-header--compact ancestor */
+	/* Compact state. Listings render a STATIC band, so this normally never
+	 * applies — BUT the mobile fullscreen map (mapa.astro) force-locks the
+	 * header compact, so ListingPageHeader must still collapse correctly.
+	 * Element collapse/shrink now comes from the shared `.wh-compact-*`
+	 * utilities applied in the markup (contract in WaveHeader.astro); only the
+	 * outer row alignment stays local. */
 	:global(.wave-header--compact) .listing-page-header {
 		align-items: center;
 		gap: var(--space-2);
-	}
-
-	:global(.wave-header--compact) .listing-page-header__tagline {
-		max-height: 0;
-		opacity: 0;
-		margin: 0;
-		pointer-events: none;
-	}
-
-	:global(.wave-header--compact) .listing-page-header__title {
-		font-size: clamp(1rem, 2vw, 1.25rem);
-	}
-
-	:global(.wave-header--compact) .listing-page-header__subtitle {
-		max-height: 0;
-		opacity: 0;
-		margin: 0;
-		pointer-events: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

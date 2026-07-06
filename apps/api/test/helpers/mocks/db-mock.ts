@@ -836,6 +836,7 @@ export function createDbMock() {
         SocialPostHashtagModel: GenericMockModel,
         SocialPostMediaModel: GenericMockModel,
         SocialPostModel: GenericMockModel,
+        SocialPostTargetMediaModel: GenericMockModel,
         SocialPostTargetModel: GenericMockModel,
         SocialPublishLogModel: GenericMockModel,
         SocialSettingModel: GenericMockModel,

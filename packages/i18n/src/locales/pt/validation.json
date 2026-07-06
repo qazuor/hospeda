@@ -3387,6 +3387,11 @@
         },
         "title": {
             "required": "[PT] El title es obligatorio"
+        },
+        "video": {
+            "url": {
+                "invalid": "[PT] A URL do vídeo é inválida"
+            }
         }
     },
     "socialHashtag": {

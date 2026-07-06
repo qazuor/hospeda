@@ -2,8 +2,8 @@
  * Social Automation catalog seed (SPEC-254 T-015).
  *
  * Seeds all static catalog data required by the social media publish pipeline:
- *   1. Platforms         — social_platforms (3 rows, unique on platform enum)
- *   2. Platform formats  — social_platform_formats (13 rows, unique on platform+publish_format)
+ *   1. Platforms         — social_platforms (5 rows, unique on platform enum)
+ *   2. Platform formats  — social_platform_formats (15 rows, unique on platform+publish_format)
  *   3. Settings          — social_settings (11 rows, unique on key)
  *   4. Campaign          — social_campaigns (1 default row, unique on slug)
  *   5. Content batch     — social_content_batches (1 default row, unique on slug)
@@ -50,14 +50,14 @@ import { summaryTracker } from '../utils/summaryTracker.js';
 // ---------------------------------------------------------------------------
 
 type InsertSocialPlatform = {
-    platform: 'INSTAGRAM' | 'FACEBOOK' | 'X';
+    platform: 'INSTAGRAM' | 'FACEBOOK' | 'X' | 'LINKEDIN' | 'TIKTOK';
     label: string;
     enabled: boolean;
     notes?: string;
 };
 
 type InsertSocialPlatformFormat = {
-    platform: 'INSTAGRAM' | 'FACEBOOK' | 'X';
+    platform: 'INSTAGRAM' | 'FACEBOOK' | 'X' | 'LINKEDIN' | 'TIKTOK';
     publishFormat:
         | 'FEED_POST'
         | 'PHOTO_POST'
@@ -132,24 +132,29 @@ type InsertSocialHashtag = {
 // Static catalog data
 // ---------------------------------------------------------------------------
 
-const PLATFORMS: InsertSocialPlatform[] = [
+export const PLATFORMS: InsertSocialPlatform[] = [
     { platform: 'INSTAGRAM', label: 'Instagram', enabled: true },
     { platform: 'FACEBOOK', label: 'Facebook', enabled: true },
-    { platform: 'X', label: 'X (Twitter)', enabled: true }
+    { platform: 'X', label: 'X (Twitter)', enabled: true },
+    { platform: 'LINKEDIN', label: 'LinkedIn', enabled: true },
+    { platform: 'TIKTOK', label: 'TikTok', enabled: true }
 ];
 
 /**
  * Platform-format catalog.
  *
- * 13 rows total — one per unique (platform, publishFormat) combo per the
+ * 15 rows total — one per unique (platform, publishFormat) combo per the
  * `social_platform_formats` UNIQUE constraint on (platform, publish_format).
  *
  * INSTAGRAM STORY and FACEBOOK STORY support both IMAGE and VIDEO media but
  * the unique index allows only one row per format. We use IMAGE as the
  * canonical media_type for STORY rows (the most common dispatch path). The
  * make_channel_key encodes the canonical media type for Make.com routing.
+ *
+ * LINKEDIN and TIKTOK (HOS-65) have NO STORY row — neither platform supports
+ * Stories, per owner decision.
  */
-const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
+export const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
     // ---- Instagram (5 rows) ----
     {
         platform: 'INSTAGRAM',
@@ -292,8 +297,47 @@ const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
         requiresMedia: true,
         requiresPublicUrl: false,
         maxCaptionLength: 280
+    },
+    // ---- LinkedIn (2 rows) — no STORY, LinkedIn has no Stories ----
+    {
+        platform: 'LINKEDIN',
+        publishFormat: 'TEXT_POST',
+        mediaType: 'NONE',
+        enabled: true,
+        mvpEnabled: false,
+        makeChannelKey: 'linkedin_text_none',
+        requiresMedia: false,
+        requiresPublicUrl: false,
+        maxCaptionLength: 3000
+    },
+    {
+        platform: 'LINKEDIN',
+        publishFormat: 'VIDEO_POST',
+        mediaType: 'VIDEO',
+        enabled: true,
+        mvpEnabled: false,
+        makeChannelKey: 'linkedin_video_video',
+        requiresMedia: true,
+        requiresPublicUrl: false,
+        maxCaptionLength: 3000,
+        recommendedRatio: '16:9',
+        recommendedSize: '1920x1080'
+    },
+    // ---- TikTok (1 row) — video-first, no STORY, no TEXT_POST ----
+    {
+        platform: 'TIKTOK',
+        publishFormat: 'VIDEO_POST',
+        mediaType: 'VIDEO',
+        enabled: true,
+        mvpEnabled: false,
+        makeChannelKey: 'tiktok_video_video',
+        requiresMedia: true,
+        requiresPublicUrl: false,
+        maxCaptionLength: 2200,
+        recommendedRatio: '9:16',
+        recommendedSize: '1080x1920'
     }
-    // Total: 4 IG + 5 FB + 3 X = 12 rows
+    // Total: 4 IG + 5 FB + 3 X + 2 LinkedIn + 1 TikTok = 15 rows
     // (IG STORY VIDEO variant is skipped — unique on (platform, publish_format))
 ];
 
@@ -755,7 +799,7 @@ function logSkip(entity: string, key: string): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Seeds the 3 social platform config rows.
+ * Seeds the 5 social platform config rows.
  * Idempotent: skips rows where `platform` already exists.
  */
 async function seedSocialPlatforms(): Promise<void> {
@@ -782,7 +826,7 @@ async function seedSocialPlatforms(): Promise<void> {
 }
 
 /**
- * Seeds the platform-format config rows (12 unique combos).
+ * Seeds the platform-format config rows (15 unique combos).
  *
  * The unique key is `(platform, publish_format)` per the DB schema. Where the
  * spec lists STORY with both IMAGE and VIDEO, we seed a single STORY row with

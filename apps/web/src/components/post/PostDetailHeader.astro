@@ -1,14 +1,29 @@
 ---
 /**
  * @file PostDetailHeader.astro
- * @description Header for the post detail page. Renders the title, category badge,
- * news/featured badges, publication meta (author byline + date + updated indicator +
- * reading time), bookmark count, engagement counters (likes/comments/shares), and
- * the FavoriteButton island. Collapses to a compact single row when the parent
- * WaveHeader enters compact mode on scroll.
+ * @description Header for the post detail page. Renders a history-aware back
+ * button, the title, category badge, news/featured badges, publication meta
+ * (author byline + date + updated indicator + reading time), bookmark count,
+ * engagement counters (likes/comments/shares), and the FavoriteButton island.
+ *
+ * Layout (HOS-84): a vertical stack — a back-button row on top, then a
+ * 2-column `.post-header__body` row where `.post-header__main` holds
+ * badges + title + summary + meta + engagement and `.post-header__favorite`
+ * anchors the heart button on the right. The favorite stays right-aligned
+ * regardless of viewport or compact mode.
+ *
+ * Compact behavior comes from the shared `.wh-compact-*` utility classes
+ * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
+ * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
+ * drops the back-button row + summary + badges + meta + engagement. This is
+ * the richest header of the three migrated in HOS-84: the engagement row
+ * (and, to a lesser extent, the summary) carry their own top
+ * border/padding/margin that would otherwise peek through once collapsed —
+ * those stay as small local overrides alongside `wh-compact-hide`.
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { FavoriteIcon, ChatIcon, ShareIcon, StarIcon, SparkleIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -88,117 +103,142 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 ---
 
 <header class="post-header">
-	<div class="post-header__main">
-		{(isNews || isFeatured) && (
-			<div class="post-header__badges" aria-hidden="false">
-				{isNews && (
-					<span class="post-header__flag post-header__flag--news">
-						<SparkleIcon size={12} weight="fill" aria-hidden="true" />
-						{t('blog.detail.badge.news', 'Noticia')}
+	<div class="post-header__back-row wh-compact-hide">
+		<HeaderBackButton href={`/${locale}/publicaciones/`} locale={locale} />
+	</div>
+
+	<div class="post-header__body">
+		<div class="post-header__main wh-compact-row">
+			{(isNews || isFeatured) && (
+				<div class="post-header__badges wh-compact-hide" aria-hidden="false">
+					{isNews && (
+						<span class="post-header__flag post-header__flag--news">
+							<SparkleIcon size={12} weight="fill" aria-hidden="true" />
+							{t('blog.detail.badge.news', 'Noticia')}
+						</span>
+					)}
+					{isFeatured && (
+						<span class="post-header__flag--featured featured-badge">
+							<StarIcon size={12} weight="fill" aria-hidden="true" />
+							<span>{t('blog.detail.badge.featured', 'Destacado')}</span>
+						</span>
+					)}
+				</div>
+			)}
+
+			<h1 class="post-header__title wh-compact-title">{title}</h1>
+
+			{summary && <p class="post-header__summary wh-compact-hide">{summary}</p>}
+
+			<div class="post-header__meta wh-compact-hide">
+				<span
+					class="post-header__category"
+					style={`background-color: ${categoryColor.bg}; color: ${categoryColor.text};`}
+				>
+					{t(`blog.categories.${category.toLowerCase()}`, category)}
+				</span>
+
+				{author && (
+					<span class="post-header__byline">
+						{authorHref ? (
+							<a href={authorHref} class="post-header__byline-link">
+								{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}
+							</a>
+						) : (
+							<span>{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}</span>
+						)}
 					</span>
 				)}
-				{isFeatured && (
-					<span class="post-header__flag--featured featured-badge">
-						<StarIcon size={12} weight="fill" aria-hidden="true" />
-						<span>{t('blog.detail.badge.featured', 'Destacado')}</span>
+
+				{formattedDate && (
+					<time class="post-header__date" datetime={String(publishedAt)}>
+						{formattedDate}
+					</time>
+				)}
+
+				{formattedUpdated && (
+					<time class="post-header__updated" datetime={String(updatedAt)}>
+						{t('blog.detail.updatedOn', `Actualizado el ${formattedUpdated}`).replace('{{date}}', formattedUpdated)}
+					</time>
+				)}
+
+				{readingTimeMinutes > 0 && (
+					<span class="post-header__reading-time">
+						{readingTimeMinutes} {t('blog.detail.readingTime', 'min de lectura')}
+					</span>
+				)}
+
+				{bookmarkCount !== undefined && (
+					<span
+						class="post-header__bookmark-count"
+						aria-label={tPlural('blog.detail.bookmark_count', bookmarkCount)}
+					>
+						<FavoriteIcon size={13} weight="fill" aria-hidden="true" />
+						{tPlural('blog.detail.bookmark_count', bookmarkCount)}
 					</span>
 				)}
 			</div>
-		)}
 
-		<h1 class="post-header__title">{title}</h1>
-
-		{summary && <p class="post-header__summary">{summary}</p>}
-
-		<div class="post-header__meta">
-			<span
-				class="post-header__category"
-				style={`background-color: ${categoryColor.bg}; color: ${categoryColor.text};`}
-			>
-				{t(`blog.categories.${category.toLowerCase()}`, category)}
-			</span>
-
-			{author && (
-				<span class="post-header__byline">
-					{authorHref ? (
-						<a href={authorHref} class="post-header__byline-link">
-							{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}
-						</a>
-					) : (
-						<span>{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}</span>
+			{hasEngagement && (
+				<div class="post-header__engagement wh-compact-hide" aria-label={t('blog.detail.engagement.likes', 'Interacciones')}>
+					{likes > 0 && (
+						<span class="post-header__engagement-item">
+							<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
+							<span>{tPlural('blog.detail.engagement.likes', likes)}</span>
+						</span>
 					)}
-				</span>
-			)}
-
-			{formattedDate && (
-				<time class="post-header__date" datetime={String(publishedAt)}>
-					{formattedDate}
-				</time>
-			)}
-
-			{formattedUpdated && (
-				<time class="post-header__updated" datetime={String(updatedAt)}>
-					{t('blog.detail.updatedOn', `Actualizado el ${formattedUpdated}`).replace('{{date}}', formattedUpdated)}
-				</time>
-			)}
-
-			{readingTimeMinutes > 0 && (
-				<span class="post-header__reading-time">
-					{readingTimeMinutes} {t('blog.detail.readingTime', 'min de lectura')}
-				</span>
-			)}
-
-			{bookmarkCount !== undefined && (
-				<span
-					class="post-header__bookmark-count"
-					aria-label={tPlural('blog.detail.bookmark_count', bookmarkCount)}
-				>
-					<FavoriteIcon size={13} weight="fill" aria-hidden="true" />
-					{tPlural('blog.detail.bookmark_count', bookmarkCount)}
-				</span>
+					{comments > 0 && (
+						<span class="post-header__engagement-item">
+							<ChatIcon size={14} weight="regular" aria-hidden="true" />
+							<span>{tPlural('blog.detail.engagement.comments', comments)}</span>
+						</span>
+					)}
+					{shares > 0 && (
+						<span class="post-header__engagement-item">
+							<ShareIcon size={14} weight="regular" aria-hidden="true" />
+							<span>{tPlural('blog.detail.engagement.shares', shares)}</span>
+						</span>
+					)}
+				</div>
 			)}
 		</div>
 
-		{hasEngagement && (
-			<div class="post-header__engagement" aria-label={t('blog.detail.engagement.likes', 'Interacciones')}>
-				{likes > 0 && (
-					<span class="post-header__engagement-item">
-						<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
-						<span>{tPlural('blog.detail.engagement.likes', likes)}</span>
-					</span>
-				)}
-				{comments > 0 && (
-					<span class="post-header__engagement-item">
-						<ChatIcon size={14} weight="regular" aria-hidden="true" />
-						<span>{tPlural('blog.detail.engagement.comments', comments)}</span>
-					</span>
-				)}
-				{shares > 0 && (
-					<span class="post-header__engagement-item">
-						<ShareIcon size={14} weight="regular" aria-hidden="true" />
-						<span>{tPlural('blog.detail.engagement.shares', shares)}</span>
-					</span>
-				)}
-			</div>
-		)}
-	</div>
-
-	<div class="post-header__favorite">
-		<FavoriteButton
-			client:load
-			entityId={postId}
-			entityType="POST"
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
-			isAuthenticated={isAuthenticated}
-			variant="standalone"
-			locale={locale}
-		/>
+		<div class="post-header__favorite">
+			<FavoriteButton
+				client:load
+				entityId={postId}
+				entityType="POST"
+				initialIsFavorited={initialIsFavorited}
+				initialBookmarkId={initialBookmarkId}
+				isAuthenticated={isAuthenticated}
+				variant="standalone"
+				locale={locale}
+			/>
+		</div>
 	</div>
 </header>
 
 <style>
+	/* Vertical stack: back-button row on top, then the body row. */
 	.post-header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	/* Back-button row — collapses out via `wh-compact-hide` in compact mode, so
+	   it needs its own max-height/opacity transition to animate. */
+	.post-header__back-row {
+		overflow: hidden;
+		max-height: 3em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease;
+	}
+
+	/* Body: main content stretches, favorite stays right. */
+	.post-header__body {
 		display: flex;
 		flex-direction: row;
 		align-items: flex-start;
@@ -211,7 +251,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		transition: flex-direction 0.3s ease, gap 0.3s ease;
+		transition: gap 0.3s ease;
 	}
 
 	.post-header__favorite {
@@ -224,6 +264,12 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 		margin-bottom: 0.1rem;
+		overflow: hidden;
+		max-height: 3em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease;
 	}
 
 	.post-header__flag {
@@ -262,6 +308,13 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		color: var(--core-muted-foreground);
 		margin: 0.15rem 0 0;
 		max-width: 70ch;
+		overflow: hidden;
+		max-height: 4em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease,
+			margin-top 0.3s ease;
 	}
 
 	.post-header__meta {
@@ -367,37 +420,34 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		color: var(--core-muted-foreground);
 	}
 
-	/* Compact state — collapses meta to a single row, hides bookmark count and engagement */
-	:global(.wave-header--compact) .post-header {
+	/* =========================================================
+	 * Compact state — only genuinely post-specific overrides remain here;
+	 * the row collapse, title shrink, and summary/badges/meta/engagement/back
+	 * hide all come from the shared `.wh-compact-*` utilities applied in the
+	 * markup (contract in WaveHeader.astro). The summary and engagement rows
+	 * each carry their own top margin/padding/border that would otherwise
+	 * peek through once collapsed by `wh-compact-hide` alone.
+	 * ========================================================= */
+	:global(.wave-header--compact) .post-header__body {
 		align-items: center;
 	}
 
-	:global(.wave-header--compact) .post-header__main {
-		flex-direction: row;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 0.5rem;
+	:global(.wave-header--compact) .post-header__summary {
+		margin-top: 0;
 	}
 
-	:global(.wave-header--compact) .post-header__title {
-		font-size: clamp(1rem, 2vw, 1.25rem);
-	}
-
-	:global(.wave-header--compact) .post-header__summary,
-	:global(.wave-header--compact) .post-header__badges,
-	:global(.wave-header--compact) .post-header__meta,
 	:global(.wave-header--compact) .post-header__engagement {
-		max-height: 0;
-		opacity: 0;
-		pointer-events: none;
 		padding-top: 0;
 		border-top: none;
 		margin-top: 0;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.post-header__back-row,
 		.post-header__main,
+		.post-header__badges,
 		.post-header__title,
+		.post-header__summary,
 		.post-header__meta,
 		.post-header__engagement {
 			transition: none;

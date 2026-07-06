@@ -1,6 +1,9 @@
 /**
  * Unit tests for `src/commands/db-seed.ts` — pure argv parsing,
- * seed-args composition, flag summary, and repo-root resolution.
+ * seed-args composition, and flag summary.
+ *
+ * Repo-root resolution moved to `src/lib/repo-root.ts` (HOS-79 T-014) —
+ * see `test/repo-root.test.ts` for its tests.
  *
  * The destructive bits (git pull, pnpm seed) are not covered here — they
  * shell out to the runner and would need integration tests with mocked
@@ -9,14 +12,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import {
     buildSeedArgs,
     collectCloudinaryEnv,
     formatFlagSummary,
-    parseArgs,
-    resolveRepoRoot
+    parseArgs
 } from '../src/commands/db-seed.ts';
 
 const ENV_KEYS_TOUCHED = [
@@ -125,6 +125,38 @@ describe('parseArgs(argv)', () => {
 
         it('--no-pull sets pull to "off"', () => {
             expect(parseArgs(['--no-pull']).pull).toBe('off');
+        });
+    });
+
+    // BETA-122: after a git pull, db-seed must `pnpm install --frozen-lockfile`
+    // before seeding so a pulled dependency doesn't leave node_modules stale
+    // (same latent gap the db-migrate BETA-102 fix already closed). `install`
+    // is ON by default and only `--no-install` opts out of just that step.
+    describe('install resolution (BETA-122)', () => {
+        it('install is ON by default', () => {
+            expect(parseArgs([]).install).toBe(true);
+        });
+
+        it('sets install=false only when --no-install is passed', () => {
+            expect(parseArgs(['--no-install']).install).toBe(false);
+        });
+
+        it('leaves install ON when --no-install is absent, even with other flags', () => {
+            const parsed = parseArgs(['--no-reset', '--build', '--no-pull']);
+            expect(parsed.install).toBe(true);
+        });
+
+        it('does not couple --no-install to the other step flags', () => {
+            const parsed = parseArgs(['--no-install']);
+            expect(parsed.reset).toBe(true);
+            expect(parsed.required).toBe(true);
+            expect(parsed.example).toBe(true);
+            expect(parsed.build).toBe(false);
+        });
+
+        it('parses pull intent independently of --no-install', () => {
+            expect(parseArgs(['--pull', '--no-install']).pull).toBe('on');
+            expect(parseArgs(['--no-pull', '--no-install']).pull).toBe('off');
         });
     });
 
@@ -411,21 +443,5 @@ describe('collectCloudinaryEnv(cleanImages)', () => {
 
     it('returns an empty object when cleanImages is true but no creds are set', () => {
         expect(collectCloudinaryEnv(true)).toEqual({});
-    });
-});
-
-describe('resolveRepoRoot()', () => {
-    it('defaults to ~/hospeda when HOPS_REPO_ROOT is unset', () => {
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
-    });
-
-    it('honours HOPS_REPO_ROOT when set', () => {
-        process.env.HOPS_REPO_ROOT = '/opt/hospeda-staging';
-        expect(resolveRepoRoot()).toBe('/opt/hospeda-staging');
-    });
-
-    it('treats an empty HOPS_REPO_ROOT as unset', () => {
-        process.env.HOPS_REPO_ROOT = '';
-        expect(resolveRepoRoot()).toBe(join(homedir(), 'hospeda'));
     });
 });

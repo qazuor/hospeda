@@ -170,7 +170,15 @@ WHERE u.email = '${escapedEmail}';
         );
         return null;
     }
-    const [userId, userEmail, customerId] = rows[0].split('|');
+    const row = rows[0];
+    if (!row) {
+        return null;
+    }
+    const [userId, userEmail, customerId] = row.split('|');
+    if (!userId || !userEmail) {
+        die(`Malformed psql output row for email ${params.email}: "${row}"`);
+        return null;
+    }
     return { userId, userEmail, customerId: customerId || null };
 }
 
@@ -233,9 +241,9 @@ SELECT table_name, row_count FROM counts WHERE row_count > 0 ORDER BY table_name
         .split('\n')
         .map((line) => line.trim())
         .filter((line) => line.length > 0)
-        .map((line) => {
+        .flatMap((line) => {
             const [table, count] = line.split('|');
-            return { table, count: Number(count) || 0 };
+            return table ? [{ table, count: Number(count) || 0 }] : [];
         });
 }
 

@@ -1303,6 +1303,7 @@
         "zodError.socialDraft.operatorPin.required",
         "zodError.socialDraft.targets.required",
         "zodError.socialDraft.title.required",
+        "zodError.socialDraft.video.url.invalid",
         "zodError.socialHashtag.audienceId.uuid",
         "zodError.socialHashtag.category.required",
         "zodError.socialHashtag.hashtag.required",
@@ -1590,7 +1591,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1589,
+    "total": 1590,
     "byNamespace": {
         "accommodation": 55,
         "accommodationAmenity": 4,
@@ -1655,7 +1656,7 @@
         "socialAuditLog": 5,
         "socialCampaign": 3,
         "socialContentBatch": 3,
-        "socialDraft": 8,
+        "socialDraft": 9,
         "socialHashtag": 5,
         "socialHashtagSet": 4,
         "socialPlatform": 2,

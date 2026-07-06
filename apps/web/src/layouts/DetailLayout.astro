@@ -146,7 +146,11 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	}
 
 	/* Sidebar offset = real navbar height (--navbar-height, published by Header.astro)
-	   + the compact wave header band (~105px: content padding + title + wave overhang).
+	   + the compact wave header band. HOS-84: the band is now a flat "band puro"
+	   (no wave overhang), so the old hardcoded ~105px is replaced by the
+	   --wave-bar-compact var. The map view measures + publishes it; on detail
+	   pages it is undefined, so the 72px fallback (compact content padding + a
+	   one-line title) applies. Tune the fallback against the real band in T-017.
 	   max-height + overflow-y: auto make the sidebar independently scrollable when
 	   its content is taller than the visible viewport area below the sticky top
 	   offset. Without this, the bottom portion of a tall sidebar was unreachable
@@ -154,9 +158,9 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	   exactly the sidebar's intrinsic height, leaving no scroll anchor. */
 	.detail-page__sidebar {
 		position: sticky;
-		top: calc(var(--navbar-height, 80px) + 105px);
+		top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
 		align-self: start;
-		max-height: calc(100vh - var(--navbar-height, 80px) - 105px);
+		max-height: calc(100vh - var(--navbar-height, 80px) - var(--wave-bar-compact, 72px));
 		overflow-y: auto;
 	}
 

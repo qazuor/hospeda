@@ -22,8 +22,8 @@
         "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "dependencies": {
-        "@react-email/components": "^0.0.30",
-        "@react-email/render": "^2.0.4",
+        "@react-email/components": "^1.0.12",
+        "@react-email/render": "^2.0.10",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",

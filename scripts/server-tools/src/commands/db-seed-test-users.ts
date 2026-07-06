@@ -35,9 +35,9 @@ import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { die, log } from '../lib/log.ts';
 import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
+import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
 import { getDbCredentials } from '../lib/target.ts';
-import { resolveRepoRoot } from './db-seed.ts';
 
 const HELP = `
 hops db-seed-test-users [--target=staging]

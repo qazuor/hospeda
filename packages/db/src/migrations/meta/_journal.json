@@ -330,6 +330,20 @@
             "when": 1783052002034,
             "tag": "0046_greedy_northstar",
             "breakpoints": true
+        },
+        {
+            "idx": 47,
+            "version": "7",
+            "when": 1783200993664,
+            "tag": "0047_military_kingpin",
+            "breakpoints": true
+        },
+        {
+            "idx": 48,
+            "version": "7",
+            "when": 1783202500321,
+            "tag": "0048_glossy_psylocke",
+            "breakpoints": true
         }
     ]
 }
