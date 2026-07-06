@@ -52,6 +52,11 @@ const { chips, ariaLabel } = Astro.props;
     .tag-chips {
         width: 100%;
         overflow: hidden;
+        /* Breathing room between the category chip row and the results grid
+           below it — without this the chips sit flush against the first cards
+           (BETA-120). Pairs with the ~8px padding-block on the list for a
+           balanced gap. */
+        margin-bottom: var(--space-6, 24px);
     }
 
     .tag-chips__fade-wrapper {

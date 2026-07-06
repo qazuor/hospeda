@@ -146,6 +146,12 @@ describe('TagChips.astro', () => {
         it('includes focus-visible rule for keyboard navigation', () => {
             expect(src).toContain(':focus-visible');
         });
+
+        it('spaces the chip row from the results grid below it (BETA-120)', () => {
+            // Without a bottom margin the chip row sits flush against the
+            // first cards. The rule lives on .tag-chips (the nav wrapper).
+            expect(src).toMatch(/\.tag-chips\s*\{[^}]*margin-bottom:\s*var\(--space-6/);
+        });
     });
 
     describe('scroll-edge fade (BETA-30)', () => {
