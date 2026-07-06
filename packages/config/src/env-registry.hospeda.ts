@@ -1411,6 +1411,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
     },
+    {
+        name: 'WEEKLY_RESTART_HEARTBEAT_URL',
+        description:
+            "Optional heartbeat-ping URL (e.g. healthchecks.io / Cronitor) hit by scripts/server-tools/weekly-restart.sh after a successful weekly app-restart + Docker prune cycle, so an external monitor can alert if the cron stops firing. NOT read by any Node app process — read directly by the bash script from the crontab environment on the VPS host. Setting it in a Coolify app's env vars panel has no effect for this purpose; it must be exported in the operator's crontab (or a sourced env file the cron job loads) on the host.",
+        descriptionEs:
+            'URL opcional de heartbeat (ej. healthchecks.io / Cronitor) que pingea scripts/server-tools/weekly-restart.sh tras un ciclo semanal exitoso de restart de apps + prune de Docker, para que un monitor externo alerte si el cron deja de correr. NO la lee ningún proceso Node — la lee directamente el script bash desde el entorno del crontab en el host del VPS. Setearla en el panel de env vars de una app de Coolify no tiene efecto para este propósito; debe exportarse en el crontab del operador (o un archivo de env que el cron cargue) en el host.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://hc-ping.com/00000000-0000-0000-0000-000000000000',
+        apps: ['api'],
+        category: 'monitoring',
+        howToObtain:
+            'Create a check at healthchecks.io (or Cronitor) for "hospeda weekly restart", copy its ping URL, and export WEEKLY_RESTART_HEARTBEAT_URL in the crontab entry (or a file it sources) that runs weekly-restart.sh on the VPS host — NOT in Coolify. Leave unset to skip the heartbeat ping (the restart itself still runs and is logged).',
+        howToObtainEs:
+            'Creá un check en healthchecks.io (o Cronitor) para "hospeda weekly restart", copiá su ping URL, y exportá WEEKLY_RESTART_HEARTBEAT_URL en la entrada de crontab (o un archivo que esta cargue) que corre weekly-restart.sh en el host del VPS — NO en Coolify. Dejala sin setear para saltear el ping de heartbeat (el restart en sí igual corre y queda logueado).'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
