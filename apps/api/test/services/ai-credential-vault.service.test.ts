@@ -22,14 +22,14 @@
  *  10. Returns NOT_FOUND when no active credential exists.
  *  11. Plaintext is NOT present in any apiLogger call (security check).
  *
- * auto-sync on create/rotate (HOS-94 T-010, OQ-2 — fail-open):
- *  12. create: pre-populates metadata.models with confidently-detected
- *      models (source detected/both, excluding uncertain) when sync succeeds.
+ * auto-sync on create/rotate (HOS-94 T-010, OQ-2 — fail-open, key validation only):
+ *  12. create: does NOT write metadata.models when sync succeeds — the
+ *      credential's metadata is left untouched (owner decision 2026-07-06).
  *  13. create: still succeeds (result unchanged) when syncAiProviderModels
  *      throws — a warning is logged, no metadata write happens.
  *  14. create: still succeeds (result unchanged) when syncAiProviderModels
  *      resolves to `{ error }` — a warning is logged, no metadata write happens.
- *  15. rotate: pre-populates metadata.models the same way as create.
+ *  15. rotate: does NOT write metadata.models the same way as create.
  *  16. rotate: still succeeds when syncAiProviderModels throws / returns
  *      `{ error }` (fail-open, mirrors create).
  *
@@ -697,16 +697,17 @@ describe('getDecryptedAiProviderCredential', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-94 T-010 — auto-sync on create/rotate (OQ-2, fail-open)
+// HOS-94 T-010 — auto-sync on create/rotate (OQ-2, fail-open, key validation
+// only — owner decision 2026-07-06: no metadata pre-population)
 // ---------------------------------------------------------------------------
 
-/** A confidently-detected model that should be pre-populated. */
+/** A confidently-detected model — must NOT be auto-written to metadata anymore. */
 const DETECTED_BOTH_MODEL = { id: 'gpt-4o', source: 'both' as const };
 /** Another confidently-detected model, detected-only. */
 const DETECTED_ONLY_MODEL = { id: 'gpt-5-preview', source: 'detected' as const };
-/** Curated-only entry — must NOT be auto-populated (never confirmed against this key). */
+/** Curated-only entry. */
 const CURATED_ONLY_MODEL = { id: 'gpt-4o-mini', source: 'curated' as const };
-/** Uncertain detected entry — must NOT be auto-populated (needs manual review). */
+/** Uncertain detected entry. */
 const UNCERTAIN_MODEL = {
     id: 'weird-model-x',
     source: 'detected' as const,
@@ -725,13 +726,9 @@ describe('createAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
     beforeEach(resetAllMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('should pre-populate metadata.models with confidently-detected models when sync succeeds', async () => {
-        // Arrange — select sequence: (1) no active cred, (2) current metadata
-        // read for the merge, (3) updateCredentialMetadata's own active-cred lookup.
-        mockDbSelectLimit
-            .mockResolvedValueOnce([])
-            .mockResolvedValueOnce([{ metadata: { baseURL: 'https://example.com/v1' } }])
-            .mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
+    it('should NOT write metadata.models when sync succeeds — the operator enables models manually', async () => {
+        // Arrange — select returns no active credential (create path).
+        mockDbSelectLimit.mockResolvedValueOnce([]);
         mockSyncAiProviderModels.mockResolvedValueOnce(SYNC_MODELS_SUCCESS);
 
         // Act
@@ -747,17 +744,13 @@ describe('createAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
         expect(result.data?.id).toBe('new-cred-uuid');
         expect(result.error).toBeUndefined();
 
-        // Assert — sync was invoked for this providerId
+        // Assert — sync was invoked for this providerId (key-validation call)
         expect(mockSyncAiProviderModels).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
 
-        // Assert — metadata.models was pre-populated with detected/both,
-        // excluding curated-only and uncertain; existing metadata (baseURL)
-        // was preserved (merge, not overwrite).
-        const updatePayload = mockDbUpdateSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(updatePayload.metadata).toEqual({
-            baseURL: 'https://example.com/v1',
-            models: ['gpt-4o', 'gpt-5-preview']
-        });
+        // Assert — no metadata write of any kind happened as a side effect of
+        // the sync (mockDbUpdateSet is only ever hit by rotate's ciphertext
+        // update or an explicit updateCredentialMetadata call — neither ran here).
+        expect(mockDbUpdateSet).not.toHaveBeenCalled();
 
         // Assert — no warning was logged for the happy path
         expect(mockApiLogger.warn).not.toHaveBeenCalled();
@@ -826,14 +819,9 @@ describe('rotateAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
     beforeEach(resetAllMocks);
     afterEach(() => vi.clearAllMocks());
 
-    it('should pre-populate metadata.models with confidently-detected models when sync succeeds', async () => {
-        // Arrange — select sequence: (1) rotate's own active-cred lookup,
-        // (2) current metadata read for the merge, (3) updateCredentialMetadata's
-        // own active-cred lookup.
-        mockDbSelectLimit
-            .mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW])
-            .mockResolvedValueOnce([{ metadata: { label: 'prod key' } }])
-            .mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
+    it('should NOT write metadata.models when sync succeeds — the operator enables models manually', async () => {
+        // Arrange — select returns the active credential (rotate path).
+        mockDbSelectLimit.mockResolvedValueOnce([ACTIVE_CREDENTIAL_ROW]);
         mockSyncAiProviderModels.mockResolvedValueOnce(SYNC_MODELS_SUCCESS);
 
         // Act
@@ -849,14 +837,12 @@ describe('rotateAiProviderCredential — auto-sync (HOS-94 T-010)', () => {
         expect(result.data?.id).toBe(ACTIVE_CREDENTIAL_ROW.id);
         expect(result.error).toBeUndefined();
 
-        // Assert — set() call #0 is rotate's own ciphertext update; call #1 is
-        // the auto-sync metadata pre-populate (merge preserved `label`).
-        expect(mockDbUpdateSet).toHaveBeenCalledTimes(2);
-        const metadataUpdatePayload = mockDbUpdateSet.mock.calls[1]?.[0] as Record<string, unknown>;
-        expect(metadataUpdatePayload.metadata).toEqual({
-            label: 'prod key',
-            models: ['gpt-4o', 'gpt-5-preview']
-        });
+        // Assert — set() was called exactly once: rotate's own ciphertext
+        // update. The auto-sync never issues a second metadata write anymore.
+        expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+
+        // Assert — sync was invoked for this providerId (key-validation call)
+        expect(mockSyncAiProviderModels).toHaveBeenCalledWith({ providerId: PROVIDER_ID });
 
         expect(mockApiLogger.warn).not.toHaveBeenCalled();
     });

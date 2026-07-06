@@ -10,6 +10,10 @@
  *    `uncertain: false`.
  * 3. An unrecognized id is kept and tagged `uncertain: true` (not dropped).
  * 4. Edge cases: empty input, duplicate ids, deprecated marker.
+ * 5. Realtime/audio, codex, web-search-augmented, deep-research, and image
+ *    families (real OpenAI leak cases) are hidden, while plain chat models
+ *    that share a prefix with them (gpt-4o, gpt-5, gpt-5.1, o4-mini) still
+ *    pass as confident chat.
  *
  * @module test/services/ai-sync-models.filter
  */
@@ -102,6 +106,155 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+        });
+    });
+
+    describe('when given real OpenAI non-text-chat leak cases (HOS-94 denylist tightening)', () => {
+        it('should hide gpt-audio (audio conversational model)', () => {
+            // Arrange
+            const input = { ids: ['gpt-audio'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-realtime (realtime speech-to-speech model)', () => {
+            // Arrange
+            const input = { ids: ['gpt-realtime'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-5-codex (agentic-coding-specialized variant)', () => {
+            // Arrange
+            const input = { ids: ['gpt-5-codex'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-5.1-codex-max (agentic-coding-specialized variant)', () => {
+            // Arrange
+            const input = { ids: ['gpt-5.1-codex-max'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-4o-search-preview (web-search-augmented variant)', () => {
+            // Arrange
+            const input = { ids: ['gpt-4o-search-preview'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-5-search-api (web-search-augmented variant)', () => {
+            // Arrange
+            const input = { ids: ['gpt-5-search-api'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide o4-mini-deep-research (deep-research agent model)', () => {
+            // Arrange
+            const input = { ids: ['o4-mini-deep-research'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide gpt-image-1 (image generation model)', () => {
+            // Arrange
+            const input = { ids: ['gpt-image-1'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should hide all of the new leak families together in one call', () => {
+            // Arrange
+            const input = {
+                ids: [
+                    'gpt-audio',
+                    'gpt-realtime',
+                    'gpt-5-codex',
+                    'gpt-5.1-codex-max',
+                    'gpt-4o-search-preview',
+                    'gpt-5-search-api',
+                    'o4-mini-deep-research',
+                    'gpt-image-1'
+                ]
+            };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toHaveLength(0);
+        });
+
+        it('should still pass plain chat models that share a prefix with the new hidden families', () => {
+            // Arrange — gpt-4o/gpt-5/gpt-5.1/o4-mini must NOT be caught by the
+            // codex/search/deep-research/audio/realtime patterns above.
+            const input = {
+                ids: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-5', 'gpt-5.1', 'o4-mini']
+            };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toEqual([
+                { id: 'gpt-4o', uncertain: false },
+                { id: 'gpt-4o-mini', uncertain: false },
+                { id: 'gpt-4.1', uncertain: false },
+                { id: 'gpt-5', uncertain: false },
+                { id: 'gpt-5.1', uncertain: false },
+                { id: 'o4-mini', uncertain: false }
+            ]);
+        });
+
+        it('should still pass o1, o3, claude-*, and gemini-* chat models', () => {
+            // Arrange
+            const input = { ids: ['o1', 'o3', 'claude-3-5-sonnet', 'gemini-1.5-pro'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.models).toEqual([
+                { id: 'o1', uncertain: false },
+                { id: 'o3', uncertain: false },
+                { id: 'claude-3-5-sonnet', uncertain: false },
+                { id: 'gemini-1.5-pro', uncertain: false }
+            ]);
         });
     });
 

@@ -6,8 +6,10 @@
  * into one of three buckets:
  *
  * - **Hidden** — matches a known non-chat family (embeddings, speech-to-text,
- *   text-to-speech, image generation, moderation, or an explicitly deprecated
- *   marker). Excluded from the result entirely.
+ *   text-to-speech, image generation, moderation, an explicitly deprecated
+ *   marker, realtime/audio conversational endpoints, code-specialized
+ *   variants, web-search-augmented variants, or deep-research agents).
+ *   Excluded from the result entirely.
  * - **Chat (confident)** — matches a known chat/text-generation family
  *   (`gpt-*`, `o1`/`o3`/`o4-*`, `claude-*`, `gemini-*`, `llama*`, ...).
  *   Returned with `uncertain: false`.
@@ -58,7 +60,25 @@ const DENYLIST_PATTERNS: readonly RegExp[] = [
     /gpt-image/i,
     /stable-diffusion/i,
     // Video generation models (e.g. sora).
-    /^sora/i
+    /^sora/i,
+    // Realtime speech-to-speech / voice-conversation models (e.g.
+    // gpt-realtime, gpt-realtime-mini) — audio I/O, not text chat.
+    /gpt-realtime/i,
+    // Standalone audio-in/audio-out chat models (e.g. gpt-audio,
+    // gpt-audio-mini) — same rationale as gpt-realtime above.
+    /gpt-audio/i,
+    // Code/agentic-coding-specialized variants (e.g. gpt-5-codex,
+    // gpt-5.1-codex-max) — built for the Codex CLI/agentic coding harness,
+    // not general text chat.
+    /-codex/i,
+    // Web-search-augmented variants (e.g. gpt-4o-search-preview,
+    // gpt-5-search-api) — retrieval-augmented search endpoints, distinct
+    // from plain chat completion.
+    /-search-preview/i,
+    /-search-api/i,
+    // Deep-research agent models (e.g. o4-mini-deep-research) — long-running
+    // multi-step research agents, not interactive chat.
+    /-deep-research/i
 ];
 
 // ---------------------------------------------------------------------------
