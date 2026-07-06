@@ -146,6 +146,7 @@ import { publicSearchRoutes } from './search/public';
 import { protectedSearchHistoryRoutes } from './search-history';
 import {
     adminGetGptActionSchemaRoute,
+    adminGetMakeWebhookSchemaRoute,
     adminSocialAudienceRoutes,
     adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
@@ -632,6 +633,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // GPT Action schema export (SPEC-254 T-030)
         // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
         app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
+
+        // Make.com webhook config export (HOS-67 G-6)
+        // Returns the dispatch payload/response JSON Schemas + webhook URL + API key.
+        app.route('/api/v1/admin/social/make-webhook-schema', adminGetMakeWebhookSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

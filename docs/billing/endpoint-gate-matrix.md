@@ -769,6 +769,7 @@
 | `PATCH /api/v1/admin/social/footers/{id}` | `social/admin/footers/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `DELETE /api/v1/admin/social/footers/{id}` | `social/admin/footers/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/gpt-action-schema` | `social/admin/gpt-action-schema.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
+| `GET /api/v1/admin/social/make-webhook-schema` | `social/admin/make-webhook-schema.ts` | none | - | n/a | Admin-only social automation route (HOS-67); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
 | `GET /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |

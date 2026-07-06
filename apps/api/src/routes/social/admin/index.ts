@@ -16,6 +16,8 @@ export { adminSocialFooterRoutes } from './footers/index';
 export { adminGetGptActionSchemaRoute } from './gpt-action-schema';
 export { adminSocialHashtagSetRoutes } from './hashtag-sets/index';
 export { adminSocialHashtagRoutes } from './hashtags/index';
+// Make.com webhook config export (HOS-67 G-6)
+export { adminGetMakeWebhookSchemaRoute } from './make-webhook-schema';
 // Config route groups (T-019)
 export { adminSocialPlatformFormatRoutes } from './platform-formats/index';
 // Social post routes (T-036 transitions + T-037 CRUD)
