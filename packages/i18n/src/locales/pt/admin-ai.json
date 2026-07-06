@@ -1,5 +1,10 @@
 {
     "credentials": {
+        "edit": {
+            "description": "Atualize a etiqueta, os modelos habilitados e, opcionalmente, a chave de API.",
+            "newApiKeyLabel": "Nova API Key (opcional)",
+            "newApiKeyHint": "Deixe este campo vazio para manter a chave atual."
+        },
         "syncModels": {
             "label": "Modelos habilitados",
             "hint": "Ative os modelos que deseja habilitar para este provedor.",

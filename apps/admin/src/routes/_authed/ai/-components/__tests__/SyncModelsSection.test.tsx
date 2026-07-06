@@ -17,7 +17,7 @@
  * - Toggling a model calls `onSelectedModelsChange` with the updated set.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/i18n', () => ({
@@ -127,6 +127,69 @@ describe('SyncModelsSection', () => {
         expect(
             screen.getByText('admin-ai.credentials.syncModels.summary::{"detected":3,"new":2}')
         ).toBeInTheDocument();
+    });
+
+    it('defaults newly-detected models to OFF while keeping previously-enabled models ON (HOS-94 owner adjustment)', () => {
+        // `gpt-4o` was already enabled before this sync (via baseProps.selectedModels).
+        // `gpt-4o-mini` (curated-only) and `gpt-5-preview` (detected-only) were never
+        // enabled and must stay OFF even though the sync surfaces them.
+        const syncResult: AiSyncModelsResult = {
+            providerId: 'openai',
+            fetchedAt: new Date().toISOString(),
+            models: [
+                { id: 'gpt-4o', source: 'both' },
+                { id: 'gpt-4o-mini', source: 'curated' },
+                { id: 'gpt-5-preview', source: 'detected' }
+            ]
+        };
+        mockUseSyncModelsMutation.mockReturnValue(buildMutationMock({ data: syncResult }));
+
+        render(
+            <SyncModelsSection
+                {...baseProps}
+                selectedModels={['gpt-4o']}
+            />
+        );
+
+        const enabledRow = screen.getByText('gpt-4o').closest('div.rounded-md') as HTMLElement;
+        const curatedOnlyRow = screen
+            .getByText('gpt-4o-mini')
+            .closest('div.rounded-md') as HTMLElement;
+        const detectedOnlyRow = screen
+            .getByText('gpt-5-preview')
+            .closest('div.rounded-md') as HTMLElement;
+
+        expect(within(enabledRow).getByRole('switch')).toBeChecked();
+        expect(within(curatedOnlyRow).getByRole('switch')).not.toBeChecked();
+        expect(within(detectedOnlyRow).getByRole('switch')).not.toBeChecked();
+    });
+
+    it('turning on a newly-detected model after sync calls onSelectedModelsChange with it added', () => {
+        const syncResult: AiSyncModelsResult = {
+            providerId: 'openai',
+            fetchedAt: new Date().toISOString(),
+            models: [
+                { id: 'gpt-4o', source: 'both' },
+                { id: 'gpt-5-preview', source: 'detected' }
+            ]
+        };
+        mockUseSyncModelsMutation.mockReturnValue(buildMutationMock({ data: syncResult }));
+        const onSelectedModelsChange = vi.fn();
+
+        render(
+            <SyncModelsSection
+                {...baseProps}
+                selectedModels={['gpt-4o']}
+                onSelectedModelsChange={onSelectedModelsChange}
+            />
+        );
+
+        const detectedRow = screen
+            .getByText('gpt-5-preview')
+            .closest('div.rounded-md') as HTMLElement;
+        fireEvent.click(within(detectedRow).getByRole('switch'));
+
+        expect(onSelectedModelsChange).toHaveBeenCalledWith(['gpt-4o', 'gpt-5-preview']);
     });
 
     it('shows the empty state when the sync result has no models', () => {

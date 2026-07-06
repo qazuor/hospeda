@@ -9,6 +9,7 @@
  * to 3 providers max.
  */
 
+import { useTranslations } from '@repo/i18n';
 import { AddIcon, AlertCircleIcon, DeleteIcon, EditIcon, LoaderIcon } from '@repo/icons';
 import { getKnownProvider, KNOWN_PROVIDERS } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -499,15 +500,19 @@ function RotateCredentialDialog({
 }
 
 /** Edit credential metadata dialog. */
-function EditCredentialDialog({ credential }: { readonly credential: AiCredentialMasked }) {
+export function EditCredentialDialog({ credential }: { readonly credential: AiCredentialMasked }) {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const updateMutation = useUpdateAiCredentialMutation();
+    const rotateMutation = useRotateAiCredentialMutation();
     const [open, setOpen] = useState(false);
     const [label, setLabel] = useState('');
     const [baseURL, setBaseURL] = useState('');
     const [selectedModels, setSelectedModels] = useState<string[]>([]);
+    const [newApiKey, setNewApiKey] = useState('');
 
     const known = getKnownProvider(credential.providerId);
+    const isSaving = updateMutation.isPending || rotateMutation.isPending;
 
     // Pre-fill from credential metadata when dialog opens
     const handleOpenChange = (nextOpen: boolean) => {
@@ -517,11 +522,26 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
             const meta = credential.metadata ?? {};
             setBaseURL(typeof meta.baseURL === 'string' ? meta.baseURL : '');
             setSelectedModels(Array.isArray(meta.models) ? (meta.models as string[]) : []);
+            setNewApiKey('');
         }
     };
 
     const handleSubmit = async () => {
         try {
+            const trimmedNewKey = newApiKey.trim();
+
+            // Rotate first (if requested), then persist label/metadata. The two
+            // mutations touch disjoint columns (ciphertext vs. label/metadata),
+            // so there is no write conflict either way — rotating first just
+            // means a failed metadata save never leaves the operator believing
+            // the key change also failed.
+            if (trimmedNewKey) {
+                await rotateMutation.mutateAsync({
+                    providerId: credential.providerId,
+                    payload: { newPlaintextKey: trimmedNewKey }
+                });
+            }
+
             const metadata: Record<string, unknown> = {};
             if (baseURL) metadata.baseURL = baseURL;
             if (selectedModels.length > 0) metadata.models = selectedModels;
@@ -539,6 +559,7 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
                 variant: 'success'
             });
             setOpen(false);
+            setNewApiKey('');
         } catch (err) {
             addToast({
                 title: 'Error al actualizar',
@@ -567,8 +588,7 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
                 <DialogHeader>
                     <DialogTitle>Editar — {getProviderLabel(credential.providerId)}</DialogTitle>
                     <DialogDescription>
-                        Actualizá la etiqueta y los modelos habilitados. La clave API no se
-                        modifica.
+                        {t('admin-ai.credentials.edit.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -596,6 +616,24 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
                         />
                     </div>
 
+                    {/* New API key (optional) — HOS-94 owner follow-up */}
+                    <div>
+                        <Label htmlFor={`edit-api-key-${credential.providerId}`}>
+                            {t('admin-ai.credentials.edit.newApiKeyLabel')}
+                        </Label>
+                        <Input
+                            id={`edit-api-key-${credential.providerId}`}
+                            type="password"
+                            value={newApiKey}
+                            onChange={(e) => setNewApiKey(e.target.value)}
+                            placeholder={known?.apiKeyPlaceholder ?? 'sk-...'}
+                            className="mt-2"
+                        />
+                        <p className="mt-1 text-muted-foreground text-xs">
+                            {t('admin-ai.credentials.edit.newApiKeyHint')}
+                        </p>
+                    </div>
+
                     {/* Model selector — sync + curated/detected/both list (HOS-94) */}
                     {known && (
                         <SyncModelsSection
@@ -610,17 +648,15 @@ function EditCredentialDialog({ credential }: { readonly credential: AiCredentia
                     <Button
                         variant="outline"
                         onClick={() => setOpen(false)}
-                        disabled={updateMutation.isPending}
+                        disabled={isSaving}
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={updateMutation.isPending}
+                        disabled={isSaving}
                     >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                        )}
+                        {isSaving && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
                         Guardar
                     </Button>
                 </DialogFooter>

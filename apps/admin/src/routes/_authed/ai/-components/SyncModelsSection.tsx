@@ -326,6 +326,17 @@ export function SyncModelsSection({
             )}
 
             <div className="grid gap-2">
+                {/*
+                 * Sync-detected models default to DISABLED (owner adjustment,
+                 * HOS-94 follow-up): `enabled` is derived ONLY from the
+                 * pre-existing `selectedModels` set, which a sync call never
+                 * mutates. A newly-detected id (not previously in
+                 * `selectedModels`) therefore always renders OFF; an id the
+                 * operator already had enabled stays ON as long as it's still
+                 * present in the merged result. Never auto-add a synced id to
+                 * `selectedModels` here — that would silently opt the
+                 * credential into models the operator never reviewed.
+                 */}
                 {mergedModels
                     ? mergedModels.map((model) => (
                           <ModelRow
