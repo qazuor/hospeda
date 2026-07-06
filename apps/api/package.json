@@ -28,7 +28,7 @@
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.4",
-        "@hono/node-server": "^1.19.10",
+        "@hono/node-server": "^2.0.6",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.4.0",
         "@linear/sdk": "^87.0.0",
