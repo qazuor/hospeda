@@ -57,10 +57,6 @@ updates:
     #   - zod: 4.4 made `.merge()` throw on object schemas containing refinements
     #     (use `.safeExtend()`), breaking apps/admin env cross-validation and
     #     cascading into E2E. Owner: SPEC-132 (Zod 4 migration).
-    #   - @react-email/render: 2.0.4 -> 2.0.9 breaks
-    #     packages/email/test/templates/verify-email.test.tsx. Lift when the
-    #     react-email render bump is taken on with its template snapshots.
-    #     Owner: HOS-61.
     #   - jsdom: 26 -> 29 changes the accessible-name computation (whitespace
     #     concatenation), so role+name queries like DestinationReviewSidebarCard
     #     stop matching. Dev-only (test env; real browsers unaffected). Lift
@@ -88,7 +84,6 @@ updates:
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
-      - dependency-name: '@react-email/render'
       - dependency-name: 'jsdom'
       - dependency-name: '@tanstack/react-form'
       - dependency-name: 'expo'

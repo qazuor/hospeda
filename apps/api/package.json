@@ -36,7 +36,7 @@
         "@qazuor/qzpay-hono": "^1.6.1",
         "@qazuor/qzpay-mercadopago": "^2.2.1",
         "@react-email/components": "^1.0.12",
-        "@react-email/render": "^2.0.4",
+        "@react-email/render": "^2.0.10",
         "@repo/ai-core": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
