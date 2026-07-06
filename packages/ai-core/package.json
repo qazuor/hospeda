@@ -39,7 +39,7 @@
         "@ai-sdk/openai": "^3.0.67",
         "@repo/db": "workspace:*",
         "@repo/schemas": "workspace:*",
-        "ai": "^6.0.196",
+        "ai": "^7.0.4",
         "zod": "^4.0.8"
     }
 }
