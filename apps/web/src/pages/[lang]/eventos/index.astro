@@ -46,6 +46,7 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import TagChips from '@/components/TagChips.astro';
+import { getEventCategoryIconComponent } from '@/components/shared/cards/utils/eventCategoryIcon';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import {
     buildEventListingSummary,
@@ -399,7 +400,11 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
         params.set('category', value);
     }
     const qs = params.toString();
-    return { label, href: qs ? `${baseUrl}?${qs}` : baseUrl, active: isActive };
+    // BETA-113 (icon parity): reuse the same category → icon mapping the
+    // event cards already use, so a category shows the identical icon on its
+    // card and in this quick-filter chip.
+    const icon = getEventCategoryIconComponent(value);
+    return { label, href: qs ? `${baseUrl}?${qs}` : baseUrl, active: isActive, icon };
 });
 
 // ItemList JSON-LD entries — the visible page of event cards, routed through

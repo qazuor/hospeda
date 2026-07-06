@@ -42,6 +42,10 @@ describe('TagChips.astro', () => {
         it('defines readonly href property', () => {
             expect(src).toContain('readonly href: string');
         });
+
+        it('defines an optional readonly icon property (BETA-113 icon parity)', () => {
+            expect(src).toContain('readonly icon?: ComponentType<IconProps>');
+        });
     });
 
     describe('accessible markup', () => {
@@ -181,6 +185,34 @@ describe('TagChips.astro', () => {
 
         it('is idempotent per list via a fadeInit guard', () => {
             expect(src).toContain('dataset.fadeInit');
+        });
+    });
+
+    describe('BETA-113 — optional leading icon (icon parity across quick-filter chips)', () => {
+        it('destructures an optional icon as a component reference (`icon: Icon`)', () => {
+            expect(src).toContain('icon: Icon');
+        });
+
+        it('renders the icon conditionally, only when provided', () => {
+            expect(src).toMatch(/\{Icon\s*&&\s*\(/);
+        });
+
+        it('renders the icon inside a dedicated wrapper span marked aria-hidden', () => {
+            expect(src).toContain('tag-chips__chip-icon');
+            expect(src).toMatch(/tag-chips__chip-icon[\s\S]*?aria-hidden="true"/);
+        });
+
+        it('renders the icon at 14px, matching the destinos attraction-filter chip icon size', () => {
+            expect(src).toMatch(/<Icon\s+size=\{14\}/);
+        });
+
+        it('adds a gap between icon and label on the chip (no gap regression when icon is absent)', () => {
+            expect(src).toMatch(/\.tag-chips__chip\s*\{[^}]*gap:\s*0\.375rem/);
+        });
+
+        it('imports ComponentType and IconProps for the icon prop type', () => {
+            expect(src).toContain("import type { ComponentType } from 'react'");
+            expect(src).toContain("import type { IconProps } from '@repo/icons'");
         });
     });
 });

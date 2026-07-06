@@ -78,7 +78,7 @@ describe('AccommodationTypeBadge.astro', () => {
     });
 
     describe('rendering', () => {
-        it('renders the leading icon resolved from the type', () => {
+        it('renders the leading icon resolved from the type (decorative span variant)', () => {
             expect(src).toMatch(/<Icon\s+size=\{iconSize\}/);
             expect(src).toContain('weight="bold"');
         });
@@ -143,6 +143,59 @@ describe('AccommodationTypeBadge.astro', () => {
     describe('a11y / motion', () => {
         it('disables transitions under prefers-reduced-motion', () => {
             expect(src).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*?transition:\s*none/);
+        });
+    });
+
+    describe('BETA-113 — quick-filter chip visual unification (interactive anchor variant)', () => {
+        it('restores the leading per-type icon in the interactive anchor branch (owner decision: icon on every chip)', () => {
+            // The anchor branch (href ? ( <a> ... </a> )) must render both the
+            // <Icon> and the label span, same as the decorative span branch.
+            // Slice the source between the two branch markers to assert on the
+            // anchor branch in isolation.
+            const anchorBranchStart = src.indexOf('href ? (');
+            const anchorBranchEnd = src.indexOf(') : (');
+            expect(anchorBranchStart).toBeGreaterThan(-1);
+            expect(anchorBranchEnd).toBeGreaterThan(anchorBranchStart);
+            const anchorBranch = src.slice(anchorBranchStart, anchorBranchEnd);
+            expect(anchorBranch).toContain('<Icon');
+            expect(anchorBranch).toContain('acc-type-badge__label');
+        });
+
+        it('uses the canonical size (font-size + padding) for the anchor variant, matching TagChips/destinos', () => {
+            expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*font-size:\s*var\(--text-body-sm\)/);
+            expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*padding:\s*6px 16px/);
+        });
+
+        it('uses the canonical neutral --core-card surface at rest for the anchor variant', () => {
+            expect(src).toMatch(
+                /a\.acc-type-badge\s*\{[^}]*background-color:\s*var\(--core-card\)/
+            );
+        });
+
+        it('uses a subtle --border token for the anchor variant (not the solid brand-primary pill)', () => {
+            expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*border:\s*1px solid var\(--border/);
+        });
+
+        it('uses the canonical solid --brand-accent surface on hover for the anchor variant', () => {
+            expect(src).toMatch(
+                /a\.acc-type-badge:hover\s*\{[^}]*background-color:\s*var\(--brand-accent\)/
+            );
+            expect(src).toMatch(
+                /a\.acc-type-badge:hover\s*\{[^}]*color:\s*var\(--accent-foreground/
+            );
+        });
+
+        it('drops the uppercase/bold decorative treatment for the anchor variant', () => {
+            expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*text-transform:\s*none/);
+            expect(src).toMatch(/a\.acc-type-badge\s*\{[^}]*font-weight:\s*500/);
+        });
+
+        it('keeps the decorative span variant on the brand-primary-dark surface (unchanged)', () => {
+            // Regression guard: only the interactive anchor variant changed —
+            // the decorative card/detail-header badge keeps its original look.
+            expect(src).toMatch(
+                /^\s*\.acc-type-badge\s*\{[^}]*background-color:\s*var\(--brand-primary-dark\)/m
+            );
         });
     });
 });
