@@ -5,11 +5,12 @@
  * All routes require `AI_SETTINGS_MANAGE` permission (SUPER_ADMIN-only).
  *
  * Routes:
- * - GET  /                      — paginated list of masked credentials
- * - POST /                      — create (encrypt + store) a new credential
- * - POST /{providerId}/rotate   — rotate an existing credential in-place
- * - PATCH /{providerId}         — update label and metadata (no key change)
- * - DELETE /{providerId}        — soft-delete an existing credential
+ * - GET  /                          — paginated list of masked credentials
+ * - POST /                          — create (encrypt + store) a new credential
+ * - POST /{providerId}/rotate       — rotate an existing credential in-place
+ * - POST /{providerId}/sync-models  — detect + merge the provider's model catalog (HOS-94)
+ * - PATCH /{providerId}             — update label and metadata (no key change)
+ * - DELETE /{providerId}            — soft-delete an existing credential
  *
  * SECURITY: plaintext keys, ciphertext, IV, and authTag NEVER appear in any
  * response.  Only the masked subset (`id`, `providerId`, `label`, `metadata`,
@@ -24,6 +25,7 @@ import {
     AiCredentialMutationResultSchema,
     AiCredentialRotateInputSchema,
     AiCredentialUpdateInputSchema,
+    AiSyncModelsResultSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -36,6 +38,7 @@ import {
     rotateAiProviderCredential,
     updateCredentialMetadata
 } from '../../../services/ai-credential-vault.service.js';
+import { syncAiProviderModels } from '../../../services/ai-sync-models.service.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { createRouter } from '../../../utils/create-app.js';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination.js';
@@ -179,6 +182,47 @@ const rotateCredentialRoute = createAdminRoute({
 });
 
 /**
+ * POST /api/v1/admin/ai/credentials/{providerId}/sync-models
+ * Detects the models available to the provider's stored credential (HOS-94).
+ *
+ * Decrypts the active credential, calls the provider's live list-models
+ * endpoint, filters the raw response to chat/text-capable models, and merges
+ * it with the curated `KNOWN_PROVIDERS` catalog. The result is annotated by
+ * `source` ('detected' | 'curated' | 'both') and is purely informational: it
+ * is NEVER persisted here (OQ-3 — ephemeral by design). The operator still
+ * confirms which models to enable via the existing `PATCH /{providerId}` route.
+ *
+ * Action-POST (not GET) because it triggers a live, outbound, side-effecting
+ * provider call with a cost/rate-limit footprint and must not be cached.
+ */
+const syncModelsRoute = createAdminRoute({
+    method: 'post',
+    path: '/{providerId}/sync-models',
+    summary: 'Sync AI provider models',
+    description:
+        "Decrypts the provider's active credential, calls its live list-models " +
+        'endpoint, filters the response to chat/text-capable models, and merges it ' +
+        'with the curated KNOWN_PROVIDERS catalog (annotated by source: detected, ' +
+        'curated, or both). Ephemeral — does not write metadata.models; confirm the ' +
+        'enabled set via PATCH /{providerId}. Requires AI_SETTINGS_MANAGE permission.',
+    tags: ['AI Credentials'],
+    requiredPermissions: [PermissionEnum.AI_SETTINGS_MANAGE],
+    requestParams: { providerId: z.string().min(1) },
+    responseSchema: AiSyncModelsResultSchema,
+    handler: async (_c, params) => {
+        const providerId = params.providerId as string;
+
+        const result = await syncAiProviderModels({ providerId });
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data;
+    }
+});
+
+/**
  * PATCH /api/v1/admin/ai/credentials/{providerId}
  * Updates non-sensitive metadata (label, models, baseURL) for an existing credential.
  */
@@ -257,6 +301,7 @@ const app = createRouter();
 app.route('/', listCredentialsRoute);
 app.route('/', createCredentialRoute);
 app.route('/', rotateCredentialRoute);
+app.route('/', syncModelsRoute);
 app.route('/', updateCredentialRoute);
 app.route('/', deleteCredentialRoute);
 

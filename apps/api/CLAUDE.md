@@ -723,6 +723,64 @@ type you must (1) add a variant to the enum in `@repo/schemas`, (2) widen
 the exact enum option set and fails if it grows). That guard exists precisely to
 turn silent scope creep into a deliberate, reviewed change.
 
+## AI credential model-sync (HOS-94)
+
+The admin AI-credentials router (`ai/credentials/index.ts`) can auto-detect
+which models a stored provider credential has access to, instead of relying
+only on the hardcoded `KNOWN_PROVIDERS` catalog in `apps/admin`.
+
+### `POST /api/v1/admin/ai/credentials/{providerId}/sync-models`
+
+Gated by `adminAuthMiddleware([AI_SETTINGS_MANAGE])` only — staff bypass
+entitlements (INV-6), so there is no billing gate; see the row in
+[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+Orchestrated by `ai-sync-models.service.ts::syncAiProviderModels()`: decrypt
+(`getDecryptedAiProviderCredential` plus a direct `metadata.baseURL` read,
+since the vault's decrypt result omits metadata) → fetch
+(`listProviderModels` from `@repo/ai-core`) → filter
+(`ai-sync-models.filter.ts`, chat-capability classifier) → merge
+(`ai-sync-models.merge.ts`, detected ∪ curated `KNOWN_PROVIDERS`, each entry
+annotated `source: 'detected' | 'curated' | 'both'`).
+
+- **Ephemeral, never persisted** (OQ-3): the endpoint never writes
+  `metadata.models`. The operator reviews the returned suggestion list and
+  confirms the enabled subset through the existing
+  `PATCH /api/v1/admin/ai/credentials/{providerId}` route, unchanged.
+- **Bad/expired key** → the fetcher throws `ListModelsAuthError`, mapped to a
+  `VALIDATION_ERROR` / HTTP 400 (actionable, not retryable — operator must
+  fix/rotate the credential). Rate limit / provider outage → HTTP 503
+  (`SERVICE_UNAVAILABLE`, retryable). No credential configured for the
+  provider → HTTP 404.
+- **Fail-open auto-sync on create/rotate** (OQ-2): `createAiProviderCredential`
+  and `rotateAiProviderCredential` (`ai-credential-vault.service.ts`) both call
+  `syncAiProviderModels()` automatically after their own transaction commits,
+  purely to validate the key against the live provider — it does **not**
+  pre-enable any detected model, and `metadata.models` is never written by
+  this path. Any error is swallowed into a single `apiLogger.warn` and never
+  propagates, so a bad key or a down provider never blocks the credential
+  save itself.
+- **Detected models arrive OFF by default.** A sync call only refreshes the
+  suggestion pool; nothing in a sync result is auto-added to a credential's
+  enabled `metadata.models` (NG-4). An id already enabled before the sync
+  stays enabled if still present in the merged result.
+- **Denylist hides non-chat families**: embeddings, whisper/STT, TTS,
+  dall-e/image, moderation, deprecated markers, realtime/audio, code-only,
+  web-search-augmented, and deep-research variants are excluded from the
+  suggestion list entirely (`DENYLIST_PATTERNS` in `ai-sync-models.filter.ts`).
+  Anything not confidently classified is kept and flagged `uncertain: true`
+  instead of being silently dropped (OQ-1).
+- **Re-sync auto-deselects now-denylisted models**: the result's
+  `hiddenModelIds` lists every raw id the denylist just excluded; the admin
+  UI (`SyncModelsSection`) removes any of those ids that were previously
+  enabled from the operator's selection automatically. A hand-typed custom id
+  the provider API never returned is never in `hiddenModelIds`, so custom
+  additions are always preserved untouched.
+- **No new env var, no DB migration** — the enabled list still lives in
+  `ai_provider_credentials.metadata.models` exactly as before this feature.
+
+See [`.specs/HOS-94-auto-detect-provider-models/spec.md`](../../.specs/HOS-94-auto-detect-provider-models/spec.md)
+for the full design record (OQ-1..OQ-5 resolutions, AC-1..AC-7).
+
 ## Related Documentation
 
 - [Adding API Routes](docs/development/creating-endpoints.md)

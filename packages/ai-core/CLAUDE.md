@@ -85,6 +85,50 @@ sub-modules is tracked as follow-up work.
 
 ---
 
+## Standalone list-models fetcher (HOS-94)
+
+`src/providers/list-models.ts` exports `listProviderModels()` — a plain-`fetch`
+per-provider model-list dispatcher used by the admin "Sync models" endpoint to
+auto-detect which models a stored credential has access to.
+
+- **Deliberately SDK-free** (spec OQ-4, resolved to option (b)): it is NOT a
+  method on the `AiProvider` interface and never touches the Vercel AI SDK
+  adapters. This was an explicit owner decision to avoid overlap with HOS-88
+  (the AI SDK v3/v4 gate, which edits `vercel-openai.adapter.ts`) — the
+  fetcher and the generate/stream adapters are now two fully independent
+  surfaces with zero shared files.
+- **Lives in `src/providers/` but is exempt from the AI-SDK isolation rule by
+  construction, not by allowlist**: the HARD RULES table above permits `ai` /
+  `@ai-sdk/*` imports in this directory, but this file uses neither.
+  `test/ac4-isolation-guard.test.ts` has a dedicated `describe('HOS-94
+  list-models.ts stays SDK-free', ...)` block that asserts zero `ai` /
+  `@ai-sdk/*`, `process.env`, and `@repo/db` references in this specific file —
+  a stricter, file-scoped check on top of the directory-level rule, so it can
+  never silently regress into an SDK dependency.
+- **Per-provider convention** (`resolveProviderFamily(providerId)` dispatches
+  to one of four fetchers):
+  - `openai-compatible` (OpenAI plus any `baseURL`-driven compatible provider —
+    Groq, DeepSeek, Together, Mistral, ...): `GET {baseURL ?? api.openai.com/v1}/models`,
+    `Authorization: Bearer <key>`.
+  - `anthropic`: `GET https://api.anthropic.com/v1/models`, `x-api-key` +
+    `anthropic-version` headers. Does not accept a custom `baseURL`.
+  - `gemini`: `GET https://generativelanguage.googleapis.com/v1beta/models?key=<key>`;
+    strips the `models/` prefix from each returned name.
+  - `ollama`: `GET {baseURL}/api/tags` — `baseURL` is REQUIRED (Ollama has no
+    hosted default).
+- **Keep the adapter dumb**: filtering the raw ids to chat-capable models,
+  merging with the curated `KNOWN_PROVIDERS` catalog, and persisting the
+  operator's confirmed selection all live in `apps/api`
+  (`ai-sync-models.filter.ts`, `.merge.ts`, `.service.ts`) — this module
+  returns raw model ids only.
+- **Errors** are typed subclasses of `ListModelsError`
+  (`ListModelsAuthError`, `ListModelsRateLimitError`, `ListModelsUpstreamError`,
+  `ListModelsUnsupportedProviderError`), each carrying `providerId` plus a
+  stable machine-readable `code`. Per R-5, the API key never appears in any
+  thrown error message.
+
+---
+
 ## Testing conventions
 
 - Framework: Vitest
