@@ -5,10 +5,24 @@
  * across listing cards, detail headers, and any other UI surface that needs
  * to communicate accommodation type.
  *
- * The pill ships with a small leading icon (resolved via
- * `getAccommodationTypeIcon`) followed by an i18n label
- * (`getAccommodationTypeLabel`). All pills use the brand-primary surface so
- * the row reads as a unified filter chip group rather than a colour parade.
+ * The DECORATIVE variant (no `href`, rendered as a `<span>`) ships with a
+ * small leading icon (resolved via `getAccommodationTypeIcon`) followed by an
+ * i18n label (`getAccommodationTypeLabel`), on the brand-primary surface.
+ *
+ * The INTERACTIVE variant (`href` provided, rendered as an `<a>`) is the
+ * accommodation quick-filter chip used above the /alojamientos/ listing and
+ * the homepage featured-accommodations row. Per BETA-113 (visual
+ * unification of every quick-filter chip row across the app — see
+ * `dest-attractions-filter__badge` in destinos/index.astro and
+ * `tag-chips__chip` in TagChips.astro for the other two surfaces that share
+ * this canonical look), this variant uses the canonical neutral-rest /
+ * brand-accent-hover treatment (instead of the solid brand-primary pill) at
+ * the SAME size/font as the other two surfaces (`--text-body-sm` / `6px
+ * 16px`, overriding the decorative variant's own `--acc-type-font-size` /
+ * `--acc-type-padding` tokens), and keeps its own per-type leading icon
+ * (owner decision: every quick-filter chip gets an icon — "icono en
+ * todos"). Only the interactive anchor variant changed; the decorative span
+ * variant (cards, detail headers) is untouched.
  *
  * The component exposes `--acc-type-padding` and `--acc-type-font-size` CSS
  * custom properties so ancestor scopes (e.g. the wave-header compact mode)
@@ -51,7 +65,7 @@ const iconSize = size === 'xs' ? 14 : 16;
 
 {href ? (
     <a class:list={classList} href={href}>
-        <Icon size={iconSize} weight="bold" aria-hidden="true" />
+        <Icon size={14} weight="regular" aria-hidden="true" />
         <span class="acc-type-badge__label">{label}</span>
     </a>
 ) : (
@@ -105,29 +119,41 @@ const iconSize = size === 'xs' ? 14 : 16;
      * `display: inline-flex` + `min-height` only when actionable, so the
      * decorative span variant keeps hugging its content.
      *
-     * Default surface is the lighter --brand-primary so the filter chip
-     * row reads as quieter; hover/focus drops to --brand-primary-dark
-     * (the same shade the decorative card variant uses) for a clear
-     * "press me" affordance. */
+     * BETA-113 canonical quick-filter chip: neutral --core-card surface at
+     * rest (like the `dest-attractions-filter__badge` and `tag-chips__chip`
+     * treatments on the other two listing surfaces), solid --brand-accent on
+     * hover. Overrides the decorative base rule's uppercase/bold/box-shadow
+     * treatment since a "chip" reads differently from a static type label. */
     a.acc-type-badge {
-        background-color: var(--brand-primary-lp10);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        border: 1px solid var(--border, var(--brand-primary-a25));
+        text-transform: none;
+        font-weight: 500;
+        letter-spacing: normal;
+        box-shadow: none;
+        /* Canonical quick-filter chip size — matches tag-chips__chip and
+         * dest-attractions-filter__badge exactly. Overrides the decorative
+         * variant's --acc-type-font-size / --acc-type-padding (0.7rem / 4px
+         * 14px for size=sm), which stay in effect for the decorative span. */
+        font-size: var(--text-body-sm);
+        padding: 6px 16px;
         text-decoration: none;
         cursor: pointer;
         min-height: 32px;
         transition:
             transform 200ms ease-out,
-            filter 200ms ease-out,
-            box-shadow 200ms ease-out,
+            background-color var(--duration-normal, 0.4s) ease,
+            color var(--duration-normal, 0.4s) ease,
+            border-color var(--duration-normal, 0.4s) ease,
             padding 0.3s ease,
-            font-size 0.3s ease,
-            background-color 0.2s ease;
+            font-size 0.3s ease;
     }
     a.acc-type-badge:hover {
         transform: translateY(-1px);
-        background-color: var(--brand-primary-dark);
-        box-shadow:
-            0 2px 4px oklch(0 0 0 / 0.1),
-            0 4px 10px oklch(0 0 0 / 0.08);
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground, #fff);
+        border-color: var(--brand-accent);
     }
     a.acc-type-badge:focus-visible {
         outline: 2px solid var(--brand-accent);

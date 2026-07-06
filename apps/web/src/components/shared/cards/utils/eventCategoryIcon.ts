@@ -7,7 +7,35 @@
  * The map is keyed by the normalised lowercase category slug. Aliases (e.g.
  * "culture" → "cultural") are included so callers do not need to normalise
  * before looking up.
+ *
+ * BETA-113 (icon parity follow-up): {@link getEventCategoryIconComponent}
+ * resolves a category directly to its icon COMPONENT reference (not just the
+ * name), for callers that render it dynamically (`const Icon = ...; <Icon
+ * />`) instead of the `===` branch-chain used by the two event card
+ * components above. Used by the eventos/index.astro quick-filter chip row —
+ * this map is more complete than `@repo/icons`' own `getEventCategoryIcon`
+ * (it additionally covers `theater`, which that domain map falls back to a
+ * generic icon for), and reusing it here means the SAME icon shows on an
+ * event card and in its category filter chip.
  */
+
+import {
+    AmphitheaterIcon,
+    BallroomIcon,
+    BooksAndMagazinesIcon,
+    CulturalCenterIcon,
+    EventIcon,
+    FestivalPlazaIcon,
+    type IconProps,
+    MuseumIcon,
+    NatureReserveIcon,
+    RestaurantIcon,
+    SportsCenterIcon,
+    UsersIcon,
+    WellnessCenterIcon,
+    WorkshopSpaceIcon
+} from '@repo/icons';
+import type { ComponentType } from 'react';
 
 /**
  * Union of icon component names available for event categories.
@@ -27,6 +55,29 @@ export type EventCategoryIconName =
     | 'WorkshopSpaceIcon'
     | 'BooksAndMagazinesIcon'
     | 'EventIcon';
+
+/**
+ * Name → component lookup backing {@link getEventCategoryIconComponent}.
+ * Kept private to this module — callers that need the name string alone
+ * should use {@link getEventCategoryIconName}.
+ */
+const EVENT_CATEGORY_ICON_COMPONENTS: Readonly<
+    Record<EventCategoryIconName, ComponentType<IconProps>>
+> = {
+    BallroomIcon,
+    SportsCenterIcon,
+    CulturalCenterIcon,
+    RestaurantIcon,
+    FestivalPlazaIcon,
+    WellnessCenterIcon,
+    MuseumIcon,
+    UsersIcon,
+    NatureReserveIcon,
+    AmphitheaterIcon,
+    WorkshopSpaceIcon,
+    BooksAndMagazinesIcon,
+    EventIcon
+};
 
 /**
  * Mapping from normalised (lowercase) category slug to icon name.
@@ -80,6 +131,25 @@ export const EVENT_CATEGORY_ICON_MAP: Readonly<Record<string, EventCategoryIconN
  */
 export function getEventCategoryIconName(category: string): EventCategoryIconName {
     return EVENT_CATEGORY_ICON_MAP[category.toLowerCase()] ?? 'EventIcon';
+}
+
+/**
+ * Resolve the actual icon COMPONENT (not just its name) for a given event
+ * category, for callers that render it dynamically via a variable JSX tag
+ * (`const Icon = getEventCategoryIconComponent(category); <Icon />`) — the
+ * same pattern already used by `AccommodationTypeBadge.astro` and the
+ * destinos attraction filter's `getAttractionIcon`.
+ *
+ * @param category - Raw category string (case-insensitive).
+ * @returns The matching icon component from `@repo/icons`.
+ *
+ * @example
+ * ```ts
+ * const Icon = getEventCategoryIconComponent('MUSIC'); // BallroomIcon
+ * ```
+ */
+export function getEventCategoryIconComponent(category: string): ComponentType<IconProps> {
+    return EVENT_CATEGORY_ICON_COMPONENTS[getEventCategoryIconName(category)];
 }
 
 /**
