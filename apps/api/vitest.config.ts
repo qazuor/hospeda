@@ -1,19 +1,25 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+// Pin NODE_ENV=test authoritatively for the whole run. A developer's
+// apps/api/.env.local carries NODE_ENV=development, which src/utils/logger.ts and
+// src/utils/env.ts eagerly dotenv-load at import time (during test collection).
+// This config module is evaluated in Vitest's MAIN process before the `forks`
+// pool spawns workers, so the workers inherit NODE_ENV=test at birth; the later
+// dotenv loads run WITHOUT override and therefore cannot clobber it, and
+// resolveEnvironment() (packages/media) resolves to 'test' locally as it already
+// does in CI (no .env.local there).
+//
+// NOTE: this MUST be a direct process.env mutation, not the vitest `test.env`
+// block. As of Vitest 4 (HOS-28), `test.env` writes ONLY to import.meta.env and
+// no longer patches process.env, so the old `env: { NODE_ENV: 'test' }` block was
+// an inert no-op for runtime helpers that read process.env.NODE_ENV.
+process.env.NODE_ENV = 'test';
+
 export default defineConfig({
     test: {
         globals: true,
         environment: 'node',
-        // Pin NODE_ENV=test authoritatively (mirrors vitest.config.e2e.ts). A
-        // developer's apps/api/.env.local carries NODE_ENV=development, which
-        // src/utils/logger.ts eagerly dotenv-loads at import time; this env block
-        // is applied by vitest before those imports run, so runtime helpers like
-        // resolveEnvironment() (packages/media) resolve to 'test' locally as they
-        // already do in CI (no .env.local there).
-        env: {
-            NODE_ENV: 'test'
-        },
         setupFiles: ['./test/setup.ts'],
         // Default 5s is too tight under parallel load (3 forks + concurrent monorepo
         // packages). A handful of tests cold-import and instantiate Hono apps. 15s held
