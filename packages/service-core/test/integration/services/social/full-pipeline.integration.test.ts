@@ -5,11 +5,9 @@
  * database, with external HTTP calls (Make.com webhook) mocked at the `fetch`
  * boundary so no real network traffic occurs.
  *
- * NOTE: `dispatchTarget` now uses a synchronous Make.com Webhook Response model:
+ * NOTE: `dispatchTarget` uses a synchronous Make.com Webhook Response model:
  * Make.com returns `{ status: 'SUCCESS', ... }` in the same HTTP round-trip,
  * and the target is immediately set to PUBLISHED (no PUBLISHING intermediate state).
- * Tests that exercise the legacy callback methods (`handleMakeCallbackClaim`,
- * `handleMakeCallbackResult`) seed the PUBLISHING state directly via SQL.
  *
  *   Scenario A — ONCE recurrence (happy path):
  *     1. ingestDraft (no image pipeline) → post NEEDS_REVIEW / PENDING
@@ -17,13 +15,6 @@
  *     3. markReady → READY_TO_PUBLISH
  *     4. findEligibleTargets → the target appears in the eligible list
  *     5. dispatchTarget (fetch mocked → Make SUCCESS) → target=PUBLISHED; publish_log SUCCESS
- *     6. handleMakeCallbackClaim (legacy) → tested with SQL-seeded PUBLISHING state
- *     7. handleMakeCallbackResult SUCCESS (legacy) → tested with SQL-seeded PUBLISHING state
- *
- *   Scenario B — WEEKLY recurrence:
- *     After a successful result callback, the cascade rearms the post:
- *     post.status reset to APPROVED, next_run_at = next weekly occurrence,
- *     all targets reset to APPROVED with retry_count=0.
  *
  * The image pipeline (Cloudinary upload) is bypassed by constructing
  * `SocialDraftIngestionService` without an `imagePipeline` argument so
@@ -48,17 +39,13 @@ import type { CreateSocialDraft } from '@repo/schemas';
 import {
     PermissionEnum,
     RoleEnum,
-    SocialApprovalStatusEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialPublishFormatEnum,
     SocialPublishResultStatusEnum
 } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    SocialAuditEvent,
-    SocialAuditLogService
-} from '../../../../src/services/social/social-audit-log.service';
+import { SocialAuditLogService } from '../../../../src/services/social/social-audit-log.service';
 import { SocialDraftIngestionService } from '../../../../src/services/social/social-draft-ingestion.service';
 import { SocialPostService } from '../../../../src/services/social/social-post.service';
 import { SocialPublishDispatchService } from '../../../../src/services/social/social-publish-dispatch.service';
@@ -217,24 +204,6 @@ function buildDraftPayload(): CreateSocialDraft {
             }
         ]
     };
-}
-
-/**
- * Queries `social_audit_log` for rows matching the given entity and event type.
- */
-async function queryAuditRows(
-    tx: DrizzleClient,
-    entityId: string,
-    eventType: string
-): Promise<ReadonlyArray<{ event_type: string; entity_id: string }>> {
-    const result = await tx.execute<{ event_type: string; entity_id: string }>(sql`
-        SELECT event_type, entity_id
-        FROM social_audit_log
-        WHERE entity_id = ${entityId}
-          AND event_type = ${eventType}
-        ORDER BY created_at DESC
-    `);
-    return result.rows ?? [];
 }
 
 // ---------------------------------------------------------------------------
@@ -419,317 +388,6 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                     LIMIT 1
                 `);
                 expect(logRows.rows?.[0]?.status).toBe(SocialPublishResultStatusEnum.SUCCESS);
-            });
-        }
-    );
-
-    it.skipIf(!dbAvailable)(
-        'Scenario A: handleMakeCallbackClaim records PUBLISHING and makeLastRunId (legacy callback method)',
-        async () => {
-            await withSocialTestTransaction(async (tx) => {
-                // Arrange — set up the target in PUBLISHING state directly via SQL,
-                // simulating what the old async dispatch model did before the target
-                // was handed to Make.com. The synchronous model no longer uses this
-                // code path in production, but we keep the method for compatibility.
-                await seedPlatformFormat(tx);
-                const actor = buildFullActor();
-                await seedActorUser(tx, actor);
-                const payload = buildDraftPayload();
-
-                const serviceConfig = {};
-                const ingestionService = new SocialDraftIngestionService(serviceConfig);
-                const auditLogService = new SocialAuditLogService(serviceConfig);
-                const postService = new SocialPostService(
-                    serviceConfig,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    auditLogService
-                );
-                const dispatchService = new SocialPublishDispatchService(serviceConfig);
-
-                // Pipeline: ingest → seed media → approve → markReady
-                const ingestResult = await ingestionService.ingestDraft({
-                    payload,
-                    actorId: actor.id
-                });
-                if (ingestResult.code !== 'SUCCESS') throw new Error('expected SUCCESS');
-                const postId = ingestResult.data.postId;
-
-                await seedPostMedia(tx, postId);
-                await postService.approve({ actor, postId });
-                await postService.markReady({ actor, postId });
-
-                const { targets } = await dispatchService.findEligibleTargets();
-                const bundle = targets.find((b) => (b.post.id as string) === postId);
-                if (!bundle) throw new Error('target bundle not found');
-                const targetId = bundle.target.id as string;
-
-                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
-                // resolves to PUBLISHED synchronously).
-                await tx.execute(sql`
-                    UPDATE social_post_targets
-                    SET status = 'PUBLISHING'
-                    WHERE id = ${targetId}
-                `);
-
-                const makeRunId = `run-${crypto.randomUUID()}`;
-
-                // Act — claim callback
-                const claimResult = await dispatchService.handleMakeCallbackClaim({
-                    targetId,
-                    makeRunId
-                });
-
-                // Assert
-                expect(claimResult.targetId).toBe(targetId);
-                expect(claimResult.status).toBe('PUBLISHING');
-
-                // Verify makeLastRunId stored in DB
-                const targetRows = await tx.execute<{
-                    status: string;
-                    make_last_run_id: string;
-                }>(sql`
-                    SELECT status, make_last_run_id
-                    FROM social_post_targets
-                    WHERE id = ${targetId}
-                `);
-                const row = targetRows.rows?.[0];
-                expect(row?.status).toBe(SocialPostStatusEnum.PUBLISHING);
-                expect(row?.make_last_run_id).toBe(makeRunId);
-            });
-        }
-    );
-
-    it.skipIf(!dbAvailable)(
-        'Scenario A: ONCE — handleMakeCallbackResult SUCCESS → target PUBLISHED, post PUBLISHED, audit TARGET_PUBLISHED, nextRunAt null (legacy callback method)',
-        async () => {
-            await withSocialTestTransaction(async (tx) => {
-                // Arrange — set up the target in PUBLISHING state directly via SQL.
-                // The synchronous model resolves to PUBLISHED immediately via
-                // dispatchTarget; this test exercises the legacy handleMakeCallbackResult
-                // method by seeding the PUBLISHING state manually.
-                await seedPlatformFormat(tx);
-                const actor = buildFullActor();
-                await seedActorUser(tx, actor);
-                const payload = buildDraftPayload();
-
-                const serviceConfig = {};
-                const ingestionService = new SocialDraftIngestionService(serviceConfig);
-                const auditLogService = new SocialAuditLogService(serviceConfig);
-                const postService = new SocialPostService(
-                    serviceConfig,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    auditLogService
-                );
-                const dispatchService = new SocialPublishDispatchService(serviceConfig);
-
-                // Pipeline: ingest → seed media → approve → markReady
-                const ingestResult = await ingestionService.ingestDraft({
-                    payload,
-                    actorId: actor.id
-                });
-                if (ingestResult.code !== 'SUCCESS') throw new Error('expected SUCCESS');
-                const postId = ingestResult.data.postId;
-
-                await seedPostMedia(tx, postId);
-                await postService.approve({ actor, postId });
-                await postService.markReady({ actor, postId });
-
-                const { targets } = await dispatchService.findEligibleTargets();
-                const bundle = targets.find((b) => (b.post.id as string) === postId);
-                if (!bundle) throw new Error('target bundle not found');
-                const targetId = bundle.target.id as string;
-
-                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
-                // resolves to PUBLISHED synchronously).
-                await tx.execute(sql`
-                    UPDATE social_post_targets
-                    SET status = 'PUBLISHING'
-                    WHERE id = ${targetId}
-                `);
-
-                // Act — result callback SUCCESS
-                const resultResponse = await dispatchService.handleMakeCallbackResult({
-                    targetId,
-                    status: 'SUCCESS',
-                    externalPostId: 'ig-post-001',
-                    externalPostUrl: 'https://www.instagram.com/p/abc123/',
-                    makeRunId: 'run-abc-123'
-                });
-
-                // Assert result
-                expect(resultResponse.targetId).toBe(targetId);
-                expect(resultResponse.status).toBe('PUBLISHED');
-
-                // Verify target = PUBLISHED in DB
-                const targetRows = await tx.execute<{
-                    status: string;
-                    external_post_id: string;
-                    external_post_url: string;
-                }>(sql`
-                    SELECT status, external_post_id, external_post_url
-                    FROM social_post_targets
-                    WHERE id = ${targetId}
-                `);
-                const targetRow = targetRows.rows?.[0];
-                expect(targetRow?.status).toBe(SocialPostStatusEnum.PUBLISHED);
-                expect(targetRow?.external_post_id).toBe('ig-post-001');
-                expect(targetRow?.external_post_url).toBe('https://www.instagram.com/p/abc123/');
-
-                // Verify post = PUBLISHED in DB and nextRunAt = null (ONCE recurrence)
-                const postRows = await tx.execute<{
-                    status: string;
-                    next_run_at: string | null;
-                }>(sql`
-                    SELECT status, next_run_at
-                    FROM social_posts
-                    WHERE id = ${postId}
-                `);
-                const postRow = postRows.rows?.[0];
-                expect(postRow?.status).toBe(SocialPostStatusEnum.PUBLISHED);
-                // Default recurrence for ingested posts is ONCE — nextRunAt nulled after publish
-                expect(postRow?.next_run_at).toBeNull();
-
-                // Verify TARGET_PUBLISHED audit row
-                const auditRows = await queryAuditRows(
-                    tx,
-                    targetId,
-                    SocialAuditEvent.TARGET_PUBLISHED
-                );
-                expect(auditRows.length).toBeGreaterThanOrEqual(1);
-
-                // Verify publish_log has a SUCCESS row
-                const logRows = await tx.execute<{ status: string }>(sql`
-                    SELECT status
-                    FROM social_publish_logs
-                    WHERE social_post_id = ${postId}
-                      AND social_post_target_id = ${targetId}
-                      AND status = 'SUCCESS'
-                    LIMIT 1
-                `);
-                expect(logRows.rows?.length).toBe(1);
-            });
-        }
-    );
-
-    // -------------------------------------------------------------------------
-    // Scenario B — WEEKLY recurrence rearm
-    // -------------------------------------------------------------------------
-
-    it.skipIf(!dbAvailable)(
-        'Scenario B: WEEKLY — after SUCCESS callback post rearms to APPROVED with future next_run_at and targets reset (legacy callback method)',
-        async () => {
-            await withSocialTestTransaction(async (tx) => {
-                // Arrange — set up the target in PUBLISHING state directly via SQL.
-                // The synchronous model resolves to PUBLISHED immediately via
-                // dispatchTarget; this test exercises the legacy handleMakeCallbackResult
-                // method by seeding the PUBLISHING state manually.
-                await seedPlatformFormat(tx);
-                const actor = buildFullActor();
-                await seedActorUser(tx, actor);
-                const payload = buildDraftPayload();
-
-                const serviceConfig = {};
-                const ingestionService = new SocialDraftIngestionService(serviceConfig);
-                const auditLogService = new SocialAuditLogService(serviceConfig);
-                const postService = new SocialPostService(
-                    serviceConfig,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    auditLogService
-                );
-                const dispatchService = new SocialPublishDispatchService(serviceConfig);
-
-                // Pipeline: ingest → set WEEKLY recurrence → seed media → approve → markReady
-                const ingestResult = await ingestionService.ingestDraft({
-                    payload,
-                    actorId: actor.id
-                });
-                if (ingestResult.code !== 'SUCCESS') throw new Error('expected SUCCESS');
-                const postId = ingestResult.data.postId;
-
-                // Patch post to WEEKLY recurrence with timezone before approve/dispatch
-                await tx.execute(sql`
-                    UPDATE social_posts
-                    SET recurrence_type = 'WEEKLY',
-                        recurrence_params_json = '{"weekday": "MONDAY"}',
-                        timezone = 'UTC'
-                    WHERE id = ${postId}
-                `);
-
-                await seedPostMedia(tx, postId);
-                await postService.approve({ actor, postId });
-                await postService.markReady({ actor, postId });
-
-                const { targets } = await dispatchService.findEligibleTargets();
-                const bundle = targets.find((b) => (b.post.id as string) === postId);
-                if (!bundle) throw new Error('target bundle not found');
-                const targetId = bundle.target.id as string;
-
-                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
-                // resolves to PUBLISHED synchronously).
-                await tx.execute(sql`
-                    UPDATE social_post_targets
-                    SET status = 'PUBLISHING'
-                    WHERE id = ${targetId}
-                `);
-
-                // Act — result callback SUCCESS
-                const beforeCallback = Date.now();
-                const resultResponse = await dispatchService.handleMakeCallbackResult({
-                    targetId,
-                    status: 'SUCCESS',
-                    externalPostId: 'ig-weekly-post',
-                    makeRunId: 'run-weekly-001'
-                });
-
-                // Assert result
-                expect(resultResponse.status).toBe('PUBLISHED');
-
-                // Verify post was rearmed — status=APPROVED, next_run_at is a future date
-                const postRows = await tx.execute<{
-                    status: string;
-                    approval_status: string;
-                    next_run_at: string | null;
-                    recurrence_type: string;
-                }>(sql`
-                    SELECT status, approval_status, next_run_at, recurrence_type
-                    FROM social_posts
-                    WHERE id = ${postId}
-                `);
-                const postRow = postRows.rows?.[0];
-
-                expect(postRow?.status).toBe(SocialPostStatusEnum.APPROVED);
-                expect(postRow?.approval_status).toBe(SocialApprovalStatusEnum.APPROVED);
-                expect(postRow?.recurrence_type).toBe('WEEKLY');
-                expect(postRow?.next_run_at).not.toBeNull();
-
-                // next_run_at must be in the future (at least 1 second after test start)
-                const nextRunAtMs = postRow?.next_run_at
-                    ? new Date(postRow.next_run_at).getTime()
-                    : 0;
-                expect(nextRunAtMs).toBeGreaterThan(beforeCallback);
-
-                // Verify all targets were reset to APPROVED with retry_count=0
-                const targetRows = await tx.execute<{
-                    status: string;
-                    retry_count: number;
-                }>(sql`
-                    SELECT status, retry_count
-                    FROM social_post_targets
-                    WHERE social_post_id = ${postId}
-                `);
-                for (const t of targetRows.rows ?? []) {
-                    expect(t.status).toBe(SocialPostStatusEnum.APPROVED);
-                    expect(t.retry_count).toBe(0);
-                }
             });
         }
     );

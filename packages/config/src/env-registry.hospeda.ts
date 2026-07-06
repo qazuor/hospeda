@@ -1968,23 +1968,6 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
-    {
-        name: 'HOSPEDA_MAKE_INBOUND_KEY',
-        description:
-            'Inbound key Make.com sends back in the `x-hospeda-make-key` header on claim and result callbacks. Validates that incoming callbacks originate from our Make.com scenario and not arbitrary senders.',
-        descriptionEs:
-            'Key entrante que Make.com envía de vuelta en el header `x-hospeda-make-key` en los callbacks de claim y resultado. Valida que los callbacks entrantes provienen de nuestro escenario de Make.com y no de remitentes arbitrarios.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'replace-with-your-make-inbound-callback-key',
-        apps: ['api'],
-        category: 'social-automation',
-        howToObtain:
-            'Generate a shared secret: `openssl rand -hex 32`. Configure it in the Make.com HTTP module that sends callbacks to Hospeda as a custom header `x-hospeda-make-key`. Set the same value here.',
-        howToObtainEs:
-            'Generá un secreto compartido: `openssl rand -hex 32`. Configuralo en el módulo HTTP de Make.com que envía callbacks a Hospeda como header custom `x-hospeda-make-key`. Poné el mismo valor acá.'
-    },
     // External reputation async polling (SPEC-250)
     {
         name: 'HOSPEDA_EXTREP_POLL_SCHEDULE',

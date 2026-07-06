@@ -105,10 +105,6 @@ import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
 import {
-    makeClaimCallbackRoute,
-    makeResultCallbackRoute
-} from './integrations/make/social/jobs/index.js';
-import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
@@ -150,6 +146,7 @@ import { publicSearchRoutes } from './search/public';
 import { protectedSearchHistoryRoutes } from './search-history';
 import {
     adminGetGptActionSchemaRoute,
+    adminGetMakeWebhookSchemaRoute,
     adminSocialAudienceRoutes,
     adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
@@ -582,7 +579,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // `feature: 'social-automation'` tag is set in ONE place, not on each of
         // the 60+ social route files.
         app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
-        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
         app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
 
         // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
@@ -596,12 +592,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social public-data pull (HOS-66 T-023): API-key gated, read-only.
         // Custom GPT pulls public accommodations/destinations to enrich a draft.
         app.route('/api/v1/ai/social/public-data', aiSocialPublicDataRoute);
-
-        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
-        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
-        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
-        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
-        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
         app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
@@ -643,6 +633,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // GPT Action schema export (SPEC-254 T-030)
         // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
         app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
+
+        // Make.com webhook config export (HOS-67 G-6)
+        // Returns the dispatch payload/response JSON Schemas + webhook URL + API key.
+        app.route('/api/v1/admin/social/make-webhook-schema', adminGetMakeWebhookSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

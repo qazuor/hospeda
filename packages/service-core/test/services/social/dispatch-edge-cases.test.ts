@@ -26,7 +26,6 @@
  * Exhaustion threshold (from service source):
  *   `MAX_RETRY_COUNT = 3` (line 382 of social-publish-dispatch.service.ts).
  *   `dispatchTarget` exhausts when `currentRetryCount >= 3` at failure time.
- *   `handleMakeCallbackResult` exhausts when `newRetryCount >= 3` after increment.
  *
  * SPEC-254 T-051.
  */

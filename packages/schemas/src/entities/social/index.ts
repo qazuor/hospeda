@@ -15,8 +15,6 @@ export * from './social-dashboard.schema.js';
 export * from './social-draft.http.schema.js';
 export * from './social-hashtag.index.js';
 export * from './social-hashtag-set.index.js';
-// Make.com inbound callback schemas (T-048)
-export * from './social-make-callback.schema.js';
 // Make.com dispatch payload schema (T-044)
 export * from './social-make-payload.schema.js';
 export * from './social-platform.index.js';

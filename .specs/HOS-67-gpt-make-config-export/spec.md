@@ -162,6 +162,33 @@ Land the R-6 removal before or alongside the export UI (not after) — sequencin
 it after would mean shipping an export page that still references a header
 belonging to dead code, momentarily.
 
+### Implementation decisions (2026-07-06)
+
+- **Spec drift vs HOS-64 — webhook URL + API key now live in the encrypted
+  vault, not `social_settings`/env.** HOS-64 (shipped in parallel) migrated
+  `make_webhook_url` and `make_api_key` into the encrypted `social_credentials`
+  vault, whose contract keeps `getDecryptedSocialCredential` server-side only.
+  The endpoint therefore reads both from the vault, not from `social_settings`
+  or `HOSPEDA_MAKE_API_KEY`.
+- **Owner-approved decision: the export EXPOSES the real webhook URL + API key
+  over HTTP** (API key masked with reveal-on-click in the UI, but the value is
+  returned in the response body). This is a deliberate deviation from HOS-64's
+  "never over HTTP" vault contract, because the export's whole purpose is to let
+  the operator copy the real config into Make.com. Gated by
+  `SOCIAL_SETTINGS_MANAGE`; the plaintext is never logged.
+- **JSON Schema generation uses Zod 4's `z.toJSONSchema`** (with
+  `unrepresentable: 'any'` for the `z.date()` field), not `zod-to-json-schema` —
+  no new dependency, and the endpoint proves the schema is generated (AC-1) by a
+  test that derives the expected keys from `SocialMakePayloadSchema.shape`.
+- **Vault read states are distinguished**: a genuinely-unconfigured credential
+  (`NOT_FOUND`) surfaces as `missing`, while a decrypt/DB failure surfaces as
+  `error` — the UI shows a distinct error note so a misconfigured vault master
+  key is never shown as the misleading "not configured".
+- **Post-merge action required (AC-4)**: `HOSPEDA_MAKE_INBOUND_KEY` was removed
+  from the env registry — unset/deprecate it in Coolify for the affected
+  environments (it was only ever read by the now-deleted callback routes, so
+  leaving it set is harmless but stale).
+
 ## 13. Linear
 
 Canonical tracking:

@@ -605,11 +605,6 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_SOCIAL_VAULT_MASTER_KEY must be at least 32 characters')
         .optional(),
-    /**
-     * Inbound key Make.com sends in `x-hospeda-make-key` on claim/result callbacks.
-     * Required when the Make.com callback route is mounted (SPEC-254 Phase 4).
-     */
-    HOSPEDA_MAKE_INBOUND_KEY: z.string().optional(),
 
     // External reputation / review aggregation (SPEC-237)
     /**
