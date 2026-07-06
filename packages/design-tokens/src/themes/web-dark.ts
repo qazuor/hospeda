@@ -107,6 +107,12 @@ export const webDark: Theme = {
     // ink → dark-on-dark inversion (e.g. ContributionBanner title/desc contrast
     // 1.4). Provide a light foreground so text on this surface clears AA in dark.
     'surface-warm-foreground': oklchValue(0.92, 0.01, 210),
+    // HOS-84: dedicated header-band token (Opt-B "band puro"). Placeholder values
+    // mirror --surface-warm until the final hue is confirmed against the visual
+    // mockup (T-017/T-019). Explicit dark base + foreground per the SPEC-308 lesson —
+    // dark does not re-derive a foreground from its light sibling.
+    'surface-header': oklchValue(0.255, 0.035, 258),
+    'surface-header-foreground': oklchValue(0.92, 0.01, 210),
 
     // Hero bottom-wave fill. In dark it must follow the page canvas so the
     // wave blends into the section below (the SVG hardcodes --core-card, which

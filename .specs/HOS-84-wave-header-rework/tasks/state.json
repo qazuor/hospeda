@@ -1,0 +1,456 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-84",
+    "title": "Wave Header Rework (Detail & Listing Pages)",
+    "created": "2026-07-05T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add dedicated --surface-header design token (light + dark)",
+            "description": "In packages/design-tokens: add surfaces.header (+ headerForeground if header ink needs pairing) OKLCH in src/tokens/colors.ts; map 'surface-header' (+ '-foreground') in src/themes/web-light.ts; add EXPLICIT dark override in src/themes/web-dark.ts for BOTH base and foreground (SPEC-308 lesson: dark does not re-derive foreground from light sibling). Do NOT touch --surface-warm. Regenerate dist/tokens.css via `pnpm --filter @repo/design-tokens build`. Tests: update src/generators/generate-css.test.ts.snap snapshot; add assertions in src/themes/web.test.ts for surface-header light+dark oklch strings. Exact l/c/h confirmed against the visual mockup at implementation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                { "title": "surfaces.header (+foreground) OKLCH in colors.ts", "completed": false },
+                { "title": "map surface-header in web-light.ts", "completed": false },
+                { "title": "explicit dark base + foreground in web-dark.ts", "completed": false },
+                { "title": "regenerate dist/tokens.css", "completed": false },
+                { "title": "update snapshot + web.test.ts assertions", "completed": false }
+            ],
+            "tags": ["design-tokens", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Rewrite WaveHeader.astro visual band (Opt-B, remove SVG)",
+            "description": "In apps/web/src/components/shared/ui/WaveHeader.astro: REMOVE the inline SVG bezier path + fill entirely. Render a solid band using var(--surface-header) with a clean straight bottom edge; keep a theme-aware bottom drop-shadow (reuse filter: drop-shadow(... var(--core-background))) for the compact/hidden edge. Preserve the paddingTop prop and the data-wave-* attributes (CSP: no inline style, drive via CSS vars/classes — SPEC-046). No behavior change in this task (static appearance only). Tests: no unit (Astro markup); visual coverage in T-018.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-007"],
+            "subtasks": [
+                { "title": "remove SVG bezier path + fill", "completed": false },
+                { "title": "solid band with --surface-header + straight edge", "completed": false },
+                { "title": "theme-aware drop-shadow edge", "completed": false },
+                { "title": "keep paddingTop + data-wave-* attrs", "completed": false }
+            ],
+            "tags": ["web", "astro", "css", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extract pure header state-machine module + unit tests",
+            "description": "Create a pure, framework-free module (e.g. apps/web/src/components/shared/ui/waveHeaderState.ts) exporting a nextWaveHeaderState({ scrollY, delta, accumulator, currentState, config:{EXPAND_AT,COMPACT_AT,HIDE_DELTA,REVEAL_DELTA}, lockedCompact, reducedMotion }) => { state:'expanded'|'compact'|'hidden', accumulator }. Encodes: expanded↔compact hysteresis (EXPAND_AT=8/COMPACT_AT=96); compact→hidden on accumulated downward delta ≥ HIDE_DELTA (never near top); hidden→compact on upward delta ≥ REVEAL_DELTA; hidden→expanded only via compact at top; RESET accumulator on direction change; lockedCompact pins compact + suppresses hidden; reducedMotion suppresses hidden. Tests (TDD, AAA): waveHeaderState.test.ts covering every transition, the direction dead-zone reset (anti-jitter, AC-3), locked-compact, and reduced-motion suppression.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004"],
+            "subtasks": [
+                { "title": "pure nextWaveHeaderState() module", "completed": false },
+                { "title": "expanded/compact/hidden transitions + hysteresis", "completed": false },
+                { "title": "direction dead-zone accumulator + reset on flip", "completed": false },
+                { "title": "lockedCompact + reducedMotion suppression", "completed": false },
+                { "title": "waveHeaderState.test.ts full transition coverage", "completed": false }
+            ],
+            "tags": ["web", "logic", "test", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Wire 3-state machine into WaveHeader.astro (detail)",
+            "description": "In WaveHeader.astro client script: consume waveHeaderState (T-003) from a rAF-throttled scroll+resize handler; toggle .wave-header--compact and a new .wave-header--hidden (translateY out) class; ONLY for paddingTop='detail'. Keep overflow-anchor:none on html:has(.wave-header) (compact still exists). Preserve the astro:before-swap cleanup + astro:after-swap reinit symmetry (no duplicate listeners across View Transitions). Read data-locked-compact + prefers-reduced-motion into the pure module inputs. Tests: behavior covered by T-003 unit + T-017 anti-trembling verify.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-007", "T-015", "T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "rAF-throttled scroll/resize handler consuming pure module",
+                    "completed": false
+                },
+                {
+                    "title": "toggle --compact + new --hidden translate class (detail only)",
+                    "completed": false
+                },
+                { "title": "keep overflow-anchor:none", "completed": false },
+                { "title": "preserve astro swap cleanup/reinit", "completed": false },
+                { "title": "feed locked-compact + reduced-motion into state", "completed": false }
+            ],
+            "tags": ["web", "astro", "js", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Listing static-band path (no state machine)",
+            "description": "Ensure paddingTop='listing' attaches NO scroll state machine and renders a fixed static band. Preserve ListingLayout.astro's hospeda:listing-nav same-path partial-swap contract (data-listing-swap='header'|'content'; the header DOM node must not be swapped/rehydrated on filter navigations). Tests: T-018 verifies listing static + filter partial-swap intact.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "guard state machine to detail only", "completed": false },
+                { "title": "static band render for listing", "completed": false },
+                { "title": "preserve data-listing-swap partial-swap", "completed": false }
+            ],
+            "tags": ["web", "astro", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create shared HeaderBackButton.astro (history-aware)",
+            "description": "New shared apps/web/src/components/shared/ui/HeaderBackButton.astro. History-aware: progressive-enhancement script calls history.back() when a same-origin document.referrer or history.state.index>0 exists, else falls back to an href pointing at the entity's parent listing (passed as prop, composed from routing only — NG-3-safe). Icon = ArrowLeftIcon from @repo/icons; i18n label ('Volver'). Model on the existing apps/web/src/components/contributions/ContributionBackLink.astro pattern. Tests: T-018 verifies both nav paths (history + href fallback).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-012", "T-013"],
+            "subtasks": [
+                { "title": "component markup + href prop", "completed": false },
+                { "title": "history-aware click handler w/ href fallback", "completed": false },
+                { "title": "ArrowLeftIcon + i18n label", "completed": false }
+            ],
+            "tags": ["web", "astro", "i18n", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Consolidate shared compact CSS + per-page override hatch",
+            "description": "Move the common compact-mode rules (row collapse, font shrink, hide breadcrumb/rating/meta) into WaveHeader.astro as the shared default keyed off .wave-header--compact. Define a DOCUMENTED per-page override mechanism (a set of --wave-compact-* CSS vars and/or opt-in classes) so each entity header can still choose what it collapses. This is the single source the 8 consumers key against. Tests: per-entity behavior in T-018.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-012", "T-013", "T-014"],
+            "subtasks": [
+                { "title": "shared compact default in WaveHeader", "completed": false },
+                { "title": "--wave-compact-* override vars / opt-in classes", "completed": false },
+                { "title": "document the override contract", "completed": false }
+            ],
+            "tags": ["web", "css", "refactor", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Migrate DetailHeader.astro (accommodation) + back button",
+            "description": "apps/web/src/.../DetailHeader.astro: remove its local duplicated :global(.wave-header--compact) block, keep only genuine overrides via the T-007 contract; mount HeaderBackButton (T-006) left of the breadcrumb row. Verify badges/status pills/name/destination/rating still collapse correctly. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "remove local compact block, use shared contract", "completed": false },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Migrate DestinationDetailHeader.astro + back button",
+            "description": "Migrate to the shared compact contract (T-007); its genuine override = collapsing the attractions <ul> + meta. Mount HeaderBackButton. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "shared contract + attractions/meta override", "completed": false },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Migrate EventDetailHeader.astro + back button",
+            "description": "Migrate to shared compact contract (T-007); override = category badge + status pills + meta collapse. Mount HeaderBackButton. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "shared contract + event override", "completed": false },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Migrate PostDetailHeader.astro + back button",
+            "description": "Migrate to shared compact contract (T-007). NOTE: this is the only header that also collapses a summary paragraph + engagement row — keep those as explicit overrides. Mount HeaderBackButton. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "shared contract + summary/engagement override", "completed": false },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Migrate GastronomyDetailHeader.astro + back button",
+            "description": "Migrate to shared compact contract (T-007). NOTE divergences: no outer align-items:center; favorite uses count/showCount props. Keep those. Override = type/price/new badges + location + rating collapse. Mount HeaderBackButton. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "shared contract + gastronomy override (divergences)",
+                    "completed": false
+                },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Migrate ExperienceHero.astro + back button",
+            "description": "Migrate to shared compact contract (T-007). NOTE divergences: no price-badge (pricing via ExperiencePriceTag collapsed by .exp-hero__pricing); no outer align-items:center; favorite count/showCount. Mount HeaderBackButton. Tests: T-018.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "shared contract + experience override (pricing collapse)",
+                    "completed": false
+                },
+                { "title": "mount HeaderBackButton", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Migrate ListingPageHeader.astro (7th consumer)",
+            "description": "apps/web/src/components/shared/layout/ListingPageHeader.astro carries its own :global(.wave-header--compact) block (tagline/subtitle collapse, title font shrink). Since listing is now a STATIC band (no compact), reconcile: either drop the now-dead compact rules or align them to the shared contract. No back-button/favorite concerns here. Tests: T-018 listing verify.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "audit listing-page-header compact rules vs static band",
+                    "completed": false
+                },
+                { "title": "drop dead compact CSS or align to shared contract", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update mapa.astro (8th consumer, locked-compact)",
+            "description": "apps/web/src/pages/[lang]/alojamientos/mapa.astro force-locks the header via data-locked-compact + manual classList.add('wave-header--compact'), hides the wave SVG (:global(.wave-header__wave){display:none}) and reads --wave-bar-compact. Update: the SVG is gone (remove the now-dead hide rule); ensure locked-compact pins compact AND suppresses the new hidden state (header never slides out in the fullscreen-map UX); verify --wave-bar-compact is still exposed by the reworked component and the measured compact height is correct. Tests: T-018 map verify.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-017", "T-018"],
+            "subtasks": [
+                { "title": "remove dead wave-SVG hide rule", "completed": false },
+                { "title": "locked-compact suppresses hidden state", "completed": false },
+                { "title": "verify --wave-bar-compact still exposed + correct", "completed": false }
+            ],
+            "tags": ["web", "astro", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Re-derive the +105px sticky-sidebar constant",
+            "description": "DetailLayout.astro and ListingLayout.astro both hardcode calc(var(--navbar-height,80px) + 105px) for the sticky sidebar top/max-height — an undocumented approximation of the compact band height. Re-derive from the NEW band/compact dimensions; prefer exposing the compact bar height as a CSS var (the map already reads --wave-bar-compact) and using it in both layouts instead of a second magic number. Tests: T-018 sidebar-offset verify at detail + listing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "measure new compact band height", "completed": false },
+                { "title": "expose as CSS var + use in both layouts", "completed": false }
+            ],
+            "tags": ["web", "css", "layout", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Verify hide/reveal dead-zone (anti-trembling, AC-3)",
+            "description": "AC-3 gate. Confirm the new hide/reveal direction layer does NOT re-introduce scroll trembling. Tune HIDE_DELTA/REVEAL_DELTA empirically (measured, not guessed) and confirm the overflow-anchor:none fix is still required with compact retained. Use the T-003 unit suite for the pure logic + Playwright/design-review to observe real scroll on a detail page (light+dark). Do NOT remove overflow-anchor handling until verified.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-015", "T-016"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "tune HIDE_DELTA/REVEAL_DELTA on real scroll", "completed": false },
+                {
+                    "title": "confirm no trembling + overflow-anchor still needed",
+                    "completed": false
+                },
+                { "title": "record tuned thresholds in spec/closeout", "completed": false }
+            ],
+            "tags": ["web", "test", "a11y", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Cross-cutting verification (entities, themes, a11y, viewports)",
+            "description": "design-review across viewports: 3-state model on all 6 detail entity types; light + dark; prefers-reduced-motion (hide/reveal disabled, header stays put); mobile compact fits one row (H1 truncates, favorite stays); listing static band + filter partial-swap intact; mapa locked-compact unbroken; back button both nav paths. Confirm the 8 compact consumers are all visually correct. Covers AC-6, AC-7.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012", "T-013", "T-014", "T-015"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "3-state on all 6 detail types", "completed": false },
+                { "title": "light/dark + reduced-motion", "completed": false },
+                {
+                    "title": "mobile compact one-row + listing static + map locked",
+                    "completed": false
+                },
+                { "title": "back button history + fallback paths", "completed": false }
+            ],
+            "tags": ["web", "test", "a11y", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Docs + closeout",
+            "description": "Update apps/web component docs / CLAUDE.md references to the wave header (band puro, 3-state, --surface-header). Record the chosen --surface-header l/c/h and the tuned dead-zone thresholds in the spec/closeout. Note the --surface-warm mislabel as a separate future cleanup (not fixed here). Fill .specs/HOS-84-wave-header-rework/closeout.md.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-017", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "update web docs/CLAUDE.md references", "completed": false },
+                { "title": "record token values + tuned thresholds", "completed": false },
+                { "title": "note --surface-warm mislabel as future cleanup", "completed": false },
+                { "title": "closeout.md", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-05T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 19,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

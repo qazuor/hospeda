@@ -1,18 +1,26 @@
 ---
 /**
  * @file EventDetailHeader.astro
- * @description Event detail page header with category badge, title, date/location meta,
- * status badges (past/cancelled), bookmark counter, and favorite button.
+ * @description Event detail page header with a history-aware back button,
+ * category badge, title, date/location meta, status badges (past/cancelled),
+ * bookmark counter, and favorite button.
  *
- * Layout: 2-column flex at all times — `.event-header__main` on the left holds
- * badges + title + meta; `.event-header__favorite` on the right anchors the heart
- * button. The favorite stays right-aligned regardless of viewport or compact mode.
+ * Layout (HOS-84): a vertical stack — a back-button row on top, then a
+ * 2-column `.event-header__body` row where `.event-header__main` holds
+ * badges + title + meta and `.event-header__favorite` anchors the heart
+ * button on the right. The favorite stays right-aligned regardless of
+ * viewport or compact mode.
  *
- * Compact mode: when inside a `.wave-header--compact` ancestor, the main column
- * collapses to a single row, fonts shrink, and meta + bookmark count are hidden.
+ * Compact behavior comes from the shared `.wh-compact-*` utility classes
+ * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
+ * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-badge`
+ * shrinks the category/status pills, `wh-compact-hide` drops the back-button
+ * row + meta. Only the genuinely event-specific body cross-axis alignment and
+ * badges-gap overrides remain local below.
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
@@ -72,74 +80,99 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
 ---
 
 <header class="event-header">
-    <div class="event-header__main">
-        <div class="event-header__badges">
-            <span class="event-header__category-badge" style={categoryStyle}>
-                {t(`events.categories.${category.toLowerCase()}`, category)}
-            </span>
-            {isPast && (
-                <span class="event-header__status-pill" style={pastStyle}>
-                    {t('event.detail.pastEvent', 'Evento Finalizado')}
-                </span>
-            )}
-            {isCancelled && (
-                <span class="event-header__status-pill" style={cancelledStyle}>
-                    {t('event.detail.cancelled', 'Cancelado')}
-                </span>
-            )}
-        </div>
-
-        <h1 class="event-header__title">{name}</h1>
-
-        <div class="event-header__meta">
-            {startDate && (
-                <span class="event-header__meta-item">
-                    <CalendarDotsIcon size={15} aria-hidden="true" />
-                    {formatDate({ date: String(startDate), locale })}
-                    {endDate && (
-                        <span class="event-header__meta-separator" aria-hidden="true">–</span>
-                    )}
-                    {endDate && formatDate({ date: String(endDate), locale })}
-                </span>
-            )}
-            {locationLabel && (
-                <span class="event-header__meta-item">
-                    <LocationIcon size={15} aria-hidden="true" />
-                    {locationLabel}
-                </span>
-            )}
-            {bookmarkCount !== undefined && (
-                <span
-                    class="event-header__bookmark-count"
-                    aria-label={bookmarkCount === 0
-                        ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-                        : tPlural('event.detail.bookmark_count', bookmarkCount)}
-                >
-                    <span class="event-header__bookmark-icon" aria-hidden="true">♥</span>
-                    {bookmarkCount === 0
-                        ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
-                        : tPlural('event.detail.bookmark_count', bookmarkCount)}
-                </span>
-            )}
-        </div>
+    <div class="event-header__back-row wh-compact-hide">
+        <HeaderBackButton href={`/${locale}/eventos/`} locale={locale} />
     </div>
 
-    <div class="event-header__favorite">
-        <FavoriteButton
-            client:load
-            entityId={eventId}
-            entityType="EVENT"
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
-            isAuthenticated={isAuthenticated}
-            variant="standalone"
-            locale={locale}
-        />
+    <div class="event-header__body">
+        <div class="event-header__main wh-compact-row">
+            <div class="event-header__badges">
+                <span class="event-header__category-badge wh-compact-badge" style={categoryStyle}>
+                    {t(`events.categories.${category.toLowerCase()}`, category)}
+                </span>
+                {isPast && (
+                    <span class="event-header__status-pill wh-compact-badge" style={pastStyle}>
+                        {t('event.detail.pastEvent', 'Evento Finalizado')}
+                    </span>
+                )}
+                {isCancelled && (
+                    <span class="event-header__status-pill wh-compact-badge" style={cancelledStyle}>
+                        {t('event.detail.cancelled', 'Cancelado')}
+                    </span>
+                )}
+            </div>
+
+            <h1 class="event-header__title wh-compact-title">{name}</h1>
+
+            <div class="event-header__meta wh-compact-hide">
+                {startDate && (
+                    <span class="event-header__meta-item">
+                        <CalendarDotsIcon size={15} aria-hidden="true" />
+                        {formatDate({ date: String(startDate), locale })}
+                        {endDate && (
+                            <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                        )}
+                        {endDate && formatDate({ date: String(endDate), locale })}
+                    </span>
+                )}
+                {locationLabel && (
+                    <span class="event-header__meta-item">
+                        <LocationIcon size={15} aria-hidden="true" />
+                        {locationLabel}
+                    </span>
+                )}
+                {bookmarkCount !== undefined && (
+                    <span
+                        class="event-header__bookmark-count"
+                        aria-label={bookmarkCount === 0
+                            ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+                            : tPlural('event.detail.bookmark_count', bookmarkCount)}
+                    >
+                        <span class="event-header__bookmark-icon" aria-hidden="true">♥</span>
+                        {bookmarkCount === 0
+                            ? t('event.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+                            : tPlural('event.detail.bookmark_count', bookmarkCount)}
+                    </span>
+                )}
+            </div>
+        </div>
+
+        <div class="event-header__favorite">
+            <FavoriteButton
+                client:load
+                entityId={eventId}
+                entityType="EVENT"
+                initialIsFavorited={initialIsFavorited}
+                initialBookmarkId={initialBookmarkId}
+                isAuthenticated={isAuthenticated}
+                variant="standalone"
+                locale={locale}
+            />
+        </div>
     </div>
 </header>
 
 <style>
+    /* Vertical stack: back-button row on top, then the body row. */
     .event-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    /* Back-button row — collapses out via `wh-compact-hide` in compact mode, so
+       it needs its own max-height/opacity transition to animate. */
+    .event-header__back-row {
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.2s ease;
+    }
+
+    /* Body: main content stretches, favorite stays right. */
+    .event-header__body {
         display: flex;
         flex-direction: row;
         align-items: flex-start;
@@ -152,7 +185,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         display: flex;
         flex-direction: column;
         gap: var(--space-2, 8px);
-        transition: flex-direction 0.3s ease, gap 0.3s ease;
+        transition: gap 0.3s ease;
     }
 
     .event-header__favorite {
@@ -254,45 +287,21 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
     }
 
     /* =========================================================
-     * Compact state — collapses __main to one row on scroll.
-     * FavoriteButton stays right-aligned via the outer flex row.
+     * Compact state — only genuinely event-specific overrides remain here;
+     * the row collapse, title shrink, badge shrink, meta/back hide all come
+     * from the shared `.wh-compact-*` utilities applied in the markup
+     * (contract in WaveHeader.astro).
      * ========================================================= */
-    :global(.wave-header--compact) .event-header {
+    :global(.wave-header--compact) .event-header__body {
         align-items: center;
-    }
-
-    :global(.wave-header--compact) .event-header__main {
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: var(--space-2, 8px);
     }
 
     :global(.wave-header--compact) .event-header__badges {
         gap: 4px;
     }
 
-    :global(.wave-header--compact) .event-header__category-badge {
-        font-size: 0.6rem;
-        padding: 2px 10px;
-    }
-
-    :global(.wave-header--compact) .event-header__status-pill {
-        font-size: 0.6rem;
-        padding: 2px 10px;
-    }
-
-    :global(.wave-header--compact) .event-header__title {
-        font-size: clamp(1rem, 2vw, 1.25rem);
-    }
-
-    :global(.wave-header--compact) .event-header__meta {
-        max-height: 0;
-        opacity: 0;
-        pointer-events: none;
-    }
-
     @media (prefers-reduced-motion: reduce) {
+        .event-header__back-row,
         .event-header__main,
         .event-header__badges,
         .event-header__category-badge,

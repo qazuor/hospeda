@@ -354,6 +354,12 @@ export const chartColors = [
 export const surfaces = {
     warm: { l: 0.95, c: 0.03, h: 250 },
     warmForeground: { l: 0.35, c: 0.03, h: 250 },
+    // HOS-84: dedicated detail/listing header-band surface ("band puro").
+    // Placeholder mirrors `warm` until the final hue is confirmed against the
+    // visual mockup (T-017/T-019). Decoupled from `warm` so the header hue can
+    // change without disturbing repo-wide section alternation.
+    header: { l: 0.95, c: 0.03, h: 250 },
+    headerForeground: { l: 0.35, c: 0.03, h: 250 },
     dark: { l: 0.15, c: 0.02, h: 160 },
     darkForeground: { l: 0.92, c: 0.01, h: 210 },
     elevated: { l: 1, c: 0, h: 0 }

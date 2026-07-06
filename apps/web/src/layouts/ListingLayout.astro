@@ -144,10 +144,15 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	}
 
 	/* Sidebar offset = real navbar height (--navbar-height, published by Header.astro)
-	   + the compact wave header band (~105px: content padding + title + wave overhang). */
+	   + the compact wave header band. HOS-84: flat "band puro" (no wave overhang);
+	   on listing the band compacts on scroll (never hides), so the sidebar sits
+	   below the compact band. Replaces the old hardcoded ~105px with the
+	   --wave-bar-compact var (104px fallback: measured compact listing band =
+	   compact content padding + one-line title + the results-count line, which
+	   detail pages don't have — that's why the detail fallback is smaller). */
 	.listing-sidebar {
 		position: sticky;
-		top: calc(var(--navbar-height, 80px) + 105px);
+		top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 104px));
 		align-self: start;
 	}
 
