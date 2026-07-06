@@ -144,8 +144,10 @@ async function getCredentialBaseUrl(providerId: string): Promise<string | undefi
  * Key Learnings entry for why no dedicated code was added):
  *
  * - `ListModelsAuthError` (invalid/expired key, HTTP 401/403) →
- *   `ServiceErrorCode.CONFIGURATION_ERROR` — the stored credential exists but
- *   is not usable; the operator must fix/rotate the key.
+ *   `ServiceErrorCode.VALIDATION_ERROR` (HTTP 400) — the stored credential is
+ *   present but the provider rejected it; this is an operator/config problem
+ *   (fix/rotate the key), NOT a server fault, so it must not surface as a 5xx
+ *   (which would trip false Sentry alerts). See HOS-94 owner decision.
  * - `ListModelsRateLimitError` / `ListModelsUpstreamError` /
  *   `ListModelsUnsupportedProviderError` (rate-limited, provider down,
  *   unexpected shape, unsupported family) →
@@ -164,7 +166,7 @@ function mapListModelsError<T>(providerId: string, error: unknown): ServiceOutpu
             { providerId, code: error.code },
             'ai-sync-models: provider rejected the stored credential'
         );
-        return errorOutput<T>(ServiceErrorCode.CONFIGURATION_ERROR, error.message);
+        return errorOutput<T>(ServiceErrorCode.VALIDATION_ERROR, error.message);
     }
 
     if (
@@ -200,7 +202,7 @@ function mapListModelsError<T>(providerId: string, error: unknown): ServiceOutpu
  *
  * Fails with the vault's own error (typically `NOT_FOUND`) when no active
  * credential is configured for `providerId`. Fails with
- * `ServiceErrorCode.CONFIGURATION_ERROR` when the provider rejects the
+ * `ServiceErrorCode.VALIDATION_ERROR` (HTTP 400) when the provider rejects the
  * stored key, or `ServiceErrorCode.SERVICE_UNAVAILABLE` when the provider is
  * unreachable, rate-limiting, or returns an unsupported/unexpected shape.
  *

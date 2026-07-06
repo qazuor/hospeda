@@ -11,7 +11,8 @@
  * 4. No active credential → the vault's own error (`NOT_FOUND`) passes
  *    through unchanged.
  * 5. Fetcher throws `ListModelsAuthError` → mapped to
- *    `ServiceErrorCode.CONFIGURATION_ERROR`.
+ *    `ServiceErrorCode.VALIDATION_ERROR` (HTTP 400 — a rejected key is a
+ *    client/config error, not a 5xx server fault).
  * 6. Fetcher throws `ListModelsUpstreamError` → mapped to
  *    `ServiceErrorCode.SERVICE_UNAVAILABLE` (the "SYNC_MODELS_FAILED"-style
  *    bucket — see the service's module doc for why no dedicated
@@ -253,7 +254,7 @@ describe('syncAiProviderModels', () => {
     });
 
     describe('fetcher failures', () => {
-        it('should map an auth error (invalid/expired key) to CONFIGURATION_ERROR', async () => {
+        it('should map an auth error (invalid/expired key) to VALIDATION_ERROR (HTTP 400)', async () => {
             // Arrange
             const { ListModelsAuthError } = await import('@repo/ai-core');
             mockListProviderModels.mockRejectedValue(new ListModelsAuthError(PROVIDER_ID, 401));
@@ -263,7 +264,7 @@ describe('syncAiProviderModels', () => {
 
             // Assert
             expect(result.data).toBeUndefined();
-            expect(result.error?.code).toBe(ServiceErrorCode.CONFIGURATION_ERROR);
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(result.error?.message).not.toContain(PLAINTEXT_KEY);
         });
 
