@@ -1,10 +1,21 @@
 # HOS-66: Social Posts — Composer + Dashboard UX
 
-## Progress: 23/27 tasks (85%) — all non-blocked tasks complete; only G-8 (T-013..T-016) remains, blocked on HOS-65
+## Progress: 23/23 in-scope tasks complete — G-8 (T-013..T-016) SPLIT OUT to HOS-98
+
+> **2026-07-06 — G-8 moved to [HOS-98](https://linear.app/hospeda-beta/issue/HOS-98).**
+> A code exploration found HOS-66's "G-8 is UI-only" premise was false: (Gap 1) no
+> admin-tier create-post endpoint exists — the only multi-target create path is the
+> GPT api-key route `POST /api/v1/ai/social/drafts`, which HOS-65 deliberately left
+> admin-inaccessible ("Do NOT re-implement fan-out"); (Gap 2) per-target overrides
+> (`captionOverride`/`hashtagsOverrideText`/`footerOverride`) have no HTTP write path.
+> G-8 therefore needs backend work HOS-66 never budgeted, plus an unresolved
+> architecture decision (new admin endpoint vs. proxy vs. reduced scope). The four
+> G-8 tasks (T-013..T-016) + both backend gaps now live in HOS-98. HOS-66 is closed
+> Done with the 23 in-scope tasks shipped in PR #2053.
 
 **Average Complexity:** 2.0/3 (max)
 **Decomposition:** direct atomic pass (all tasks ≤ 3 complexity, grounded against current code)
-**Blocked:** 4 tasks (T-013..T-016, G-8) — waiting on HOS-65 (Publishing Engine Extension), still in Linear Backlog.
+**Moved out:** 4 tasks (T-013..T-016, G-8) → [HOS-98](https://linear.app/hospeda-beta/issue/HOS-98) (was blocked on HOS-65; on picking HOS-65 apart the split above emerged).
 
 **Scope note (found while atomizing, not assumed from spec.md alone):** G-5's catalog
 active-campaigns/batches list and G-4/G-5's `campaignSlug`/`batchSlug` fields on draft
@@ -67,17 +78,14 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
   - Blocked by: T-008
   - Blocks: T-012
 
-- [ ] **T-013** (complexity: 3) ⚠ BLOCKED (HOS-65) - Scaffold admin compose-social-post page
-  - Blocked by: none (external: HOS-65)
-  - Blocks: T-014
+- [→] **T-013** (complexity: 3) MOVED TO HOS-98 - Scaffold admin compose-social-post page
+  - Moved: needs admin create-post endpoint (Gap 1) before it can land
 
-- [ ] **T-014** (complexity: 3) ⚠ BLOCKED (HOS-65) - Add platform multi-select creating N target rows
-  - Blocked by: T-013
-  - Blocks: T-015, T-016
+- [→] **T-014** (complexity: 3) MOVED TO HOS-98 - Add platform multi-select creating N target rows
+  - Moved: depends on T-013 + the admin fan-out contract
 
-- [ ] **T-015** (complexity: 2) ⚠ BLOCKED (HOS-65) - Add per-platform caption override affordance
-  - Blocked by: T-014
-  - Blocks: T-016
+- [→] **T-015** (complexity: 2) MOVED TO HOS-98 - Add per-platform caption override affordance
+  - Moved: per-target overrides have no HTTP write path yet (Gap 2)
 
 - [x] **T-023** (complexity: 2) - Add public-data-pull API route (`public-data.ts`, 8 route tests)
   - Blocked by: T-022
@@ -109,8 +117,8 @@ spec G-5 requires resolve-**or-create**. Tasks below reflect only the actual rem
 - [x] **T-012** (complexity: 2) - Verify dashboard AC-4 end-to-end
   - Blocked by: T-007, T-009, T-010, T-011
 
-- [ ] **T-016** (complexity: 2) ⚠ BLOCKED (HOS-65) - Verify AC-5 end-to-end
-  - Blocked by: T-014, T-015
+- [→] **T-016** (complexity: 2) MOVED TO HOS-98 - Verify AC-5 end-to-end
+  - Moved: depends on T-014/T-015 (all G-8)
 
 - [x] **T-020** (complexity: 1) - Add CI guard against inline SVG / direct phosphor imports (AC-6) — `no-inline-icons.guard.test.ts`, 7/7 green
   - Blocked by: T-018, T-019
