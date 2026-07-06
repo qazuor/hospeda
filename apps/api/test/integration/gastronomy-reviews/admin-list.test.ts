@@ -20,12 +20,13 @@
 
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Mutable reference holding the captured mock for listForModeration.
  * Stored on an object to dodge the vi.mock() hoisting temporal-dead-zone.
  */
-const mockRef: { listForModeration: ReturnType<typeof vi.fn> } = {
+const mockRef: { listForModeration: Mock } = {
     listForModeration: vi.fn()
 };
 

@@ -9,6 +9,7 @@ import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { billingCustomerMiddleware } from '../../src/middlewares/billing-customer';
 import type { AppBindings } from '../../src/types';
 
@@ -28,8 +29,8 @@ vi.mock('../../src/utils/logger', () => ({
 
 describe('billingCustomerMiddleware', () => {
     let mockContext: Partial<Context<AppBindings>>;
-    let mockNext: ReturnType<typeof vi.fn>;
-    let mockGetQZPayBilling: ReturnType<typeof vi.fn>;
+    let mockNext: Mock;
+    let mockGetQZPayBilling: Mock;
 
     const mockActor: Actor = {
         id: 'user_123',

@@ -18,13 +18,14 @@
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Mutable reference for the captured `search` mock. The `vi.mock()` factory is
  * hoisted above outer `const` declarations, so we store the mock on `mockRef`
  * and read it from tests (same pattern as admin-list.test.ts).
  */
-const mockRef: { search: ReturnType<typeof vi.fn> } = {
+const mockRef: { search: Mock } = {
     search: vi.fn()
 };
 

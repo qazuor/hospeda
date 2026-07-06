@@ -20,13 +20,14 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Mutable ref for the mocked `UserService.update`. `vi.mock()` hoists its
  * factory above outer const declarations, so the factory reads through this
  * ref instead of closing over a `const` directly.
  */
-const userServiceRef: { update: ReturnType<typeof vi.fn> } = {
+const userServiceRef: { update: Mock } = {
     update: vi.fn()
 };
 

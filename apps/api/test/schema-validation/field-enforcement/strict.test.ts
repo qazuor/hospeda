@@ -14,6 +14,7 @@
 
 import { AccommodationService } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { apiLogger } from '../../../src/utils/logger';
@@ -34,7 +35,7 @@ const INVALID_PAYLOAD = {
 
 describe('SPEC-087 — strict response strip', () => {
     let app: ReturnType<typeof initApp>;
-    let errorSpy: ReturnType<typeof vi.spyOn>;
+    let errorSpy: Mock;
 
     beforeAll(() => {
         validateApiEnv();

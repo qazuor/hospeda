@@ -19,16 +19,17 @@
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
-const accommodationReviewMock: { listByAccommodation: ReturnType<typeof vi.fn> } = {
+const accommodationReviewMock: { listByAccommodation: Mock } = {
     listByAccommodation: vi.fn()
 };
 
-const destinationReviewMock: { listByDestination: ReturnType<typeof vi.fn> } = {
+const destinationReviewMock: { listByDestination: Mock } = {
     listByDestination: vi.fn()
 };
 
-const ownerPromotionMock: { getById: ReturnType<typeof vi.fn> } = {
+const ownerPromotionMock: { getById: Mock } = {
     getById: vi.fn()
 };
 

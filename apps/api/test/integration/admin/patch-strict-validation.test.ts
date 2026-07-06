@@ -18,6 +18,7 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Mutable refs for mocks — same pattern as
@@ -25,13 +26,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * `vi.mock()` hoists the factory above outer const declarations, so we read
  * them through these refs instead of closing over `const` names directly.
  */
-const ownerPromotionRef: { update: ReturnType<typeof vi.fn> } = {
+const ownerPromotionRef: { update: Mock } = {
     update: vi.fn()
 };
-const sponsorshipRef: { update: ReturnType<typeof vi.fn> } = {
+const sponsorshipRef: { update: Mock } = {
     update: vi.fn()
 };
-const accommodationReviewRef: { update: ReturnType<typeof vi.fn> } = {
+const accommodationReviewRef: { update: Mock } = {
     update: vi.fn()
 };
 

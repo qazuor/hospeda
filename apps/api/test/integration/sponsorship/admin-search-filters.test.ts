@@ -16,6 +16,7 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Mutable reference that holds the captured mock for adminList.
@@ -24,7 +25,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * initialized, so we cannot reference a `const adminListMock` from inside
  * the factory.  Instead, we store the mock on `mockRef` and read it in tests.
  */
-const mockRef: { adminList: ReturnType<typeof vi.fn> } = {
+const mockRef: { adminList: Mock } = {
     adminList: vi.fn()
 };
 

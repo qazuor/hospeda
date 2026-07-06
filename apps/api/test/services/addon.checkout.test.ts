@@ -101,6 +101,13 @@ const {
     };
 });
 
+// Derived from the hoisted mocks' own inferred `vi.fn(impl)` types (rather than
+// re-declaring the nested Mock<> chain by hand) so the callback signatures used
+// to restore these mocks in `beforeEach` below stay structurally identical to
+// what `mockImplementation()` actually expects.
+type MockDbTransactionCallback = Parameters<typeof mockDbTransaction>[0];
+type MockDbTx = Parameters<MockDbTransactionCallback>[0];
+
 // Mock @repo/db/client - dynamic import used inside confirmAddonPurchase
 vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
@@ -404,12 +411,7 @@ describe('confirmAddonPurchase', () => {
 
         // Restore mockDbTransaction after clearAllMocks.
         // SPEC-064: tx must have both insert() and execute() (for SELECT FOR UPDATE dedup check).
-        mockDbTransaction.mockImplementation(async function (
-            callback: (tx: {
-                insert: ReturnType<typeof vi.fn>;
-                execute: ReturnType<typeof vi.fn>;
-            }) => Promise<unknown>
-        ) {
+        mockDbTransaction.mockImplementation(async function (callback: MockDbTransactionCallback) {
             const mockInsert = vi.fn(() => ({ values: mockDbInsertValues }));
             const mockExecute = vi.fn().mockResolvedValue({ rows: [] }); // no duplicate → allow insert
             mockDbInsertValues.mockReturnValue({ returning: mockDbInsertReturning });
@@ -418,19 +420,10 @@ describe('confirmAddonPurchase', () => {
 
         // Restore mockWithTransaction (SPEC-064) after clearAllMocks.
         mockWithTransaction.mockImplementation(async function (
-            callback: (tx: {
-                insert: ReturnType<typeof vi.fn>;
-                execute: ReturnType<typeof vi.fn>;
-            }) => Promise<unknown>,
+            callback: MockDbTransactionCallback,
             existingTx?: unknown
         ) {
-            if (existingTx)
-                return callback(
-                    existingTx as {
-                        insert: ReturnType<typeof vi.fn>;
-                        execute: ReturnType<typeof vi.fn>;
-                    }
-                );
+            if (existingTx) return callback(existingTx as MockDbTx);
             return mockDbTransaction(callback);
         });
     });

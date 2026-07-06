@@ -723,7 +723,7 @@ describe('TrialService', () => {
             });
 
             mockWithServiceTransaction.mockImplementationOnce(async function (
-                callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                callback: (ctx: { tx: { execute: Mock } }) => Promise<unknown>
             ) {
                 txCallbackActive = true;
                 const result = await callback({
@@ -763,7 +763,7 @@ describe('TrialService', () => {
             // and must NOT call subscriptions.list, subscriptions.cancel, or customers.get.
 
             mockWithServiceTransaction.mockImplementationOnce(async function (
-                callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                callback: (ctx: { tx: { execute: Mock } }) => Promise<unknown>
             ) {
                 return callback({
                     tx: {

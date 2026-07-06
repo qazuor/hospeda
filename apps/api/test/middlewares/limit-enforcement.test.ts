@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import {
     enforceAccommodationLimit,
     enforcePhotoLimit,
@@ -1296,7 +1297,7 @@ describe('Limit Enforcement Middleware', () => {
  */
 describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
     let mockContext: Context<AppBindings>;
-    let mockNext: ReturnType<typeof vi.fn>;
+    let mockNext: Mock;
     let mockLimitsMap: Map<LimitKey, number>;
 
     beforeEach(() => {
