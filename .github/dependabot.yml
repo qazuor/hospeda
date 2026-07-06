@@ -105,6 +105,18 @@ updates:
       # native-memory ceiling is fixed (vmForks+vmMemoryLimit or heavy-test
       # isolation). Owner: HOS-80.
       - dependency-name: '@radix-ui/*'
+      # @ai-sdk/openai + @ai-sdk/anthropic + ai: the Vercel AI SDK v4/v7 line
+      # ships a LanguageModelV4 provider that the installed `ai` core's
+      # generateText/streamText don't accept, so these three MUST move together
+      # (bumping any one alone fails Build/Typecheck — see the adapter error in
+      # packages/ai-core/src/providers/vercel-openai.adapter.ts). Dependabot kept
+      # re-opening #2077/#2116 (openai), #2123 (anthropic), #2120 (ai) as
+      # standalone bumps; gate them until the coordinated migration lands.
+      # @ai-sdk/gateway is already on v4 (#2078, merged) and unaffected.
+      # Owner: HOS-88.
+      - dependency-name: '@ai-sdk/openai'
+      - dependency-name: '@ai-sdk/anthropic'
+      - dependency-name: 'ai'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
