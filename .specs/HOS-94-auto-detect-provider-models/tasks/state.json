@@ -432,105 +432,105 @@
             "id": "T-013",
             "title": "Integration tests — sync-models endpoint across all providers",
             "description": "E2E integration tests for POST /credentials/{providerId}/sync-models with fixtures per provider (OpenAI, Anthropic, Gemini, Ollama, compatible via baseURL). Assert filter + merge (source) + fail-open create/rotate. Mocked fetch, no real calls.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005", "T-009", "T-010"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Per-provider fixture integration tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Filter + merge assertions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fail-open create/rotate assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-06T14:00:00.000Z",
+                "completed": "2026-07-06T14:20:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Isolation guard — fetcher stays SDK-free and env-free",
             "description": "Confirm ac4 isolation guard covers list-models.ts: no ai/@ai-sdk/* outside providers/, no process.env, no @repo/db. Plain fetch mirrors OpenAiAdapter.moderate() precedent — likely no special-casing, just confirm.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify guard covers list-models.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "No @ai-sdk / no process.env / no @repo/db",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["ai-core", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-06T14:20:00.000Z",
+                "completed": "2026-07-06T14:30:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Docs + gate-matrix + i18n finalization",
             "description": "Update apps/api/CLAUDE.md AI section and/or ai-core README (list-models fetcher + sync-models endpoint; no migration, ephemeral, fail-open auto-sync). Confirm gate-matrix row + i18n keys (es/en/pt). No env var added.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update api/ai-core docs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate-matrix + i18n keys check",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-06T14:30:00.000Z",
+                "completed": "2026-07-06T14:45:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 3,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.6
     }
