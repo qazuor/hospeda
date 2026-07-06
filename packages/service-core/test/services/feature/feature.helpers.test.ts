@@ -1,10 +1,10 @@
 // TODO [96ec6f25-86ea-4410-9581-3e45095aa652]: Implement tests for all helpers in feature.helpers.ts, including slug generation and utility functions.
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { generateFeatureSlug } from '../../../src/services/feature/feature.helpers';
 
 describe('generateFeatureSlug', () => {
-    let findOneMock: ReturnType<typeof vi.fn>;
+    let findOneMock: Mock;
     let model: { findOne: typeof findOneMock };
     beforeEach(() => {
         findOneMock = vi.fn();

@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     buildEventPriceConditions,
     generateEventSlug
@@ -10,7 +10,7 @@ import {
  * Ensures robust, unique, and predictable slug generation for events.
  */
 describe('generateEventSlug (EventService)', () => {
-    let findOneMock: ReturnType<typeof vi.fn>;
+    let findOneMock: Mock;
     beforeEach(() => {
         findOneMock = vi.fn();
         vi.spyOn(EventModel.prototype, 'findOne').mockImplementation(findOneMock);

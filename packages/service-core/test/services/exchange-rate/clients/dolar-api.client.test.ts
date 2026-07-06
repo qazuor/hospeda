@@ -1,10 +1,10 @@
 import { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { DolarApiClient } from '../../../../src/services/exchange-rate/clients/dolar-api.client.js';
 
 describe('DolarApiClient', () => {
     let client: DolarApiClient;
-    let fetchMock: ReturnType<typeof vi.fn>;
+    let fetchMock: Mock;
 
     beforeEach(() => {
         client = new DolarApiClient();
