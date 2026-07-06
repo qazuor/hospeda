@@ -68,6 +68,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
     description={`${t('blog.byTag.description', 'Publicaciones con etiqueta')} ${tagName}`}
     showFilters={false}
     noindex={true}
+    totalCount={total}
 >
     <Breadcrumbs
         slot="breadcrumbs"
@@ -84,7 +85,6 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
         locale={locale}
         tagline={t('blog.byTag.tagline', 'Etiqueta')}
         title={`#${tagName}`}
-        totalCount={total}
     />
 
     {hasError && !result.ok && (

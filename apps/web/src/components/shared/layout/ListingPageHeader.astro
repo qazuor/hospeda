@@ -2,12 +2,18 @@
 /**
  * @file ListingPageHeader.astro
  * @description Reusable header area for listing pages with decorative tagline,
- * bold title, optional subtitle, and result count.
+ * bold title, and optional subtitle.
  * Matches Figma design: italic Caveat tagline above bold Geologica heading.
+ *
+ * BETA-22: the natural-language results summary ("Mostrando N de M ...")
+ * used to render here as a count element, inside the sticky WaveHeader band,
+ * detached from the filters/results it describes. It now renders in
+ * `ListingLayout` instead, at the top of the content column — see the
+ * results-summary props documented on `ListingLayout.astro`. This component
+ * intentionally has no results-count prop anymore; do not re-add one here.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -17,24 +23,10 @@ interface Props {
 	readonly title: string;
 	/** Optional subtitle below the title. */
 	readonly subtitle?: string;
-	/** Total result count displayed to the right. */
-	readonly totalCount?: number;
-	/**
-	 * Natural-language description of applied filters and current results.
-	 * When provided, replaces the generic "N resultados encontrados" text.
-	 * Example: "Mostrando 5 de 8 casas quintas en Concepción del Uruguay"
-	 */
-	readonly filterSummary?: string;
 	readonly class?: string;
 }
 
-const { locale, tagline, title, subtitle, totalCount, filterSummary, class: className } = Astro.props;
-const t = createT(locale);
-
-const countLabel = filterSummary
-	?? (totalCount !== undefined
-		? `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`
-		: undefined);
+const { tagline, title, subtitle, class: className } = Astro.props;
 ---
 
 <div class:list={['listing-page-header', className]}>
@@ -47,22 +39,9 @@ const countLabel = filterSummary
 			<p class="listing-page-header__subtitle wh-compact-hide">{subtitle}</p>
 		)}
 	</div>
-
-	{countLabel && (
-		<p class="listing-page-header__count">{countLabel}</p>
-	)}
 </div>
 
 <style>
-	.listing-page-header {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: var(--space-4);
-		flex-wrap: wrap;
-		transition: gap 0.3s ease;
-	}
-
 	.listing-page-header__tagline {
 		font-family: var(--font-decorative);
 		font-weight: 700;
@@ -102,36 +81,7 @@ const countLabel = filterSummary
 			margin 0.3s ease;
 	}
 
-	.listing-page-header__count {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		margin: 0;
-		/* Allow the natural-language summary (filters + counts) to wrap on
-		 * narrow viewports — single-line forced overflow on mobile. */
-		text-wrap: pretty;
-	}
-
-	@media (max-width: 640px) {
-		.listing-page-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-	}
-
-	/* Compact state. Listings render a STATIC band, so this normally never
-	 * applies — BUT the mobile fullscreen map (mapa.astro) force-locks the
-	 * header compact, so ListingPageHeader must still collapse correctly.
-	 * Element collapse/shrink now comes from the shared `.wh-compact-*`
-	 * utilities applied in the markup (contract in WaveHeader.astro); only the
-	 * outer row alignment stays local. */
-	:global(.wave-header--compact) .listing-page-header {
-		align-items: center;
-		gap: var(--space-2);
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.listing-page-header,
 		.listing-page-header__tagline,
 		.listing-page-header__title,
 		.listing-page-header__subtitle {

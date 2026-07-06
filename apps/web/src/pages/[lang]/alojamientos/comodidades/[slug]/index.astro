@@ -49,9 +49,9 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 const baseUrl = buildUrl({ locale, path: `alojamientos/comodidades/${slug}` });
 ---
 
-<ListingLayout locale={locale} title={`${amenityName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true}>
+<ListingLayout locale={locale} title={`${amenityName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true} totalCount={total}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.amenities', 'Comodidades') }, { label: amenityName }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byAmenity.tagline', 'Comodidad')} title={amenityName} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byAmenity.tagline', 'Comodidad')} title={amenityName} />
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />}

@@ -199,6 +199,7 @@ const itemListEntries = cards.map((card) => ({
     showFilters={true}
     filterPosition="left"
     ogTagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
+    totalCount={total}
 >
     <ItemListJsonLd
         slot="head-extra"
@@ -219,7 +220,6 @@ const itemListEntries = cards.map((card) => ({
         locale={locale}
         tagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}
         title={t('experience.listing.title', 'Experiencias')}
-        totalCount={total}
     />
 
     <FilterSidebar

@@ -309,6 +309,8 @@ const postCategoryChips = [
     canonicalPath={canonicalPath}
     showFilters={true}
     filterPosition="left"
+    totalCount={total}
+    filterSummary={filterSummary}
 >
     {/* RSS feed-discovery hints — one per supported locale (SPEC-157 REQ-6) */}
     <link
@@ -338,8 +340,6 @@ const postCategoryChips = [
         locale={locale}
         tagline={t('blog.tagline', 'Descubrí historias')}
         title={t('blog.title', 'Publicaciones')}
-        totalCount={total}
-        filterSummary={filterSummary}
     />
 
     <FilterSidebar

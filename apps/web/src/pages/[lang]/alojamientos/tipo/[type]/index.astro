@@ -368,6 +368,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	totalCount={total}
 >
 	<CollectionPageJsonLd
 		slot="head-extra"
@@ -400,7 +401,6 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		locale={locale}
 		tagline={t('accommodations.byType.tagline', 'Tipo de alojamiento')}
 		title={typeName}
-		totalCount={total}
 	/>
 
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />

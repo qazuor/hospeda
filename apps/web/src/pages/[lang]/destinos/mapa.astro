@@ -33,6 +33,13 @@ const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
+// BETA-22: this page predates ListingLayout (still on DefaultLayout + its own
+// wave decorative markup), so it doesn't get ListingLayout's shared
+// `totalCount`/`filterSummary` results-summary handling. Built locally with
+// the same visual treatment, placed in the content column above the map
+// instead of inside the page header.
+const resultsSummaryLabel = `${total} ${t('ui.listing.resultsFound', 'resultados encontrados')}`;
+
 const mapItems = cards
 	.filter((c) => c.coordinates?.lat && c.coordinates?.long)
 	.map((c) => {
@@ -84,7 +91,6 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 					locale={locale}
 					tagline={t('destinations.tagline', 'Explorá la región')}
 					title={t('destinations.title', 'Destinos')}
-					totalCount={total}
 				/>
 			</div>
 		</div>
@@ -97,6 +103,10 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 
 		<div class="dest-listing__body">
 			<div class="dest-listing__container">
+				{!hasError && (
+					<p class="listing-results-summary" role="status" aria-live="polite">{resultsSummaryLabel}</p>
+				)}
+
 				{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
 
 				{!hasError && cards.length === 0 && (
@@ -152,6 +162,17 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 	.dest-listing__wave svg { width: 100%; height: 80px; display: block; }
 
 	.dest-listing__body { padding: var(--space-section-sm) 0; }
+
+	/* Results summary (BETA-22): same visual treatment as ListingLayout's
+	 * shared `.listing-results-summary` — this page predates ListingLayout,
+	 * so the rule is duplicated locally instead of imported. */
+	.listing-results-summary {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0 0 var(--space-4);
+		text-wrap: pretty;
+	}
 
 	.view-toggle {
 		display: inline-flex;

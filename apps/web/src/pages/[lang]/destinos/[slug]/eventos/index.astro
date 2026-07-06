@@ -81,9 +81,9 @@ const heading = t('events.typeInLocation', '{{type}} en {{location}}', {
 });
 ---
 
-<ListingLayout locale={locale} title={heading} showFilters={false}>
+<ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('events.title', 'Eventos') }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.tagline', 'No te pierdas nada')} title={heading} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.tagline', 'No te pierdas nada')} title={heading} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && resolvedCards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: 'eventos' })} actionLabel={t('events.viewAll', 'Ver todos los eventos')} />}
 	{!hasError && resolvedCards.length > 0 && (
