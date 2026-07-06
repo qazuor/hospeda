@@ -6,7 +6,7 @@
     "Destinations List [light]": ["color-contrast", "heading-order"],
     "Destinations List [dark]": ["heading-order"],
     "Events List [light]": ["color-contrast"],
-    "Events List [dark]": [],
+    "Events List [dark]": ["color-contrast"],
     "Gastronomy List [light]": ["color-contrast"],
     "Gastronomy List [dark]": [],
     "Experiences List [light]": ["color-contrast"],
