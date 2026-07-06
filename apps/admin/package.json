@@ -30,7 +30,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@faker-js/faker": "10.5.0",
-        "@github/relative-time-element": "^4.4.8",
+        "@github/relative-time-element": "^5.2.0",
         "@pablotheblink/flashyjs": "^1.0.5",
         "@qazuor/qzpay-core": "^1.8.0",
         "@qazuor/qzpay-react": "^1.1.16",

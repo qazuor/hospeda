@@ -155,8 +155,8 @@ importers:
         specifier: 10.5.0
         version: 10.5.0
       '@github/relative-time-element':
-        specifier: ^4.4.8
-        version: 4.4.8
+        specifier: ^5.2.0
+        version: 5.2.0
       '@pablotheblink/flashyjs':
         specifier: ^1.0.5
         version: 1.0.5
@@ -3209,8 +3209,8 @@ packages:
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
 
-  '@github/relative-time-element@4.4.8':
-    resolution: {integrity: sha512-FSLYm6F3TSQnqHE1EMQUVVgi2XjbCvsESwwXfugHFpBnhyF1uhJOtu0Psp/BB/qqazfdkk7f5fVcu7WuXl3t8Q==}
+  '@github/relative-time-element@5.2.0':
+    resolution: {integrity: sha512-yPXdxA44fJAHp0NaJ0cykLqDq7i1PYOZ1wsh+m3SKvmZDoXk5jQdt4xIaHQEfRWBvK/xOQYpMPgjh2OGSqTqWg==}
 
   '@graphql-typed-document-node/core@3.2.0':
     resolution: {integrity: sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==}
@@ -13718,7 +13718,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@github/relative-time-element@4.4.8': {}
+  '@github/relative-time-element@5.2.0': {}
 
   '@graphql-typed-document-node/core@3.2.0(graphql@16.14.2)':
     dependencies:
