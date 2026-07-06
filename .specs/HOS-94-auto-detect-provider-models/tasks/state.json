@@ -362,70 +362,70 @@
             "id": "T-011",
             "title": "Admin UI — 'Sync models' button + mutation + detected/curated render",
             "description": "credentials.tsx per-provider 'Sync models' button; TanStack Query mutation in features/ai-settings/hooks.ts calling the endpoint. Render source-badged (Detected/Curated/Both). Preserve toggle + custom-add; persist enabled set to metadata.models via existing update mutation. i18n.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "useSyncModelsMutation hook",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sync button + source-badged list render",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Persist enabled set via existing update mutation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-06T00:05:00.000Z",
+                "completed": "2026-07-06T00:20:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Admin UI — loading / empty / error states for sync",
             "description": "credentials.tsx sync flow states: loading spinner, 'No chat models detected' empty, inline error banner (auth/network/rate-limit) with retry. i18n. Tests for the three states. Revisit T-008 error-code granularity here (CONFIGURATION_ERROR vs SERVICE_UNAVAILABLE) — decide if finer codes are needed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Loading + empty states",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Error banner + retry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "State tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-07-05T16:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-06T00:05:00.000Z",
+                "completed": "2026-07-06T00:20:00.000Z"
             }
         },
         {
@@ -528,9 +528,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 5,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.6
     }
