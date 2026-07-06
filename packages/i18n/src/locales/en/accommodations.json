@@ -52,8 +52,13 @@
         "page": {
             "metaTitle": "Compare accommodations",
             "metaDescription": "Compare accommodations side by side: price, location, rating and more.",
+            "tagline": "Compare better",
             "heading": "Accommodation comparison",
-            "backToListing": "Back to accommodations"
+            "subtitle": "We highlight the differences so you can decide more easily",
+            "breadcrumbLabel": "Compare",
+            "backToListing": "Back to accommodations",
+            "count_one": "Comparing {{count}} accommodation",
+            "count_other": "Comparing {{count}} accommodations"
         },
         "empty": {
             "title": "No accommodations to compare",

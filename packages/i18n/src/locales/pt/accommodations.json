@@ -52,8 +52,13 @@
         "page": {
             "metaTitle": "Comparar hospedagens",
             "metaDescription": "Compare hospedagens lado a lado: preço, localização, avaliação e mais.",
+            "tagline": "Compare melhor",
             "heading": "Comparação de hospedagens",
-            "backToListing": "Voltar para hospedagens"
+            "subtitle": "Destacamos as diferenças para você decidir mais fácil",
+            "breadcrumbLabel": "Comparar",
+            "backToListing": "Voltar para hospedagens",
+            "count_one": "Comparando {{count}} hospedagem",
+            "count_other": "Comparando {{count}} hospedagens"
         },
         "empty": {
             "title": "Nenhuma hospedagem para comparar",

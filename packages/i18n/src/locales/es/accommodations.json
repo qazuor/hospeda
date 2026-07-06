@@ -52,8 +52,13 @@
         "page": {
             "metaTitle": "Comparar alojamientos",
             "metaDescription": "Compará alojamientos lado a lado: precio, ubicación, calificación y más.",
+            "tagline": "Compará mejor",
             "heading": "Comparación de alojamientos",
-            "backToListing": "Volver a alojamientos"
+            "subtitle": "Resaltamos las diferencias para que decidas más fácil",
+            "breadcrumbLabel": "Comparar",
+            "backToListing": "Volver a alojamientos",
+            "count_one": "Comparás {{count}} alojamiento",
+            "count_other": "Comparás {{count}} alojamientos"
         },
         "empty": {
             "title": "No hay alojamientos para comparar",

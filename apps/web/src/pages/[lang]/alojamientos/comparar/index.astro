@@ -1,79 +1,139 @@
 ---
 /**
  * @file alojamientos/comparar/index.astro
- * @description Accommodation comparison page (SPEC-288 T-011). Renders the
- * side-by-side comparison matrix for the client-only selection. The matrix
+ * @description Accommodation comparison page (SPEC-288 T-011, page shell
+ * redesigned HOS-85 to match the accommodation listing/detail visual
+ * language). Renders the side-by-side comparison matrix for the client-only
+ * selection inside the shared celeste "wave header" band (breadcrumb +
+ * decorative tagline + heading), reusing {@link DetailLayout} — the matrix
  * island reads the compare-store, hydrates the accommodations through the
  * protected compare endpoint, and re-validates the per-plan cap server-side.
+ *
+ * Reuse decision (HOS-85): this page uses `DetailLayout` (not `ListingLayout`)
+ * because it needs the shared `WaveHeader` band (breadcrumb + Caveat tagline +
+ * heading — the exact piece HOS-84 is reworking, so this page inherits that
+ * rework for free) WITHOUT the listing's filter sidebar, pagination, or
+ * `CompareBar`. `ListingLayout` always renders `CompareBar`, which would be
+ * redundant here — the user is already looking at their full selection in
+ * the matrix below, so a floating "N selected, view comparison" bar adds
+ * nothing. `DetailLayout` gives the same breadcrumb/tagline/heading slots
+ * (`breadcrumbs` / `page-header`) with `showSidebar={false}` for a clean
+ * single-column body, at the cost of a `detail`-sized header padding preset
+ * instead of `listing` — an acceptable tradeoff since this is a transient,
+ * noindex utility page, not a landing page.
  *
  * @route /{lang}/alojamientos/comparar/
  * @rendering SSR (prerender=false) — the matrix itself is client-only because
  *   the selection lives in localStorage; the page is noindex (transient view).
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { CompareCount } from '@/components/shared/compare/CompareCount.client';
 import { ComparisonMatrix } from '@/components/shared/compare/ComparisonMatrix.client';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import { ArrowLeftIcon } from '@repo/icons';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
+const locale = (Astro.locals.locale ?? 'es') as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const title = t('accommodations.comparison.page.metaTitle', 'Comparar alojamientos');
-const description = t(
+const metaTitle = t('accommodations.comparison.page.metaTitle', 'Comparar alojamientos');
+const metaDescription = t(
 	'accommodations.comparison.page.metaDescription',
 	'Compará alojamientos lado a lado: precio, ubicación, calificación y más.'
 );
+const tagline = t('accommodations.comparison.page.tagline', 'Compará mejor');
 const heading = t('accommodations.comparison.page.heading', 'Comparación de alojamientos');
+const subtitle = t(
+	'accommodations.comparison.page.subtitle',
+	'Resaltamos las diferencias para que decidas más fácil'
+);
+const breadcrumbLabel = t('accommodations.comparison.page.breadcrumbLabel', 'Comparar');
 const backLabel = t('accommodations.comparison.page.backToListing', 'Volver a alojamientos');
+const accommodationsLabel = t('accommodations.title', 'Alojamientos');
+
+const listingUrl = buildUrl({ locale, path: 'alojamientos' });
 ---
 
-<DefaultLayout locale={locale} title={title} description={description} noindex={true}>
-	<main class="compare-page">
-		<header class="compare-page__header">
-			<h1 class="compare-page__title">{heading}</h1>
-			<a class="compare-page__back" href={`/${locale}/alojamientos/`}>{backLabel}</a>
-		</header>
+<DetailLayout
+	locale={locale}
+	title={metaTitle}
+	description={metaDescription}
+	showSidebar={false}
+	noindex={true}
+>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: accommodationsLabel, path: 'alojamientos' },
+			{ label: breadcrumbLabel },
+		]}
+	/>
 
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={tagline}
+		title={heading}
+		subtitle={subtitle}
+	/>
+
+	<div class="compare-page__meta">
+		<a class="compare-page__back" href={listingUrl}>
+			<ArrowLeftIcon size="sm" weight="bold" aria-hidden="true" />
+			{backLabel}
+		</a>
+		<CompareCount client:only="react" locale={locale} />
+	</div>
+
+	<section class="compare-page__section">
 		<ComparisonMatrix client:only="react" locale={locale} />
-	</main>
-</DefaultLayout>
+	</section>
+</DetailLayout>
 
 <style>
-	.compare-page {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: var(--space-section-sm) var(--space-container-x);
-	}
-
-	.compare-page__header {
+	.compare-page__meta {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: var(--space-3, 0.75rem);
 		flex-wrap: wrap;
-		margin-bottom: var(--space-6);
-	}
-
-	.compare-page__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-h2, 1.75rem);
-		color: var(--core-foreground);
-		margin: 0;
+		margin-bottom: var(--space-5, 1.25rem);
 	}
 
 	.compare-page__back {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
 		font-family: var(--font-sans);
-		font-weight: 500;
 		font-size: var(--text-body-sm, 0.875rem);
+		font-weight: 600;
 		color: var(--brand-primary);
 		text-decoration: none;
+		transition: color var(--duration-fast, 0.2s) ease;
 	}
 
-	.compare-page__back:hover {
-		text-decoration: underline;
+	.compare-page__back:hover,
+	.compare-page__back:focus-visible {
+		color: var(--brand-accent);
+	}
+
+	.compare-page__section {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		padding: var(--space-6, 1.5rem);
+	}
+
+	@media (max-width: 640px) {
+		.compare-page__section {
+			padding: var(--space-4, 1rem);
+		}
 	}
 </style>
