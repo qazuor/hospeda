@@ -697,5 +697,34 @@
             "saveEdit": "Guardar",
             "saveError": "Error al guardar la configuración"
         }
+    },
+    "integrationConfig": {
+        "title": "Exportar configuración de integración",
+        "description": "Copiá la configuración necesaria para conectar el GPT personalizado y el escenario de Make.com sin tener que reconstruirla manualmente.",
+        "copyButton": "Copiar",
+        "copySuccessTitle": "Copiado",
+        "copySuccessDescription": "El contenido se copió al portapapeles.",
+        "copyErrorTitle": "Error al copiar",
+        "copyErrorDescription": "No se pudo acceder al portapapeles.",
+        "revealSecret": "Mostrar valor",
+        "hideSecret": "Ocultar valor",
+        "gptAction": {
+            "title": "Acción de GPT",
+            "description": "Documento OpenAPI 3.1 para pegar directamente en la configuración de \"Actions\" del GPT personalizado.",
+            "copyButton": "Copiar JSON",
+            "downloadButton": "Descargar .json",
+            "error": "Error al cargar la configuración de la acción de GPT"
+        },
+        "makeWebhook": {
+            "title": "Webhook de Make.com",
+            "description": "URL del webhook, encabezado y clave de autenticación, y los JSON Schema del payload y la respuesta esperados por el escenario de Make.com.",
+            "webhookUrlLabel": "URL del webhook",
+            "headerNameLabel": "Nombre del encabezado",
+            "apiKeyLabel": "Clave de API",
+            "notConfigured": "No configurado",
+            "payloadSchemaLabel": "JSON Schema del payload",
+            "responseSchemaLabel": "JSON Schema de la respuesta",
+            "error": "Error al cargar la configuración del webhook de Make.com"
+        }
     }
 }
