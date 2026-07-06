@@ -270,6 +270,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			import { initScrollReveal } from '@/lib/scroll-reveal';
 			import { initImageFallback } from '@/scripts/image-fallback';
 			import { initStopPropagation } from '@/scripts/dom-helpers';
+			import { clearCompareModeIfOutsideSection } from '@/store/compare-store';
 
 			// Initialize delegated handlers once (module-level dedup)
 			initImageFallback();
@@ -312,6 +313,12 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			}
 
 			async function initPage(): Promise<void> {
+				// HOS-85 T-005: compare mode is scoped to /{locale}/alojamientos/*.
+				// Runs on every page-load event (initial load AND every
+				// ClientRouter-driven navigation) so the flag turns off the
+				// instant the user browses outside the accommodation section,
+				// regardless of which layout the destination page uses.
+				clearCompareModeIfOutsideSection(window.location.pathname);
 				initScrollReveal();
 				initParallax();
 				// Lazy-load GLightbox only when elements with [data-glightbox] exist on the page

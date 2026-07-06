@@ -81,3 +81,75 @@
             background-color var(--duration-fast) ease;
     }
 }
+
+/* --- Variant: contextual (HOS-85) ---
+ * Labeled add/remove control rendered in the card body, shown only while
+ * compare mode is active (see CompareButton.client.tsx). Styled as a clear
+ * secondary pill button, consistent with the card's CTA ("Ver más →")
+ * styling, rather than the neutral icon button used by standalone/compact.
+ * `align-self: flex-start` keeps it from stretching to full width when
+ * rendered as a direct child of a `flex-direction: column` container. */
+.contextualButton {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--border);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 19.2px;
+    white-space: nowrap;
+    cursor: pointer;
+
+    transition:
+        color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        transform var(--duration-fast) var(--ease-bounce);
+}
+
+.contextualButton:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.contextualButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.contextualButton:active {
+    transform: scale(0.96);
+}
+
+/* Selected (accommodation is in the comparison list) */
+.contextualButton[aria-pressed="true"] {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a35);
+    background-color: var(--brand-primary-a08);
+}
+
+.contextualButton[aria-pressed="true"]:hover {
+    border-color: var(--brand-primary-a40);
+    background-color: var(--brand-primary-a12);
+}
+
+.contextualButton[aria-busy="true"] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .contextualButton,
+    .contextualButton:active {
+        transform: none;
+        transition:
+            color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
+    }
+}

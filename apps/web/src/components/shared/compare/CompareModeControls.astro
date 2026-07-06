@@ -1,0 +1,55 @@
+---
+/**
+ * @file CompareModeControls.astro
+ * @description Wrapper mounting the compare-mode toggle next to
+ * `ListingPageHeader` on the six accommodation listing pages (HOS-85 T-005).
+ *
+ * `ListingPageHeader` (`@/components/shared/layout/ListingPageHeader.astro`)
+ * exposes no slot for extra controls, so instead of touching that shared
+ * component this wraps `CompareModeToggle` as a single unit that pages
+ * render as an additional `slot="page-header"` sibling right after
+ * `<ListingPageHeader>` — Astro projects every child sharing a slot name
+ * into that named slot in DOM order, so it ends up directly below the
+ * header title inside `ListingLayout`.
+ *
+ * A dedicated `CompareModeBanner` explainer used to be mounted here too, but
+ * was removed post-review (HOS-85 fix): the toggle itself now communicates
+ * the active state (label + visual style change), so a separate banner is
+ * redundant — see `CompareModeToggle.client.tsx`.
+ *
+ * Post-review fix (HOS-85): `CompareModeToggle` now gates on the comparison
+ * entitlement and needs to know whether the visitor is authenticated (to
+ * decide between the guest auth popover and the authenticated upsell
+ * popover). Islands cannot read `Astro.locals` directly, so this wrapper
+ * forwards `isAuthenticated` down from the page — same pattern as
+ * `FavoriteButton`'s `isAuthenticated` prop.
+ *
+ * @module components/shared/compare/CompareModeControls
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { CompareModeToggle } from './CompareModeToggle.client';
+
+interface Props {
+	/** Locale for the toggle labels. */
+	readonly locale: SupportedLocale;
+	/** Whether the current visitor is authenticated. Forwarded to {@link CompareModeToggle}. */
+	readonly isAuthenticated: boolean;
+}
+
+const { locale, isAuthenticated } = Astro.props;
+---
+
+<div class="compare-mode-controls">
+	<CompareModeToggle client:idle locale={locale} isAuthenticated={isAuthenticated} />
+</div>
+
+<style>
+	.compare-mode-controls {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-3, 12px);
+		margin-top: var(--space-4, 16px);
+	}
+</style>

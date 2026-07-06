@@ -28,6 +28,41 @@
     pointer-events: none;
 }
 
+/*
+ * Post-review fix (HOS-85): while the floating accommodation CompareBar is
+ * visible, it sits bottom-anchored with a z-index deliberately above this
+ * viewport's (see the rationale comment on `.bar` in CompareBar.module.css),
+ * so a bottom-anchored toast would be hidden behind it. Move the toast
+ * viewport to the top of the screen instead whenever that flag is present.
+ *
+ * `[data-compare-bar-visible]` is published on `<html>` by CompareBar itself
+ * (mirrors the `data-mobile-menu-open` / `data-filters-drawer-open`
+ * conventions in `feedback-overrides.css`) — this file only reacts to it, so
+ * ToastViewport stays decoupled from the compare feature/store. When the bar
+ * is not visible, `.viewport`'s normal bottom-anchored rules above apply.
+ *
+ * The attribute-selector prefix gives this rule higher specificity than the
+ * plain `.viewport` rules above (including the desktop media query one), so
+ * a single unqualified declaration here overrides both breakpoints without
+ * needing to duplicate the horizontal (`inset-inline*`) positioning.
+ *
+ * `:global(...)` wraps the `html[...]` selector because it targets a
+ * non-locally-scoped element (`<html>`), not a CSS Module class — same
+ * convention as `MapCardsSidebar.module.css`'s `data-filters-drawer-open` /
+ * `data-search-panel-open` / `data-mobile-menu-open` rules.
+ */
+:global(html[data-compare-bar-visible]) .viewport {
+    inset-block-start: var(--space-4, 1rem);
+    inset-block-end: auto;
+}
+
+@media (min-width: 768px) {
+    :global(html[data-compare-bar-visible]) .viewport {
+        inset-block-start: var(--space-6, 1.5rem);
+        inset-block-end: auto;
+    }
+}
+
 .toast {
     /* Default auto-dismiss duration; ToastViewport.client.tsx overrides this
        per-toast via an inline `--toast-duration` style from `toast.duration`. */

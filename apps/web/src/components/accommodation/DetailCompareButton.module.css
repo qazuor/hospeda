@@ -1,0 +1,134 @@
+/* DetailCompareButton.module.css
+ * Scoped styles for the DetailCompareButton React island (HOS-85 T-010).
+ * All values use CSS custom properties from global.css — never hardcode.
+ * A labeled secondary button (pill icon + text), mirroring the tint treatment
+ * of CompareButton.module.css but sized for a standalone header action rather
+ * than a compact card overlay.
+ */
+
+/* --- Base button --- */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2, 8px);
+    height: 2.5rem;
+    padding-inline: var(--space-4, 16px);
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--border);
+    background-color: var(--core-card);
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition:
+        color var(--duration-fast) ease,
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        transform var(--duration-fast) var(--ease-bounce),
+        box-shadow var(--duration-fast) ease;
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Hover */
+.button:hover {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a35);
+    transform: scale(1.02);
+    box-shadow: var(--shadow-card);
+}
+
+/* Focus-visible — accessible ring */
+.button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Active tap feedback */
+.button:active {
+    transform: scale(0.98);
+}
+
+/* --- Selected (accommodation is in the comparison list) --- */
+.button[aria-pressed="true"] {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a35);
+    background-color: var(--brand-primary-a08);
+}
+
+.button[aria-pressed="true"]:hover {
+    border-color: var(--brand-primary-a40);
+    background-color: var(--brand-primary-a12);
+}
+
+/* --- Busy (entitlements still loading) --- */
+.button[aria-busy="true"] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+    .button,
+    .button:hover,
+    .button:active {
+        transform: none;
+        transition:
+            color var(--duration-fast) ease,
+            background-color var(--duration-fast) ease;
+    }
+}
+
+/* --- Compact header state (mirrors detail-header compact collapse) --- */
+:global(.wave-header--compact) .button {
+    height: 2rem;
+    padding-inline: var(--space-3, 12px);
+}
+
+:global(.wave-header--compact) .label {
+    font-size: 0.75rem;
+}
+
+/* --- Mobile: icon-only compact form (HOS-85 post-review fix) ---
+ * The full labeled pill ("Agregar a comparación") is too wide next to the
+ * circular FavoriteButton inside `.detail-header__favorite` on narrow
+ * viewports and squeezes/overflows the header row. Below 768px, collapse to
+ * an icon-only circle matching FavoriteButton's `standalone` diameter
+ * (2.5rem, see FavoriteButton.module.css `.button`) so the two controls read
+ * as a tidy pair.
+ *
+ * The `.label` text is hidden with `display: none`, not removed from the
+ * DOM. This is safe for accessibility because the button's accessible name
+ * is driven entirely by the `aria-label` attribute set unconditionally in
+ * DetailCompareButton.client.tsx ("Agregar {{name}} a la comparación" /
+ * "Quitar {{name}} de la comparación") — per the Accessible Name and
+ * Description Computation spec, an explicit `aria-label` always wins over
+ * the element's text content, so hiding `.label` does not change what
+ * screen readers announce.
+ */
+@media (max-width: 767px) {
+    .button {
+        width: 2.5rem;
+        padding-inline: 0;
+        gap: 0;
+    }
+
+    .label {
+        display: none;
+    }
+
+    /* Keep the same circular treatment when the sticky-scroll compact header
+     * is also active — without this override the higher-specificity compact
+     * rule above (height: 2rem; padding-inline: var(--space-3)) would win and
+     * leave the icon off-center inside a non-circular box. */
+    :global(.wave-header--compact) .button {
+        width: 2rem;
+        height: 2rem;
+        padding-inline: 0;
+    }
+}

@@ -7,6 +7,8 @@
  * and the in-place loading -> success transition driven by `updateToast`.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastViewport } from '../../../src/components/ui/ToastViewport.client';
@@ -151,5 +153,42 @@ describe('ToastViewport', () => {
 
         fireEvent.pointerLeave(toast);
         expect(getToastTimer(id)?.paused).toBe(false);
+    });
+});
+
+describe('ToastViewport — repositions to the top while the CompareBar is visible (HOS-85 post-review fix)', () => {
+    // The CSS module is loaded verbatim (no proxy mock in this file), so the
+    // reposition rule is asserted via source text — the project's documented
+    // approach for style-source coverage (see apps/web/CLAUDE.md > Testing,
+    // and CompareBar.test.tsx's own z-index source-assert tests).
+    const cssPath = resolve(__dirname, '../../../src/components/ui/ToastViewport.module.css');
+    const cssSrc = readFileSync(cssPath, 'utf8');
+
+    it('anchors the viewport to the top when html[data-compare-bar-visible] is present', () => {
+        // `:global(...)` wraps the html[...] selector — same CSS Modules
+        // convention as MapCardsSidebar.module.css's drawer/menu flags.
+        expect(cssSrc).toContain(':global(html[data-compare-bar-visible]) .viewport');
+        expect(cssSrc).toContain('inset-block-start: var(--space-4, 1rem);');
+        expect(cssSrc).toContain('inset-block-end: auto;');
+    });
+
+    it('keeps the top-anchor override on the desktop breakpoint too', () => {
+        // The desktop `.viewport` rule (min-width: 768px) sets
+        // `inset-block-start: auto`; the reposition rule must re-override it
+        // inside the same media query, not just at the mobile base rule.
+        const desktopBlock = cssSrc.slice(cssSrc.indexOf('@media (min-width: 768px)'));
+        expect(desktopBlock).toContain(':global(html[data-compare-bar-visible]) .viewport');
+        expect(desktopBlock).toContain('inset-block-start: var(--space-6, 1.5rem);');
+    });
+
+    it('does not touch horizontal (inset-inline) positioning in the reposition rule', () => {
+        // Only the vertical anchor should flip; horizontal placement stays
+        // whatever the normal (non-compare-bar) rules already set.
+        const repositionBlockStart = cssSrc.indexOf(
+            ':global(html[data-compare-bar-visible]) .viewport'
+        );
+        const repositionBlockEnd = cssSrc.indexOf('}', repositionBlockStart);
+        const repositionBlock = cssSrc.slice(repositionBlockStart, repositionBlockEnd);
+        expect(repositionBlock).not.toContain('inset-inline');
     });
 });
