@@ -7,10 +7,14 @@
  * the Vercel AI SDK, so it has zero overlap with HOS-88 (AI SDK v4 migration,
  * which edits `vercel-openai.adapter.ts`) and stays SDK-version-independent.
  *
- * **Scope (T-003)**: OpenAI + OpenAI-compatible providers only (`GET
- * {baseURL}/models` with `Authorization: Bearer <key>`). Anthropic (T-004)
- * and Google Gemini / Ollama (T-005) are dispatched through
- * {@link resolveProviderFamily} but not yet implemented — see the seam below.
+ * **Scope**: all four provider families from spec §6.1 are implemented —
+ * OpenAI + OpenAI-compatible (T-003, `GET {baseURL}/models` with
+ * `Authorization: Bearer <key>`), Anthropic (T-004, `GET
+ * https://api.anthropic.com/v1/models` with `x-api-key` +
+ * `anthropic-version`), and Google Gemini / Ollama (T-005, `GET
+ * .../v1beta/models?key=<key>` and `GET {baseURL}/api/tags` respectively).
+ * Dispatch happens through {@link resolveProviderFamily} /
+ * {@link fetchModelsForFamily}.
  *
  * **Caller responsibilities** (never done here): decrypting the stored
  * credential, filtering the raw IDs to chat/text-capable models, merging with
@@ -105,11 +109,12 @@ export class ListModelsUpstreamError extends ListModelsError {
 
 /**
  * Thrown for a provider family that is dispatched by
- * {@link resolveProviderFamily} but has no fetcher implemented yet.
+ * {@link resolveProviderFamily} but has no fetcher implemented.
  *
- * This is the seam T-004 (Anthropic) and T-005 (Gemini, Ollama) fill in —
- * their fetchers replace the corresponding branch in {@link fetchModelsForFamily}
- * and this error stops being reachable for their family.
+ * With T-004/T-005 landed, every member of {@link ProviderFamily} has a real
+ * fetcher in {@link fetchModelsForFamily}; this error is now only reachable
+ * if a future {@link ProviderFamily} member is added without a matching
+ * fetcher (the `default` branch's exhaustiveness guard).
  */
 export class ListModelsUnsupportedProviderError extends ListModelsError {
     constructor(providerId: string, family: ProviderFamily) {
@@ -132,8 +137,8 @@ export class ListModelsUnsupportedProviderError extends ListModelsError {
  * `openai-compatible` covers OpenAI itself plus every OpenAI-compatible
  * provider reachable via a custom `baseURL` (Groq, DeepSeek, Together,
  * Mistral, Moonshot, Zhipu, Baidu — the `KNOWN_PROVIDERS` catalog in
- * `apps/admin`). `anthropic`, `gemini`, and `ollama` are dispatched here but
- * implemented by later tasks (T-004/T-005).
+ * `apps/admin`). `anthropic`, `gemini`, and `ollama` each speak their own
+ * fixed HTTP shape (T-004/T-005).
  */
 export type ProviderFamily = 'openai-compatible' | 'anthropic' | 'gemini' | 'ollama';
 
@@ -203,11 +208,118 @@ export interface ListProviderModelsResult {
 }
 
 // ---------------------------------------------------------------------------
-// OpenAI + OpenAI-compatible fetcher (T-003)
+// Shared HTTP helpers (T-004/T-005 — de-duplicated across all four fetchers)
 // ---------------------------------------------------------------------------
 
-/** Default OpenAI API base URL, used when no `baseURL` override is supplied. */
+/**
+ * OQ-5 — per-provider path convention (spec §6.1 / §11, resolved: no
+ * per-credential override in v1). Each family speaks a fixed URL shape:
+ *
+ * - `openai-compatible` — `{baseURL ?? https://api.openai.com/v1}/models`,
+ *   `Authorization: Bearer <key>`.
+ * - `anthropic` — fixed `https://api.anthropic.com/v1/models` (no custom
+ *   `baseURL`), `x-api-key` + `anthropic-version`.
+ * - `gemini` — fixed `https://generativelanguage.googleapis.com/v1beta/models`
+ *   (no custom `baseURL`), API key passed as a `?key=` query parameter.
+ * - `ollama` — `{baseURL}/api/tags`; `baseURL` is REQUIRED (Ollama is always
+ *   self-hosted, there is no sensible default), no auth header.
+ */
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';
+const ANTHROPIC_MODELS_URL = 'https://api.anthropic.com/v1/models';
+const ANTHROPIC_API_VERSION = '2023-06-01';
+const GEMINI_MODELS_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_NAME_PREFIX = 'models/';
+
+/**
+ * Performs the outbound `fetch`, translating a network-level failure (DNS,
+ * connection refused, timeout, …) into a {@link ListModelsUpstreamError}
+ * instead of letting a raw exception escape.
+ *
+ * @param providerId - The provider id, for error attribution.
+ * @param url - The fully-resolved request URL.
+ * @param init - Standard `fetch` options (method/headers).
+ */
+async function performListModelsFetch(
+    providerId: string,
+    url: string,
+    init: RequestInit
+): Promise<Response> {
+    try {
+        return await fetch(url, init);
+    } catch (cause) {
+        const detail = cause instanceof Error ? cause.message : 'network request failed';
+        throw new ListModelsUpstreamError(providerId, undefined, detail);
+    }
+}
+
+/**
+ * Maps a non-OK HTTP response to the appropriate typed error, shared across
+ * all four provider fetchers (spec §7 error contract).
+ *
+ * @throws {ListModelsAuthError} On HTTP 401/403.
+ * @throws {ListModelsRateLimitError} On HTTP 429.
+ * @throws {ListModelsUpstreamError} On any other non-OK status.
+ */
+function throwForHttpError(providerId: string, response: Response): never {
+    if (response.status === 401 || response.status === 403) {
+        throw new ListModelsAuthError(providerId, response.status);
+    }
+    if (response.status === 429) {
+        throw new ListModelsRateLimitError(providerId);
+    }
+    throw new ListModelsUpstreamError(
+        providerId,
+        response.status,
+        `HTTP ${response.status} ${response.statusText}`
+    );
+}
+
+/**
+ * Parses a response body as JSON, wrapping a parse failure in a
+ * {@link ListModelsUpstreamError} instead of letting it escape as a raw
+ * `SyntaxError`.
+ */
+async function parseJsonBody<T>(providerId: string, response: Response): Promise<T> {
+    try {
+        return (await response.json()) as T;
+    } catch (cause) {
+        const detail = cause instanceof Error ? cause.message : 'invalid JSON response';
+        throw new ListModelsUpstreamError(providerId, response.status, detail);
+    }
+}
+
+/**
+ * Extracts a string field from each entry of a raw model-list array,
+ * skipping (with a warning) any entry where the field is missing or not a
+ * string. Shared parsing logic for the `data[].id` (OpenAI/Anthropic) and
+ * `models[].name` (Gemini/Ollama) response shapes.
+ *
+ * @param entries - The raw array of model entries from the response body.
+ * @param field - Which field to extract (`'id'` or `'name'`).
+ * @param transform - Optional post-processing applied to each extracted
+ *   value (e.g. stripping Gemini's `models/` prefix).
+ */
+function extractModelIds(
+    entries: readonly unknown[],
+    field: 'id' | 'name',
+    transform?: (value: string) => string
+): ListProviderModelsResult {
+    const ids: string[] = [];
+    const warnings: string[] = [];
+    for (const entry of entries) {
+        const value = (entry as Record<string, unknown> | null)?.[field];
+        if (typeof value === 'string' && value.length > 0) {
+            ids.push(transform ? transform(value) : value);
+        } else {
+            warnings.push(`Skipped a model entry with a missing or non-string "${field}" field.`);
+        }
+    }
+    return warnings.length > 0 ? { ids, warnings } : { ids };
+}
+
+// ---------------------------------------------------------------------------
+// OpenAI + OpenAI-compatible fetcher (T-003)
+// ---------------------------------------------------------------------------
 
 /** Minimal shape of the `GET /models` response body this parser relies on. */
 interface OpenAiModelsListResponse {
@@ -233,40 +345,18 @@ async function fetchOpenAiCompatibleModels(
     const { providerId, apiKey, baseURL } = input;
     const url = `${baseURL ?? DEFAULT_OPENAI_BASE_URL}/models`;
 
-    let response: Response;
-    try {
-        response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${apiKey}`
-            }
-        });
-    } catch (cause) {
-        const detail = cause instanceof Error ? cause.message : 'network request failed';
-        throw new ListModelsUpstreamError(providerId, undefined, detail);
-    }
+    const response = await performListModelsFetch(providerId, url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${apiKey}`
+        }
+    });
 
     if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-            throw new ListModelsAuthError(providerId, response.status);
-        }
-        if (response.status === 429) {
-            throw new ListModelsRateLimitError(providerId);
-        }
-        throw new ListModelsUpstreamError(
-            providerId,
-            response.status,
-            `HTTP ${response.status} ${response.statusText}`
-        );
+        throwForHttpError(providerId, response);
     }
 
-    let body: OpenAiModelsListResponse;
-    try {
-        body = (await response.json()) as OpenAiModelsListResponse;
-    } catch (cause) {
-        const detail = cause instanceof Error ? cause.message : 'invalid JSON response';
-        throw new ListModelsUpstreamError(providerId, response.status, detail);
-    }
+    const body = await parseJsonBody<OpenAiModelsListResponse>(providerId, response);
 
     if (!Array.isArray(body.data)) {
         throw new ListModelsUpstreamError(
@@ -276,18 +366,181 @@ async function fetchOpenAiCompatibleModels(
         );
     }
 
-    const ids: string[] = [];
-    const warnings: string[] = [];
-    for (const entry of body.data) {
-        const id = (entry as { id?: unknown } | null)?.id;
-        if (typeof id === 'string' && id.length > 0) {
-            ids.push(id);
-        } else {
-            warnings.push('Skipped a model entry with a missing or non-string "id" field.');
+    return extractModelIds(body.data, 'id');
+}
+
+// ---------------------------------------------------------------------------
+// Anthropic fetcher (T-004)
+// ---------------------------------------------------------------------------
+
+/** Minimal shape of the Anthropic `GET /v1/models` response body. */
+interface AnthropicModelsListResponse {
+    readonly data?: readonly unknown[];
+}
+
+/**
+ * Fetches and parses the model catalog for Anthropic via
+ * `GET https://api.anthropic.com/v1/models`.
+ *
+ * Anthropic does not accept a custom `baseURL` in this fetcher — it is a
+ * fixed first-party endpoint, unlike the OpenAI-compatible family (OQ-5: no
+ * per-credential path override in v1).
+ *
+ * @param input - Provider id and API key. Any `baseURL` on the input is
+ *   ignored for this family.
+ * @returns The parsed model IDs, plus warnings for any entry missing a
+ *   string `id` field.
+ *
+ * @throws {ListModelsAuthError} On HTTP 401/403.
+ * @throws {ListModelsRateLimitError} On HTTP 429.
+ * @throws {ListModelsUpstreamError} On any other non-OK response, or a
+ *   response body that cannot be parsed as the expected shape.
+ */
+async function fetchAnthropicModels(
+    input: ListProviderModelsInput
+): Promise<ListProviderModelsResult> {
+    const { providerId, apiKey } = input;
+
+    const response = await performListModelsFetch(providerId, ANTHROPIC_MODELS_URL, {
+        method: 'GET',
+        headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': ANTHROPIC_API_VERSION
         }
+    });
+
+    if (!response.ok) {
+        throwForHttpError(providerId, response);
     }
 
-    return warnings.length > 0 ? { ids, warnings } : { ids };
+    const body = await parseJsonBody<AnthropicModelsListResponse>(providerId, response);
+
+    if (!Array.isArray(body.data)) {
+        throw new ListModelsUpstreamError(
+            providerId,
+            response.status,
+            'response body is missing a "data" array'
+        );
+    }
+
+    return extractModelIds(body.data, 'id');
+}
+
+// ---------------------------------------------------------------------------
+// Google Gemini fetcher (T-005)
+// ---------------------------------------------------------------------------
+
+/** Minimal shape of the Gemini `GET /v1beta/models` response body. */
+interface GeminiModelsListResponse {
+    readonly models?: readonly unknown[];
+}
+
+/**
+ * Fetches and parses the model catalog for Google Gemini via
+ * `GET https://generativelanguage.googleapis.com/v1beta/models?key=<apiKey>`.
+ *
+ * The API key travels as a `?key=` query parameter (Gemini's convention, not
+ * an `Authorization` header). Each entry's `name` field arrives prefixed
+ * with `models/` (e.g. `models/gemini-1.5-pro`); this fetcher strips that
+ * prefix so the returned ids match the bare model id used elsewhere in the
+ * catalog (spec §6.1, AC-2).
+ *
+ * @param input - Provider id and API key. Any `baseURL` on the input is
+ *   ignored for this family (fixed first-party endpoint, OQ-5).
+ * @returns The parsed, prefix-stripped model ids, plus warnings for any
+ *   entry missing a string `name` field.
+ *
+ * @throws {ListModelsAuthError} On HTTP 401/403.
+ * @throws {ListModelsRateLimitError} On HTTP 429.
+ * @throws {ListModelsUpstreamError} On any other non-OK response, or a
+ *   response body that cannot be parsed as the expected shape.
+ */
+async function fetchGeminiModels(
+    input: ListProviderModelsInput
+): Promise<ListProviderModelsResult> {
+    const { providerId, apiKey } = input;
+    const url = `${GEMINI_MODELS_BASE_URL}?key=${encodeURIComponent(apiKey)}`;
+
+    const response = await performListModelsFetch(providerId, url, { method: 'GET' });
+
+    if (!response.ok) {
+        throwForHttpError(providerId, response);
+    }
+
+    const body = await parseJsonBody<GeminiModelsListResponse>(providerId, response);
+
+    if (!Array.isArray(body.models)) {
+        throw new ListModelsUpstreamError(
+            providerId,
+            response.status,
+            'response body is missing a "models" array'
+        );
+    }
+
+    return extractModelIds(body.models, 'name', (name) =>
+        name.startsWith(GEMINI_NAME_PREFIX) ? name.slice(GEMINI_NAME_PREFIX.length) : name
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Ollama fetcher (T-005)
+// ---------------------------------------------------------------------------
+
+/** Minimal shape of the Ollama `GET /api/tags` response body. */
+interface OllamaTagsResponse {
+    readonly models?: readonly unknown[];
+}
+
+/**
+ * Fetches and parses the model catalog for a local/self-hosted Ollama
+ * instance via `GET {baseURL}/api/tags`. Ollama has no first-party hosted
+ * endpoint and needs no authentication — the request carries no
+ * `Authorization` header.
+ *
+ * @param input - Provider id and a **required** `baseURL` (e.g.
+ *   `http://localhost:11434`). `apiKey` is accepted for interface
+ *   uniformity but unused — Ollama does not authenticate list-models calls.
+ * @returns The parsed model ids, plus warnings for any entry missing a
+ *   string `name` field.
+ *
+ * @throws {ListModelsUpstreamError} When `baseURL` is missing (Ollama has
+ *   no sensible default — OQ-5), on any non-OK response, or when the
+ *   response body cannot be parsed as the expected shape.
+ * @throws {ListModelsAuthError} On HTTP 401/403 (unusual for Ollama, but
+ *   handled for consistency if a proxied/secured instance returns one).
+ * @throws {ListModelsRateLimitError} On HTTP 429.
+ */
+async function fetchOllamaModels(
+    input: ListProviderModelsInput
+): Promise<ListProviderModelsResult> {
+    const { providerId, baseURL } = input;
+
+    if (!baseURL) {
+        throw new ListModelsUpstreamError(
+            providerId,
+            undefined,
+            'Ollama requires a baseURL (e.g. http://localhost:11434); none was provided.'
+        );
+    }
+
+    const url = `${baseURL}/api/tags`;
+    const response = await performListModelsFetch(providerId, url, { method: 'GET' });
+
+    if (!response.ok) {
+        throwForHttpError(providerId, response);
+    }
+
+    const body = await parseJsonBody<OllamaTagsResponse>(providerId, response);
+
+    if (!Array.isArray(body.models)) {
+        throw new ListModelsUpstreamError(
+            providerId,
+            response.status,
+            'response body is missing a "models" array'
+        );
+    }
+
+    return extractModelIds(body.models, 'name');
 }
 
 // ---------------------------------------------------------------------------
@@ -297,10 +550,11 @@ async function fetchOpenAiCompatibleModels(
 /**
  * Dispatches to the fetcher for the resolved {@link ProviderFamily}.
  *
- * This is the seam future tasks extend: T-004 replaces the `'anthropic'`
- * branch, T-005 replaces `'gemini'` and `'ollama'`, each with a real fetcher
- * matching the shape documented in spec §6.1. Until then those branches throw
- * {@link ListModelsUnsupportedProviderError}.
+ * Every family now has a real fetcher (T-003 OpenAI-compatible, T-004
+ * Anthropic, T-005 Gemini/Ollama), each matching the HTTP shape documented
+ * in spec §6.1. {@link ListModelsUnsupportedProviderError} remains reachable
+ * only through the `default` exhaustiveness guard, for a future
+ * {@link ProviderFamily} member added without a matching fetcher.
  */
 async function fetchModelsForFamily(
     family: ProviderFamily,
@@ -310,9 +564,11 @@ async function fetchModelsForFamily(
         case 'openai-compatible':
             return fetchOpenAiCompatibleModels(input);
         case 'anthropic':
+            return fetchAnthropicModels(input);
         case 'gemini':
+            return fetchGeminiModels(input);
         case 'ollama':
-            throw new ListModelsUnsupportedProviderError(input.providerId, family);
+            return fetchOllamaModels(input);
         default: {
             // Exhaustiveness guard: adding a new ProviderFamily member without
             // handling it here is a compile-time error.
@@ -343,9 +599,12 @@ async function fetchModelsForFamily(
  *
  * @throws {ListModelsAuthError} The provider rejected the API key (401/403).
  * @throws {ListModelsRateLimitError} The provider rate-limited the request (429).
- * @throws {ListModelsUpstreamError} Any other transport/response failure.
- * @throws {ListModelsUnsupportedProviderError} The resolved provider family
- *   has no fetcher implemented yet (anthropic/gemini/ollama — T-004/T-005).
+ * @throws {ListModelsUpstreamError} Any other transport/response failure
+ *   (including a missing required `baseURL` for Ollama).
+ * @throws {ListModelsUnsupportedProviderError} Reachable only if a future
+ *   {@link ProviderFamily} member is added without a matching fetcher; every
+ *   family currently supported (openai-compatible/anthropic/gemini/ollama)
+ *   has one.
  *
  * @example
  * ```ts
