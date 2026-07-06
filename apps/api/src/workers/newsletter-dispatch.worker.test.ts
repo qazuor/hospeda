@@ -26,7 +26,14 @@ const { MockWorker, mockWorkerInstance, mockCaptureException, mockSentryStartSpa
             _handlers: onHandlers
         };
 
-        const MockWorker = vi.fn().mockImplementation(() => mockWorkerInstance);
+        // Vitest 4: a mock invoked with `new` (as BullMQ's `Worker` is here) requires
+        // its `mockImplementation` to itself be constructible — an arrow function
+        // implementation now throws "is not a constructor" instead of being called
+        // as a plain function the way it was under Vitest 3. A regular `function`
+        // expression is constructible and still just returns the shared instance.
+        const MockWorker = vi.fn().mockImplementation(function MockWorkerImpl() {
+            return mockWorkerInstance;
+        });
 
         const mockCaptureException = vi.fn();
         const mockSentryStartSpan = vi
