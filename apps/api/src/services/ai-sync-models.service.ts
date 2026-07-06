@@ -12,7 +12,9 @@
  * 2. **Fetch** — `listProviderModels` (`@repo/ai-core`, T-003/T-004/T-005) is
  *    a plain-`fetch` per-provider dispatcher that returns raw model ids.
  * 3. **Filter** — `filterChatCapableModels` (T-006) classifies raw ids into
- *    confident-chat / uncertain, hiding known non-chat families entirely.
+ *    confident-chat / uncertain, hiding known non-chat families entirely and
+ *    reporting the excluded ids as `hiddenIds` (owner follow-up, threaded
+ *    into this service's `hiddenModelIds` result field below).
  * 4. **Merge** — `mergeDetectedAndCuratedModels` (T-007) unions the filtered
  *    detected list with the curated `KNOWN_PROVIDERS` catalog, annotating
  *    each entry by `source`.
@@ -252,7 +254,11 @@ export async function syncAiProviderModels(
         }
 
         // 3. Filter to chat-capable models (denylist + uncertain bucket).
-        const { models: classified } = filterChatCapableModels({
+        //    `hiddenIds` are the raw ids the denylist excluded — surfaced so
+        //    the admin UI can auto-remove them from a previously-enabled
+        //    selection on re-sync, while telling them apart from hand-typed
+        //    custom ids the provider API never returned (owner follow-up).
+        const { models: classified, hiddenIds } = filterChatCapableModels({
             ids: fetchResult.ids,
             providerId
         });
@@ -266,7 +272,8 @@ export async function syncAiProviderModels(
             fetchedAt: new Date().toISOString(),
             ...(fetchResult.warnings && fetchResult.warnings.length > 0
                 ? { warnings: fetchResult.warnings }
-                : {})
+                : {}),
+            ...(hiddenIds.length > 0 ? { hiddenModelIds: [...hiddenIds] } : {})
         };
 
         apiLogger.info({ providerId, modelCount: models.length }, 'ai-sync-models: sync completed');

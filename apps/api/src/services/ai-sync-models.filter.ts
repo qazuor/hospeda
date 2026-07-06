@@ -9,7 +9,11 @@
  *   text-to-speech, image generation, moderation, an explicitly deprecated
  *   marker, realtime/audio conversational endpoints, code-specialized
  *   variants, web-search-augmented variants, or deep-research agents).
- *   Excluded from the result entirely.
+ *   Excluded from `models` entirely, but its id is reported in the result's
+ *   `hiddenIds` (owner follow-up: this lets a consumer auto-remove a
+ *   previously-enabled id from an operator's selection on re-sync, while
+ *   still telling it apart from a hand-typed custom id the provider API
+ *   never returned — see `FilterChatCapableModelsResult`).
  * - **Chat (confident)** — matches a known chat/text-generation family
  *   (`gpt-*`, `o1`/`o3`/`o4-*`, `claude-*`, `gemini-*`, `llama*`, ...).
  *   Returned with `uncertain: false`.
@@ -169,6 +173,19 @@ export interface FilterChatCapableModelsResult {
      * ids are excluded entirely and do not appear here.
      */
     readonly models: readonly ClassifiedModel[];
+    /**
+     * Raw input ids that were excluded because they matched the denylist
+     * (HOS-94 owner decision, "auto-detect provider models" follow-up).
+     *
+     * Surfaced so a consumer can tell apart two very different reasons a
+     * previously-enabled id might be missing from `models`: a denylisted id
+     * (the provider API returned it, but this filter hid it) vs. a hand-typed
+     * custom id (the provider API never returned it at all). Only the former
+     * should ever be auto-removed from an operator's existing selection on
+     * re-sync — the admin UI (`SyncModelsSection`) uses this list to do
+     * exactly that, while preserving custom ids untouched.
+     */
+    readonly hiddenIds: readonly string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +202,8 @@ export interface FilterChatCapableModelsResult {
  *
  * @param input - Raw model ids (and optional provider id, reserved for
  * future per-provider nuance).
- * @returns The filtered/classified model list, denylisted ids excluded.
+ * @returns The filtered/classified model list, denylisted ids excluded from
+ * `models` and reported separately in `hiddenIds`.
  *
  * @example
  * ```ts
@@ -197,6 +215,7 @@ export interface FilterChatCapableModelsResult {
  * //     { id: 'gpt-4o', uncertain: false },
  * //     { id: 'weird-new-model-x', uncertain: true },
  * //   ],
+ * //   hiddenIds: ['text-embedding-3-large', 'whisper-1'],
  * // }
  * ```
  */
@@ -205,6 +224,7 @@ export function filterChatCapableModels(
 ): FilterChatCapableModelsResult {
     const seen = new Set<string>();
     const models: ClassifiedModel[] = [];
+    const hiddenIds: string[] = [];
 
     for (const id of input.ids) {
         if (seen.has(id)) {
@@ -213,13 +233,14 @@ export function filterChatCapableModels(
         seen.add(id);
 
         if (isDenylisted(id)) {
+            hiddenIds.push(id);
             continue;
         }
 
         models.push({ id, uncertain: !isConfidentChatModel(id) });
     }
 
-    return { models };
+    return { models, hiddenIds };
 }
 
 // ---------------------------------------------------------------------------

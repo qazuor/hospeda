@@ -120,7 +120,62 @@ describe('AiSyncModelsResultSchema', () => {
         if (result.success) {
             expect(result.data.warnings).toBeUndefined();
             expect(result.data.models).toEqual([]);
+            expect(result.data.hiddenModelIds).toBeUndefined();
         }
+    });
+
+    it('should validate a sync result including hiddenModelIds (owner follow-up)', () => {
+        // Arrange
+        const input = {
+            providerId: 'openai',
+            models: [{ id: 'gpt-4o', source: 'both' }],
+            fetchedAt: '2026-07-05T12:00:00.000Z',
+            hiddenModelIds: ['whisper-1', 'text-embedding-3-large']
+        };
+
+        // Act
+        const result = AiSyncModelsResultSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.hiddenModelIds).toEqual(['whisper-1', 'text-embedding-3-large']);
+        }
+    });
+
+    it('should accept an empty hiddenModelIds array', () => {
+        // Arrange
+        const input = {
+            providerId: 'openai',
+            models: [],
+            fetchedAt: '2026-07-05T12:00:00.000Z',
+            hiddenModelIds: []
+        };
+
+        // Act
+        const result = AiSyncModelsResultSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.hiddenModelIds).toEqual([]);
+        }
+    });
+
+    it('should reject hiddenModelIds containing a non-string entry', () => {
+        // Arrange
+        const input = {
+            providerId: 'openai',
+            models: [],
+            fetchedAt: '2026-07-05T12:00:00.000Z',
+            hiddenModelIds: [123]
+        };
+
+        // Act
+        const result = AiSyncModelsResultSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(false);
     });
 
     it('should reject a non-ISO fetchedAt value', () => {

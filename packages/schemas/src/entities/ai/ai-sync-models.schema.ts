@@ -69,7 +69,25 @@ export const AiSyncModelsResultSchema = z.object({
      * shape from the provider, a partially-parsed page). Absent or empty
      * means the sync completed without caveats.
      */
-    warnings: z.array(z.string()).optional()
+    warnings: z.array(z.string()).optional(),
+    /**
+     * Raw provider model ids that were excluded from `models` by the
+     * chat-capability denylist (owner follow-up to HOS-94: audio/realtime/
+     * codex/search/deep-research/image/embedding/tts/whisper/dall-e/
+     * moderation families). Absent or empty means nothing was hidden.
+     *
+     * The admin UI (`SyncModelsSection`) uses this list to auto-remove any
+     * of these ids from an operator's existing `selectedModels` on re-sync,
+     * while preserving hand-typed custom ids untouched — a custom id never
+     * appears here because the provider API never returned it in the first
+     * place, so it can't have been denylisted.
+     *
+     * Optional for backward compatibility with the pre-existing additive-only
+     * schema contract (see the package's Schema Compatibility Policy): older
+     * cached/queued `AiSyncModelsResult` payloads without this field still
+     * parse successfully.
+     */
+    hiddenModelIds: z.array(z.string()).optional()
 });
 
 /** TypeScript type for the sync-models result. */

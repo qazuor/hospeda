@@ -19,6 +19,8 @@
  *    `ServiceErrorCode` was added).
  * 7. R-5 secret hygiene: the decrypted API key never appears in the returned
  *    success object nor in any thrown/mapped error's message.
+ * 8. `hiddenModelIds` (owner follow-up) is populated from the filter's
+ *    `hiddenIds` and omitted entirely when nothing was denylisted.
  *
  * @module test/services/ai-sync-models.service
  */
@@ -162,6 +164,8 @@ describe('syncAiProviderModels', () => {
             // text-embedding-3-large is denylisted by the T-006 filter — must
             // not appear anywhere in the merged output.
             expect(result.data?.models.some((m) => m.id === 'text-embedding-3-large')).toBe(false);
+            // ...and must instead be reported in hiddenModelIds (owner follow-up).
+            expect(result.data?.hiddenModelIds).toEqual(['text-embedding-3-large']);
             // gpt-4o is a confident chat match and part of the curated OpenAI
             // catalog — expect it present, annotated 'both'.
             const gpt4o = result.data?.models.find((m) => m.id === 'gpt-4o');
@@ -169,6 +173,17 @@ describe('syncAiProviderModels', () => {
             for (const model of result.data?.models ?? []) {
                 expect(AiProviderModelSchema.safeParse(model).success).toBe(true);
             }
+        });
+
+        it('should omit hiddenModelIds from the result when nothing was denylisted', async () => {
+            // Arrange
+            mockListProviderModels.mockResolvedValue({ ids: ['gpt-4o'] });
+
+            // Act
+            const result = await syncAiProviderModels({ providerId: PROVIDER_ID });
+
+            // Assert
+            expect(result.data?.hiddenModelIds).toBeUndefined();
         });
 
         it('should call listProviderModels with the decrypted apiKey and providerId', async () => {

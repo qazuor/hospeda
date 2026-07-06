@@ -14,6 +14,9 @@
  *    families (real OpenAI leak cases) are hidden, while plain chat models
  *    that share a prefix with them (gpt-4o, gpt-5, gpt-5.1, o4-mini) still
  *    pass as confident chat.
+ * 6. `hiddenIds` reports every denylisted id excluded from `models` (owner
+ *    follow-up: lets a consumer auto-remove a previously-enabled denylisted
+ *    id from a selection on re-sync, distinct from a hand-typed custom id).
  *
  * @module test/services/ai-sync-models.filter
  */
@@ -32,6 +35,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['text-embedding-3-large']);
         });
 
         it('should hide whisper (speech-to-text) models', () => {
@@ -43,6 +47,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['whisper-1']);
         });
 
         it('should hide tts (text-to-speech) models', () => {
@@ -54,6 +59,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['tts-1']);
         });
 
         it('should hide dall-e (image generation) models', () => {
@@ -65,6 +71,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['dall-e-3']);
         });
 
         it('should hide moderation models', () => {
@@ -76,6 +83,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['omni-moderation-latest']);
         });
 
         it('should hide a model with an explicit deprecated marker', () => {
@@ -87,6 +95,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual(['gpt-3.5-turbo-deprecated']);
         });
 
         it('should hide all non-chat families together in one call', () => {
@@ -106,6 +115,13 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toHaveLength(0);
+            expect(result.hiddenIds).toEqual([
+                'text-embedding-3-large',
+                'whisper-1',
+                'tts-1',
+                'dall-e-3',
+                'omni-moderation-latest'
+            ]);
         });
     });
 
@@ -350,6 +366,7 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toEqual([]);
+            expect(result.hiddenIds).toEqual([]);
         });
 
         it('should de-duplicate repeated ids, keeping the first occurrence', () => {
@@ -387,6 +404,7 @@ describe('filterChatCapableModels', () => {
                 { id: 'weird-new-model-x', uncertain: true },
                 { id: 'claude-3-5-sonnet', uncertain: false }
             ]);
+            expect(result.hiddenIds).toEqual(['text-embedding-3-large', 'whisper-1']);
         });
 
         it('should accept an optional providerId without affecting classification', () => {
@@ -398,6 +416,18 @@ describe('filterChatCapableModels', () => {
 
             // Assert
             expect(result.models).toEqual([{ id: 'gpt-4o', uncertain: false }]);
+            expect(result.hiddenIds).toEqual([]);
+        });
+
+        it('should not report a duplicate denylisted id twice in hiddenIds', () => {
+            // Arrange
+            const input = { ids: ['whisper-1', 'whisper-1', 'gpt-4o'] };
+
+            // Act
+            const result = filterChatCapableModels(input);
+
+            // Assert
+            expect(result.hiddenIds).toEqual(['whisper-1']);
         });
     });
 });

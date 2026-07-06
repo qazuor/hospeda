@@ -15,6 +15,10 @@
  * - 400 (VALIDATION_ERROR) vs 503 (SERVICE_UNAVAILABLE) error rendering —
  *   503 shows a retry action, 400 does not.
  * - Toggling a model calls `onSelectedModelsChange` with the updated set.
+ * - Auto-removal of denylisted ids on sync (owner follow-up, HOS-94): a
+ *   previously-enabled id present in `result.hiddenModelIds` is dropped from
+ *   the selection, while a hand-added custom id NOT in `hiddenModelIds`
+ *   stays enabled.
  */
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
@@ -281,5 +285,86 @@ describe('SyncModelsSection', () => {
         fireEvent.click(screen.getByText('admin-ai.credentials.syncModels.addButton'));
 
         expect(onSelectedModelsChange).toHaveBeenCalledWith(['gpt-4o', 'my-custom-model']);
+    });
+
+    describe('auto-removal of denylisted ids on sync (owner follow-up, HOS-94)', () => {
+        it('removes a previously-enabled id that the sync now reports as hiddenModelIds', () => {
+            // Arrange — `whisper-1` was enabled before this sync (e.g. from an
+            // earlier, looser filter version) but the fresh sync result now
+            // denylists it and reports it in `hiddenModelIds`.
+            const syncResult: AiSyncModelsResult = {
+                providerId: 'openai',
+                fetchedAt: new Date().toISOString(),
+                models: [{ id: 'gpt-4o', source: 'both' }],
+                hiddenModelIds: ['whisper-1']
+            };
+            mockUseSyncModelsMutation.mockReturnValue(buildMutationMock({ data: syncResult }));
+            const onSelectedModelsChange = vi.fn();
+
+            // Act
+            render(
+                <SyncModelsSection
+                    {...baseProps}
+                    selectedModels={['gpt-4o', 'whisper-1']}
+                    onSelectedModelsChange={onSelectedModelsChange}
+                />
+            );
+
+            // Assert
+            expect(onSelectedModelsChange).toHaveBeenCalledWith(['gpt-4o']);
+        });
+
+        it('preserves a hand-added custom id that is NOT in hiddenModelIds', () => {
+            // Arrange — `my-custom-model` was never returned by the provider
+            // API at all, so it can never appear in `hiddenModelIds`.
+            const syncResult: AiSyncModelsResult = {
+                providerId: 'openai',
+                fetchedAt: new Date().toISOString(),
+                models: [{ id: 'gpt-4o', source: 'both' }],
+                hiddenModelIds: ['whisper-1']
+            };
+            mockUseSyncModelsMutation.mockReturnValue(buildMutationMock({ data: syncResult }));
+            const onSelectedModelsChange = vi.fn();
+
+            // Act
+            render(
+                <SyncModelsSection
+                    {...baseProps}
+                    selectedModels={['gpt-4o', 'my-custom-model']}
+                    onSelectedModelsChange={onSelectedModelsChange}
+                />
+            );
+
+            // Assert — nothing to remove, so the effect must not fire at all.
+            expect(onSelectedModelsChange).not.toHaveBeenCalled();
+            expect(screen.getByText('my-custom-model')).toBeInTheDocument();
+            const customRow = screen
+                .getByText('my-custom-model')
+                .closest('div.rounded-md') as HTMLElement;
+            expect(within(customRow).getByRole('switch')).toBeChecked();
+        });
+
+        it('does not call onSelectedModelsChange when hiddenModelIds is absent', () => {
+            // Arrange
+            const syncResult: AiSyncModelsResult = {
+                providerId: 'openai',
+                fetchedAt: new Date().toISOString(),
+                models: [{ id: 'gpt-4o', source: 'both' }]
+            };
+            mockUseSyncModelsMutation.mockReturnValue(buildMutationMock({ data: syncResult }));
+            const onSelectedModelsChange = vi.fn();
+
+            // Act
+            render(
+                <SyncModelsSection
+                    {...baseProps}
+                    selectedModels={['gpt-4o']}
+                    onSelectedModelsChange={onSelectedModelsChange}
+                />
+            );
+
+            // Assert
+            expect(onSelectedModelsChange).not.toHaveBeenCalled();
+        });
     });
 });

@@ -16,12 +16,23 @@
  * enabled-models toggle state and the custom-add mechanic are unchanged by
  * sync — they operate on the same `selectedModels` array regardless of
  * whether it was seeded from `curatedModels` or from a synced result.
+ *
+ * ## Auto-removal of denylisted ids on sync (owner follow-up)
+ *
+ * A fresh sync result may report `hiddenModelIds` — raw ids the API's
+ * chat-capability denylist just excluded (audio/realtime/codex/search/
+ * deep-research/image/embedding/tts/whisper/dall-e/moderation families). Any
+ * of those ids that were previously enabled in `selectedModels` are removed
+ * automatically as soon as the result arrives (see the `useEffect` below).
+ * Hand-typed custom ids the provider API never returned at all are NEVER in
+ * `hiddenModelIds` (the backend can only "hide" an id it actually saw), so
+ * they are always preserved untouched by this removal.
  */
 
 import { useTranslations } from '@repo/i18n';
 import { AlertCircleIcon, DeleteIcon, LoaderIcon, RefreshIcon } from '@repo/icons';
-import type { AiProviderModel } from '@repo/schemas';
-import { useState } from 'react';
+import type { AiProviderModel, AiSyncModelsResult } from '@repo/schemas';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,6 +99,27 @@ function sortMergedModels(models: readonly AiProviderModel[]): AiProviderModel[]
         const rank = (m: AiProviderModel) => (m.source === 'detected' ? 1 : 0);
         return rank(a) - rank(b);
     });
+}
+
+/**
+ * Removes any id present in `hiddenModelIds` from `selectedModels`, leaving
+ * every other id — including hand-typed custom ids the provider API never
+ * returned — untouched. Order of the remaining ids is preserved.
+ *
+ * @param selectedModels - Currently enabled model ids.
+ * @param hiddenModelIds - Ids the sync result's denylist just excluded (owner
+ * follow-up); `undefined`/empty means nothing needs removing.
+ * @returns A new array with the denylisted ids removed.
+ */
+function removeHiddenModelIds(
+    selectedModels: readonly string[],
+    hiddenModelIds: readonly string[] | undefined
+): string[] {
+    if (!hiddenModelIds || hiddenModelIds.length === 0) {
+        return [...selectedModels];
+    }
+    const hiddenSet = new Set(hiddenModelIds);
+    return selectedModels.filter((model) => !hiddenSet.has(model));
 }
 
 /** Badge variant per merge source. */
@@ -236,6 +268,33 @@ export function SyncModelsSection({
     const syncMutation = useSyncModelsMutation();
     const [newModel, setNewModel] = useState('');
 
+    // Refs mirroring the latest lifted props, read (not depended on) by the
+    // auto-removal effect below so it reacts only to a NEW sync result.
+    const selectedModelsRef = useRef(selectedModels);
+    const onSelectedModelsChangeRef = useRef(onSelectedModelsChange);
+    useEffect(() => {
+        selectedModelsRef.current = selectedModels;
+        onSelectedModelsChangeRef.current = onSelectedModelsChange;
+    });
+
+    const syncResult: AiSyncModelsResult | undefined = syncMutation.data;
+
+    // Auto-removal of denylisted ids on sync (owner follow-up, HOS-94): a
+    // previously-enabled id that the fresh sync now reports as
+    // `hiddenModelIds` is dropped from the selection. Runs once per new
+    // `syncResult` — NOT on every `selectedModels` change — otherwise it
+    // would keep re-stripping an id the operator deliberately re-adds later.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reacts only to syncResult identity (a new sync); selectedModels/onSelectedModelsChange are read via refs updated every render instead, so re-running on every selection change doesn't fight the operator's own toggles.
+    useEffect(() => {
+        if (!syncResult?.hiddenModelIds || syncResult.hiddenModelIds.length === 0) {
+            return;
+        }
+        const next = removeHiddenModelIds(selectedModelsRef.current, syncResult.hiddenModelIds);
+        if (next.length !== selectedModelsRef.current.length) {
+            onSelectedModelsChangeRef.current(next);
+        }
+    }, [syncResult]);
+
     const toggleModel = (model: string) => {
         onSelectedModelsChange(
             selectedModels.includes(model)
@@ -259,7 +318,6 @@ export function SyncModelsSection({
         syncMutation.mutate(providerId);
     };
 
-    const syncResult = syncMutation.data;
     const mergedModels = syncResult ? sortMergedModels(syncResult.models) : null;
     const knownIds = mergedModels ? mergedModels.map((m) => m.id) : curatedModels;
 
