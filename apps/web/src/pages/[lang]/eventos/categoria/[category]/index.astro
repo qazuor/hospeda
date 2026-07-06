@@ -290,6 +290,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	totalCount={total}
 >
 	<CollectionPageJsonLd
 		slot="head-extra"
@@ -322,7 +323,6 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		locale={locale}
 		tagline={t('events.categoryPage.tagline', 'Categoría')}
 		title={categoryName}
-		totalCount={total}
 	/>
 
 	<FilterSidebar

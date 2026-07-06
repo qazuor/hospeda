@@ -93,6 +93,7 @@ const itemListEntries = cards.map((card) => ({
     canonicalPath={canonicalPath}
     showFilters={true}
     filterPosition="left"
+    totalCount={total}
 >
     <ItemListJsonLd
         slot="head-extra"
@@ -121,7 +122,6 @@ const itemListEntries = cards.map((card) => ({
         locale={locale}
         tagline={t('partners.listing.subtitle', 'Conocé a las organizaciones que apoyan a Hospeda')}
         title={t('partners.listing.title', 'Socios')}
-        totalCount={total}
     />
 
     {hasError && !result.ok && (

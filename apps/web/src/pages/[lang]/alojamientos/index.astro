@@ -607,6 +607,8 @@ const emptyStateSuggestions = [
 	showFilters={true}
 	filterPosition="left"
 	ogTagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
+	totalCount={total}
+	filterSummary={filterSummary}
 >
 	<ItemListJsonLd
 		slot="head-extra"
@@ -627,8 +629,6 @@ const emptyStateSuggestions = [
 		locale={locale}
 		tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 		title={t('accommodations.title', 'Alojamientos')}
-		totalCount={total}
-		filterSummary={filterSummary}
 	/>
 
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />

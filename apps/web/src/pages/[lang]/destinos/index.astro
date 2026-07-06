@@ -237,6 +237,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	title={t('destinations.title', 'Destinos')}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
 	showFilters={false}
+	totalCount={total}
 >
 	<ItemListJsonLd
 		slot="head-extra"
@@ -252,7 +253,6 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		locale={locale}
 		tagline={t('destinations.tagline', 'Explorá la región')}
 		title={t('destinations.title', 'Destinos')}
-		totalCount={total}
 	/>
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}

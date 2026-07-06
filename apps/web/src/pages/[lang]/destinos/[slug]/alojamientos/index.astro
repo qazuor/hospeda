@@ -58,9 +58,9 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 ---
 
-<ListingLayout locale={locale} title={heading} showFilters={false}>
+<ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('accommodations.title', 'Alojamientos') }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')} title={heading} totalCount={total} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')} title={heading} />
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: `destinos/${slug}` })} />}

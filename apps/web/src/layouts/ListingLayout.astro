@@ -8,6 +8,7 @@
  */
 
 import { getSiteUrl } from '@/lib/env';
+import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
@@ -30,6 +31,19 @@ interface Props {
 	readonly noindex?: boolean;
 	/** Caveat tagline for the generated OG BRAND card. */
 	readonly ogTagline?: string;
+	/**
+	 * Total result count for the generic results-summary line rendered above
+	 * the content grid. Ignored when `filterSummary` is provided.
+	 */
+	readonly totalCount?: number;
+	/**
+	 * Natural-language description of applied filters and current results,
+	 * rendered as a single-line caption above the content grid (BETA-22).
+	 * When provided, replaces the generic "N resultados encontrados" text
+	 * built from `totalCount`.
+	 * Example: "Mostrando 5 de 8 casas quintas en Concepción del Uruguay"
+	 */
+	readonly filterSummary?: string;
 }
 
 const {
@@ -41,6 +55,8 @@ const {
 	filterPosition = 'left',
 	noindex = false,
 	ogTagline,
+	totalCount,
+	filterSummary,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -53,6 +69,17 @@ const hasLeftFilters = showFilters && filterPosition === 'left';
 const hasTopFilters = showFilters && filterPosition === 'top';
 
 const cspNonce = Astro.locals.cspNonce ?? '';
+
+// BETA-22: the results-summary sentence used to render inside the sticky
+// WaveHeader band (via ListingPageHeader), detached from the filters/results
+// it describes. It now renders here, at the top of the content column, level
+// with the filters sidebar and aligned with the grid it summarizes.
+const t = createT(locale);
+const resultsSummaryLabel =
+	filterSummary ??
+	(totalCount !== undefined
+		? `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`
+		: undefined);
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -100,6 +127,10 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 				 * wave header, navbar and FilterSidebar untouched. See the
 				 * inline script below. */}
 				<div class="listing-content" data-listing-swap="content">
+					{resultsSummaryLabel && (
+						<p class="listing-results-summary" role="status" aria-live="polite">{resultsSummaryLabel}</p>
+					)}
+
 					<slot />
 
 					<div class="listing-pagination">
@@ -147,13 +178,25 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	   + the compact wave header band. HOS-84: flat "band puro" (no wave overhang);
 	   on listing the band compacts on scroll (never hides), so the sidebar sits
 	   below the compact band. Replaces the old hardcoded ~105px with the
-	   --wave-bar-compact var (104px fallback: measured compact listing band =
-	   compact content padding + one-line title + the results-count line, which
-	   detail pages don't have — that's why the detail fallback is smaller). */
+	   --wave-bar-compact var (72px fallback: BETA-22 moved the results-count line
+	   out of the compact header into the content column, so the compact listing
+	   band is now structurally identical to the compact detail band — same
+	   fallback as DetailLayout's --wave-bar-compact usage). */
 	.listing-sidebar {
 		position: sticky;
-		top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 104px));
+		top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
 		align-self: start;
+	}
+
+	/* Results summary (BETA-22): the "Mostrando N de M ..." caption, aligned
+	 * with the content column instead of floating in the sticky page header.
+	 * Single line by default; wraps gracefully on narrow viewports. */
+	.listing-results-summary {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		margin: 0 0 var(--space-4);
+		text-wrap: pretty;
 	}
 
 	/* Content area */

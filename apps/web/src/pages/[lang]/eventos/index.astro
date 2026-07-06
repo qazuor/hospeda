@@ -417,6 +417,8 @@ const itemListEntries = cards.map((card) => ({
 	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	totalCount={total}
+	filterSummary={filterSummary}
 >
 	{/* RSS feed-discovery hints (SPEC-157 REQ-6) */}
 	<link
@@ -446,8 +448,6 @@ const itemListEntries = cards.map((card) => ({
 		locale={locale}
 		tagline={t('events.tagline', 'No te pierdas nada')}
 		title={t('events.title', 'Eventos')}
-		totalCount={total}
-		filterSummary={filterSummary}
 	/>
 
 	<FilterSidebar

@@ -358,7 +358,18 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	showFilters={true}
 	filterPosition="left"
 	noindex={true}
->
+	totalCount={total}
+	filterSummary={filterSummary}
+><!--
+	BETA-22: totalCount/filterSummary render as ListingLayout's
+	`.listing-results-summary`, in-flow at the top of the content column
+	(above the map). On mobile, a filter-driven navigation triggers
+	ListingLayout's scrollIntoView-to-content behavior, which can land the
+	summary just above the fold — a known, accepted tradeoff: this is a
+	map-view + mobile edge case where the map itself is the primary surface,
+	and the summary stays fully visible in the (default) list view. Not
+	worth a position:fixed pin here.
+-->
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
@@ -373,8 +384,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		locale={locale}
 		tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 		title={t('accommodations.title', 'Alojamientos')}
-		totalCount={total}
-		filterSummary={filterSummary}
 	/>
 
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
