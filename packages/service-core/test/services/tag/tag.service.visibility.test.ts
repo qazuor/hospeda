@@ -8,8 +8,8 @@
  * - Picker without auth → UNAUTHORIZED.
  */
 import { REntityTagModel, TagModel } from '@repo/db';
-import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, TagTypeEnum } from '@repo/schemas';
 import type { EntityTag, Tag } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, TagTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import { createActor, createGuestActor } from '../../factories/actorFactory';

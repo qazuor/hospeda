@@ -1,16 +1,16 @@
+import { EditIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { createElement, Fragment } from 'react';
 import { AttractionIconCell } from '@/components/entity-list/AttractionIconCell';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
-import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { EditIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
-import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
 import {
     useDeleteAttractionMutation,
     useUpdateAttractionMutation

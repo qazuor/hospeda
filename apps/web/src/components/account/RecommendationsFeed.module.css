@@ -138,8 +138,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        box-shadow var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
 }
 
 .card:hover {

@@ -10,18 +10,18 @@
  * @module services/billing/promo-code/promo-code.redemption
  */
 
+import type { QueryContext } from '@repo/db';
 import {
-    type QZPayBillingPromoCode,
-    billingPromoCodeUsage,
     billingPromoCodes,
+    billingPromoCodeUsage,
     billingSubscriptions,
     count,
     eq,
     getDb,
+    type QZPayBillingPromoCode,
     sql,
     withTransaction
 } from '@repo/db';
-import type { QueryContext } from '@repo/db';
 import {
     PromoEffectKindEnum,
     ServiceErrorCode,
@@ -903,7 +903,7 @@ export async function applyPromoCode(
         // For subscriptionId context, remainingCycles is the value from the reducer.
         // When no subscriptionId is provided, we keep it undefined (preview path).
         const remainingCycles: number | null | undefined =
-            subscriptionId !== undefined ? rawRemainingCycles : undefined;
+            subscriptionId === undefined ? undefined : rawRemainingCycles;
 
         // Redeem and record usage atomically.
         const redeemResult = await withTransaction(async (tx) => {
@@ -957,7 +957,7 @@ export async function applyPromoCode(
                 finalAmount,
                 originalAmount: effectiveAmount,
                 ...(roundingDelta !== undefined && roundingDelta > 0 && { roundingDelta }),
-                ...(subscriptionId !== undefined ? { remainingCycles } : {})
+                ...(subscriptionId === undefined ? {} : { remainingCycles })
             }
         };
     } catch (error) {

@@ -7,10 +7,10 @@
  * marker stripping, and resetConversation.
  */
 
-import { useAccommodationChat } from '@/hooks/useAccommodationChat';
-import type { SseEvent } from '@/lib/api/ai-chat-stream';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAccommodationChat } from '@/hooks/useAccommodationChat';
+import type { SseEvent } from '@/lib/api/ai-chat-stream';
 
 // --- Mocks ---
 

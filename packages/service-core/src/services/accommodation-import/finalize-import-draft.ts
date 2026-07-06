@@ -209,11 +209,11 @@ export async function finalizeImportDraft(
         source: effectiveSource,
         methodsUsed,
         partial,
-        ...(responseFailureCode !== undefined ? { failureCode: responseFailureCode } : {}),
-        ...(destinationHint !== undefined ? { destinationHint } : {}),
-        ...(resolvedAmenityIds !== undefined ? { resolvedAmenityIds } : {}),
-        ...(unresolvedAmenities !== undefined ? { unresolvedAmenities } : {}),
-        ...(mediaHints !== undefined ? { mediaHints } : {})
+        ...(responseFailureCode === undefined ? {} : { failureCode: responseFailureCode }),
+        ...(destinationHint === undefined ? {} : { destinationHint }),
+        ...(resolvedAmenityIds === undefined ? {} : { resolvedAmenityIds }),
+        ...(unresolvedAmenities === undefined ? {} : { unresolvedAmenities }),
+        ...(mediaHints === undefined ? {} : { mediaHints })
     };
 
     const parsed = AccommodationImportResponseSchema.safeParse(assembled);

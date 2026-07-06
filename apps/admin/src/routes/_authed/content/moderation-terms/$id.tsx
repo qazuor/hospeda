@@ -1,3 +1,5 @@
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import {
     AlertDialog,
@@ -19,8 +21,6 @@ import {
 } from '@/features/content-moderation/hooks/useModerationTermQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/moderation-terms/$id')({
     component: ModerationTermViewPage,

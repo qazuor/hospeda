@@ -14,7 +14,7 @@
 
 import type { getDb } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     NotificationService,
     type NotificationServiceDeps
@@ -22,8 +22,8 @@ import {
 import type { PreferenceService } from '../../src/services/preference.service';
 import type { RetryService } from '../../src/services/retry.service';
 import type { EmailTransport } from '../../src/transports/email/email-transport.interface';
-import { NotificationType } from '../../src/types/notification.types';
 import type { NotificationPayload } from '../../src/types/notification.types';
+import { NotificationType } from '../../src/types/notification.types';
 
 describe('NotificationService', () => {
     let service: NotificationService;

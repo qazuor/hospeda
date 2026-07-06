@@ -4,13 +4,13 @@
  * Displays event information with tabs for tickets and attendees.
  */
 
+import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
+import { eventTabs, PageTabs } from '@/components/layout/PageTabs';
 import { EventQualityScore } from '@/features/events/components/EventQualityScore';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/$id')({
     component: EventViewPage,

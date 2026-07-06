@@ -16,12 +16,12 @@
  * @module features/ai-usage/components/AiUsageByProviderTable
  */
 
+import { formatMicroUsd } from '@repo/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByProviderQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatMicroUsd } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
 // Props

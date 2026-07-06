@@ -12,6 +12,6 @@
  * @module routes/webhooks
  */
 
-export { createMercadoPagoWebhookRoutes } from './mercadopago';
-export { webhookHealthRoutes } from './health';
 export { brevoWebhookRoutes } from './brevo';
+export { webhookHealthRoutes } from './health';
+export { createMercadoPagoWebhookRoutes } from './mercadopago';

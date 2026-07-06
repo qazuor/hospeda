@@ -4,6 +4,7 @@
  * (padding, icon/font sizes, min-height, inline style, class list).
  */
 
+import { describe, expect, it } from 'vitest';
 import type { BadgeColorScheme } from '@/components/shared/ui/badge.types';
 import type { BadgeStylesMap } from '@/components/shared/ui/badge.utils';
 import {
@@ -16,7 +17,6 @@ import {
     getBadgeMinHeight,
     getBadgePadding
 } from '@/components/shared/ui/badge.utils';
-import { describe, expect, it } from 'vitest';
 
 const scheme: BadgeColorScheme = {
     bg: 'rgba(0, 0, 0, 0.05)',

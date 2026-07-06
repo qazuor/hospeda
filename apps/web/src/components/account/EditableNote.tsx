@@ -16,10 +16,10 @@
  * - On save error an `addToast` is called and the previous value is kept.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './EditableNote.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

@@ -43,7 +43,16 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // build to upload source maps. Not read by the runtime, so it is
     // deliberately absent from ApiEnvBaseSchema. Registered with apps: ['api']
     // so it shows up in the API .env.example for build-environment setup.
-    'SENTRY_AUTH_TOKEN'
+    'SENTRY_AUTH_TOKEN',
+
+    // HOS-79 — read directly via process.env by SHARED PACKAGES (service-core,
+    // media, billing), not through ApiEnvBaseSchema. They are registered so the
+    // new `env:check:usage` scanner (which walks package source, not app schemas)
+    // recognizes them; they deliberately stay out of the API Zod schema, so they
+    // belong here. All three are optional with built-in fallbacks.
+    'HOSPEDA_TAG_USER_QUOTA_PER_USER', // packages/service-core tag quota (default 50)
+    'HOSPEDA_DEPLOY_ENV', // packages/media environment resolution (falls back to NODE_ENV)
+    'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED' // packages/billing test-control gate (dev/test only)
 ]);
 
 /**

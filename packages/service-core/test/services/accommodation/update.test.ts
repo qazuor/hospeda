@@ -4,7 +4,7 @@ import {
     DestinationTypeEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { z } from 'zod';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
@@ -23,11 +23,7 @@ beforeEach(() => {
     vi.spyOn(AccommodationUpdateInputSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
             const typedInput = input as z.infer<typeof AccommodationUpdateInputSchema>;
-            if (
-                typedInput &&
-                Object.prototype.hasOwnProperty.call(typedInput, 'name') &&
-                typedInput.name === undefined
-            ) {
+            if (typedInput && Object.hasOwn(typedInput, 'name') && typedInput.name === undefined) {
                 return {
                     success: false,
                     error: new ZodError([

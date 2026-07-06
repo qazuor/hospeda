@@ -1,6 +1,6 @@
 import type { AddonDefinition } from '@repo/billing';
 import { ALL_ADDONS } from '@repo/billing';
-import { type DrizzleClient, billingAddons, eq, getDb } from '@repo/db';
+import { billingAddons, type DrizzleClient, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';

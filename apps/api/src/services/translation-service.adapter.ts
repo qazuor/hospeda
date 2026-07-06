@@ -12,8 +12,8 @@
 
 import type { TranslationInput, TranslationService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
-import { persistTranslations, translateEntity } from './ai-translate.service';
 import type { TranslatableEntityType } from './ai-translate.service';
+import { persistTranslations, translateEntity } from './ai-translate.service';
 
 /** Entity types that can be translated. */
 const VALID_ENTITY_TYPES: ReadonlySet<string> = new Set([

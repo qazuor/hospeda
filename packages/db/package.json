@@ -25,7 +25,9 @@
             "import": "./src/schemas/billing/index.ts"
         }
     },
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "drizzle-kit": "tsx node_modules/drizzle-kit/bin.cjs",
         "build": "tsup",
@@ -58,20 +60,20 @@
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
-        "bcryptjs": "^3.0.2",
+        "bcryptjs": "^3.0.3",
         "drizzle-orm": "^0.45.2"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/bcrypt": "^6.0.0",
         "@types/node": "^26.0.1",
-        "@types/pg": "^8.15.1",
+        "@types/pg": "^8.20.0",
         "@vitest/coverage-v8": "^4.1.9",
         "@vitest/ui": "^4.1.9",
         "c8": "^11.0.0",
         "dotenv": "^17.4.2",
         "drizzle-kit": "0.31.10",
-        "pg": "^8.11.1",
+        "pg": "^8.22.0",
         "tsup": "^8.5.1",
         "tsx": "^4.22.4",
         "typescript": "6.0.3",
@@ -79,6 +81,6 @@
         "vitest": "^4.1.9"
     },
     "peerDependencies": {
-        "pg": "^8.11.1"
+        "pg": "^8.22.0"
     }
 }

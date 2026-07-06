@@ -10,8 +10,8 @@
  *  - SSR guard: no-op when `navigator` is undefined.
  */
 
-import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sendViewBeacon } from '@/lib/analytics/view-capture';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks
@@ -218,21 +218,22 @@ describe('sendViewBeacon (SPEC-159 T-012)', () => {
     // ── Payload correctness for all entity types ───────────────────────────
 
     describe('entity type variants', () => {
-        it.each([['ACCOMMODATION' as const], ['POST' as const], ['EVENT' as const]])(
-            'sends correct entityType for %s',
-            async (entityType) => {
-                // Arrange
-                const beaconSpy = vi.fn().mockReturnValue(true);
-                navigator.sendBeacon = beaconSpy;
+        it.each([
+            ['ACCOMMODATION' as const],
+            ['POST' as const],
+            ['EVENT' as const]
+        ])('sends correct entityType for %s', async (entityType) => {
+            // Arrange
+            const beaconSpy = vi.fn().mockReturnValue(true);
+            navigator.sendBeacon = beaconSpy;
 
-                // Act
-                sendViewBeacon({ entityType, entityId: 'abc-123' });
+            // Act
+            sendViewBeacon({ entityType, entityId: 'abc-123' });
 
-                // Assert
-                const blob = beaconSpy.mock.calls[0]?.[1] as Blob;
-                const parsed = JSON.parse(await blobText(blob)) as { entityType: string };
-                expect(parsed.entityType).toBe(entityType);
-            }
-        );
+            // Assert
+            const blob = beaconSpy.mock.calls[0]?.[1] as Blob;
+            const parsed = JSON.parse(await blobText(blob)) as { entityType: string };
+            expect(parsed.entityType).toBe(entityType);
+        });
     });
 });

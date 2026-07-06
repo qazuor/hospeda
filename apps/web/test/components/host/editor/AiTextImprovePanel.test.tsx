@@ -34,14 +34,14 @@
  * mocking. The hook's own behaviour is tested in T-001.
  */
 
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
     AiTextImproveHookError,
     AiTextImproveProgress,
     AiTextImproveStatus,
     UseAiTextImproveReturn
 } from '@/hooks/useAiTextImprove';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks

@@ -19,7 +19,7 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import { PlanService, mapDbToPlan } from '@repo/service-core';
+import { mapDbToPlan, PlanService } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------

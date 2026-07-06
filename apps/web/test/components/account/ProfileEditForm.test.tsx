@@ -16,8 +16,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
 import type { ProfileEditUser } from '../../../src/components/account/ProfileEditForm.client';
+import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 

@@ -37,10 +37,7 @@ export interface SetPasswordUserService {
 
 /** Better Auth `setPassword` adapter — injected for testing. */
 export interface BetterAuthSetPassword {
-    setPassword: (opts: {
-        body: { newPassword: string };
-        headers: Headers;
-    }) => Promise<unknown>;
+    setPassword: (opts: { body: { newPassword: string }; headers: Headers }) => Promise<unknown>;
 }
 
 /** Dependency injection bag for the pure handler. */

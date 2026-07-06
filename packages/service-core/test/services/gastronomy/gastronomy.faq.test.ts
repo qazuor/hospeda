@@ -37,7 +37,6 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 // ---------------------------------------------------------------------------
 
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type {
     GastronomyFaq,
     GastronomyFaqAddInput,
@@ -46,6 +45,7 @@ import type {
     GastronomyFaqReorderInput,
     GastronomyFaqUpdateInput
 } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addGastronomyFaq,

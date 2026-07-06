@@ -9,10 +9,10 @@
  * ```
  */
 
+import type { JSX } from 'react';
 import type { ResponseRateData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { JSX } from 'react';
 import styles from './ResponseRateWidget.module.css';
 
 // ---------------------------------------------------------------------------
@@ -116,9 +116,9 @@ export function ResponseRateWidget({
     const pct = Math.min(100, Math.max(0, data.responseRatePct));
     const offset = CIRCUMFERENCE - (pct / 100) * CIRCUMFERENCE;
     const avgTime =
-        data.avgResponseTimeMinutes != null
-            ? `${data.avgResponseTimeMinutes} ${t('host.dashboard.analytics.responseRate.minutes', 'min')}`
-            : t('host.dashboard.analytics.responseRate.notAvailable', 'N/A');
+        data.avgResponseTimeMinutes == null
+            ? t('host.dashboard.analytics.responseRate.notAvailable', 'N/A')
+            : `${data.avgResponseTimeMinutes} ${t('host.dashboard.analytics.responseRate.minutes', 'min')}`;
 
     return (
         <div className={styles.widget}>

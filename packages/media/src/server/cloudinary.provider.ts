@@ -41,6 +41,13 @@ interface CloudinaryUploadResponse {
     height: number;
     format: string;
     bytes: number;
+    /**
+     * Video duration in seconds, reported by Cloudinary only for video uploads
+     * (`resource_type: 'video'`). Undefined for images. Surfaced up to
+     * {@link UploadResult.durationSeconds} so the social pipeline can enforce
+     * the VIDEO_POST duration limit (HOS-65).
+     */
+    duration?: number;
 }
 
 /**
@@ -230,7 +237,7 @@ export class CloudinaryProvider implements ImageProvider {
      * @throws {Error} If Cloudinary returns an incomplete or missing response
      */
     async upload(options: UploadOptions): Promise<UploadResult> {
-        const { file, folder, publicId, tags, overwrite } = options;
+        const { file, folder, publicId, tags, overwrite, transformation, resourceType } = options;
 
         if (!folder || !folder.startsWith(this.folderRoot)) {
             throw new InvalidFolderError(
@@ -241,7 +248,10 @@ export class CloudinaryProvider implements ImageProvider {
         const uploadOptions: Record<string, unknown> = {
             folder,
             overwrite: overwrite ?? true,
-            resource_type: 'image' as const
+            // Default to 'image' when the caller does not specify a resource
+            // type, preserving the historical image-only behavior. Video
+            // callers pass 'video' so Cloudinary reports video metadata.
+            resource_type: resourceType ?? 'image'
         };
 
         if (publicId) {
@@ -249,6 +259,9 @@ export class CloudinaryProvider implements ImageProvider {
         }
         if (tags && tags.length > 0) {
             uploadOptions.tags = [...tags];
+        }
+        if (transformation !== undefined) {
+            uploadOptions.transformation = transformation;
         }
 
         const result = await this.uploadBuffer(file, uploadOptions);
@@ -261,7 +274,8 @@ export class CloudinaryProvider implements ImageProvider {
             url: result.secure_url,
             publicId: result.public_id,
             width: result.width,
-            height: result.height
+            height: result.height,
+            durationSeconds: result.duration
         };
     }
 
@@ -407,7 +421,8 @@ export class CloudinaryProvider implements ImageProvider {
                         width: result.width,
                         height: result.height,
                         format: result.format,
-                        bytes: result.bytes
+                        bytes: result.bytes,
+                        duration: result.duration
                     });
                 } else {
                     reject(new Error('Cloudinary returned no result'));

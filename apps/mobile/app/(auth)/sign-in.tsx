@@ -4,9 +4,9 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { AuthButton } from '../../src/components/auth/AuthButton';
 import { TextField } from '../../src/components/auth/TextField';
 import { theme } from '../../src/design';
-import { signIn } from '../../src/lib/auth-client';
 import { mapSignInError } from '../../src/lib/auth/auth-errors';
 import { getFieldError, signInFormSchema } from '../../src/lib/auth/auth-form-schemas';
+import { signIn } from '../../src/lib/auth-client';
 import { getTranslation } from '../../src/lib/i18n';
 import { useLocale } from '../../src/lib/locale-context';
 

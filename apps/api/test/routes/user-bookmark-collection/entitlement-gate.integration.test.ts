@@ -184,90 +184,90 @@ describe('user-bookmark-collections — cross-plan entitlement gate (SPEC-287 T-
     describe.each([
         { plan: 'plus' as TouristPlan, expectedLimit: 10 },
         { plan: 'vip' as TouristPlan, expectedLimit: 25 }
-    ])(
-        'tourist-$plan (CAN_USE_COLLECTIONS + MAX_COLLECTIONS=$expectedLimit)',
-        ({ plan, expectedLimit }) => {
-            it('passes the gate and resolves the correct planLimit on create', async () => {
-                // Arrange
-                setCurrentPlan(plan);
-                const actor = buildUserActor();
-                mockCollectionService.createCollection.mockResolvedValue({
-                    data: {
-                        id: COLLECTION_ID,
-                        userId: ACTOR_ID,
-                        name: 'New Collection',
-                        description: null,
-                        color: null,
-                        icon: null,
-                        lifecycleState: 'ACTIVE',
-                        createdAt: new Date('2025-01-01').toISOString(),
-                        updatedAt: new Date('2025-01-01').toISOString(),
-                        deletedAt: null,
-                        createdById: null,
-                        updatedById: null,
-                        deletedById: null,
-                        adminInfo: null
-                    }
-                });
-
-                // Act
-                const res = await app.request(BASE_URL, {
-                    method: 'POST',
-                    headers: actorHeaders(actor),
-                    body: JSON.stringify({ name: 'New Collection' })
-                });
-
-                // Assert
-                expect(res.status).toBe(201);
-                expect(mockCollectionService.createCollection).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.anything(),
-                    { hookState: { planLimit: expectedLimit } }
-                );
+    ])('tourist-$plan (CAN_USE_COLLECTIONS + MAX_COLLECTIONS=$expectedLimit)', ({
+        plan,
+        expectedLimit
+    }) => {
+        it('passes the gate and resolves the correct planLimit on create', async () => {
+            // Arrange
+            setCurrentPlan(plan);
+            const actor = buildUserActor();
+            mockCollectionService.createCollection.mockResolvedValue({
+                data: {
+                    id: COLLECTION_ID,
+                    userId: ACTOR_ID,
+                    name: 'New Collection',
+                    description: null,
+                    color: null,
+                    icon: null,
+                    lifecycleState: 'ACTIVE',
+                    createdAt: new Date('2025-01-01').toISOString(),
+                    updatedAt: new Date('2025-01-01').toISOString(),
+                    deletedAt: null,
+                    createdById: null,
+                    updatedById: null,
+                    deletedById: null,
+                    adminInfo: null
+                }
             });
 
-            it(`returns 403 QUOTA_EXCEEDED at the ${expectedLimit}-collection boundary`, async () => {
-                // Arrange
-                setCurrentPlan(plan);
-                const actor = buildUserActor();
-                mockCollectionService.createCollection.mockResolvedValue({
-                    error: {
-                        code: ServiceErrorCode.QUOTA_EXCEEDED,
-                        message: `Collection limit reached: users may not have more than ${expectedLimit} active collections`,
-                        details: { currentCount: expectedLimit, maxAllowed: expectedLimit }
-                    }
-                });
-
-                // Act
-                const res = await app.request(BASE_URL, {
-                    method: 'POST',
-                    headers: actorHeaders(actor),
-                    body: JSON.stringify({ name: 'One too many' })
-                });
-
-                // Assert
-                expect(res.status).toBe(403);
+            // Act
+            const res = await app.request(BASE_URL, {
+                method: 'POST',
+                headers: actorHeaders(actor),
+                body: JSON.stringify({ name: 'New Collection' })
             });
 
-            it('resolves the correct usage.max on list', async () => {
-                // Arrange
-                setCurrentPlan(plan);
-                const actor = buildUserActor();
-                mockCollectionService.listCollectionsByUser.mockResolvedValue({
-                    data: { rows: [], total: 0, page: 1, pageSize: 10 }
-                });
+            // Assert
+            expect(res.status).toBe(201);
+            expect(mockCollectionService.createCollection).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                { hookState: { planLimit: expectedLimit } }
+            );
+        });
 
-                // Act
-                const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
-                    method: 'GET',
-                    headers: actorHeaders(actor)
-                });
-
-                // Assert
-                expect(res.status).toBe(200);
-                const body = await res.json();
-                expect(body.data.usage.max).toBe(expectedLimit);
+        it(`returns 403 QUOTA_EXCEEDED at the ${expectedLimit}-collection boundary`, async () => {
+            // Arrange
+            setCurrentPlan(plan);
+            const actor = buildUserActor();
+            mockCollectionService.createCollection.mockResolvedValue({
+                error: {
+                    code: ServiceErrorCode.QUOTA_EXCEEDED,
+                    message: `Collection limit reached: users may not have more than ${expectedLimit} active collections`,
+                    details: { currentCount: expectedLimit, maxAllowed: expectedLimit }
+                }
             });
-        }
-    );
+
+            // Act
+            const res = await app.request(BASE_URL, {
+                method: 'POST',
+                headers: actorHeaders(actor),
+                body: JSON.stringify({ name: 'One too many' })
+            });
+
+            // Assert
+            expect(res.status).toBe(403);
+        });
+
+        it('resolves the correct usage.max on list', async () => {
+            // Arrange
+            setCurrentPlan(plan);
+            const actor = buildUserActor();
+            mockCollectionService.listCollectionsByUser.mockResolvedValue({
+                data: { rows: [], total: 0, page: 1, pageSize: 10 }
+            });
+
+            // Act
+            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.usage.max).toBe(expectedLimit);
+        });
+    });
 });

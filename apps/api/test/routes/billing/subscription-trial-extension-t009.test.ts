@@ -194,32 +194,20 @@ vi.mock('@qazuor/qzpay-hono', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OpenAPIHono } = require('@hono/zod-openapi');
     return {
-        createAdminRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware?: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                return router;
+        createAdminRoutes: vi.fn(({ authMiddleware }: { authMiddleware?: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        ),
-        createBillingRoutes: vi.fn(
-            ({
-                authMiddleware
-            }: {
-                authMiddleware?: unknown;
-            }) => {
-                const router = new OpenAPIHono({ strict: false });
-                if (authMiddleware) {
-                    router.use('*', authMiddleware);
-                }
-                return router;
+            return router;
+        }),
+        createBillingRoutes: vi.fn(({ authMiddleware }: { authMiddleware?: unknown }) => {
+            const router = new OpenAPIHono({ strict: false });
+            if (authMiddleware) {
+                router.use('*', authMiddleware);
             }
-        )
+            return router;
+        })
     };
 });
 

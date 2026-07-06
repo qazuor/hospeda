@@ -46,10 +46,10 @@ process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import {
-    StubProvider,
     createAiService,
     invalidateConfigCache,
-    invalidatePromptCache
+    invalidatePromptCache,
+    StubProvider
 } from '@repo/ai-core';
 import { aiSettings, getDb } from '@repo/db';
 import type { AiSettingsValue } from '@repo/schemas';

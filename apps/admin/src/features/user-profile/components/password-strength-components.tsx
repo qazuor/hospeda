@@ -4,9 +4,10 @@
  * Sub-components for the change-password page that display
  * password strength and requirements checklist.
  */
-import { useTranslations } from '@/hooks/use-translations';
+
 import type { TranslationKey } from '@repo/i18n';
 import { CheckCircleIcon, XCircleIcon } from '@repo/icons';
+import { useTranslations } from '@/hooks/use-translations';
 
 import type { PasswordRule } from './password-validation';
 import { STRENGTH_LEVELS } from './password-validation';
@@ -14,11 +15,7 @@ import { STRENGTH_LEVELS } from './password-validation';
 /**
  * Password strength indicator bar
  */
-export function PasswordStrengthIndicator({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
+export function PasswordStrengthIndicator({ rules }: { readonly rules: readonly PasswordRule[] }) {
     const { t } = useTranslations();
     const passedCount = rules.filter((r) => r.passed).length;
     const strengthIndex = passedCount === 0 ? 0 : Math.min(passedCount - 1, 4);
@@ -51,11 +48,7 @@ export function PasswordStrengthIndicator({
 /**
  * Password requirements checklist
  */
-export function PasswordRequirements({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
+export function PasswordRequirements({ rules }: { readonly rules: readonly PasswordRule[] }) {
     const { t } = useTranslations();
 
     return (

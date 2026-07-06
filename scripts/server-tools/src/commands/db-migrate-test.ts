@@ -27,15 +27,14 @@
 
 import { existsSync } from 'node:fs';
 import { unlink, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { docker, runInContainer } from '../lib/docker.ts';
-import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
 import { buildDbDependencies, runMigrateSequence } from '../lib/migrate-core.ts';
 import { buildPostgresUrl, pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
+import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
 import { getDbCredentials } from '../lib/target.ts';
 
@@ -147,18 +146,6 @@ export function parseMigrateTestArgs(argv: ReadonlyArray<string>): ParseMigrateT
             skipConfirm: args.includes('--yes')
         }
     };
-}
-
-/**
- * Resolve the repository root from env or default.
- * Mirrors the same helper in db-migrate and db-seed.
- *
- * @returns Absolute path to the repository root.
- */
-export function resolveRepoRoot(): string {
-    const explicit = get('HOPS_REPO_ROOT');
-    if (explicit) return explicit;
-    return join(homedir(), 'hospeda');
 }
 
 /**
@@ -309,12 +296,12 @@ async function dropScratchDb(params: {
         input: dropSql
     });
 
-    if (result.exitCode !== 0) {
+    if (result.exitCode === 0) {
+        log.ok(`Scratch database '${params.scratchDb}' dropped.`);
+    } else {
         log.warn(
             `Could not drop scratch DB '${params.scratchDb}': ${result.stderr.trim() || result.stdout.trim()}. Drop it manually when convenient.`
         );
-    } else {
-        log.ok(`Scratch database '${params.scratchDb}' dropped.`);
     }
 }
 

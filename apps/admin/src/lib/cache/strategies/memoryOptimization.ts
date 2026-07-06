@@ -1,5 +1,5 @@
-import { adminLogger } from '@/utils/logger';
 import type { QueryClient } from '@tanstack/react-query';
+import { adminLogger } from '@/utils/logger';
 
 import type {
     CacheStats,

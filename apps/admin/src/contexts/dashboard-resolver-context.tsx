@@ -29,11 +29,11 @@
  * @see SPEC-155 T-017
  */
 
+import { createContext, type ReactNode, useCallback, useContext, useMemo } from 'react';
 import type { WidgetScope } from '@/config/ia/schema';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import type { DashboardQueryOptions, ResolverContext } from '@/lib/dashboard-sources';
 import { resolveDataSource } from '@/lib/dashboard-sources';
-import { type ReactNode, createContext, useCallback, useContext, useMemo } from 'react';
 
 // ============================================================================
 // CONTEXT VALUE

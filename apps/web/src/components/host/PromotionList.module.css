@@ -243,8 +243,9 @@
     padding: 0.375rem 0.75rem;
     border: 1px solid var(--brand-primary);
     border-radius: var(--radius-button, 8px);
-    transition: background-color var(--duration-fast, 0.2s) ease, color var(--duration-fast, 0.2s)
-        ease;
+    transition:
+        background-color var(--duration-fast, 0.2s) ease,
+        color var(--duration-fast, 0.2s) ease;
 }
 
 .editLink:hover {
@@ -267,8 +268,9 @@
     border-radius: var(--radius-button, 8px);
     padding: 0.375rem 0.75rem;
     cursor: pointer;
-    transition: background-color var(--duration-fast, 0.2s) ease, border-color
-        var(--duration-fast, 0.2s) ease;
+    transition:
+        background-color var(--duration-fast, 0.2s) ease,
+        border-color var(--duration-fast, 0.2s) ease;
 }
 
 .deleteButton:hover {

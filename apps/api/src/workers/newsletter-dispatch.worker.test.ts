@@ -57,8 +57,8 @@ vi.mock('@sentry/node', () => ({
 // System under test
 // ---------------------------------------------------------------------------
 
-import { NEWSLETTER_DISPATCH_QUEUE, startNewsletterWorker } from './newsletter-dispatch.worker.js';
 import type { NewsletterWorkerDeps } from './newsletter-dispatch.worker.js';
+import { NEWSLETTER_DISPATCH_QUEUE, startNewsletterWorker } from './newsletter-dispatch.worker.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -15,14 +15,14 @@
  * @module test/services/addon.checkout.test
  */
 
-import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
+import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 
 // ---------------------------------------------------------------------------
 // Hoisted mock setup

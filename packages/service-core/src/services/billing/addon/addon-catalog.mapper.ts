@@ -34,7 +34,7 @@
  */
 
 import type { AddonDefinition } from '@repo/billing';
-import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
+import { type EntitlementKey, isEntitlementKey, isLimitKey, type LimitKey } from '@repo/billing';
 import type { QZPayBillingAddon } from '@repo/db';
 
 // ---------------------------------------------------------------------------

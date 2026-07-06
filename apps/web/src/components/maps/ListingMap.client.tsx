@@ -18,9 +18,10 @@
  * via React.lazy so they are NOT included in the eager island bundle. The full
  * implementation lives in `ListingMapInner.client.tsx`.
  */
+
+import { lazy, Suspense } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
-import { Suspense, lazy } from 'react';
 import styles from './ListingMap.module.css';
 
 // ---------------------------------------------------------------------------

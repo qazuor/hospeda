@@ -7,27 +7,24 @@
  * @module services
  */
 
-export { BillingCustomerSyncService } from './billing-customer-sync';
-export type { BillingCustomerSyncConfig } from './billing-customer-sync';
-
-export { TrialService } from './trial.service';
 export type {
-    TrialStatus,
-    StartTrialInput,
-    ReactivateFromTrialInput,
-    ReactivateSubscriptionInput,
-    ReactivateSubscriptionResult,
-    TrialEndingSubscription
-} from './trial.service';
-
-export { AddonExpirationService } from './addon-expiration.service';
-export type {
+    ExpireAddonInput,
+    ExpireAddonResult,
     ExpiredAddon,
     ExpiringAddon,
     FindExpiringAddonsInput,
-    ExpireAddonInput,
-    ExpireAddonResult,
     ProcessExpiredAddonsResult
 } from './addon-expiration.service';
-
+export { AddonExpirationService } from './addon-expiration.service';
+export type { BillingCustomerSyncConfig } from './billing-customer-sync';
+export { BillingCustomerSyncService } from './billing-customer-sync';
 export { getMediaProvider } from './media';
+export type {
+    ReactivateFromTrialInput,
+    ReactivateSubscriptionInput,
+    ReactivateSubscriptionResult,
+    StartTrialInput,
+    TrialEndingSubscription,
+    TrialStatus
+} from './trial.service';
+export { TrialService } from './trial.service';

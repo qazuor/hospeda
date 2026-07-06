@@ -17,7 +17,7 @@
 
 import type { PromoEffect } from '@repo/schemas';
 import { PromoEffectKindEnum, ValueKindEnum } from '@repo/schemas';
-import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { calculatePromoCodeEffect } from '../../src/services/billing/promo-code/effect-reducer.js';
 
 // Mock @repo/db BEFORE any imports that use it.
@@ -56,9 +56,7 @@ let mapDbToPromoCode: (row: any) => unknown;
 
 beforeAll(async () => {
     const crudModule = await vi.importActual<{
-        mapDbToPromoCode: typeof import(
-            '../../src/services/billing/promo-code/promo-code.crud.js'
-        )['mapDbToPromoCode'];
+        mapDbToPromoCode: typeof import('../../src/services/billing/promo-code/promo-code.crud.js')['mapDbToPromoCode'];
     }>('../../src/services/billing/promo-code/promo-code.crud.js');
     mapDbToPromoCode = crudModule.mapDbToPromoCode;
 });

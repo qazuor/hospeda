@@ -7,7 +7,7 @@ import {
 import { EventIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { EventSchema } from './event.schema.js';
 import { EventDateSchema } from './subtypes/event.date.schema.js';
 import { EventPriceSchema } from './subtypes/event.price.schema.js';

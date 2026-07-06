@@ -8,8 +8,9 @@
  * to /api/v1/admin/users/options (requires ACCESS_PANEL_ADMIN only).
  * Response shape: { items: [{ id, label, slug }] } — label = displayName ?? email (D4 addendum).
  */
-import { useTranslations } from '@/hooks/use-translations';
+
 import type { FC } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 import { ApiSelect, type ApiSelectOption } from '../ui/ApiSelect';
 
 /**

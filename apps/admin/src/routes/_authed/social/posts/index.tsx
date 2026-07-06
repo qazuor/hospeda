@@ -12,15 +12,14 @@
  * Pagination: page + pageSize (admin convention — NOT limit).
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { Button } from '@/components/ui/button';
 import { useSocialPostsList } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { SocialPostFilters, type SocialPostFiltersValue } from './-components/SocialPostFilters';
 import { SocialPostsTable } from './-components/SocialPostsTable';
 

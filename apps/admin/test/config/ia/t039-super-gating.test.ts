@@ -29,8 +29,8 @@
  * @see SPEC-155 T-039, AC-7, AC-8, AC-31
  */
 
-import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
 import { describe, expect, it } from 'vitest';
+import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
 
 // ============================================================================
 // CONSTANTS

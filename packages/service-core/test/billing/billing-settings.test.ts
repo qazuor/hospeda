@@ -8,8 +8,8 @@ vi.mock('@repo/db', () => ({
     withTransaction: vi.fn()
 }));
 
-import * as dbModule from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import * as dbModule from '@repo/db';
 import {
     BillingSettingsService,
     getBillingSettingsService,

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PermissionCategoryEnum, PermissionEnum } from '../../src/enums/index.js';
 import {
-    PERMISSION_TO_CATEGORY,
-    getPermissionsByCategory
+    getPermissionsByCategory,
+    PERMISSION_TO_CATEGORY
 } from '../../src/utils/permission-grouping.js';
 
 /** Reverse map PermissionEnum value -> KEY (e.g. 'accommodation.create' -> 'ACCOMMODATION_CREATE'). */

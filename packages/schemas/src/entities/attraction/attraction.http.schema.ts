@@ -84,11 +84,10 @@ export type AttractionGetHttp = z.infer<typeof AttractionGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { AttractionSearchInput } from './attraction.query.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 import type { AttractionCreateInput, AttractionUpdateInput } from './attraction.crud.schema.js';
-
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { AttractionSearchInput } from './attraction.query.schema.js';
 
 /**
  * Convert HTTP attraction search parameters to domain search schema

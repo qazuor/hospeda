@@ -29,11 +29,32 @@ vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () =
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    // Mirror the real translator: a key with no translation resolves to
-    // `[MISSING:<key>]` (not the bare key). `catalog-names` relies on that
-    // sentinel to fall back to a humanized label, so the mock must reproduce it.
+    // Mirror the real translator closely enough for the fields under test:
+    //  - A key with no translation resolves to `[MISSING:<key>]` (not the bare
+    //    key). `catalog-names` relies on that sentinel to fall back to a
+    //    humanized label, so the mock must reproduce it.
+    //  - The `summaryHint` key EXISTS in the real catalog as the template
+    //    "{{count}}/300", so simulate that here. A bare `fallback ?? [MISSING]`
+    //    mock would hide the BETA-124 bug: the real resolver returns the catalog
+    //    value and ignores the fallback, so the count only shows up when it is
+    //    passed as an interpolation param (not baked into the fallback string).
+    //  - Interpolate `{{param}}` / `{param}` from the params object like the
+    //    real `resolve()` does, so params actually take effect.
     createTranslations: () => ({
-        t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const raw =
+                key === 'commerce.owner.editor.validation.summaryHint'
+                    ? '{{count}}/300'
+                    : (fallback ?? `[MISSING:${key}]`);
+            if (!params) return raw;
+            return Object.keys(params).reduce(
+                (acc, k) =>
+                    acc
+                        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
+                        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
+                raw
+            );
+        }
     })
 }));
 
@@ -93,6 +114,24 @@ describe('CommerceListingEditor', () => {
         renderEditor('gastronomy');
         const save = screen.getByRole('button', { name: 'Guardar cambios' });
         expect(save).toBeDisabled();
+    });
+
+    it('renders the summary counter interpolated, not the literal {{count}} template (BETA-124)', () => {
+        renderEditor('gastronomy');
+
+        // Summary starts empty → the counter reads "0/300", NOT the raw
+        // "{{count}}/300" template that leaked before the fix (the count was
+        // passed as the fallback, which the resolver discards for an existing
+        // key).
+        const hint = screen.getByText('0/300');
+        expect(hint).toBeInTheDocument();
+        expect(hint.textContent).not.toContain('{{count}}');
+
+        // Typing a valid-length summary updates the interpolated counter.
+        fireEvent.change(screen.getByLabelText('Resumen'), {
+            target: { value: 'hello world!' }
+        });
+        expect(screen.getByText('12/300')).toBeInTheDocument();
     });
 
     it('PATCHes the gastronomy endpoint with only the dirty field on submit', async () => {

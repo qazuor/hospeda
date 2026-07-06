@@ -19,6 +19,11 @@
  *         throwing (shell renders from a config object — no forked shell code).
  */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import * as React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ColumnTFunction } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
@@ -29,11 +34,6 @@ import {
     createCommerceOperationalSection
 } from '@/features/commerce';
 import { fetchApi } from '@/lib/api/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
-import * as React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
 // Mock API client (used by commerce hooks)

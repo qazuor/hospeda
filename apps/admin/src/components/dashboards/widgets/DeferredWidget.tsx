@@ -22,11 +22,11 @@
  * @module DeferredWidget
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { ClockIcon } from '@repo/icons';
 import { EMPTY_SURFACE_CLASS } from '@/components/feedback/empty-surface';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { TranslationKey } from '@repo/i18n';
-import { ClockIcon } from '@repo/icons';
 
 /**
  * Props for the DeferredWidget component.
@@ -74,7 +74,7 @@ export function DeferredWidget({ phaseSpec, title, description, className }: Def
         description ?? t('admin-common.comingSoon.description' as TranslationKey);
 
     return (
-        <div
+        <section
             className={cn(EMPTY_SURFACE_CLASS, 'gap-2 p-6', className)}
             data-testid="deferred-widget"
             aria-label={`${displayTitle} — ${phaseSpec}`}
@@ -102,6 +102,6 @@ export function DeferredWidget({ phaseSpec, title, description, className }: Def
             <p className="max-w-xs text-center text-muted-foreground text-xs">
                 {displayDescription}
             </p>
-        </div>
+        </section>
     );
 }

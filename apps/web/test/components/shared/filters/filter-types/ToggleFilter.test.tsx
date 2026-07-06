@@ -5,10 +5,10 @@
  * role="switch" semantics, and label rendering.
  */
 
-import { ToggleFilter } from '@/components/shared/filters/filter-types/ToggleFilter';
-import type { ToggleFilterConfig } from '@/components/shared/filters/filter-types/ToggleFilter';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ToggleFilterConfig } from '@/components/shared/filters/filter-types/ToggleFilter';
+import { ToggleFilter } from '@/components/shared/filters/filter-types/ToggleFilter';
 
 vi.mock('@/components/shared/filters/FilterSidebar.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })

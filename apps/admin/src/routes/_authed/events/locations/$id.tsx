@@ -4,12 +4,12 @@
  * Displays event location information with tabs for related events.
  */
 
+import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { PageTabs, eventLocationTabs } from '@/components/layout/PageTabs';
+import { eventLocationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { useEventLocationPage } from '@/features/event-locations/hooks/useEventLocationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/locations/$id')({
     component: EventLocationViewPage,

@@ -5,9 +5,9 @@
  * with the expected path and parameters.
  */
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/lib/api/client';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api/client', () => ({
     apiClient: {

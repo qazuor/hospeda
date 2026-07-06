@@ -1,13 +1,12 @@
+// Import types for models
+import type { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import { getMockAccommodationId } from '../../../test/factories/accommodationFactory';
 import { createActor } from '../../../test/factories/actorFactory';
 import { AmenityFactoryBuilder, getMockAmenityId } from '../../../test/factories/amenityFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
-
-// Import types for models
-import type { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
 
 /**
  * Test suite for AmenityService.addAmenityToAccommodation

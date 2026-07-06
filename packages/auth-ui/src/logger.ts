@@ -16,10 +16,10 @@ const createLogMethod = (level: LogLevel, category: string, style: string) => {
     return (message: string, data?: unknown) => {
         const consoleMethod = console[level] ?? console.log;
 
-        if (data !== undefined) {
-            consoleMethod(`%c[${category}] ${message}`, style, data);
-        } else {
+        if (data === undefined) {
             consoleMethod(`%c[${category}] ${message}`, style);
+        } else {
+            consoleMethod(`%c[${category}] ${message}`, style, data);
         }
     };
 };

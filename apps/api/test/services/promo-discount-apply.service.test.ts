@@ -73,9 +73,7 @@ const billingStub = {} as never;
 const DURATION_CYCLES = 3; // finite discount: 3 cycles
 
 /** Configure the subscription lookup mock (HOS-75 T-014: typed helper, camelCase fields). */
-function configureDb(options: {
-    subRow: Record<string, unknown> | null;
-}) {
+function configureDb(options: { subRow: Record<string, unknown> | null }) {
     loadSubscriptionDiscountStateMock.mockResolvedValue(options.subRow);
 }
 

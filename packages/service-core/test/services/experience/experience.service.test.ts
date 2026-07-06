@@ -19,6 +19,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
@@ -29,7 +30,6 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
-import type { Experience } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
 import type { Actor } from '../../../src/types';

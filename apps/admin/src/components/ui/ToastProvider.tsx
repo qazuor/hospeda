@@ -6,9 +6,9 @@
  * the modern features of Flashy.js.
  */
 
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo } from 'react';
 import { type FlashyToastType, useFlashyToast } from '@/hooks/use-flashy-toast';
 import { setToastFunction } from '@/lib/errors';
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 
 /**
  * Legacy toast variant type for backward compatibility

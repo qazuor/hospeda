@@ -4,10 +4,11 @@
  * Reusable display components for the user profile page:
  * ProfileField, ProfileSection, and SocialLink.
  */
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
+
 import { formatDate } from '@repo/i18n';
 import type { ReactNode } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 
 /**
  * Displays a single profile field with label and value

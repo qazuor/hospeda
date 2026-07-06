@@ -107,11 +107,7 @@ import '../../src/routes/billing/trial';
  * Creates a minimal mock Hono context for the handler.
  */
 function createMockContext(
-    options: {
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-        body?: unknown;
-    } = {}
+    options: { billingEnabled?: boolean; billingCustomerId?: string | null; body?: unknown } = {}
 ) {
     const {
         billingEnabled = true,

@@ -114,7 +114,7 @@ describe('User CRUD Schemas', () => {
                 'banExpires'
             ]) {
                 expect(
-                    Object.prototype.hasOwnProperty.call(parsed, flag),
+                    Object.hasOwn(parsed, flag),
                     `system flag '${flag}' must not be present after parsing a partial update`
                 ).toBe(false);
             }
@@ -130,10 +130,10 @@ describe('User CRUD Schemas', () => {
             }) as Record<string, unknown>;
 
             expect(parsed.firstName).toBe('Jane');
-            expect(Object.prototype.hasOwnProperty.call(parsed, 'emailVerified')).toBe(false);
-            expect(Object.prototype.hasOwnProperty.call(parsed, 'profileCompleted')).toBe(false);
-            expect(Object.prototype.hasOwnProperty.call(parsed, 'banned')).toBe(false);
-            expect(Object.prototype.hasOwnProperty.call(parsed, 'serviceSuspended')).toBe(false);
+            expect(Object.hasOwn(parsed, 'emailVerified')).toBe(false);
+            expect(Object.hasOwn(parsed, 'profileCompleted')).toBe(false);
+            expect(Object.hasOwn(parsed, 'banned')).toBe(false);
+            expect(Object.hasOwn(parsed, 'serviceSuspended')).toBe(false);
         });
 
         it('still allows role updates (no default, admin-editable)', () => {
@@ -325,7 +325,7 @@ describe('User CRUD Schemas', () => {
                 try {
                     const _parsedUser = UserSchema.parse(user);
                 } catch (error) {
-                    // biome-ignore lint/suspicious/noConsoleLog: console.log used for debugging schema parse failures in tests
+                    // biome-ignore lint/suspicious/noConsole: console.log used for debugging schema parse failures in tests
                     console.log('UserSchema parsing failed:', (error as Error).message);
                 }
 
@@ -333,7 +333,7 @@ describe('User CRUD Schemas', () => {
                 try {
                     const _parsedOutput = UserCreateOutputSchema.parse(user);
                 } catch (error) {
-                    // biome-ignore lint/suspicious/noConsoleLog: console.log used for debugging schema parse failures in tests
+                    // biome-ignore lint/suspicious/noConsole: console.log used for debugging schema parse failures in tests
                     console.log('UserCreateOutputSchema parsing failed:', (error as Error).message);
                 }
 

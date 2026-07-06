@@ -22,8 +22,8 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-    type IntegrationContext,
     getIntegrationContext,
+    type IntegrationContext,
     isDbAvailable
 } from '../integration/helpers';
 

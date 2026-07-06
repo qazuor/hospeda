@@ -160,15 +160,14 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         // detach.
         const guardSrc = page.viaHelper ? loadPageSource(page.viaHelper.file) : routeSrc;
 
-        it.each(page.mustReferencePermissions)(
-            'references PermissionEnum.%s in the gating module',
-            (permission) => {
-                expect(
-                    guardSrc.includes(`PermissionEnum.${permission}`),
-                    `Expected ${page.viaHelper ? page.viaHelper.file : page.file} to reference PermissionEnum.${permission}. ${page.notes ?? ''}`
-                ).toBe(true);
-            }
-        );
+        it.each(
+            page.mustReferencePermissions
+        )('references PermissionEnum.%s in the gating module', (permission) => {
+            expect(
+                guardSrc.includes(`PermissionEnum.${permission}`),
+                `Expected ${page.viaHelper ? page.viaHelper.file : page.file} to reference PermissionEnum.${permission}. ${page.notes ?? ''}`
+            ).toBe(true);
+        });
 
         it('redirects unauthorized actors to /auth/forbidden', () => {
             expect(

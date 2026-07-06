@@ -31,13 +31,13 @@
  * directive guide).
  */
 
+import type { RecommendationFeedResponse, ScoredAccommodation } from '@repo/schemas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { RecommendationFeedResponse, ScoredAccommodation } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './RecommendationsFeed.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -92,13 +92,13 @@ function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
 
     const priceValue = accommodation.price?.price;
     const formattedPrice =
-        priceValue != null
-            ? formatPrice({
+        priceValue == null
+            ? null
+            : formatPrice({
                   amount: priceValue,
                   currency: accommodation.price?.currency ?? 'ARS',
                   locale
-              })
-            : null;
+              });
 
     const rating = accommodation.averageRating;
     const hasRating = typeof rating === 'number' && rating > 0;
@@ -245,6 +245,7 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
         return (
             <div
                 className={styles.loadingWrap}
+                role="status"
                 aria-live="polite"
                 aria-busy="true"
                 aria-label={t('account.recommendations.loading', 'Cargando recomendaciones...')}

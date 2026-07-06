@@ -14,12 +14,12 @@
 import { AccommodationModel, EntityViewModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EntityViewService } from '../../../src/services/entityView/entityView.service.js';
 import type {
     EntityViewCaptureServiceInput,
     GetStatsForEditorEntitiesInput,
     GetStatsForHostAccommodationsInput
 } from '../../../src/services/entityView/entityView.service.js';
+import { EntityViewService } from '../../../src/services/entityView/entityView.service.js';
 import { createActor } from '../../factories/actorFactory.js';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory.js';
 import { asMock } from '../../utils/test-utils.js';

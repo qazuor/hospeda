@@ -9,7 +9,7 @@
  * - SPEC-086 D-007 (entity-tag visibility per actor)
  * - SPEC-086 D-018 (final schema shape with 4-column PK)
  *
- * Uses @ts-ignore on Drizzle mocks — the RelationalQueryBuilder interface
+ * Uses @ts-expect-error on Drizzle mocks — the RelationalQueryBuilder interface
  * cannot be fully replicated in tests; only the used methods are mocked.
  */
 import type { AccommodationIdType, EntityTag, TagIdType } from '@repo/schemas';
@@ -74,7 +74,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -95,7 +95,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -115,7 +115,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -148,7 +148,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -164,7 +164,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -376,7 +376,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -401,7 +401,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });
@@ -417,7 +417,7 @@ describe('REntityTagModel', () => {
             });
             vi.mocked(dbUtils.getDb).mockReturnValue({
                 query: {
-                    // @ts-ignore: mock Drizzle relation for test
+                    // @ts-expect-error: mock Drizzle relation for test
                     rEntityTag: rEntityTagMock
                 }
             });

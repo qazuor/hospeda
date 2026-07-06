@@ -31,8 +31,9 @@ import {
     getDb
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
 import {
+    AddonCatalogService,
+    BILLING_EVENT_TYPES,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';

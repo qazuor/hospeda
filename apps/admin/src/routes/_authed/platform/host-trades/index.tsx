@@ -5,11 +5,12 @@
  * The route and component are generated from `HostTradesRoute` / `HostTradesPageComponent`
  * in the `host-trades` feature config.
  */
+
+import { createFileRoute } from '@tanstack/react-router';
 import {
     HostTradesPageComponent,
     HostTradesRoute
 } from '@/features/host-trades/config/host-trades.config';
-import { createFileRoute } from '@tanstack/react-router';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;

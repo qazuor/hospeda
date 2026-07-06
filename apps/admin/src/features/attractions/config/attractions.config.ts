@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Attraction, AttractionListItemSchema } from '../schemas/attractions.schemas';
 import { createAttractionsColumns } from './attractions.columns';
 
@@ -78,4 +78,5 @@ export const attractionsConfig: EntityConfig<Attraction> = {
 };
 
 const { component, route } = createEntityListPage(attractionsConfig);
+
 export { component as AttractionsPageComponent, route as AttractionsRoute };

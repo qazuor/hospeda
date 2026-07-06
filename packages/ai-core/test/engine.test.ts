@@ -30,10 +30,10 @@ import {
     type AiEngineEvent,
     AiEngineExhaustedError,
     AiFeatureDisabledError,
-    MAX_ATTEMPTS_PER_PROVIDER,
     createAiEngine,
     defaultProviderOrderStrategy,
-    isRetryableError
+    isRetryableError,
+    MAX_ATTEMPTS_PER_PROVIDER
 } from '../src/engine/index.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';

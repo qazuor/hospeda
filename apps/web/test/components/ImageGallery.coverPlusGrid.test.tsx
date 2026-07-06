@@ -20,12 +20,12 @@
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { GalleryImage } from '../../src/components/ImageGallery.client';
 import {
     getCoverExtrasCountKey,
-    getVisibleExtrasCount
+    getVisibleExtrasCount,
+    ImageGallery
 } from '../../src/components/ImageGallery.client';
-import type { GalleryImage } from '../../src/components/ImageGallery.client';
-import { ImageGallery } from '../../src/components/ImageGallery.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 

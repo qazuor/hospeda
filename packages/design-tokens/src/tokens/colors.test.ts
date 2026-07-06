@@ -7,8 +7,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    type OKLCH,
-    SHADES,
     accent,
     accommodationTypePalettes,
     avatarGradients,
@@ -24,11 +22,13 @@ import {
     formatOKLCH,
     info,
     neutral,
+    type OKLCH,
     palettes,
     purple,
     ratingStar,
     river,
     rose,
+    SHADES,
     sand,
     semanticPalettes,
     sky,
@@ -331,7 +331,15 @@ describe('chartColors', () => {
 describe('surfaces', () => {
     it('declares warm/dark/elevated + their foreground variants', () => {
         expect(Object.keys(surfaces).sort()).toEqual(
-            ['dark', 'darkForeground', 'elevated', 'warm', 'warmForeground'].sort()
+            [
+                'dark',
+                'darkForeground',
+                'elevated',
+                'header',
+                'headerForeground',
+                'warm',
+                'warmForeground'
+            ].sort()
         );
     });
 

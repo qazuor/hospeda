@@ -4,9 +4,9 @@
  * Verifies rendering, toolbar buttons, content typing, and Markdown round-trip.
  */
 
-import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 
 // ---------------------------------------------------------------------------
 // Mocks

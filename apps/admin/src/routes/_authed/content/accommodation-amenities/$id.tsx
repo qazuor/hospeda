@@ -1,3 +1,6 @@
+import { defaultLocale, trans } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
@@ -5,9 +8,6 @@ import { useAmenityPage } from '@/features/amenities/hooks/useAmenityPage';
 import { useDeleteAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { defaultLocale, trans } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 /**
  * Amenity View Route Configuration

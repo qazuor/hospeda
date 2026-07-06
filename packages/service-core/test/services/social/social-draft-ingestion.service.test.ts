@@ -19,8 +19,10 @@
  * SPEC-254 T-028.
  */
 
+import { InMemoryImageProvider } from '@repo/media/test-utils';
 import {
     SocialApprovalStatusEnum,
+    SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
     SocialPublishFormatEnum,
@@ -32,7 +34,9 @@ import type {
     IngestionResult
 } from '../../../src/services/social/social-draft-ingestion.service';
 import { SocialDraftIngestionService } from '../../../src/services/social/social-draft-ingestion.service';
+import { SocialImagePipelineService as RealSocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
 import type { SocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
+import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
 import { createModelMock } from '../../utils/modelMockFactory';
 
 // ---------------------------------------------------------------------------
@@ -116,7 +120,12 @@ function buildImagePipelineMock(result: {
     warnings: string[];
 }): SocialImagePipelineService {
     return {
-        processImage: vi.fn().mockResolvedValue(result)
+        processImage: vi.fn().mockResolvedValue(result),
+        // HOS-65 T-018: per-target dispatch also reaches for these two methods.
+        // Stubbed here so existing single-image tests (which never call them)
+        // keep working unmodified, and new per-target tests can override them.
+        processImages: vi.fn().mockResolvedValue([result]),
+        processVideo: vi.fn().mockResolvedValue(result)
     } as unknown as SocialImagePipelineService;
 }
 
@@ -236,13 +245,13 @@ function buildService(
         })();
 
     const imagePipeline =
-        overrides.imagePipeline !== undefined
-            ? overrides.imagePipeline
-            : buildImagePipelineMock({
+        overrides.imagePipeline === undefined
+            ? buildImagePipelineMock({
                   assetId: 'asset-uuid',
                   cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
                   warnings: []
-              });
+              })
+            : overrides.imagePipeline;
 
     return new SocialDraftIngestionService(
         {},
@@ -565,6 +574,192 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
         });
     });
 
+    // --- Per-target media dispatch (HOS-65 T-018) ---
+
+    describe('per-target media dispatch (HOS-65 T-018)', () => {
+        /** Returns a distinct `social_post_targets` row id for each successive call. */
+        function buildSequentialPostTargetModel() {
+            const m = createModelMock();
+            let callCount = 0;
+            m.create.mockImplementation(async () => {
+                callCount += 1;
+                return { id: `target-${callCount}` };
+            });
+            return m;
+        }
+
+        it('scopes each target own assets to its own dispatch — no cross-target leak', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.platform === SocialPlatformEnum.INSTAGRAM) {
+                        return buildPlatformFormatRow({
+                            platform: 'INSTAGRAM',
+                            publishFormat: 'FEED_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    if (where.platform === SocialPlatformEnum.FACEBOOK) {
+                        return buildPlatformFormatRow({
+                            platform: 'FACEBOOK',
+                            publishFormat: 'PHOTO_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    return null;
+                }
+            );
+            const postTargetModel = buildSequentialPostTargetModel();
+            const imagePipeline = buildImagePipelineMock({
+                assetId: 'asset-uuid',
+                cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, postTargetModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST,
+                            assets: [
+                                { image: { mode: 'public_url', url: 'https://example.com/a.jpg' } }
+                            ]
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST,
+                            assets: [
+                                { image: { mode: 'public_url', url: 'https://example.com/b.jpg' } }
+                            ]
+                        }
+                    ]
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            const processImageMock = imagePipeline.processImage as ReturnType<typeof vi.fn>;
+            expect(processImageMock).toHaveBeenCalledTimes(2);
+
+            const callForA = processImageMock.mock.calls.find(
+                (call) =>
+                    (call[0] as { image: { url?: string } }).image.url ===
+                    'https://example.com/a.jpg'
+            );
+            const callForB = processImageMock.mock.calls.find(
+                (call) =>
+                    (call[0] as { image: { url?: string } }).image.url ===
+                    'https://example.com/b.jpg'
+            );
+
+            expect(callForA?.[0]).toMatchObject({ socialPostTargetId: 'target-1' });
+            expect(callForB?.[0]).toMatchObject({ socialPostTargetId: 'target-2' });
+        });
+
+        it('applies the legacy root image fallback to every IMAGE-needing target when none carry their own assets', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockImplementation(
+                async (where: Record<string, unknown>) => {
+                    if (where.platform === SocialPlatformEnum.INSTAGRAM) {
+                        return buildPlatformFormatRow({
+                            platform: 'INSTAGRAM',
+                            publishFormat: 'FEED_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    if (where.platform === SocialPlatformEnum.FACEBOOK) {
+                        return buildPlatformFormatRow({
+                            platform: 'FACEBOOK',
+                            publishFormat: 'PHOTO_POST',
+                            mediaType: 'IMAGE'
+                        });
+                    }
+                    return null;
+                }
+            );
+            const postTargetModel = buildSequentialPostTargetModel();
+            const imagePipeline = buildImagePipelineMock({
+                assetId: 'asset-uuid',
+                cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/test.jpg',
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, postTargetModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST
+                        }
+                    ],
+                    image: { mode: 'public_url', url: 'https://example.com/legacy.jpg' }
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            const processImageMock = imagePipeline.processImage as ReturnType<typeof vi.fn>;
+            expect(processImageMock).toHaveBeenCalledTimes(2);
+            expect(processImageMock).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({
+                    image: expect.objectContaining({ url: 'https://example.com/legacy.jpg' }),
+                    socialPostTargetId: 'target-1'
+                })
+            );
+            expect(processImageMock).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({
+                    image: expect.objectContaining({ url: 'https://example.com/legacy.jpg' }),
+                    socialPostTargetId: 'target-2'
+                })
+            );
+        });
+
+        it('dispatches zero media calls for a TEXT_POST/NONE target even with a legacy root image present', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'X',
+                    publishFormat: 'TEXT_POST',
+                    mediaType: 'NONE'
+                })
+            );
+            const imagePipeline = buildImagePipelineMock({
+                assetId: null,
+                cloudinaryUrl: null,
+                warnings: []
+            });
+
+            const service = buildService({ platformFormatModel, imagePipeline });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    image: { mode: 'public_url', url: 'https://example.com/legacy.jpg' }
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.assetStatus).toBe('none');
+            expect(imagePipeline.processImage).not.toHaveBeenCalled();
+            expect(imagePipeline.processImages).not.toHaveBeenCalled();
+            expect(imagePipeline.processVideo).not.toHaveBeenCalled();
+        });
+    });
+
     // --- Audit row failure ---
 
     describe('social_ai_requests audit row', () => {
@@ -621,6 +816,42 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             });
 
             expect(postTargetModel.create).toHaveBeenCalledOnce();
+        });
+
+        it('should create exactly 3 social_post_targets rows for a draft with 3 valid targets (AC-3 fan-out, HOS-65 T-022)', async () => {
+            const postTargetModel = createModelMock();
+            let callCount = 0;
+            postTargetModel.create.mockImplementation(async () => {
+                callCount += 1;
+                return { id: `target-${callCount}` };
+            });
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(buildPlatformFormatRow());
+
+            const service = buildService({ postTargetModel, platformFormatModel });
+            const result = (await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.INSTAGRAM,
+                            publishFormat: SocialPublishFormatEnum.FEED_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.FACEBOOK,
+                            publishFormat: SocialPublishFormatEnum.PHOTO_POST
+                        },
+                        {
+                            platform: SocialPlatformEnum.X,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ]
+                }),
+                actorId: 'actor-id'
+            })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+            expect(result.code).toBe('SUCCESS');
+            expect(result.data.targetsCreated).toBe(3);
+            expect(postTargetModel.create).toHaveBeenCalledTimes(3);
         });
     });
 
@@ -974,6 +1205,75 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
         });
 
+        it('HOS-65 FIX 4: rejects a LINKEDIN draft that exceeds the default max of 5 hashtags', async () => {
+            // Before the fix, `maxByPlatform` was built from a hardcoded
+            // Instagram/Facebook/X literal, so LINKEDIN (and TIKTOK) had no
+            // configured max and `checkHashtagLimits` silently skipped them.
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'LINKEDIN',
+                    publishFormat: 'TEXT_POST',
+                    mediaType: 'NONE'
+                })
+            );
+            // Empty settings → LinkedIn falls back to the default max of 5.
+            const service = buildService({ platformFormatModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.LINKEDIN,
+                            publishFormat: SocialPublishFormatEnum.TEXT_POST
+                        }
+                    ],
+                    // 6 total hashtags — one over LinkedIn's default max of 5.
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis'],
+                    customHashtagSuggestions: []
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            if (result.code !== 'HASHTAG_LIMIT_EXCEEDED') throw new Error('expected rejection');
+            expect(
+                result.error.violations.some((v) => v.platform === SocialPlatformEnum.LINKEDIN)
+            ).toBe(true);
+        });
+
+        it('HOS-65 FIX 4: rejects a TIKTOK draft that exceeds the default max of 5 hashtags', async () => {
+            const platformFormatModel = createModelMock();
+            platformFormatModel.findOne.mockResolvedValue(
+                buildPlatformFormatRow({
+                    platform: 'TIKTOK',
+                    publishFormat: 'VIDEO_POST',
+                    mediaType: 'VIDEO'
+                })
+            );
+            const service = buildService({ platformFormatModel });
+
+            const result = await service.ingestDraft({
+                payload: buildPayload({
+                    targets: [
+                        {
+                            platform: SocialPlatformEnum.TIKTOK,
+                            publishFormat: SocialPublishFormatEnum.VIDEO_POST
+                        }
+                    ],
+                    curatedHashtags: ['#uno', '#dos', '#tres', '#cuatro', '#cinco', '#seis'],
+                    customHashtagSuggestions: []
+                }),
+                actorId: 'actor-id'
+            });
+
+            expect(result.code).toBe('HASHTAG_LIMIT_EXCEEDED');
+            if (result.code !== 'HASHTAG_LIMIT_EXCEEDED') throw new Error('expected rejection');
+            expect(
+                result.error.violations.some((v) => v.platform === SocialPlatformEnum.TIKTOK)
+            ).toBe(true);
+        });
+
         it('does not create any DB rows when the hashtag limit is exceeded', async () => {
             const settingModel = buildSettingModelWithMaxHashtagsX(5);
             const postModel = createModelMock();
@@ -999,5 +1299,622 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             expect(postModel.create).not.toHaveBeenCalled();
             expect(aiRequestModel.create).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-65 T-023/T-024/T-026: full-chain verification harness
+//
+// These tests are DELIBERATELY different from the scripted-mock tests above:
+// they wire a REAL `SocialImagePipelineService` and a REAL
+// `SocialPublishDispatchService` to STATEFUL in-memory fake models (not
+// `vi.fn().mockResolvedValue(...)` mocks with canned return values). The
+// pipeline's writes and the dispatch service's reads share the SAME store
+// instances, so a genuine wiring bug (wrong id threaded through, wrong filter
+// key, a format not mapped) surfaces as a real query miss/assertion failure —
+// not a scripted mock silently papering over it. No real DB or network is
+// used (fetch and the Cloudinary upload are the only mocked/faked I/O).
+// ---------------------------------------------------------------------------
+
+interface FakeCrudRow extends Record<string, unknown> {
+    id: string;
+}
+
+/**
+ * Minimal, STATEFUL in-memory fake for a `BaseModelImpl`-shaped CRUD model
+ * (`create`/`findOne`/`findAll`). See the file-level comment above for why
+ * this exists instead of a scripted mock.
+ */
+function createFakeCrudModel<T extends FakeCrudRow>() {
+    const store = new Map<string, T>();
+    let counter = 0;
+
+    function matches(row: T, where: Record<string, unknown>): boolean {
+        return Object.entries(where).every(([key, value]) => row[key] === value);
+    }
+
+    return {
+        async create(data: Partial<T>): Promise<T> {
+            counter += 1;
+            const id = (data.id as string | undefined) ?? `fake-${counter}`;
+            const row = { ...data, id } as T;
+            store.set(id, row);
+            return row;
+        },
+        async findOne(where: Record<string, unknown>): Promise<T | null> {
+            for (const row of store.values()) {
+                if (matches(row, where)) return row;
+            }
+            return null;
+        },
+        async findAll(
+            where: Record<string, unknown>,
+            options?: { sortBy?: string; sortOrder?: 'asc' | 'desc' }
+        ): Promise<{ items: T[]; total: number }> {
+            let items = Array.from(store.values()).filter((row) => matches(row, where));
+            if (options?.sortBy) {
+                const sortKey = options.sortBy;
+                const dir = options.sortOrder === 'desc' ? -1 : 1;
+                items = [...items].sort((a, b) => {
+                    const aVal = a[sortKey];
+                    const bVal = b[sortKey];
+                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                        return (aVal - bVal) * dir;
+                    }
+                    return 0;
+                });
+            }
+            return { items, total: items.length };
+        }
+    };
+}
+
+/**
+ * Builds a REAL `SocialImagePipelineService` and a REAL
+ * `SocialPublishDispatchService`, sharing the same fake
+ * assetModel/postMediaModel/postTargetMediaModel stores between them. The
+ * dispatch service's `platformFormatModel.findOne` is seeded from
+ * `platformFormatRows` (looked up by `id`, matching `buildMakePayload`'s real
+ * query shape: `{ id: target.platformFormatId }`).
+ */
+function buildFullChainHarness(platformFormatRows: Array<Record<string, unknown>>) {
+    const assetModel = createFakeCrudModel<FakeCrudRow>();
+    const postMediaModel = createFakeCrudModel<FakeCrudRow>();
+    const postTargetMediaModel = createFakeCrudModel<FakeCrudRow>();
+
+    const pipelineSettingModel = createModelMock();
+    pipelineSettingModel.findOne.mockResolvedValue(undefined);
+
+    const mediaProvider = new InMemoryImageProvider({ cloudName: 'test-cloud' });
+
+    const realPipeline = new RealSocialImagePipelineService(
+        {},
+        mediaProvider as never,
+        assetModel as never,
+        postMediaModel as never,
+        pipelineSettingModel as never,
+        postTargetMediaModel as never
+    );
+
+    const dispatchPlatformFormatModel = createModelMock();
+    dispatchPlatformFormatModel.findOne.mockImplementation(
+        async (where: Record<string, unknown>) =>
+            platformFormatRows.find((row) => row.id === where.id) ?? null
+    );
+
+    const dispatchService = new SocialPublishDispatchService(
+        { logger: undefined },
+        createModelMock() as never, // postModel — buildMakePayload receives `post` directly
+        createModelMock() as never, // targetModel — buildMakePayload receives `target` directly
+        postMediaModel as never,
+        dispatchPlatformFormatModel as never,
+        createModelMock() as never, // footerModel — unused when post.footerId is null
+        assetModel as never,
+        createModelMock() as never, // publishLogModel — unused by buildMakePayload
+        createModelMock() as never, // settingModel — unused by buildMakePayload
+        { log: vi.fn() } as never, // auditLog — unused by buildMakePayload
+        postTargetMediaModel as never
+    );
+
+    return {
+        realPipeline,
+        dispatchService,
+        assetModel,
+        postMediaModel,
+        postTargetMediaModel,
+        mediaProvider
+    };
+}
+
+describe('HOS-65 end-to-end verification (T-023/T-024/T-026)', () => {
+    const STORY_PLATFORM_FORMAT_ID = 'pf-instagram-story';
+    const FEED_PLATFORM_FORMAT_ID = 'pf-facebook-feed';
+    const LINKEDIN_VIDEO_PLATFORM_FORMAT_ID = 'pf-linkedin-video';
+    const CAROUSEL_PLATFORM_FORMAT_ID = 'pf-instagram-carousel';
+
+    // Mirrors the real seeded rows (T-010, packages/seed/src/required/socialAutomation.seed.ts).
+    const PLATFORM_FORMAT_ROWS = [
+        {
+            id: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'instagram_story_image',
+            enabled: true
+        },
+        {
+            id: FEED_PLATFORM_FORMAT_ID,
+            platform: 'FACEBOOK',
+            publishFormat: 'FEED_POST',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'facebook_feed_image',
+            enabled: true
+        },
+        {
+            id: LINKEDIN_VIDEO_PLATFORM_FORMAT_ID,
+            platform: 'LINKEDIN',
+            publishFormat: 'VIDEO_POST',
+            mediaType: 'VIDEO',
+            makeChannelKey: 'linkedin_video_video',
+            enabled: true
+        },
+        {
+            id: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL',
+            mediaType: 'IMAGE',
+            makeChannelKey: 'instagram_carousel_image',
+            enabled: true
+        }
+    ];
+
+    /** Ingestion-side platform-format lookup — queried by `{platform, publishFormat, enabled}`. */
+    function buildIngestionPlatformFormatModel(rows: Array<Record<string, unknown>>) {
+        const m = createModelMock();
+        m.findOne.mockImplementation(
+            async (where: Record<string, unknown>) =>
+                rows.find(
+                    (row) =>
+                        row.platform === where.platform && row.publishFormat === where.publishFormat
+                ) ?? null
+        );
+        return m;
+    }
+
+    /** Sequential-id `social_post_targets` mock, keyed for later lookup by publishFormat. */
+    function buildSequentialPostTargetModel() {
+        const m = createModelMock();
+        let counter = 0;
+        const idByFormat: Record<string, string> = {};
+        m.create.mockImplementation(async (data: Record<string, unknown>) => {
+            counter += 1;
+            const id = `target-${counter}`;
+            idByFormat[data.publishFormat as string] = id;
+            return { id };
+        });
+        return { model: m, idByFormat };
+    }
+
+    it('T-023: STORY end-to-end publish + media isolation from a co-target of a different format', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const STORY_IMAGE_URL = 'https://example.com/story.jpg';
+        const FEED_IMAGE_URL = 'https://example.com/feed.jpg';
+
+        // Act — ingest a draft with a STORY target (own asset) and a FEED_POST
+        // co-target of a DIFFERENT format (own, different asset) on the same post.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.STORY,
+                        assets: [{ image: { mode: 'public_url', url: STORY_IMAGE_URL } }]
+                    },
+                    {
+                        platform: SocialPlatformEnum.FACEBOOK,
+                        publishFormat: SocialPublishFormatEnum.FEED_POST,
+                        assets: [{ image: { mode: 'public_url', url: FEED_IMAGE_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        expect(result.data.assetStatus).toBe('uploaded');
+
+        const storyTargetId = idByFormat.STORY;
+        const feedTargetId = idByFormat.FEED_POST;
+        expect(storyTargetId).toBeDefined();
+        expect(feedTargetId).toBeDefined();
+
+        // Assert — the pipeline persisted a social_assets row (mediaType=IMAGE)
+        // AND a social_post_target_media link row scoped SPECIFICALLY to the
+        // STORY target — not to the FEED_POST co-target.
+        const storyLinkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: storyTargetId })
+        ).items;
+        expect(storyLinkRows).toHaveLength(1);
+
+        const storyMediaRow = await harness.postMediaModel.findOne({
+            id: storyLinkRows[0]?.socialPostMediaId
+        });
+        expect(storyMediaRow).not.toBeNull();
+
+        const storyAsset = await harness.assetModel.findOne({ id: storyMediaRow?.assetId });
+        expect(storyAsset?.mediaType).toBe(SocialMediaTypeEnum.IMAGE);
+        expect(storyAsset?.originalUrl).toBe(STORY_IMAGE_URL);
+        const storyCloudinaryUrl = storyAsset?.cloudinaryUrl as string;
+        expect(storyCloudinaryUrl).toBeTruthy();
+
+        const feedLinkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: feedTargetId })
+        ).items;
+        expect(feedLinkRows).toHaveLength(1);
+        const feedMediaRow = await harness.postMediaModel.findOne({
+            id: feedLinkRows[0]?.socialPostMediaId
+        });
+        const feedAsset = await harness.assetModel.findOne({ id: feedMediaRow?.assetId });
+        const feedCloudinaryUrl = feedAsset?.cloudinaryUrl as string;
+        expect(feedCloudinaryUrl).toBeTruthy();
+        expect(feedCloudinaryUrl).not.toBe(storyCloudinaryUrl);
+
+        // Assert — buildMakePayload resolves exactly 1 mediaUrl for the STORY
+        // target, and it is the STORY asset's own URL (never the FEED_POST one).
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const storyTargetRow = {
+            id: storyTargetId,
+            platformFormatId: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY'
+        };
+        const feedTargetRow = {
+            id: feedTargetId,
+            platformFormatId: FEED_PLATFORM_FORMAT_ID,
+            platform: 'FACEBOOK',
+            publishFormat: 'FEED_POST'
+        };
+
+        const { payload: storyPayload } = await harness.dispatchService.buildMakePayload({
+            target: storyTargetRow,
+            post: postRow
+        });
+        expect(storyPayload.mediaUrls).toEqual([storyCloudinaryUrl]);
+        expect(storyPayload.mediaUrls).not.toContain(feedCloudinaryUrl);
+
+        // Assert — the FEED_POST co-target does NOT receive the STORY asset.
+        const { payload: feedPayload } = await harness.dispatchService.buildMakePayload({
+            target: feedTargetRow,
+            post: postRow
+        });
+        expect(feedPayload.mediaUrls).toEqual([feedCloudinaryUrl]);
+        expect(feedPayload.mediaUrls).not.toContain(storyCloudinaryUrl);
+    });
+
+    it('T-024: VIDEO_POST end-to-end publish on LinkedIn', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3, 4, 5]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        // Cloudinary reports a duration WITHIN the VIDEO_POST limit (60s) — this
+        // exercises the actual preset-consultation path (HOS-65 T-021) rather
+        // than merely asserting a hardcoded value; a duration OVER the limit is
+        // already covered as a dedicated rejection test in
+        // social-image-pipeline.service.test.ts (HOS-65 T-021).
+        const VIDEO_DURATION_SECONDS = 45;
+        vi.spyOn(harness.mediaProvider, 'upload').mockResolvedValue({
+            url: 'https://res.cloudinary.com/test-cloud/video/upload/v1/linkedin-clip',
+            publicId: 'linkedin-clip',
+            width: 1920,
+            height: 1080,
+            durationSeconds: VIDEO_DURATION_SECONDS
+        });
+
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const VIDEO_URL = 'https://example.com/linkedin-clip.mp4';
+
+        // Act — ingest a draft with a single VIDEO_POST target on LinkedIn
+        // carrying its own video asset.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.LINKEDIN,
+                        publishFormat: SocialPublishFormatEnum.VIDEO_POST,
+                        assets: [{ video: { mode: 'public_url', url: VIDEO_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        expect(result.data.assetStatus).toBe('uploaded');
+
+        const videoTargetId = idByFormat.VIDEO_POST;
+        expect(videoTargetId).toBeDefined();
+
+        // Assert — processVideo persisted the asset with mediaType=VIDEO and the
+        // duration reported from the (mocked) Cloudinary response — proving the
+        // VIDEO_POST preset was consulted (HOS-65 T-021) and did not incorrectly
+        // reject a within-limits video.
+        const linkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: videoTargetId })
+        ).items;
+        expect(linkRows).toHaveLength(1);
+        const mediaRow = await harness.postMediaModel.findOne({
+            id: linkRows[0]?.socialPostMediaId
+        });
+        expect(mediaRow).not.toBeNull();
+        const asset = await harness.assetModel.findOne({ id: mediaRow?.assetId });
+        expect(asset?.mediaType).toBe(SocialMediaTypeEnum.VIDEO);
+        expect(asset?.durationSeconds).toBe(VIDEO_DURATION_SECONDS);
+        expect(asset?.originalUrl).toBe(VIDEO_URL);
+        const videoCloudinaryUrl = asset?.cloudinaryUrl as string;
+        expect(videoCloudinaryUrl).toBeTruthy();
+
+        // Assert — buildMakePayload resolves exactly 1 mediaUrl (the video),
+        // and the target resolves against the LinkedIn VIDEO_POST platform-format
+        // row (T-010) via its makeChannelKey.
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const videoTargetRow = {
+            id: videoTargetId,
+            platformFormatId: LINKEDIN_VIDEO_PLATFORM_FORMAT_ID,
+            platform: 'LINKEDIN',
+            publishFormat: 'VIDEO_POST'
+        };
+
+        const { payload } = await harness.dispatchService.buildMakePayload({
+            target: videoTargetRow,
+            post: postRow
+        });
+
+        expect(payload.mediaUrls).toEqual([videoCloudinaryUrl]);
+        expect(payload.makeChannelKey).toBe('linkedin_video_video');
+        expect(payload.platform).toBe('LINKEDIN');
+    });
+
+    it('T-026: media isolation across co-targets of different formats (CAROUSEL N-assets vs STORY 1-asset)', async () => {
+        // Arrange
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })
+        );
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        const CAROUSEL_URLS = [
+            'https://example.com/carousel-a.jpg',
+            'https://example.com/carousel-b.jpg',
+            'https://example.com/carousel-c.jpg'
+        ];
+        const STORY_URL = 'https://example.com/vertical-story.jpg';
+
+        // Act — ingest a draft with a CAROUSEL target (3 images) and a STORY
+        // co-target (1 vertical image) on the same post.
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.CAROUSEL,
+                        assets: CAROUSEL_URLS.map((url) => ({
+                            image: { mode: 'public_url' as const, url }
+                        }))
+                    },
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.STORY,
+                        assets: [{ image: { mode: 'public_url', url: STORY_URL } }]
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+
+        const carouselTargetId = idByFormat.CAROUSEL;
+        const storyTargetId = idByFormat.STORY;
+        expect(carouselTargetId).toBeDefined();
+        expect(storyTargetId).toBeDefined();
+
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const carouselTargetRow = {
+            id: carouselTargetId,
+            platformFormatId: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL'
+        };
+        const storyTargetRow = {
+            id: storyTargetId,
+            platformFormatId: STORY_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'STORY'
+        };
+
+        // Assert — the CAROUSEL target resolves exactly its own 3 URLs, in order,
+        // and none of the STORY sibling's asset.
+        const { payload: carouselPayload } = await harness.dispatchService.buildMakePayload({
+            target: carouselTargetRow,
+            post: postRow
+        });
+        expect(carouselPayload.mediaUrls).toHaveLength(3);
+
+        // Assert — the STORY target resolves exactly its own 1 URL, and none of
+        // the CAROUSEL sibling's assets.
+        const { payload: storyPayload } = await harness.dispatchService.buildMakePayload({
+            target: storyTargetRow,
+            post: postRow
+        });
+        expect(storyPayload.mediaUrls).toHaveLength(1);
+
+        // Cross-check by ORIGINAL source URL (originalUrl, preserved verbatim by
+        // the pipeline) rather than the synthesized Cloudinary URL, since the
+        // InMemoryImageProvider assigns cloudinary URLs by upload order, not by
+        // target — this is the only way to unambiguously attribute each
+        // resolved mediaUrl back to the asset it came from.
+        async function cloudinaryUrlForOriginal(originalUrl: string): Promise<string> {
+            const { items: assets } = await harness.assetModel.findAll({ originalUrl });
+            expect(assets).toHaveLength(1);
+            return assets[0]?.cloudinaryUrl as string;
+        }
+
+        const carouselCloudinaryUrls = await Promise.all(
+            CAROUSEL_URLS.map((url) => cloudinaryUrlForOriginal(url))
+        );
+        const storyCloudinaryUrl = await cloudinaryUrlForOriginal(STORY_URL);
+
+        expect(carouselPayload.mediaUrls).toEqual(carouselCloudinaryUrls);
+        expect(carouselPayload.mediaUrls).not.toContain(storyCloudinaryUrl);
+        expect(storyPayload.mediaUrls).toEqual([storyCloudinaryUrl]);
+        for (const url of carouselCloudinaryUrls) {
+            expect(storyPayload.mediaUrls).not.toContain(url);
+        }
+    });
+
+    it('T-026 follow-up: a partial mid-carousel upload failure leaves a position GAP that buildMakePayload still resolves correctly, in order (no crash, no off-by-one)', async () => {
+        // Arrange — this directly probes the position-gap concern: processImages
+        // (HOS-65 T-012) numbers `social_post_target_media.position` by each
+        // asset's ORIGINAL array index, not by a renumbered successful-only
+        // count. If the middle of 3 carousel assets fails to download, the
+        // surviving link rows land at position 0 and 2 (position 1 is a GAP,
+        // never created) — buildMakePayload's CAROUSEL resolution must still
+        // return exactly the 2 survivors, correctly ordered, unaffected by the gap.
+        const OK_URL_0 = 'https://example.com/gap-a.jpg';
+        const FAILING_URL_1 = 'https://example.com/gap-b-fails.jpg';
+        const OK_URL_2 = 'https://example.com/gap-c.jpg';
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            if (String(input) === FAILING_URL_1) {
+                throw new Error('simulated network failure for the middle carousel asset');
+            }
+            return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+        });
+
+        const harness = buildFullChainHarness(PLATFORM_FORMAT_ROWS);
+        const { model: postTargetModel, idByFormat } = buildSequentialPostTargetModel();
+
+        const service = buildService({
+            imagePipeline: harness.realPipeline,
+            platformFormatModel: buildIngestionPlatformFormatModel(PLATFORM_FORMAT_ROWS),
+            postTargetModel
+        });
+
+        // Act
+        const result = (await service.ingestDraft({
+            payload: buildPayload({
+                targets: [
+                    {
+                        platform: SocialPlatformEnum.INSTAGRAM,
+                        publishFormat: SocialPublishFormatEnum.CAROUSEL,
+                        assets: [OK_URL_0, FAILING_URL_1, OK_URL_2].map((url) => ({
+                            image: { mode: 'public_url' as const, url }
+                        }))
+                    }
+                ]
+            }),
+            actorId: 'actor-id'
+        })) as Extract<IngestionResult, { code: 'SUCCESS' }>;
+
+        expect(result.code).toBe('SUCCESS');
+        // The overall draft still reports uploaded (2 of 3 assets succeeded) —
+        // graceful degradation, per the pipeline's per-asset isolation contract.
+        expect(result.data.assetStatus).toBe('uploaded');
+        // One warning surfaces for the failed middle asset.
+        expect(result.data.warnings.some((w) => w.field === 'image')).toBe(true);
+
+        const carouselTargetId = idByFormat.CAROUSEL;
+        expect(carouselTargetId).toBeDefined();
+
+        // Assert — exactly 2 link rows exist (position 1 is a genuine gap, never created)
+        const linkRows = (
+            await harness.postTargetMediaModel.findAll({ socialPostTargetId: carouselTargetId })
+        ).items;
+        expect(linkRows).toHaveLength(2);
+        const positions = linkRows.map((row) => row.position).sort();
+        expect(positions).toEqual([0, 2]);
+
+        // Assert — buildMakePayload still resolves exactly the 2 survivors, in
+        // the correct relative order (position 0's asset before position 2's),
+        // despite the gap.
+        const postRow = {
+            id: result.data.postId,
+            finalCaption: null,
+            captionBase: 'Caption',
+            finalHashtagsText: null,
+            footerId: null,
+            scheduledAt: null,
+            timezone: 'UTC'
+        };
+        const carouselTargetRow = {
+            id: carouselTargetId,
+            platformFormatId: CAROUSEL_PLATFORM_FORMAT_ID,
+            platform: 'INSTAGRAM',
+            publishFormat: 'CAROUSEL'
+        };
+
+        const { payload } = await harness.dispatchService.buildMakePayload({
+            target: carouselTargetRow,
+            post: postRow
+        });
+
+        expect(payload.mediaUrls).toHaveLength(2);
+
+        const asset0 = (await harness.assetModel.findAll({ originalUrl: OK_URL_0 })).items[0];
+        const asset2 = (await harness.assetModel.findAll({ originalUrl: OK_URL_2 })).items[0];
+        expect(payload.mediaUrls).toEqual([asset0?.cloudinaryUrl, asset2?.cloudinaryUrl]);
     });
 });

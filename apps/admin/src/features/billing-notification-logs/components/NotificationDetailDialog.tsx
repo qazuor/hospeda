@@ -3,6 +3,8 @@
  *
  * Modal dialog showing full details of a billing notification log entry.
  */
+
+import type { TranslationKey } from '@repo/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +23,6 @@ import type {
 } from '@/features/billing-notification-logs';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateWithTime } from '@/lib/format-helpers';
-import type { TranslationKey } from '@repo/i18n';
 
 /**
  * Get status badge variant

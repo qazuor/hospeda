@@ -22,8 +22,8 @@ import { findContainer } from './container-lookup.ts';
 import { runInContainer } from './docker.ts';
 import { die, log } from './log.ts';
 import { runner } from './runner.ts';
-import { getDbCredentials } from './target.ts';
 import type { Target } from './target.ts';
+import { getDbCredentials } from './target.ts';
 
 /**
  * Build the `@repo/db` package and its deps via turbo so `drizzle-kit

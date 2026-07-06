@@ -1,7 +1,7 @@
 /**
  * Admin get moderation term by ID endpoint
  */
-import { PermissionEnum, contentModerationTermSchema } from '@repo/schemas';
+import { contentModerationTermSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';

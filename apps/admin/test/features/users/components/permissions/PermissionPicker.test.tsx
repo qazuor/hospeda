@@ -13,10 +13,10 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 
-import { PermissionPicker } from '@/features/users/components/permissions/PermissionPicker';
 import { PermissionEnum } from '@repo/schemas';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { PermissionPicker } from '@/features/users/components/permissions/PermissionPicker';
 import { renderWithProviders } from '../../../../helpers/render-with-providers';
 
 const K = 'admin-pages.access.users.permissions';

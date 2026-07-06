@@ -14,11 +14,11 @@
  * - Section title / description always rendered
  */
 
-import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
-import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
+import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)

@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
-import type { DrizzleClient } from '@repo/db';
+import type { DrizzleClient, SelectConversationAccessToken } from '@repo/db';
 import { AccessTokenModel } from '@repo/db';
-import type { SelectConversationAccessToken } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';

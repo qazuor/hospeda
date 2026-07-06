@@ -24,12 +24,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NoOpRevalidationAdapter } from '../../../../packages/service-core/src/revalidation/adapters/noop-revalidation.adapter';
+import { RevalidationService } from '../../../../packages/service-core/src/revalidation/revalidation.service';
 import {
     _resetRevalidationService,
     getRevalidationService,
     initializeRevalidationService
 } from '../../../../packages/service-core/src/revalidation/revalidation-init';
-import { RevalidationService } from '../../../../packages/service-core/src/revalidation/revalidation.service';
 
 // ---------------------------------------------------------------------------
 // Mock @repo/db so the service can be instantiated without a real DB

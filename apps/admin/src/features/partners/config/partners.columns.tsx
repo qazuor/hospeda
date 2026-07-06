@@ -1,8 +1,8 @@
-import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
-import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import type { TranslationKey } from '@repo/i18n';
 import { Link } from '@tanstack/react-router';
-import { Fragment, createElement } from 'react';
+import { createElement, Fragment } from 'react';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import type { Partner } from '../schemas/partners.schemas';
 
 /**

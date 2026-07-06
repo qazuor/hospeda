@@ -32,10 +32,7 @@
  * "Descartar" buttons. "Aplicar" writes the draft into the form; "Descartar"
  * clears the local draft state without touching the form.
  */
-import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
-import type { EntityFormContextValue } from '@/components/entity-form/context/EntityFormContext';
-import { Button } from '@/components/ui-wrapped/Button';
-import { useTranslations } from '@/hooks/use-translations';
+
 import { SparkleIcon } from '@repo/icons';
 import type { AiPostGenerateDraft, AiPostGenerateRequest } from '@repo/schemas';
 import {
@@ -44,11 +41,15 @@ import {
     PostCategoryEnum
 } from '@repo/schemas';
 import { useCallback, useContext, useReducer, useRef } from 'react';
+import type { EntityFormContextValue } from '@/components/entity-form/context/EntityFormContext';
+import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
+import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
 import { initialPanelState, panelReducer } from './ai-post-generate-panel.state';
 import {
-    POST_CATEGORY_LABELS,
     getAiPostGenerateUrl,
-    mapErrorKey
+    mapErrorKey,
+    POST_CATEGORY_LABELS
 } from './ai-post-generate-panel.utils';
 
 // ---------------------------------------------------------------------------

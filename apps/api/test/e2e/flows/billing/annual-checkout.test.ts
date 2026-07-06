@@ -374,9 +374,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
     /**
      * Helper: build + sign an MP IPN payment.updated payload.
      */
-    function buildSignedWebhookRequest(opts: {
-        readonly providerPaymentId: string;
-    }): {
+    function buildSignedWebhookRequest(opts: { readonly providerPaymentId: string }): {
         readonly body: string;
         readonly headers: Record<string, string>;
     } {

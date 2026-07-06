@@ -11,11 +11,11 @@
  * @module use-media-upload.test
  */
 
-import { type UploadEntityImageInput, useMediaUpload } from '@/hooks/use-media-upload';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type UploadEntityImageInput, useMediaUpload } from '@/hooks/use-media-upload';
 
 /**
  * Builds a minimal QueryClient wrapper for hook tests. Disables retries so

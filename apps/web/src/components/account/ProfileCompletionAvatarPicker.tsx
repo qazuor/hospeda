@@ -19,8 +19,8 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
-import { translateApiError } from '@/lib/api-errors';
 import { useRef, useState } from 'react';
+import { translateApiError } from '@/lib/api-errors';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

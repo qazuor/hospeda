@@ -40,16 +40,19 @@ import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
-import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
+import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbRestore } from './commands/db-restore.ts';
-import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSeed } from './commands/db-seed.ts';
+import { dbSeedTestUsers } from './commands/db-seed-test-users.ts';
 import { dbSuperAdminPass } from './commands/db-superadmin-pass.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
+import { envCheckRules } from './commands/env-check-rules.ts';
 import { envDelete } from './commands/env-delete.ts';
+import { envDoctor } from './commands/env-doctor.ts';
 import { envList } from './commands/env-list.ts';
 import { envPull } from './commands/env-pull.ts';
+import { envReconcile } from './commands/env-reconcile.ts';
 import { envSet } from './commands/env-set.ts';
 import { findCommand } from './commands/find.ts';
 import { freeMem } from './commands/free-mem.ts';
@@ -62,8 +65,8 @@ import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
 import { setActiveTarget } from './lib/container-lookup.ts';
 import { die, log } from './lib/log.ts';
+import { resolveTarget, type Target, type TargetPolicy, type TargetSource } from './lib/target.ts';
 import { evaluateTargetPolicy } from './lib/target-policy.ts';
-import { type Target, type TargetPolicy, type TargetSource, resolveTarget } from './lib/target.ts';
 
 /**
  * Toolkit version. MUST stay in sync with `scripts/server-tools/package.json`
@@ -288,6 +291,27 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Read-only from Coolify; writes a local file only. Safe with env default.
         targetPolicy: 'default-ok',
         run: envPull
+    },
+    {
+        name: 'env-reconcile',
+        summary: 'Diff the env-var registry against live Coolify vars for an app (missing-only).',
+        // Read-only diff; safe with env default.
+        targetPolicy: 'default-ok',
+        run: envReconcile
+    },
+    {
+        name: 'env-check-rules',
+        summary: 'Evaluate cross-app env-var consistency rules against live Coolify values.',
+        // Read-only evaluation; safe with env default.
+        targetPolicy: 'default-ok',
+        run: envCheckRules
+    },
+    {
+        name: 'env-doctor',
+        summary: 'Umbrella: env-reconcile + env-check-rules for an app, combined report.',
+        // Read-only umbrella over two read-only checks; safe with env default.
+        targetPolicy: 'default-ok',
+        run: envDoctor
     },
     {
         name: 'update',

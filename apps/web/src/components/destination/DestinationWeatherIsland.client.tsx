@@ -1,5 +1,3 @@
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { DropIcon, ThermometerIcon, WindIcon } from '@repo/icons';
 /**
  * @file DestinationWeatherIsland.client.tsx
@@ -11,6 +9,8 @@ import { DropIcon, ThermometerIcon, WindIcon } from '@repo/icons';
  * never breaks layout, never shows error styling.
  */
 import { useEffect, useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './DestinationWeatherIsland.module.css';
 import { getWeatherConditionKey, getWeatherIcon } from './weather-icons';
 
@@ -134,6 +134,7 @@ export function DestinationWeatherIsland({
         return (
             <div
                 className={styles.skeleton}
+                role="status"
                 aria-busy="true"
                 aria-label={t('destinations.weather.title', 'Tiempo actual')}
             />

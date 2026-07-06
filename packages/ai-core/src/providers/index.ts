@@ -27,7 +27,7 @@ export type {
 } from './ai-provider.interface.js';
 export { NotImplementedError } from './ai-provider.interface.js';
 export { StubProvider } from './stub.provider.js';
-export { OpenAiAdapter } from './vercel-openai.adapter.js';
-export type { OpenAiAdapterOptions } from './vercel-openai.adapter.js';
-export { AnthropicAdapter } from './vercel-anthropic.adapter.js';
 export type { AnthropicAdapterOptions } from './vercel-anthropic.adapter.js';
+export { AnthropicAdapter } from './vercel-anthropic.adapter.js';
+export type { OpenAiAdapterOptions } from './vercel-openai.adapter.js';
+export { OpenAiAdapter } from './vercel-openai.adapter.js';

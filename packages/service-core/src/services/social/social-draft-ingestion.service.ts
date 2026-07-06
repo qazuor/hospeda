@@ -62,25 +62,28 @@ import {
     SocialPostTargetModel as RealSocialPostTargetModel,
     SocialSettingModel as RealSocialSettingModel
 } from '@repo/db';
+import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import {
     SocialApprovalStatusEnum,
+    type SocialMediaTypeEnum,
     SocialPlatformEnum,
     SocialPostStatusEnum,
+    type SocialPublishFormatEnum,
     SocialSourceEnum
 } from '@repo/schemas';
-import type { CreateSocialDraft, SocialDraftWarning } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ServiceConfig } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
+import { normalizeHashtag } from './social.helpers';
 import type {
     HashtagCountsByPlatform,
     HashtagLimitViolation,
     MaxHashtagsByPlatform
 } from './social-hashtag-limit.util';
 import { checkHashtagLimits } from './social-hashtag-limit.util';
-import type { GptImagePayload } from './social-image-pipeline.service';
-import type { SocialImagePipelineService } from './social-image-pipeline.service';
-import { normalizeHashtag } from './social.helpers';
+import type { GptImagePayload, SocialImagePipelineService } from './social-image-pipeline.service';
+import type { TargetAsset } from './social-target-assets.util';
+import { resolveTargetAssets } from './social-target-assets.util';
 
 // ---------------------------------------------------------------------------
 // max_hashtags_<platform> setting keys + fallback defaults.
@@ -92,13 +95,17 @@ import { normalizeHashtag } from './social.helpers';
 const HASHTAG_LIMIT_SETTING_KEYS = {
     [SocialPlatformEnum.INSTAGRAM]: 'max_hashtags_instagram',
     [SocialPlatformEnum.FACEBOOK]: 'max_hashtags_facebook',
-    [SocialPlatformEnum.X]: 'max_hashtags_x'
+    [SocialPlatformEnum.X]: 'max_hashtags_x',
+    [SocialPlatformEnum.LINKEDIN]: 'max_hashtags_linkedin',
+    [SocialPlatformEnum.TIKTOK]: 'max_hashtags_tiktok'
 } as const satisfies Record<SocialPlatformEnum, string>;
 
 const DEFAULT_MAX_HASHTAGS: Record<SocialPlatformEnum, number> = {
     [SocialPlatformEnum.INSTAGRAM]: 30,
     [SocialPlatformEnum.FACEBOOK]: 10,
-    [SocialPlatformEnum.X]: 5
+    [SocialPlatformEnum.X]: 5,
+    [SocialPlatformEnum.LINKEDIN]: 5,
+    [SocialPlatformEnum.TIKTOK]: 5
 };
 
 // ---------------------------------------------------------------------------
@@ -360,6 +367,8 @@ export class SocialDraftIngestionService {
                 platform: string;
                 publishFormat: string;
                 mediaType: string;
+                /** The target's OWN media assets (HOS-65 G-3), carried forward for T-018 per-target dispatch. */
+                assets?: TargetAsset[];
             }> = [];
 
             for (let i = 0; i < payload.targets.length; i++) {
@@ -377,7 +386,8 @@ export class SocialDraftIngestionService {
                         platformFormatId: pf.id as string,
                         platform: target.platform,
                         publishFormat: target.publishFormat,
-                        mediaType: pf.mediaType as string
+                        mediaType: pf.mediaType as string,
+                        assets: target.assets
                     });
                 } else {
                     warnings.push({
@@ -416,20 +426,19 @@ export class SocialDraftIngestionService {
                 settingsResult.items.map((s) => [s.key as string, s.value as string])
             );
 
-            const maxByPlatform: MaxHashtagsByPlatform = {
-                [SocialPlatformEnum.INSTAGRAM]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.INSTAGRAM]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.INSTAGRAM]
-                ),
-                [SocialPlatformEnum.FACEBOOK]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.FACEBOOK]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.FACEBOOK]
-                ),
-                [SocialPlatformEnum.X]: Number(
-                    settingsMap.get(HASHTAG_LIMIT_SETTING_KEYS[SocialPlatformEnum.X]) ??
-                        DEFAULT_MAX_HASHTAGS[SocialPlatformEnum.X]
-                )
-            };
+            // Build the per-platform max map by iterating EVERY platform in
+            // HASHTAG_LIMIT_SETTING_KEYS (all 5 — Instagram/Facebook/X plus
+            // LinkedIn/TikTok). A hardcoded 3-key literal silently left
+            // LinkedIn/TikTok with no configured max, so `checkHashtagLimits`
+            // never flagged them (HOS-65 fix).
+            const maxByPlatform: MaxHashtagsByPlatform = {};
+            for (const [platform, settingKey] of Object.entries(
+                HASHTAG_LIMIT_SETTING_KEYS
+            ) as Array<[SocialPlatformEnum, string]>) {
+                maxByPlatform[platform] = Number(
+                    settingsMap.get(settingKey) ?? DEFAULT_MAX_HASHTAGS[platform]
+                );
+            }
 
             const countsByPlatform: HashtagCountsByPlatform = {};
             for (const target of validTargets) {
@@ -536,15 +545,30 @@ export class SocialDraftIngestionService {
 
             const postId = newPost.id as string;
 
-            // Create social_post_targets rows
+            // Create social_post_targets rows, capturing each created row's id
+            // so the media pipeline (Step 8) can scope `social_post_target_media`
+            // link rows to the correct target (HOS-65 T-018).
+            const createdTargets: Array<{
+                id: string;
+                mediaType: string;
+                publishFormat: string;
+                assets?: TargetAsset[];
+            }> = [];
+
             for (const target of validTargets) {
-                await this.postTargetModel.create({
+                const createdTarget = await this.postTargetModel.create({
                     socialPostId: postId,
                     platformFormatId: target.platformFormatId,
                     platform: target.platform,
                     publishFormat: target.publishFormat,
                     mediaType: target.mediaType,
                     status: SocialPostStatusEnum.NEEDS_REVIEW
+                });
+                createdTargets.push({
+                    id: createdTarget.id as string,
+                    mediaType: target.mediaType,
+                    publishFormat: target.publishFormat,
+                    assets: target.assets
                 });
             }
 
@@ -583,36 +607,130 @@ export class SocialDraftIngestionService {
             }
 
             // ----------------------------------------------------------------
-            // Step 8: Image pipeline
+            // Step 8: Media pipeline — per-target asset dispatch (HOS-65 T-018)
             // ----------------------------------------------------------------
+            // Each target's media is resolved and dispatched independently via
+            // resolveTargetAssets (HOS-65 T-014): a target with its OWN `assets`
+            // uses those; otherwise it falls back to the post-level legacy
+            // `image` field ONLY when its resolved media type is not NONE.
+            // TEXT_POST/NONE targets always resolve to zero assets, so they
+            // never dispatch and never create a social_post_target_media link row.
             let assetStatus: 'uploaded' | 'pending' | 'none' = 'none';
 
-            if (payload.image) {
-                // Thread the root-level `openaiFileIdRefs` (injected by OpenAI
-                // at the request-body root) into the image payload that the
-                // pipeline expects. The Zod schema moved `openaiFileIdRefs` out
-                // of the `image` sub-object to the request root so OpenAI can
-                // auto-populate it; the pipeline's internal `GptImagePayload`
-                // type still carries the field for unified access within the
-                // download logic.
-                const imagePayload: GptImagePayload = {
-                    ...payload.image,
-                    openaiFileIdRefs:
-                        payload.openaiFileIdRefs as GptImagePayload['openaiFileIdRefs']
-                };
+            // Thread the root-level `openaiFileIdRefs` (injected by OpenAI at
+            // the request-body root) into the legacy image payload — this is
+            // the post-level fallback used by targets with no assets of their
+            // own. The Zod schema moved `openaiFileIdRefs` out of the `image`
+            // sub-object to the request root so OpenAI can auto-populate it;
+            // the pipeline's internal `GptImagePayload` type still carries the
+            // field for unified access within the download logic.
+            const legacyImage: GptImagePayload | undefined = payload.image
+                ? {
+                      ...payload.image,
+                      openaiFileIdRefs:
+                          payload.openaiFileIdRefs as GptImagePayload['openaiFileIdRefs']
+                  }
+                : undefined;
 
+            const targetAssetPlans = createdTargets.map((target) => ({
+                target,
+                assets: resolveTargetAssets({
+                    target: { assets: target.assets },
+                    legacyImage,
+                    targetMediaType: target.mediaType as SocialMediaTypeEnum
+                })
+            }));
+
+            const anyAssetsNeeded = targetAssetPlans.some((plan) => plan.assets.length > 0);
+
+            if (anyAssetsNeeded) {
                 if (this.imagePipeline) {
-                    const imageResult = await this.imagePipeline.processImage({
-                        image: imagePayload,
-                        socialPostId: postId,
-                        actorId
-                    });
+                    const pipeline = this.imagePipeline;
+                    let anyUploaded = false;
 
-                    for (const w of imageResult.warnings) {
-                        warnings.push({ field: 'image', message: w });
+                    // Post-global running position for `social_post_media`
+                    // (HOS-65 collision fix). `social_post_media` has a
+                    // UNIQUE(social_post_id, position) index, so when a post
+                    // fans out to multiple targets that EACH carry media, every
+                    // target's media rows must occupy a DISTINCT position slice
+                    // of the whole post — NOT restart at 0 per target. Each
+                    // dispatched asset advances this counter by one; it is
+                    // passed to the pipeline as `mediaPositionOffset`. The
+                    // per-target `social_post_target_media` link position stays
+                    // 0..N-1 within the target (handled inside the pipeline), so
+                    // per-target ordering is preserved.
+                    let postMediaPosition = 0;
+
+                    for (const plan of targetAssetPlans) {
+                        if (plan.assets.length === 0) continue;
+
+                        const imageAssets = plan.assets.flatMap((a) => (a.image ? [a.image] : []));
+                        const videoAssets = plan.assets.flatMap((a) => (a.video ? [a.video] : []));
+
+                        // HOS-65 T-021: thread the target's own publishFormat so
+                        // the pipeline can resolve the STORY/VIDEO_POST preset.
+                        const publishFormat = plan.target.publishFormat as SocialPublishFormatEnum;
+
+                        if (imageAssets.length === 1) {
+                            const soleImage = imageAssets[0];
+                            if (soleImage) {
+                                const imageResult = await pipeline.processImage({
+                                    image: soleImage,
+                                    socialPostId: postId,
+                                    socialPostTargetId: plan.target.id,
+                                    actorId,
+                                    publishFormat,
+                                    mediaPositionOffset: postMediaPosition
+                                });
+                                postMediaPosition += 1;
+                                for (const w of imageResult.warnings) {
+                                    warnings.push({ field: 'image', message: w });
+                                }
+                                anyUploaded = anyUploaded || !!imageResult.cloudinaryUrl;
+                            }
+                        } else if (imageAssets.length > 1) {
+                            const imageResults = await pipeline.processImages(
+                                imageAssets.map((image) => ({
+                                    image,
+                                    socialPostId: postId,
+                                    socialPostTargetId: plan.target.id,
+                                    actorId,
+                                    publishFormat,
+                                    // processImages assigns the per-target index
+                                    // 0..N-1 internally; the shared post-global
+                                    // base offset is added on top of that index
+                                    // so media positions stay globally unique
+                                    // across targets.
+                                    mediaPositionOffset: postMediaPosition
+                                }))
+                            );
+                            postMediaPosition += imageAssets.length;
+                            for (const imageResult of imageResults) {
+                                for (const w of imageResult.warnings) {
+                                    warnings.push({ field: 'image', message: w });
+                                }
+                                anyUploaded = anyUploaded || !!imageResult.cloudinaryUrl;
+                            }
+                        }
+
+                        for (const video of videoAssets) {
+                            const videoResult = await pipeline.processVideo({
+                                video,
+                                socialPostId: postId,
+                                socialPostTargetId: plan.target.id,
+                                actorId,
+                                publishFormat,
+                                mediaPositionOffset: postMediaPosition
+                            });
+                            postMediaPosition += 1;
+                            for (const w of videoResult.warnings) {
+                                warnings.push({ field: 'video', message: w });
+                            }
+                            anyUploaded = anyUploaded || !!videoResult.cloudinaryUrl;
+                        }
                     }
 
-                    assetStatus = imageResult.cloudinaryUrl ? 'uploaded' : 'pending';
+                    assetStatus = anyUploaded ? 'uploaded' : 'pending';
                 } else {
                     // No image pipeline configured (e.g. unit tests without media provider)
                     assetStatus = 'pending';

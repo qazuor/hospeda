@@ -1,3 +1,22 @@
+import type { Announcements, ScreenReaderInstructions } from '@dnd-kit/core';
+import {
+    DndContext,
+    type DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    type UniqueIdentifier,
+    useSensor,
+    useSensors
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    rectSortingStrategy,
+    SortableContext,
+    sortableKeyboardCoordinates
+} from '@dnd-kit/sortable';
+import { AddIcon, ImageIcon, UploadIcon } from '@repo/icons';
+import { ModerationStatusEnum } from '@repo/schemas';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageSearchModal } from '@/components/entity-form/fields';
 import type {
@@ -8,28 +27,9 @@ import { Input, Label } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
 import { DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import {
-    DndContext,
-    type DragEndEvent,
-    KeyboardSensor,
-    PointerSensor,
-    type UniqueIdentifier,
-    useSensor,
-    useSensors
-} from '@dnd-kit/core';
-import type { Announcements, ScreenReaderInstructions } from '@dnd-kit/core';
-import {
-    SortableContext,
-    arrayMove,
-    rectSortingStrategy,
-    sortableKeyboardCoordinates
-} from '@dnd-kit/sortable';
-import { AddIcon, ImageIcon, UploadIcon } from '@repo/icons';
-import { ModerationStatusEnum } from '@repo/schemas';
-import * as React from 'react';
+import type { GalleryImage } from './gallery-types';
 import { SortableGalleryItem } from './SortableGalleryItem';
 import { UploadProgressIndicator } from './UploadProgressIndicator';
-import type { GalleryImage } from './gallery-types';
 import { useGalleryUploads } from './use-gallery-uploads';
 
 export type { GalleryImage };

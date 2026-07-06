@@ -11,13 +11,13 @@
  * see accommodations views-column.test.tsx for the full cell state suite.
  */
 
-import { Views30dCell } from '@/components/entity-list/Views30dCell';
-import { createEventsColumns } from '@/features/events/config/events.columns';
-import { fetchApi } from '@/lib/api/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Views30dCell } from '@/components/entity-list/Views30dCell';
+import { createEventsColumns } from '@/features/events/config/events.columns';
+import { fetchApi } from '@/lib/api/client';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 

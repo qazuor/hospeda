@@ -14,11 +14,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sendBatch } from '../../src/transports/email/brevo-batch.js';
 import type {
     BrevoBatchPayload,
     BrevoBatchRecipient
 } from '../../src/transports/email/brevo-batch.js';
+import { sendBatch } from '../../src/transports/email/brevo-batch.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

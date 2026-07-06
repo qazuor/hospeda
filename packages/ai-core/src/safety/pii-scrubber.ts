@@ -87,7 +87,7 @@ const PLACEHOLDER_CARD = '[REDACTED_CARD]';
  * Matches `local@domain.tld` where local may contain `._%+-` chars.
  * Case-insensitive, global flag for `replaceAll`-style replacement.
  */
-const RE_EMAIL = /[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/gi;
+const RE_EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
 /**
  * Payment card regex.
@@ -100,7 +100,7 @@ const RE_EMAIL = /[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/gi;
  * Global, no word-boundary anchor — digit sequences inside larger text should
  * still be caught.
  */
-const RE_CARD_CANDIDATE = /\b\d{4}(?:[ \-]?\d{2,7}){2,5}\b/g;
+const RE_CARD_CANDIDATE = /\b\d{4}(?:[ -]?\d{2,7}){2,5}\b/g;
 
 /**
  * Phone number regex — international and Argentina-friendly.
@@ -166,7 +166,7 @@ function replaceCards(text: string): { result: string; count: number } {
     let count = 0;
 
     const result = text.replace(RE_CARD_CANDIDATE, (match: string) => {
-        const digits = match.replace(/[ \-]/g, '');
+        const digits = match.replace(/[ -]/g, '');
         if (digits.length >= 13 && digits.length <= 19 && isLuhnValid(digits)) {
             count++;
             return PLACEHOLDER_CARD;

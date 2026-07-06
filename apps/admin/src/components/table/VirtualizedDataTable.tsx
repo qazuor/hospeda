@@ -1,20 +1,20 @@
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { useTranslations } from '@/hooks/use-translations';
-import { cn } from '@/lib/utils';
 import {
     type ColumnDef,
-    type SortingState,
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
+    type SortingState,
     useReactTable
 } from '@tanstack/react-table';
 import { useCallback, useMemo } from 'react';
+import { EmptyState } from '@/components/feedback/EmptyState';
+import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import { type DataTableColumn, type DataTableSort, renderCellByType } from './DataTable';
 import {
     TABLE_VIRTUALIZATION_PRESETS,
-    type VirtualizedTableConfig,
-    useVirtualizedTable
+    useVirtualizedTable,
+    type VirtualizedTableConfig
 } from './hooks/useVirtualizedTable';
 
 export type VirtualizedDataTableProps<TData> = {

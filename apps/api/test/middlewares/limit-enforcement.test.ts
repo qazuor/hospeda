@@ -13,8 +13,8 @@ import {
     OwnerPromotionService,
     ServiceError
 } from '@repo/service-core';
-import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
+import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';

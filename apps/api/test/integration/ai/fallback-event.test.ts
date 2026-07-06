@@ -71,17 +71,15 @@
 
 process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration-tests-32chr';
 
+import type { AiEngineEvent, AiProvider } from '@repo/ai-core';
 import {
-    StubProvider,
     createAiService,
     invalidateConfigCache,
-    invalidatePromptCache
+    invalidatePromptCache,
+    StubProvider
 } from '@repo/ai-core';
-import type { AiEngineEvent } from '@repo/ai-core';
-import type { AiProvider } from '@repo/ai-core';
 import { aiSettings, getDb } from '@repo/db';
-import type { AiSettingsValue } from '@repo/schemas';
-import type { AiProviderId } from '@repo/schemas';
+import type { AiProviderId, AiSettingsValue } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';

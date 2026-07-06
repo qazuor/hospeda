@@ -22,7 +22,7 @@ import {
 // does not apply.
 import { redactSensitiveData, shouldUseWhiteText } from '../src/formatter.ts';
 import { resetLogger } from '../src/logger.js';
-import { LogFormat, LogLevel, type LoggerColorType, LoggerColors } from '../src/types.js';
+import { LogFormat, LoggerColors, type LoggerColorType, LogLevel } from '../src/types.js';
 
 describe('formatter', () => {
     beforeEach(() => {

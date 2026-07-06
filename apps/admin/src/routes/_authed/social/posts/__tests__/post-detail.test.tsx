@@ -61,13 +61,7 @@ vi.mock('@/components/auth/RoutePermissionGuard', () => ({
 
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@tanstack/react-router')>()),
-    Link: ({
-        children,
-        to
-    }: {
-        children: ReactNode;
-        to: string;
-    }) => <a href={to}>{children}</a>,
+    Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
     createFileRoute: () => () => ({})
 }));
 
@@ -88,6 +82,8 @@ vi.mock('@/lib/api/client', () => ({
 // Imports AFTER mocks
 // ---------------------------------------------------------------------------
 
+import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
+import type { SocialPostDetail } from '@repo/service-core';
 import {
     useApproveSocialPost,
     useArchiveSocialPost,
@@ -102,8 +98,6 @@ import {
     useUnpauseSocialPost
 } from '@/hooks/use-social-posts';
 import { useHasPermission } from '@/hooks/use-user-permissions';
-import { PermissionEnum, SocialPostStatusEnum } from '@repo/schemas';
-import type { SocialPostDetail } from '@repo/service-core';
 
 // ---------------------------------------------------------------------------
 // We cannot render the full route component (it uses Route.useParams() which

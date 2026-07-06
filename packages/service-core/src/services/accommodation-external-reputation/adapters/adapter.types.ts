@@ -14,8 +14,7 @@
  * @module services/accommodation-external-reputation/adapters/adapter.types
  */
 
-import type { ExternalReviewSnippet } from '@repo/schemas';
-import type { AccommodationExternalListing } from '@repo/schemas';
+import type { AccommodationExternalListing, ExternalReviewSnippet } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // ReputationFetchResult

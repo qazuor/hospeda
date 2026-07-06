@@ -18,7 +18,6 @@
  * pagination behaviour.
  */
 
-import { fetchApi } from '@/lib/api/client';
 import type {
     CreateNewsletterCampaign,
     NewsletterCampaign,
@@ -27,6 +26,7 @@ import type {
     UpdateNewsletterCampaign
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
 
 // ---------------------------------------------------------------------------
 // Query key factory

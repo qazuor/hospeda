@@ -19,9 +19,9 @@ import { getTableConfig } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
 import {
+    entityViews,
     type InsertEntityView,
-    type SelectEntityView,
-    entityViews
+    type SelectEntityView
 } from '../../src/schemas/entity-view/entity_view.dbschema.ts';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
-import { Separator, confirm, input, search } from '@inquirer/prompts';
+import { confirm, input, Separator, search } from '@inquirer/prompts';
 import type Fuse from 'fuse.js';
 import { CATEGORY_DISPLAY_ORDER, CATEGORY_LABELS } from './categories.js';
 import {
-    MIN_ID_PAD,
     formatBanner,
     formatDangerWarning,
     formatExecutionInfo,
-    formatResult
+    formatResult,
+    MIN_ID_PAD
 } from './format.js';
 import { getRecentCommands, readHistory, recordCommand } from './history.js';
 import { runCommand } from './runner.js';

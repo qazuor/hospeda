@@ -14,11 +14,11 @@ import {
 import { TextField } from '../../../src/components/auth/TextField';
 import { theme } from '../../../src/design';
 import { useOwnAccommodation } from '../../../src/lib/api/hooks/use-own-accommodations';
+import type { AccommodationOperationalUpdate } from '../../../src/lib/api/hooks/use-patch-accommodation';
 import {
     AccommodationOperationalUpdateSchema,
     usePatchAccommodation
 } from '../../../src/lib/api/hooks/use-patch-accommodation';
-import type { AccommodationOperationalUpdate } from '../../../src/lib/api/hooks/use-patch-accommodation';
 import { getTranslation } from '../../../src/lib/i18n';
 import { useLocale } from '../../../src/lib/locale-context';
 import { logger } from '../../../src/lib/logger';

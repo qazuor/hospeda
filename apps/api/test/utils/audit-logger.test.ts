@@ -101,8 +101,8 @@ vi.mock('@repo/logger', () => {
 import { logger } from '@repo/logger';
 // Imports must come after vi.mock declarations.
 import {
-    AuditEventType,
     __resetAuditLogPersisterForTests,
+    AuditEventType,
     auditLog,
     buildPersistedAuditRecord,
     classifyAuditLogType,

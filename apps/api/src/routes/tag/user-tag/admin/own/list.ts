@@ -7,8 +7,7 @@
  *
  * @see SPEC-086 D-007, D-017, D-022, AC-003-01, AC-003-04
  */
-import { PermissionEnum, TagSchema } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../../utils/actor';

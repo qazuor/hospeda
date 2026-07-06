@@ -6,7 +6,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
-
+import { BaseHttpSearchSchema, HttpPaginationSchema } from '../src/api/http/base-http.schema.js';
 // Import base schemas for validation
 import {
     BaseAuditSchema,
@@ -14,8 +14,6 @@ import {
     PaginationParamsSchema,
     UuidSchema
 } from '../src/common/base.schema.js';
-
-import { BaseHttpSearchSchema, HttpPaginationSchema } from '../src/api/http/base-http.schema.js';
 
 // Import entity schemas for validation
 import {

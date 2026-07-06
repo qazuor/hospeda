@@ -5,21 +5,18 @@
  * Each component provides different ways to structure and display form sections.
  */
 
-// Grid Layout
-export { GridItem, GridLayout } from './GridLayout';
-export type { GridItemProps, GridLayoutProps } from './GridLayout';
-
-// Tabs Layout
-export { TabsLayout } from './TabsLayout';
-export type { TabConfig, TabsLayoutProps } from './TabsLayout';
-
+export type { AccordionLayoutProps, AccordionSectionConfig } from './AccordionLayout';
 // Accordion Layout
 export { AccordionLayout } from './AccordionLayout';
-export type { AccordionLayoutProps, AccordionSectionConfig } from './AccordionLayout';
-
+export type { FormSidebarLayoutProps } from './FormSidebarLayout';
 // Form Sidebar Layout (responsive sidebar/content shell)
 export { FormSidebarLayout } from './FormSidebarLayout';
-export type { FormSidebarLayoutProps } from './FormSidebarLayout';
+export type { GridItemProps, GridLayoutProps } from './GridLayout';
+// Grid Layout
+export { GridItem, GridLayout } from './GridLayout';
+export type { TabConfig, TabsLayoutProps } from './TabsLayout';
+// Tabs Layout
+export { TabsLayout } from './TabsLayout';
 
 // TODO: Implement additional layout types
 // export { SplitLayout } from './SplitLayout';

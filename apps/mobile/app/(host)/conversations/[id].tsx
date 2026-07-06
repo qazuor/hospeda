@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
+import type { ListRenderItemInfo } from 'react-native';
 import {
     ActivityIndicator,
     FlatList,
@@ -11,7 +12,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import type { ListRenderItemInfo } from 'react-native';
 import { CaretLeftIcon } from '../../../src/components/icons';
 import { theme } from '../../../src/design';
 import {

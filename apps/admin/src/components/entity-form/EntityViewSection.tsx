@@ -1,9 +1,9 @@
+import { EditIcon, EyeIcon } from '@repo/icons';
+import type { I18nText } from '@repo/schemas';
+import * as React from 'react';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
-import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
-import type { ImageValue } from '@/components/entity-form/fields/ImageField';
-import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import {
     loadAccommodationsByIds,
     loadDestinationsByIds,
@@ -13,6 +13,9 @@ import {
     loadPostSponsorshipsByIds,
     loadUsersByIds
 } from '@/components/entity-form/fields/entity-selects/utils';
+import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
+import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import type {
     EntitySelectFieldConfig,
     SelectFieldConfig,
@@ -35,9 +38,6 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-import { EditIcon, EyeIcon } from '@repo/icons';
-import type { I18nText } from '@repo/schemas';
-import * as React from 'react';
 
 // Lazy-loaded so leaflet stays out of the components-entity-form chunk. The
 // view path reuses the editable CoordinatesField (disabled), so without this it

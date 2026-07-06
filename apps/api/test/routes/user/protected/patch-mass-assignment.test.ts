@@ -117,7 +117,7 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
         expect(input).toHaveProperty('firstName', 'Carlos');
         for (const flag of SYSTEM_FLAGS) {
             expect(
-                Object.prototype.hasOwnProperty.call(input, flag),
+                Object.hasOwn(input, flag),
                 `system flag '${flag}' must not be injected into the service input`
             ).toBe(false);
         }
@@ -145,7 +145,7 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
         expect(input).toHaveProperty('firstName', 'Carlos');
         for (const flag of SYSTEM_FLAGS) {
             expect(
-                Object.prototype.hasOwnProperty.call(input, flag),
+                Object.hasOwn(input, flag),
                 `explicit system flag '${flag}' must be stripped before the service`
             ).toBe(false);
         }

@@ -4,15 +4,15 @@
  * Displays and manages tickets for a specific event.
  */
 
-import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
+import { formatCurrency } from '@repo/i18n';
+import { DollarSignIcon, InfoIcon, UsersIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { eventTabs, PageTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEventQuery } from '@/features/events/hooks/useEventQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatCurrency } from '@repo/i18n';
-import { DollarSignIcon, InfoIcon, UsersIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/$id_/tickets')({
     component: EventTicketsPage

@@ -31,13 +31,13 @@
 import type { AiFeatureConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeStreamText } from '../src/capabilities/stream-text.capability.js';
+import type { AiEngine, AiEngineEvent, AiService } from '../src/engine/index.js';
 import {
     AiCeilingHitError,
     AiModerationBlockedError,
     createAiEngine,
     createAiService
 } from '../src/engine/index.js';
-import type { AiEngine, AiEngineEvent, AiService } from '../src/engine/index.js';
 import type { AiProvider, StreamTextResult } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 

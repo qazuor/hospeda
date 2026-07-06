@@ -7,11 +7,11 @@
  * Redirects automatically after success (with configurable delay).
  */
 
+import { useEffect, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { verifyEmail } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useState } from 'react';
 import styles from './VerifyEmail.module.css';
 
 /** Possible verification states. */

@@ -17,8 +17,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
     type InsertRPostPostTag,
-    type SelectRPostPostTag,
-    rPostPostTag
+    rPostPostTag,
+    type SelectRPostPostTag
 } from '../../src/schemas/tag/r_post_post_tag.dbschema.ts';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

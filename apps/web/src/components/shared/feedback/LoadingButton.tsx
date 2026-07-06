@@ -22,8 +22,8 @@
  * ```
  */
 
-import { cn } from '@/lib/cn';
 import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
+import { cn } from '@/lib/cn';
 import styles from './LoadingButton.module.css';
 import { Spinner } from './Spinner';
 

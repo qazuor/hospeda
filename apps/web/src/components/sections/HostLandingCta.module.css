@@ -36,7 +36,9 @@
     font-weight: 600;
     border-radius: var(--radius-pill);
     text-decoration: none;
-    transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
+    transition:
+        opacity var(--duration-normal) ease,
+        transform var(--duration-normal) ease;
 }
 
 .primaryBtn:hover,

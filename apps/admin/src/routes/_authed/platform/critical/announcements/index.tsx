@@ -18,6 +18,9 @@
  * /auth/forbidden.
  */
 
+import { AddIcon, DeleteIcon, EditIcon } from '@repo/icons';
+import { type AnnouncementItem, type AnnouncementsValue, PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,9 +34,6 @@ import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { usePlatformSetting, useUpdatePlatformSetting } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
-import { AddIcon, DeleteIcon, EditIcon } from '@repo/icons';
-import { type AnnouncementItem, type AnnouncementsValue, PermissionEnum } from '@repo/schemas';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/critical/announcements/')({
     beforeLoad: ({ context }) => {

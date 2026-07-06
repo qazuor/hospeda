@@ -11,10 +11,11 @@
  *
  * @module features/billing/use-my-entitlements
  */
-import { fetchApi } from '@/lib/api/client';
+
 import type { EntitlementKey, LimitKey } from '@repo/billing';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { fetchApi } from '@/lib/api/client';
 
 /** Stable query key – shared across all components on the page. */
 export const MY_ENTITLEMENTS_QUERY_KEY = ['billing', 'me', 'entitlements'] as const;

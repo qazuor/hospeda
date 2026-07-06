@@ -5,15 +5,15 @@
  * Read-only reference page showing the permission catalog organized by category.
  */
 
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { PermissionCategoryEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/access/permissions')({
     component: PermissionsPage

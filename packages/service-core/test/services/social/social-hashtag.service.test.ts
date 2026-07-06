@@ -10,8 +10,8 @@
 import type { SocialHashtagModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SocialHashtagService } from '../../../src/services/social/social-hashtag.service';
 import { normalizeHashtag } from '../../../src/services/social/social.helpers';
+import { SocialHashtagService } from '../../../src/services/social/social-hashtag.service';
 import { createActor } from '../../factories/actorFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 

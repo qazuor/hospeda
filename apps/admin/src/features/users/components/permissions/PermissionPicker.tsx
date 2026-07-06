@@ -11,8 +11,17 @@
  * Broad/sensitive permissions (`*ViewAll`, `*ReadAll`, `*hardDelete`) carry a
  * warning icon so the admin double-checks before granting (R-1).
  */
-import { useMemo, useState } from 'react';
 
+import type { TranslationKey } from '@repo/i18n';
+import { AddIcon, AlertTriangleIcon } from '@repo/icons';
+import {
+    getPermissionsByCategory,
+    type PermissionCategoryEnum,
+    type PermissionEffect,
+    PermissionEffectEnum,
+    type PermissionEnum
+} from '@repo/schemas';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,15 +41,6 @@ import {
     DialogTrigger
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { AddIcon, AlertTriangleIcon } from '@repo/icons';
-import {
-    type PermissionCategoryEnum,
-    type PermissionEffect,
-    PermissionEffectEnum,
-    type PermissionEnum,
-    getPermissionsByCategory
-} from '@repo/schemas';
 
 export interface PermissionPickerProps {
     readonly fromRole: readonly PermissionEnum[];

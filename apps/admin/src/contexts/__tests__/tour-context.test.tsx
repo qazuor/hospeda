@@ -60,6 +60,7 @@ vi.mock('@/lib/analytics/posthog-client', () => ({
 }));
 
 import { trackEvent } from '@/lib/analytics/posthog-client';
+
 const mockedTrackEvent = vi.mocked(trackEvent);
 
 // ---------------------------------------------------------------------------

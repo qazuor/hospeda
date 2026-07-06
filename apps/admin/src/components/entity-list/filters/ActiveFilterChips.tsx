@@ -5,9 +5,9 @@
  * Uses aria-live="polite" so screen readers announce changes.
  */
 
-import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { useCallback, useRef } from 'react';
+import { useTranslations } from '@/hooks/use-translations';
 import { FilterChip } from './FilterChip';
 import type { FilterChipData } from './filter-types';
 

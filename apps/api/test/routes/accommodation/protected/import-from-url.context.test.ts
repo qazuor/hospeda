@@ -9,8 +9,8 @@
  * delegates to it without hitting the real OAuth token service.
  */
 
-import { PermissionEnum } from '@repo/schemas';
 import type { AccommodationImportResponse } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { ImportContext } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

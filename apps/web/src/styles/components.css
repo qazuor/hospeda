@@ -528,7 +528,10 @@
     top: 0;
     z-index: var(--z-nav);
     max-height: 80px;
-    transition: background-color 300ms ease, backdrop-filter 300ms ease, box-shadow 300ms ease;
+    transition:
+        background-color 300ms ease,
+        backdrop-filter 300ms ease,
+        box-shadow 300ms ease;
 }
 .navbar--scrolled {
     background-color: var(--core-card);
@@ -556,8 +559,9 @@
 /* === Scroll Reveal === */
 [data-reveal] {
     opacity: 0;
-    transition: opacity var(--duration-reveal) var(--ease-reveal), transform var(--duration-reveal)
-        var(--ease-reveal);
+    transition:
+        opacity var(--duration-reveal) var(--ease-reveal),
+        transform var(--duration-reveal) var(--ease-reveal);
 }
 [data-reveal="up"] {
     transform: translateY(20px);
@@ -821,7 +825,9 @@
     font-size: var(--text-body);
     background-color: var(--core-card);
     color: var(--core-foreground);
-    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    transition:
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
     box-sizing: border-box;
 }
 
@@ -1029,8 +1035,9 @@
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.875rem);
     line-height: 1.35;
-    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
-        ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        color var(--duration-fast, 0.15s) ease;
 }
 
 .combobox__option:focus-visible {
@@ -1101,8 +1108,9 @@
     align-items: center;
     justify-content: center;
     background-color: var(--core-card);
-    transition: background-color var(--duration-fast, 0.15s) ease, border-color
-        var(--duration-fast, 0.15s) ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        border-color var(--duration-fast, 0.15s) ease;
 }
 
 .combobox__option--selected .combobox__option-check {

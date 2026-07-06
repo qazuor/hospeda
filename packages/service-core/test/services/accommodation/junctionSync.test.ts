@@ -26,7 +26,7 @@ import type {
     RAccommodationFeatureModel
 } from '@repo/db';
 import { DestinationTypeEnum, ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 
 /**
@@ -61,6 +61,7 @@ vi.mock('../../../src/utils/transaction', () => ({
         }
     )
 }));
+
 import {
     createMockAccommodation,
     createMockAccommodationCreateInput

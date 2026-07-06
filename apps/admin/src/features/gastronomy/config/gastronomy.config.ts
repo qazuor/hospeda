@@ -8,9 +8,6 @@
  * injected via `extraFilters`.
  */
 
-import { createEntityListPage } from '@/components/entity-list';
-import { EntityType } from '@/components/table/DataTable';
-import { createCommerceListConfig } from '@/features/commerce';
 import {
     GastronomyAdminListItemSchema,
     GastronomyTypeEnum,
@@ -18,6 +15,9 @@ import {
     PriceRangeEnum
 } from '@repo/schemas';
 import type { z } from 'zod';
+import { createEntityListPage } from '@/components/entity-list';
+import { EntityType } from '@/components/table/DataTable';
+import { createCommerceListConfig } from '@/features/commerce';
 import { createGastronomyColumns } from './gastronomy.columns';
 
 // ---------------------------------------------------------------------------
@@ -106,9 +106,8 @@ export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>
     // grid could only show raw FK UUIDs in the Destino / Propietario columns.
     // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
     // structurally compatible with the list-item shape, brand-only mismatch.
-    listItemSchema: GastronomyAdminListItemSchema as unknown as import(
-        'zod'
-    ).ZodSchema<GastronomyListItem>,
+    listItemSchema:
+        GastronomyAdminListItemSchema as unknown as import('zod').ZodSchema<GastronomyListItem>,
     createColumns: createGastronomyColumns,
     extraFilters: [
         {

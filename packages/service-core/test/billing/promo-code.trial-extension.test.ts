@@ -75,10 +75,7 @@ const mockRedeemAndRecordUsage = promoRedemptionModule.redeemAndRecordUsage as R
  * - tx.select().from(...).where(...).limit(1) → returns `subRows`
  * - tx.execute(sql`...`)                       → resolves void (tracked by executeFn)
  */
-function buildTxMock(options: {
-    subRows: unknown[];
-    executeFn?: ReturnType<typeof vi.fn>;
-}) {
+function buildTxMock(options: { subRows: unknown[]; executeFn?: ReturnType<typeof vi.fn> }) {
     const { subRows, executeFn = vi.fn().mockResolvedValue(undefined) } = options;
 
     return {

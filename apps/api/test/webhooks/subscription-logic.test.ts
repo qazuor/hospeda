@@ -18,8 +18,8 @@ import * as Sentry from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as notificationsModule from '../../src/routes/webhooks/mercadopago/notifications.js';
 import {
-    QZPAY_TO_HOSPEDA_STATUS,
     processSubscriptionUpdated,
+    QZPAY_TO_HOSPEDA_STATUS,
     shouldSendAdminAlert,
     shouldSendCancelledEmail,
     shouldSendPausedEmail,

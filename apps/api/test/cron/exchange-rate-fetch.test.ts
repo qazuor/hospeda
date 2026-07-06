@@ -13,8 +13,8 @@
  * @module test/cron/exchange-rate-fetch
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exchangeRateFetchJob } from '../../src/cron/jobs/exchange-rate-fetch.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 

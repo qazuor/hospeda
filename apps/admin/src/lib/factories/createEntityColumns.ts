@@ -37,9 +37,9 @@ import {
 } from './createBaseColumns';
 import { type ActionConfig, type ActionType, createActionColumn } from './entity-action-column';
 
+export type { ActionColumnResult, ActionConfig, PreparedAction } from './entity-action-column';
 // Re-export action types for consumers
 export { ActionType, createActionColumn } from './entity-action-column';
-export type { ActionConfig, ActionColumnResult, PreparedAction } from './entity-action-column';
 
 // ============================================================================
 // Types
@@ -364,18 +364,17 @@ export function createEntityColumns<TData extends { id: string; name?: string }>
 // ============================================================================
 
 export {
+    createAllBaseColumns,
+    createAuditColumns,
+    createFeaturedColumn,
+    createLifecycleColumn,
+    createModerationColumn,
+    createNameColumn as createNameColumnBase,
+    createTimestampColumns,
+    createVisibilityColumn
+} from './createBaseColumns';
+export {
     ACCOMMODATION_TYPE_OPTIONS,
     BADGE_OPTIONS,
     EVENT_TYPE_OPTIONS
 } from './entity-column-presets';
-
-export {
-    createAllBaseColumns,
-    createAuditColumns,
-    createLifecycleColumn,
-    createModerationColumn,
-    createTimestampColumns,
-    createVisibilityColumn,
-    createFeaturedColumn,
-    createNameColumn as createNameColumnBase
-} from './createBaseColumns';

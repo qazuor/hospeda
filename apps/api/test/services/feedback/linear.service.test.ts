@@ -130,9 +130,7 @@ const mockIssuePayload = (id: string, identifier: string) => ({
 
 describe('LinearFeedbackService', () => {
     // Import is deferred so the mock is in place when the module loads
-    let LinearFeedbackService: typeof import(
-        '../../../src/services/feedback/linear.service'
-    ).LinearFeedbackService;
+    let LinearFeedbackService: typeof import('../../../src/services/feedback/linear.service').LinearFeedbackService;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -290,26 +288,21 @@ describe('LinearFeedbackService', () => {
             ['high', 2],
             ['medium', 3],
             ['low', 4]
-        ] as const)(
-            'should map severityId "%s" to priority %i',
-            async (severityId, expectedPriority) => {
-                // Arrange
-                const service = makeService();
-                mockClientInstance.createIssue.mockResolvedValue(
-                    mockIssuePayload('id-x', 'ABC-99')
-                );
+        ] as const)('should map severityId "%s" to priority %i', async (severityId, expectedPriority) => {
+            // Arrange
+            const service = makeService();
+            mockClientInstance.createIssue.mockResolvedValue(mockIssuePayload('id-x', 'ABC-99'));
 
-                const input = makeInput({ severityId });
+            const input = makeInput({ severityId });
 
-                // Act
-                await service.createIssue(input);
+            // Act
+            await service.createIssue(input);
 
-                // Assert
-                expect(mockClientInstance.createIssue).toHaveBeenCalledWith(
-                    expect.objectContaining({ priority: expectedPriority })
-                );
-            }
-        );
+            // Assert
+            expect(mockClientInstance.createIssue).toHaveBeenCalledWith(
+                expect.objectContaining({ priority: expectedPriority })
+            );
+        });
 
         it('should default to priority 3 (medium) when severityId is absent', async () => {
             // Arrange

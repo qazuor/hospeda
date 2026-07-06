@@ -9,10 +9,10 @@ import type { RecommendationCandidateAccommodation, SearchHistoryFilters } from 
 import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    buildRecommendationProfile,
     FAVORITE_SIGNAL_WEIGHT,
     RECENTLY_VIEWED_SIGNAL_WEIGHT,
-    SEARCH_HISTORY_SIGNAL_WEIGHT,
-    buildRecommendationProfile
+    SEARCH_HISTORY_SIGNAL_WEIGHT
 } from '../../../src/services/recommendation/recommendation.profile';
 
 // ---------------------------------------------------------------------------

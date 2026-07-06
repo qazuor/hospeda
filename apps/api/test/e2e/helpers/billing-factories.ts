@@ -33,12 +33,12 @@
 
 import { randomUUID } from 'node:crypto';
 import {
-    type DrizzleClient,
     billingAddons,
     billingCustomers,
     billingPromoCodes,
     billingSubscriptionAddons,
     billingSubscriptions,
+    type DrizzleClient,
     getDb
 } from '@repo/db';
 
@@ -127,8 +127,8 @@ export async function createTestBillingCustomer(
             segment,
             livemode: input.livemode ?? false,
             metadata: input.metadata ?? {},
-            ...(mpCustomerId !== undefined ? { mpCustomerId } : {}),
-            ...(stripeCustomerId !== undefined ? { stripeCustomerId } : {})
+            ...(mpCustomerId === undefined ? {} : { mpCustomerId }),
+            ...(stripeCustomerId === undefined ? {} : { stripeCustomerId })
         } as typeof billingCustomers.$inferInsert)
         .returning({ id: billingCustomers.id });
 

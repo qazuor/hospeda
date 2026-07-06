@@ -4,7 +4,7 @@ linear: HOS-84
 statusSource: linear
 deliverable: G-1
 status: decided
-decision: "Opt-B band puro (both surfaces) + Beh-2 hide/reveal (detail) / static (listing); shared-component rework; dedicated --surface-header token; fold 6 compact blocks"
+decision: "Opt-B band puro (both surfaces) + HYBRID 3-state compact+hide/reveal (detail) / static (listing); shared-component rework; dedicated --surface-header token; consolidate compact blocks preserving per-page override. NOTE: OQ-6 revised 2026-07-05 from Beh-2 puro — see spec.md §6.2"
 created: 2026-07-04
 ---
 
@@ -20,13 +20,21 @@ created: 2026-07-04
 
 ## 0. Decision recorded (2026-07-04) — AC-1 ✅
 
+> **⚠️ OQ-6 revised 2026-07-05 (Phase 2 kickoff).** At implementation start the owner
+> reversed OQ-6 from **Beh-2 puro** to a **hybrid 3-state model** (expanded / compact /
+> hidden): compaction is **kept** (it carries per-page show/hide function), and
+> hide/reveal is layered on top. Consequently OQ-4 becomes **consolidate** the compact
+> blocks (preserving per-page override), **not delete** them, and the
+> hysteresis + `overflow-anchor` fix is **retained**. The authoritative, updated design
+> lives in `spec.md` §6.2 / §6.5. The table below is the original 2026-07-04 record.
+
 The owner reviewed the four aesthetics and five scroll behaviors (interactive mockup with
 the real Hospeda nav + full detail page) and chose:
 
 | OQ | Decision |
 |---|---|
 | **OQ-2 — Aesthetic** | **Opt-B — solid / gradient band, "band puro" (no image in the header)**, applied to **both** detail and listing surfaces. The entity photo stays in the body gallery, not the header. |
-| **OQ-6 — Behavior** | **Detail: Beh-2 — hide on scroll-down / reveal on scroll-up** (frees max reading height, title one flick away). **Listing: static band** (no compaction). |
+| **OQ-6 — Behavior** | ~~Detail: Beh-2 — hide on scroll-down / reveal on scroll-up~~ **REVISED 2026-07-05 → hybrid 3-state (expanded/compact/hidden); compaction kept + hide/reveal layered on top** (see spec.md §6.2). **Listing: static band** (unchanged). |
 | **OQ-1 — Scope** | **Rework the single shared component** — NO detail-only variant. Enabled by using Opt-B on both surfaces; keeps blast radius minimal. |
 | **OQ-3 — Token** | **Dedicated `--surface-header` token** (light + dark), not a repo-wide `--surface-warm` rename. The band gradient is built from brand tokens. |
 | **OQ-4 — De-dup** | **Yes** — fold the 6 duplicated compact-mode blocks into the shared component. With Beh-2 + static listing, most of that compact CSS is deleted rather than moved. |

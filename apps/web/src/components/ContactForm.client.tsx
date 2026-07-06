@@ -10,12 +10,12 @@
  * Hydration: client:visible (below-the-fold interactive form).
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './ContactForm.module.css';
 
 // API base URL — must be absolute because the web app (host A) and the API
@@ -274,7 +274,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                         {t('contact.form.firstName', 'Nombre')}
                         <span
                             className={styles.required}
-                            aria-label={t('ui.required', 'requerido')}
+                            aria-hidden="true"
                         >
                             *
                         </span>
@@ -297,10 +297,10 @@ export function ContactForm({ locale }: ContactFormProps) {
                             className={styles.errorMsg}
                             role="alert"
                         >
-                            {t('zodError.contact.firstName.min', errors.firstName) !==
+                            {t('zodError.contact.firstName.min', errors.firstName) ===
                             errors.firstName
-                                ? t('zodError.contact.firstName.min', 'El nombre es requerido')
-                                : errors.firstName}
+                                ? errors.firstName
+                                : t('zodError.contact.firstName.min', 'El nombre es requerido')}
                         </p>
                     )}
                 </div>
@@ -313,7 +313,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                         {t('contact.form.lastName', 'Apellido')}
                         <span
                             className={styles.required}
-                            aria-label={t('ui.required', 'requerido')}
+                            aria-hidden="true"
                         >
                             *
                         </span>
@@ -351,7 +351,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                     {t('contact.form.email', 'Email')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>
@@ -388,7 +388,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                     {t('contact.form.type', 'Tipo de consulta')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>
@@ -421,7 +421,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                     {t('contact.form.message', 'Mensaje')}
                     <span
                         className={styles.required}
-                        aria-label={t('ui.required', 'requerido')}
+                        aria-hidden="true"
                     >
                         *
                     </span>

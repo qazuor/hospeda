@@ -5,11 +5,12 @@
  * The route and component are generated from `ExperiencesRoute` /
  * `ExperiencesPageComponent` in the `experience` feature config (SPEC-240 T-028).
  */
+
+import { createFileRoute } from '@tanstack/react-router';
 import {
     ExperiencesPageComponent,
     ExperiencesRoute
 } from '@/features/experience/config/experience.config';
-import { createFileRoute } from '@tanstack/react-router';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;

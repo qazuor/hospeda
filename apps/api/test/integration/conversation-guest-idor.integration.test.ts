@@ -32,8 +32,8 @@ process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
 // Module mocks (hoisted before all imports)
 // ---------------------------------------------------------------------------
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/logger', async (importOriginal) => {
     // Bring in real constant values (AuditEventType, LogLevel, LoggerColors, etc.)

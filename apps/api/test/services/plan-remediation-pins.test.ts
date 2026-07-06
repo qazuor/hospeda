@@ -102,8 +102,10 @@ vi.mock('@repo/service-core', () => ({
 
 import { getDb, withTransaction } from '@repo/db';
 import { getRevalidationService } from '@repo/service-core';
-import type { ApplyDowngradeRestrictionsInput } from '../../src/services/plan-downgrade-remediation.service';
-import type { DowngradeRemediationDeps } from '../../src/services/plan-downgrade-remediation.service';
+import type {
+    ApplyDowngradeRestrictionsInput,
+    DowngradeRemediationDeps
+} from '../../src/services/plan-downgrade-remediation.service';
 import { applyDowngradeRestrictions } from '../../src/services/plan-downgrade-remediation.service';
 import { archiveAccommodationPhotos } from '../../src/services/plan-photo-restriction.service';
 import {

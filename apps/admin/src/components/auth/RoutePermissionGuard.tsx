@@ -6,12 +6,12 @@
  * Used to protect edit/create routes that require specific permissions.
  */
 
-import { useAuthContext } from '@/hooks/use-auth-context';
-import { useTranslations } from '@/hooks/use-translations';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef } from 'react';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useTranslations } from '@/hooks/use-translations';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 
 export interface RoutePermissionGuardProps {
     /** Permissions required to access this route (OR logic - any one suffices) */

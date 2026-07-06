@@ -19,7 +19,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UsageTrackingService } from '../../src/services/usage-tracking.service';
 
 /**

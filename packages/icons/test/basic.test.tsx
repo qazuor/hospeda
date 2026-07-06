@@ -9,7 +9,10 @@ import { describe, expect, it } from 'vitest';
 const TestIconComponent = ({
     size = 24,
     color = 'currentColor'
-}: { size?: number; color?: string }) => {
+}: {
+    size?: number;
+    color?: string;
+}) => {
     return (
         <svg
             width={size}

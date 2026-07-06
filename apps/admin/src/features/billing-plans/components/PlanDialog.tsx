@@ -5,6 +5,12 @@
  * Uses TanStack Form with sections for basic info, pricing, trial,
  * entitlements, limits, and configuration.
  */
+
+import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
+import type { ApiErrorShape, TranslationKey } from '@repo/i18n';
+import { LoaderIcon } from '@repo/icons';
+import { useForm } from '@tanstack/react-form';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -27,15 +33,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
-import type { TranslationKey } from '@repo/i18n';
-import { LoaderIcon } from '@repo/icons';
-import { useForm } from '@tanstack/react-form';
-import { useEffect } from 'react';
-import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
 
 import { translateAdminApiError } from '@/lib/errors';
-import type { ApiErrorShape } from '@repo/i18n';
+import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
 import { ENTITLEMENT_GROUP_KEYS, getEntitlementName } from './plan-entitlement-groups';
 
 interface PlanDialogProps {

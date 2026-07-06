@@ -19,8 +19,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
     type InsertPostTag,
-    type SelectPostTag,
-    postTags
+    postTags,
+    type SelectPostTag
 } from '../../src/schemas/tag/post_tag.dbschema.ts';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

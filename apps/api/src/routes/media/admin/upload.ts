@@ -28,10 +28,10 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
     AdminUploadRequestSchema,
     ENTITY_FOLDER_MAP,
+    getGalleryCap,
     PermissionEnum,
     ServiceErrorCode,
-    UploadResponseDataSchema,
-    getGalleryCap
+    UploadResponseDataSchema
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -276,8 +276,8 @@ export const adminUploadMediaRoute = createAdminRoute({
             entityType: formData.get('entityType'),
             entityId: formData.get('entityId'),
             role: formData.get('role'),
-            ...(tagsArray !== undefined ? { tags: tagsArray } : {}),
-            ...(overwriteBool !== undefined ? { overwrite: overwriteBool } : {})
+            ...(tagsArray === undefined ? {} : { tags: tagsArray }),
+            ...(overwriteBool === undefined ? {} : { overwrite: overwriteBool })
         };
 
         const parseResult = AdminUploadRequestSchema.safeParse(rawFields);
@@ -590,8 +590,8 @@ export const adminUploadMediaRoute = createAdminRoute({
                 file: buffer,
                 folder,
                 publicId,
-                ...(tags !== undefined ? { tags } : {}),
-                ...(overwrite !== undefined ? { overwrite } : {})
+                ...(tags === undefined ? {} : { tags }),
+                ...(overwrite === undefined ? {} : { overwrite })
             });
         } catch (uploadError) {
             apiLogger.error(

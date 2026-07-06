@@ -7,7 +7,7 @@ import {
 import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**

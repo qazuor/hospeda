@@ -1,5 +1,5 @@
-import { adminLogger } from '@/utils/logger';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Cross-field validation rule

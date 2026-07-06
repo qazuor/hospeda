@@ -3,6 +3,10 @@
  *
  * Shows all purchased add-ons (customerAddons) with filtering and search capabilities.
  */
+
+import { SearchIcon } from '@repo/icons';
+import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
 import {
@@ -25,10 +29,10 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import {
+    getPurchasedAddonColumns,
     type PurchasedAddon,
     PurchasedAddonDetailsDialog,
     type PurchasedAddonFilters,
-    getPurchasedAddonColumns,
     useForceActivatePurchasedAddonMutation,
     useForceExpirePurchasedAddonMutation,
     usePurchasedAddonsQuery
@@ -36,9 +40,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { SearchIcon } from '@repo/icons';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/addons')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
@@ -206,7 +207,7 @@ function BillingAddonsPage() {
                             {/* Search by email */}
                             <div className="flex flex-1 gap-2">
                                 <div className="relative flex-1">
-                                    <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                                    <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         placeholder={t('admin-billing.addons.searchPlaceholder')}
                                         value={searchTerm}

@@ -17,10 +17,10 @@
  *   short delay so the host sees the new translations immediately.
  */
 
+import { useCallback, useState } from 'react';
 import type { AccommodationTranslationData, I18nFieldValues } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useState } from 'react';
 import styles from './TranslationPanel.module.css';
 
 // ---------------------------------------------------------------------------

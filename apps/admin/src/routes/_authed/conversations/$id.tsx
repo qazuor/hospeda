@@ -6,6 +6,8 @@
  * DeleteDialog shown only when actor has CONVERSATION_DELETE_ANY.
  */
 
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { ArchiveToggle } from '@/features/conversations/components/ArchiveToggle';
 import { BlockDialog } from '@/features/conversations/components/BlockDialog';
@@ -17,8 +19,6 @@ import { useConversation } from '@/features/conversations/hooks/useConversation'
 import { useUpdateStatusMutation } from '@/features/conversations/hooks/useUpdateStatusMutation';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasAnyPermission, useHasPermission } from '@/hooks/use-user-permissions';
-import { PermissionEnum } from '@repo/schemas';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/conversations/$id')({
     component: ConversationDetailPage

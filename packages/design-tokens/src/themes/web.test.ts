@@ -31,14 +31,14 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 213 web :root tokens', () => {
+    it('declares all 215 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
         // and sponsor-type (3) token families. The dark-mode refresh + SPEC-308
         // a11y pass then added hospeda-forest-link and the dark navy-ramp
         // companions. Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(213);
+        expect(Object.keys(webLight)).toHaveLength(215);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
@@ -126,6 +126,10 @@ describe('webLight — structured-token refs preserve identity', () => {
     it('--surface-warm references surfaces.warm', () => {
         expect(webLight['surface-warm']).toBe(surfaces.warm);
     });
+
+    it('--surface-header references surfaces.header', () => {
+        expect(webLight['surface-header']).toBe(surfaces.header);
+    });
 });
 
 describe('webLight — radius / spacing / typography / shadows / motion / z-index / layout', () => {
@@ -152,11 +156,12 @@ describe('webLight — radius / spacing / typography / shadows / motion / z-inde
 });
 
 describe('webDark — coverage', () => {
-    it('declares 63 dark overrides', () => {
+    it('declares 65 dark overrides', () => {
         // 57 was the count after brand-primary-text; the dark-mode navy refresh
         // (hero-wave-fill) and the SPEC-308 a11y pass (brand-primary-link,
         // hospeda-forest-link, surface-warm-foreground) brought it to 63.
-        expect(Object.keys(webDark)).toHaveLength(63);
+        // HOS-84 added surface-header + surface-header-foreground → 65.
+        expect(Object.keys(webDark)).toHaveLength(65);
     });
 
     // Dark tokens that intentionally have NO light counterpart (the light value
@@ -187,6 +192,8 @@ describe('webDark — sample dark values match seed byte-for-byte', () => {
         ['warning', 'oklch(0.78 0.18 85)'],
         ['info', 'oklch(0.68 0.17 259)'],
         ['surface-warm', 'oklch(0.255 0.035 258)'],
+        ['surface-header', 'oklch(0.255 0.035 258)'],
+        ['surface-header-foreground', 'oklch(0.92 0.01 210)'],
         ['surface-elevated', 'oklch(0.285 0.04 258)'],
         ['footer-bg', 'oklch(0.12 0.02 220)'],
         ['avatar-1-from', 'oklch(0.3 0.1 255)']

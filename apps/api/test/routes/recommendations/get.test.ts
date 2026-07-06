@@ -17,8 +17,8 @@
  * @see apps/api/src/routes/recommendations/protected/get.ts
  */
 import { EntitlementKey, type LimitKey } from '@repo/billing';
-import { AccommodationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { RecommendationFeedResponse } from '@repo/schemas';
+import { AccommodationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';

@@ -223,66 +223,60 @@ describe('addon-entitlement.service cutover parity (SPEC-192 T-012)', () => {
                     },
                     'FEATURED_LISTING'
                 ]
-            ])(
-                'slug "%s": catalog resolves grantsEntitlement=%s → billing.entitlements.grant() called',
-                async (slug, stub, expectedEntitlement) => {
-                    // Arrange
-                    mockGetBySlug.mockResolvedValue({ success: true, data: stub });
+            ])('slug "%s": catalog resolves grantsEntitlement=%s → billing.entitlements.grant() called', async (slug, stub, expectedEntitlement) => {
+                // Arrange
+                mockGetBySlug.mockResolvedValue({ success: true, data: stub });
 
-                    // Act
-                    const result = await service.applyAddonEntitlements({
+                // Act
+                const result = await service.applyAddonEntitlements({
+                    customerId: 'cust-uuid',
+                    addonSlug: slug,
+                    purchaseId: `purchase-${slug}`
+                });
+
+                // Assert
+                expect(result.success).toBe(true);
+                expect(mockGetBySlug).toHaveBeenCalledWith(slug);
+                expect(billing.entitlements.grant).toHaveBeenCalledWith(
+                    expect.objectContaining({
                         customerId: 'cust-uuid',
-                        addonSlug: slug,
-                        purchaseId: `purchase-${slug}`
-                    });
-
-                    // Assert
-                    expect(result.success).toBe(true);
-                    expect(mockGetBySlug).toHaveBeenCalledWith(slug);
-                    expect(billing.entitlements.grant).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            customerId: 'cust-uuid',
-                            entitlementKey: expectedEntitlement
-                        })
-                    );
-                    expect(billing.limits.set).not.toHaveBeenCalled();
-                }
-            );
+                        entitlementKey: expectedEntitlement
+                    })
+                );
+                expect(billing.limits.set).not.toHaveBeenCalled();
+            });
         });
 
         describe('limit-affecting addons (affectsLimitKey non-null)', () => {
             it.each([
                 ['extra-accommodations-5', STUB_EXTRA_ACCOMMODATIONS, 'max_accommodations', 5],
                 ['extra-photos-20', STUB_EXTRA_PHOTOS, 'max_photos_per_accommodation', 20]
-            ])(
-                'slug "%s": catalog resolves affectsLimitKey=%s → billing.limits.set() called',
-                async (slug, stub, limitKey, _limitIncrease) => {
-                    // Arrange — catalog returns the stub for getBySlug calls
-                    // (first call: for the primary addon, subsequent: for allActivePurchases loop)
-                    mockGetBySlug.mockResolvedValue({ success: true, data: stub });
+            ])('slug "%s": catalog resolves affectsLimitKey=%s → billing.limits.set() called', async (slug, stub, limitKey, _limitIncrease) => {
+                // Arrange — catalog returns the stub for getBySlug calls
+                // (first call: for the primary addon, subsequent: for allActivePurchases loop)
+                mockGetBySlug.mockResolvedValue({ success: true, data: stub });
 
-                    // Act
-                    const result = await service.applyAddonEntitlements({
+                // Act
+                const result = await service.applyAddonEntitlements({
+                    customerId: 'cust-uuid',
+                    addonSlug: slug,
+                    purchaseId: `purchase-${slug}`
+                });
+
+                // Assert
+                expect(result.success).toBe(true);
+                expect(mockGetBySlug).toHaveBeenCalledWith(slug);
+                // billing.limits.set was called (allActivePurchases is empty so increment=0,
+                // but basePlanLimit > 0 so the "unlimited" skip branch doesn't fire).
+                // With allActivePurchases=[], totalIncrement=0, newMaxValue=basePlanLimit.
+                expect(billing.limits.set).toHaveBeenCalledWith(
+                    expect.objectContaining({
                         customerId: 'cust-uuid',
-                        addonSlug: slug,
-                        purchaseId: `purchase-${slug}`
-                    });
-
-                    // Assert
-                    expect(result.success).toBe(true);
-                    expect(mockGetBySlug).toHaveBeenCalledWith(slug);
-                    // billing.limits.set was called (allActivePurchases is empty so increment=0,
-                    // but basePlanLimit > 0 so the "unlimited" skip branch doesn't fire).
-                    // With allActivePurchases=[], totalIncrement=0, newMaxValue=basePlanLimit.
-                    expect(billing.limits.set).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            customerId: 'cust-uuid',
-                            limitKey
-                        })
-                    );
-                    expect(billing.entitlements.grant).not.toHaveBeenCalled();
-                }
-            );
+                        limitKey
+                    })
+                );
+                expect(billing.entitlements.grant).not.toHaveBeenCalled();
+            });
         });
 
         describe('when catalog returns NOT_FOUND', () => {

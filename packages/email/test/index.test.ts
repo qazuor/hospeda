@@ -1,12 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
-import {
-    BaseLayout,
-    ResetPasswordTemplate,
-    VerifyEmailTemplate,
-    createEmailClient,
-    sendEmail
-} from '../src/index.js';
 import type {
     BaseLayoutProps,
     CreateEmailClientInput,
@@ -15,6 +7,13 @@ import type {
     SendEmailInput,
     SendEmailResult,
     VerifyEmailTemplateProps
+} from '../src/index.js';
+import {
+    BaseLayout,
+    createEmailClient,
+    ResetPasswordTemplate,
+    sendEmail,
+    VerifyEmailTemplate
 } from '../src/index.js';
 
 /**

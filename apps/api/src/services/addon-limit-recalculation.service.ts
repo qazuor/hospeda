@@ -6,8 +6,8 @@
  * @deprecated Import from '@repo/service-core' instead.
  */
 export {
-    recalculateAddonLimitsForCustomer,
+    type RecalculateAddonLimitsInput,
     type RecalculationOutcome,
     type RecalculationResult,
-    type RecalculateAddonLimitsInput
+    recalculateAddonLimitsForCustomer
 } from '@repo/service-core';

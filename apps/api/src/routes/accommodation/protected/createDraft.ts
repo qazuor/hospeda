@@ -14,8 +14,8 @@ import {
     type AccommodationCreateDraftHttp,
     AccommodationCreateDraftHttpSchema,
     AccommodationProtectedSchema,
-    PermissionEnum,
-    httpToDomainAccommodationCreateDraft
+    httpToDomainAccommodationCreateDraft,
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';

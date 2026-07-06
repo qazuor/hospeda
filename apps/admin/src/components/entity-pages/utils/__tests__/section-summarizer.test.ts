@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { describe, expect, it } from 'vitest';
 import { computeSectionSummary } from '../section-summarizer';
 
 // ---------------------------------------------------------------------------

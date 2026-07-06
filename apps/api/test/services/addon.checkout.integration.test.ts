@@ -396,11 +396,11 @@ vi.mock('../../src/utils/env', () => ({
     }
 }));
 
+import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 // ---------------------------------------------------------------------------
 // Imports AFTER mocks are in place
 // ---------------------------------------------------------------------------
 import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
-import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 
 // ---------------------------------------------------------------------------
 // Fixtures

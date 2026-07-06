@@ -67,15 +67,15 @@
 
 process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration-tests-32chr';
 
+import type { AiService } from '@repo/ai-core';
 import {
-    StubProvider,
     createAiService,
     invalidateConfigCache,
     invalidatePromptCache,
     resolveConfig,
+    StubProvider,
     saveConfig
 } from '@repo/ai-core';
-import type { AiService } from '@repo/ai-core';
 import { aiSettings, getDb } from '@repo/db';
 import type { AiSettingsValue } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';

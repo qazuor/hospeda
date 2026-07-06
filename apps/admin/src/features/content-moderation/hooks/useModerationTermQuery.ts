@@ -1,5 +1,5 @@
-import { createEntityHooks } from '@/lib/factories/createEntityHooks';
 import type { ContentModerationTerm } from '@repo/schemas';
+import { createEntityHooks } from '@/lib/factories/createEntityHooks';
 
 /**
  * Entity hooks for moderation terms CRUD operations.

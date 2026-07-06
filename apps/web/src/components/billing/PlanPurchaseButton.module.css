@@ -27,8 +27,10 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color var(--duration-normal, 0.4s) ease, opacity
-        var(--duration-normal, 0.4s) ease, transform 0.15s ease;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        opacity var(--duration-normal, 0.4s) ease,
+        transform 0.15s ease;
     text-align: center;
     min-height: 48px; /* WCAG AA touch target */
 }
@@ -190,8 +192,9 @@
     text-decoration: none;
     cursor: pointer;
     line-height: 1.4;
-    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
-        ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        color var(--duration-fast, 0.15s) ease;
 }
 
 .promoToggle:hover {
@@ -262,8 +265,9 @@
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
-        ease;
+    transition:
+        background-color var(--duration-fast, 0.15s) ease,
+        color var(--duration-fast, 0.15s) ease;
 }
 
 .promoApplyButton:hover:not(:disabled) {

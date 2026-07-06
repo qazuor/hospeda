@@ -1,6 +1,6 @@
-import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
 
 /**

@@ -15,9 +15,9 @@
  *  - Badge options for priceRange include all PriceRangeEnum values
  */
 
-import { ColumnType } from '@/components/table/DataTable';
 import { GastronomyTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { ColumnType } from '@/components/table/DataTable';
 import { createGastronomyColumns } from '../config/gastronomy.columns';
 
 // ---------------------------------------------------------------------------

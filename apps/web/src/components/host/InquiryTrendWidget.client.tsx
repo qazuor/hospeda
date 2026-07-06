@@ -9,9 +9,6 @@
  * ```
  */
 
-import type { InquiryTrendData } from '@/lib/api/types';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { type JSX, useMemo } from 'react';
 import {
     CartesianGrid,
@@ -22,6 +19,9 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
+import type { InquiryTrendData } from '@/lib/api/types';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import styles from './InquiryTrendWidget.module.css';
 
 // ---------------------------------------------------------------------------

@@ -95,12 +95,12 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+import type { DrizzleClient, SelectConversation } from '@repo/db';
 import * as dbModule from '@repo/db';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
-import type { DrizzleClient, SelectConversation } from '@repo/db';
 import { ConversationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import * as jose from 'jose';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
 import { ConversationService } from '../../../src/services/conversation/conversation.service.js';
 import type { MessageService } from '../../../src/services/conversation/message.service.js';

@@ -34,10 +34,10 @@ vi.mock('@/features/users/hooks/useUserPermissionOverrides', () => ({
     useRevokeUserPermission: () => ({ mutateAsync: revokeMutate, isPending: false })
 }));
 
-import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach } from 'vitest';
+import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
 import { renderWithProviders } from '../../../../helpers/render-with-providers';
 
 const K = 'admin-pages.access.users.permissions';

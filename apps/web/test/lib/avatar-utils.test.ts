@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { INITIALS_PLACEHOLDER, getInitials, getInitialsFromName } from '../../src/lib/avatar-utils';
+import { getInitials, getInitialsFromName, INITIALS_PLACEHOLDER } from '../../src/lib/avatar-utils';
 
 describe('getInitials', () => {
     it('returns first + last initial for multi-word names', () => {

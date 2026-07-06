@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@repo/icons';
 import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Accordion wrapper component

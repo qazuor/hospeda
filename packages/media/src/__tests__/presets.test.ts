@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MEDIA_PRESETS } from '../presets.js';
 import type { MediaPreset } from '../presets.js';
+import { MEDIA_PRESETS } from '../presets.js';
 
 describe('MEDIA_PRESETS', () => {
     const EXPECTED_PRESETS: MediaPreset[] = [

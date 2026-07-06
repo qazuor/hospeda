@@ -11,6 +11,7 @@ import type {
 import type { SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
+
 export { listOptionsSchema } from './schemas';
 
 export type { ServiceLogger };
@@ -252,8 +253,8 @@ export class ServiceError extends Error {
     }
 }
 
-export type { PaginatedListOutput } from '@repo/schemas';
 export type { BaseModel, DrizzleClient } from '@repo/db';
+export type { PaginatedListOutput } from '@repo/schemas';
 
 // --- Search Types ---
 export type SortingType = z.infer<typeof HttpSortingSchema>;

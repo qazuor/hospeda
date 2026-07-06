@@ -21,8 +21,6 @@
  * @module use-platform-setting
  */
 
-import { fetchApi } from '@/lib/api/client';
-import { adminLogger } from '@/utils/logger';
 import type {
     AnnouncementsValue,
     MaintenanceModeValue,
@@ -30,6 +28,8 @@ import type {
     SeoDefaultsValue
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+import { adminLogger } from '@/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Type-level mapping: key -> value shape

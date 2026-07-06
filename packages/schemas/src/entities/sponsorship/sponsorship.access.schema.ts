@@ -4,9 +4,9 @@ import {
     UserProtectedSchema,
     UserPublicSchema
 } from '../user/user.access.schema.js';
+import { SponsorshipSchema } from './sponsorship.schema.js';
 import { SponsorshipLevelSchema } from './sponsorship-level.schema.js';
 import { SponsorshipPackageSchema } from './sponsorship-package.schema.js';
-import { SponsorshipSchema } from './sponsorship.schema.js';
 
 /**
  * PUBLIC ACCESS SCHEMA

@@ -133,9 +133,9 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
             // Narrow the check to the from-admin eyebrow CSS block only.
             const eyebrowCssIdx = src.indexOf('.publicar-hero__from-admin {');
             const eyebrowCssBlock =
-                eyebrowCssIdx !== -1
-                    ? src.slice(eyebrowCssIdx, src.indexOf('}', eyebrowCssIdx) + 1)
-                    : '';
+                eyebrowCssIdx === -1
+                    ? ''
+                    : src.slice(eyebrowCssIdx, src.indexOf('}', eyebrowCssIdx) + 1);
             expect(eyebrowCssBlock).not.toContain('border-left: 4px solid var(--brand-accent)');
             // The deprecated wrapper class must never reappear.
             expect(src).not.toContain('publicar-from-admin-wrap');

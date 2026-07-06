@@ -48,7 +48,9 @@
     background: transparent;
     color: var(--core-muted-foreground, #666);
     cursor: pointer;
-    transition: background-color 100ms ease-out, color 100ms ease-out;
+    transition:
+        background-color 100ms ease-out,
+        color 100ms ease-out;
 }
 
 .toolbarButton:hover {
@@ -76,7 +78,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 100ms ease-out, color 100ms ease-out;
+    transition:
+        background-color 100ms ease-out,
+        color 100ms ease-out;
 }
 
 .toolbarTextButton:hover {

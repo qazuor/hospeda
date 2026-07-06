@@ -21,7 +21,10 @@
         "./tokens.css": "./dist/tokens.css",
         "./seed/web-baseline.json": "./seed/web-baseline.json"
     },
-    "files": ["dist", "seed"],
+    "files": [
+        "dist",
+        "seed"
+    ],
     "scripts": {
         "build": "tsup && tsx src/generators/generate-css.ts && tsx src/generators/validate.ts",
         "build:ts": "tsup",

@@ -1,5 +1,5 @@
-import { LocalProvider } from '../providers/local.provider.js';
 import type { LocalModerationTerm } from '../providers/local.provider.js';
+import { LocalProvider } from '../providers/local.provider.js';
 import { OpenAIProvider } from '../providers/openai.provider.js';
 import { StubProvider } from '../providers/stub.provider.js';
 import {
@@ -8,8 +8,8 @@ import {
     invalidateModerationCacheByTermPattern
 } from './cache.js';
 import {
-    ModerationOrchestrator,
     getModerationEngineHealth,
+    ModerationOrchestrator,
     registerModerationMonitoringHooks,
     resetModerationEngineHealth,
     setModerationEngineProvider

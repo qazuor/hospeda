@@ -165,11 +165,7 @@ function buildSelectOnlyDb(selectRows: unknown[] = []) {
  * `countValue` - value returned by count queries (for hardDelete guard).
  */
 function buildUpdateDb(
-    options: {
-        selectRow?: unknown;
-        updateRow?: unknown;
-        countValue?: number;
-    } = {}
+    options: { selectRow?: unknown; updateRow?: unknown; countValue?: number } = {}
 ) {
     const { selectRow, updateRow, countValue = 0 } = options;
 
@@ -186,7 +182,7 @@ function buildUpdateDb(
             return {
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                        limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                     })
                 })
             };
@@ -197,7 +193,7 @@ function buildUpdateDb(
         update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                    returning: vi.fn().mockResolvedValue(updateRow !== undefined ? [updateRow] : [])
+                    returning: vi.fn().mockResolvedValue(updateRow === undefined ? [] : [updateRow])
                 })
             })
         }),
@@ -216,7 +212,7 @@ function buildSoftDeleteDb(selectRow?: unknown) {
         select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                    limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                 })
             })
         }),
@@ -243,11 +239,7 @@ function buildSoftDeleteDb(selectRow?: unknown) {
  * count to return, mirroring the two sequential referential guards.
  */
 function buildHardDeleteDb(
-    options: {
-        selectRow?: unknown;
-        subscriptionAddonCount?: number;
-        purchaseCount?: number;
-    } = {}
+    options: { selectRow?: unknown; subscriptionAddonCount?: number; purchaseCount?: number } = {}
 ) {
     const { selectRow, subscriptionAddonCount = 0, purchaseCount = 0 } = options;
     return {
@@ -269,7 +261,7 @@ function buildHardDeleteDb(
             return {
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue(selectRow !== undefined ? [selectRow] : [])
+                        limit: vi.fn().mockResolvedValue(selectRow === undefined ? [] : [selectRow])
                     })
                 })
             };

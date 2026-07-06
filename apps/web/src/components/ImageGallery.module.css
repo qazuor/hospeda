@@ -481,8 +481,10 @@
     background: oklch(0 0 0 / 0.65);
     color: oklch(1 0 0);
     cursor: pointer;
-    transition: background var(--duration-normal, 0.4s) ease, border-color
-        var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s) ease;
+    transition:
+        background var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease,
+        transform var(--duration-normal, 0.4s) ease;
     z-index: 10;
     box-shadow: 0 2px 12px oklch(0 0 0 / 0.5);
 }
@@ -628,8 +630,9 @@
     background: none;
     cursor: pointer;
     opacity: 0.6;
-    transition: opacity var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s)
-        ease;
+    transition:
+        opacity var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
 }
 
 .lightboxThumb:hover,

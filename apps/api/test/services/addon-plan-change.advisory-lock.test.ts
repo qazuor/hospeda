@@ -19,7 +19,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
 import { createMockBilling, createMockCustomer } from '../helpers/mock-factories';
 

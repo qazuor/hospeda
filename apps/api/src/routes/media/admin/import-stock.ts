@@ -1,5 +1,5 @@
 import { accommodationMediaModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode, getGalleryCap } from '@repo/schemas';
+import { getGalleryCap, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     DestinationService,

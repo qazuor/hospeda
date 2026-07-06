@@ -18,12 +18,12 @@ import {
 // CREATE SCHEMAS
 // ============================================================================
 
+export type { SponsorshipCreateInput } from './sponsorship.schema.js';
 /**
  * Schema for creating a new sponsorship.
  * Re-exported from base schema — slug is optional (auto-generated if absent).
  */
 export { SponsorshipCreateInputSchema };
-export type { SponsorshipCreateInput } from './sponsorship.schema.js';
 
 /**
  * Schema for sponsorship creation response.
@@ -36,12 +36,12 @@ export type SponsorshipCreateOutput = z.infer<typeof SponsorshipCreateOutputSche
 // UPDATE SCHEMAS
 // ============================================================================
 
+export type { SponsorshipUpdateInput } from './sponsorship.schema.js';
 /**
  * Schema for updating a sponsorship (PUT / PATCH — all fields optional).
  * Re-exported from base schema.
  */
 export { SponsorshipUpdateInputSchema };
-export type { SponsorshipUpdateInput } from './sponsorship.schema.js';
 
 /**
  * Schema for partial sponsorship updates (PATCH).

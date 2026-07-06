@@ -1,7 +1,7 @@
+import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { z } from 'zod';
 import { type Amenity, AmenityListItemSchema } from '../schemas/amenities.schemas';
 import { createAmenitiesColumns } from './amenities.columns';
 
@@ -122,4 +122,5 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
 };
 
 const { component, route } = createEntityListPage(amenitiesConfig);
+
 export { component as AmenitiesPageComponent, route as AmenitiesRoute };

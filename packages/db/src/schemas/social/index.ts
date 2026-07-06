@@ -13,6 +13,7 @@ export * from './social_platforms.dbschema.ts';
 export * from './social_post_footers.dbschema.ts';
 export * from './social_post_hashtags.dbschema.ts';
 export * from './social_post_media.dbschema.ts';
+export * from './social_post_target_media.dbschema.ts';
 export * from './social_post_targets.dbschema.ts';
 export * from './social_posts.dbschema.ts';
 export * from './social_publish_logs.dbschema.ts';

@@ -3,9 +3,9 @@ import {
     AI_SUPPORT_ADDON,
     ALL_ADDONS,
     EXTRA_PHOTOS_ADDON,
+    getAddonBySlug,
     VISIBILITY_BOOST_30D_ADDON,
-    VISIBILITY_BOOST_ADDON,
-    getAddonBySlug
+    VISIBILITY_BOOST_ADDON
 } from '../src/config/addons.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 import { LimitKey } from '../src/types/plan.types.js';

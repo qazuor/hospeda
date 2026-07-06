@@ -6,11 +6,11 @@
  * Permission-gated Edit action only (SOCIAL_SETTINGS_MANAGE). No delete, no create.
  */
 
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum, type SocialSetting } from '@repo/schemas';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum, type SocialSetting } from '@repo/schemas';
 
 /** Badge color map for the setting type column. */
 const TYPE_BADGE_CLASS: Record<SocialSetting['type'], string> = {

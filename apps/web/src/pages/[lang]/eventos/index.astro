@@ -1,9 +1,9 @@
 ---
 /**
  * @file eventos/index.astro
- * @description Events listing page with temporal quick-filter chips, category
- * chips, FilterSidebar (search + category + free toggle + price range + sort),
- * EventCard grid, and pagination.
+ * @description Events listing page with category chips, FilterSidebar
+ * (search + category + free toggle + date-range with temporal preset pills +
+ * price range + sort), EventCard grid, and pagination.
  *
  * URL params:
  * - page             — pagination (default: 1)
@@ -13,7 +13,14 @@
  *                      (upcoming | farthest | nameAsc | nameDesc | newest |
  *                       oldest | featured | mostSaved). Direction lives inside
  *                       the key, so no separate `sortOrder` param.
- * - when             — temporal quick-filter (today | week | month | next60 | past)
+ * - when             — LEGACY temporal quick-filter (today | week | month |
+ *                      next60 | past). BETA-115 folded the standalone chip
+ *                      row into the sidebar's `date` filter group as preset
+ *                      pills; `when` is still read for back-compat (old
+ *                      shared/indexed links) but is never written by the UI —
+ *                      it's translated into `startDateAfter`/`startDateBefore`
+ *                      on load (see `computeWhenQueryBounds` /
+ *                      `resolveWhenAliasParams`).
  * - isFree           — boolean toggle for free events only
  * - includeUnpriced  — when `false`, exclude events without pricing data
  *                      (default behavior is to INCLUDE them)
@@ -39,14 +46,18 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import TagChips from '@/components/TagChips.astro';
-import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
-import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import {
     buildEventListingSummary,
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
+import {
+    computeWhenQueryBounds,
+    EVENT_DATE_FILTER_VALUES,
+    resolveWhenAliasParams,
+    type EventDateFilter
+} from '@/lib/filters/event-date-presets';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
@@ -87,10 +98,14 @@ const DEFAULT_SORT_KEY = 'upcoming';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-/** Parse the temporal quick-filter from the `when` query param. */
+/**
+ * Parse the (legacy, back-compat-only) `when` query param. BETA-115 folded
+ * the standalone date chip row into the sidebar's `date` filter group as
+ * preset pills — `when` is still accepted on read so old shared/indexed
+ * links keep working, but the UI no longer writes it.
+ */
 const rawWhen = url.searchParams.get('when');
-const VALID_WHEN_VALUES: ReadonlyArray<EventDateFilter> = ['today', 'week', 'month', 'next60', 'past'];
-const when: EventDateFilter = VALID_WHEN_VALUES.includes(rawWhen as EventDateFilter)
+const when: EventDateFilter = EVENT_DATE_FILTER_VALUES.includes(rawWhen as EventDateFilter)
     ? (rawWhen as EventDateFilter)
     : 'all';
 
@@ -121,39 +136,8 @@ const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const startDateAfterFilter = url.searchParams.get('startDateAfter') ?? undefined;
 const startDateBeforeFilter = url.searchParams.get('startDateBefore') ?? undefined;
 
-/** Compute date range from the `when` temporal filter. */
+/** Reference instant for resolving `when` and the sidebar's date presets. */
 const now = new Date();
-
-/**
- * Returns a copy of `now` at 00:00:00.000 local time.
- */
-function startOfToday(): Date {
-    const d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    return d;
-}
-
-/**
- * Returns a copy of `now` at 23:59:59.999 local time.
- */
-function endOfToday(): Date {
-    const d = new Date(now);
-    d.setHours(23, 59, 59, 999);
-    return d;
-}
-
-/**
- * Returns a date N days ahead of `startOfToday()` at 23:59:59.999.
- */
-function daysAhead(n: number): Date {
-    const d = startOfToday();
-    d.setDate(d.getDate() + n);
-    d.setHours(23, 59, 59, 999);
-    return d;
-}
-
-let startDateAfter: string | undefined;
-let startDateBefore: string | undefined;
 
 /**
  * Fetch destinations once for the sidebar's location filter. Filter to CITY
@@ -167,27 +151,9 @@ const destinationsResult = await destinationsApi.list({
 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
-switch (when) {
-    case 'today':
-        startDateAfter = startOfToday().toISOString();
-        startDateBefore = endOfToday().toISOString();
-        break;
-    case 'week':
-        startDateAfter = startOfToday().toISOString();
-        startDateBefore = daysAhead(7).toISOString();
-        break;
-    case 'month':
-        startDateAfter = startOfToday().toISOString();
-        startDateBefore = daysAhead(30).toISOString();
-        break;
-    case 'next60':
-        startDateAfter = startOfToday().toISOString();
-        startDateBefore = daysAhead(60).toISOString();
-        break;
-    case 'past':
-        startDateBefore = startOfToday().toISOString();
-        break;
-}
+const whenQueryBounds = computeWhenQueryBounds({ when, now });
+let startDateAfter: string | undefined = whenQueryBounds.startDateAfter;
+let startDateBefore: string | undefined = whenQueryBounds.startDateBefore;
 
 /**
  * Sidebar date-range filter takes precedence over the temporal chips when
@@ -264,7 +230,7 @@ const filterSummary = buildEventListingSummary({
  * per-category facet landings share the exact same config (minus the
  * category group, which is fixed by the URL there).
  */
-const filterGroups = buildEventsFilterGroups({ t, destinations });
+const filterGroups = buildEventsFilterGroups({ t, destinations, now });
 
 /**
  * `mostSaved` is intentionally NOT exposed in the UI options here: the
@@ -374,6 +340,18 @@ if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
 if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
 if (startDateBeforeFilter) sidebarInitialParams['startDateBefore'] = startDateBeforeFilter;
+// BETA-115 back-compat: a bare `?when=X` (no explicit sidebar dates) is
+// translated into the sidebar's own `startDateAfter`/`startDateBefore` state
+// so old shared/indexed links land with the matching date preset pill
+// already highlighted, instead of a dateless sidebar next to a filtered grid.
+Object.assign(
+    sidebarInitialParams,
+    resolveWhenAliasParams({
+        when,
+        now,
+        hasExplicitBounds: Boolean(startDateAfterFilter || startDateBeforeFilter)
+    })
+);
 // Composite price filter (id='price') reads `isFree`, `includeUnpriced`,
 // `minPrice`, `maxPrice` from the URL. `includeUnpriced` only appears when
 // the user explicitly turned it OFF; otherwise the server defaults to TRUE.
@@ -482,15 +460,12 @@ const itemListEntries = cards.map((card) => ({
 		initialParams={sidebarInitialParams}
 	/>
 
-	<!-- Temporal quick-filter chips (above category chips) -->
-	<EventDateFilterChips
-		locale={locale}
-		current={when}
-		baseUrl={baseUrl.slice(0, -1)}
-		searchParams={paginationParams}
-	/>
-
-	<!-- Category chips (below temporal chips) -->
+	<!--
+	  BETA-115: the standalone temporal quick-filter chip row was removed —
+	  the "when" presets now live inside the sidebar's `date` filter group
+	  (see `buildEventsFilterGroups`'s `date` group `presets`).
+	-->
+	<!-- Category chips -->
 	<TagChips
 		chips={categoryChips}
 		ariaLabel={t('events.categoryChips.ariaLabel', 'Filtrar por categoría de evento')}

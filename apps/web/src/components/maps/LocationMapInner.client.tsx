@@ -15,8 +15,8 @@
 import 'leaflet/dist/leaflet.css';
 
 import L from 'leaflet';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { useEffect, useRef, useState } from 'react';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';

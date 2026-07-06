@@ -7,7 +7,7 @@
  * of all possible translation keys for type safety.
  */
 
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const LOCALES_DIR = resolve(import.meta.dirname, '../src/locales');

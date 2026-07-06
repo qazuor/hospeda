@@ -4,19 +4,18 @@
  * Displays and manages pricing for a specific accommodation.
  */
 
+import { formatCurrency } from '@repo/i18n';
+import { createFileRoute } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
-import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
-import { useTranslations } from '@/hooks/use-translations';
-import { formatCurrency } from '@repo/i18n';
-import { createFileRoute } from '@tanstack/react-router';
-
 import type {
     DiscountBadgeLabels,
     FeeBadgeLabels
 } from '@/features/accommodations/components/pricing-components';
 import { DiscountItem, FeeItem } from '@/features/accommodations/components/pricing-components';
+import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/pricing')({
     component: AccommodationPricingPage

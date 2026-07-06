@@ -5,11 +5,11 @@
  * Opens the WhatsNewPanel slide-over on click.
  */
 
+import { SparkleIcon } from '@repo/icons';
+import { useCallback, useState } from 'react';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { SparkleIcon } from '@repo/icons';
-import { useCallback, useState } from 'react';
 import styles from './WhatsNew.module.css';
 import { WhatsNewPanel } from './WhatsNewPanel.client';
 

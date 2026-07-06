@@ -3,9 +3,9 @@
  * Returns paginated terms with full admin access
  */
 import {
-    PermissionEnum,
     contentModerationTermAdminSearchSchema,
-    contentModerationTermSchema
+    contentModerationTermSchema,
+    PermissionEnum
 } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';

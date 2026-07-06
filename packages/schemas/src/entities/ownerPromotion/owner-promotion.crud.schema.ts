@@ -19,21 +19,21 @@ import {
 // CREATE SCHEMAS
 // ============================================================================
 
+export type {
+    OwnerPromotionCreateInput,
+    OwnerPromotionCreateRequest
+} from './owner-promotion.schema.js';
 /**
  * Schema for creating a new owner promotion.
  * Re-exported from base schema — slug is optional (auto-generated if absent).
  */
-export { OwnerPromotionCreateInputSchema };
-export type { OwnerPromotionCreateInput } from './owner-promotion.schema.js';
-
 /**
  * Client-facing create request schema.
  * Omits `ownerId` — the route handler injects it from the authenticated actor.
  * Use this as `requestBody` on POST /api/v1/protected/owner-promotions to prevent
  * clients from supplying or forging the owner.
  */
-export { OwnerPromotionCreateRequestSchema };
-export type { OwnerPromotionCreateRequest } from './owner-promotion.schema.js';
+export { OwnerPromotionCreateInputSchema, OwnerPromotionCreateRequestSchema };
 
 /**
  * Schema for owner promotion creation response.
@@ -46,12 +46,12 @@ export type OwnerPromotionCreateOutput = z.infer<typeof OwnerPromotionCreateOutp
 // UPDATE SCHEMAS
 // ============================================================================
 
+export type { OwnerPromotionUpdateInput } from './owner-promotion.schema.js';
 /**
  * Schema for updating an owner promotion (PUT / PATCH — all fields optional).
  * Re-exported from base schema.
  */
 export { OwnerPromotionUpdateInputSchema };
-export type { OwnerPromotionUpdateInput } from './owner-promotion.schema.js';
 
 /**
  * Schema for owner promotion update response.

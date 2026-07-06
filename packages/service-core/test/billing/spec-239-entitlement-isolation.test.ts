@@ -201,133 +201,148 @@ describe('SPEC-239 T-051: queryUserAddons — accommodation entitlement isolatio
         mockGetDb.mockReturnValue(buildSelectMock([]));
     });
 
-    it('customer with ONLY accommodation sub resolves addon metadata ' +
-        '(baseline — no commerce sub present)', async () => {
-        // Arrange
-        const accommodationSub = withAddonMetadata(
-            { id: 'sub-acc', status: 'active', productDomain: 'accommodation' },
-            'extra-photos'
-        );
-        const billing = buildBillingClient([accommodationSub]);
+    it(
+        'customer with ONLY accommodation sub resolves addon metadata ' +
+            '(baseline — no commerce sub present)',
+        async () => {
+            // Arrange
+            const accommodationSub = withAddonMetadata(
+                { id: 'sub-acc', status: 'active', productDomain: 'accommodation' },
+                'extra-photos'
+            );
+            const billing = buildBillingClient([accommodationSub]);
 
-        // Act
-        const result = await queryUserAddons({
-            billing: billing as never,
-            userId: 'user-host-1'
-        });
+            // Act
+            const result = await queryUserAddons({
+                billing: billing as never,
+                userId: 'user-host-1'
+            });
 
-        // Assert
-        expect(result.success).toBe(true);
-        if (!result.success) throw new Error('unreachable');
-        // Addon metadata was parsed from the accommodation sub.
-        expect(result.data.some((a) => a.addonSlug === 'extra-photos')).toBe(true);
-    });
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('unreachable');
+            // Addon metadata was parsed from the accommodation sub.
+            expect(result.data.some((a) => a.addonSlug === 'extra-photos')).toBe(true);
+        }
+    );
 
-    it('customer with BOTH accommodation and commerce subs resolves addon metadata ' +
-        'identically to having ONLY the accommodation sub (the commerce sub is invisible)', async () => {
-        // Arrange — accommodation sub has addon metadata; commerce sub has none.
-        const accommodationSub = withAddonMetadata(
-            { id: 'sub-acc', status: 'active', productDomain: 'accommodation' },
-            'extra-photos'
-        );
-        const commerceSub: StubSubscription = {
-            id: 'sub-com',
-            status: 'active',
-            productDomain: 'commerce',
-            // Commerce sub also carries metadata — the engine must NOT read it.
-            metadata: {
-                addonAdjustments: JSON.stringify([
-                    {
-                        addonSlug: 'commerce-addon',
-                        appliedAt: '2025-01-01T00:00:00.000Z',
-                        limitKey: null,
-                        limitIncrease: null,
-                        entitlement: null
-                    }
-                ])
-            }
-        };
+    it(
+        'customer with BOTH accommodation and commerce subs resolves addon metadata ' +
+            'identically to having ONLY the accommodation sub (the commerce sub is invisible)',
+        async () => {
+            // Arrange — accommodation sub has addon metadata; commerce sub has none.
+            const accommodationSub = withAddonMetadata(
+                { id: 'sub-acc', status: 'active', productDomain: 'accommodation' },
+                'extra-photos'
+            );
+            const commerceSub: StubSubscription = {
+                id: 'sub-com',
+                status: 'active',
+                productDomain: 'commerce',
+                // Commerce sub also carries metadata — the engine must NOT read it.
+                metadata: {
+                    addonAdjustments: JSON.stringify([
+                        {
+                            addonSlug: 'commerce-addon',
+                            appliedAt: '2025-01-01T00:00:00.000Z',
+                            limitKey: null,
+                            limitIncrease: null,
+                            entitlement: null
+                        }
+                    ])
+                }
+            };
 
-        const billing = buildBillingClient([accommodationSub, commerceSub]);
+            const billing = buildBillingClient([accommodationSub, commerceSub]);
 
-        // Act
-        const result = await queryUserAddons({
-            billing: billing as never,
-            userId: 'user-host-1'
-        });
+            // Act
+            const result = await queryUserAddons({
+                billing: billing as never,
+                userId: 'user-host-1'
+            });
 
-        // Assert
-        expect(result.success).toBe(true);
-        if (!result.success) throw new Error('unreachable');
-        // Should see the accommodation addon.
-        expect(result.data.some((a) => a.addonSlug === 'extra-photos')).toBe(true);
-        // Must NOT see the commerce-only addon.
-        expect(result.data.some((a) => a.addonSlug === 'commerce-addon')).toBe(false);
-    });
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('unreachable');
+            // Should see the accommodation addon.
+            expect(result.data.some((a) => a.addonSlug === 'extra-photos')).toBe(true);
+            // Must NOT see the commerce-only addon.
+            expect(result.data.some((a) => a.addonSlug === 'commerce-addon')).toBe(false);
+        }
+    );
 
-    it('customer whose ONLY sub is a commerce sub resolves to NO accommodation addons ' +
-        '(the commerce sub is invisible to the accommodation engine)', async () => {
-        // Arrange — only a commerce sub, with addon metadata that must NOT bleed through.
-        const commerceSub = withAddonMetadata(
-            { id: 'sub-com', status: 'active', productDomain: 'commerce' },
-            'commerce-promo-addon'
-        );
-        const billing = buildBillingClient([commerceSub]);
+    it(
+        'customer whose ONLY sub is a commerce sub resolves to NO accommodation addons ' +
+            '(the commerce sub is invisible to the accommodation engine)',
+        async () => {
+            // Arrange — only a commerce sub, with addon metadata that must NOT bleed through.
+            const commerceSub = withAddonMetadata(
+                { id: 'sub-com', status: 'active', productDomain: 'commerce' },
+                'commerce-promo-addon'
+            );
+            const billing = buildBillingClient([commerceSub]);
 
-        // Act
-        const result = await queryUserAddons({
-            billing: billing as never,
-            userId: 'user-commerce-only'
-        });
+            // Act
+            const result = await queryUserAddons({
+                billing: billing as never,
+                userId: 'user-commerce-only'
+            });
 
-        // Assert
-        expect(result.success).toBe(true);
-        if (!result.success) throw new Error('unreachable');
-        // No accommodation addons: the commerce sub was invisible.
-        expect(result.data).toHaveLength(0);
-    });
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('unreachable');
+            // No accommodation addons: the commerce sub was invisible.
+            expect(result.data).toHaveLength(0);
+        }
+    );
 
-    it('legacy rows (null productDomain) are treated as accommodation — ' +
-        'no regression for existing data', async () => {
-        // Arrange — a legacy sub without productDomain (column not yet applied or NULL).
-        const legacySub = withAddonMetadata(
-            { id: 'sub-legacy', status: 'active', productDomain: null },
-            'legacy-addon'
-        );
-        const billing = buildBillingClient([legacySub]);
+    it(
+        'legacy rows (null productDomain) are treated as accommodation — ' +
+            'no regression for existing data',
+        async () => {
+            // Arrange — a legacy sub without productDomain (column not yet applied or NULL).
+            const legacySub = withAddonMetadata(
+                { id: 'sub-legacy', status: 'active', productDomain: null },
+                'legacy-addon'
+            );
+            const billing = buildBillingClient([legacySub]);
 
-        // Act
-        const result = await queryUserAddons({
-            billing: billing as never,
-            userId: 'user-legacy'
-        });
+            // Act
+            const result = await queryUserAddons({
+                billing: billing as never,
+                userId: 'user-legacy'
+            });
 
-        // Assert — the legacy sub was treated as accommodation.
-        expect(result.success).toBe(true);
-        if (!result.success) throw new Error('unreachable');
-        expect(result.data.some((a) => a.addonSlug === 'legacy-addon')).toBe(true);
-    });
+            // Assert — the legacy sub was treated as accommodation.
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('unreachable');
+            expect(result.data.some((a) => a.addonSlug === 'legacy-addon')).toBe(true);
+        }
+    );
 
-    it('undefined productDomain (column not in SELECT) is treated as accommodation — ' +
-        'no regression when qzpay-core does not include the field', async () => {
-        // Arrange — productDomain field completely absent from the object.
-        const noColumnSub = withAddonMetadata(
-            { id: 'sub-nofield', status: 'active' } as StubSubscription,
-            'existing-addon'
-        );
-        const billing = buildBillingClient([noColumnSub]);
+    it(
+        'undefined productDomain (column not in SELECT) is treated as accommodation — ' +
+            'no regression when qzpay-core does not include the field',
+        async () => {
+            // Arrange — productDomain field completely absent from the object.
+            const noColumnSub = withAddonMetadata(
+                { id: 'sub-nofield', status: 'active' } as StubSubscription,
+                'existing-addon'
+            );
+            const billing = buildBillingClient([noColumnSub]);
 
-        // Act
-        const result = await queryUserAddons({
-            billing: billing as never,
-            userId: 'user-no-field'
-        });
+            // Act
+            const result = await queryUserAddons({
+                billing: billing as never,
+                userId: 'user-no-field'
+            });
 
-        // Assert — sub was treated as accommodation (field absent = include).
-        expect(result.success).toBe(true);
-        if (!result.success) throw new Error('unreachable');
-        expect(result.data.some((a) => a.addonSlug === 'existing-addon')).toBe(true);
-    });
+            // Assert — sub was treated as accommodation (field absent = include).
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('unreachable');
+            expect(result.data.some((a) => a.addonSlug === 'existing-addon')).toBe(true);
+        }
+    );
 
     it('trialing accommodation sub is included; trialing commerce sub is excluded', async () => {
         // Arrange

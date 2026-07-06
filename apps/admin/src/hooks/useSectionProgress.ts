@@ -1,6 +1,6 @@
+import { useCallback, useMemo } from 'react';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { useCallback, useMemo } from 'react';
 
 /**
  * Section completion status

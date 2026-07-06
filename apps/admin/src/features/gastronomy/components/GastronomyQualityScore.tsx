@@ -10,11 +10,11 @@
  * renders).
  */
 
+import { useStore } from '@tanstack/react-form';
+import * as React from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
-import { useStore } from '@tanstack/react-form';
-import * as React from 'react';
 import { createGastronomySignals } from '../config/score-signals';
 
 // TYPE-WORKAROUND: `ReactFormApi` doesn't expose `.store` on the public type

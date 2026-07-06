@@ -4,10 +4,10 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    type PaginationParams,
     calculatePagination,
     extractPaginationParams,
-    getPaginationResponse
+    getPaginationResponse,
+    type PaginationParams
 } from '../../src/utils/pagination';
 
 describe('Pagination Utils', () => {

@@ -36,7 +36,9 @@ import { apiLogger } from '../../src/utils/logger';
  */
 function createTestApp({
     route = '/api/v1/public/accommodations'
-}: { readonly route?: string } = {}) {
+}: {
+    readonly route?: string;
+} = {}) {
     const middleware = createCacheMiddleware();
     const app = new Hono();
     let callCount = 0;

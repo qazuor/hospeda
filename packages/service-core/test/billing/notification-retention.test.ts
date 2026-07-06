@@ -68,8 +68,8 @@ vi.mock('drizzle-orm', () => ({
     )
 }));
 
-import * as dbModule from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import * as dbModule from '@repo/db';
 import {
     NotificationRetentionService,
     type RetentionSummary

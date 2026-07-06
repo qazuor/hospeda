@@ -17,19 +17,6 @@
  *   readers reliably announce new toasts.
  */
 
-import { cn } from '@/lib/cn';
-import { type SupportedLocale, createTranslations } from '@/lib/i18n';
-import * as toastStore from '@/store/toast-store';
-import {
-    type Toast,
-    type ToastAction,
-    drainPendingToast,
-    getToasts,
-    pauseToast,
-    removeToast,
-    resumeToast,
-    subscribe
-} from '@/store/toast-store';
 import {
     AlertTriangleIcon,
     CheckCircleIcon,
@@ -48,6 +35,19 @@ import {
     useState,
     useSyncExternalStore
 } from 'react';
+import { cn } from '@/lib/cn';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import * as toastStore from '@/store/toast-store';
+import {
+    drainPendingToast,
+    getToasts,
+    pauseToast,
+    removeToast,
+    resumeToast,
+    subscribe,
+    type Toast,
+    type ToastAction
+} from '@/store/toast-store';
 import styles from './ToastViewport.module.css';
 
 /**
@@ -236,6 +236,7 @@ function ToastItem({ toast, closeLabel }: ToastItemProps) {
     }
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: pointer handlers only implement swipe-to-dismiss, a touch/mouse-only convenience; the explicit close <button onClick={dismiss}> below is the keyboard-accessible way to dismiss, and role=alert|status is the correct live-region role for a toast (not an interactive one)
         <div
             // `role=alert` interrupts; reserve for errors. Everything else uses
             // `status` so it joins the polite announcement queue.

@@ -8,10 +8,10 @@
  * @module auth-context
  */
 
+import { createContext, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import type { AuthState as ServerAuthState } from '@/lib/auth-session';
-import { type ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { adminLogger } from '../utils/logger';
 
 /**

@@ -5,7 +5,7 @@
 import { accommodations, getDb } from '@repo/db';
 import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { type SQL, and, desc, eq, ne, or } from 'drizzle-orm';
+import { and, desc, eq, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';

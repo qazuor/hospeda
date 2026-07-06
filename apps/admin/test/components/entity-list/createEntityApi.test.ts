@@ -8,12 +8,12 @@
  * - Error handling
  */
 
+import { HttpResponse, http } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { createEntityApi } from '@/components/entity-list/api/createEntityApi';
 import type { FilterBarConfig } from '@/components/entity-list/filters/filter-types';
 import { fetchApi } from '@/lib/api/client';
-import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
 import { server } from '../../mocks/server';
 
 // We need to mock the fetchApi module
