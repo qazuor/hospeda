@@ -29,53 +29,53 @@ import type { CatalogEntry, SortKeyEntry, SummaryLocale, TypeGrammarEntry } from
 export const DEFAULT_TYPE_GRAMMAR: readonly TypeGrammarEntry[] = [
     {
         key: 'APARTMENT',
-        singular: { es: 'departamento', en: 'apartment' },
-        plural: { es: 'departamentos', en: 'apartments' }
+        singular: { es: 'departamento', en: 'apartment', pt: 'apartamento' },
+        plural: { es: 'departamentos', en: 'apartments', pt: 'apartamentos' }
     },
     {
         key: 'HOUSE',
-        singular: { es: 'casa', en: 'house' },
-        plural: { es: 'casas', en: 'houses' }
+        singular: { es: 'casa', en: 'house', pt: 'casa' },
+        plural: { es: 'casas', en: 'houses', pt: 'casas' }
     },
     {
         key: 'COUNTRY_HOUSE',
-        singular: { es: 'casa quinta', en: 'country house' },
-        plural: { es: 'casas quinta', en: 'country houses' }
+        singular: { es: 'casa quinta', en: 'country house', pt: 'casa de campo' },
+        plural: { es: 'casas quinta', en: 'country houses', pt: 'casas de campo' }
     },
     {
         key: 'CABIN',
-        singular: { es: 'cabaña', en: 'cabin' },
-        plural: { es: 'cabañas', en: 'cabins' }
+        singular: { es: 'cabaña', en: 'cabin', pt: 'cabana' },
+        plural: { es: 'cabañas', en: 'cabins', pt: 'cabanas' }
     },
     {
         key: 'HOTEL',
-        singular: { es: 'hotel', en: 'hotel' },
-        plural: { es: 'hoteles', en: 'hotels' }
+        singular: { es: 'hotel', en: 'hotel', pt: 'hotel' },
+        plural: { es: 'hoteles', en: 'hotels', pt: 'hotéis' }
     },
     {
         key: 'HOSTEL',
-        singular: { es: 'hostel', en: 'hostel' },
-        plural: { es: 'hostels', en: 'hostels' }
+        singular: { es: 'hostel', en: 'hostel', pt: 'hostel' },
+        plural: { es: 'hostels', en: 'hostels', pt: 'hostels' }
     },
     {
         key: 'CAMPING',
-        singular: { es: 'camping', en: 'campsite' },
-        plural: { es: 'campings', en: 'campsites' }
+        singular: { es: 'camping', en: 'campsite', pt: 'camping' },
+        plural: { es: 'campings', en: 'campsites', pt: 'campings' }
     },
     {
         key: 'ROOM',
-        singular: { es: 'habitación', en: 'room' },
-        plural: { es: 'habitaciones', en: 'rooms' }
+        singular: { es: 'habitación', en: 'room', pt: 'quarto' },
+        plural: { es: 'habitaciones', en: 'rooms', pt: 'quartos' }
     },
     {
         key: 'MOTEL',
-        singular: { es: 'motel', en: 'motel' },
-        plural: { es: 'moteles', en: 'motels' }
+        singular: { es: 'motel', en: 'motel', pt: 'motel' },
+        plural: { es: 'moteles', en: 'motels', pt: 'motéis' }
     },
     {
         key: 'RESORT',
-        singular: { es: 'resort', en: 'resort' },
-        plural: { es: 'resorts', en: 'resorts' }
+        singular: { es: 'resort', en: 'resort', pt: 'resort' },
+        plural: { es: 'resorts', en: 'resorts', pt: 'resorts' }
     }
 ] as const;
 
@@ -93,44 +93,48 @@ export const DEFAULT_SORT_KEYS: readonly SortKeyEntry[] = [
     {
         key: 'name',
         type: 'alpha',
-        label: { es: 'nombre', en: 'name' },
-        asc: { es: 'A a Z', en: 'A to Z' },
-        desc: { es: 'Z a A', en: 'Z to A' }
+        label: { es: 'nombre', en: 'name', pt: 'nome' },
+        asc: { es: 'A a Z', en: 'A to Z', pt: 'A a Z' },
+        desc: { es: 'Z a A', en: 'Z to A', pt: 'Z a A' }
     },
     {
         key: 'createdAt',
         type: 'date',
-        label: { es: 'fecha de creación', en: 'creation date' },
-        asc: { es: 'más antiguos primero', en: 'oldest first' },
-        desc: { es: 'más recientes primero', en: 'newest first' }
+        label: { es: 'fecha de creación', en: 'creation date', pt: 'data de criação' },
+        asc: { es: 'más antiguos primero', en: 'oldest first', pt: 'mais antigos primeiro' },
+        desc: { es: 'más recientes primero', en: 'newest first', pt: 'mais recentes primeiro' }
     },
     {
         key: 'averageRating',
         type: 'numeric',
-        label: { es: 'calificación', en: 'rating' },
-        asc: { es: 'de menor a mayor', en: 'lowest first' },
-        desc: { es: 'de mayor a menor', en: 'highest first' }
+        label: { es: 'calificación', en: 'rating', pt: 'avaliação' },
+        asc: { es: 'de menor a mayor', en: 'lowest first', pt: 'menor para maior' },
+        desc: { es: 'de mayor a menor', en: 'highest first', pt: 'maior para menor' }
     },
     {
         key: 'reviewsCount',
         type: 'numeric',
-        label: { es: 'cantidad de reseñas', en: 'review count' },
-        asc: { es: 'de menor a mayor', en: 'fewest first' },
-        desc: { es: 'de mayor a menor', en: 'most first' }
+        label: { es: 'cantidad de reseñas', en: 'review count', pt: 'quantidade de avaliações' },
+        asc: { es: 'de menor a mayor', en: 'fewest first', pt: 'menos primeiro' },
+        desc: { es: 'de mayor a menor', en: 'most first', pt: 'mais primeiro' }
     },
     {
         key: 'isFeatured',
         type: 'boolean',
-        label: { es: 'destacados', en: 'featured' },
-        asc: { es: 'no destacados primero', en: 'non-featured first' },
-        desc: { es: 'destacados primero', en: 'featured first' }
+        label: { es: 'destacados', en: 'featured', pt: 'destaques' },
+        asc: {
+            es: 'no destacados primero',
+            en: 'non-featured first',
+            pt: 'não destacados primeiro'
+        },
+        desc: { es: 'destacados primero', en: 'featured first', pt: 'destacados primeiro' }
     },
     {
         key: 'price',
         type: 'numeric',
-        label: { es: 'precio', en: 'price' },
-        asc: { es: 'de menor a mayor', en: 'lowest first' },
-        desc: { es: 'de mayor a menor', en: 'highest first' }
+        label: { es: 'precio', en: 'price', pt: 'preço' },
+        asc: { es: 'de menor a mayor', en: 'lowest first', pt: 'menor para maior' },
+        desc: { es: 'de mayor a menor', en: 'highest first', pt: 'maior para menor' }
     }
 ] as const;
 
@@ -210,6 +214,40 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         onlyFeatured: 'featured only',
         onlyNotFeatured: 'non-featured only',
         noResultsFound: 'No results found for'
+    },
+    pt: {
+        showing: 'Mostrando',
+        of: 'de',
+        genericSubjectSingular: 'hospedagem',
+        genericSubjectPlural: 'hospedagens',
+        noFiltersActive: 'sem filtros ativos',
+        sortedBy: 'ordenados por',
+        in: 'em',
+        containing: 'que contêm',
+        inNameOrDescription: 'no nome ou na descrição',
+        priceFrom: 'com preço a partir de',
+        priceUpTo: 'com preço até',
+        priceBetween: 'com preço entre',
+        and: 'e',
+        or: 'ou',
+        withoutPriceDefined: 'sem preço definido',
+        forAtLeast: 'para pelo menos',
+        forExactly: 'para exatamente',
+        guestSingular: 'hóspede',
+        guestPlural: 'hóspedes',
+        withServicesLike: 'com serviços como',
+        withAmenitiesLike: 'com comodidades como',
+        withMinRating: 'com avaliação mínima de',
+        withoutRating: 'sem avaliação',
+        withAtLeast: 'com pelo menos',
+        withExactly: 'com exatamente',
+        bedroomSingular: 'quarto',
+        bedroomPlural: 'quartos',
+        bathroomSingular: 'banheiro',
+        bathroomPlural: 'banheiros',
+        onlyFeatured: 'somente destacados',
+        onlyNotFeatured: 'somente não destacados',
+        noResultsFound: 'Nenhum resultado encontrado para'
     }
 } as const;
 

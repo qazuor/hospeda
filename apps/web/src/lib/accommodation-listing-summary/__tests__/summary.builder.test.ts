@@ -17,23 +17,26 @@ const TEST_CATALOGS: SummaryCatalogs = {
         ...DEFAULT_TYPE_GRAMMAR,
         {
             key: 'APART_HOTEL',
-            singular: { es: 'apart hotel', en: 'apart hotel' },
-            plural: { es: 'apart hoteles', en: 'apart hotels' }
+            singular: { es: 'apart hotel', en: 'apart hotel', pt: 'apart hotel' },
+            plural: { es: 'apart hoteles', en: 'apart hotels', pt: 'apart hotéis' }
         }
     ],
     destinations: [
-        { key: 'colon', label: { es: 'Colón', en: 'Colón' } },
-        { key: 'concordia', label: { es: 'Concordia', en: 'Concordia' } },
-        { key: 'federacion', label: { es: 'Federación', en: 'Federación' } }
+        { key: 'colon', label: { es: 'Colón', en: 'Colón', pt: 'Colón' } },
+        { key: 'concordia', label: { es: 'Concordia', en: 'Concordia', pt: 'Concordia' } },
+        { key: 'federacion', label: { es: 'Federación', en: 'Federación', pt: 'Federación' } }
     ],
     services: [
-        { key: 'desayuno', label: { es: 'desayuno', en: 'breakfast' } },
-        { key: 'limpieza', label: { es: 'limpieza', en: 'cleaning' } }
+        { key: 'desayuno', label: { es: 'desayuno', en: 'breakfast', pt: 'café da manhã' } },
+        { key: 'limpieza', label: { es: 'limpieza', en: 'cleaning', pt: 'limpeza' } }
     ],
     amenities: [
-        { key: 'wifi', label: { es: 'wifi', en: 'wifi' } },
-        { key: 'pileta', label: { es: 'pileta', en: 'pool' } },
-        { key: 'aire-acondicionado', label: { es: 'aire acondicionado', en: 'air conditioning' } }
+        { key: 'wifi', label: { es: 'wifi', en: 'wifi', pt: 'wifi' } },
+        { key: 'pileta', label: { es: 'pileta', en: 'pool', pt: 'piscina' } },
+        {
+            key: 'aire-acondicionado',
+            label: { es: 'aire acondicionado', en: 'air conditioning', pt: 'ar condicionado' }
+        }
     ],
     sortKeys: DEFAULT_SORT_KEYS
 };
@@ -75,6 +78,16 @@ describe('buildAccommodationListingSummary', () => {
                 catalogs: TEST_CATALOGS
             });
             expect(result).toBe('Showing 50 of 50 accommodations, no active filters.');
+        });
+
+        it('should handle empty filters object with portuguese locale', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: {},
+                counts: { shown: 50, globalTotal: 50 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toBe('Mostrando 50 de 50 hospedagens, sem filtros ativos.');
         });
     });
 
@@ -1025,6 +1038,90 @@ describe('buildAccommodationListingSummary', () => {
                 catalogs: TEST_CATALOGS
             });
             expect(result).toContain('hotels and cabins');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Portuguese locale (BETA-83)
+    // -------------------------------------------------------------------------
+
+    describe('portuguese locale', () => {
+        it('should render no filters in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: {},
+                counts: { shown: 50, globalTotal: 50 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toBe('Mostrando 50 de 50 hospedagens, sem filtros ativos.');
+        });
+
+        it('should render single type + destination in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { types: ['HOTEL'], destinations: ['colon'] },
+                counts: { shown: 18, globalTotal: 124, subjectTotal: 42 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toBe('Mostrando 18 de 42 hotéis em Colón.');
+        });
+
+        it('should render sort phrase in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: {},
+                counts: { shown: 10, globalTotal: 50 },
+                sort: { key: 'name', direction: 'asc' },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toContain('ordenados por nome, A a Z');
+        });
+
+        it('should render price in Portuguese locale', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { price: { max: 500 } },
+                counts: { shown: 20, globalTotal: 100 }
+            });
+            expect(result).toContain('com preço até');
+        });
+
+        it('should render guests in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { guests: 3 },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('para pelo menos 3 hóspedes');
+        });
+
+        it('should render amenities in Portuguese using catalog labels', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { amenities: ['wifi', 'pileta'] },
+                counts: { shown: 20, globalTotal: 50 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toContain('com comodidades como wifi e piscina');
+        });
+
+        it('should render featured in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { featured: true },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('somente destacados');
+        });
+
+        it('should render multiple types joined with "e" in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { types: ['HOTEL', 'CABIN'] },
+                counts: { shown: 20, globalTotal: 100, subjectTotal: 50 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toContain('hotéis e cabanas');
         });
     });
 

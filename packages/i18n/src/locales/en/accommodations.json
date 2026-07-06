@@ -121,7 +121,17 @@
         "price.desc": "Price: High to low",
         "rating": "Top rated",
         "recent": "Most recent",
-        "name": "Name"
+        "name": "Name",
+        "mostSaved": "Most saved",
+        "ratingDesc": "Highest rated",
+        "mostReviewed": "Most reviewed",
+        "newest": "Newest",
+        "nameAsc": "Name A-Z",
+        "nameDesc": "Name Z-A",
+        "priceAsc": "Price: low to high",
+        "priceDesc": "Price: high to low",
+        "distance": "Distance",
+        "relevance": "Relevance"
     },
     "search": {
         "placeholder": "Search accommodations...",
@@ -233,7 +243,29 @@
         "dates": "Dates",
         "checkInPlaceholder": "Check-in",
         "checkOutPlaceholder": "Check-out",
-        "minCapacity": "Minimum capacity"
+        "minCapacity": "Minimum capacity",
+        "search": "Search by text",
+        "searchPlaceholder": "Search by name or description...",
+        "features": "Features",
+        "includeNoPrice": "Include without price",
+        "includeNoReviews": "Include without rating",
+        "children.helper": "(under 5 years old)",
+        "dates.helper": "Informational for now: real-time availability is under development and does not yet affect results.",
+        "geoRadius": "Near",
+        "geoRadius.browserCta": "Use my location",
+        "geoRadius.browserMode": "My location",
+        "geoRadius.browserPending": "Detecting…",
+        "geoRadius.browserError": "We couldn't detect your location. Check your browser permissions.",
+        "geoRadius.destinationMode": "One destination",
+        "geoRadius.destinationPlaceholder": "Choose a destination",
+        "geoRadius.radiusUnit": "km",
+        "section": {
+            "location": "Location",
+            "type": "Type and features",
+            "dates": "Dates",
+            "capacity": "Capacity",
+            "priceAndQuality": "Price and quality"
+        }
     },
     "faqs": "Frequently asked questions",
     "contactTitle": "Contact",
@@ -783,6 +815,27 @@
         "viewMap": "View on map",
         "popular": "Most saved",
         "allDestinations": "Explore destinations"
+    },
+    "typeChips": {
+        "ariaLabel": "Filter by accommodation type"
+    },
+    "header": {
+        "ariaLabel": "Listing controls"
+    },
+    "viewToggle": {
+        "ariaLabel": "View",
+        "list": "List",
+        "map": "Map"
+    },
+    "contextBar": {
+        "checkIn": "Check-in",
+        "checkOut": "Check-out"
+    },
+    "quickAmenity": {
+        "wifi": "WiFi",
+        "pool": "Pool",
+        "parking": "Parking",
+        "pets": "Pet-friendly"
     },
     "aiChat": {
         "fabLabel": "Ask AI about this accommodation",
