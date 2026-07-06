@@ -174,8 +174,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * CLOUDFLARE_* vars are added to the WEB app's KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA
  * (read via process.env in the revalidate route, not the web Zod schema);
  * 247 + 3 = 250.
+ *
+ * 249 (2026-07-06, HOS-67 R-6): -1. HOSPEDA_MAKE_INBOUND_KEY (social-automation)
+ * removed alongside the dead Make.com inbound callback routes it gated — those
+ * routes were superseded by the synchronous "Webhook Response" model and only
+ * that env var read them; 250 - 1 = 249.
  */
-const EXPECTED_VAR_COUNT = 250;
+const EXPECTED_VAR_COUNT = 249;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
