@@ -148,7 +148,13 @@ export function SortPopover({ options, value, onChange, locale }: SortPopoverPro
                 aria-label={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
                 title={`${t('ui.filter.sortBy', 'Ordenar por')}: ${selectedLabel}`}
             >
-                ⇅
+                <span
+                    className={styles.sortPopoverIcon}
+                    aria-hidden="true"
+                >
+                    ⇅
+                </span>
+                <span className={styles.sortPopoverLabel}>{t('ui.filter.sort', 'Ordenar')}</span>
             </button>
 
             {isOpen &&
