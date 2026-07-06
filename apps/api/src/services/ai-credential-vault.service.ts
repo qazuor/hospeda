@@ -24,16 +24,33 @@
  *   `providerId`; the caller must rotate instead.
  * - Never log plaintext keys or ciphertext at info/warn/error level (§5.5).
  *
+ * ## Auto-sync on create/rotate (HOS-94 T-010, OQ-2 — FAIL-OPEN)
+ *
+ * After a credential is successfully created or rotated, this service fires
+ * `syncAiProviderModels` (`ai-sync-models.service.ts`, HOS-94 T-008) to
+ * pre-populate `metadata.models` with the confidently-detected chat models
+ * (`source: 'detected' | 'both'`, excluding the `capabilityHint: 'uncertain'`
+ * bucket) — see {@link autoSyncModelsAfterCredentialChange}.
+ *
+ * This is a **hard requirement from the owner (OQ-2): the auto-sync path MUST
+ * be fail-open.** A failed list-models call (bad key, provider down, rate
+ * limit) — or any other error in this path, including the metadata-merge
+ * write itself — is swallowed into a single `apiLogger.warn` call and NEVER
+ * propagates. It runs strictly AFTER the credential's own transaction has
+ * already committed, so the create/rotate result returned to the caller is
+ * always identical to what it would be without this feature.
+ *
  * @module services/ai-credential-vault
  */
 
 import { aiCredentialAudit, aiProviderCredentials, getDb, withTransaction } from '@repo/db';
-import type { AiCredentialMasked } from '@repo/schemas';
+import type { AiCredentialMasked, AiProviderModel } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor, ServiceOutput } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { decryptSecret, encryptSecret } from '../utils/ai-vault.js';
 import { apiLogger } from '../utils/logger.js';
+import { syncAiProviderModels } from './ai-sync-models.service.js';
 
 // ---------------------------------------------------------------------------
 // Input types
@@ -157,6 +174,129 @@ export interface DecryptedCredentialResult {
  */
 function errorOutput<T>(code: ServiceErrorCode, message: string): ServiceOutput<T> {
     return { error: { code, message } };
+}
+
+/**
+ * Reads the current `metadata` blob for the active credential of `providerId`.
+ *
+ * Used only by {@link autoSyncModelsAfterCredentialChange} to read-merge-write
+ * `metadata.models` without clobbering other keys (`baseURL`, custom fields)
+ * that `updateCredentialMetadata` would otherwise overwrite wholesale.
+ *
+ * @param providerId - AI provider identifier to look up.
+ * @returns The current metadata object, or `{}` when absent/not an object.
+ */
+async function getCurrentCredentialMetadata(providerId: string): Promise<Record<string, unknown>> {
+    const db = getDb();
+
+    const rows = await db
+        .select({ metadata: aiProviderCredentials.metadata })
+        .from(aiProviderCredentials)
+        .where(
+            and(
+                eq(aiProviderCredentials.providerId, providerId),
+                isNull(aiProviderCredentials.deletedAt)
+            )
+        )
+        .limit(1);
+
+    const metadata = rows[0]?.metadata;
+    return metadata !== null && metadata !== undefined && typeof metadata === 'object'
+        ? (metadata as Record<string, unknown>)
+        : {};
+}
+
+/**
+ * Extracts the confidently-detected chat model ids from a sync-models result:
+ * entries annotated `source: 'detected' | 'both'` (confirmed against the live
+ * provider key) whose classifier hint is NOT `'uncertain'`.
+ *
+ * `source: 'curated'`-only entries are excluded — those were never confirmed
+ * against this specific key, so auto-populating them would be a guess about
+ * the operator's account, not a detection. Uncertain entries are excluded for
+ * the same reason the admin UX surfaces them separately: the operator should
+ * review and enable them manually rather than have them silently pre-checked.
+ *
+ * @param models - The merged model list returned by `syncAiProviderModels`.
+ * @returns Model ids suitable for pre-populating `metadata.models`.
+ */
+function selectConfidentlyDetectedModelIds(models: readonly AiProviderModel[]): string[] {
+    return models
+        .filter(
+            (model) =>
+                (model.source === 'detected' || model.source === 'both') &&
+                model.capabilityHint !== 'uncertain'
+        )
+        .map((model) => model.id);
+}
+
+/**
+ * Runs the HOS-94 auto-sync after a credential create/rotate and, when
+ * confidently-detected models are found, pre-populates `metadata.models`
+ * with them via {@link updateCredentialMetadata}.
+ *
+ * **FAIL-OPEN CONTRACT (OQ-2, hard requirement)**: this function NEVER
+ * throws and its return value is deliberately `void` — the caller does not
+ * (and must not) branch on its outcome. Every failure mode —
+ * `syncAiProviderModels` throwing or returning `{ error }`, the metadata read,
+ * or the `updateCredentialMetadata` write itself failing — is caught here and
+ * logged as a single `apiLogger.warn`. It always runs AFTER the credential's
+ * own transaction has already committed, so nothing it does can undo or
+ * block that save.
+ *
+ * A successful sync that yields zero confidently-detected models (e.g. a
+ * fresh key with no chat-capable access, or a provider outside the curated
+ * catalog) is a silent no-op — there is nothing to pre-populate.
+ *
+ * @param input - Actor/ipAddress (attributed to the resulting metadata-update
+ * audit row) and the providerId whose credential just changed.
+ */
+async function autoSyncModelsAfterCredentialChange(input: {
+    readonly actor: Actor;
+    readonly ipAddress: string | null;
+    readonly providerId: string;
+}): Promise<void> {
+    const { actor, ipAddress, providerId } = input;
+
+    try {
+        const syncResult = await syncAiProviderModels({ providerId });
+
+        if (syncResult.data === undefined) {
+            apiLogger.warn(
+                { providerId, code: syncResult.error?.code, message: syncResult.error?.message },
+                'ai-credential-vault: auto-sync after credential change failed (fail-open — credential save unaffected)'
+            );
+            return;
+        }
+
+        const detectedIds = selectConfidentlyDetectedModelIds(syncResult.data.models);
+        if (detectedIds.length === 0) {
+            return;
+        }
+
+        const currentMetadata = await getCurrentCredentialMetadata(providerId);
+        const updateResult = await updateCredentialMetadata({
+            actor,
+            ipAddress,
+            providerId,
+            metadata: { ...currentMetadata, models: detectedIds }
+        });
+
+        if (updateResult.data === undefined) {
+            apiLogger.warn(
+                { providerId, code: updateResult.error?.code },
+                'ai-credential-vault: auto-sync detected models but the metadata pre-populate write failed (fail-open — credential save unaffected)'
+            );
+        }
+    } catch (error) {
+        apiLogger.warn(
+            {
+                providerId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'ai-credential-vault: auto-sync after credential change threw (fail-open — credential save unaffected)'
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +475,11 @@ export async function createAiProviderCredential(
             'ai-credential-vault: credential created'
         );
 
+        // HOS-94 T-010 (OQ-2): auto-sync the model catalog now that the
+        // credential is saved. FAIL-OPEN — see autoSyncModelsAfterCredentialChange;
+        // this call cannot throw and never changes the result below.
+        await autoSyncModelsAfterCredentialChange({ actor, ipAddress, providerId });
+
         return { data: { id: createdId, providerId } };
     } catch (error) {
         // Race-safe duplicate guard: if two concurrent requests slip past the
@@ -446,6 +591,11 @@ export async function rotateAiProviderCredential(
             { providerId, credentialId, actorId: actor.id },
             'ai-credential-vault: credential rotated'
         );
+
+        // HOS-94 T-010 (OQ-2): auto-sync the model catalog now that the
+        // rotated key is saved. FAIL-OPEN — see autoSyncModelsAfterCredentialChange;
+        // this call cannot throw and never changes the result below.
+        await autoSyncModelsAfterCredentialChange({ actor, ipAddress, providerId });
 
         return { data: { id: credentialId, providerId } };
     } catch (error) {
